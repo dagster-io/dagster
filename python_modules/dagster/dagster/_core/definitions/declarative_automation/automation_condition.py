@@ -155,7 +155,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         target_key: EntityKey | None,
     ) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
-        return non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.name}".encode())
+        return non_secure_md5_hash_str(
+            f"{parent_unique_id}{index}{self.name}{self.get_label() or ''}{target_key or ''}".encode()
+        )
 
     def get_backcompat_node_unique_ids(
         self,
@@ -863,21 +865,58 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         """Returns a copy of this AutomationCondition with a human-readable label."""
         return copy(self, label=label)
 
-    def _get_stable_unique_id(self, target_key: EntityKey | None) -> str:
+    def _get_stable_unique_id(
+        self, target_key: EntityKey | None, use_backcompat_child_ids: bool = False
+    ) -> str:
         """Returns an identifier that is stable regardless of where it exists in the broader condition tree.
         This should only be used for conditions that don't change their output based on what conditions are
         evaluated before them (i.e. they explicitly set their candidate subset to the entire subset).
         """
-        child_ids = [
-            child.get_node_unique_id(
-                parent_unique_id=None,
-                index=i,
-                target_key=target_key,
-            )
-            for i, child in enumerate(self.children)
+        child_ids = []
+        for i, child in enumerate(self.children):
+            if use_backcompat_child_ids:
+                bc_ids = child.get_backcompat_node_unique_ids(
+                    parent_unique_id=None, index=i, target_key=target_key
+                )
+                child_ids.append(
+                    bc_ids[0]
+                    if bc_ids
+                    else child.get_node_unique_id(
+                        parent_unique_id=None, index=i, target_key=target_key
+                    )
+                )
+            else:
+                child_ids.append(
+                    child.get_node_unique_id(parent_unique_id=None, index=i, target_key=target_key)
+                )
+
+        parts = [
+            self.name,
+            self.get_label() or "",
+            *child_ids,
+            str(target_key) if target_key else "",
         ]
-        parts = [self.name, *child_ids, target_key.to_user_string() if target_key else ""]
         return non_secure_md5_hash_str("".join(parts).encode())
+
+    def get_backcompat_node_unique_ids(
+        self,
+        *,
+        parent_unique_id: str | None = None,
+        index: int | None = None,
+        target_key: EntityKey | None = None,
+    ) -> Sequence[str]:
+        backcompat_ids = []
+        # if this node has a stable unique id, check if it has a legacy stable unique id based on
+        # its children's backcompat ids
+        if self.get_node_unique_id(
+            parent_unique_id=parent_unique_id, index=index, target_key=target_key
+        ) == self._get_stable_unique_id(target_key):
+            legacy_stable_id = self._get_stable_unique_id(target_key, use_backcompat_child_ids=True)
+            if legacy_stable_id != self.get_node_unique_id(
+                parent_unique_id=parent_unique_id, index=index, target_key=target_key
+            ):
+                backcompat_ids.append(legacy_stable_id)
+        return backcompat_ids
 
 
 @public
