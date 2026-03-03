@@ -1261,49 +1261,49 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_cursor_no_recording_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_cursor_no_recording_json_json]
   '''
   {"error": "Exhausted 0 responses"}
   Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_cursor_no_recording_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_cursor_no_recording_text_text]
   '''
   Error querying Dagster Plus API: Exhausted 0 responses
   Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_logs_no_recording_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_empty_logs_no_recording_json_json]
   '''
   {"error": "Exhausted 0 responses"}
   Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_logs_no_recording_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_empty_logs_no_recording_text_text]
   '''
   Error querying Dagster Plus API: Exhausted 0 responses
   Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_run_id_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_empty_run_id_json_json]
   '''
   {"error": "Exhausted 0 responses"}
   Error: Failed to get logs for run '': Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_run_id_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_empty_run_id_text_text]
   '''
   Error querying Dagster Plus API: Exhausted 0 responses
   Error: Failed to get logs for run '': Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_invalid_level_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_level_json_json]
   dict({
     'count': 0,
     'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=',
@@ -1313,41 +1313,100 @@
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_invalid_level_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_level_text_text]
   '''
   No logs found for run 85156191-170d-4229-8eba-14450b6ca9e3
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_malformed_run_id_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_run_id_json]
+  dict({
+    'error': "Run not found: ''",
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_malformed_run_id_json_json]
   '''
   {"error": "Exhausted 0 responses"}
   Error: Failed to get logs for run invalid-uuid-format: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_malformed_run_id_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_malformed_run_id_text_text]
   '''
   Error querying Dagster Plus API: Exhausted 0 responses
   Error: Failed to get logs for run invalid-uuid-format: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_run_not_found_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_run_not_found_events_json_json]
   '''
   {"error": "Exhausted 0 responses"}
   Error: Failed to get logs for run nonexistent-run-uuid-1234-5678-900000000000: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_error_run_not_found_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_run_not_found_events_text_text]
   '''
   Error querying Dagster Plus API: Exhausted 0 responses
   Error: Failed to get logs for run nonexistent-run-uuid-1234-5678-900000000000: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_basic_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_error_run_not_found_text]
+  '''
+  Error querying Dagster Plus API: Run not found: nonexistent-run-id
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_canceled_run_json]
+  dict({
+    'created_at': 1751036896.306532,
+    'ended_at': 1751036909.142719,
+    'id': 'e0248005-fc38-4e55-a9fb-472c8694303b',
+    'job_name': 'run_etl_pipeline',
+    'started_at': 1751036903.35325,
+    'status': 'CANCELED',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_failed_run_json]
+  dict({
+    'created_at': 1757703542.251137,
+    'ended_at': 1757703554.673739,
+    'id': '4db16a22-4124-4d43-bd4c-ea0aeaa78172',
+    'job_name': 'snowflake_insights_import',
+    'started_at': 1757703550.780887,
+    'status': 'FAILURE',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_get_events_json]
+  dict({
+    'count': 2,
+    'cursor': None,
+    'hasMore': False,
+    'logs': list([
+      dict({
+        'error': None,
+        'eventType': 'PIPELINE_START',
+        'level': 'INFO',
+        'message': 'Started execution of run for "dbt_analytics_core_job".',
+        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+        'stepKey': None,
+        'timestamp': '1771476078297',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ASSET_MATERIALIZATION_PLANNED',
+        'level': 'INFO',
+        'message': 'dbt_analytics_core_job intends to materialize asset "my_asset".',
+        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+        'stepKey': 'dbt_non_partitioned_models_2',
+        'timestamp': '1771476078298',
+      }),
+    ]),
+    'run_id': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_basic_json_json]
   dict({
     'count': 20,
     'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgyMTg1Nzg2MH0=',
@@ -1537,7 +1596,7 @@
     'run_id': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_basic_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_basic_text_text]
   '''
   Logs for run b45fff8a-7def-43b8-805d-1cf5f435c997:
   
@@ -1569,7 +1628,7 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_debug_level_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_debug_level_json_json]
   dict({
     'count': 1,
     'cursor': None,
@@ -1588,7 +1647,7 @@
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_debug_level_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_debug_level_text_text]
   '''
   Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
   
@@ -1600,7 +1659,7 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_error_level_only_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_error_level_only_json_json]
   dict({
     'count': 3,
     'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=',
@@ -1779,7 +1838,7 @@
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_error_level_only_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_error_level_only_text_text]
   '''
   Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
   
@@ -1810,7 +1869,7 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_small_limit_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_small_limit_json_json]
   dict({
     'count': 5,
     'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODUyODM1MX0=',
@@ -1865,7 +1924,7 @@
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_small_limit_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_small_limit_text_text]
   '''
   Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
   
@@ -1882,7 +1941,7 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_step_filter_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_step_filter_json_json]
   dict({
     'count': 3,
     'cursor': None,
@@ -1919,7 +1978,7 @@
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_step_filter_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_step_filter_text_text]
   '''
   Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
   
@@ -1933,7 +1992,7 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_errors_json_json]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_with_errors_json_json]
   dict({
     'count': 41,
     'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=',
@@ -2454,7 +2513,7 @@
     'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_errors_text_text]
+# name: TestDynamicCommandExecution.test_command_execution[run_success_logs_with_errors_text_text]
   '''
   Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
   
@@ -2522,67 +2581,6 @@
   Total log entries: 41
   
   '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_run_id_json]
-  dict({
-    'error': "Run not found: ''",
-  })
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[run_error_run_not_found_text]
-  '''
-  Error querying Dagster Plus API: Run not found: nonexistent-run-id
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[run_event_error_run_not_found_text]
-  '''
-  Error querying Dagster Plus API: Exhausted 0 responses
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[run_event_success_get_events_json]
-  dict({
-    'count': 2,
-    'events': list([
-      dict({
-        'eventType': 'PIPELINE_START',
-        'level': 'INFO',
-        'message': 'Started execution of run for "dbt_analytics_core_job".',
-        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
-        'stepKey': None,
-        'timestamp': '1771476078297',
-      }),
-      dict({
-        'eventType': 'ASSET_MATERIALIZATION_PLANNED',
-        'level': 'INFO',
-        'message': 'dbt_analytics_core_job intends to materialize asset "my_asset".',
-        'runId': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
-        'stepKey': 'dbt_non_partitioned_models_2',
-        'timestamp': '1771476078298',
-      }),
-    ]),
-    'run_id': 'a34cd75c-cfa9-4e99-8f0a-955492b89afd',
-  })
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[run_success_canceled_run_json]
-  dict({
-    'created_at': 1751036896.306532,
-    'ended_at': 1751036909.142719,
-    'id': 'e0248005-fc38-4e55-a9fb-472c8694303b',
-    'job_name': 'run_etl_pipeline',
-    'started_at': 1751036903.35325,
-    'status': 'CANCELED',
-  })
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[run_success_failed_run_json]
-  dict({
-    'created_at': 1757703542.251137,
-    'ended_at': 1757703554.673739,
-    'id': '4db16a22-4124-4d43-bd4c-ea0aeaa78172',
-    'job_name': 'snowflake_insights_import',
-    'started_at': 1757703550.780887,
-    'status': 'FAILURE',
-  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_single_run_json]
   dict({

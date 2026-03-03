@@ -1,11 +1,13 @@
-"""Test log business logic functions without mocks.
+"""Test run get-events business logic functions and CLI command invocation.
 
-These tests focus on testing pure functions that process data without requiring
-GraphQL client mocking or external dependencies.
+These tests cover the formatting, filtering, and pagination logic for
+`dg api run get-events`, consolidated from the former log_tests and run_event_tests.
 """
 
+import json
 from unittest.mock import MagicMock
 
+from click.testing import CliRunner
 from dagster_dg_cli.api_layer.graphql_adapter.run_event import (
     _filter_events_by_level,
     _filter_events_by_step,
@@ -18,7 +20,8 @@ from dagster_dg_cli.api_layer.schemas.run_event import (
     RunEventLevel,
     RunEventList,
 )
-from dagster_dg_cli.cli.api.log import format_logs_json, format_logs_table
+from dagster_dg_cli.cli.api.client import DgApiTestContext
+from dagster_dg_cli.cli.api.run import format_logs_json, format_logs_table
 
 
 class TestFormatLogs:
@@ -146,8 +149,6 @@ class TestFormatLogs:
         result = format_logs_json(log_list, "test-run-12345")
 
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -162,8 +163,6 @@ class TestFormatLogs:
         """Test formatting empty log list as JSON."""
         log_list = self._create_empty_log_list()
         result = format_logs_json(log_list, "empty-run-67890")
-
-        import json
 
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
@@ -186,8 +185,6 @@ class TestFormatLogs:
         log_list = RunEventList(items=[log_with_nested_error], total=1)
 
         result = format_logs_json(log_list, "nested-error-run")
-
-        import json
 
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
@@ -334,8 +331,6 @@ class TestLogDataProcessing:
 
         # Test JSON serialization works correctly for all levels
         result = log_list.model_dump_json(indent=2)
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -616,3 +611,64 @@ class TestAutoPagination:
             assert client.execute.call_count == 5
         finally:
             mod._MAX_PAGES = original  # noqa: SLF001
+
+
+_RUN_ID = "a34cd75c-cfa9-4e99-8f0a-955492b89afd"
+
+_SAMPLE_GRAPHQL_RESPONSE = {
+    "logsForRun": {
+        "__typename": "EventConnection",
+        "events": [
+            {
+                "__typename": "MessageEvent",
+                "runId": _RUN_ID,
+                "message": 'Started execution of run for "dbt_analytics_core_job".',
+                "timestamp": "1771476078297",
+                "level": "INFO",
+                "stepKey": None,
+                "eventType": "PIPELINE_START",
+            },
+            {
+                "__typename": "MessageEvent",
+                "runId": _RUN_ID,
+                "message": 'dbt_analytics_core_job intends to materialize asset "my_asset".',
+                "timestamp": "1771476078298",
+                "level": "INFO",
+                "stepKey": "dbt_non_partitioned_models_2",
+                "eventType": "ASSET_MATERIALIZATION_PLANNED",
+            },
+        ],
+        "cursor": None,
+        "hasMore": False,
+    }
+}
+
+
+class TestGetEventsCommandInvocation:
+    """Regression tests for `dg api run get-events` CLI invocation."""
+
+    def test_command_accepts_view_graphql_param(self):
+        """Regression test: get_events_run_command must accept the view_graphql kwarg.
+
+        The @dg_api_options decorator unconditionally injects view_graphql into kwargs
+        (dagster_shared/plus/config_utils.py). If the command function signature is missing
+        this parameter, the invocation crashes with:
+
+            TypeError: get_events_run_command() got an unexpected keyword argument 'view_graphql'
+        """
+        from dagster_dg_cli.cli import cli as root_cli
+
+        from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
+            ReplayClient,
+        )
+
+        replay_client = ReplayClient([_SAMPLE_GRAPHQL_RESPONSE])
+        test_context = DgApiTestContext(client_factory=lambda config: replay_client)
+
+        runner = CliRunner()
+        result = runner.invoke(root_cli, ["api", "run", "get-events", _RUN_ID], obj=test_context)
+
+        assert "view_graphql" not in (result.output or ""), (
+            "Command crashed with view_graphql TypeError - check get_events_run_command signature"
+        )
+        assert result.exit_code == 0

@@ -266,6 +266,17 @@ def <noun>_group():
     """Manage <noun> in Dagster Plus."""
 ```
 
+## Resource Event Subcommands
+
+Some resources support a `get-events` subcommand to retrieve event history. This follows
+the pattern `dg api <noun> get-events <identifier>`:
+
+- `dg api asset get-events <asset_key>` — materialization/observation events
+- `dg api run get-events <run_id>` — execution log events (step starts, failures, etc.)
+
+The `get-events` command lives alongside `get` and `list` in the resource's command group,
+keeping all operations for a resource under one noun.
+
 ## Standard Verbs
 
 ### Read Operations:
