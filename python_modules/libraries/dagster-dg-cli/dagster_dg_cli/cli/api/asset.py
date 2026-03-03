@@ -10,9 +10,10 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
+from dagster_dg_cli.cli.api.formatters import format_asset, format_asset_events, format_assets
 
 DG_API_MAX_ASSET_LIMIT: Final = 1000
+DG_API_MAX_EVENT_LIMIT: Final = 1000
 
 
 @click.command(name="list", cls=DgClickCommand)
@@ -126,12 +127,92 @@ def get_asset_command(
         raise click.ClickException(f"Failed to get asset: {e}")
 
 
+@click.command(name="get-events", cls=DgClickCommand)
+@click.argument("asset_key", type=str)
+@click.option(
+    "--event-type",
+    type=click.Choice(["materialization", "observation"], case_sensitive=False),
+    default=None,
+    help="Filter by event type (default: both)",
+)
+@click.option(
+    "--limit",
+    type=click.IntRange(1, DG_API_MAX_EVENT_LIMIT),
+    default=50,
+    help=f"Max events to return (default: 50, max: {DG_API_MAX_EVENT_LIMIT})",
+)
+@click.option(
+    "--before",
+    type=str,
+    default=None,
+    help="Events before this ISO timestamp (e.g. 2024-01-15T00:00:00)",
+)
+@click.option(
+    "--partition",
+    "partitions",
+    type=str,
+    multiple=True,
+    help="Filter by partition key (repeatable)",
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output in JSON format for machine readability",
+)
+@dg_api_options(deployment_scoped=True)
+@cli_telemetry_wrapper
+@click.pass_context
+def get_events_asset_command(
+    ctx: click.Context,
+    asset_key: str,
+    event_type: str | None,
+    limit: int,
+    before: str | None,
+    partitions: tuple[str, ...],
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
+    view_graphql: bool,
+) -> None:
+    """Get materialization and observation events for an asset."""
+    config = DagsterPlusCliConfig.create_for_deployment(
+        deployment=deployment,
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
+    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+
+    api = DgApiAssetApi(client)
+
+    try:
+        events = api.get_events(
+            asset_key=asset_key,
+            event_type=event_type,
+            limit=limit,
+            before=before,
+            partitions=list(partitions) if partitions else None,
+        )
+        output = format_asset_events(events, as_json=output_json)
+        click.echo(output)
+    except Exception as e:
+        if output_json:
+            error_response = {"error": str(e)}
+            click.echo(json.dumps(error_response), err=True)
+        else:
+            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
+        raise click.ClickException(f"Failed to get asset events: {e}")
+
+
 @click.group(
     name="asset",
     cls=DgClickGroup,
     commands={
         "list": list_assets_command,
         "get": get_asset_command,
+        "get-events": get_events_asset_command,
     },
 )
 def asset_group():

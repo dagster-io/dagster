@@ -4,8 +4,15 @@ These tests focus on testing pure functions that process data without requiring
 GraphQL client mocking or external dependencies.
 """
 
-from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
-from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
+import json
+
+from dagster_dg_cli.api_layer.schemas.asset import (
+    DgApiAsset,
+    DgApiAssetEvent,
+    DgApiAssetEventList,
+    DgApiAssetList,
+)
+from dagster_dg_cli.cli.api.formatters import format_asset, format_asset_events, format_assets
 
 
 class TestFormatAssets:
@@ -71,8 +78,6 @@ class TestFormatAssets:
         result = format_assets(asset_list, as_json=True)
 
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -88,8 +93,6 @@ class TestFormatAssets:
         asset_list = self._create_empty_asset_list()
         result = format_assets(asset_list, as_json=True)
 
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -104,8 +107,6 @@ class TestFormatAssets:
         """Test formatting single asset as JSON."""
         asset = self._create_single_asset()
         result = format_asset(asset, as_json=True)
-
-        import json
 
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
@@ -176,8 +177,6 @@ class TestAssetDataProcessing:
 
         # Test JSON serialization works correctly
         result = asset.model_dump_json(indent=2)
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -196,3 +195,72 @@ class TestAssetDataProcessing:
         assert asset.asset_key == "level1/level2/level3/asset"
         assert asset.asset_key_parts == ["level1", "level2", "level3", "asset"]
         assert len(asset.asset_key_parts) == 4
+
+
+class TestFormatAssetEvents:
+    """Test the asset event formatting functions."""
+
+    def _create_sample_events(self) -> DgApiAssetEventList:
+        """Create sample event list with mixed event types."""
+        return DgApiAssetEventList(
+            items=[
+                DgApiAssetEvent(
+                    timestamp="1706745600000",  # 2024-01-31T16:00:00 UTC
+                    run_id="run-abc-123",
+                    event_type="ASSET_MATERIALIZATION",
+                    partition="2024-01-31",
+                    tags=[{"key": "dagster/partition", "value": "2024-01-31"}],
+                    metadata_entries=[
+                        {"label": "row_count", "description": "Rows", "intValue": 5000},
+                    ],
+                ),
+                DgApiAssetEvent(
+                    timestamp="1706659200000",  # 2024-01-30T16:00:00 UTC
+                    run_id="run-def-456",
+                    event_type="ASSET_OBSERVATION",
+                    partition=None,
+                    tags=[],
+                    metadata_entries=[
+                        {"label": "freshness", "description": "Minutes", "floatValue": 12.5},
+                    ],
+                ),
+                DgApiAssetEvent(
+                    timestamp="1706572800000",  # 2024-01-29T16:00:00 UTC
+                    run_id="run-ghi-789",
+                    event_type="ASSET_MATERIALIZATION",
+                    partition="2024-01-29",
+                    tags=[{"key": "dagster/partition", "value": "2024-01-29"}],
+                    metadata_entries=[],
+                ),
+            ]
+        )
+
+    def _create_empty_events(self) -> DgApiAssetEventList:
+        """Create empty event list."""
+        return DgApiAssetEventList(items=[])
+
+    def test_format_asset_events_text_output(self, snapshot):
+        """Test formatting asset events as text table."""
+        event_list = self._create_sample_events()
+        result = format_asset_events(event_list, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_asset_events_json_output(self, snapshot):
+        """Test formatting asset events as JSON."""
+        event_list = self._create_sample_events()
+        result = format_asset_events(event_list, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_empty_asset_events_text_output(self, snapshot):
+        """Test formatting empty asset events list."""
+        event_list = self._create_empty_events()
+        result = format_asset_events(event_list, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_empty_asset_events_json_output(self, snapshot):
+        """Test formatting empty asset events as JSON."""
+        event_list = self._create_empty_events()
+        result = format_asset_events(event_list, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)

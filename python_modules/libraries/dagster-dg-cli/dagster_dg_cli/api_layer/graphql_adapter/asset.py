@@ -5,6 +5,8 @@ import logging
 from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAsset,
     DgApiAssetChecksStatus,
+    DgApiAssetEvent,
+    DgApiAssetEventList,
     DgApiAssetFreshnessInfo,
     DgApiAssetList,
     DgApiAssetMaterialization,
@@ -429,3 +431,115 @@ def get_dg_plus_api_asset_via_graphql(
         raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
 
     return asset
+
+
+def _build_asset_events_query(event_type: str | None) -> str:
+    """Build the GraphQL query for asset events based on requested event type.
+
+    Args:
+        event_type: "materialization", "observation", or None for both.
+    """
+    event_fields = f"""
+                    timestamp
+                    runId
+                    partition
+                    tags {{ key value }}
+                    {METADATA_ENTRIES_FRAGMENT}"""
+
+    materializations_fragment = f"""
+                assetMaterializations(limit: $limit, beforeTimestampMillis: $beforeTimestampMillis, partitions: $partitions) {{{event_fields}
+                }}"""
+
+    observations_fragment = f"""
+                assetObservations(limit: $limit, beforeTimestampMillis: $beforeTimestampMillis, partitions: $partitions) {{{event_fields}
+                }}"""
+
+    if event_type == "materialization":
+        event_fragments = materializations_fragment
+    elif event_type == "observation":
+        event_fragments = observations_fragment
+    else:
+        event_fragments = materializations_fragment + observations_fragment
+
+    return f"""
+query AssetEvents($assetKeys: [AssetKeyInput!]!, $limit: Int, $beforeTimestampMillis: String, $partitions: [String!]) {{
+    assetsOrError(assetKeys: $assetKeys) {{
+        __typename
+        ... on AssetConnection {{
+            nodes {{
+                key {{ path }}{event_fragments}
+            }}
+        }}
+        ... on PythonError {{ message }}
+    }}
+}}
+"""
+
+
+def get_asset_events_via_graphql(
+    client: IGraphQLClient,
+    asset_key: str,
+    event_type: str | None = None,
+    limit: int = 50,
+    before_timestamp_millis: str | None = None,
+    partitions: list[str] | None = None,
+) -> DgApiAssetEventList:
+    """Fetch materialization and/or observation events for an asset."""
+    asset_key_parts = asset_key.split("/")
+    query = _build_asset_events_query(event_type)
+
+    variables: dict = {"assetKeys": [{"path": asset_key_parts}]}
+    if before_timestamp_millis:
+        variables["beforeTimestampMillis"] = before_timestamp_millis
+    if partitions:
+        variables["partitions"] = partitions
+
+    variables["limit"] = limit
+
+    result = client.execute(query, variables=variables)
+    assets_or_error = result.get("assetsOrError", {})
+    if assets_or_error.get("__typename") == "PythonError":
+        raise Exception(f"GraphQL error: {assets_or_error.get('message', 'Unknown error')}")
+
+    nodes = assets_or_error.get("nodes", [])
+
+    if not nodes:
+        raise Exception(f"Asset not found: {asset_key}")
+
+    node = nodes[0]
+    events: list[DgApiAssetEvent] = []
+
+    # Process materializations
+    if event_type in ("materialization", None):
+        for mat in node.get("assetMaterializations", []):
+            events.append(
+                DgApiAssetEvent(
+                    timestamp=mat["timestamp"],
+                    run_id=mat["runId"],
+                    event_type="ASSET_MATERIALIZATION",
+                    partition=mat.get("partition"),
+                    tags=[{"key": t["key"], "value": t["value"]} for t in mat.get("tags", [])],
+                    metadata_entries=_parse_metadata_entries(mat.get("metadataEntries", [])),
+                )
+            )
+
+    # Process observations
+    if event_type in ("observation", None):
+        for obs in node.get("assetObservations", []):
+            events.append(
+                DgApiAssetEvent(
+                    timestamp=obs["timestamp"],
+                    run_id=obs["runId"],
+                    event_type="ASSET_OBSERVATION",
+                    partition=obs.get("partition"),
+                    tags=[{"key": t["key"], "value": t["value"]} for t in obs.get("tags", [])],
+                    metadata_entries=_parse_metadata_entries(obs.get("metadataEntries", [])),
+                )
+            )
+
+    # Sort by timestamp descending (newest first) and apply limit when merging both types
+    if event_type is None:
+        events.sort(key=lambda e: e.timestamp, reverse=True)
+        events = events[:limit]
+
+    return DgApiAssetEventList(items=events)

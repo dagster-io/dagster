@@ -1,6 +1,10 @@
 """Asset models for REST-like API."""
 
+from typing import Literal
+
 from pydantic import BaseModel
+
+DgApiEventType = Literal["materialization", "observation"]
 
 
 class DgApiAssetHealthMetadata(BaseModel):
@@ -80,3 +84,20 @@ class DgApiAssetList(BaseModel):
     items: list[DgApiAsset]
     cursor: str | None  # Next cursor for pagination
     has_more: bool  # Whether more results exist
+
+
+class DgApiAssetEvent(BaseModel):
+    """A materialization or observation event for an asset."""
+
+    timestamp: str  # millisecond timestamp string from GraphQL
+    run_id: str
+    event_type: Literal["ASSET_MATERIALIZATION", "ASSET_OBSERVATION"]
+    partition: str | None
+    tags: list[dict]
+    metadata_entries: list[dict]
+
+
+class DgApiAssetEventList(BaseModel):
+    """GET /api/assets/{key}/events response."""
+
+    items: list[DgApiAssetEvent]

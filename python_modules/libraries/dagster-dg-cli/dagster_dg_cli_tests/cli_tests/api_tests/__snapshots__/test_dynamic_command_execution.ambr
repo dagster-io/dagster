@@ -84,7 +84,7 @@
   Label: Agent da7da2bb
   ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
   Status: RUNNING
-  Last Heartbeat: 2025-09-17 14:21:55
+  Last Heartbeat: 2025-09-17 14:21:55 UTC
   
   Metadata:
     version: "1.5.1"
@@ -149,12 +149,12 @@
   Label: Agent 858fd654
   ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
   Status: RUNNING
-  Last Heartbeat: 2025-09-17 14:22:04
+  Last Heartbeat: 2025-09-17 14:22:04 UTC
   
   Label: Agent da7da2bb
   ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
   Status: RUNNING
-  Last Heartbeat: 2025-09-17 14:21:55
+  Last Heartbeat: 2025-09-17 14:21:55 UTC
   
   '''
 # ---
@@ -189,7 +189,7 @@
   Label: Agent 858fd654
   ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
   Status: RUNNING
-  Last Heartbeat: 2025-09-17 14:22:04
+  Last Heartbeat: 2025-09-17 14:22:04 UTC
   
   Metadata:
     utilization_metrics: {}
@@ -226,7 +226,7 @@
   Label: Agent da7da2bb
   ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
   Status: RUNNING
-  Last Heartbeat: 2025-09-17 14:21:55
+  Last Heartbeat: 2025-09-17 14:21:55 UTC
   
   Metadata:
     version: "1.5.1"
@@ -266,7 +266,7 @@
   Label: Agent 858fd654
   ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
   Status: RUNNING
-  Last Heartbeat: 2025-09-17 14:22:04
+  Last Heartbeat: 2025-09-17 14:22:04 UTC
   
   Metadata:
     utilization_metrics: {}
@@ -309,7 +309,7 @@
   Materialization Status: HEALTHY
   Freshness Status: NOT_APPLICABLE
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-09-30 13:01:29
+  Latest Materialization: 2025-09-30 13:01:29 UTC
   Latest Run ID: 68fb6e21-5928-4da1-b9fe-3f6a565e3a39
   
   Asset Key: aws/cloud-prod/user_roles
@@ -322,7 +322,7 @@
   Materialization Status: HEALTHY
   Freshness Status: NOT_APPLICABLE
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-10-01 03:02:40
+  Latest Materialization: 2025-10-01 03:02:40 UTC
   Latest Run ID: 74a2f116-1e7a-41d8-9d6d-5b47c05ebbe0
   
   Asset Key: aws/cloud-prod/workspace_staging_asset_checks
@@ -335,7 +335,7 @@
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-10-01 09:20:37
+  Latest Materialization: 2025-10-01 09:20:37 UTC
   Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   Asset Key: aws/cloud-prod/workspace_staging_assets
@@ -348,7 +348,7 @@
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-10-01 09:20:37
+  Latest Materialization: 2025-10-01 09:20:37 UTC
   Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   Asset Key: aws/cloud-prod/workspace_staging_external_repo_metadata
@@ -361,7 +361,7 @@
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-10-01 09:20:37
+  Latest Materialization: 2025-10-01 09:20:37 UTC
   Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   Asset Key: aws/cloud-prod/workspace_staging_jobs
@@ -374,7 +374,7 @@
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-10-01 09:20:37
+  Latest Materialization: 2025-10-01 09:20:37 UTC
   Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   Asset Key: aws/cloud-prod/workspace_staging_metadata
@@ -387,7 +387,7 @@
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-10-01 09:20:37
+  Latest Materialization: 2025-10-01 09:20:37 UTC
   Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   Asset Key: aws/cloud-prod/workspace_staging_partitions
@@ -400,7 +400,7 @@
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-10-01 09:20:37
+  Latest Materialization: 2025-10-01 09:20:37 UTC
   Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   '''
@@ -985,7 +985,7 @@
     Materialization Status: HEALTHY
     Freshness Status: HEALTHY
     Asset Checks Status: NOT_APPLICABLE
-    Latest Materialization: 2025-10-01 09:20:37
+    Latest Materialization: 2025-10-01 09:20:37 UTC
     Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   '''

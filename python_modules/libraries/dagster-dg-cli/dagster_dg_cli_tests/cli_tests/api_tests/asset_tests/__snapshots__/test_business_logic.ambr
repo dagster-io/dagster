@@ -70,6 +70,80 @@
     'status': None,
   })
 # ---
+# name: TestFormatAssetEvents.test_format_asset_events_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'event_type': 'ASSET_MATERIALIZATION',
+        'metadata_entries': list([
+          dict({
+            'description': 'Rows',
+            'intValue': 5000,
+            'label': 'row_count',
+          }),
+        ]),
+        'partition': '2024-01-31',
+        'run_id': 'run-abc-123',
+        'tags': list([
+          dict({
+            'key': 'dagster/partition',
+            'value': '2024-01-31',
+          }),
+        ]),
+        'timestamp': '1706745600000',
+      }),
+      dict({
+        'event_type': 'ASSET_OBSERVATION',
+        'metadata_entries': list([
+          dict({
+            'description': 'Minutes',
+            'floatValue': 12.5,
+            'label': 'freshness',
+          }),
+        ]),
+        'partition': None,
+        'run_id': 'run-def-456',
+        'tags': list([
+        ]),
+        'timestamp': '1706659200000',
+      }),
+      dict({
+        'event_type': 'ASSET_MATERIALIZATION',
+        'metadata_entries': list([
+        ]),
+        'partition': '2024-01-29',
+        'run_id': 'run-ghi-789',
+        'tags': list([
+          dict({
+            'key': 'dagster/partition',
+            'value': '2024-01-29',
+          }),
+        ]),
+        'timestamp': '1706572800000',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssetEvents.test_format_asset_events_text_output[0]
+  '''
+  TIMESTAMP            TYPE                      RUN_ID                                   PARTITION           
+  ------------------------------------------------------------------------------------------------------------
+  2024-02-01 00:00:00 UTC ASSET_MATERIALIZATION     run-abc-123                              2024-01-31          
+  2024-01-31 00:00:00 UTC ASSET_OBSERVATION         run-def-456                                                  
+  2024-01-30 00:00:00 UTC ASSET_MATERIALIZATION     run-ghi-789                              2024-01-29          
+  
+  Total events: 3
+  '''
+# ---
+# name: TestFormatAssetEvents.test_format_empty_asset_events_json_output[0]
+  dict({
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestFormatAssetEvents.test_format_empty_asset_events_text_output[0]
+  'No events found.'
+# ---
 # name: TestFormatAssets.test_format_asset_without_metadata[0]
   '''
   Asset Key: simple

@@ -1,11 +1,16 @@
 """Output formatters for CLI display."""
 
 import datetime
+import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
-    from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
+    from dagster_dg_cli.api_layer.schemas.asset import (
+        DgApiAsset,
+        DgApiAssetEventList,
+        DgApiAssetList,
+    )
     from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
     from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
 
@@ -78,12 +83,12 @@ def _format_timestamp(timestamp: float, unit: str = "seconds") -> str:
     """
     try:
         if unit == "milliseconds":
-            dt = datetime.datetime.fromtimestamp(timestamp / 1000)
+            dt = datetime.datetime.fromtimestamp(timestamp / 1000, tz=datetime.timezone.utc)
         elif unit == "seconds":
-            dt = datetime.datetime.fromtimestamp(timestamp)
+            dt = datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
         else:
             raise ValueError(f"Unsupported unit: {unit}")
-        return dt.strftime("%Y-%m-%d %H:%M:%S")
+        return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
     except (ValueError, OSError):
         return f"Invalid timestamp: {timestamp}"
 
@@ -198,6 +203,33 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
     return "\n".join(lines)
 
 
+def format_asset_events(event_list: "DgApiAssetEventList", as_json: bool) -> str:
+    """Format asset events for output."""
+    if as_json:
+        return event_list.model_dump_json(indent=2)
+
+    if not event_list.items:
+        return "No events found."
+
+    # Table header
+    header = f"{'TIMESTAMP':<20} {'TYPE':<25} {'RUN_ID':<40} {'PARTITION':<20}"
+    separator = "-" * len(header)
+    lines = [header, separator]
+
+    # Table rows
+    for event in event_list.items:
+        timestamp = _format_timestamp(float(event.timestamp), "milliseconds")
+        event_type = event.event_type
+        run_id = event.run_id
+        partition = event.partition or ""
+
+        row = f"{timestamp:<20} {event_type:<25} {run_id:<40} {partition:<20}"
+        lines.append(row)
+
+    lines.extend(["", f"Total events: {len(event_list.items)}"])
+    return "\n".join(lines)
+
+
 def format_agents(agents: "DgApiAgentList", as_json: bool) -> str:
     """Format agent list for output."""
     if as_json:
@@ -285,8 +317,6 @@ def format_secret(secret: "DgApiSecret", as_json: bool, show_value: bool = False
         as_json: Whether to output JSON format
         show_value: Whether to include the secret value (security sensitive)
     """
-    import json
-
     if as_json:
         if not show_value and secret.value is not None:
             # Create a copy with hidden value for JSON output

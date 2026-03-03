@@ -62,11 +62,16 @@ def is_pydantic_model(type_hint) -> bool:
 
 
 def is_allowed_type(type_hint) -> bool:
-    """Check if a type hint is allowed (primitive or Pydantic model)."""
-    # Handle Optional types
+    """Check if a type hint is allowed (primitive, list of primitives, or Pydantic model)."""
+    # Handle Optional/Union types
     if get_origin(type_hint) in (Union, UnionType):
         args = get_args(type_hint)
         return all(is_allowed_type(arg) for arg in args)
+
+    # Handle list[primitive] types (e.g., list[str], list[int])
+    if get_origin(type_hint) is list:
+        args = get_args(type_hint)
+        return all(arg in ALLOWED_PRIMITIVES for arg in args)
 
     # Check if it's a primitive or Pydantic model
     return type_hint in ALLOWED_PRIMITIVES or is_pydantic_model(type_hint)

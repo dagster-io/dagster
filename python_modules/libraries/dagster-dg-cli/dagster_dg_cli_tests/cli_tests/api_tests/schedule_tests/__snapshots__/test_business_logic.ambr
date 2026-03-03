@@ -71,7 +71,7 @@
   Pipeline: daily_pipeline
   Description: Runs daily at midnight
   Timezone: UTC
-  Next Tick: 2024-01-15 09:30:00
+  Next Tick: 2024-01-15 09:30:00 UTC
   
   Name: hourly_job
   Status: STOPPED
@@ -106,7 +106,7 @@
   Pipeline: critical_pipeline
   Description: Critical production schedule
   Timezone: UTC
-  Next Tick: 2024-01-15 09:45:00
+  Next Tick: 2024-01-15 09:45:00 UTC
   '''
 # ---
 # name: TestProcessScheduleResponses.test_process_repositories_response_empty[0]
