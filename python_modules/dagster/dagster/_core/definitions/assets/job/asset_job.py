@@ -208,14 +208,20 @@ class JobScopedAssetGraph(AssetGraph):
         asset_nodes_by_key: Mapping[AssetKey, AssetNode],
         assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
         source_asset_graph: AssetGraph,
+        ordered_asset_keys: Sequence[AssetKey] | None = None,
     ):
         super().__init__(asset_nodes_by_key, assets_defs_by_check_key)
         self._source_asset_graph = source_asset_graph
+        self._ordered_asset_keys = ordered_asset_keys
 
     @property
     def source_asset_graph(self) -> AssetGraph:
         """The source AssetGraph from which this job-scoped graph was created."""
         return self._source_asset_graph
+
+    @property
+    def ordered_asset_keys(self) -> Sequence[AssetKey] | None:
+        return self._ordered_asset_keys
 
 
 def get_asset_graph_for_job(
@@ -238,6 +244,7 @@ def get_asset_graph_for_job(
     )
 
     selected_keys = selection.resolve(parent_asset_graph)
+    selected_keys_ordered = selection.resolve_ordered(parent_asset_graph)
     invalid_keys = selected_keys - parent_asset_graph.executable_asset_keys
     if invalid_keys:
         raise DagsterInvalidDefinitionError(
@@ -284,7 +291,12 @@ def get_asset_graph_for_job(
     asset_nodes_by_key, assets_defs_by_check_key = JobScopedAssetGraph.key_mappings_from_assets(
         [*executable_assets_defs, *unexecutable_assets_defs]
     )
-    return JobScopedAssetGraph(asset_nodes_by_key, assets_defs_by_check_key, parent_asset_graph)
+    return JobScopedAssetGraph(
+        asset_nodes_by_key,
+        assets_defs_by_check_key,
+        parent_asset_graph,
+        ordered_asset_keys=selected_keys_ordered,
+    )
 
 
 def _subset_assets_defs(
@@ -462,7 +474,30 @@ def build_node_deps(
         # the key that we'll use to reference the node inside this AssetsDefinition
         node_def_name = assets_def.node_def.name
         alias = node_handle.name if node_handle.name != node_def_name else None
-        node_key = NodeInvocation(node_def_name, alias=alias)
+
+        tags = {}
+        if (
+            isinstance(asset_graph, JobScopedAssetGraph)
+            and asset_graph.ordered_asset_keys
+            and len(asset_graph.ordered_asset_keys) > 1
+            and asset_graph.ordered_asset_keys != sorted(asset_graph.ordered_asset_keys)
+            and len(assets_defs_by_node_handle) > 1
+        ):
+            asset_to_priority = {
+                key: len(asset_graph.ordered_asset_keys) - i
+                for i, key in enumerate(asset_graph.ordered_asset_keys)
+            }
+            node_priority = max(
+                (asset_to_priority.get(key, 0) for key in assets_def.keys),
+                default=0,
+            )
+            if node_priority > 0:
+                tags = {"dagster/priority": str(node_priority)}
+
+        if tags:
+            node_key = NodeInvocation(node_def_name, alias=alias, tags=tags)
+        else:
+            node_key = NodeInvocation(node_def_name, alias=alias)
         deps[node_key] = {}
 
         # For check-only nodes, we treat additional_deps as execution dependencies regardless
