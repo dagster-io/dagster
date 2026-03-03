@@ -1,0 +1,94 @@
+.tickWrapper {
+  position: absolute;
+  height: 24px;
+}
+
+.tickWrapper * {
+  height: 24px;
+}
+
+.tick {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  background-color: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.tick:hover {
+  background: var(--color-accent-green);
+}
+
+.tick.error:hover {
+  background: var(--color-accent-red);
+}
+
+.tick.skipped:hover {
+  background: var(--color-accent-gray);
+}
+
+.tick.mixed:hover {
+  background: linear-gradient(90deg, var(--color-accent-red) 50%, var(--color-accent-green) 50%);
+}
+
+.tickText {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  display: grid;
+  place-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: transparent;
+  background: none;
+  user-select: none;
+}
+
+.tickText:hover {
+  user-select: initial;
+  color: var(--color-accent-reversed);
+}
+
+.innerTick {
+  width: 8px;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  pointer-events: none;
+  border-radius: 1px;
+  background: var(--color-accent-green);
+}
+
+.innerTick.error {
+  background: var(--color-accent-red);
+}
+
+.innerTick.skipped {
+  background: var(--color-accent-gray);
+}
+
+.innerTick.mixed {
+  background: linear-gradient(90deg, var(--color-accent-red) 50%, var(--color-accent-green) 50%);
+}
+
+.tickLines {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  top: -6px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-keyline-default) 0,
+    var(--color-keyline-default) 2px,
+    transparent 2px,
+    transparent 5%
+  );
+}
+
