@@ -19,12 +19,11 @@ classifiers = [
 ]
 dependencies = [
     "dagster==1!0+dev",
+    "psycopg2-binary",
 ]
 
 [project.optional-dependencies]
-test = [
-    "psycopg2-binary",
-]
+test = []
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-postgres"
