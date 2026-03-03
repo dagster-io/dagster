@@ -36,4 +36,9 @@ setup(
     python_requires=">=3.10,<3.15",
     install_requires=[f"dagster{pin}"],
     zip_safe=False,
+    entry_points={
+        "dagster_dg_cli.registry_modules": [
+            "dagster_spark = dagster_spark",
+        ],
+    },
 )
