@@ -97,13 +97,10 @@ export const useRunsForTimeline = ({
   }, [completedRunsCache, end, endSec, startSec]);
 
   const [completedRunsQueryData, setCompletedRunsData] = useState<{
-    // TODO: Remove data property here since we grab the data from the cache instead of here.
-    data: RunTimelineFragment[] | undefined;
     loading: boolean;
     error: any;
     called: boolean;
   }>({
-    data: undefined,
     loading: true,
     error: undefined,
     called: false,
@@ -166,8 +163,6 @@ export const useRunsForTimeline = ({
           // it is not complete even though there is some data for the time range
 
           return {
-            // TODO: Remove data property here
-            data: [],
             cursor: undefined,
             hasMore: false,
             error: undefined,
@@ -224,7 +219,6 @@ export const useRunsForTimeline = ({
         }
 
         return {
-          data: [],
           cursor: nextCursor,
           hasMore: hasMoreData,
           error: undefined,
