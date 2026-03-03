@@ -5,12 +5,17 @@ import logging
 from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAsset,
     DgApiAssetChecksStatus,
+    DgApiAssetDependency,
     DgApiAssetEvent,
     DgApiAssetEventList,
     DgApiAssetFreshnessInfo,
     DgApiAssetList,
     DgApiAssetMaterialization,
     DgApiAssetStatus,
+    DgApiAutomationCondition,
+    DgApiBackfillPolicy,
+    DgApiPartitionDefinition,
+    DgApiPartitionMapping,
 )
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
@@ -102,6 +107,8 @@ def _build_asset_from_node(node_data: dict, include_status: bool) -> DgApiAsset 
 
     status = _transform_asset_status_data(node_data) if include_status else None
 
+    extended_kwargs = _extract_extended_asset_details(definition)
+
     return DgApiAsset(
         id=node_data["id"],
         asset_key=asset_key,
@@ -112,6 +119,7 @@ def _build_asset_from_node(node_data: dict, include_status: bool) -> DgApiAsset 
         metadata_entries=metadata_entries,
         dependency_keys=dependency_keys,
         status=status,
+        **extended_kwargs,
     )
 
 
@@ -137,6 +145,34 @@ query AssetRecords($cursor: String, $limit: Int) {
 }
 """
 
+EXTENDED_DEFINITION_FIELDS = """
+                    # Automation
+                    automationCondition {
+                        label
+                        expandedLabel
+                    }
+                    # Partitions
+                    partitionDefinition {
+                        description
+                    }
+                    # Dependencies with partition mappings
+                    dependencies {
+                        asset { assetKey { path } }
+                        partitionMapping { className description }
+                    }
+                    dependedByKeys { path }
+                    # Additional detail fields
+                    owners {
+                        ... on UserAssetOwner { email }
+                        ... on TeamAssetOwner { team }
+                    }
+                    tags { key value }
+                    backfillPolicy {
+                        maxPartitionsPerRun
+                    }
+                    jobNames
+"""
+
 ASSET_DETAIL_QUERY = (
     """
 query AssetDetail($assetKeys: [AssetKeyInput!]!) {
@@ -153,6 +189,7 @@ query AssetDetail($assetKeys: [AssetKeyInput!]!) {
                     dependencyKeys { path }
 """
     + METADATA_ENTRIES_FRAGMENT
+    + EXTENDED_DEFINITION_FIELDS
     + """
                 }
             }
@@ -184,6 +221,7 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
                     }
 """
     + METADATA_ENTRIES_FRAGMENT
+    + EXTENDED_DEFINITION_FIELDS
     + """
                     # Freshness information from definition
                     freshnessInfo {
@@ -250,6 +288,79 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
 }
 """
 )
+
+
+def _extract_extended_asset_details(definition: dict) -> dict:
+    """Extract extended detail fields from a definition node.
+
+    Returns a dict of kwargs to pass to DgApiAsset constructor.
+    """
+    result: dict = {}
+
+    # Automation condition
+    ac_data = definition.get("automationCondition")
+    if ac_data:
+        result["automation_condition"] = DgApiAutomationCondition(
+            label=ac_data.get("label"),
+            expanded_label=ac_data.get("expandedLabel", []),
+        )
+
+    # Partition definition
+    pd_data = definition.get("partitionDefinition")
+    if pd_data:
+        result["partition_definition"] = DgApiPartitionDefinition(
+            description=pd_data["description"],
+        )
+
+    # Upstream dependencies with partition mappings
+    deps_data = definition.get("dependencies", [])
+    if deps_data:
+        upstream_deps = []
+        for dep in deps_data:
+            dep_key_parts = dep["asset"]["assetKey"]["path"]
+            pm_data = dep.get("partitionMapping")
+            partition_mapping = None
+            if pm_data:
+                partition_mapping = DgApiPartitionMapping(
+                    class_name=pm_data["className"],
+                    description=pm_data["description"],
+                )
+            upstream_deps.append(
+                DgApiAssetDependency(
+                    asset_key="/".join(dep_key_parts),
+                    partition_mapping=partition_mapping,
+                )
+            )
+        result["upstream_dependencies"] = upstream_deps
+
+    # Downstream keys
+    depended_by_keys = definition.get("dependedByKeys", [])
+    if depended_by_keys:
+        result["downstream_keys"] = _extract_dependency_keys(depended_by_keys)
+
+    # Owners
+    owners_data = definition.get("owners", [])
+    if owners_data:
+        result["owners"] = owners_data
+
+    # Tags
+    tags_data = definition.get("tags", [])
+    if tags_data:
+        result["tags"] = [{"key": t["key"], "value": t["value"]} for t in tags_data]
+
+    # Backfill policy
+    bp_data = definition.get("backfillPolicy")
+    if bp_data:
+        result["backfill_policy"] = DgApiBackfillPolicy(
+            max_partitions_per_run=bp_data.get("maxPartitionsPerRun"),
+        )
+
+    # Job names
+    job_names = definition.get("jobNames", [])
+    if job_names:
+        result["job_names"] = job_names
+
+    return result
 
 
 def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:

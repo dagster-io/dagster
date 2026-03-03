@@ -185,21 +185,6 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
         for line in status_lines:
             lines.append(f"  {line}")
 
-    if asset.metadata_entries:
-        lines.append("")
-        lines.append("Metadata:")
-        for entry in asset.metadata_entries:
-            value = entry.get("description", "")
-            for key in ["text", "url", "path", "jsonString", "mdStr"]:
-                if entry.get(key):
-                    value = entry[key]
-                    break
-            for key in ["floatValue", "intValue", "boolValue"]:
-                if entry.get(key) is not None:
-                    value = str(entry[key])
-                    break
-            lines.append(f"  {entry['label']}: {value}")
-
     return "\n".join(lines)
 
 

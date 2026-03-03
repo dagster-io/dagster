@@ -8,9 +8,14 @@ import json
 
 from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAsset,
+    DgApiAssetDependency,
     DgApiAssetEvent,
     DgApiAssetEventList,
     DgApiAssetList,
+    DgApiAutomationCondition,
+    DgApiBackfillPolicy,
+    DgApiPartitionDefinition,
+    DgApiPartitionMapping,
 )
 from dagster_dg_cli.cli.api.formatters import format_asset, format_asset_events, format_assets
 
@@ -146,7 +151,11 @@ class TestAssetDataProcessing:
             group_name="analytics",
             kinds=["dbt", "table", "materialized"],
             metadata_entries=[
-                {"label": "text_meta", "description": "Some text", "text": "example_text"},
+                {
+                    "label": "text_meta",
+                    "description": "Some text",
+                    "text": "example_text",
+                },
                 {
                     "label": "url_meta",
                     "description": "Documentation",
@@ -157,7 +166,11 @@ class TestAssetDataProcessing:
                     "description": "File path",
                     "path": "/data/warehouse/table.sql",
                 },
-                {"label": "json_meta", "description": "Config", "jsonString": '{"key": "value"}'},
+                {
+                    "label": "json_meta",
+                    "description": "Config",
+                    "jsonString": '{"key": "value"}',
+                },
                 {
                     "label": "markdown_meta",
                     "description": "Notes",
@@ -195,6 +208,111 @@ class TestAssetDataProcessing:
         assert asset.asset_key == "level1/level2/level3/asset"
         assert asset.asset_key_parts == ["level1", "level2", "level3", "asset"]
         assert len(asset.asset_key_parts) == 4
+
+
+class TestFormatAssetExtendedDetails:
+    """Test formatting of extended asset details (get view)."""
+
+    def _create_extended_asset(self) -> DgApiAsset:
+        """Create asset with all extended detail fields populated."""
+        return DgApiAsset(
+            id="extended-asset",
+            asset_key="analytics/daily_metrics",
+            asset_key_parts=["analytics", "daily_metrics"],
+            description="Daily aggregated metrics",
+            group_name="analytics",
+            kinds=["dbt", "table"],
+            metadata_entries=[
+                {"label": "owner", "description": "data-team"},
+            ],
+            owners=[{"email": "alice@example.com"}, {"team": "data-platform"}],
+            tags=[
+                {"key": "dagster/priority", "value": "high"},
+                {"key": "domain", "value": "analytics"},
+            ],
+            automation_condition=DgApiAutomationCondition(
+                label="eager",
+                expanded_label=["Any", "deps", "updated", "AND", "NOT", "in_progress"],
+            ),
+            partition_definition=DgApiPartitionDefinition(
+                description="Daily partitions from 2024-01-01 [%Y-%m-%d]",
+            ),
+            backfill_policy=DgApiBackfillPolicy(
+                max_partitions_per_run=10,
+            ),
+            job_names=["analytics_daily_job", "analytics_backfill_job"],
+            upstream_dependencies=[
+                DgApiAssetDependency(
+                    asset_key="raw/events",
+                    partition_mapping=DgApiPartitionMapping(
+                        class_name="TimeWindowPartitionMapping",
+                        description="Maps each downstream partition to the same upstream partition",
+                    ),
+                ),
+                DgApiAssetDependency(
+                    asset_key="raw/users",
+                    partition_mapping=None,
+                ),
+            ],
+            downstream_keys=["reporting/dashboard_metrics", "reporting/weekly_summary"],
+        )
+
+    def _create_minimal_extended_asset(self) -> DgApiAsset:
+        """Create asset with extended fields but minimal data (unpartitioned, no automation)."""
+        return DgApiAsset(
+            id="simple-extended",
+            asset_key="simple_table",
+            asset_key_parts=["simple_table"],
+            description="A simple table",
+            group_name="default",
+            kinds=["table"],
+            metadata_entries=[],
+            owners=[],
+            tags=[],
+            job_names=["default_job"],
+            upstream_dependencies=[],
+            downstream_keys=[],
+        )
+
+    def test_format_extended_asset_text_output(self, snapshot):
+        """Test formatting extended asset as text."""
+        asset = self._create_extended_asset()
+        result = format_asset(asset, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_extended_asset_json_output(self, snapshot):
+        """Test formatting extended asset as JSON."""
+        import json
+
+        asset = self._create_extended_asset()
+        result = format_asset(asset, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_minimal_extended_asset_text_output(self, snapshot):
+        """Test formatting asset with extended fields but minimal data."""
+        asset = self._create_minimal_extended_asset()
+        result = format_asset(asset, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_multipartitioned_asset_text_output(self, snapshot):
+        """Test formatting asset with multipartitioned definition."""
+        asset = DgApiAsset(
+            id="multi-part-asset",
+            asset_key="analytics/multi_dim",
+            asset_key_parts=["analytics", "multi_dim"],
+            description="Multi-dimensional partitioned asset",
+            group_name="analytics",
+            kinds=["table"],
+            metadata_entries=[],
+            partition_definition=DgApiPartitionDefinition(
+                description="Multi-dimensional: date (time_window), region (static)",
+            ),
+            upstream_dependencies=[],
+            downstream_keys=[],
+        )
+        result = format_asset(asset, as_json=False)
+        snapshot.assert_match(result)
 
 
 class TestFormatAssetEvents:

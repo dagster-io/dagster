@@ -6,11 +6,15 @@
       'analytics',
       'complex_table',
     ]),
+    'automation_condition': None,
+    'backfill_policy': None,
     'dependency_keys': list([
     ]),
     'description': 'Complex asset with various metadata types',
+    'downstream_keys': None,
     'group_name': 'analytics',
     'id': 'complex-asset',
+    'job_names': None,
     'kinds': list([
       'dbt',
       'table',
@@ -67,7 +71,11 @@
         'label': 'bool_meta',
       }),
     ]),
+    'owners': None,
+    'partition_definition': None,
     'status': None,
+    'tags': None,
+    'upstream_dependencies': None,
   })
 # ---
 # name: TestFormatAssetEvents.test_format_asset_events_json_output[0]
@@ -144,6 +152,117 @@
 # name: TestFormatAssetEvents.test_format_empty_asset_events_text_output[0]
   'No events found.'
 # ---
+# name: TestFormatAssetExtendedDetails.test_format_extended_asset_json_output[0]
+  dict({
+    'asset_key': 'analytics/daily_metrics',
+    'asset_key_parts': list([
+      'analytics',
+      'daily_metrics',
+    ]),
+    'automation_condition': dict({
+      'expanded_label': list([
+        'Any',
+        'deps',
+        'updated',
+        'AND',
+        'NOT',
+        'in_progress',
+      ]),
+      'label': 'eager',
+    }),
+    'backfill_policy': dict({
+      'max_partitions_per_run': 10,
+    }),
+    'dependency_keys': list([
+    ]),
+    'description': 'Daily aggregated metrics',
+    'downstream_keys': list([
+      'reporting/dashboard_metrics',
+      'reporting/weekly_summary',
+    ]),
+    'group_name': 'analytics',
+    'id': 'extended-asset',
+    'job_names': list([
+      'analytics_daily_job',
+      'analytics_backfill_job',
+    ]),
+    'kinds': list([
+      'dbt',
+      'table',
+    ]),
+    'metadata_entries': list([
+      dict({
+        'description': 'data-team',
+        'label': 'owner',
+      }),
+    ]),
+    'owners': list([
+      dict({
+        'email': 'alice@example.com',
+      }),
+      dict({
+        'team': 'data-platform',
+      }),
+    ]),
+    'partition_definition': dict({
+      'description': 'Daily partitions from 2024-01-01 [%Y-%m-%d]',
+    }),
+    'status': None,
+    'tags': list([
+      dict({
+        'key': 'dagster/priority',
+        'value': 'high',
+      }),
+      dict({
+        'key': 'domain',
+        'value': 'analytics',
+      }),
+    ]),
+    'upstream_dependencies': list([
+      dict({
+        'asset_key': 'raw/events',
+        'partition_mapping': dict({
+          'class_name': 'TimeWindowPartitionMapping',
+          'description': 'Maps each downstream partition to the same upstream partition',
+        }),
+      }),
+      dict({
+        'asset_key': 'raw/users',
+        'partition_mapping': None,
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssetExtendedDetails.test_format_extended_asset_text_output[0]
+  '''
+  Asset Key: analytics/daily_metrics
+  ID: extended-asset
+  Description: Daily aggregated metrics
+  Group: analytics
+  Kinds: dbt, table
+  Deps: None
+  '''
+# ---
+# name: TestFormatAssetExtendedDetails.test_format_minimal_extended_asset_text_output[0]
+  '''
+  Asset Key: simple_table
+  ID: simple-extended
+  Description: A simple table
+  Group: default
+  Kinds: table
+  Deps: None
+  '''
+# ---
+# name: TestFormatAssetExtendedDetails.test_format_multipartitioned_asset_text_output[0]
+  '''
+  Asset Key: analytics/multi_dim
+  ID: multi-part-asset
+  Description: Multi-dimensional partitioned asset
+  Group: analytics
+  Kinds: table
+  Deps: None
+  '''
+# ---
 # name: TestFormatAssets.test_format_asset_without_metadata[0]
   '''
   Asset Key: simple
@@ -164,11 +283,15 @@
         'asset_key_parts': list([
           'users',
         ]),
+        'automation_condition': None,
+        'backfill_policy': None,
         'dependency_keys': list([
         ]),
         'description': 'User data table',
+        'downstream_keys': None,
         'group_name': 'core_tables',
         'id': 'asset-1',
+        'job_names': None,
         'kinds': list([
           'dbt',
           'table',
@@ -184,7 +307,11 @@
             'label': 'rows',
           }),
         ]),
+        'owners': None,
+        'partition_definition': None,
         'status': None,
+        'tags': None,
+        'upstream_dependencies': None,
       }),
       dict({
         'asset_key': 'analytics/user_metrics',
@@ -192,18 +319,26 @@
           'analytics',
           'user_metrics',
         ]),
+        'automation_condition': None,
+        'backfill_policy': None,
         'dependency_keys': list([
         ]),
         'description': 'Aggregated user metrics',
+        'downstream_keys': None,
         'group_name': 'analytics',
         'id': 'asset-2',
+        'job_names': None,
         'kinds': list([
           'dbt',
           'view',
         ]),
         'metadata_entries': list([
         ]),
+        'owners': None,
+        'partition_definition': None,
         'status': None,
+        'tags': None,
+        'upstream_dependencies': None,
       }),
     ]),
   })
@@ -242,11 +377,15 @@
     'asset_key_parts': list([
       'users',
     ]),
+    'automation_condition': None,
+    'backfill_policy': None,
     'dependency_keys': list([
     ]),
     'description': 'User data table',
+    'downstream_keys': None,
     'group_name': 'core_tables',
     'id': 'asset-1',
+    'job_names': None,
     'kinds': list([
       'dbt',
       'table',
@@ -262,7 +401,11 @@
         'text': 'public',
       }),
     ]),
+    'owners': None,
+    'partition_definition': None,
     'status': None,
+    'tags': None,
+    'upstream_dependencies': None,
   })
 # ---
 # name: TestFormatAssets.test_format_single_asset_text_output[0]
@@ -273,9 +416,5 @@
   Group: core_tables
   Kinds: dbt, table
   Deps: None
-  
-  Metadata:
-    owner: data-team
-    schema: public
   '''
 # ---

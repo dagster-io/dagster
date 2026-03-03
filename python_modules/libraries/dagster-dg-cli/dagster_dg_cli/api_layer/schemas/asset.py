@@ -60,6 +60,39 @@ class DgApiAssetStatus(BaseModel):
     checks_status: DgApiAssetChecksStatus | None
 
 
+class DgApiAutomationCondition(BaseModel):
+    """Automation condition attached to an asset."""
+
+    label: str | None
+    expanded_label: list[str]
+
+
+class DgApiPartitionDefinition(BaseModel):
+    """Partition definition for an asset."""
+
+    description: str
+
+
+class DgApiPartitionMapping(BaseModel):
+    """Mapping of partitions between an asset and a dependency."""
+
+    class_name: str
+    description: str
+
+
+class DgApiAssetDependency(BaseModel):
+    """An upstream dependency with optional partition mapping."""
+
+    asset_key: str
+    partition_mapping: DgApiPartitionMapping | None
+
+
+class DgApiBackfillPolicy(BaseModel):
+    """Backfill policy for a partitioned asset."""
+
+    max_partitions_per_run: int | None
+
+
 class DgApiAsset(BaseModel):
     """Asset resource model."""
 
@@ -73,6 +106,15 @@ class DgApiAsset(BaseModel):
     dependency_keys: list[str] = []  # ["dep/one", "dep/two"]
     # Status fields - populated only for status view
     status: DgApiAssetStatus | None = None
+    # Extended detail fields - populated only for get (single asset)
+    owners: list[dict] | None = None
+    tags: list[dict] | None = None  # [{key: str, value: str}]
+    automation_condition: DgApiAutomationCondition | None = None
+    partition_definition: DgApiPartitionDefinition | None = None
+    backfill_policy: DgApiBackfillPolicy | None = None
+    job_names: list[str] | None = None
+    upstream_dependencies: list[DgApiAssetDependency] | None = None
+    downstream_keys: list[str] | None = None
 
     class Config:
         from_attributes = True
