@@ -482,6 +482,45 @@ def test_nested_resource_raw_value() -> None:
     assert executed["yes"]
 
 
+def test_nested_resource_dependency_does_not_enter_context_manager() -> None:
+    """Test that Dagster does not call __enter__ on non-resource objects nested via ResourceDependency,
+    even if they implement the context manager protocol.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/33511.
+    """
+
+    class MyObject:
+        def __init__(self) -> None:
+            self.is_open = False
+
+        def __enter__(self) -> "MyObject":
+            self.is_open = True
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            self.is_open = False
+
+    class MyResource(dg.ConfigurableResource):
+        my_object: dg.ResourceDependency[MyObject]
+
+    executed = {}
+
+    @dg.asset
+    def my_asset(my_resource: MyResource) -> None:
+        assert not my_resource.my_object.is_open, (
+            "Dagster should not call __enter__ on nested ResourceDependency objects"
+        )
+        executed["yes"] = True
+
+    my_object = MyObject()
+    defs = dg.Definitions(
+        assets=[my_asset],
+        resources={"my_resource": MyResource(my_object=my_object)},
+    )
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
+    assert executed["yes"]
+
+
 def test_nested_resource_raw_value_io_manager() -> None:
     class MyMultiwriteIOManager(dg.ConfigurableIOManager):
         base_io_manager: dg.ResourceDependency[dg.IOManager]
