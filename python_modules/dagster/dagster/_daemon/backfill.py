@@ -148,7 +148,7 @@ def execute_backfill_iteration(
     )
 
 
-def _is_retryable_asset_backfill_error(e: Exception):
+def _is_retryable_backfill_error(e: Exception):
     # Retry on issues reaching or loading user code, or transient race conditions submitting runs.
     if isinstance(
         e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError, DagsterRunAlreadyExists)
@@ -203,7 +203,8 @@ def execute_backfill_iteration_with_instigation_logger(
                 e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 # Both asset and job backfills retry indefinitely on unreachable code server;
-                # failure_count is not incremented so as not to exhaust the retry budget.
+                # failure_count is not incremented and there is no retry-budget gate, so a
+                # code-server outage can never permanently consume the retry budget.
                 try:
                     raise DagsterUserCodeUnreachableError(
                         "Unable to reach the code server. Backfill will resume once the code server is available."
@@ -216,10 +217,9 @@ def execute_backfill_iteration_with_instigation_logger(
                     )
                     instance.update_backfill(backfill.with_error(error_info))
             elif (
-                backfill.is_asset_backfill
-                and backfill.status == BulkActionStatus.REQUESTED
+                backfill.status == BulkActionStatus.REQUESTED
                 and backfill.failure_count < _get_max_asset_backfill_retries()
-                and _is_retryable_asset_backfill_error(e)
+                and _is_retryable_backfill_error(e)
             ):
                 error_info = DaemonErrorCapture.process_exception(
                     sys.exc_info(),

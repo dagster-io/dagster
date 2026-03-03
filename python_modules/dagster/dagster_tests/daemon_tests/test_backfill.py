@@ -1196,7 +1196,7 @@ def test_job_backfill_code_server_unreachable_is_retried(
     assert backfill
     # Backfill must stay REQUESTED, not be moved to FAILING
     assert backfill.status == BulkActionStatus.REQUESTED
-    # failure_count must not be incremented — code server outages don't burn the retry budget
+    # failure_count must not be incremented — code server outages don't consume the retry budget
     assert backfill.failure_count == 0
     assert isinstance(backfill.error, SerializableErrorInfo)
 
@@ -1205,6 +1205,85 @@ def test_job_backfill_code_server_unreachable_is_retried(
     assert instance.get_runs_count() == 3
     backfill = instance.get_backfill(backfill_id)
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+
+def test_job_backfill_retryable_error_increments_failure_count(
+    instance, workspace_context, remote_repo
+):
+    """Job backfills should retry on transient (non-DagsterError) exceptions, incrementing
+    failure_count each time, and move to FAILING once the retry budget is exhausted — the same
+    behaviour as asset backfills.
+    """
+    partition_set = remote_repo.get_partition_set("comp_always_succeed_partition_set")
+    partition_keys = my_config.partitions_def.get_partition_keys()
+    backfill_id = "job_backfill_retryable_error"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=partition_keys[:3],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    def raise_transient_error(*args, **kwargs):
+        raise Exception("transient non-DagsterError")
+
+    with mock.patch(
+        "dagster._daemon.backfill.execute_job_backfill_iteration",
+        side_effect=raise_transient_error,
+    ):
+        with environ({"DAGSTER_MAX_ASSET_BACKFILL_RETRIES": "2"}):
+            # First retry: failure_count → 1, stays REQUESTED
+            errors = [
+                e
+                for e in execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+                if e
+            ]
+            assert len(errors) == 1
+            backfill = instance.get_backfill(backfill_id)
+            assert backfill.status == BulkActionStatus.REQUESTED
+            assert backfill.failure_count == 1
+
+            # Second retry: failure_count → 2, stays REQUESTED
+            errors = [
+                e
+                for e in execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+                if e
+            ]
+            assert len(errors) == 1
+            backfill = instance.get_backfill(backfill_id)
+            assert backfill.status == BulkActionStatus.REQUESTED
+            assert backfill.failure_count == 2
+
+            # Budget exhausted (failure_count == max): moves to FAILING
+            errors = [
+                e
+                for e in execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+                if e
+            ]
+            assert len(errors) == 1
+            backfill = instance.get_backfill(backfill_id)
+            assert backfill.status == BulkActionStatus.FAILING
+            assert backfill.failure_count == 3
+            assert backfill.backfill_end_timestamp is None
+
+    # One more iteration (no mock) to cancel runs and finalize as FAILED
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill.status == BulkActionStatus.FAILED
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_unloadable_asset_backfill(instance, workspace_context):
