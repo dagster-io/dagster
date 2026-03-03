@@ -411,7 +411,7 @@ const Criteria = React.memo(
   },
 );
 
-export type AssetHealthStatusString = 'Unknown' | 'Degraded' | 'Warning' | 'Healthy';
+export type AssetHealthStatusString = 'Unknown' | 'Degraded' | 'Warning' | 'Healthy' | 'No data';
 
 export const STATUS_INFO: Record<
   AssetHealthStatusString | 'Not Applicable',
@@ -451,6 +451,20 @@ export const STATUS_INFO: Record<
     textColor: Colors.textDefault(),
     text: 'Unknown',
     text2: 'Not evaluated',
+    intent: 'none',
+    materializationText: 'Never materialized',
+    subStatusIconName: 'missing',
+    borderColor: Colors.accentGray(),
+    backgroundColor: Colors.backgroundGray(),
+    hoverBackgroundColor: Colors.backgroundGrayHover(),
+  },
+  'No data': {
+    iconName: 'status',
+    iconName2: 'missing',
+    iconColor: Colors.textLight(),
+    textColor: Colors.textDefault(),
+    text: 'No data',
+    text2: 'No data',
     intent: 'none',
     materializationText: 'Never materialized',
     subStatusIconName: 'missing',
@@ -506,7 +520,14 @@ export const statusToIconAndColor: Record<
   AssetHealthStatus | 'undefined',
   (typeof STATUS_INFO)[keyof typeof STATUS_INFO]
 > = {
-  ['undefined']: STATUS_INFO.Unknown,
+  // Callers pass 'undefined' when `health?.assetHealth` is missing
+  // (feature gate off, asset not in workspace, or not found in query).
+  // We show this as "No data" so that it is distinct + debuggable.
+  //
+  // `AssetHealthStatus.UNKNOWN` means the backend evaluated the asset and determined it has never
+  // been materialized or observed - a distinct, more informative state.
+  //
+  ['undefined']: STATUS_INFO['No data'],
   [AssetHealthStatus.NOT_APPLICABLE]: STATUS_INFO['Not Applicable'],
   [AssetHealthStatus.UNKNOWN]: STATUS_INFO.Unknown,
   [AssetHealthStatus.DEGRADED]: STATUS_INFO.Degraded,

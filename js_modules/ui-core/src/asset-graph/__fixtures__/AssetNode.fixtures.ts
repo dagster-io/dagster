@@ -842,13 +842,12 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNodeWithStale
 
 export const AssetNodeScenariosBase = [
   {
-    title: 'No Live Data',
+    title: 'Live Data Loading',
     liveData: undefined,
     healthData: undefined,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Unknown'],
+    expectedText: ['Loading'],
   },
-
   {
     title: 'Run Started - Not Executing Yet',
     liveData: LiveDataForNodeRunStartedNotMaterializing,
@@ -1013,11 +1012,11 @@ export const AssetNodeScenariosBase = [
 
 export const AssetNodeScenariosSource = [
   {
-    title: 'Source Asset - No Live Data',
+    title: 'Source Asset - Live Data Loading',
     liveData: undefined,
     healthData: undefined,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Unknown'],
+    expectedText: ['Loading'],
   },
 
   {
@@ -1166,6 +1165,6 @@ export const AssetNodeScenariosPartitioned = [
     liveData: undefined,
     healthData: undefined,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['Unknown'],
+    expectedText: ['Loading'],
   },
 ];
