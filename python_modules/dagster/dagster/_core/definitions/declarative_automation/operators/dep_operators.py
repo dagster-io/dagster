@@ -134,20 +134,6 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         parts = [str(parent_unique_id), str(index), self.base_name]
         return non_secure_md5_hash_str("".join(parts).encode())
 
-    def get_backcompat_node_unique_ids(
-        self,
-        *,
-        parent_unique_id: str | None = None,
-        index: int | None = None,
-        target_key: EntityKey | None = None,
-    ) -> Sequence[str]:
-        # backcompat for previous cursors where the allow/ignore selection influenced the hash
-        return [
-            super().get_node_unique_id(
-                parent_unique_id=parent_unique_id, index=index, target_key=target_key
-            )
-        ]
-
     @public
     def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided

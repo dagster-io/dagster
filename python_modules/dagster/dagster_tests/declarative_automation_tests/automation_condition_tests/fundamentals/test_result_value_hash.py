@@ -141,9 +141,10 @@ def test_node_unique_id() -> None:
         condition.get_node_unique_id(parent_unique_id=None, index=None, target_key=None)
         == "80f87fb32baaf7ce3f65f68c12d3eb11"
     )
-    assert condition.get_backcompat_node_unique_ids(
-        parent_unique_id=None, index=None, target_key=None
-    ) == ["35b152923d1d99348e85c3cbe426bcb7"]
+    assert (
+        condition.get_backcompat_node_unique_ids(parent_unique_id=None, index=None, target_key=None)
+        == []
+    )
 
 
 def test_since_condition_cursor_backcompat() -> None:
