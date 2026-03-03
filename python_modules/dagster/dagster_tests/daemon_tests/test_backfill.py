@@ -1152,6 +1152,61 @@ def test_unloadable_backfill(instance, workspace_context):
     assert backfill.status == BulkActionStatus.FAILED
 
 
+def test_job_backfill_code_server_unreachable_is_retried(
+    instance, workspace_context, remote_repo
+):
+    """Job backfills should not be moved to FAILING when the code server is momentarily
+    unreachable. They should stay REQUESTED and resume once the server is available again.
+    """
+    partition_set = remote_repo.get_partition_set("comp_always_succeed_partition_set")
+    partition_keys = my_config.partitions_def.get_partition_keys()
+    backfill_id = "job_backfill_unreachable_retry"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=partition_keys[:3],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    # Simulate code server being momentarily unreachable
+    with mock.patch(
+        "dagster._daemon.backfill.execute_job_backfill_iteration",
+        side_effect=DagsterUserCodeUnreachableError("test unreachable"),
+    ):
+        errors = [
+            error
+            for error in list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+            if error
+        ]
+        assert len(errors) == 1
+        assert "Unable to reach the code server" in str(errors[0])
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    # Backfill must stay REQUESTED, not be moved to FAILING
+    assert backfill.status == BulkActionStatus.REQUESTED
+    # failure_count must not be incremented — code server outages don't burn the retry budget
+    assert backfill.failure_count == 0
+    assert isinstance(backfill.error, SerializableErrorInfo)
+
+    # When the code server is available again the backfill should resume and complete normally
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+
 def test_unloadable_asset_backfill(instance, workspace_context):
     backfill_id = "simple_fan_out_backfill"
     asset_backfill_data = AssetBackfillData.empty(

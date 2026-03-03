@@ -199,35 +199,36 @@ def execute_backfill_iteration_with_instigation_logger(
                     )
         except Exception as e:
             backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
-            if (
+            if backfill.status == BulkActionStatus.REQUESTED and isinstance(
+                e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
+            ):
+                # Both asset and job backfills retry indefinitely on unreachable code server;
+                # failure_count is not incremented so as not to exhaust the retry budget.
+                try:
+                    raise DagsterUserCodeUnreachableError(
+                        "Unable to reach the code server. Backfill will resume once the code server is available."
+                    ) from e
+                except:
+                    error_info = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=backfill_logger,
+                        log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
+                    )
+                    instance.update_backfill(backfill.with_error(error_info))
+            elif (
                 backfill.is_asset_backfill
                 and backfill.status == BulkActionStatus.REQUESTED
                 and backfill.failure_count < _get_max_asset_backfill_retries()
                 and _is_retryable_asset_backfill_error(e)
             ):
-                if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
-                    try:
-                        raise DagsterUserCodeUnreachableError(
-                            "Unable to reach the code server. Backfill will resume once the code server is available."
-                        ) from e
-                    except:
-                        error_info = DaemonErrorCapture.process_exception(
-                            sys.exc_info(),
-                            logger=backfill_logger,
-                            log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
-                        )
-                        instance.update_backfill(backfill.with_error(error_info))
-                else:
-                    error_info = DaemonErrorCapture.process_exception(
-                        sys.exc_info(),
-                        logger=backfill_logger,
-                        log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
-                    )
-                    instance.update_backfill(
-                        backfill.with_error(error_info).with_failure_count(
-                            backfill.failure_count + 1
-                        )
-                    )
+                error_info = DaemonErrorCapture.process_exception(
+                    sys.exc_info(),
+                    logger=backfill_logger,
+                    log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
+                )
+                instance.update_backfill(
+                    backfill.with_error(error_info).with_failure_count(backfill.failure_count + 1)
+                )
             else:
                 error_info = DaemonErrorCapture.process_exception(
                     sys.exc_info(),
