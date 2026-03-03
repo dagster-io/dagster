@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import subprocess
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -36,11 +36,15 @@ class BuildkiteContext(Generic[T_Config]):
         self.python_packages = python_packages
 
     @classmethod
-    def create(cls, env: Mapping[str, str] = os.environ) -> Self:
+    def create(
+        cls, env: Mapping[str, str] = os.environ, changed_files: Iterable[Path] | None = None
+    ) -> Self:
         repo_path = Path.cwd()
         config = cls.extract_build_config(env)
 
-        changed_files = _discover_changed_files(repo_path)
+        changed_files = (
+            frozenset(changed_files) if changed_files else _discover_changed_files(repo_path)
+        )
         python_packages = PythonPackagesData.load(repo_path, changed_files)
         return cls(
             repo_path=repo_path,

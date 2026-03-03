@@ -4,56 +4,11 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import packaging.version
-import yaml
 from buildkite_shared.context import BuildkiteContext
-from buildkite_shared.step_builders.step_builder import StepConfiguration
-
-BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
-    "rex@dagsterlabs.com": "eng-buildkite-rex",
-    "dish@dagsterlabs.com": "eng-buildkite-dish",
-    "johann@dagsterlabs.com": "eng-buildkite-johann",
-}
 
 # ########################
 # ##### FUNCTIONS
 # ########################
-
-
-def buildkite_yaml_for_steps(
-    steps: Sequence[StepConfiguration], custom_slack_channel: str | None = None
-) -> str:
-    return yaml.dump(
-        {
-            "env": {
-                "CI_NAME": "buildkite",
-                "CI_BUILD_NUMBER": "$BUILDKITE_BUILD_NUMBER",
-                "CI_BUILD_URL": "$BUILDKITE_BUILD_URL",
-                "CI_BRANCH": "$BUILDKITE_BRANCH",
-                "CI_PULL_REQUEST": "$BUILDKITE_PULL_REQUEST",
-            },
-            "steps": steps,
-            "notify": [
-                {
-                    "slack": f"elementl#{slack_channel}",
-                    "if": (
-                        f"build.creator.email == '{buildkite_email}'  && build.state != 'canceled'"
-                    ),
-                }
-                for buildkite_email, slack_channel in BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP.items()
-            ]
-            + (
-                [
-                    {
-                        "slack": f"elementl#{custom_slack_channel}",
-                        "if": "build.state != 'canceled'",
-                    }
-                ]
-                if custom_slack_channel
-                else []
-            ),
-        },
-        default_flow_style=False,
-    )
 
 
 def check_for_release() -> bool:

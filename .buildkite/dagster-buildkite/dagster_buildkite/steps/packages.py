@@ -1082,6 +1082,5 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             ".buildkite/dagster-buildkite",
-            run_pytest=False,
         ),
     ]
