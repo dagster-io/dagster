@@ -225,32 +225,19 @@ def execute_backfill_iteration_with_instigation_logger(
                 and backfill.failure_count < max_retries
                 and _is_retryable_backfill_error(e)
             ):
-                if isinstance(e, DagsterRunAlreadyExists):
-                    rae_count = 0
-                    if run_already_exists_counts is not None:
-                        rae_count = run_already_exists_counts.get(backfill.backfill_id, 0) + 1
-                        run_already_exists_counts[backfill.backfill_id] = rae_count
-                    
-                    if rae_count > max_retries + 5:
-                        error_info = DaemonErrorCapture.process_exception(
-                            sys.exc_info(),
-                            logger=backfill_logger,
-                            log_message=f"Backfill hit persistent DagsterRunAlreadyExists for {backfill.backfill_id} and will consume retry budget.",
+
+                elif isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError, DagsterRunAlreadyExists)):
+                    error_info = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=backfill_logger,
+                        log_message=f"Backfill hit retryable error for {backfill.backfill_id}, retrying.",
+                    )
+                    instance.update_backfill(
+                        backfill.with_error(error_info).with_failure_count(
+                            backfill.failure_count + 1
                         )
-                        instance.update_backfill(
-                            backfill.with_error(error_info).with_failure_count(
-                                backfill.failure_count + 1
-                            )
-                        )
-                    else:
-                        error_info = DaemonErrorCapture.process_exception(
-                            sys.exc_info(),
-                            logger=backfill_logger,
-                            log_message=f"Backfill hit transient DagsterRunAlreadyExists for {backfill.backfill_id}, retrying without consuming failure budget.",
-                        )
-                        instance.update_backfill(
-                            backfill.with_error(error_info)
-                        )
+                    )
+
 
                 elif isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
                     try:
