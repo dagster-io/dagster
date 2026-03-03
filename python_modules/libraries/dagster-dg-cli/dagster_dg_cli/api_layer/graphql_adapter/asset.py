@@ -36,7 +36,85 @@ def _extract_dependency_keys(dependency_keys_data: list[dict]) -> list[str]:
     return dependency_keys
 
 
+# Shared GraphQL fragment for metadata entries
+METADATA_ENTRIES_FRAGMENT = """
+    metadataEntries {
+        label
+        description
+        ... on TextMetadataEntry { text }
+        ... on UrlMetadataEntry { url }
+        ... on PathMetadataEntry { path }
+        ... on JsonMetadataEntry { jsonString }
+        ... on MarkdownMetadataEntry { mdStr }
+        ... on PythonArtifactMetadataEntry { module name }
+        ... on FloatMetadataEntry { floatValue }
+        ... on IntMetadataEntry { intValue }
+        ... on BoolMetadataEntry { boolValue }
+    }
+"""
+
+_METADATA_VALUE_FIELDS = [
+    "text",
+    "url",
+    "path",
+    "jsonString",
+    "mdStr",
+    "floatValue",
+    "intValue",
+    "boolValue",
+]
+
+
+def _parse_metadata_entries(raw_entries: list[dict]) -> list[dict]:
+    """Parse raw GraphQL metadata entries into a normalized dict format."""
+    metadata_entries = []
+    for entry in raw_entries:
+        metadata_dict: dict = {
+            "label": entry.get("label", ""),
+            "description": entry.get("description", ""),
+        }
+        for field in _METADATA_VALUE_FIELDS:
+            if field in entry:
+                metadata_dict[field] = entry[field]
+        if "module" in entry and "name" in entry:
+            metadata_dict["module"] = entry["module"]
+            metadata_dict["name"] = entry["name"]
+        metadata_entries.append(metadata_dict)
+    return metadata_entries
+
+
+def _build_asset_from_node(node_data: dict, include_status: bool) -> DgApiAsset | None:
+    """Build a DgApiAsset from an assetsOrError node.
+
+    Returns None if the node's definition is null (asset doesn't exist in code).
+    """
+    definition = node_data.get("definition")
+    if definition is None:
+        return None
+
+    asset_key_parts = node_data["key"]["path"]
+    asset_key = "/".join(asset_key_parts)
+
+    metadata_entries = _parse_metadata_entries(definition.get("metadataEntries", []))
+    dependency_keys = _extract_dependency_keys(definition.get("dependencyKeys", []))
+
+    status = _transform_asset_status_data(node_data) if include_status else None
+
+    return DgApiAsset(
+        id=node_data["id"],
+        asset_key=asset_key,
+        asset_key_parts=asset_key_parts,
+        description=definition.get("description"),
+        group_name=definition.get("groupName", ""),
+        kinds=definition.get("kinds", []),
+        metadata_entries=metadata_entries,
+        dependency_keys=dependency_keys,
+        status=status,
+    )
+
+
 # GraphQL queries
+
 ASSET_RECORDS_QUERY = """
 query AssetRecords($cursor: String, $limit: Int) {
     assetRecordsOrError(cursor: $cursor, limit: $limit) {
@@ -57,217 +135,36 @@ query AssetRecords($cursor: String, $limit: Int) {
 }
 """
 
-ASSET_NODES_QUERY = """
-query AssetNodes($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys) {
-        id
-        assetKey {
-            path
+ASSET_DETAIL_QUERY = (
+    """
+query AssetDetail($assetKeys: [AssetKeyInput!]!) {
+    assetsOrError(assetKeys: $assetKeys) {
+        __typename
+        ... on AssetConnection {
+            nodes {
+                id
+                key { path }
+                definition {
+                    description
+                    groupName
+                    kinds
+                    dependencyKeys { path }
+"""
+    + METADATA_ENTRIES_FRAGMENT
+    + """
+                }
+            }
         }
-        description
-        groupName
-        kinds
-        dependencyKeys {
-            path
-        }
-        metadataEntries {
-            label
-            description
-            ... on TextMetadataEntry {
-                text
-            }
-            ... on UrlMetadataEntry {
-                url
-            }
-            ... on PathMetadataEntry {
-                path
-            }
-            ... on JsonMetadataEntry {
-                jsonString
-            }
-            ... on MarkdownMetadataEntry {
-                mdStr
-            }
-            ... on PythonArtifactMetadataEntry {
-                module
-                name
-            }
-            ... on FloatMetadataEntry {
-                floatValue
-            }
-            ... on IntMetadataEntry {
-                intValue
-            }
-            ... on BoolMetadataEntry {
-                boolValue
-            }
+        ... on PythonError {
+            message
         }
     }
 }
 """
+)
 
-
-def list_dg_plus_api_assets_via_graphql(
-    client: IGraphQLClient,
-    limit: int | None = None,
-    cursor: str | None = None,
-) -> DgApiAssetList:
-    """Fetch assets using two-step GraphQL approach.
-
-    1. Use assetRecordsOrError for paginated asset keys
-    2. Use assetNodes to fetch metadata for those keys
-    3. Combine and transform data
+ASSETS_WITH_STATUS_QUERY = (
     """
-    # Step 1: Get paginated asset keys
-    variables = {}
-    if cursor:
-        variables["cursor"] = cursor
-    if limit is not None:
-        variables["limit"] = limit
-
-    result = client.execute(ASSET_RECORDS_QUERY, variables=variables)
-
-    asset_records_or_error = result.get("assetRecordsOrError", {})
-    if asset_records_or_error.get("__typename") == "PythonError":
-        raise Exception(f"GraphQL error: {asset_records_or_error.get('message', 'Unknown error')}")
-
-    records = asset_records_or_error.get("assets", [])
-    next_cursor = asset_records_or_error.get("cursor")
-
-    if not records:
-        return DgApiAssetList(items=[], cursor=None, has_more=False)
-
-    # Step 2: Get detailed metadata for these asset keys
-    asset_keys = [{"path": record["key"]["path"]} for record in records]
-
-    nodes_result = client.execute(ASSET_NODES_QUERY, variables={"assetKeys": asset_keys})
-    asset_nodes = nodes_result.get("assetNodes", [])
-
-    # Step 3: Transform and combine data
-    assets = []
-    for node in asset_nodes:
-        asset_key_parts = node["assetKey"]["path"]
-        asset_key = "/".join(asset_key_parts)
-
-        # Convert metadata entries to dict format
-        metadata_entries = []
-        for entry in node.get("metadataEntries", []):
-            metadata_dict = {
-                "label": entry.get("label", ""),
-                "description": entry.get("description", ""),
-            }
-
-            # Add type-specific fields
-            if "text" in entry:
-                metadata_dict["text"] = entry["text"]
-            elif "url" in entry:
-                metadata_dict["url"] = entry["url"]
-            elif "path" in entry:
-                metadata_dict["path"] = entry["path"]
-            elif "jsonString" in entry:
-                metadata_dict["jsonString"] = entry["jsonString"]
-            elif "mdStr" in entry:
-                metadata_dict["mdStr"] = entry["mdStr"]
-            elif "module" in entry and "name" in entry:
-                metadata_dict["module"] = entry["module"]
-                metadata_dict["name"] = entry["name"]
-            elif "floatValue" in entry:
-                metadata_dict["floatValue"] = entry["floatValue"]
-            elif "intValue" in entry:
-                metadata_dict["intValue"] = entry["intValue"]
-            elif "boolValue" in entry:
-                metadata_dict["boolValue"] = entry["boolValue"]
-
-            metadata_entries.append(metadata_dict)
-
-        # Extract dependency keys
-        dependency_keys = _extract_dependency_keys(node.get("dependencyKeys", []))
-
-        asset = DgApiAsset(
-            id=node["id"],
-            asset_key=asset_key,
-            asset_key_parts=asset_key_parts,
-            description=node.get("description"),
-            group_name=node.get("groupName", ""),
-            kinds=node.get("kinds", []),
-            metadata_entries=metadata_entries,
-            dependency_keys=dependency_keys,
-        )
-        assets.append(asset)
-
-    # Determine if there are more results
-    has_more = next_cursor is not None
-
-    return DgApiAssetList(
-        items=assets,
-        cursor=next_cursor,
-        has_more=has_more,
-    )
-
-
-def get_dg_plus_api_asset_via_graphql(
-    client: IGraphQLClient, asset_key_parts: list[str]
-) -> DgApiAsset:
-    """Single asset fetch using assetNodes with specific assetKey."""
-    variables = {"assetKeys": [{"path": asset_key_parts}]}
-
-    result = client.execute(ASSET_NODES_QUERY, variables=variables)
-    asset_nodes = result.get("assetNodes", [])
-
-    if not asset_nodes:
-        raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
-
-    node = asset_nodes[0]
-    asset_key = "/".join(asset_key_parts)
-
-    # Convert metadata entries to dict format
-    metadata_entries = []
-    for entry in node.get("metadataEntries", []):
-        metadata_dict = {
-            "label": entry.get("label", ""),
-            "description": entry.get("description", ""),
-        }
-
-        # Add type-specific fields
-        if "text" in entry:
-            metadata_dict["text"] = entry["text"]
-        elif "url" in entry:
-            metadata_dict["url"] = entry["url"]
-        elif "path" in entry:
-            metadata_dict["path"] = entry["path"]
-        elif "jsonString" in entry:
-            metadata_dict["jsonString"] = entry["jsonString"]
-        elif "mdStr" in entry:
-            metadata_dict["mdStr"] = entry["mdStr"]
-        elif "module" in entry and "name" in entry:
-            metadata_dict["module"] = entry["module"]
-            metadata_dict["name"] = entry["name"]
-        elif "floatValue" in entry:
-            metadata_dict["floatValue"] = entry["floatValue"]
-        elif "intValue" in entry:
-            metadata_dict["intValue"] = entry["intValue"]
-        elif "boolValue" in entry:
-            metadata_dict["boolValue"] = entry["boolValue"]
-
-        metadata_entries.append(metadata_dict)
-
-    # Extract dependency keys
-    dependency_keys = _extract_dependency_keys(node.get("dependencyKeys", []))
-
-    return DgApiAsset(
-        id=node["id"],
-        asset_key=asset_key,
-        asset_key_parts=asset_key_parts,
-        description=node.get("description"),
-        group_name=node.get("groupName", ""),
-        kinds=node.get("kinds", []),
-        metadata_entries=metadata_entries,
-        dependency_keys=dependency_keys,
-    )
-
-
-# Status view GraphQL queries - using assetsOrError to get assetHealth data
-ASSETS_WITH_STATUS_QUERY = """
 query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
     assetsOrError(assetKeys: $assetKeys) {
         __typename
@@ -283,19 +180,9 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
                     dependencyKeys {
                         path
                     }
-                    metadataEntries {
-                        label
-                        description
-                        ... on TextMetadataEntry { text }
-                        ... on UrlMetadataEntry { url }
-                        ... on PathMetadataEntry { path }
-                        ... on JsonMetadataEntry { jsonString }
-                        ... on MarkdownMetadataEntry { mdStr }
-                        ... on PythonArtifactMetadataEntry { module name }
-                        ... on FloatMetadataEntry { floatValue }
-                        ... on IntMetadataEntry { intValue }
-                        ... on BoolMetadataEntry { boolValue }
-                    }
+"""
+    + METADATA_ENTRIES_FRAGMENT
+    + """
                     # Freshness information from definition
                     freshnessInfo {
                         currentLagMinutes
@@ -360,24 +247,7 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
     }
 }
 """
-
-ASSET_RECORDS_WITH_STATUS_QUERY = """
-query AssetRecordsWithStatus($cursor: String, $limit: Int) {
-    assetRecordsOrError(cursor: $cursor, limit: $limit) {
-        __typename
-        ... on AssetRecordConnection {
-            assets {
-                id
-                key { path }
-            }
-            cursor
-        }
-        ... on PythonError {
-            message
-        }
-    }
-}
-"""
+)
 
 
 def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:
@@ -469,12 +339,31 @@ def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:
     )
 
 
-def list_dg_plus_api_assets_with_status_via_graphql(
+def _fetch_assets_or_error(
+    client: IGraphQLClient,
+    query: str,
+    asset_keys: list[dict],
+) -> list[dict]:
+    """Execute an assetsOrError query and return the nodes list."""
+    result = client.execute(query, variables={"assetKeys": asset_keys})
+    assets_or_error = result.get("assetsOrError", {})
+    if assets_or_error.get("__typename") == "PythonError":
+        raise Exception(f"GraphQL error: {assets_or_error.get('message', 'Unknown error')}")
+    return assets_or_error.get("nodes", [])
+
+
+def list_dg_plus_api_assets_via_graphql(
     client: IGraphQLClient,
     limit: int | None = None,
     cursor: str | None = None,
+    status: bool = False,
 ) -> DgApiAssetList:
-    """Fetch assets with status information using comprehensive GraphQL approach."""
+    """Fetch assets using two-step GraphQL approach.
+
+    1. Use assetRecordsOrError for paginated asset keys
+    2. Use assetsOrError to fetch metadata (and optionally status) for those keys
+    3. Combine and transform data
+    """
     # Step 1: Get paginated asset keys
     variables = {}
     if cursor:
@@ -482,7 +371,7 @@ def list_dg_plus_api_assets_with_status_via_graphql(
     if limit is not None:
         variables["limit"] = limit
 
-    result = client.execute(ASSET_RECORDS_WITH_STATUS_QUERY, variables=variables)
+    result = client.execute(ASSET_RECORDS_QUERY, variables=variables)
 
     asset_records_or_error = result.get("assetRecordsOrError", {})
     if asset_records_or_error.get("__typename") == "PythonError":
@@ -494,79 +383,24 @@ def list_dg_plus_api_assets_with_status_via_graphql(
     if not records:
         return DgApiAssetList(items=[], cursor=None, has_more=False)
 
-    # Step 2: Get comprehensive status data for these asset keys
+    # Step 2: Get detailed metadata (and optionally status) for these asset keys
     asset_keys = [{"path": record["key"]["path"]} for record in records]
-
-    status_result = client.execute(ASSETS_WITH_STATUS_QUERY, variables={"assetKeys": asset_keys})
-
-    # Handle assetsOrError response structure
-    assets_or_error = status_result.get("assetsOrError", {})
-    if assets_or_error.get("__typename") == "PythonError":
-        raise Exception(f"GraphQL error: {assets_or_error.get('message', 'Unknown error')}")
-
-    asset_nodes = assets_or_error.get("nodes", [])
+    query = ASSETS_WITH_STATUS_QUERY if status else ASSET_DETAIL_QUERY
+    asset_nodes = _fetch_assets_or_error(client, query, asset_keys)
 
     # Step 3: Transform and combine data
     assets = []
-
-    # Create lookup map for efficient merging
     nodes_by_key = {"/".join(node["key"]["path"]): node for node in asset_nodes}
 
     for record in records:
         asset_key_parts = record["key"]["path"]
         asset_key = "/".join(asset_key_parts)
-
-        # There will always be a node since we queried for these keys specifically, but the
-        # definition may be null if the asset does not exist.
-        node_data = nodes_by_key[asset_key]
-        if not node_data.get("definition"):
-            continue  # Skip if we don't have node data
-
-        # Build basic asset data from definition
-        definition_data = node_data.get("definition", {})
-        metadata_entries = []
-        for entry in definition_data.get("metadataEntries", []):
-            metadata_dict = {
-                "label": entry.get("label", ""),
-                "description": entry.get("description", ""),
-            }
-
-            # Add type-specific fields (same logic as existing)
-            for field in [
-                "text",
-                "url",
-                "path",
-                "jsonString",
-                "mdStr",
-                "floatValue",
-                "intValue",
-                "boolValue",
-            ]:
-                if field in entry:
-                    metadata_dict[field] = entry[field]
-            if "module" in entry and "name" in entry:
-                metadata_dict.update({"module": entry["module"], "name": entry["name"]})
-
-            metadata_entries.append(metadata_dict)
-
-        # Extract dependency keys
-        dependency_keys = _extract_dependency_keys(definition_data.get("dependencyKeys", []))
-
-        # Build status data
-        status = _transform_asset_status_data(node_data)
-
-        asset = DgApiAsset(
-            id=node_data["id"],
-            asset_key=asset_key,
-            asset_key_parts=asset_key_parts,
-            description=definition_data.get("description"),
-            group_name=definition_data.get("groupName", ""),
-            kinds=definition_data.get("kinds", []),
-            metadata_entries=metadata_entries,
-            dependency_keys=dependency_keys,
-            status=status,
-        )
-        assets.append(asset)
+        node_data = nodes_by_key.get(asset_key)
+        if not node_data:
+            continue
+        asset = _build_asset_from_node(node_data, include_status=status)
+        if asset is not None:
+            assets.append(asset)
 
     has_more = next_cursor is not None
 
@@ -577,67 +411,21 @@ def list_dg_plus_api_assets_with_status_via_graphql(
     )
 
 
-def get_dg_plus_api_asset_with_status_via_graphql(
-    client: IGraphQLClient, asset_key_parts: list[str]
+def get_dg_plus_api_asset_via_graphql(
+    client: IGraphQLClient,
+    asset_key_parts: list[str],
+    status: bool = False,
 ) -> DgApiAsset:
-    """Single asset fetch with status information."""
-    variables = {"assetKeys": [{"path": asset_key_parts}]}
+    """Single asset fetch using assetsOrError with specific assetKey."""
+    query = ASSETS_WITH_STATUS_QUERY if status else ASSET_DETAIL_QUERY
+    asset_nodes = _fetch_assets_or_error(client, query, [{"path": asset_key_parts}])
 
-    result = client.execute(ASSETS_WITH_STATUS_QUERY, variables=variables)
-
-    # Handle assetsOrError response structure
-    assets_or_error = result.get("assetsOrError", {})
-    if assets_or_error.get("__typename") == "PythonError":
-        raise Exception(f"GraphQL error: {assets_or_error.get('message', 'Unknown error')}")
-
-    asset_nodes = assets_or_error.get("nodes", [])
-
-    # If an asset does not exist, it will return a node but the definition will be null
-    node = asset_nodes[0]
-    if node.get("definition") is None:
+    if not asset_nodes:
         raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
 
-    asset_key = "/".join(asset_key_parts)
-    # Build metadata entries from definition
-    definition_data = node.get("definition") or {}
-    metadata_entries = []
-    for entry in definition_data.get("metadataEntries", []):
-        metadata_dict = {
-            "label": entry.get("label", ""),
-            "description": entry.get("description", ""),
-        }
+    node = asset_nodes[0]
+    asset = _build_asset_from_node(node, include_status=status)
+    if asset is None:
+        raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
 
-        for field in [
-            "text",
-            "url",
-            "path",
-            "jsonString",
-            "mdStr",
-            "floatValue",
-            "intValue",
-            "boolValue",
-        ]:
-            if field in entry:
-                metadata_dict[field] = entry[field]
-        if "module" in entry and "name" in entry:
-            metadata_dict.update({"module": entry["module"], "name": entry["name"]})
-
-        metadata_entries.append(metadata_dict)
-
-    # Extract dependency keys
-    dependency_keys = _extract_dependency_keys(definition_data.get("dependencyKeys", []))
-
-    # Build status data
-    status = _transform_asset_status_data(node)
-
-    return DgApiAsset(
-        id=node["id"],
-        asset_key=asset_key,
-        asset_key_parts=asset_key_parts,
-        description=definition_data.get("description"),
-        group_name=definition_data.get("groupName", ""),
-        kinds=definition_data.get("kinds", []),
-        metadata_entries=metadata_entries,
-        dependency_keys=dependency_keys,
-        status=status,
-    )
+    return asset

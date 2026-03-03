@@ -290,15 +290,6 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_error_invalid_view_json]
-  '''
-  Usage: dg api asset get [OPTIONS] ASSET_KEY
-  Try 'dg api asset get -h' for help.
-  
-  Error: Invalid value for '--view': 'invalid' is not 'status'.
-  
-  '''
-# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_malformed_asset_key_json]
   '''
   {"error": "Asset not found: ''"}

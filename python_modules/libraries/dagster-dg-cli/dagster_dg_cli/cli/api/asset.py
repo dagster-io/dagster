@@ -28,9 +28,9 @@ DG_API_MAX_ASSET_LIMIT: Final = 1000
     help="Cursor for pagination",
 )
 @click.option(
-    "--view",
-    type=click.Choice(["status"]),
-    help="View type: 'status' for health and runtime information",
+    "--status",
+    is_flag=True,
+    help="Include health and runtime status information",
 )
 @click.option(
     "--json",
@@ -45,7 +45,7 @@ def list_assets_command(
     ctx: click.Context,
     limit: int,
     cursor: str,
-    view: str,
+    status: bool,
     output_json: bool,
     organization: str,
     deployment: str,
@@ -64,7 +64,7 @@ def list_assets_command(
     api = DgApiAssetApi(client)
 
     try:
-        assets = api.list_assets(limit=limit, cursor=cursor, view=view)
+        assets = api.list_assets(limit=limit, cursor=cursor, status=status)
         output = format_assets(assets, as_json=output_json)
         click.echo(output)
     except Exception as e:
@@ -79,9 +79,9 @@ def list_assets_command(
 @click.command(name="get", cls=DgClickCommand)
 @click.argument("asset_key", type=str)
 @click.option(
-    "--view",
-    type=click.Choice(["status"]),
-    help="View type: 'status' for health and runtime information",
+    "--status",
+    is_flag=True,
+    help="Include health and runtime status information",
 )
 @click.option(
     "--json",
@@ -95,7 +95,7 @@ def list_assets_command(
 def get_asset_command(
     ctx: click.Context,
     asset_key: str,
-    view: str,
+    status: bool,
     output_json: bool,
     organization: str,
     deployment: str,
@@ -114,7 +114,7 @@ def get_asset_command(
     api = DgApiAssetApi(client)
 
     try:
-        asset = api.get_asset(asset_key, view=view)
+        asset = api.get_asset(asset_key, status=status)
         output = format_asset(asset, as_json=output_json)
         click.echo(output)
     except Exception as e:
