@@ -11,10 +11,6 @@ import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
 
 Compass is the Dagster+ AI assistant. It analyzes run logs, identifies root causes of failures, suggests debugging steps, and lets you ask follow-up questions in a conversational chat interface. You can trigger Compass from any completed run or directly from a degraded asset on the home page.
 
-## Prerequisites
-
-Compass must be enabled for your organization. If you don't see the **Summarize with AI** option in the UI, contact your Dagster+ administrator.
-
 ## Generate a summary for a run
 
 From a row in the runs list or on a run detail page, open the menu and click **Summarize with AI**. 
