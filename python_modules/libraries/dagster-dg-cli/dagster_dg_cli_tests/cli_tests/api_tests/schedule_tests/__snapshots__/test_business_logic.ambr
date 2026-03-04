@@ -22,11 +22,11 @@
 # ---
 # name: TestFormatSchedules.test_format_minimal_schedule_text_output[0]
   '''
-  Name: minimal_schedule
-  Status: STOPPED
+  Name:          minimal_schedule
+  Status:        STOPPED
   Cron Schedule: */15 * * * *
-  Pipeline: minimal_pipeline
-  Description: None
+  Pipeline:      minimal_pipeline
+  Description:   None
   '''
 # ---
 # name: TestFormatSchedules.test_format_schedules_json_output[0]
@@ -65,26 +65,10 @@
 # ---
 # name: TestFormatSchedules.test_format_schedules_text_output[0]
   '''
-  Name: daily_job
-  Status: RUNNING
-  Cron Schedule: 0 0 * * *
-  Pipeline: daily_pipeline
-  Description: Runs daily at midnight
-  Timezone: UTC
-  Next Tick: 2024-01-15 09:30:00 UTC
-  
-  Name: hourly_job
-  Status: STOPPED
-  Cron Schedule: 0 * * * *
-  Pipeline: hourly_pipeline
-  Description: Runs every hour
-  Timezone: America/New_York
-  
-  Name: minimal_schedule
-  Status: RUNNING
-  Cron Schedule: */5 * * * *
-  Pipeline: quick_job
-  Description: None
+  NAME              STATUS   CRON         PIPELINE
+  daily_job         RUNNING  0 0 * * *    daily_pipeline
+  hourly_job        STOPPED  0 * * * *    hourly_pipeline
+  minimal_schedule  RUNNING  */5 * * * *  quick_job
   '''
 # ---
 # name: TestFormatSchedules.test_format_single_schedule_json_output[0]
@@ -100,13 +84,13 @@
 # ---
 # name: TestFormatSchedules.test_format_single_schedule_text_output[0]
   '''
-  Name: critical_job
-  Status: RUNNING
+  Name:          critical_job
+  Status:        RUNNING
   Cron Schedule: 0 0 * * *
-  Pipeline: critical_pipeline
-  Description: Critical production schedule
-  Timezone: UTC
-  Next Tick: 2024-01-15 09:45:00 UTC
+  Pipeline:      critical_pipeline
+  Description:   Critical production schedule
+  Timezone:      UTC
+  Next Tick:     2024-01-15 09:45:00 UTC
   '''
 # ---
 # name: TestProcessScheduleResponses.test_process_repositories_response_empty[0]

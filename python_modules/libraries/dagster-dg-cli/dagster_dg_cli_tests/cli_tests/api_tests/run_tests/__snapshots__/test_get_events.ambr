@@ -1,12 +1,11 @@
 # serializer version: 1
 # name: TestFormatLogs.test_format_empty_logs_json_output[0]
   dict({
-    'count': 0,
     'cursor': None,
-    'hasMore': False,
-    'logs': list([
+    'has_more': False,
+    'items': list([
     ]),
-    'run_id': 'empty-run-67890',
+    'total': 0,
   })
 # ---
 # name: TestFormatLogs.test_format_empty_logs_table_output[0]
@@ -29,35 +28,34 @@
 # ---
 # name: TestFormatLogs.test_format_logs_json_output[0]
   dict({
-    'count': 5,
     'cursor': None,
-    'hasMore': False,
-    'logs': list([
+    'has_more': False,
+    'items': list([
       dict({
         'error': None,
-        'eventType': 'RunStartEvent',
+        'event_type': 'RunStartEvent',
         'level': 'INFO',
         'message': 'Starting execution of run for "test_pipeline".',
-        'runId': 'test-run-12345',
-        'stepKey': None,
+        'run_id': 'test-run-12345',
+        'step_key': None,
         'timestamp': '1641046800000',
       }),
       dict({
         'error': None,
-        'eventType': 'ExecutionStepStartEvent',
+        'event_type': 'ExecutionStepStartEvent',
         'level': 'DEBUG',
         'message': 'Started execution of step "process_data".',
-        'runId': 'test-run-12345',
-        'stepKey': 'process_data',
+        'run_id': 'test-run-12345',
+        'step_key': 'process_data',
         'timestamp': '1641046805000',
       }),
       dict({
         'error': None,
-        'eventType': 'MessageEvent',
+        'event_type': 'MessageEvent',
         'level': 'DEBUG',
         'message': 'Loading input from path: /tmp/input.json',
-        'runId': 'test-run-12345',
-        'stepKey': 'process_data',
+        'run_id': 'test-run-12345',
+        'step_key': 'process_data',
         'timestamp': '1641046810000',
       }),
       dict({
@@ -85,36 +83,25 @@
   
             ''',
           ]),
-          'stackTrace': '''
-              File "/app/pipeline.py", line 42, in process_data
-                data = json.loads(input_str)
-            
-              File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
-                return _default_decoder.decode(s)
-            
-              File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
-                obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  
-          ''',
         }),
-        'eventType': 'ExecutionStepFailureEvent',
+        'event_type': 'ExecutionStepFailureEvent',
         'level': 'ERROR',
         'message': 'Execution of step "process_data" failed.',
-        'runId': 'test-run-12345',
-        'stepKey': 'process_data',
+        'run_id': 'test-run-12345',
+        'step_key': 'process_data',
         'timestamp': '1641046815000',
       }),
       dict({
         'error': None,
-        'eventType': 'RunFailureEvent',
+        'event_type': 'RunFailureEvent',
         'level': 'ERROR',
         'message': 'Execution of run for "test_pipeline" failed. Steps failed: [\'process_data\'].',
-        'runId': 'test-run-12345',
-        'stepKey': None,
+        'run_id': 'test-run-12345',
+        'step_key': None,
         'timestamp': '1641046820000',
       }),
     ]),
-    'run_id': 'test-run-12345',
+    'total': 5,
   })
 # ---
 # name: TestFormatLogs.test_format_logs_table_output[0]
@@ -172,10 +159,9 @@
 # ---
 # name: TestFormatLogs.test_format_logs_with_nested_errors_json[0]
   dict({
-    'count': 1,
     'cursor': None,
-    'hasMore': False,
-    'logs': list([
+    'has_more': False,
+    'items': list([
       dict({
         'error': dict({
           'cause': dict({
@@ -202,17 +188,6 @@
   
               ''',
             ]),
-            'stackTrace': '''
-                File "/app/database.py", line 35, in _execute_with_retry
-                  result = self.connection.execute(query)
-              
-                File "/usr/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
-                  return connection.execute(statement, parameters)
-              
-                File "/usr/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
-                  conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
-  
-            ''',
           }),
           'className': 'RetryRequestedFromPolicy',
           'message': '''
@@ -231,24 +206,16 @@
   
             ''',
           ]),
-          'stackTrace': '''
-              File "/app/database.py", line 25, in execute_query
-                return self._execute_with_retry(query)
-            
-              File "/app/database.py", line 45, in _execute_with_retry
-                raise RetryRequestedFromPolicy(f"Exceeded max_retries of {max_retries}")
-  
-          ''',
         }),
-        'eventType': 'ExecutionStepFailureEvent',
+        'event_type': 'ExecutionStepFailureEvent',
         'level': 'ERROR',
         'message': 'Database connection failed with retry exhausted.',
-        'runId': 'nested-error-run',
-        'stepKey': 'database_query',
+        'run_id': 'nested-error-run',
+        'step_key': 'database_query',
         'timestamp': '1641046825000',
       }),
     ]),
-    'run_id': 'nested-error-run',
+    'total': 1,
   })
 # ---
 # name: TestFormatLogs.test_format_logs_with_pagination_info[0]

@@ -10,9 +10,9 @@
 # ---
 # name: TestFormatSensors.test_format_minimal_sensor_text_output[0]
   '''
-  Name: minimal_sensor
-  Status: PAUSED
-  Type: STANDARD
+  Name:        minimal_sensor
+  Status:      PAUSED
+  Type:        STANDARD
   Description: None
   '''
 # ---
@@ -27,11 +27,11 @@
 # ---
 # name: TestFormatSensors.test_format_sensor_text_output[0]
   '''
-  Name: critical_sensor
-  Status: RUNNING
-  Type: AUTO_MATERIALIZE
+  Name:        critical_sensor
+  Status:      RUNNING
+  Type:        AUTO_MATERIALIZE
   Description: Critical production sensor
-  Next Tick: 2024-01-15 09:45:00 UTC
+  Next Tick:   2024-01-15 09:45:00 UTC
   '''
 # ---
 # name: TestFormatSensors.test_format_sensors_json_output[0]
@@ -64,21 +64,10 @@
 # ---
 # name: TestFormatSensors.test_format_sensors_text_output[0]
   '''
-  Name: daily_sensor
-  Status: RUNNING
-  Type: STANDARD
-  Description: Daily processing sensor
-  Next Tick: 2024-01-15 09:30:00 UTC
-  
-  Name: asset_sensor
-  Status: STOPPED
-  Type: ASSET
-  Description: Asset change sensor
-  
-  Name: minimal_sensor
-  Status: PAUSED
-  Type: MULTI_ASSET
-  Description: None
+  NAME            STATUS   TYPE
+  daily_sensor    RUNNING  STANDARD
+  asset_sensor    STOPPED  ASSET
+  minimal_sensor  PAUSED   MULTI_ASSET
   '''
 # ---
 # name: TestProcessSensorResponses.test_process_repositories_response_empty[0]

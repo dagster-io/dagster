@@ -11,11 +11,11 @@
 # ---
 # name: TestFormatRun.test_format_canceled_run_text_output[0]
   '''
-  Run ID: canceled-run-789
-  Status: CANCELED
-  Created: 1705311000.0
-  Started: 1705311060.0
-  Ended: 1705311120.0
+  Run ID:   canceled-run-789
+  Status:   CANCELED
+  Created:  1705311000.0
+  Started:  1705311060.0
+  Ended:    1705311120.0
   Pipeline: canceled_pipeline
   '''
 # ---
@@ -31,11 +31,11 @@
 # ---
 # name: TestFormatRun.test_format_failed_run_text_output[0]
   '''
-  Run ID: failed-run-456
-  Status: FAILURE
-  Created: 1705311000.0
-  Started: 1705311060.0
-  Ended: 1705311180.0
+  Run ID:   failed-run-456
+  Status:   FAILURE
+  Created:  1705311000.0
+  Started:  1705311060.0
+  Ended:    1705311180.0
   Pipeline: failing_pipeline
   '''
 # ---
@@ -51,8 +51,8 @@
 # ---
 # name: TestFormatRun.test_format_minimal_run_text_output[0]
   '''
-  Run ID: minimal-run-123
-  Status: QUEUED
+  Run ID:  minimal-run-123
+  Status:  QUEUED
   Created: 1705311000.0
   '''
 # ---
@@ -68,11 +68,11 @@
 # ---
 # name: TestFormatRun.test_format_run_text_output[0]
   '''
-  Run ID: 123e4567-e89b-12d3-a456-426614174000
-  Status: SUCCESS
-  Created: 1705311000.0
-  Started: 1705311060.0
-  Ended: 1705311900.0
+  Run ID:   123e4567-e89b-12d3-a456-426614174000
+  Status:   SUCCESS
+  Created:  1705311000.0
+  Started:  1705311060.0
+  Ended:    1705311900.0
   Pipeline: my_pipeline
   '''
 # ---
@@ -123,32 +123,16 @@
 # ---
 # name: TestFormatRunsList.test_format_runs_list_text[0]
   '''
-  Run ID: run-001
-  Status: SUCCESS
-  Job: my_pipeline
-  Created: 1705311000.0
-  
-  Run ID: run-002
-  Status: FAILURE
-  Job: failing_pipeline
-  Created: 1705312000.0
-  
-  Run ID: run-003
-  Status: QUEUED
-  Job: N/A
-  Created: 1705313000.0
-  
-  Total: 3
+  ID       STATUS   JOB               CREATED
+  run-001  SUCCESS  my_pipeline       1705311000.0
+  run-002  FAILURE  failing_pipeline  1705312000.0
+  run-003  QUEUED   N/A               1705313000.0
   '''
 # ---
 # name: TestFormatRunsList.test_format_runs_list_with_pagination[0]
   '''
-  Run ID: run-001
-  Status: SUCCESS
-  Job: my_pipeline
-  Created: 1705311000.0
-  
-  Total: 100
+  ID       STATUS   JOB          CREATED
+  run-001  SUCCESS  my_pipeline  1705311000.0
   Note: More runs available (use --limit to increase or --cursor to paginate)
   '''
 # ---

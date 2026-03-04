@@ -8,25 +8,7 @@ import json
 
 from dagster_dg_cli.api_layer.graphql_adapter.run import process_runs_response
 from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList, DgApiRunStatus
-from dagster_dg_cli.cli.api.run import format_runs_list
-
-
-def format_run_table(run) -> str:
-    """Format run as human-readable table."""
-    lines = [
-        f"Run ID: {run.id}",
-        f"Status: {run.status.value}",
-        f"Created: {run.created_at}",
-    ]
-
-    if run.started_at:
-        lines.append(f"Started: {run.started_at}")
-    if run.ended_at:
-        lines.append(f"Ended: {run.ended_at}")
-    if run.job_name:
-        lines.append(f"Pipeline: {run.job_name}")
-
-    return "\n".join(lines)
+from dagster_dg_cli.cli.api.formatters import format_run, format_runs_list
 
 
 class TestFormatRun:
@@ -76,7 +58,7 @@ class TestFormatRun:
     def test_format_run_text_output(self, snapshot):
         """Test formatting run as text."""
         run = self._create_sample_run()
-        result = format_run_table(run)
+        result = format_run(run, as_json=False)
 
         # Snapshot the entire text output
         snapshot.assert_match(result)
@@ -93,7 +75,7 @@ class TestFormatRun:
     def test_format_minimal_run_text_output(self, snapshot):
         """Test formatting minimal run as text."""
         run = self._create_minimal_run()
-        result = format_run_table(run)
+        result = format_run(run, as_json=False)
 
         snapshot.assert_match(result)
 
@@ -108,7 +90,7 @@ class TestFormatRun:
     def test_format_failed_run_text_output(self, snapshot):
         """Test formatting failed run as text."""
         run = self._create_failed_run()
-        result = format_run_table(run)
+        result = format_run(run, as_json=False)
 
         snapshot.assert_match(result)
 
@@ -123,7 +105,7 @@ class TestFormatRun:
     def test_format_canceled_run_text_output(self, snapshot):
         """Test formatting canceled run as text."""
         run = self._create_canceled_run()
-        result = format_run_table(run)
+        result = format_run(run, as_json=False)
 
         snapshot.assert_match(result)
 
