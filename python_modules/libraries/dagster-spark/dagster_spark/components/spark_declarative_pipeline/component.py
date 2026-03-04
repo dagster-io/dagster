@@ -184,11 +184,17 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             context: dg.AssetExecutionContext,
             spark_pipelines: SparkPipelinesResource,
         ) -> Any:
-            keys = (
-                list(context.selected_asset_keys)
-                if context.selected_asset_keys
-                else [s.key for s in asset_specs]
-            )
+            # When the entire graph is executed (not a subset), pass keys=None to allow
+            # --full-refresh-all and avoid OS argument length limits.
+            is_subset = getattr(context, "is_subset", True)
+            if is_subset:
+                keys = (
+                    list(context.selected_asset_keys)
+                    if context.selected_asset_keys
+                    else [s.key for s in asset_specs]
+                )
+            else:
+                keys = None
             yield from spark_pipelines.run_and_observe(
                 context=context,
                 pipeline_spec_path=resolved_spec_path,

@@ -5,7 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from dagster import AssetKey
 from dagster._core.definitions.result import MaterializeResult
-from dagster_spark.components.spark_declarative_pipeline.discovery import SparkPipelinesDryRunError
+from dagster_spark.components.spark_declarative_pipeline.discovery import (
+    SparkPipelinesExecutionError,
+)
 from dagster_spark.components.spark_declarative_pipeline.resource import SparkPipelinesResource
 
 
@@ -69,7 +71,7 @@ def test_run_and_observe_streams_logs_via_context() -> None:
 
 
 def test_run_and_observe_raises_with_captured_log_on_nonzero_exit() -> None:
-    """run_and_observe raises SparkPipelinesDryRunError with captured log when process exits non-zero."""
+    """run_and_observe raises SparkPipelinesExecutionError with captured log when process exits non-zero."""
     mock_context = MagicMock()
     with patch(
         "dagster_spark.components.spark_declarative_pipeline.resource.subprocess.Popen"
@@ -81,7 +83,7 @@ def test_run_and_observe_raises_with_captured_log_on_nonzero_exit() -> None:
         mock_popen.return_value = proc
 
         resource = SparkPipelinesResource()
-        with pytest.raises(SparkPipelinesDryRunError) as exc_info:
+        with pytest.raises(SparkPipelinesExecutionError) as exc_info:
             list(
                 resource.run_and_observe(
                     context=mock_context,
@@ -225,7 +227,7 @@ def test_run_and_observe_only_yields_on_success() -> None:
         mock_popen.return_value = proc
 
         resource = SparkPipelinesResource()
-        with pytest.raises(SparkPipelinesDryRunError):
+        with pytest.raises(SparkPipelinesExecutionError):
             list(
                 resource.run_and_observe(
                     context=mock_context,

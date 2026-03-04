@@ -4,6 +4,7 @@ SparkPipelinesResource provides discover_datasets (via dry-run or source_only) a
 run_and_observe (run spark-pipelines with log streaming and MaterializeResult yields).
 """
 
+import os
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
@@ -15,7 +16,7 @@ from pydantic import Field
 from dagster_spark.components.spark_declarative_pipeline.discovery import (
     DiscoveredDataset,
     DiscoveryMode,
-    SparkPipelinesDryRunError,
+    SparkPipelinesExecutionError,
     discover_datasets_fn,
 )
 
@@ -82,8 +83,7 @@ class SparkPipelinesResource(ConfigurableResource):
 
         Uses Popen to stream stdout/stderr line-by-line and logs each line via context.log.info.
         Passes --full-refresh or --refresh based on execution_mode, then optional comma-separated
-        dataset list from asset_keys. Only yields MaterializeResults if the process exits with
-        returncode == 0; otherwise raises SparkPipelinesDryRunError with the captured log.
+        dataset list from asset_keys.         returncode == 0; otherwise raises SparkPipelinesExecutionError with the captured log.
 
         Args:
             context: Asset execution context (used for context.log.info).
@@ -97,7 +97,7 @@ class SparkPipelinesResource(ConfigurableResource):
             MaterializeResult for each materialized asset on success.
 
         Raises:
-            SparkPipelinesDryRunError: If spark-pipelines run exits with non-zero return code.
+            SparkPipelinesExecutionError: If spark-pipelines run exits with non-zero return code.
         """
         path_str = str(pipeline_spec_path)
         cmd = [self.spark_pipelines_cmd, "run", "--spec", path_str]
@@ -117,12 +117,15 @@ class SparkPipelinesResource(ConfigurableResource):
             cmd.extend(extra_args)
 
         cwd = str(working_dir) if working_dir else None
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             cwd=cwd,
+            env=env,
             bufsize=1,
         )
         log_lines: list[str] = []
@@ -138,7 +141,7 @@ class SparkPipelinesResource(ConfigurableResource):
 
         if returncode != 0:
             captured = "\n".join(log_lines) if log_lines else "(no output)"
-            raise SparkPipelinesDryRunError(
+            raise SparkPipelinesExecutionError(
                 f"spark-pipelines run failed with return code {returncode}",
                 stderr=captured,
                 returncode=returncode,

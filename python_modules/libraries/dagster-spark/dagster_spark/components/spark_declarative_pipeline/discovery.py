@@ -20,8 +20,27 @@ from dagster_shared.serdes import whitelist_for_serdes  # type: ignore[reportMis
 DiscoveryMode = Literal["dry_run_only", "dry_run_with_fallback", "source_only"]
 
 
-class SparkPipelinesDryRunError(Exception):
-    """Raised when ``spark-pipelines dry-run`` or ``spark-pipelines run`` fails.
+class SparkPipelinesError(Exception):
+    """Base exception for Spark Declarative Pipeline operations (dry-run and execution)."""
+
+
+class SparkPipelinesDryRunError(SparkPipelinesError):
+    """Raised when ``spark-pipelines dry-run`` fails.
+
+    Attributes:
+        message: Error description.
+        stderr: Captured stderr or combined stdout/stderr from the process.
+        returncode: Process exit code (non-zero on failure).
+    """
+
+    def __init__(self, message: str, stderr: str | None = None, returncode: int | None = None):
+        super().__init__(message)
+        self.stderr = stderr
+        self.returncode = returncode
+
+
+class SparkPipelinesExecutionError(SparkPipelinesError):
+    """Raised when ``spark-pipelines run`` fails.
 
     Attributes:
         message: Error description.
@@ -341,14 +360,20 @@ def discover_datasets_from_sources(pipeline_spec_path: Path) -> list[DiscoveredD
         )
         return []
 
+    if not root.exists():
+        logger.warning("Pipeline spec directory does not exist: %s", root)
+        return []
+
     seen: set[str] = set()
     result: list[DiscoveredDataset] = []
+    scanned_files = 0
 
     try:
         for ext in ("*.py", "*.sql"):
             for path in root.rglob(ext):
                 try:
                     text = path.read_text(encoding="utf-8", errors="replace")
+                    scanned_files += 1
                 except Exception as e:
                     logger.warning(
                         "Failed to read source file %s: %s",
@@ -398,6 +423,11 @@ def discover_datasets_from_sources(pipeline_spec_path: Path) -> list[DiscoveredD
         )
         return []
 
+    logger.info(
+        "Scanned %d files for static dataset discovery, found %d datasets.",
+        scanned_files,
+        len(result),
+    )
     return result
 
 
