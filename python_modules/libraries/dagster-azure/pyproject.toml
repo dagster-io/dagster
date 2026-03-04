@@ -31,3 +31,6 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 
 [project.scripts]
 dagster-azure = "dagster_azure.cli.cli:main"
+
+[project.entry-points."dagster_dg_cli.registry_modules"]
+dagster_azure = "dagster_azure.components"
