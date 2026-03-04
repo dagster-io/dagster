@@ -4,7 +4,7 @@ Copybara configuration for syncing commits from dagster-io/dagster master to dag
 
 def _skip_synced_from_internal(ctx):
     """Skip commits that originated from dagster-io/internal so we don't double-commit them."""
-    if "\nSynced-From-Internal" in ctx.message:
+    if "\nSynced-From-Internal" in ctx.message or ctx.find_label("Internal-RevId"):
         core.fail_with_noop("Skipping commit that originated from dagster-io/internal.")
 
 core.workflow(
@@ -45,11 +45,6 @@ core.workflow(
         # Mount all contents of this repo on the dagster-oss subdirectory for
         # the dagster-io/internal commit.
         core.move("", "dagster-oss"),
-
-        # Mark this commit as originating from dagster-io/dagster. The opposite
-        # Copybara workflow needs this in order to avoid echoing back this
-        # commit.
-        metadata.replace_message("${COPYBARA_CURRENT_MESSAGE}\n\nSynced-From-Dagster"),
     ],
 
     # Follows this algorithm:
@@ -77,5 +72,5 @@ core.workflow(
     # would mistakenly identify commits synced from another repo, which would
     # also use the default GitOrigin-RevId, as having originated from this
     # repo.
-    experimental_custom_rev_id = "Dagster-RevId",
+    custom_rev_id = "Dagster-RevId",
 )
