@@ -127,7 +127,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
 
     def build_defs_from_state(
         self,
-        context: ComponentLoadContext,
+        load_context: ComponentLoadContext,
         state_path: Optional[Path],
     ) -> Definitions:
         """Build Definitions with a multi_asset that runs spark_pipelines.run_and_observe.
@@ -137,7 +137,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         can_subset=True that yields MaterializeResults via run_and_observe.
 
         Args:
-            context: Component load context (path, etc.).
+            load_context: Component load context (path, etc.).
             state_path: Path to serialized state file; if None or missing, returns empty Definitions.
 
         Returns:
@@ -166,10 +166,10 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         pipeline_spec_path = state.pipeline_spec_path
         # Resolve path relative to component path
         if not Path(pipeline_spec_path).is_absolute():
-            resolved_spec_path = (context.path / pipeline_spec_path).resolve()
+            resolved_spec_path = (load_context.path / Path(pipeline_spec_path)).resolve()
         else:
             resolved_spec_path = Path(pipeline_spec_path)
-        working_dir = context.path
+        working_dir = load_context.path
         execution_mode = self.execution_mode
 
         @dg.multi_asset(

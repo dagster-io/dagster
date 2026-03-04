@@ -17,6 +17,9 @@ from dagster import get_dagster_logger
 from dagster_shared import check  # type: ignore[reportMissingImports]
 from dagster_shared.serdes import whitelist_for_serdes  # type: ignore[reportMissingImports]
 
+# Guardrail to prevent daemon hangs.
+DRY_RUN_TIMEOUT_SECONDS = 60
+
 DiscoveryMode = Literal["dry_run_only", "dry_run_with_fallback", "source_only"]
 
 
@@ -167,7 +170,7 @@ def discover_datasets_via_dry_run(
         text=True,
         check=False,
         cwd=working_dir,
-        timeout=300,
+        timeout=DRY_RUN_TIMEOUT_SECONDS,
     )
 
     if result.returncode != 0:
@@ -349,7 +352,7 @@ def discover_datasets_from_sources(pipeline_spec_path: Path) -> list[DiscoveredD
     logger = get_dagster_logger()
     try:
         root = Path(pipeline_spec_path).resolve()
-        if root.suffix:
+        if root.is_file():
             root = root.parent
     except Exception as e:
         logger.warning(

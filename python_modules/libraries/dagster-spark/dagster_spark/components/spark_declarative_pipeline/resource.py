@@ -6,6 +6,7 @@ run_and_observe (run spark-pipelines with log streaming and MaterializeResult yi
 
 import os
 import subprocess
+from collections import deque
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal
@@ -128,7 +129,7 @@ class SparkPipelinesResource(ConfigurableResource):
             env=env,
             bufsize=1,
         )
-        log_lines: list[str] = []
+        log_lines: deque[str] = deque(maxlen=1000)
         if process.stdout:
             for raw_line in process.stdout:
                 line = raw_line.rstrip("\n\r")
