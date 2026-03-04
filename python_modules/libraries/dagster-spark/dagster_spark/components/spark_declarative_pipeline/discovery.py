@@ -111,6 +111,7 @@ def discover_datasets_via_dry_run(
     pipeline_spec_path: str | Path,
     working_dir: str | Path | None = None,
     extra_args: list[str] | None = None,
+    spark_pipelines_cmd: str = "spark-pipelines",
 ) -> str:
     """Run `spark-pipelines dry-run` and return raw stdout.
 
@@ -118,6 +119,7 @@ def discover_datasets_via_dry_run(
         pipeline_spec_path: Path to the pipeline spec file.
         working_dir: Optional working directory for the subprocess.
         extra_args: Optional extra CLI arguments.
+        spark_pipelines_cmd: Executable name or path for the spark-pipelines CLI.
 
     Returns:
         Raw stdout from the command.
@@ -126,7 +128,7 @@ def discover_datasets_via_dry_run(
         SparkPipelinesDryRunError: If the command fails or times out.
     """
     path_str = str(pipeline_spec_path)
-    cmd = ["spark-pipelines", "dry-run", path_str]
+    cmd = [spark_pipelines_cmd, "dry-run", path_str]
     if extra_args:
         cmd.extend(extra_args)
 
@@ -141,7 +143,7 @@ def discover_datasets_via_dry_run(
 
     if result.returncode != 0:
         raise SparkPipelinesDryRunError(
-            f"spark-pipelines dry-run failed with return code {result.returncode}",
+            f"{spark_pipelines_cmd} dry-run failed with return code {result.returncode}",
             stderr=result.stderr,
             returncode=result.returncode,
         )
@@ -414,6 +416,8 @@ def discover_datasets_fn(
     discovery_mode: DiscoveryMode,
     working_dir: str | Path | None = None,
     source_only_datasets: list[DiscoveredDataset] | None = None,
+    spark_pipelines_cmd: str = "spark-pipelines",
+    dry_run_extra_args: list[str] | None = None,
 ) -> list[DiscoveredDataset]:
     """Discover datasets for a Spark Declarative Pipeline based on discovery_mode.
 
@@ -428,6 +432,8 @@ def discover_datasets_fn(
         discovery_mode: One of dry_run_only, dry_run_with_fallback, source_only.
         working_dir: Optional working directory for dry-run.
         source_only_datasets: Optional list used when mode is source_only or as fallback.
+        spark_pipelines_cmd: Executable name or path for the spark-pipelines CLI.
+        dry_run_extra_args: Optional extra CLI arguments for dry-run.
 
     Returns:
         List of DiscoveredDataset.
@@ -437,6 +443,7 @@ def discover_datasets_fn(
     """
     check.inst_param(discovery_mode, "discovery_mode", str)
     source_list = source_only_datasets
+    extra_args = dry_run_extra_args or []
 
     def _return(datasets: list[DiscoveredDataset]) -> list[DiscoveredDataset]:
         _validate_no_duplicate_dataset_names(datasets)
@@ -451,6 +458,8 @@ def discover_datasets_fn(
         raw = discover_datasets_via_dry_run(
             pipeline_spec_path,
             working_dir=working_dir,
+            extra_args=extra_args,
+            spark_pipelines_cmd=spark_pipelines_cmd,
         )
         datasets = parse_dry_run_output_to_datasets(raw)
     except SparkPipelinesDryRunError:

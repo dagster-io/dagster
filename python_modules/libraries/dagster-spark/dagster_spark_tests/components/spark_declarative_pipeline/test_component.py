@@ -44,6 +44,26 @@ def test_build_defs_from_state_returns_valid_definitions_with_multi_asset() -> N
     assert "table_b" in keys
 
 
+def test_get_asset_spec_includes_deps_from_attributes() -> None:
+    """get_asset_spec sets deps from dataset.attributes (dependencies, upstream_dataset_names, or deps)."""
+    component = SparkDeclarativePipelineComponent(
+        pipeline_spec_path="pipeline.yaml",
+        discovery_mode="source_only",
+    )
+    dataset = DiscoveredDataset(
+        name="catalog.schema.orders",
+        attributes={
+            "upstream_dataset_names": ["catalog.schema.customers", "catalog.schema.products"],
+        },
+    )
+    spec = component.get_asset_spec(dataset)
+    assert list(spec.key.path) == ["catalog", "schema", "orders"]
+    dep_keys = [dep.asset_key for dep in spec.deps]
+    assert len(dep_keys) == 2
+    assert list(dep_keys[0].path) == ["catalog", "schema", "customers"]
+    assert list(dep_keys[1].path) == ["catalog", "schema", "products"]
+
+
 def test_build_defs_from_state_filters_temporary_views() -> None:
     """Temporary view datasets are filtered out unless overridden in asset_attributes_by_dataset."""
     component = SparkDeclarativePipelineComponent(

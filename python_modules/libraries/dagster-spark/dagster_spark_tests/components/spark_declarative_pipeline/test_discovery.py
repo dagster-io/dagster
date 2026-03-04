@@ -128,3 +128,24 @@ def test_discover_datasets_via_dry_run_returns_stdout_on_success() -> None:
         out = discover_datasets_via_dry_run("/path/to/spec.yaml")
         assert "datasets" in out
         assert "x" in out
+
+
+def test_discover_datasets_via_dry_run_uses_custom_cmd_and_extra_args() -> None:
+    """discover_datasets_via_dry_run uses spark_pipelines_cmd and extra_args when provided."""
+    with patch(
+        "dagster_spark.components.spark_declarative_pipeline.discovery.subprocess.run"
+    ) as mock_run:
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stderr="",
+            stdout='{"datasets":[{"name":"x"}]}',
+        )
+        discover_datasets_via_dry_run(
+            "/path/to/spec.yaml",
+            spark_pipelines_cmd="/custom/spark-pipelines",
+            extra_args=["--output", "json"],
+        )
+        call_cmd = mock_run.call_args[0][0]
+        assert call_cmd[0] == "/custom/spark-pipelines"
+        assert "--output" in call_cmd
+        assert "json" in call_cmd

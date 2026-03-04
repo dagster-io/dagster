@@ -120,6 +120,66 @@ def test_run_and_observe_yields_nothing_when_no_asset_keys() -> None:
     )
 
 
+def test_run_and_observe_passes_dot_notation_datasets_to_cli() -> None:
+    """run_and_observe passes dataset names as dot-separated (catalog.db.table) to the CLI, not slash."""
+    mock_context = MagicMock()
+    asset_keys = [
+        AssetKey(["my_catalog", "my_db", "orders"]),
+    ]
+    with patch(
+        "dagster_spark.components.spark_declarative_pipeline.resource.subprocess.Popen"
+    ) as mock_popen:
+        proc = MagicMock()
+        proc.stdout = iter([])
+        proc.wait.return_value = 0
+        proc.returncode = 0
+        mock_popen.return_value = proc
+
+        resource = SparkPipelinesResource()
+        list(
+            resource.run_and_observe(
+                context=mock_context,
+                pipeline_spec_path="/path/spec.yaml",
+                asset_keys=asset_keys,
+            )
+        )
+
+    call_cmd = mock_popen.call_args[0][0]
+    datasets_arg = call_cmd[-1]
+    assert datasets_arg == "my_catalog.my_db.orders"
+    assert "/" not in datasets_arg
+
+
+def test_run_and_observe_uses_configurable_cmd_and_run_extra_args() -> None:
+    """run_and_observe uses spark_pipelines_cmd and appends run_extra_args to the command."""
+    mock_context = MagicMock()
+    with patch(
+        "dagster_spark.components.spark_declarative_pipeline.resource.subprocess.Popen"
+    ) as mock_popen:
+        proc = MagicMock()
+        proc.stdout = iter([])
+        proc.wait.return_value = 0
+        proc.returncode = 0
+        mock_popen.return_value = proc
+
+        resource = SparkPipelinesResource(
+            spark_pipelines_cmd="/usr/local/bin/spark-pipelines",
+            run_extra_args=["--option", "value"],
+        )
+        list(
+            resource.run_and_observe(
+                context=mock_context,
+                pipeline_spec_path="/path/spec.yaml",
+                asset_keys=[AssetKey(["a"])],
+            )
+        )
+
+    call_cmd = mock_popen.call_args[0][0]
+    assert call_cmd[0] == "/usr/local/bin/spark-pipelines"
+    assert "--option" in call_cmd
+    assert "value" in call_cmd
+
+
 def test_run_and_observe_only_yields_on_success() -> None:
     """MaterializeResults are only yielded when process returncode is 0."""
     mock_context = MagicMock()

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Optional
 
 import dagster as dg
-from dagster import AssetSpec, Definitions, deserialize_value, serialize_value
+from dagster import AssetKey, AssetSpec, Definitions, deserialize_value, serialize_value
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.core_models import OpSpec
@@ -82,10 +82,13 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             state_path: File path to write serialized state (parent used as working_dir for dry-run).
         """
         working_dir = state_path.parent
+        resource = self.spark_pipelines
         datasets = discover_datasets_fn(
             pipeline_spec_path=self.pipeline_spec_path,
             discovery_mode=self.discovery_mode,
             working_dir=working_dir,
+            spark_pipelines_cmd=resource.spark_pipelines_cmd,
+            dry_run_extra_args=resource.dry_run_extra_args,
         )
         state = SparkPipelineState(
             datasets=datasets,
@@ -101,12 +104,24 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             dataset: Discovered dataset from state.
 
         Returns:
-            AssetSpec with key from dataset.name and optional description/metadata/group/tags
-            from asset_attributes_by_dataset.
+            AssetSpec with key from dataset.name (split by '.' for multi-segment), optional deps
+            from attributes (dependencies, upstream_dataset_names, or deps), and optional
+            description/metadata/group/tags from asset_attributes_by_dataset.
         """
         attrs = self.asset_attributes_by_dataset.get(dataset.name, {})
+        source_attrs = dataset.attributes or {}
+        dep_names = (
+            source_attrs.get("dependencies")
+            or source_attrs.get("upstream_dataset_names")
+            or source_attrs.get("deps")
+            or []
+        )
+        if isinstance(dep_names, str):
+            dep_names = [dep_names]
+        deps = [AssetKey(d.split(".")) for d in dep_names] if dep_names else []
         return AssetSpec(
             key=dataset.name.split("."),
+            deps=deps,
             description=attrs.get("description")
             or f"Spark Declarative Pipeline dataset: {dataset.name}",
             metadata=attrs.get("metadata"),

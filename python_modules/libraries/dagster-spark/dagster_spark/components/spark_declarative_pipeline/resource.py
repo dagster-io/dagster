@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from dagster import AssetKey, ConfigurableResource, MaterializeResult
+from pydantic import Field
 
 from dagster_spark.components.spark_declarative_pipeline.discovery import (
     DiscoveredDataset,
@@ -27,6 +28,19 @@ class SparkPipelinesResource(ConfigurableResource):
     Use discover_datasets to get datasets from spark-pipelines dry-run (or source_only).
     Use run_and_observe inside an asset to run the pipeline and yield MaterializeResults.
     """
+
+    spark_pipelines_cmd: str = Field(
+        default="spark-pipelines",
+        description="Executable name or path for the spark-pipelines CLI.",
+    )
+    dry_run_extra_args: list[str] = Field(
+        default_factory=list,
+        description="Extra CLI arguments appended to spark-pipelines dry-run.",
+    )
+    run_extra_args: list[str] = Field(
+        default_factory=list,
+        description="Extra CLI arguments appended to spark-pipelines run (before any per-call extra_args).",
+    )
 
     def discover_datasets(
         self,
@@ -51,6 +65,8 @@ class SparkPipelinesResource(ConfigurableResource):
             discovery_mode=discovery_mode,
             working_dir=working_dir,
             source_only_datasets=source_only_datasets,
+            spark_pipelines_cmd=self.spark_pipelines_cmd,
+            dry_run_extra_args=self.dry_run_extra_args,
         )
 
     def run_and_observe(
@@ -84,15 +100,16 @@ class SparkPipelinesResource(ConfigurableResource):
             SparkPipelinesDryRunError: If spark-pipelines run exits with non-zero return code.
         """
         path_str = str(pipeline_spec_path)
-        cmd = ["spark-pipelines", "run", path_str]
+        cmd = [self.spark_pipelines_cmd, "run", path_str]
         if execution_mode == "full_refresh":
             cmd.append("--full-refresh")
         else:
             cmd.append("--refresh")
         if asset_keys:
-            datasets_str = ",".join(k.to_user_string() for k in asset_keys)
+            datasets_str = ",".join(".".join(k.path) for k in asset_keys)
             if datasets_str:
                 cmd.append(datasets_str)
+        cmd.extend(self.run_extra_args)
         if extra_args:
             cmd.extend(extra_args)
 
