@@ -17,7 +17,7 @@ from dagster_dg_cli.api_layer.schemas.sensor import (
     DgApiSensorStatus,
     DgApiSensorType,
 )
-from dagster_dg_cli.cli.api.sensor import format_sensor, format_sensors
+from dagster_dg_cli.cli.api.formatters import format_sensor, format_sensors
 
 
 class TestProcessSensorResponses:

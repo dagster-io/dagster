@@ -64,12 +64,31 @@ query CliRunEventsQuery($runId: ID!, $limit: Int, $afterCursor: String) {
 """
 
 
+# Mapping from user-friendly RUN_* names to the actual GraphQL PIPELINE_* values
+_EVENT_TYPE_ALIASES: dict[str, str] = {
+    "RUN_ENQUEUED": "PIPELINE_ENQUEUED",
+    "RUN_DEQUEUED": "PIPELINE_DEQUEUED",
+    "RUN_STARTING": "PIPELINE_STARTING",
+    "RUN_START": "PIPELINE_START",
+    "RUN_SUCCESS": "PIPELINE_SUCCESS",
+    "RUN_FAILURE": "PIPELINE_FAILURE",
+    "RUN_CANCELING": "PIPELINE_CANCELING",
+    "RUN_CANCELED": "PIPELINE_CANCELED",
+}
+
+
 def _filter_events_by_type(events: list[dict], event_types: Sequence[str]) -> list[dict]:
     """Client-side filtering logic for event types."""
     if not event_types:
         return events
 
-    types_upper = {t.upper() for t in event_types}
+    types_upper: set[str] = set()
+    for t in event_types:
+        t_upper = t.upper()
+        types_upper.add(t_upper)
+        # Also add the alias so both RUN_START and PIPELINE_START work
+        if t_upper in _EVENT_TYPE_ALIASES:
+            types_upper.add(_EVENT_TYPE_ALIASES[t_upper])
 
     return [event for event in events if (event.get("eventType") or "").upper() in types_upper]
 

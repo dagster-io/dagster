@@ -105,32 +105,32 @@ error_invalid_level_text:
 success_get_events:
   command: "dg api run get-events a34cd75c-cfa9-4e99-8f0a-955492b89afd --json"
 
-# list scenarios
+# list scenarios (no recordings yet — these exercise CLI arg parsing + error paths)
 
-success_list_runs_json:
+error_list_runs_no_recording_json:
   command: "dg api run list --json"
   has_recording: false
 
-success_list_runs_text:
+error_list_runs_no_recording_text:
   command: "dg api run list"
   has_recording: false
 
-success_list_runs_with_status_filter:
+error_list_runs_status_filter_no_recording:
   command: "dg api run list --status SUCCESS --json"
   has_recording: false
 
-success_list_runs_with_job_filter:
+error_list_runs_job_filter_no_recording:
   command: "dg api run list --job my_pipeline --json"
   has_recording: false
 
-success_list_runs_with_limit:
+error_list_runs_limit_no_recording:
   command: "dg api run list --limit 10 --json"
   has_recording: false
 
-success_list_runs_with_cursor:
+error_list_runs_cursor_no_recording:
   command: "dg api run list --cursor abc-123 --json"
   has_recording: false
 
-success_list_runs_multiple_statuses:
+error_list_runs_multiple_statuses_no_recording:
   command: "dg api run list --status SUCCESS --status FAILURE --json"
   has_recording: false

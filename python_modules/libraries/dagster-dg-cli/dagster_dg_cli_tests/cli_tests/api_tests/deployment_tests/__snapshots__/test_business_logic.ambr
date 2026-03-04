@@ -28,21 +28,11 @@
 # ---
 # name: TestFormatDeployments.test_format_deployments_text_output[0]
   '''
-  Name: data-eng-prod
-  ID: 87
-  Type: PRODUCTION
-  
-  Name: gtm20
-  ID: 190248
-  Type: PRODUCTION
-  
-  Name: data-eng-staging
-  ID: 213933
-  Type: PRODUCTION
-  
-  Name: data-eng-dev
-  ID: 217021
-  Type: PRODUCTION
+  NAME              ID      TYPE
+  data-eng-prod     87      PRODUCTION
+  gtm20             190248  PRODUCTION
+  data-eng-staging  213933  PRODUCTION
+  data-eng-dev      217021  PRODUCTION
   '''
 # ---
 # name: TestProcessDeploymentsResponse.test_empty_response_processing[0]

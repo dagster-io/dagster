@@ -1,7 +1,5 @@
 """Run API commands following GitHub CLI patterns."""
 
-import datetime
-import json
 from typing import Final
 
 import click
@@ -12,136 +10,16 @@ from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.api_layer.api.run_event import DgApiRunEventApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
+from dagster_dg_cli.cli.api.formatters import (
+    format_logs_json,
+    format_logs_table,
+    format_run,
+    format_runs_list,
+)
+from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.api.utils import dg_api_response_schema
 
 DG_API_MAX_RUN_LIMIT: Final = 1000
-
-
-def format_run_table(run) -> str:
-    """Format run as human-readable table."""
-    lines = [
-        f"Run ID: {run.id}",
-        f"Status: {run.status.value}",
-        f"Created: {run.created_at}",
-    ]
-
-    if run.started_at:
-        lines.append(f"Started: {run.started_at}")
-    if run.ended_at:
-        lines.append(f"Ended: {run.ended_at}")
-    if run.job_name:
-        lines.append(f"Pipeline: {run.job_name}")
-
-    return "\n".join(lines)
-
-
-def format_logs_table(events, run_id: str) -> str:
-    """Format logs as human-readable table."""
-    if not events.items:
-        return f"No logs found for run {run_id}"
-
-    lines = [f"Logs for run {run_id}:", ""]
-
-    # Table header
-    header = f"{'TIMESTAMP':<20} {'LEVEL':<8} {'STEP_KEY':<25} {'MESSAGE'}"
-    separator = "-" * 80
-    lines.extend([header, separator])
-
-    # Table rows
-    for event in events.items:
-        # Convert Unix timestamp to readable format
-        timestamp_ms = int(event.timestamp)
-        dt = datetime.datetime.fromtimestamp(timestamp_ms / 1000.0)
-        timestamp_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-
-        level = event.level.value
-        step_key = (event.step_key or "")[:24]  # Truncate long step keys
-        message = event.message
-
-        row = f"{timestamp_str:<20} {level:<8} {step_key:<25} {message}"
-        lines.append(row)
-
-        # Add stack trace for error events
-        if event.error and event.error.stack:
-            lines.append("")
-            lines.append("Stack Trace:")
-            # Format the stack trace with indentation
-            stack_trace = event.error.get_stack_trace_string()
-            for stack_line in stack_trace.split("\n"):
-                if stack_line.strip():
-                    lines.append(f"  {stack_line}")
-            lines.append("")
-
-    lines.extend(["", f"Total log entries: {events.total}"])
-    if events.has_more:
-        lines.append("Note: More logs available (use --limit to increase or --cursor to paginate)")
-
-    return "\n".join(lines)
-
-
-def format_logs_json(events, run_id: str) -> str:
-    """Format logs as JSON."""
-
-    def error_to_dict(error_info):
-        """Convert ErrorInfo to dictionary recursively."""
-        if not error_info:
-            return None
-        return {
-            "message": error_info.message,
-            "className": error_info.className,
-            "stack": error_info.stack,  # Keep as list for JSON
-            "stackTrace": error_info.get_stack_trace_string(),  # Also provide as string
-            "cause": error_to_dict(error_info.cause) if error_info.cause else None,
-        }
-
-    return json.dumps(
-        {
-            "run_id": run_id,
-            "logs": [
-                {
-                    "runId": event.run_id,
-                    "message": event.message,
-                    "timestamp": event.timestamp,
-                    "level": event.level,
-                    "stepKey": event.step_key,
-                    "eventType": event.event_type,
-                    "error": error_to_dict(event.error) if event.error else None,
-                }
-                for event in events.items
-            ],
-            "count": events.total,
-            "cursor": events.cursor,
-            "hasMore": events.has_more,
-        },
-        indent=2,
-    )
-
-
-def format_runs_list(runs_list, as_json: bool) -> str:
-    """Format run list for output."""
-    if as_json:
-        return runs_list.model_dump_json(indent=2)
-
-    if not runs_list.items:
-        return "No runs found."
-
-    lines = []
-    for run in runs_list.items:
-        lines.extend(
-            [
-                f"Run ID: {run.id}",
-                f"Status: {run.status.value}",
-                f"Job: {run.job_name or 'N/A'}",
-                f"Created: {run.created_at}",
-                "",  # Empty line between runs
-            ]
-        )
-
-    lines.append(f"Total: {runs_list.total}")
-    if runs_list.has_more:
-        lines.append("Note: More runs available (use --limit to increase or --cursor to paginate)")
-
-    return "\n".join(lines).rstrip()
 
 
 @click.command(name="list", cls=DgClickCommand)
@@ -205,7 +83,7 @@ def list_runs_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     api = DgApiRunApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         # Normalize statuses to uppercase
         normalized_statuses = tuple(s.upper() for s in statuses)
         runs = api.list_runs(
@@ -216,13 +94,6 @@ def list_runs_command(
         )
         output = format_runs_list(runs, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to list runs: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -257,21 +128,10 @@ def get_run_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     api = DgApiRunApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         run = api.get_run(run_id)
-
-        if output_json:
-            output = run.model_dump_json(indent=2)
-        else:
-            output = format_run_table(run)
-
+        output = format_run(run, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
 
 
 @click.command(name="get-events", cls=DgClickCommand)
@@ -338,7 +198,7 @@ def get_events_run_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     api = DgApiRunEventApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         logs = api.get_events(
             run_id=run_id,
             event_types=event_types,
@@ -349,18 +209,11 @@ def get_events_run_command(
         )
 
         if output_json:
-            output = format_logs_json(logs, run_id)
+            output = format_logs_json(logs)
         else:
             output = format_logs_table(logs, run_id)
 
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to get logs for run {run_id}: {e}")
 
 
 @click.group(

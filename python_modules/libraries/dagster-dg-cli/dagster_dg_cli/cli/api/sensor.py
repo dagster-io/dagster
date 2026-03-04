@@ -1,8 +1,5 @@
 """Sensor API commands following GitHub CLI patterns."""
 
-import json
-from typing import TYPE_CHECKING
-
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
@@ -10,61 +7,9 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.formatters import _format_timestamp
+from dagster_dg_cli.cli.api.formatters import format_sensor, format_sensors
+from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.api.utils import dg_api_response_schema
-
-if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
-
-
-def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
-    """Format sensor list for output."""
-    if as_json:
-        sensors_dict = sensors.model_dump()
-        for sensor in sensors_dict["items"]:
-            sensor.pop("repository_origin", None)
-            sensor.pop("id", None)
-        return json.dumps(sensors_dict, indent=2)
-
-    lines = []
-    for sensor in sensors.items:
-        sensor_lines = [
-            f"Name: {sensor.name}",
-            f"Status: {sensor.status.value}",
-            f"Type: {sensor.sensor_type.value}",
-            f"Description: {sensor.description or 'None'}",
-        ]
-
-        if sensor.next_tick_timestamp:
-            next_tick_str = _format_timestamp(sensor.next_tick_timestamp)
-            sensor_lines.append(f"Next Tick: {next_tick_str}")
-
-        sensor_lines.append("")  # Empty line between sensors
-        lines.extend(sensor_lines)
-
-    return "\n".join(lines).rstrip()  # Remove trailing empty line
-
-
-def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
-    """Format single sensor for output."""
-    if as_json:
-        sensor_dict = sensor.model_dump()
-        sensor_dict.pop("repository_origin", None)
-        sensor_dict.pop("id", None)
-        return json.dumps(sensor_dict, indent=2)
-
-    lines = [
-        f"Name: {sensor.name}",
-        f"Status: {sensor.status.value}",
-        f"Type: {sensor.sensor_type.value}",
-        f"Description: {sensor.description or 'None'}",
-    ]
-
-    if sensor.next_tick_timestamp:
-        next_tick_str = _format_timestamp(sensor.next_tick_timestamp)
-        lines.append(f"Next Tick: {next_tick_str}")
-
-    return "\n".join(lines)
 
 
 @click.command(name="list", cls=DgClickCommand)
@@ -103,7 +48,7 @@ def list_sensors_command(
 
     api = DgApiSensorApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         sensors = api.list_sensors()
 
         if status:
@@ -116,13 +61,6 @@ def list_sensors_command(
 
         output = format_sensors(sensors, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-            ctx.exit(1)
-        else:
-            raise click.ClickException(f"Failed to list sensors: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -157,17 +95,10 @@ def get_sensor_command(
 
     api = DgApiSensorApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         sensor = api.get_sensor_by_name(sensor_name=sensor_name)
         output = format_sensor(sensor, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-            ctx.exit(1)
-        else:
-            raise click.ClickException(f"Failed to get sensor: {e}")
 
 
 @click.group(

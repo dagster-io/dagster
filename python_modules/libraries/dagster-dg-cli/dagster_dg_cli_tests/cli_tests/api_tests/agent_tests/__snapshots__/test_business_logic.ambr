@@ -68,9 +68,9 @@
 # ---
 # name: TestFormatAgents.test_format_agent_without_label[0]
   '''
-  Label: Agent no-label
-  ID: no-label-agent-uuid-123456789
-  Status: UNKNOWN
+  Label:          Agent no-label
+  ID:             no-label-agent-uuid-123456789
+  Status:         UNKNOWN
   Last Heartbeat: 2022-01-01 14:22:00 UTC
   
   Metadata:
@@ -79,9 +79,9 @@
 # ---
 # name: TestFormatAgents.test_format_agent_without_metadata[0]
   '''
-  Label: Simple Agent
-  ID: simple-agent-uuid
-  Status: NOT_RUNNING
+  Label:          Simple Agent
+  ID:             simple-agent-uuid
+  Status:         NOT_RUNNING
   Last Heartbeat: Never
   '''
 # ---
@@ -130,20 +130,10 @@
 # ---
 # name: TestFormatAgents.test_format_agents_text_output[0]
   '''
-  Label: Production Agent
-  ID: agent-1-uuid-12345
-  Status: RUNNING
-  Last Heartbeat: 2022-01-01 14:20:00 UTC
-  
-  Label: Agent agent-2-
-  ID: agent-2-uuid-67890
-  Status: STOPPED
-  Last Heartbeat: Never
-  
-  Label: Staging Agent
-  ID: agent-3-uuid-abcdef
-  Status: UNHEALTHY
-  Last Heartbeat: 2022-01-01 14:21:00 UTC
+  LABEL             ID                   STATUS     LAST HEARTBEAT
+  Production Agent  agent-1-uuid-12345   RUNNING    2022-01-01 14:20:00 UTC
+  Agent agent-2-    agent-2-uuid-67890   STOPPED    Never
+  Staging Agent     agent-3-uuid-abcdef  UNHEALTHY  2022-01-01 14:21:00 UTC
   '''
 # ---
 # name: TestFormatAgents.test_format_empty_agents_json_output[0]
@@ -180,9 +170,9 @@
 # ---
 # name: TestFormatAgents.test_format_single_agent_text_output[0]
   '''
-  Label: Development Agent
-  ID: single-agent-uuid-xyz
-  Status: RUNNING
+  Label:          Development Agent
+  ID:             single-agent-uuid-xyz
+  Status:         RUNNING
   Last Heartbeat: 2022-01-01 14:20:00 UTC
   
   Metadata:

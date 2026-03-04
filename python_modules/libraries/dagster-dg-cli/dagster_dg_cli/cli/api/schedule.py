@@ -1,8 +1,5 @@
 """Schedule API commands following GitHub CLI patterns."""
 
-import json
-from typing import TYPE_CHECKING
-
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
@@ -10,69 +7,9 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.formatters import _format_timestamp
+from dagster_dg_cli.cli.api.formatters import format_schedule, format_schedules
+from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.api.utils import dg_api_response_schema
-
-if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
-
-
-def format_schedules(schedules: "DgApiScheduleList", as_json: bool) -> str:
-    """Format schedule list for output."""
-    if as_json:
-        schedules_dict = schedules.model_dump()
-        for schedule in schedules_dict["items"]:
-            schedule.pop("code_location_origin", None)
-            schedule.pop("id", None)
-        return json.dumps(schedules_dict, indent=2)
-
-    lines = []
-    for schedule in schedules.items:
-        schedule_lines = [
-            f"Name: {schedule.name}",
-            f"Status: {schedule.status.value}",
-            f"Cron Schedule: {schedule.cron_schedule}",
-            f"Pipeline: {schedule.pipeline_name}",
-            f"Description: {schedule.description or 'None'}",
-        ]
-
-        if schedule.execution_timezone:
-            schedule_lines.append(f"Timezone: {schedule.execution_timezone}")
-
-        if schedule.next_tick_timestamp:
-            next_tick_str = _format_timestamp(schedule.next_tick_timestamp)
-            schedule_lines.append(f"Next Tick: {next_tick_str}")
-
-        schedule_lines.append("")  # Empty line between schedules
-        lines.extend(schedule_lines)
-
-    return "\n".join(lines).rstrip()  # Remove trailing empty line
-
-
-def format_schedule(schedule: "DgApiSchedule", as_json: bool) -> str:
-    """Format single schedule for output."""
-    if as_json:
-        schedule_dict = schedule.model_dump()
-        schedule_dict.pop("code_location_origin", None)
-        schedule_dict.pop("id", None)
-        return json.dumps(schedule_dict, indent=2)
-
-    lines = [
-        f"Name: {schedule.name}",
-        f"Status: {schedule.status.value}",
-        f"Cron Schedule: {schedule.cron_schedule}",
-        f"Pipeline: {schedule.pipeline_name}",
-        f"Description: {schedule.description or 'None'}",
-    ]
-
-    if schedule.execution_timezone:
-        lines.append(f"Timezone: {schedule.execution_timezone}")
-
-    if schedule.next_tick_timestamp:
-        next_tick_str = _format_timestamp(schedule.next_tick_timestamp)
-        lines.append(f"Next Tick: {next_tick_str}")
-
-    return "\n".join(lines)
 
 
 @click.command(name="list", cls=DgClickCommand)
@@ -111,7 +48,7 @@ def list_schedules_command(
 
     api = DgApiScheduleApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         schedules = api.list_schedules()
 
         if status:
@@ -129,13 +66,6 @@ def list_schedules_command(
 
         output = format_schedules(schedules, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-            ctx.exit(1)
-        else:
-            raise click.ClickException(f"Failed to list schedules: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -170,17 +100,10 @@ def get_schedule_command(
 
     api = DgApiScheduleApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         schedule = api.get_schedule_by_name(schedule_name=schedule_name)
         output = format_schedule(schedule, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-            ctx.exit(1)
-        else:
-            raise click.ClickException(f"Failed to get schedule: {e}")
 
 
 @click.group(

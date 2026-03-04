@@ -1,7 +1,5 @@
 """Deployment API commands following GitHub CLI patterns."""
 
-import json
-
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
@@ -11,6 +9,7 @@ from dagster_shared.plus.config_utils import dg_api_options
 # Lazy import to avoid loading pydantic at CLI startup
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_deployment, format_deployments
+from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.api.utils import dg_api_response_schema
 
 
@@ -38,17 +37,10 @@ def list_deployments_command(
 
     api = DgApiDeploymentApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         deployments = api.list_deployments()
         output = format_deployments(deployments, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to list deployments: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -81,22 +73,16 @@ def get_deployment_command(
 
     api = DgApiDeploymentApi(client)
 
-    try:
-        deployment = api.get_deployment(name)
+    with handle_api_errors(ctx, output_json):
+        try:
+            deployment = api.get_deployment(name)
+        except ValueError as e:
+            if "Deployment not found" in str(e):
+                raise click.ClickException(f"Deployment '{name}' not found")
+            else:
+                raise
         output = format_deployment(deployment, as_json=output_json)
         click.echo(output)
-    except ValueError as e:
-        if "Deployment not found" in str(e):
-            raise click.ClickException(f"Deployment '{name}' not found")
-        else:
-            raise
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to get deployment: {e}")
 
 
 @click.group(

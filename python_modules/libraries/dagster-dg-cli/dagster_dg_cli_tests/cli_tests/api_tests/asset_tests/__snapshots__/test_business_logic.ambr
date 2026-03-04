@@ -152,12 +152,9 @@
 # ---
 # name: TestFormatAssetEvaluations.test_format_evaluations_text_output[0]
   '''
-  EVAL_ID      TIMESTAMP                NUM_REQUESTED    RUN_IDS
-  ----------------------------------------------------------------------------------------------------
-  100          2024-02-01 00:00:00 UTC  3                run-abc-123, run-def-456
-  99           2024-01-31 00:00:00 UTC  0                -
-  
-  Total evaluations: 2
+  EVAL ID  TIMESTAMP                NUM REQUESTED  RUN IDS
+  100      2024-02-01 00:00:00 UTC  3              run-abc-123, run-def-456
+  99       2024-01-31 00:00:00 UTC  0              -
   '''
 # ---
 # name: TestFormatAssetEvaluations.test_format_evaluations_with_nodes_json_output[0]
@@ -231,14 +228,11 @@
 # ---
 # name: TestFormatAssetEvaluations.test_format_evaluations_with_nodes_text_output[0]
   '''
-  EVAL_ID      TIMESTAMP                NUM_REQUESTED    RUN_IDS
-  ----------------------------------------------------------------------------------------------------
-  100          2024-02-01 00:00:00 UTC  2                run-abc-123
+  EVAL ID  TIMESTAMP                NUM REQUESTED  RUN IDS
+  100      2024-02-01 00:00:00 UTC  2              run-abc-123
       eager (true=5, candidates=10)
       Any > deps > updated (true=5, candidates=10)
       node_child_2 (true=-, candidates=-)
-  
-  Total evaluations: 1
   '''
 # ---
 # name: TestFormatAssetEvents.test_format_asset_events_json_output[0]
@@ -297,13 +291,10 @@
 # ---
 # name: TestFormatAssetEvents.test_format_asset_events_text_output[0]
   '''
-  TIMESTAMP            TYPE                      RUN_ID                                   PARTITION           
-  ------------------------------------------------------------------------------------------------------------
-  2024-02-01 00:00:00 UTC ASSET_MATERIALIZATION     run-abc-123                              2024-01-31          
-  2024-01-31 00:00:00 UTC ASSET_OBSERVATION         run-def-456                                                  
-  2024-01-30 00:00:00 UTC ASSET_MATERIALIZATION     run-ghi-789                              2024-01-29          
-  
-  Total events: 3
+  TIMESTAMP                TYPE                   RUN ID       PARTITION
+  2024-02-01 00:00:00 UTC  ASSET_MATERIALIZATION  run-abc-123  2024-01-31
+  2024-01-31 00:00:00 UTC  ASSET_OBSERVATION      run-def-456  
+  2024-01-30 00:00:00 UTC  ASSET_MATERIALIZATION  run-ghi-789  2024-01-29
   '''
 # ---
 # name: TestFormatAssetEvents.test_format_empty_asset_events_json_output[0]
@@ -508,19 +499,9 @@
 # ---
 # name: TestFormatAssets.test_format_assets_text_output[0]
   '''
-  Asset Key: users
-  ID: asset-1
-  Description: User data table
-  Group: core_tables
-  Kinds: dbt, table
-  Deps: None
-  
-  Asset Key: analytics/user_metrics
-  ID: asset-2
-  Description: Aggregated user metrics
-  Group: analytics
-  Kinds: dbt, view
-  Deps: None
+  ASSET KEY               GROUP        DESCRIPTION              KINDS
+  users                   core_tables  User data table          dbt, table
+  analytics/user_metrics  analytics    Aggregated user metrics  dbt, view
   '''
 # ---
 # name: TestFormatAssets.test_format_empty_assets_json_output[0]

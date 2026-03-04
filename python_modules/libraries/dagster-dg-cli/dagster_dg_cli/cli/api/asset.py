@@ -1,6 +1,5 @@
 """Asset API commands following GitHub CLI patterns."""
 
-import json
 from typing import Final
 
 import click
@@ -16,6 +15,7 @@ from dagster_dg_cli.cli.api.formatters import (
     format_asset_events,
     format_assets,
 )
+from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.api.utils import dg_api_response_schema
 
 DG_API_MAX_ASSET_LIMIT: Final = 1000
@@ -71,17 +71,10 @@ def list_assets_command(
 
     api = DgApiAssetApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         assets = api.list_assets(limit=limit, cursor=cursor, status=status)
         output = format_assets(assets, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to list assets: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -122,17 +115,10 @@ def get_asset_command(
 
     api = DgApiAssetApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         asset = api.get_asset(asset_key, status=status)
         output = format_asset(asset, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to get asset: {e}")
 
 
 @click.command(name="get-events", cls=DgClickCommand)
@@ -196,7 +182,7 @@ def get_events_asset_command(
 
     api = DgApiAssetApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         events = api.get_events(
             asset_key=asset_key,
             event_type=event_type.upper() if event_type else None,
@@ -206,13 +192,6 @@ def get_events_asset_command(
         )
         output = format_asset_events(events, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to get asset events: {e}")
 
 
 @click.command(name="get-evaluations", cls=DgClickCommand)
@@ -273,7 +252,7 @@ def get_evaluations_asset_command(
 
     api = DgApiAssetApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         evaluations = api.get_evaluations(
             asset_key=asset_key,
             limit=limit,
@@ -282,13 +261,6 @@ def get_evaluations_asset_command(
         )
         output = format_asset_evaluations(evaluations, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to get asset evaluations: {e}")
 
 
 @click.group(

@@ -21,7 +21,7 @@ from dagster_dg_cli.api_layer.schemas.run_event import (
     RunEventList,
 )
 from dagster_dg_cli.cli.api.client import DgApiTestContext
-from dagster_dg_cli.cli.api.run import format_logs_json, format_logs_table
+from dagster_dg_cli.cli.api.formatters import format_logs_json, format_logs_table
 
 
 class TestFormatLogs:
@@ -146,7 +146,7 @@ class TestFormatLogs:
     def test_format_logs_json_output(self, snapshot):
         """Test formatting logs as JSON."""
         log_list = self._create_sample_log_list()
-        result = format_logs_json(log_list, "test-run-12345")
+        result = format_logs_json(log_list)
 
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
         parsed = json.loads(result)
@@ -162,7 +162,7 @@ class TestFormatLogs:
     def test_format_empty_logs_json_output(self, snapshot):
         """Test formatting empty log list as JSON."""
         log_list = self._create_empty_log_list()
-        result = format_logs_json(log_list, "empty-run-67890")
+        result = format_logs_json(log_list)
 
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
@@ -184,7 +184,7 @@ class TestFormatLogs:
         log_with_nested_error = self._create_log_with_nested_error()
         log_list = RunEventList(items=[log_with_nested_error], total=1)
 
-        result = format_logs_json(log_list, "nested-error-run")
+        result = format_logs_json(log_list)
 
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
@@ -457,11 +457,16 @@ class TestLogDataProcessing:
 
 
 SAMPLE_EVENTS = [
-    {"eventType": "RUN_START", "level": "INFO", "stepKey": None, "message": "run started"},
+    {"eventType": "PIPELINE_START", "level": "INFO", "stepKey": None, "message": "run started"},
     {"eventType": "STEP_START", "level": "DEBUG", "stepKey": "my_step", "message": "step started"},
     {"eventType": "STEP_OUTPUT", "level": "DEBUG", "stepKey": "my_step", "message": "output"},
     {"eventType": "STEP_FAILURE", "level": "ERROR", "stepKey": "my_step", "message": "step failed"},
-    {"eventType": "RUN_FAILURE", "level": "ERROR", "stepKey": None, "message": "run failed"},
+    {
+        "eventType": "PIPELINE_FAILURE",
+        "level": "ERROR",
+        "stepKey": None,
+        "message": "run failed",
+    },
     {
         "eventType": "STEP_START",
         "level": "DEBUG",
@@ -512,6 +517,31 @@ class TestFilterEventsByType:
     def test_case_insensitive(self):
         result = _filter_events_by_type(SAMPLE_EVENTS, ("step_failure",))
         assert len(result) == 1
+
+    def test_run_start_alias_matches_pipeline_start(self):
+        """RUN_START should match events with eventType PIPELINE_START."""
+        result = _filter_events_by_type(SAMPLE_EVENTS, ("RUN_START",))
+        assert len(result) == 1
+        assert result[0]["eventType"] == "PIPELINE_START"
+
+    def test_pipeline_start_also_works(self):
+        """PIPELINE_START should still match directly."""
+        result = _filter_events_by_type(SAMPLE_EVENTS, ("PIPELINE_START",))
+        assert len(result) == 1
+        assert result[0]["eventType"] == "PIPELINE_START"
+
+    def test_run_failure_alias_matches_pipeline_failure(self):
+        """RUN_FAILURE should match events with eventType PIPELINE_FAILURE."""
+        result = _filter_events_by_type(SAMPLE_EVENTS, ("RUN_FAILURE",))
+        assert len(result) == 1
+        assert result[0]["eventType"] == "PIPELINE_FAILURE"
+
+    def test_mixed_alias_and_direct_types(self):
+        """Mix of aliased and direct types should work together."""
+        result = _filter_events_by_type(SAMPLE_EVENTS, ("RUN_START", "STEP_FAILURE"))
+        assert len(result) == 2
+        event_types = {e["eventType"] for e in result}
+        assert event_types == {"PIPELINE_START", "STEP_FAILURE"}
 
 
 class TestFilterEventsByStep:
@@ -600,7 +630,9 @@ class TestAutoPagination:
 
         client = MagicMock()
         # Every page returns no matching events but has more
-        no_match = [{"eventType": "RUN_START", "level": "INFO", "stepKey": None, "message": "x"}]
+        no_match = [
+            {"eventType": "PIPELINE_START", "level": "INFO", "stepKey": None, "message": "x"}
+        ]
         client.execute.return_value = _make_page(no_match, "cursor", True)
 
         original = mod._MAX_PAGES  # noqa: SLF001
