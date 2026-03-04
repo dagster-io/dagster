@@ -134,14 +134,17 @@ class SparkPipelinesResource(ConfigurableResource):
             bufsize=1,
         )
         log_lines: deque[str] = deque(maxlen=1000)
-        if process.stdout:
-            for raw_line in process.stdout:
-                line = raw_line.rstrip("\n\r")
-                if line:
-                    log_lines.append(line)
-                    if context is not None and hasattr(context, "log"):
-                        context.log.info(line)
-        process.wait()
+        try:
+            if process.stdout:
+                for raw_line in process.stdout:
+                    line = raw_line.rstrip("\n\r")
+                    if line:
+                        log_lines.append(line)
+                        if context is not None and hasattr(context, "log"):
+                            context.log.info(line)
+        finally:
+            process.wait()
+        returncode = process.returncode
         returncode = process.returncode
 
         if returncode != 0:
