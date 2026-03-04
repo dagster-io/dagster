@@ -77,7 +77,7 @@ class TestYAMLIntegration:
             )
             with scoped_definitions_load_context():
                 with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                    component,
+                    _component,
                     defs,
                 ):
                     assert defs.resources
@@ -101,7 +101,7 @@ class TestYAMLIntegration:
             )
             with scoped_definitions_load_context():
                 with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                    component,
+                    _component,
                     defs,
                 ):
                     assert defs.resources
@@ -126,7 +126,7 @@ class TestYAMLIntegration:
             with environ({"GCP_PROJECT": "my-gcp-project"}):
                 with scoped_definitions_load_context():
                     with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                        component,
+                        _component,
                         defs,
                     ):
                         assert defs.resources
@@ -152,7 +152,7 @@ class TestYAMLIntegration:
             )
             with scoped_definitions_load_context():
                 with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                    component,
+                    _component,
                     defs,
                 ):
                     assert defs.resources
@@ -186,7 +186,7 @@ class TestYAMLIntegration:
             )
             with scoped_definitions_load_context():
                 with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                    component,
+                    _component,
                     defs,
                 ):
                     assert defs.resources
@@ -209,7 +209,7 @@ class TestYAMLIntegration:
             )
             with scoped_definitions_load_context():
                 with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-                    component,
+                    _component,
                     defs,
                 ):
                     assert not defs.resources

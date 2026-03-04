@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster._annotations import beta, preview, public
@@ -31,7 +31,7 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         ),
     )
 
-    labels: Optional[dict[str, str]] = Field(
+    labels: dict[str, str] | None = Field(
         default=None,
         description=(
             "Optional. The labels to associate with this cluster. Label keys must"
@@ -43,7 +43,7 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         ),
     )
 
-    cluster_config_yaml_path: Optional[str] = Field(
+    cluster_config_yaml_path: str | None = Field(
         default=None,
         description=(
             "Full path to a YAML file containing cluster configuration. See"
@@ -53,7 +53,7 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         ),
     )
 
-    cluster_config_json_path: Optional[str] = Field(
+    cluster_config_json_path: str | None = Field(
         default=None,
         description=(
             "Full path to a JSON file containing cluster configuration. See"
@@ -63,7 +63,7 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         ),
     )
 
-    cluster_config_dict: Optional[dict[str, Any]] = Field(
+    cluster_config_dict: dict[str, Any] | None = Field(
         default=None,
         description=(
             "Python dictionary containing cluster configuration. See"
@@ -73,7 +73,7 @@ class DataprocResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         ),
     )
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the Dataproc resource will be bound to the definitions.",
     )

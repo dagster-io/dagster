@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 from dagster._annotations import preview, public
 from pydantic import Field
@@ -12,7 +10,7 @@ from dagster_gcp.bigquery.resources import BigQueryResource
 class BigQueryResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """A component that provides a BigQueryResource for interacting with Google BigQuery."""
 
-    project: Optional[str] = Field(
+    project: str | None = Field(
         default=None,
         description=(
             "Project ID for the project which the client acts on behalf of. Will be passed when"
@@ -21,12 +19,12 @@ class BigQueryResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         ),
     )
 
-    location: Optional[str] = Field(
+    location: str | None = Field(
         default=None,
         description="Default location for jobs / datasets / tables.",
     )
 
-    gcp_credentials: Optional[str] = Field(
+    gcp_credentials: str | None = Field(
         default=None,
         description=(
             "GCP authentication credentials. If provided, a temporary file will be created"
@@ -37,7 +35,7 @@ class BigQueryResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         ),
     )
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the BigQuery resource will be bound to the definitions.",
     )
