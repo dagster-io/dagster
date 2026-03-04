@@ -316,7 +316,23 @@ Dagster will automatically convert this configuration dictionary into the JSON-e
 
 If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.
 
-## 10. Advanced configuration (subclassing)
+## 10. Customize manifest generation
+
+By default, `DbtProjectComponent` runs `dbt parse --quiet` to generate the manifest during development. If you need `dbt compile` instead — for example, to access `compiled_code` on your dbt nodes — you can set the `prepare_project_cli_args` option on the `project` attribute:
+
+```yaml
+# defs.yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project:
+    project_dir: '{{ project_root }}/path/to/dbt_project'
+    prepare_project_cli_args: ['compile', '--quiet']
+```
+
+This passes the specified arguments to the dbt CLI when generating the manifest, instead of the default `["parse", "--quiet"]`. Using `compile` is useful when you want to leverage `node.compiled_code` in translations or custom subclasses, for example to include the compiled SQL in asset descriptions.
+
+## 11. Advanced configuration (subclassing)
 
 For more complex use cases that cannot easily be handled with templated yaml, you can create a custom subclass of `DbtProjectComponent` to add custom behavior. This allows you to:
 
