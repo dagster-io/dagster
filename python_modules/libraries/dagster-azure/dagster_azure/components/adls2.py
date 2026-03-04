@@ -1,6 +1,7 @@
 from typing import Optional
 
 import dagster as dg
+import dagster._check as check
 from dagster._annotations import preview, public
 from pydantic import Field
 
@@ -48,8 +49,8 @@ class ADLS2ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     @property
     def resource(self) -> ADLS2Resource:
         return ADLS2Resource(
-            storage_account=self.storage_account,
-            credential=self.credential,
+            storage_account=check.not_none(self.storage_account, "storage_account is required"),
+            credential=check.not_none(self.credential, "credential is required"),
         )
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:

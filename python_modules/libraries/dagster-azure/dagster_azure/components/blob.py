@@ -1,5 +1,5 @@
-
 import dagster as dg
+import dagster._check as check
 from dagster._annotations import preview, public
 from pydantic import Field
 
@@ -34,11 +34,15 @@ class AzureBlobStorageResourceComponent(dg.Component, dg.Resolvable, dg.Model):
               resource_key: blob_storage
     """
 
-    account_url: str | None = Field(
-        default=None, description="The URL to the blob storage account"
-    )
+    account_url: str | None = Field(default=None, description="The URL to the blob storage account")
 
-    credential: AzureBlobStorageSASTokenCredential | AzureBlobStorageKeyCredential | AzureBlobStorageDefaultCredential | AzureBlobStorageAnonymousCredential | None = Field(default=None, description="Azure credential configuration")
+    credential: (
+        AzureBlobStorageSASTokenCredential
+        | AzureBlobStorageKeyCredential
+        | AzureBlobStorageDefaultCredential
+        | AzureBlobStorageAnonymousCredential
+        | None
+    ) = Field(default=None, description="Azure credential configuration")
 
     resource_key: str | None = Field(
         default=None, description="Resource key for binding to definitions"
@@ -47,8 +51,8 @@ class AzureBlobStorageResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     @property
     def resource(self) -> AzureBlobStorageResource:
         return AzureBlobStorageResource(
-            account_url=self.account_url,
-            credential=self.credential,
+            account_url=check.not_none(self.account_url, "account_url is required"),
+            credential=check.not_none(self.credential, "credential is required"),
         )
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
