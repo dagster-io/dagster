@@ -1,5 +1,5 @@
 import {FeatureFlag} from '@shared/FeatureFlags';
-import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@visx/shape';
 import memoize from 'lodash/memoize';
 
 import {featureEnabled} from '../app/Flags';
