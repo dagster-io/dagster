@@ -16,7 +16,6 @@ from dagster_spark.components.spark_declarative_pipeline.discovery import (
     DiscoveryMode,
     SparkPipelinesDryRunError,
     discover_datasets_fn,
-    parse_dry_run_output_to_datasets,
 )
 
 ExecutionMode = Literal["incremental", "full_refresh"]
@@ -130,10 +129,8 @@ class SparkPipelinesResource(ConfigurableResource):
                 yield MaterializeResult(asset_key=k)
             return
 
-        # Fallback: parse stdout for reported materialized keys (use captured log as stdout)
-        stdout_text = "\n".join(log_lines)
-        datasets = parse_dry_run_output_to_datasets(stdout_text)
-        for ds in datasets:
-            yield MaterializeResult(asset_key=AssetKey([ds.name]))
-        if not datasets:
-            yield MaterializeResult(asset_key=AssetKey(["spark_pipeline"]))
+        # No specific asset keys requested; complete gracefully without yielding (avoids UnexpectedAssetMaterializationError)
+        if context is not None and hasattr(context, "log"):
+            context.log.info(
+                "No specific asset keys requested; spark-pipelines run completed successfully."
+            )

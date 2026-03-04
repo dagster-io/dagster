@@ -12,7 +12,7 @@ class SparkDeclarativePipelineScaffolder(Scaffolder):
         scaffold_component(
             request,
             {
-                "pipeline_spec_path": "pipeline.yaml",
+                "pipeline_spec_path": "spark-pipeline.yml",
                 "discovery_mode": "dry_run_only",
             },
         )

@@ -13,8 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from dagster_shared import check
-from dagster_shared.serdes import whitelist_for_serdes
+from dagster import get_dagster_logger
+from dagster_shared import check  # type: ignore[reportMissingImports]
+from dagster_shared.serdes import whitelist_for_serdes  # type: ignore[reportMissingImports]
 
 DiscoveryMode = Literal["dry_run_only", "dry_run_with_fallback", "source_only"]
 
@@ -32,6 +33,18 @@ class SparkPipelinesDryRunError(Exception):
         super().__init__(message)
         self.stderr = stderr
         self.returncode = returncode
+
+
+class DuplicateDatasetNamesError(ValueError):
+    """Raised when discovered datasets contain duplicate names after normalization.
+
+    Attributes:
+        duplicate_names: List of dataset names that appear more than once.
+    """
+
+    def __init__(self, message: str, duplicate_names: list[str]):
+        super().__init__(message)
+        self.duplicate_names = duplicate_names
 
 
 @dataclass(frozen=True)
@@ -153,31 +166,59 @@ def extract_report(stdout: str) -> DryRunReport | None:
     return _extract_report_text(stdout)
 
 
+# Optional log-level prefix before JSON in stdout (e.g. "INFO: " or "WARN: ")
+_LOG_PREFIX = re.compile(r"^\s*(?:\[?\w+\]?:\s*)?", re.IGNORECASE)
+
+
 def _extract_report_json(stdout: str) -> DryRunReport | None:
-    """Try to parse a JSON object or array from stdout and map to DryRunReport."""
+    """Try to parse a JSON object or array from stdout and map to DryRunReport.
+
+    Iterates through lines and tries json.loads on stripped content (with optional
+    log-style prefix stripped) to avoid capturing arbitrary log text between
+    first '{' and last '}' which can crash json.loads.
+    """
     stripped = stdout.strip()
     if not stripped:
         return None
 
-    # Try to find a JSON object or array (allow surrounding text)
-    for pattern in (
-        r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}",
-        r"\[\s*\{[^]]*\}\s*\]",
-    ):
-        match = re.search(pattern, stdout, re.DOTALL)
-        if match:
-            try:
-                data = json.loads(match.group(0))
-                return _json_to_report(data)
-            except (json.JSONDecodeError, TypeError):
-                continue
-
-    # Try parsing the whole output as JSON
+    # Try parsing the whole output as JSON first
     try:
         data = json.loads(stripped)
-        return _json_to_report(data)
+        report = _json_to_report(data)
+        if report is not None:
+            return report
     except (json.JSONDecodeError, TypeError):
         pass
+
+    # Line-by-line: try each line (and optional log prefix strip) to find valid JSON
+    for raw_line in stdout.splitlines():
+        line = raw_line.strip()
+        if not line or ("{" not in line and "[" not in line):
+            continue
+        for candidate in (line, _LOG_PREFIX.sub("", line)):
+            if not candidate:
+                continue
+            try:
+                data = json.loads(candidate)
+                report = _json_to_report(data)
+                if report is not None:
+                    return report
+            except (json.JSONDecodeError, TypeError):
+                pass
+        # Single line may have leading/trailing text; try substring from first { or [
+        for start_char, end_char in (("{", "}"), ("[", "]")):
+            i = line.find(start_char)
+            if i == -1:
+                continue
+            j = line.rfind(end_char)
+            if j != -1 and j > i:
+                try:
+                    data = json.loads(line[i : j + 1])
+                    report = _json_to_report(data)
+                    if report is not None:
+                        return report
+                except (json.JSONDecodeError, TypeError):
+                    pass
 
     return None
 
@@ -229,6 +270,100 @@ def _extract_report_text(stdout: str) -> DryRunReport | None:
     return DryRunReport(datasets=datasets, raw=None)
 
 
+# Regex for source-only discovery: Python decorator (optional dp. prefix, optional args) + function name
+_PY_DATASET_DECORATOR = re.compile(
+    r"@(?:dp\.)?(materialized_view|table|streaming_table|temporary_view)(?:\([^)]*\))?\s*\n\s*def\s+(\w+)\s*\(",
+    re.MULTILINE,
+)
+# Regex for source-only discovery: SQL CREATE statement (capture supports catalog.schema.table)
+_SQL_CREATE_DATASET = re.compile(
+    r"CREATE\s+(?:MATERIALIZED\s+VIEW|STREAMING\s+TABLE|TABLE|VIEW)\s+(?:IF\s+NOT\s+EXISTS\s+)?([\w.]+)",
+    re.IGNORECASE,
+)
+
+
+def discover_datasets_from_sources(pipeline_spec_path: Path) -> list[DiscoveredDataset]:
+    """Discover datasets by scanning source files under the pipeline spec directory.
+
+    Best-effort fallback only: scans the directory (and subdirectories) of
+    pipeline_spec_path for .py and .sql files using regex. Does not evaluate
+    dynamic Python arguments (e.g. @dp.table(name="tbl")) or resolve complex
+    imports (e.g. @table). Prefer dry-run discovery when available.
+
+    For Python: matches @(dp.)?(materialized_view|table|streaming_table|temporary_view)
+    with optional parentheses and arguments, then def my_dataset_name(.
+    For SQL: CREATE (MATERIALIZED VIEW|...) [IF NOT EXISTS] my_dataset_name.
+
+    Args:
+        pipeline_spec_path: Path to the pipeline spec file (its parent is scanned).
+
+    Returns:
+        List of DiscoveredDataset (deduplicated by name). Returns [] on any failure.
+    """
+    logger = get_dagster_logger()
+    try:
+        root = Path(pipeline_spec_path).resolve()
+        if root.suffix:
+            root = root.parent
+    except Exception as e:
+        logger.warning(
+            "Failed to resolve pipeline spec path %s: %s",
+            pipeline_spec_path,
+            e,
+            exc_info=True,
+        )
+        return []
+
+    seen: set[str] = set()
+    result: list[DiscoveredDataset] = []
+
+    try:
+        for ext in ("*.py", "*.sql"):
+            for path in root.rglob(ext):
+                try:
+                    text = path.read_text(encoding="utf-8", errors="replace")
+                except Exception as e:
+                    logger.warning(
+                        "Failed to read source file %s: %s",
+                        path,
+                        e,
+                        exc_info=True,
+                    )
+                    continue
+                if ext == "*.py":
+                    for m in _PY_DATASET_DECORATOR.finditer(text):
+                        name = m.group(2)
+                        if name not in seen:
+                            seen.add(name)
+                            result.append(
+                                DiscoveredDataset(
+                                    name=name,
+                                    attributes={"dataset_type": m.group(1), "source": str(path)},
+                                )
+                            )
+                else:
+                    for m in _SQL_CREATE_DATASET.finditer(text):
+                        name = m.group(1)
+                        if name not in seen:
+                            seen.add(name)
+                            result.append(
+                                DiscoveredDataset(
+                                    name=name,
+                                    attributes={"source": str(path)},
+                                )
+                            )
+    except Exception as e:
+        logger.warning(
+            "Failed to discover datasets from sources under %s: %s",
+            root,
+            e,
+            exc_info=True,
+        )
+        return []
+
+    return result
+
+
 def parse_dry_run_output_to_datasets(stdout: str) -> list[DiscoveredDataset]:
     """Parse dry-run stdout into a list of DiscoveredDataset.
 
@@ -249,6 +384,31 @@ def parse_dry_run_output_to_datasets(stdout: str) -> list[DiscoveredDataset]:
     ]
 
 
+def _validate_no_duplicate_dataset_names(datasets: list[DiscoveredDataset]) -> None:
+    """Raise DuplicateDatasetNamesError if any dataset names are duplicated after normalization.
+
+    Normalization: strip and lowercased name for comparison.
+    """
+    from collections import Counter
+
+    normalized = [ds.name.strip().lower() for ds in datasets]
+    counts = Counter(normalized)
+    duplicate_normalized = [k for k, c in counts.items() if c > 1]
+    if not duplicate_normalized:
+        return
+    # Report original names for duplicated normalized keys (first occurrence each)
+    seen_orig: dict[str, str] = {}
+    for ds in datasets:
+        key = ds.name.strip().lower()
+        if key not in seen_orig:
+            seen_orig[key] = ds.name
+    duplicate_names = [seen_orig[k] for k in duplicate_normalized]
+    raise DuplicateDatasetNamesError(
+        f"Duplicate dataset names after normalization: {duplicate_names}",
+        duplicate_names=duplicate_names,
+    )
+
+
 def discover_datasets_fn(
     pipeline_spec_path: str | Path,
     discovery_mode: DiscoveryMode,
@@ -259,7 +419,9 @@ def discover_datasets_fn(
 
     - dry_run_only: Run spark-pipelines dry-run and parse output; raise if it fails.
     - dry_run_with_fallback: Same as above, but on failure or empty result use source_only.
-    - source_only: Do not run dry-run; use source_only_datasets if provided, else [].
+    - source_only: Do not run dry-run; use source_only_datasets if provided, else discover from sources.
+
+    Duplicate dataset names (after normalization: strip + lowercase) are a hard error.
 
     Args:
         pipeline_spec_path: Path to the pipeline spec.
@@ -269,12 +431,21 @@ def discover_datasets_fn(
 
     Returns:
         List of DiscoveredDataset.
+
+    Raises:
+        DuplicateDatasetNamesError: If the discovered list contains duplicate names.
     """
     check.inst_param(discovery_mode, "discovery_mode", str)
-    source_list = source_only_datasets or []
+    source_list = source_only_datasets
+
+    def _return(datasets: list[DiscoveredDataset]) -> list[DiscoveredDataset]:
+        _validate_no_duplicate_dataset_names(datasets)
+        return list(datasets)
 
     if discovery_mode == "source_only":
-        return list(source_list)
+        if source_list is not None:
+            return _return(source_list)
+        return _return(discover_datasets_from_sources(Path(pipeline_spec_path)))
 
     try:
         raw = discover_datasets_via_dry_run(
@@ -285,9 +456,13 @@ def discover_datasets_fn(
     except SparkPipelinesDryRunError:
         if discovery_mode == "dry_run_only":
             raise
-        return list(source_list)
+        if source_list is not None:
+            return _return(source_list)
+        return _return(discover_datasets_from_sources(Path(pipeline_spec_path)))
 
     if discovery_mode == "dry_run_with_fallback" and not datasets:
-        return list(source_list)
+        if source_list is not None:
+            return _return(source_list)
+        return _return(discover_datasets_from_sources(Path(pipeline_spec_path)))
 
-    return datasets
+    return _return(datasets)

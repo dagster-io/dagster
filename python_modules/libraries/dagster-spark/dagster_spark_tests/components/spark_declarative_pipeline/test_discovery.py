@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from dagster_spark.components.spark_declarative_pipeline.discovery import (
     DiscoveredDataset,
+    DuplicateDatasetNamesError,
     SparkPipelinesDryRunError,
     discover_datasets_fn,
     discover_datasets_via_dry_run,
@@ -97,6 +98,21 @@ def test_discover_datasets_via_dry_run_raises_on_nonzero_exit() -> None:
             discover_datasets_via_dry_run("/path/to/spec.yaml")
         assert exc_info.value.returncode == 2
         assert exc_info.value.stderr == "stderr output"
+
+
+def test_discover_datasets_fn_raises_on_duplicate_dataset_names() -> None:
+    """Duplicate dataset names (after normalization) raise DuplicateDatasetNamesError."""
+    source = [
+        DiscoveredDataset(name="Foo", attributes={}),
+        DiscoveredDataset(name="foo", attributes={}),
+    ]
+    with pytest.raises(DuplicateDatasetNamesError) as exc_info:
+        discover_datasets_fn(
+            pipeline_spec_path="/any/path",
+            discovery_mode="source_only",
+            source_only_datasets=source,
+        )
+    assert "foo" in exc_info.value.duplicate_names or "Foo" in exc_info.value.duplicate_names
 
 
 def test_discover_datasets_via_dry_run_returns_stdout_on_success() -> None:

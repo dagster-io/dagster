@@ -7,6 +7,7 @@ from dagster_spark.components.spark_declarative_pipeline.discovery import (
     DiscoveredDataset as DiscoveredDataset,
     DryRunDatasetNode as DryRunDatasetNode,
     DryRunReport as DryRunReport,
+    DuplicateDatasetNamesError as DuplicateDatasetNamesError,
     SparkPipelinesDryRunError as SparkPipelinesDryRunError,
     SparkPipelineState as SparkPipelineState,
     discover_datasets_fn as discover_datasets_fn,

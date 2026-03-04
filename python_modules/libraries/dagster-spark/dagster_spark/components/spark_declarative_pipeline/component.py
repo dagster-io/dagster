@@ -106,7 +106,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         """
         attrs = self.asset_attributes_by_dataset.get(dataset.name, {})
         return AssetSpec(
-            key=[dataset.name],
+            key=dataset.name.split("."),
             description=attrs.get("description")
             or f"Spark Declarative Pipeline dataset: {dataset.name}",
             metadata=attrs.get("metadata"),
@@ -160,7 +160,6 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         else:
             resolved_spec_path = Path(pipeline_spec_path)
         working_dir = context.path
-        resource = self.spark_pipelines
         execution_mode = self.execution_mode
 
         @dg.multi_asset(
@@ -171,13 +170,16 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             backfill_policy=op_spec.backfill_policy,
             pool=op_spec.pool,
         )
-        def _spark_pipeline_asset(context: dg.AssetExecutionContext) -> Any:
+        def _spark_pipeline_asset(
+            context: dg.AssetExecutionContext,
+            spark_pipelines: SparkPipelinesResource,
+        ) -> Any:
             keys = (
                 list(context.selected_asset_keys)
                 if context.selected_asset_keys
                 else [s.key for s in asset_specs]
             )
-            yield from resource.run_and_observe(
+            yield from spark_pipelines.run_and_observe(
                 context=context,
                 pipeline_spec_path=resolved_spec_path,
                 working_dir=working_dir,
@@ -187,5 +189,5 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
 
         return Definitions(
             assets=[_spark_pipeline_asset],
-            resources={"spark_pipelines": resource},
+            resources={"spark_pipelines": self.spark_pipelines},
         )

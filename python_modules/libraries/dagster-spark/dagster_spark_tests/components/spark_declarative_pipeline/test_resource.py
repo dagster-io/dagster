@@ -93,6 +93,33 @@ def test_run_and_observe_raises_with_captured_log_on_nonzero_exit() -> None:
         assert "error line" in (exc_info.value.stderr or "")
 
 
+def test_run_and_observe_yields_nothing_when_no_asset_keys() -> None:
+    """When asset_keys is empty, run_and_observe yields nothing and completes gracefully (logs only)."""
+    mock_context = MagicMock()
+    with patch(
+        "dagster_spark.components.spark_declarative_pipeline.resource.subprocess.Popen"
+    ) as mock_popen:
+        proc = MagicMock()
+        proc.stdout = iter(["log line\n"])
+        proc.wait.return_value = 0
+        proc.returncode = 0
+        mock_popen.return_value = proc
+
+        resource = SparkPipelinesResource()
+        results = list(
+            resource.run_and_observe(
+                context=mock_context,
+                pipeline_spec_path="/path/spec.yaml",
+                asset_keys=None,
+            )
+        )
+
+    assert len(results) == 0
+    mock_context.log.info.assert_any_call(
+        "No specific asset keys requested; spark-pipelines run completed successfully."
+    )
+
+
 def test_run_and_observe_only_yields_on_success() -> None:
     """MaterializeResults are only yielded when process returncode is 0."""
     mock_context = MagicMock()
