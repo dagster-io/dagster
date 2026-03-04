@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
@@ -81,12 +81,12 @@ class AzureBlobStorageResource(ConfigurableResource):
         ),
     )
 
-    credential: Union[
-        AzureBlobStorageKeyCredential,
-        AzureBlobStorageSASTokenCredential,
-        AzureBlobStorageDefaultCredential,
-        AzureBlobStorageAnonymousCredential,
-    ] = Field(
+    credential: (
+        AzureBlobStorageKeyCredential
+        | AzureBlobStorageSASTokenCredential
+        | AzureBlobStorageDefaultCredential
+        | AzureBlobStorageAnonymousCredential
+    ) = Field(
         discriminator="credential_type",
         description=(
             "The credential used to authenticate to the storage account. One of:"

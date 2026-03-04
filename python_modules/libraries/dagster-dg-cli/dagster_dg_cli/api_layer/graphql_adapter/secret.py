@@ -1,6 +1,6 @@
 """GraphQL implementation for secret operations."""
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster_dg_cli.utils.plus.gql import (
     GET_SECRETS_FOR_SCOPES_QUERY,
@@ -90,7 +90,7 @@ def process_single_secret_response(
     return secret_list.items[0]
 
 
-def build_secret_scopes_input(scope: Optional[str] = None) -> "DgApiSecretScopesInput":
+def build_secret_scopes_input(scope: str | None = None) -> "DgApiSecretScopesInput":
     """Build SecretScopesInput based on scope parameter.
 
     Args:
@@ -125,10 +125,10 @@ def build_secret_scopes_input(scope: Optional[str] = None) -> "DgApiSecretScopes
 
 def list_secrets_via_graphql(
     client: IGraphQLClient,
-    location_name: Optional[str] = None,
-    scope: Optional[str] = None,
+    location_name: str | None = None,
+    scope: str | None = None,
     include_values: bool = False,
-    limit: Optional[int] = None,
+    limit: int | None = None,
 ) -> "DgApiSecretList":
     """Fetch secrets using GraphQL.
 
@@ -175,7 +175,7 @@ def list_secrets_via_graphql(
 def get_secret_via_graphql(
     client: IGraphQLClient,
     secret_name: str,
-    location_name: Optional[str] = None,
+    location_name: str | None = None,
     include_value: bool = False,
 ) -> "DgApiSecret":
     """Fetch a specific secret using GraphQL.

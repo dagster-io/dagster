@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -13,10 +12,10 @@ from dagster_databricks.databricks_pyspark_step_launcher import (
 def mock_step_launcher_factory():
     def _mocked(
         add_dagster_env_variables: bool = True,
-        env_variables: Optional[dict] = None,
-        databricks_token: Optional[str] = None,
-        oauth_creds: Optional[dict[str, str]] = None,
-        azure_creds: Optional[dict[str, str]] = None,
+        env_variables: dict | None = None,
+        databricks_token: str | None = None,
+        oauth_creds: dict[str, str] | None = None,
+        azure_creds: dict[str, str] | None = None,
     ):
         return DatabricksPySparkStepLauncher(
             run_config={"some": "config"},

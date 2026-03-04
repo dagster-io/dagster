@@ -12,7 +12,7 @@ from collections.abc import Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
-from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, cast  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value
 
@@ -147,12 +147,12 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
     )
 
 
-def _get_minimum_allowed_asset_daemon_interval() -> Optional[int]:
+def _get_minimum_allowed_asset_daemon_interval() -> int | None:
     return int(os.getenv("DAGSTER_ASSET_DAEMON_MINIMUM_ALLOWED_MIN_INTERVAL", "0"))
 
 
 def _get_pre_sensor_auto_materialize_cursor(
-    instance: DagsterInstance, full_asset_graph: Optional[BaseAssetGraph]
+    instance: DagsterInstance, full_asset_graph: BaseAssetGraph | None
 ) -> AssetDaemonCursor:
     """Gets a deserialized cursor by either reading from the new cursor key and simply deserializing
     the value, or by reading from the old cursor key and converting the legacy cursor into the
@@ -179,8 +179,8 @@ def _get_pre_sensor_auto_materialize_cursor(
 
 
 def get_current_evaluation_id(
-    instance: DagsterInstance, sensor_origin: Optional[RemoteInstigatorOrigin]
-) -> Optional[int]:
+    instance: DagsterInstance, sensor_origin: RemoteInstigatorOrigin | None
+) -> int | None:
     if not sensor_origin:
         cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
     else:
@@ -220,7 +220,7 @@ def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCurso
 
 
 def asset_daemon_cursor_from_instigator_serialized_cursor(
-    serialized_cursor: Optional[str], asset_graph: Optional[BaseAssetGraph]
+    serialized_cursor: str | None, asset_graph: BaseAssetGraph | None
 ) -> AssetDaemonCursor:
     """This method decompresses the serialized cursor and returns a deserialized cursor object,
     converting from the legacy cursor format if necessary.
@@ -248,7 +248,7 @@ class AutoMaterializeLaunchContext:
     def __init__(
         self,
         tick: InstigatorTick,
-        remote_sensor: Optional[RemoteSensor],
+        remote_sensor: RemoteSensor | None,
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
@@ -280,7 +280,7 @@ class AutoMaterializeLaunchContext:
     def set_run_requests(
         self,
         run_requests: Sequence[RunRequest],
-        reserved_run_ids: Optional[Sequence[str]],
+        reserved_run_ids: Sequence[str] | None,
     ):
         self._tick = self._tick.with_run_requests(run_requests, reserved_run_ids=reserved_run_ids)
         return self._tick
@@ -396,11 +396,11 @@ class AssetDaemon(DagsterDaemon):
         return "ASSET"
 
     def instrument_elapsed(
-        self, sensor: Optional[RemoteSensor], elapsed: Optional[float], min_interval: int
+        self, sensor: RemoteSensor | None, elapsed: float | None, min_interval: int
     ) -> None:
         pass
 
-    def _get_print_sensor_name(self, sensor: Optional[RemoteSensor]) -> str:
+    def _get_print_sensor_name(self, sensor: RemoteSensor | None) -> str:
         if not sensor:
             return ""
         repo_origin = sensor.get_remote_origin().repository_origin
@@ -431,7 +431,7 @@ class AssetDaemon(DagsterDaemon):
                 " migrate` to enable."
             )
 
-        amp_tick_futures: dict[Optional[str], Future] = {}
+        amp_tick_futures: dict[str | None, Future] = {}
         threadpool_executor = None
         with ExitStack() as stack:
             if self._settings.get("use_threads"):
@@ -469,8 +469,8 @@ class AssetDaemon(DagsterDaemon):
     def _run_iteration_impl(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-        threadpool_executor: Optional[ThreadPoolExecutor],
-        amp_tick_futures: dict[Optional[str], Future],
+        threadpool_executor: ThreadPoolExecutor | None,
+        amp_tick_futures: dict[str | None, Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
         instance: DagsterInstance = workspace_process_context.instance
@@ -495,14 +495,14 @@ class AssetDaemon(DagsterDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         workspace_request_context: BaseWorkspaceRequestContext,
         instance: DagsterInstance,
-        threadpool_executor: Optional[ThreadPoolExecutor],
-        amp_tick_futures: dict[Optional[str], Future],
+        threadpool_executor: ThreadPoolExecutor | None,
+        amp_tick_futures: dict[str | None, Future],
         use_auto_materialize_sensors: bool,
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
         now = get_current_timestamp()
 
-        sensors_and_repos: Sequence[tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
+        sensors_and_repos: Sequence[tuple[RemoteSensor | None, RemoteRepository | None]] = []
 
         if use_auto_materialize_sensors:
             current_workspace = {
@@ -757,8 +757,8 @@ class AssetDaemon(DagsterDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         workspace: BaseWorkspaceRequestContext,
-        repository: Optional[RemoteRepository],
-        sensor: Optional[RemoteSensor],
+        repository: RemoteRepository | None,
+        sensor: RemoteSensor | None,
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
     ):
         asyncio.run(
@@ -775,8 +775,8 @@ class AssetDaemon(DagsterDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         workspace_asset_graph: RemoteWorkspaceAssetGraph,
-        repository: Optional[RemoteRepository],
-        sensor: Optional[RemoteSensor],
+        repository: RemoteRepository | None,
+        sensor: RemoteSensor | None,
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
     ):
         evaluation_time = get_current_datetime()
@@ -887,8 +887,8 @@ class AssetDaemon(DagsterDaemon):
             max_retries = instance.auto_materialize_max_tick_retries
 
             # Determine if the most recent tick requires retrying
-            retry_tick: Optional[InstigatorTick] = None
-            override_evaluation_id: Optional[int] = None
+            retry_tick: InstigatorTick | None = None
+            override_evaluation_id: int | None = None
             consecutive_failure_count: int = 0
             if latest_tick:
                 can_resume = (
@@ -1026,7 +1026,7 @@ class AssetDaemon(DagsterDaemon):
         self,
         tick_context: AutoMaterializeLaunchContext,
         tick: InstigatorTick,
-        sensor: Optional[RemoteSensor],
+        sensor: RemoteSensor | None,
         workspace_process_context: IWorkspaceProcessContext,
         workspace: BaseWorkspaceRequestContext,
         asset_graph: RemoteWorkspaceAssetGraph,
@@ -1308,7 +1308,7 @@ class AssetDaemon(DagsterDaemon):
         run_requests: Sequence[RunRequest],
         reserved_run_ids: Sequence[str],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        remote_sensor: Optional[RemoteSensor],
+        remote_sensor: RemoteSensor | None,
         run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
         print_group_name: str,
     ):
@@ -1388,7 +1388,7 @@ class AssetDaemon(DagsterDaemon):
                 TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
             )
 
-    def _sensor_is_enabled(self, instance: DagsterInstance, remote_sensor: Optional[RemoteSensor]):
+    def _sensor_is_enabled(self, instance: DagsterInstance, remote_sensor: RemoteSensor | None):
         use_auto_materialize_sensors = instance.auto_materialize_use_sensors
         if (not use_auto_materialize_sensors) and get_auto_materialize_paused(instance):
             return False

@@ -1,5 +1,3 @@
-from typing import Union
-
 from dagster_sigma import (
     DagsterSigmaTranslator,
     SigmaBaseUrl,
@@ -21,7 +19,7 @@ sigma_organization = SigmaOrganization(
 # start_upstream_asset
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
     def get_asset_spec(
-        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> dg.AssetSpec:
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(data)

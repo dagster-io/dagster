@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from typing_extensions import Self
 
@@ -36,7 +36,7 @@ class RunQueueConfig(
     def __new__(
         cls,
         max_concurrent_runs: int,
-        tag_concurrency_limits: Optional[Sequence[Mapping[str, Any]]],
+        tag_concurrency_limits: Sequence[Mapping[str, Any]] | None,
         max_user_code_failure_retries: int = 0,
         user_code_failure_retry_delay: int = 60,
         should_block_op_concurrency_limited_runs: bool = True,
@@ -86,17 +86,17 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
 
     def __init__(
         self,
-        max_concurrent_runs: Optional[int] = None,
-        tag_concurrency_limits: Optional[Sequence[Mapping[str, Any]]] = None,
-        dequeue_interval_seconds: Optional[int] = None,
-        dequeue_use_threads: Optional[bool] = None,
-        dequeue_num_workers: Optional[int] = None,
-        max_user_code_failure_retries: Optional[int] = None,
-        user_code_failure_retry_delay: Optional[int] = None,
-        block_op_concurrency_limited_runs: Optional[Mapping[str, Any]] = None,
-        inst_data: Optional[ConfigurableClassData] = None,
+        max_concurrent_runs: int | None = None,
+        tag_concurrency_limits: Sequence[Mapping[str, Any]] | None = None,
+        dequeue_interval_seconds: int | None = None,
+        dequeue_use_threads: bool | None = None,
+        dequeue_num_workers: int | None = None,
+        max_user_code_failure_retries: int | None = None,
+        user_code_failure_retry_delay: int | None = None,
+        block_op_concurrency_limited_runs: Mapping[str, Any] | None = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
-        self._inst_data: Optional[ConfigurableClassData] = check.opt_inst_param(
+        self._inst_data: ConfigurableClassData | None = check.opt_inst_param(
             inst_data, "inst_data", ConfigurableClassData
         )
         self._max_concurrent_runs: int = check.opt_int_param(
@@ -117,7 +117,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         self._dequeue_use_threads: bool = check.opt_bool_param(
             dequeue_use_threads, "dequeue_use_threads", False
         )
-        self._dequeue_num_workers: Optional[int] = check.opt_int_param(
+        self._dequeue_num_workers: int | None = check.opt_int_param(
             dequeue_num_workers, "dequeue_num_workers"
         )
         self._max_user_code_failure_retries: int = check.opt_int_param(
@@ -148,7 +148,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     def get_run_queue_config(self) -> RunQueueConfig:
@@ -171,7 +171,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         return self._dequeue_use_threads
 
     @property
-    def dequeue_num_workers(self) -> Optional[int]:
+    def dequeue_num_workers(self) -> int | None:
         return self._dequeue_num_workers
 
     @property

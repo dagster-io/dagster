@@ -76,7 +76,7 @@ def get_time_partitions_def(
 
 
 def get_time_partition_key(
-    partitions_def: Optional["PartitionsDefinition"], partition_key: Optional[str]
+    partitions_def: Optional["PartitionsDefinition"], partition_key: str | None
 ) -> str:
     from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
     from dagster._core.definitions.partitions.definition.time_window import (
@@ -177,7 +177,7 @@ def get_multipartition_key_from_tags(tags: Mapping[str, str]) -> str:
 class MultiPartitionCursor:
     """A cursor for MultiPartitionsDefinition that tracks last seen keys for each dimension."""
 
-    last_seen_key: Optional[MultiPartitionKey]
+    last_seen_key: MultiPartitionKey | None
 
     def __str__(self) -> str:
         return self.to_string()
@@ -191,7 +191,7 @@ class MultiPartitionCursor:
         return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
 
     @classmethod
-    def from_cursor(cls, cursor: Optional[str]):
+    def from_cursor(cls, cursor: str | None):
         if cursor is None:
             return MultiPartitionCursor(last_seen_key=None)
 
@@ -345,7 +345,7 @@ class MultiDimensionalPartitionKeyIterator:
             state[dim_name] < 0 for dim_name in state
         )
 
-    def _partition_key_from_state(self, state, dimension_keys) -> Optional[MultiPartitionKey]:
+    def _partition_key_from_state(self, state, dimension_keys) -> MultiPartitionKey | None:
         if self._is_state_invalid(state, dimension_keys):
             return None
 

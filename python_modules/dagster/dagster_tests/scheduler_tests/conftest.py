@@ -1,7 +1,7 @@
 import os
 import sys
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import dagster as dg
 import pytest
@@ -53,7 +53,7 @@ def instance_fixture(instance_session_scoped: DagsterInstance) -> Iterator[dg.Da
 
 
 def workspace_load_target(
-    module: Optional[str] = "test_scheduler_run", attribute: Optional[str] = "the_repo"
+    module: str | None = "test_scheduler_run", attribute: str | None = "the_repo"
 ) -> ModuleTarget:
     return ModuleTarget(
         module_name=f"dagster_tests.scheduler_tests.{module}",

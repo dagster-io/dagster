@@ -75,7 +75,7 @@ T = TypeVar("T")
 
 
 def _check_node_defs_arg(
-    graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]
+    graph_name: str, node_defs: Sequence[NodeDefinition] | None
 ) -> Sequence[NodeDefinition]:
     node_defs = node_defs or []
 
@@ -192,7 +192,7 @@ class GraphDefinition(NodeDefinition):
     _node_dict: Mapping[str, Node]
     _input_mappings: Sequence[InputMapping]
     _output_mappings: Sequence[OutputMapping]
-    _config_mapping: Optional[ConfigMapping]
+    _config_mapping: ConfigMapping | None
     _nodes_in_topological_order: Sequence[Node]
 
     # (node name within the graph -> (input name -> AssetsDefinition to load that input from))
@@ -205,20 +205,17 @@ class GraphDefinition(NodeDefinition):
         self,
         name: str,
         *,
-        description: Optional[str] = None,
-        node_defs: Optional[Sequence[NodeDefinition]] = None,
-        dependencies: Optional[
-            Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]
-        ] = None,
-        input_mappings: Optional[Sequence[InputMapping]] = None,
-        output_mappings: Optional[Sequence[OutputMapping]] = None,
-        config: Optional[ConfigMapping] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
-        input_assets: Optional[
-            Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
-        ] = None,
-        composition_fn: Optional[Callable] = None,
+        description: str | None = None,
+        node_defs: Sequence[NodeDefinition] | None = None,
+        dependencies: DependencyMapping[str] | DependencyMapping[NodeInvocation] | None = None,
+        input_mappings: Sequence[InputMapping] | None = None,
+        output_mappings: Sequence[OutputMapping] | None = None,
+        config: ConfigMapping | None = None,
+        tags: Mapping[str, str] | None = None,
+        node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]] | None = None,
+        input_assets: Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
+        | None = None,
+        composition_fn: Callable | None = None,
         **kwargs: Any,
     ):
         from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
@@ -307,7 +304,7 @@ class GraphDefinition(NodeDefinition):
         return [self.node_named(node_name) for node_name in order]
 
     def get_inputs_must_be_resolved_top_level(
-        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+        self, asset_layer: "AssetLayer", handle: NodeHandle | None = None
     ) -> Sequence[InputDefinition]:
         unresolveable_input_defs: list[InputDefinition] = []
         for node in self.node_dict.values():
@@ -360,7 +357,7 @@ class GraphDefinition(NodeDefinition):
         return self._input_assets
 
     @property
-    def composition_fn(self) -> Optional[Callable]:
+    def composition_fn(self) -> Callable | None:
         return self._composition_fn
 
     def has_node_named(self, name: str) -> bool:
@@ -402,7 +399,7 @@ class GraphDefinition(NodeDefinition):
             yield from outer_node_def.iterate_op_defs()
 
     def iterate_node_handles(
-        self, parent_node_handle: Optional[NodeHandle] = None
+        self, parent_node_handle: NodeHandle | None = None
     ) -> Iterator[NodeHandle]:
         for node in self.node_dict.values():
             cur_node_handle = NodeHandle(node.name, parent_node_handle)
@@ -430,7 +427,7 @@ class GraphDefinition(NodeDefinition):
 
     @public
     @property
-    def config_mapping(self) -> Optional[ConfigMapping]:
+    def config_mapping(self) -> ConfigMapping | None:
         """The config mapping for the graph, if present.
 
         By specifying a config mapping function, you can override the configuration for the child nodes contained within a graph.
@@ -460,8 +457,8 @@ class GraphDefinition(NodeDefinition):
         check.failed(f"Could not find input mapping {input_name}")
 
     def input_mapping_for_pointer(
-        self, pointer: Union[InputPointer, FanInInputPointer]
-    ) -> Optional[InputMapping]:
+        self, pointer: InputPointer | FanInInputPointer
+    ) -> InputMapping | None:
         check.inst_param(pointer, "pointer", (InputPointer, FanInInputPointer))
 
         for mapping in self._input_mappings:
@@ -477,8 +474,8 @@ class GraphDefinition(NodeDefinition):
         check.failed(f"Could not find output mapping {output_name}")
 
     def resolve_output_to_origin(
-        self, output_name: str, handle: Optional[NodeHandle]
-    ) -> tuple[OutputDefinition, Optional[NodeHandle]]:
+        self, output_name: str, handle: NodeHandle | None
+    ) -> tuple[OutputDefinition, NodeHandle | None]:
         check.str_param(output_name, "output_name")
         check.opt_inst_param(handle, "handle", NodeHandle)
 
@@ -532,7 +529,7 @@ class GraphDefinition(NodeDefinition):
         return self._dependency_structure
 
     @property
-    def config_schema(self) -> Optional[IDefinitionConfigSchema]:
+    def config_schema(self) -> IDefinitionConfigSchema | None:
         return self.config_mapping.config_schema if self.config_mapping is not None else None
 
     def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
@@ -552,13 +549,13 @@ class GraphDefinition(NodeDefinition):
 
     def copy(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        input_mappings: Optional[Sequence[InputMapping]] = None,
-        output_mappings: Optional[Sequence[OutputMapping]] = None,
-        config: Optional[ConfigMapping] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        input_assets: Optional[Mapping[str, Mapping[str, "AssetsDefinition"]]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        input_mappings: Sequence[InputMapping] | None = None,
+        output_mappings: Sequence[OutputMapping] | None = None,
+        config: ConfigMapping | None = None,
+        tags: Mapping[str, str] | None = None,
+        input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]] | None = None,
     ) -> Self:
         return self.__class__(
             node_defs=self.node_defs,
@@ -575,7 +572,7 @@ class GraphDefinition(NodeDefinition):
     def copy_for_configured(
         self,
         name: str,
-        description: Optional[str],
+        description: str | None,
         config_schema: Any,
     ) -> Self:
         if not self.has_config_mapping:
@@ -602,25 +599,24 @@ class GraphDefinition(NodeDefinition):
     @beta_param(param="owners")
     def to_job(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, object]] = None,
-        config: Optional[
-            Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
-        ] = None,
-        tags: Optional[Mapping[str, object]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        resource_defs: Mapping[str, object] | None = None,
+        config: Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
+        | None = None,
+        tags: Mapping[str, object] | None = None,
+        metadata: Mapping[str, RawMetadataValue] | None = None,
+        logger_defs: Mapping[str, LoggerDefinition] | None = None,
         executor_def: Optional["ExecutorDefinition"] = None,
-        hooks: Optional[AbstractSet[HookDefinition]] = None,
-        op_retry_policy: Optional[RetryPolicy] = None,
-        op_selection: Optional[Sequence[str]] = None,
+        hooks: AbstractSet[HookDefinition] | None = None,
+        op_retry_policy: RetryPolicy | None = None,
+        op_selection: Sequence[str] | None = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
-        input_values: Optional[Mapping[str, object]] = None,
-        run_tags: Optional[Mapping[str, object]] = None,
-        _asset_selection_data: Optional[AssetSelectionData] = None,
-        owners: Optional[Sequence[str]] = None,
+        input_values: Mapping[str, object] | None = None,
+        run_tags: Mapping[str, object] | None = None,
+        _asset_selection_data: AssetSelectionData | None = None,
+        owners: Sequence[str] | None = None,
     ) -> "JobDefinition":
         """Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -722,11 +718,11 @@ class GraphDefinition(NodeDefinition):
         self,
         run_config: Any = None,
         instance: Optional["DagsterInstance"] = None,
-        resources: Optional[Mapping[str, object]] = None,
+        resources: Mapping[str, object] | None = None,
         raise_on_error: bool = True,
-        op_selection: Optional[Sequence[str]] = None,
-        run_id: Optional[str] = None,
-        input_values: Optional[Mapping[str, object]] = None,
+        op_selection: Sequence[str] | None = None,
+        run_id: str | None = None,
+        input_values: Mapping[str, object] | None = None,
     ) -> "ExecuteInProcessResult":
         """Execute this graph in-process, collecting results in-memory.
 
@@ -837,7 +833,7 @@ class GraphDefinition(NodeDefinition):
         return super().alias(name)
 
     @public
-    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Mapping[str, str] | None) -> "PendingNodeInvocation":
         """Attaches the provided tags to the graph immutably.
 
         Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
@@ -903,7 +899,7 @@ class GraphDefinition(NodeDefinition):
         return all_destinations
 
     def resolve_output_to_destinations(
-        self, output_name: str, handle: Optional[NodeHandle]
+        self, output_name: str, handle: NodeHandle | None
     ) -> Sequence[NodeInputHandle]:
         all_destinations: list[NodeInputHandle] = []
         for mapping in self.output_mappings:
@@ -942,7 +938,7 @@ class GraphDefinition(NodeDefinition):
             for op_handle in node.definition.get_op_handles(NodeHandle(node.name, parent=parent))
         }
 
-    def get_op_output_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeOutputHandle]:
+    def get_op_output_handles(self, parent: NodeHandle | None) -> AbstractSet[NodeOutputHandle]:
         return {
             op_output_handle
             for node in self.nodes
@@ -952,7 +948,7 @@ class GraphDefinition(NodeDefinition):
         }
 
     def get_op_input_output_handle_pairs(
-        self, outer_handle: Optional[NodeHandle]
+        self, outer_handle: NodeHandle | None
     ) -> AbstractSet[tuple[NodeOutputHandle, NodeInputHandle]]:
         """Get all pairs of op output handles and their downstream op input handles within the graph."""
         result: set[tuple[NodeOutputHandle, NodeInputHandle]] = set()
@@ -1011,15 +1007,10 @@ class SubselectedGraphDefinition(GraphDefinition):
     def __init__(
         self,
         parent_graph_def: GraphDefinition,
-        node_defs: Optional[Sequence[NodeDefinition]],
-        dependencies: Optional[
-            Union[
-                DependencyMapping[str],
-                DependencyMapping[NodeInvocation],
-            ]
-        ],
-        input_mappings: Optional[Sequence[InputMapping]],
-        output_mappings: Optional[Sequence[OutputMapping]],
+        node_defs: Sequence[NodeDefinition] | None,
+        dependencies: DependencyMapping[str] | DependencyMapping[NodeInvocation] | None,
+        input_mappings: Sequence[InputMapping] | None,
+        output_mappings: Sequence[OutputMapping] | None,
     ):
         self._parent_graph_def = check.inst_param(
             parent_graph_def, "parent_graph_def", GraphDefinition

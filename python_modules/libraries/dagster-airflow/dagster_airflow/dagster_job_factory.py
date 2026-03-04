@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import Optional
 
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
@@ -27,9 +26,9 @@ from dagster_airflow.utils import normalized_name
 )
 def make_dagster_job_from_airflow_dag(
     dag: DAG,
-    tags: Optional[Mapping[str, str]] = None,
-    connections: Optional[list[Connection]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    tags: Mapping[str, str] | None = None,
+    connections: list[Connection] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = {},
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.
 

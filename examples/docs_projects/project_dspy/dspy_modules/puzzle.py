@@ -4,7 +4,7 @@ import csv
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Set
 
 # Color to difficulty mapping
 COLOR_TO_DIFFICULTY = {
@@ -47,8 +47,8 @@ class GameState:
     invalid_count: int
     finished: bool
     won: bool
-    start_time: Optional[float]
-    end_time: Optional[float]
+    start_time: float | None
+    end_time: float | None
 
 
 # end_puzzle_dataclasses
@@ -186,7 +186,7 @@ class ConnectionsGameLogic:
         return [word for word in words if word]  # Remove empty strings
 
     @staticmethod
-    def validate_guess(state: GameState, words: List[str]) -> Optional[str]:
+    def validate_guess(state: GameState, words: List[str]) -> str | None:
         """
         Validate a guess.
         Returns: Error message if invalid, None if valid

@@ -1,7 +1,5 @@
 """Implementation for configuring build artifacts (Dockerfiles, build configs, etc)."""
 
-from typing import Optional
-
 import click
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
@@ -46,7 +44,7 @@ def configure_build_artifacts_impl(config: DgPlusDeployConfigureOptions) -> None
     )
 
     # For hybrid deployments, use provided registry URL or prompt for one
-    registry_url: Optional[str] = None
+    registry_url: str | None = None
     if config.agent_type == DgPlusAgentType.HYBRID:
         if config.registry_url:
             registry_url = config.registry_url

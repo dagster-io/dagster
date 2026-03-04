@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -127,7 +127,7 @@ class HookContext:
 
     @public
     @property
-    def op_exception(self) -> Optional[BaseException]:
+    def op_exception(self) -> BaseException | None:
         """The thrown exception in a failed op."""
         exc = self._step_execution_context.step_exception
 
@@ -138,14 +138,14 @@ class HookContext:
 
     @public
     @property
-    def op_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+    def op_output_values(self) -> Mapping[str, Any | Mapping[str, Any]]:
         """The computed output values.
 
         Returns a dictionary where keys are output names and the values are:
             * the output values in the normal case
             * a dictionary from mapping key to corresponding value in the mapped case
         """
-        results: dict[str, Union[Any, dict[str, Any]]] = {}
+        results: dict[str, Any | dict[str, Any]] = {}
         captured = self._step_execution_context.step_output_capture
 
         if captured is None:
@@ -167,14 +167,14 @@ class HookContext:
 
     @public
     @property
-    def op_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+    def op_output_metadata(self) -> Mapping[str, Any | Mapping[str, Any]]:
         """The applied output metadata.
 
         Returns a dictionary where keys are output names and the values are:
             * the applied output metadata in the normal case
             * a dictionary from mapping key to corresponding metadata in the mapped case
         """
-        results: dict[str, Union[Any, dict[str, Any]]] = {}
+        results: dict[str, Any | dict[str, Any]] = {}
         captured = self._step_execution_context.step_output_metadata_capture
 
         if captured is None:
@@ -201,10 +201,10 @@ class UnboundHookContext(HookContext):
     def __init__(
         self,
         resources: Mapping[str, Any],
-        op: Optional[Union[OpDefinition, PendingNodeInvocation]],
-        run_id: Optional[str],
-        job_name: Optional[str],
-        op_exception: Optional[Exception],
+        op: OpDefinition | PendingNodeInvocation | None,
+        run_id: str | None,
+        job_name: str | None,
+        op_exception: Exception | None,
         instance: Optional["DagsterInstance"],
     ):
         from dagster._core.execution.build_resources import (
@@ -301,11 +301,11 @@ class UnboundHookContext(HookContext):
         return self._log
 
     @property
-    def op_exception(self) -> Optional[BaseException]:
+    def op_exception(self) -> BaseException | None:
         return self._op_exception
 
     @property
-    def op_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+    def op_output_values(self) -> Mapping[str, Any | Mapping[str, Any]]:
         """The computed output values.
 
         Returns a dictionary where keys are output names and the values are:
@@ -315,7 +315,7 @@ class UnboundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("op_output_values", "method"))
 
     @property
-    def op_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+    def op_output_metadata(self) -> Mapping[str, Any | Mapping[str, Any]]:
         """The applied output metadata.
 
         Returns a dictionary where keys are output names and the values are:
@@ -340,11 +340,11 @@ class BoundHookContext(HookContext):
         self,
         hook_def: HookDefinition,
         resources: Resources,
-        op: Optional[Node],
+        op: Node | None,
         log_manager: DagsterLogManager,
-        run_id: Optional[str],
-        job_name: Optional[str],
-        op_exception: Optional[Exception],
+        run_id: str | None,
+        job_name: str | None,
+        op_exception: Exception | None,
         instance: Optional["DagsterInstance"],
     ):
         self._hook_def = hook_def
@@ -407,7 +407,7 @@ class BoundHookContext(HookContext):
         return self._op_exception
 
     @property
-    def op_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+    def op_output_values(self) -> Mapping[str, Any | Mapping[str, Any]]:
         """The computed output values.
 
         Returns a dictionary where keys are output names and the values are:
@@ -417,7 +417,7 @@ class BoundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("op_output_values", "method"))
 
     @property
-    def op_output_metadata(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
+    def op_output_metadata(self) -> Mapping[str, Any | Mapping[str, Any]]:
         """The applied output metadata.
 
         Returns a dictionary where keys are output names and the values are:
@@ -439,11 +439,11 @@ class BoundHookContext(HookContext):
 
 @public
 def build_hook_context(
-    resources: Optional[Mapping[str, Any]] = None,
-    op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
-    run_id: Optional[str] = None,
-    job_name: Optional[str] = None,
-    op_exception: Optional[Exception] = None,
+    resources: Mapping[str, Any] | None = None,
+    op: OpDefinition | PendingNodeInvocation | None = None,
+    run_id: str | None = None,
+    job_name: str | None = None,
+    op_exception: Exception | None = None,
     instance: Optional["DagsterInstance"] = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.

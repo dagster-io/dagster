@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Union  # noqa: UP035
+from typing import AbstractSet, TypeAlias  # noqa: UP035
 
 from dagster import AssetKey, AssetsDefinition, AssetSpec
 from dagster._annotations import beta, public
@@ -30,7 +30,7 @@ from dagster_airlift.core.utils import (
     task_handles_for_spec,
 )
 
-MappedAsset = Union[AssetSpec, AssetsDefinition]
+MappedAsset: TypeAlias = AssetSpec | AssetsDefinition
 
 
 def _is_mapped_asset_spec(asset: AssetSpec) -> bool:

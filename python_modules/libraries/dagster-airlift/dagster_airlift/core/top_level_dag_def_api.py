@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Union
+from typing import Any
 
 from dagster import (
     AssetsDefinition,
@@ -13,8 +13,8 @@ from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_ta
 
 
 def apply_metadata_to_assets(
-    assets: Iterable[Union[AssetsDefinition, AssetSpec]], metadata: dict[str, Any]
-) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    assets: Iterable[AssetsDefinition | AssetSpec], metadata: dict[str, Any]
+) -> Sequence[AssetsDefinition | AssetSpec]:
     return [assets_def_with_af_metadata(asset, metadata) for asset in assets]
 
 
@@ -49,8 +49,8 @@ def spec_with_metadata(spec: AssetSpec, metadata: Mapping[str, Any]) -> "AssetSp
 
 
 def assets_def_with_af_metadata(
-    assets_def: Union[AssetsDefinition, AssetSpec], metadata: Mapping[str, str]
-) -> Union[AssetsDefinition, AssetSpec]:
+    assets_def: AssetsDefinition | AssetSpec, metadata: Mapping[str, str]
+) -> AssetsDefinition | AssetSpec:
     return (
         assets_def.map_asset_specs(lambda spec: spec_with_metadata(spec, metadata))
         if isinstance(assets_def, AssetsDefinition)
@@ -60,8 +60,8 @@ def assets_def_with_af_metadata(
 
 @beta
 def assets_with_task_mappings(
-    dag_id: str, task_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]]
-) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    dag_id: str, task_mappings: Mapping[str, Iterable[AssetsDefinition | AssetSpec]]
+) -> Sequence[AssetsDefinition | AssetSpec]:
     """Modify assets to be associated with a particular task in Airlift tooling.
 
     Used in concert with `build_defs_from_airflow_instance` to observe an airflow
@@ -107,8 +107,8 @@ def assets_with_task_mappings(
 
 @beta
 def assets_with_dag_mappings(
-    dag_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]],
-) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    dag_mappings: Mapping[str, Iterable[AssetsDefinition | AssetSpec]],
+) -> Sequence[AssetsDefinition | AssetSpec]:
     """Modify assets to be associated with a particular dag in Airlift tooling.
 
     Used in concert with `build_defs_from_airflow_instance` to observe an airflow

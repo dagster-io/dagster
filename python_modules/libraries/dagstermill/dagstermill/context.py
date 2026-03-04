@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, cast  # noqa: UP035
 
 from dagster import (
     DagsterRun,
@@ -55,7 +55,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         check.str_param(key, "key")
         return self._job_context.has_tag(key)
 
-    def get_tag(self, key: str) -> Optional[str]:
+    def get_tag(self, key: str) -> str | None:
         """Get a logging tag defined on the context.
 
         Args:

@@ -1,6 +1,5 @@
 from collections.abc import Iterator, Sequence
 from datetime import timedelta
-from typing import Optional, Union
 
 from dagster import (
     AssetCheckEvaluation,
@@ -49,9 +48,9 @@ class BatchResult:
 class DbtCloudPollingSensorCursor:
     """A cursor that stores the last effective timestamp and offset."""
 
-    finished_at_lower_bound: Optional[float] = None
-    finished_at_upper_bound: Optional[float] = None
-    offset: Optional[int] = None
+    finished_at_lower_bound: float | None = None
+    finished_at_upper_bound: float | None = None
+    offset: int | None = None
 
 
 def materializations_from_batch_iter(
@@ -61,7 +60,7 @@ def materializations_from_batch_iter(
     offset: int,
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: DagsterDbtTranslator,
-) -> Iterator[Optional[BatchResult]]:
+) -> Iterator[BatchResult | None]:
     client = workspace.get_client()
     workspace_data = workspace.get_or_fetch_workspace_data()
 
@@ -131,9 +130,9 @@ def materializations_from_batch_iter(
 
 
 def sorted_asset_events(
-    asset_events: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
+    asset_events: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
     repository_def: RepositoryDefinition,
-) -> list[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]:
+) -> list[AssetMaterialization | AssetObservation | AssetCheckEvaluation]:
     """Sort asset events by end date and toposort order."""
     topo_aks = repository_def.asset_graph.toposorted_asset_keys
     materializations_and_timestamps = [
@@ -150,9 +149,9 @@ def sorted_asset_events(
 def build_dbt_cloud_polling_sensor(
     *,
     workspace: DbtCloudWorkspace,
-    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
     minimum_interval_seconds: int = DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS,
-    default_sensor_status: Optional[DefaultSensorStatus] = None,
+    default_sensor_status: DefaultSensorStatus | None = None,
 ) -> SensorDefinition:
     """The constructed sensor polls the dbt Cloud Workspace for activity, and inserts asset events into Dagster's event log.
 

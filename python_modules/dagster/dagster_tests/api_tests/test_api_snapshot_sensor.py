@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 from unittest import mock
 
 import dagster as dg
@@ -73,7 +72,7 @@ def test_remote_sensor_error(instance):
 
 @pytest.mark.parametrize(argnames="timeout", argvalues=[0, 1], ids=["zero", "nonzero"])
 @pytest.mark.parametrize("env_var_default_val", [200, None], ids=["env-var-set", "env-var-not-set"])
-def test_remote_sensor_client_timeout(instance, timeout: int, env_var_default_val: Optional[int]):
+def test_remote_sensor_client_timeout(instance, timeout: int, env_var_default_val: int | None):
     if env_var_default_val:
         os.environ["DAGSTER_SENSOR_GRPC_TIMEOUT_SECONDS"] = str(env_var_default_val)
     with get_bar_repo_handle(instance) as repository_handle:

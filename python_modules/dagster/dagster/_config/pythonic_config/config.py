@@ -2,7 +2,7 @@ import re
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from dagster_shared.dagster_model.pydantic_compat_layer import (
     ModelFieldCompat,
@@ -347,7 +347,7 @@ def _discriminated_union_config_dict_to_selector_config_dict(
     return wrapped_dict
 
 
-def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], value: Any):
+def _config_value_to_dict_representation(field: ModelFieldCompat | None, value: Any):
     """Converts a config value to a dictionary representation. If a field is provided, it will be used
     to determine the appropriate dictionary representation in the case of discriminated unions.
     """
@@ -417,9 +417,9 @@ class PermissiveConfig(Config):
 
 def infer_schema_from_config_class(
     model_cls: type["Config"],
-    description: Optional[str] = None,
-    fields_to_omit: Optional[set[str]] = None,
-    default: Optional[Any] = None,
+    description: str | None = None,
+    fields_to_omit: set[str] | None = None,
+    default: Any | None = None,
 ) -> DagsterField:
     from dagster._config.pythonic_config.config import Config
     from dagster._config.pythonic_config.resource import (

@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes
@@ -33,7 +32,7 @@ def cron_schedule_from_schedule_type_and_offsets(
     schedule_type: ScheduleType,
     minute_offset: int,
     hour_offset: int,
-    day_offset: Optional[int],
+    day_offset: int | None,
 ) -> str:
     if schedule_type is ScheduleType.HOURLY:
         return f"{minute_offset} * * * *"

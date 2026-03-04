@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster._config import Field, Shape
 from dagster._core.instance.types import T_DagsterInstance
@@ -50,7 +50,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], Config
         deployment: str,
         graphql_client,
         organization: str,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._url = url
         self._api_token = api_token
@@ -74,7 +74,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], Config
         )
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -159,7 +159,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], Config
         )
         self.set_latest_version(key, version)
 
-    def get_latest_defs_state_info(self) -> Optional[DefsStateInfo]:
+    def get_latest_defs_state_info(self) -> DefsStateInfo | None:
         res = self._execute_query(GET_LATEST_DEFS_STATE_INFO_QUERY)
         latest_info = res["latestDefsStateInfo"]
         return DefsStateInfo.from_graphql(latest_info) if latest_info else None

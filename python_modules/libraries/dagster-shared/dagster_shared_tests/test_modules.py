@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional, Union
 
 import pytest
 from dagster_shared.seven import resolve_module_pattern
@@ -14,7 +13,7 @@ def test_resolve_module_pattern_literal(monkeypatch, matches_exist: bool):
             return _FakeModuleSpec()
         return None
 
-    def fake_iter_modules(path: Optional[list[str]] = None):
+    def fake_iter_modules(path: list[str] | None = None):
         if path is None:
             return [
                 (None, "foo", False),
@@ -37,7 +36,7 @@ def test_resolve_module_pattern_top_level_standalone_wildcard(monkeypatch):
     def fake_find_spec(name: str):
         return _FakeModuleSpec()
 
-    def fake_iter_modules(path: Optional[list[str]] = None):
+    def fake_iter_modules(path: list[str] | None = None):
         return [
             (None, "foo", False),
             (None, "bar", False),
@@ -66,7 +65,7 @@ def test_resolve_module_pattern_embedded_wildcard_start(monkeypatch, matches_exi
             return _FakeModuleSpec()
         return None
 
-    def fake_iter_modules(path: Optional[list[str]] = None):
+    def fake_iter_modules(path: list[str] | None = None):
         if matches_exist and path == ["/fake/path/bar"]:
             return [(None, "foo", False)]
         elif matches_exist and path == ["/fake/path/bar"]:
@@ -88,14 +87,14 @@ def test_resolve_module_pattern_embedded_wildcard_start(monkeypatch, matches_exi
 
 @pytest.mark.parametrize("matches_exist", [True, False])
 def test_resolve_wildcard_modules_embedded_wildcard_middle(monkeypatch, matches_exist: bool):
-    def fake_find_spec(name: str) -> Optional[_FakeModuleSpec]:
+    def fake_find_spec(name: str) -> _FakeModuleSpec | None:
         if name == "foo":
             return _FakeModuleSpec(["/fake/path/foo"])
         if matches_exist and name in ["foo.bar.models", "foo.baz.models"]:
             return _FakeModuleSpec()
         return None
 
-    def fake_iter_modules(path: Optional[list[str]] = None):
+    def fake_iter_modules(path: list[str] | None = None):
         if path == ["/fake/path/foo"]:
             return [
                 (None, "bar", False),
@@ -122,7 +121,7 @@ def test_resolve_module_pattern_embedded_wildcard_end(monkeypatch, matches_exist
             return _FakeModuleSpec()
         return None
 
-    def fake_iter_modules(path: Optional[list[str]] = None):
+    def fake_iter_modules(path: list[str] | None = None):
         if path == ["/fake/path/foo"]:
             return [
                 (None, "bar", False),
@@ -142,4 +141,4 @@ def test_resolve_module_pattern_embedded_wildcard_end(monkeypatch, matches_exist
 
 @dataclass
 class _FakeModuleSpec:
-    submodule_search_locations: Union[list[str], None] = None
+    submodule_search_locations: list[str] | None = None

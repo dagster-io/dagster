@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, NamedTuple, Optional, TypeVar, Union
+from typing import Any, NamedTuple, TypeVar
 
 from dagster_shared.error import DagsterError
 
@@ -57,12 +57,12 @@ class OutputDefinition:
     def __init__(
         self,
         dagster_type=None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
         is_required: bool = True,
-        io_manager_key: Optional[str] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
-        code_version: Optional[str] = None,
+        io_manager_key: str | None = None,
+        metadata: ArbitraryMetadataMapping | None = None,
+        code_version: str | None = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
@@ -88,7 +88,7 @@ class OutputDefinition:
         return self._dagster_type
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._description
 
     @property
@@ -100,7 +100,7 @@ class OutputDefinition:
         return self._io_manager_key
 
     @property
-    def code_version(self) -> Optional[str]:
+    def code_version(self) -> str | None:
         return self._code_version
 
     @property
@@ -116,7 +116,7 @@ class OutputDefinition:
         return False
 
     def mapping_from(
-        self, node_name: str, output_name: Optional[str] = None, from_dynamic_mapping: bool = False
+        self, node_name: str, output_name: str | None = None, from_dynamic_mapping: bool = False
     ) -> "OutputMapping":
         """Create an output mapping from an output of a child node.
 
@@ -143,7 +143,7 @@ class OutputDefinition:
 
     @staticmethod
     def create_from_inferred(
-        inferred: Optional[InferredOutputProps], code_version: Optional[str] = None
+        inferred: InferredOutputProps | None, code_version: str | None = None
     ) -> "OutputDefinition":
         if not inferred:
             return OutputDefinition(code_version=code_version)
@@ -243,7 +243,7 @@ class DynamicOutputDefinition(OutputDefinition):
 
 
 class OutputPointer(NamedTuple("_OutputPointer", [("node_name", str), ("output_name", str)])):
-    def __new__(cls, node_name: str, output_name: Optional[str] = None):
+    def __new__(cls, node_name: str, output_name: str | None = None):
         return super().__new__(
             cls,
             check.str_param(node_name, "node_name"),
@@ -301,8 +301,8 @@ class OutputMapping(NamedTuple):
     graph_output_name: str
     mapped_node_name: str
     mapped_node_output_name: str
-    graph_output_description: Optional[str] = None
-    dagster_type: Optional[DagsterType] = None
+    graph_output_description: str | None = None
+    dagster_type: DagsterType | None = None
     from_dynamic_mapping: bool = False
 
     @property
@@ -325,12 +325,12 @@ class Out(
     NamedTuple(
         "_Out",
         [
-            ("dagster_type", PublicAttr[Union[DagsterType, type[NoValueSentinel]]]),
-            ("description", PublicAttr[Optional[str]]),
+            ("dagster_type", PublicAttr[DagsterType | type[NoValueSentinel]]),
+            ("description", PublicAttr[str | None]),
             ("is_required", PublicAttr[bool]),
             ("io_manager_key", PublicAttr[str]),
-            ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
-            ("code_version", PublicAttr[Optional[str]]),
+            ("metadata", PublicAttr[RawMetadataMapping | None]),
+            ("code_version", PublicAttr[str | None]),
         ],
     )
 ):
@@ -362,12 +362,12 @@ class Out(
 
     def __new__(
         cls,
-        dagster_type: Optional[Union[type, DagsterType]] = NoValueSentinel,
-        description: Optional[str] = None,
+        dagster_type: type | DagsterType | None = NoValueSentinel,
+        description: str | None = None,
         is_required: bool = True,
-        io_manager_key: Optional[str] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
-        code_version: Optional[str] = None,
+        io_manager_key: str | None = None,
+        metadata: ArbitraryMetadataMapping | None = None,
+        code_version: str | None = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         return super().__new__(
@@ -401,9 +401,9 @@ class Out(
     def to_definition(
         self,
         annotation_type: type,
-        name: Optional[str],
-        description: Optional[str],
-        code_version: Optional[str],
+        name: str | None,
+        description: str | None,
+        code_version: str | None,
     ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type
@@ -469,9 +469,9 @@ class DynamicOut(Out):
     def to_definition(
         self,
         annotation_type: type,
-        name: Optional[str],
-        description: Optional[str],
-        code_version: Optional[str],
+        name: str | None,
+        description: str | None,
+        code_version: str | None,
     ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type
@@ -495,15 +495,15 @@ class DynamicOut(Out):
 
 
 @public
-class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
+class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[str | None])])):
     """Represents information about the outputs that a graph maps.
 
     Args:
         description (Optional[str]): Human-readable description of the output.
     """
 
-    def __new__(cls, description: Optional[str] = None):
+    def __new__(cls, description: str | None = None):
         return super().__new__(cls, description=description)
 
-    def to_definition(self, name: Optional[str]) -> "OutputDefinition":
+    def to_definition(self, name: str | None) -> "OutputDefinition":
         return OutputDefinition(name=name, description=self.description)

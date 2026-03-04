@@ -1,5 +1,6 @@
 import os
 
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
@@ -15,19 +16,19 @@ from dagster_buildkite.steps.packages import PackageSpec
 from dagster_buildkite.utils import has_helm_changes, skip_if_no_helm_changes
 
 
-def build_helm_steps() -> list[StepConfiguration]:
+def build_helm_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     package_spec = PackageSpec(
         os.path.join("helm", "dagster", "schema"),
         # run helm schema tests only once, on the latest python version
         unsupported_python_versions=AvailablePythonVersion.get_all()[:-1],
         name="dagster-helm",
         retries=2,
-        always_run_if=has_helm_changes,
+        always_run_if=lambda: has_helm_changes(ctx),
     )
 
     steps: list[GroupLeafStepConfiguration] = []
-    steps += _build_lint_steps(package_spec)
-    pkg_steps = package_spec.build_steps()
+    steps += _build_lint_steps(package_spec, ctx)
+    pkg_steps = package_spec.build_steps(ctx)
     assert len(pkg_steps) == 1
     # We're only testing the latest python version, so we only expect one step.
     # Otherwise we'd be putting a group in a group which isn't supported.
@@ -43,7 +44,9 @@ def build_helm_steps() -> list[StepConfiguration]:
     ]
 
 
-def _build_lint_steps(package_spec) -> list[CommandStepConfiguration]:
+def _build_lint_steps(
+    package_spec: PackageSpec, ctx: BuildkiteContext
+) -> list[CommandStepConfiguration]:
     return [
         add_test_image(
             CommandStepBuilder("dagster-json-schema"),
@@ -54,7 +57,7 @@ def _build_lint_steps(package_spec) -> list[CommandStepConfiguration]:
             "dagster-helm schema apply",
             "git diff --exit-code",
         )
-        .skip_if(skip_if_no_helm_changes() and package_spec.skip_reason)
+        .skip(skip_if_no_helm_changes(ctx) and package_spec.get_skip_reason(ctx))
         .build(),
         add_test_image(
             CommandStepBuilder(":lint-roller: dagster"),
@@ -63,7 +66,7 @@ def _build_lint_steps(package_spec) -> list[CommandStepConfiguration]:
         .run(
             "helm lint helm/dagster --with-subcharts --strict",
         )
-        .skip_if(skip_if_no_helm_changes() or package_spec.skip_reason)
+        .skip(skip_if_no_helm_changes(ctx) or package_spec.get_skip_reason(ctx))
         .with_retry(2)
         .build(),
         add_test_image(
@@ -76,6 +79,6 @@ def _build_lint_steps(package_spec) -> list[CommandStepConfiguration]:
             " https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
             "helm dependency build helm/dagster",
         )
-        .skip_if(skip_if_no_helm_changes() and package_spec.skip_reason)
+        .skip(skip_if_no_helm_changes(ctx) and package_spec.get_skip_reason(ctx))
         .build(),
     ]

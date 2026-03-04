@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -20,7 +19,7 @@ def mock_get_or_create_agent_token():
 
 @pytest.fixture
 def mock_token_gql_responses() -> Callable[[str], None]:
-    def _mock(description: Optional[str] = None) -> None:
+    def _mock(description: str | None = None) -> None:
         mock_gql_response(
             query=gql.AGENT_TOKENS_QUERY,
             json_data={

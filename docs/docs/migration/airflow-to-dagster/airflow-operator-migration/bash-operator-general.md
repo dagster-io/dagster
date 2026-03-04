@@ -53,7 +53,7 @@ For many of the use cases that you might be using the BashOperator for, Dagster 
 
 #### Running a Python script
 
-As mentioned above, you can use the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/> to run a Python script in a subprocess. But you can also modify this script to send additional information and logging back to Dagster. See the [Dagster Pipes tutorial](/guides/build/external-pipelines) for more information.
+As mentioned above, you can use the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/> to run a Python script in a subprocess. But you can also modify this script to send additional information and logging back to Dagster. See the [Dagster Pipes tutorial](/integrations/external-pipelines) for more information.
 
 #### Running a dbt command
 

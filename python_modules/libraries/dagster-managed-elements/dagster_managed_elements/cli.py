@@ -4,7 +4,6 @@ import logging
 import sys
 from collections.abc import Sequence
 from types import ModuleType
-from typing import Optional
 
 import click
 import click_spinner
@@ -22,7 +21,7 @@ def _deepgetattr(obj, attr: str):
 
 
 def get_reconcilable_objects_from_module(
-    module_dir: Optional[str], import_str: str
+    module_dir: str | None, import_str: str
 ) -> Sequence[ManagedElementReconciler]:
     module_str = import_str
     object_paths = None

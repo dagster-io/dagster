@@ -59,43 +59,42 @@ Each noun file (e.g., `deployment.py`) contains:
 - `--cursor <cursor>` for cursor-based pagination (preferred)
 - `--filter <query>` for filtering results
 - `--format <table|json>` (alternative to --json flag)
-- `--view <view>` for view-specific data (see View Patterns section)
+- `--status` for including runtime health/status data
 
-## View Patterns
+## Status Flag Pattern
 
-Some commands support different "views" that fetch distinct subsets of entity data:
+Some commands support a `--status` boolean flag to include runtime/stateful data:
 
-### Asset Views:
+### Asset Status:
 
-- **Default view** (no `--view` flag): Definition-time data (description, group, kinds, metadata)
-- **Status view** (`--view status`): Runtime/stateful data including:
+- **Default** (no `--status` flag): Definition-time data (description, group, kinds, metadata)
+- **With `--status`**: Includes additional runtime/stateful data:
   - Asset health status (overall, materialization, freshness, checks)
   - Health metadata (failure details, run IDs, timestamps)
   - Latest materialization information (with natural partition data)
   - Freshness information (lag minutes, policy details)
   - Asset checks execution status
 
-### View Usage Examples:
+### Usage Examples:
 
 ```bash
 # Default definition view
 dg api asset list
 dg api asset get my/asset/key
 
-# Status view for operational monitoring
-dg api asset list --view status
-dg api asset get my/asset/key --view status
+# Include status for operational monitoring
+dg api asset list --status
+dg api asset get my/asset/key --status
 
-# JSON output works with all views
-dg api asset list --view status --json
+# JSON output works with --status
+dg api asset list --status --json
 ```
 
 ### Implementation Guidelines:
 
-1. **View Parameter Validation**: Always validate view parameter values
-2. **Backward Compatibility**: Default behavior (no view) must remain unchanged
-3. **GraphQL Efficiency**: Use appropriate queries for each view to avoid over-fetching
-4. **Documentation**: Each view should be documented with specific data included/excluded
+1. **Backward Compatibility**: Default behavior (no flag) must remain unchanged
+2. **GraphQL Efficiency**: Use appropriate queries based on whether status is requested
+3. **Documentation**: Document what additional data `--status` includes
 
 ## Output Formatting
 
@@ -267,6 +266,17 @@ def <noun>_group():
     """Manage <noun> in Dagster Plus."""
 ```
 
+## Resource Event Subcommands
+
+Some resources support a `get-events` subcommand to retrieve event history. This follows
+the pattern `dg api <noun> get-events <identifier>`:
+
+- `dg api asset get-events <asset_key>` — materialization/observation events
+- `dg api run get-events <run_id>` — execution log events (step starts, failures, etc.)
+
+The `get-events` command lives alongside `get` and `list` in the resource's command group,
+keeping all operations for a resource under one noun.
+
 ## Standard Verbs
 
 ### Read Operations:
@@ -306,9 +316,8 @@ result = client.execute(query, variables)
 - Test error handling in both output modes
 - Verify REST-like data transformation
 - Ensure --json flag works on all commands
-- Test all supported views (default and view-specific)
-- Verify view parameter validation and error messages
-- Test backward compatibility (no view parameter)
+- Test with and without `--status` flag
+- Test backward compatibility (no `--status` flag)
 
 ## Future Extensions
 
@@ -331,11 +340,11 @@ dg api deployment list
 # List deployments in JSON format
 dg api deployment list --json
 
-# Asset management with view support
+# Asset management with status flag
 dg api asset list                    # Default definition view
-dg api asset list --view status      # Status view with health information
+dg api asset list --status           # Include health/status information
 dg api asset get my/asset --json     # Single asset in JSON
-dg api asset get my/asset --view status  # Single asset with status
+dg api asset get my/asset --status   # Single asset with status
 ```
 
 ### Planned Extensions:

@@ -79,12 +79,12 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 
-SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, Union[int, Exception]]
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int | Exception]
 DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
 
 
 def check_for_debug_crash(
-    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+    debug_crash_flags: SingleInstigatorDebugCrashFlags | None, key: str
 ) -> None:
     if not debug_crash_flags:
         return
@@ -250,7 +250,7 @@ def check_script(path: str, return_code: int = 0) -> None:
 
 
 def check_cli_execute_file_job(
-    path: str, pipeline_fn_name: str, env_file: Optional[str] = None
+    path: str, pipeline_fn_name: str, env_file: str | None = None
 ) -> None:
     from dagster._core.test_utils import instance_for_test
 
@@ -315,7 +315,7 @@ def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
 
 
 def ensure_gen(
-    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]],
+    thing_or_gen: T | Iterator[T] | Generator[T, Any, Any],
 ) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
         thing_or_gen = cast("T", thing_or_gen)
@@ -419,12 +419,12 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
         self,
         generator: Iterator[Union["DagsterEvent", T_GeneratedContext]],
         object_cls: type[T_GeneratedContext],
-        require_object: Optional[bool] = True,
+        require_object: bool | None = True,
     ):
         self.generator = check.generator(generator)
         self.object_cls: type[T_GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
-        self.object: Optional[T_GeneratedContext] = None
+        self.object: T_GeneratedContext | None = None
         self.did_setup = False
         self.did_teardown = False
 
@@ -589,7 +589,7 @@ class Counter:
         return copy
 
 
-traced_counter: contextvars.ContextVar[Optional[Counter]] = contextvars.ContextVar(
+traced_counter: contextvars.ContextVar[Counter | None] = contextvars.ContextVar(
     "traced_counts",
     default=None,
 )
@@ -653,7 +653,7 @@ def is_named_tuple_subclass(klass: type[object]) -> TypeGuard[type[NamedTuple]]:
 
 @overload
 def normalize_to_repository(
-    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    definitions_or_repository: Union["Definitions", "RepositoryDefinition"] | None = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[True] = ...,
 ) -> "RepositoryDefinition": ...
@@ -661,14 +661,14 @@ def normalize_to_repository(
 
 @overload
 def normalize_to_repository(
-    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    definitions_or_repository: Union["Definitions", "RepositoryDefinition"] | None = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[False] = ...,
 ) -> Optional["RepositoryDefinition"]: ...
 
 
 def normalize_to_repository(
-    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = None,
+    definitions_or_repository: Union["Definitions", "RepositoryDefinition"] | None = None,
     repository: Optional["RepositoryDefinition"] = None,
     error_on_none: bool = True,
 ) -> Optional["RepositoryDefinition"]:
@@ -699,7 +699,7 @@ def xor(a: object, b: object) -> bool:
     return bool(a) != bool(b)
 
 
-def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> Iterator[str]:
+def tail_file(path_or_fd: str | int, should_stop: Callable[[], bool]) -> Iterator[str]:
     with open(path_or_fd) as output_stream:
         while True:
             line = output_stream.readline()

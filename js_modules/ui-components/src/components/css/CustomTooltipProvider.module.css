@@ -1,0 +1,14 @@
+.tooltipContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 12px;
+  padding: 4px 6px;
+  color: var(--color-tooltip-text);
+  background: var(--color-tooltip-background);
+  transform: translate(5px, 5px);
+  box-shadow: 1px 1px 3px var(--color-shadow-default);
+  z-index: 100;
+  pointer-events: none;
+  user-select: none;
+}

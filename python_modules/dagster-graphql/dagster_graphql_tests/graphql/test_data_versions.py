@@ -1,7 +1,7 @@
 import shutil
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dagster import (
@@ -439,7 +439,7 @@ def get_observable_source_asset_repo():
 def _fetch_data_versions(
     context: WorkspaceRequestContext,
     repo: RepositoryDefinition,
-    location_name: Optional[str] = None,
+    location_name: str | None = None,
 ):
     selector = infer_job_selector(
         context, repo.get_implicit_asset_job_names()[0], location_name=location_name
@@ -456,8 +456,8 @@ def _fetch_data_versions(
 def _fetch_partition_data_versions(
     context: WorkspaceRequestContext,
     asset_key: AssetKey,
-    partition: Optional[str] = None,
-    partitions: Optional[Sequence[str]] = None,
+    partition: str | None = None,
+    partitions: Sequence[str] | None = None,
 ):
     return execute_dagster_graphql(
         context,
@@ -470,7 +470,7 @@ def _fetch_partition_data_versions(
     )
 
 
-def _get_asset_node(result: Any, key: Optional[str] = None) -> Mapping[str, Any]:
+def _get_asset_node(result: Any, key: str | None = None) -> Mapping[str, Any]:
     to_check = result if isinstance(result, dict) else result.data  # GqlResult
     if key is None:  # assume we are dealing with a single-node query
         return to_check["assetNodeOrError"]

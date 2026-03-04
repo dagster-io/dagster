@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -12,8 +12,8 @@ from pydantic import BaseModel, Field
 
 class DbtScaffoldParams(BaseModel):
     init: bool = Field(default=False)
-    project_path: Optional[str] = None
-    git_url: Optional[str] = None
+    project_path: str | None = None
+    git_url: str | None = None
 
 
 class DbtProjectComponentScaffolder(Scaffolder[DbtScaffoldParams]):
@@ -31,7 +31,7 @@ class DbtProjectComponentScaffolder(Scaffolder[DbtScaffoldParams]):
 
         dbtRunner().invoke(["init"])
 
-    def _git_url_params(self, git_url: str, project_path: Optional[str]) -> dict[str, Any]:
+    def _git_url_params(self, git_url: str, project_path: str | None) -> dict[str, Any]:
         repo_relative_path = {"repo_relative_path": project_path} if project_path else {}
         return {"project": {"repo_url": git_url, **repo_relative_path}}
 

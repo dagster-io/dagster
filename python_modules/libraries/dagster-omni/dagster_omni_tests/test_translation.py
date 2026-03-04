@@ -2,7 +2,7 @@ import tempfile
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -50,7 +50,7 @@ class TestOmniTranslation(TestTranslation):
         self,
         attributes: Mapping[str, Any],
         assertion: Callable[[AssetSpec], bool],
-        key_modifier: Optional[Callable[[dg.AssetKey], dg.AssetKey]],
+        key_modifier: Callable[[dg.AssetKey], dg.AssetKey] | None,
     ) -> None:
         body = {
             "type": "dagster_omni.OmniComponent",

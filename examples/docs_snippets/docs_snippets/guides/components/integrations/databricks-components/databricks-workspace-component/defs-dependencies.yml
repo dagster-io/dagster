@@ -1,0 +1,10 @@
+# my_project/defs/my_databricks_workspace/defs.yaml
+
+type: dagster_databricks.DatabricksWorkspaceComponent
+
+attributes:
+  asset_overrides:
+    customer_analytics:
+      depends_on:
+        - clean_customers
+        - clean_orders

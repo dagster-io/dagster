@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Optional, Union, cast
+from typing import Union, cast
 
 from dagster_shared.record import record
 
@@ -48,9 +48,7 @@ class WorkspaceFileTarget(WorkspaceLoadTarget):
 class InProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
     """A workspace load target that is in-process and does not spin up a gRPC server."""
 
-    def __init__(
-        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
-    ):
+    def __init__(self, origin: InProcessCodeLocationOrigin | Sequence[InProcessCodeLocationOrigin]):
         self._origins = cast(
             "Sequence[InProcessCodeLocationOrigin]",
             origin if isinstance(origin, list) else [origin],
@@ -185,9 +183,9 @@ class PyProjectFileTarget(WorkspaceLoadTarget):
 @record(kw_only=False)
 class PythonFileTarget(WorkspaceLoadTarget):
     python_file: str
-    attribute: Optional[str]
-    working_directory: Optional[str]
-    location_name: Optional[str]
+    attribute: str | None
+    working_directory: str | None
+    location_name: str | None
 
     def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
@@ -203,9 +201,9 @@ class PythonFileTarget(WorkspaceLoadTarget):
 @record(kw_only=False)
 class ModuleTarget(WorkspaceLoadTarget):
     module_name: str
-    attribute: Optional[str]
-    working_directory: Optional[str]
-    location_name: Optional[str]
+    attribute: str | None
+    working_directory: str | None
+    location_name: str | None
 
     def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
@@ -221,9 +219,9 @@ class ModuleTarget(WorkspaceLoadTarget):
 @record(kw_only=False)
 class PackageTarget(WorkspaceLoadTarget):
     package_name: str
-    attribute: Optional[str]
-    working_directory: Optional[str]
-    location_name: Optional[str]
+    attribute: str | None
+    working_directory: str | None
+    location_name: str | None
 
     def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
@@ -239,9 +237,9 @@ class PackageTarget(WorkspaceLoadTarget):
 @record(kw_only=False)
 class GrpcServerTarget(WorkspaceLoadTarget):
     host: str
-    port: Optional[int]
-    socket: Optional[str]
-    location_name: Optional[str]
+    port: int | None
+    socket: str | None
+    location_name: str | None
 
     def create_origins(self) -> Sequence[GrpcServerCodeLocationOrigin]:
         return [
@@ -264,8 +262,8 @@ class EmptyWorkspaceTarget(WorkspaceLoadTarget):
 @record(kw_only=False)
 class AutoloadDefsModuleTarget(WorkspaceLoadTarget):
     autoload_defs_module_name: str
-    working_directory: Optional[str]
-    location_name: Optional[str]
+    working_directory: str | None
+    location_name: str | None
 
     def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [

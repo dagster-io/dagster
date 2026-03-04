@@ -6,7 +6,6 @@ import logging
 import time
 from collections.abc import Callable, Mapping
 from enum import Enum
-from typing import Optional
 
 import typer
 from typer.models import CommandInfo
@@ -44,7 +43,7 @@ else:
 def _import_commands(
     parent: typer.Typer,
     child: typer.Typer,
-    remap_fn: Optional[Callable[[CommandInfo], CommandInfo]] = None,
+    remap_fn: Callable[[CommandInfo], CommandInfo] | None = None,
 ) -> None:
     """Copies the commands from one Typer app to another.
     Equivalent of `add_typer` but doesn't add a subcommand.

@@ -102,7 +102,7 @@ def test_single_typed_input_and_output_lambda():
 
 def test_string_typed_input_and_output():
     @dg.op
-    def add_one(_context, num: "Optional[int]") -> "int":
+    def add_one(_context, num: "int | None") -> "int":
         return num + 1 if num else 1
 
     assert add_one
@@ -133,7 +133,7 @@ def test_invalid_string_typed_input():
 
 def test_wrapped_input_and_output_lambda():
     @dg.op
-    def add_one(nums: List[int]) -> Optional[List[int]]:
+    def add_one(nums: List[int]) -> List[int] | None:
         return [num + 1 for num in nums]
 
     assert add_one
@@ -159,7 +159,7 @@ def test_kitchen_sink():
         b: bool,
         s: str,
         x: Any,
-        o: Optional[str],
+        o: str | None,
         m: List[str],
         c: Custom,
     ):
@@ -266,7 +266,7 @@ def test_python_tuple_output():
 
 def test_nested_kitchen_sink():
     @dg.op
-    def no_execute() -> Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]:
+    def no_execute() -> List[Tuple[List[int], str, Dict[str, List[str] | None]]] | None:
         pass
 
     assert (
@@ -276,7 +276,7 @@ def test_nested_kitchen_sink():
 
     assert (
         no_execute.output_defs[0].dagster_type.typing_type
-        == Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]
+        == Optional[List[Tuple[List[int], str, Dict[str, List[str] | None]]]]  # noqa: UP045
     )
 
 

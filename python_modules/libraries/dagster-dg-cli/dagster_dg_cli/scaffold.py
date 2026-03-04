@@ -2,7 +2,7 @@ import json
 import textwrap
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Literal, Optional, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 import click
 import dagster_shared.check as check
@@ -64,7 +64,7 @@ def scaffold_component(
 def scaffold_inline_component(
     path: Path,
     typename: str,
-    superclass: Optional[str],
+    superclass: str | None,
     dg_context: "DgContext",
 ) -> None:
     full_path = dg_context.defs_path / path
@@ -118,7 +118,7 @@ def scaffold_inline_component(
 def scaffold_registry_object(
     path: Path,
     typename: str,
-    scaffold_params: Optional[Mapping[str, Any]],
+    scaffold_params: Mapping[str, Any] | None,
     dg_context: "DgContext",
     scaffold_format: ScaffoldFormatOptions,
     append: bool = False,

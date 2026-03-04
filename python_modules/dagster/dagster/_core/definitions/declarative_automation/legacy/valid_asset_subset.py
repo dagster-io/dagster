@@ -1,6 +1,6 @@
 import operator
 from dataclasses import replace
-from typing import AbstractSet, Any, Callable, Optional  # noqa: UP035
+from typing import AbstractSet, Any, Callable  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -23,7 +23,7 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
     functionality is subsumed by EntitySubset.
     """
 
-    def inverse(self, partitions_def: Optional[PartitionsDefinition]) -> "ValidAssetSubset":
+    def inverse(self, partitions_def: PartitionsDefinition | None) -> "ValidAssetSubset":
         """Returns the EntitySubset containing all asset partitions which are not in this EntitySubset."""
         if partitions_def is None:
             return replace(self, value=not self.bool_value)
@@ -54,7 +54,7 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
 
     @staticmethod
     def coerce_from_subset(
-        subset: SerializableEntitySubset, partitions_def: Optional[PartitionsDefinition]
+        subset: SerializableEntitySubset, partitions_def: PartitionsDefinition | None
     ) -> "ValidAssetSubset":
         """Converts an EntitySubset to a ValidAssetSubset by returning a copy of this EntitySubset
         if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
@@ -87,9 +87,7 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
             )
 
     @staticmethod
-    def all(
-        asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
-    ) -> "ValidAssetSubset":
+    def all(asset_key: AssetKey, partitions_def: PartitionsDefinition | None) -> "ValidAssetSubset":
         if partitions_def is None:
             return ValidAssetSubset(key=asset_key, value=True)
         else:
@@ -100,7 +98,7 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
 
     @classmethod
     def empty(
-        cls, key: AssetKey, partitions_def: Optional[PartitionsDefinition]
+        cls, key: AssetKey, partitions_def: PartitionsDefinition | None
     ) -> "ValidAssetSubset":
         if partitions_def is None:
             return cls(key=key, value=False)
@@ -110,7 +108,7 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
     @staticmethod
     def from_asset_partitions_set(
         asset_key: AssetKey,
-        partitions_def: Optional[PartitionsDefinition],
+        partitions_def: PartitionsDefinition | None,
         asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
     ) -> "ValidAssetSubset":
         return (

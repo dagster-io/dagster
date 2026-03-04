@@ -15,7 +15,7 @@ slug: '/integrations/libraries/spark'
 
 <p>{frontMatter.description}</p>
 
-This page is focused on using Pipes with specific Spark providers, such as AWS EMR or Databricks. Our guide about [Building pipelines with PySpark](/guides/build/external-pipelines/pyspark-pipeline) provides more information on using Dagster Pipes to launch & monitor general PySpark jobs.
+This page is focused on using Pipes with specific Spark providers, such as AWS EMR or Databricks. Our guide about [Building pipelines with PySpark](/integrations/external-pipelines/pyspark-pipeline) provides more information on using Dagster Pipes to launch & monitor general PySpark jobs.
 
 ## About Apache Spark
 
@@ -23,17 +23,17 @@ This page is focused on using Pipes with specific Spark providers, such as AWS E
 
 ## Using Dagster Pipes to run Spark jobs
 
-[Dagster pipes](/guides/build/external-pipelines) is our toolkit for orchestrating remote compute from Dagster. It allows you to run code outside of the Dagster process, and stream logs and events back to Dagster. This is the recommended approach for running Spark jobs.
+[Dagster pipes](/integrations/external-pipelines) is our toolkit for orchestrating remote compute from Dagster. It allows you to run code outside of the Dagster process, and stream logs and events back to Dagster. This is the recommended approach for running Spark jobs.
 
 With Pipes, the code inside the asset or op definition submits a Spark job to an external system like Databricks or AWS EMR, usually pointing to a jar or zip of Python files that contain the actual Spark data transformations and actions.
 
 You can either use one of the available Pipes Clients or make your own. The available Pipes Clients for popular Spark providers are:
 
-- [Databricks](/guides/build/external-pipelines/databricks-pipeline)
-- [AWS Glue](/guides/build/external-pipelines/aws/aws-glue-pipeline)
-- [AWS EMR](/guides/build/external-pipelines/aws/aws-emr-pipeline)
-- [AWS EMR on EKS](/guides/build/external-pipelines/aws/aws-emr-containers-pipeline)
-- [AWS EMR Serverless](/guides/build/external-pipelines/aws/aws-emr-serverless-pipeline)
+- [Databricks](/integrations/external-pipelines/databricks-pipeline)
+- [AWS Glue](/integrations/external-pipelines/aws/aws-glue-pipeline)
+- [AWS EMR](/integrations/external-pipelines/aws/aws-emr-pipeline)
+- [AWS EMR on EKS](/integrations/external-pipelines/aws/aws-emr-containers-pipeline)
+- [AWS EMR Serverless](/integrations/external-pipelines/aws/aws-emr-serverless-pipeline)
 
 Existing Spark jobs can be used with Pipes without any modifications. In this case, Dagster will be receiving logs from the job, but not events like asset checks or attached metadata.
 

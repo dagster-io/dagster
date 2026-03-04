@@ -4,7 +4,7 @@ import os
 import sys
 import time
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -42,10 +42,10 @@ class StepDelegatingExecutor(Executor):
         self,
         step_handler: StepHandler,
         retries: RetryMode,
-        sleep_seconds: Optional[float] = None,
-        check_step_health_interval_seconds: Optional[int] = None,
-        max_concurrent: Optional[int] = None,
-        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
+        sleep_seconds: float | None = None,
+        check_step_health_interval_seconds: int | None = None,
+        max_concurrent: int | None = None,
+        tag_concurrency_limits: list[dict[str, Any]] | None = None,
         should_verify_step: bool = False,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
@@ -73,7 +73,7 @@ class StepDelegatingExecutor(Executor):
         )
         self._should_verify_step = should_verify_step
 
-        self._event_cursor: Optional[str] = None
+        self._event_cursor: str | None = None
 
         self._pop_events_limit = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_LIMIT", "1000"))
 

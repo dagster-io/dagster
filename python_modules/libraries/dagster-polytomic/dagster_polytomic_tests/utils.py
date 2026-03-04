@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster_polytomic.objects import (
     PolytomicBulkField,
     PolytomicBulkSync,
@@ -14,8 +12,8 @@ def create_sample_connection(
     connection_id: str = "conn-123",
     name: str = "Test Connection",
     connection_type: str = "postgres",
-    organization_id: Optional[str] = "org-123",
-    status: Optional[str] = "active",
+    organization_id: str | None = "org-123",
+    status: str | None = "active",
 ) -> PolytomicConnection:
     """Create a sample PolytomicConnection for testing."""
     return PolytomicConnection(
@@ -31,11 +29,11 @@ def create_sample_bulk_sync(
     bulk_sync_id: str = "sync-123",
     name: str = "Test Bulk Sync",
     active: bool = True,
-    mode: Optional[str] = "create",
-    source_connection_id: Optional[str] = "conn-source",
-    destination_connection_id: Optional[str] = "conn-dest",
-    organization_id: Optional[str] = "org-123",
-    destination_configuration_schema: Optional[str] = None,
+    mode: str | None = "create",
+    source_connection_id: str | None = "conn-source",
+    destination_connection_id: str | None = "conn-dest",
+    organization_id: str | None = "org-123",
+    destination_configuration_schema: str | None = None,
 ) -> PolytomicBulkSync:
     """Create a sample PolytomicBulkSync for testing."""
     return PolytomicBulkSync(
@@ -64,10 +62,10 @@ def create_sample_bulk_field(
 def create_sample_bulk_sync_schema(
     schema_id: str = "schema-123",
     enabled: bool = True,
-    output_name: Optional[str] = "users",
-    partition_key: Optional[str] = None,
-    tracking_field: Optional[str] = None,
-    fields: Optional[list[PolytomicBulkField]] = None,
+    output_name: str | None = "users",
+    partition_key: str | None = None,
+    tracking_field: str | None = None,
+    fields: list[PolytomicBulkField] | None = None,
 ) -> PolytomicBulkSyncSchema:
     """Create a sample PolytomicBulkSyncSchema for testing."""
     if fields is None:
@@ -87,15 +85,15 @@ def create_sample_enriched_schema(
     schema_id: str = "schema-123",
     bulk_sync_id: str = "sync-123",
     enabled: bool = True,
-    output_name: Optional[str] = "users",
-    partition_key: Optional[str] = None,
-    tracking_field: Optional[str] = None,
-    fields: Optional[list[PolytomicBulkField]] = None,
-    destination_configuration_schema: Optional[str] = None,
-    source_connection_id: Optional[str] = "conn-source",
-    source_connection_name: Optional[str] = "Source Connection",
-    destination_connection_id: Optional[str] = "conn-dest",
-    destination_connection_name: Optional[str] = "Dest Connection",
+    output_name: str | None = "users",
+    partition_key: str | None = None,
+    tracking_field: str | None = None,
+    fields: list[PolytomicBulkField] | None = None,
+    destination_configuration_schema: str | None = None,
+    source_connection_id: str | None = "conn-source",
+    source_connection_name: str | None = "Source Connection",
+    destination_connection_id: str | None = "conn-dest",
+    destination_connection_name: str | None = "Dest Connection",
 ) -> PolytomicBulkSyncEnrichedSchema:
     """Create a sample PolytomicBulkSyncEnrichedSchema for testing."""
     if fields is None:
@@ -118,9 +116,9 @@ def create_sample_enriched_schema(
 
 
 def create_sample_workspace_data(
-    connections: Optional[list[PolytomicConnection]] = None,
-    bulk_syncs: Optional[list[PolytomicBulkSync]] = None,
-    schemas_by_bulk_sync_id: Optional[dict[str, list[PolytomicBulkSyncSchema]]] = None,
+    connections: list[PolytomicConnection] | None = None,
+    bulk_syncs: list[PolytomicBulkSync] | None = None,
+    schemas_by_bulk_sync_id: dict[str, list[PolytomicBulkSyncSchema]] | None = None,
 ) -> PolytomicWorkspaceData:
     """Create sample PolytomicWorkspaceData for testing."""
     if connections is None:

@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 import dagster._check as check
 from botocore import __version__ as botocore_version
@@ -27,7 +27,7 @@ T = TypeVar("T")
 
 
 class ResourceWithBoto3Configuration(ConfigurableResource):
-    region_name: Optional[str] = Field(
+    region_name: str | None = Field(
         default=None, description="Specifies a custom region for the Boto3 session"
     )
     max_attempts: int = Field(
@@ -37,28 +37,28 @@ class ResourceWithBoto3Configuration(ConfigurableResource):
             " initial call counts toward the max_attempts value that you provide"
         ),
     )
-    profile_name: Optional[str] = Field(
+    profile_name: str | None = Field(
         default=None, description="Specifies a profile to connect that session"
     )
     use_ssl: bool = Field(
         default=True, description="Whether or not to use SSL. By default, SSL is used."
     )
-    endpoint_url: Optional[str] = Field(
+    endpoint_url: str | None = Field(
         default=None, description="Specifies a custom endpoint for the Boto3 session."
     )
-    verify: Optional[bool] = Field(
+    verify: bool | None = Field(
         default=True,
         description=(
             "Whether or not to verify SSL certificates. By default SSL certificates are verified."
         ),
     )
-    aws_access_key_id: Optional[str] = Field(
+    aws_access_key_id: str | None = Field(
         default=None, description="AWS access key ID to use when creating the boto3 session."
     )
-    aws_secret_access_key: Optional[str] = Field(
+    aws_secret_access_key: str | None = Field(
         default=None, description="AWS secret access key to use when creating the boto3 session."
     )
-    aws_session_token: Optional[str] = Field(
+    aws_session_token: str | None = Field(
         default=None, description="AWS session token to use when creating the boto3 session."
     )
 

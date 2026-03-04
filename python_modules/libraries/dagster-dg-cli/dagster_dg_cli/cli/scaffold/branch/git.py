@@ -3,7 +3,6 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.version import __version__ as dg_version
@@ -20,9 +19,7 @@ def get_dg_version() -> str:
     return dg_version
 
 
-def run_git_command(
-    args: list[str], cwd: Optional[Path] = None
-) -> subprocess.CompletedProcess[str]:
+def run_git_command(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     """Run a git command and return the result.
 
     Args:

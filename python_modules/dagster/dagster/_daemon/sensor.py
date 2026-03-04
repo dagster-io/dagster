@@ -8,7 +8,7 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import dagster_shared.seven as seven
 from dagster_shared.error import DagsterError
@@ -84,11 +84,11 @@ FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILU
 
 
 # sensor, elapsed, min_interval
-ElapsedInstrumentation = Callable[[RemoteSensor, Optional[float], int], None]
+ElapsedInstrumentation = Callable[[RemoteSensor, float | None, int], None]
 
 
 def default_elapsed_instrumentation(
-    sensor: RemoteSensor, elapsed: Optional[float], min_interval: int
+    sensor: RemoteSensor, elapsed: float | None, min_interval: int
 ) -> None:
     pass
 
@@ -100,7 +100,7 @@ class DagsterSensorDaemonError(DagsterError):
 class SkippedSensorRun(NamedTuple):
     """Placeholder for runs that are skipped during the run_key idempotence check."""
 
-    run_key: Optional[str]
+    run_key: str | None
     existing_run: DagsterRun
 
 
@@ -161,10 +161,10 @@ class SensorLaunchContext(AbstractContextManager):
             kwargs["failure_count"] = 0
             kwargs["consecutive_failure_count"] = 0
 
-        skip_reason = cast("Optional[str]", kwargs.get("skip_reason"))
-        cursor = cast("Optional[str]", kwargs.get("cursor"))
-        origin_run_id = cast("Optional[str]", kwargs.get("origin_run_id"))
-        user_interrupted = cast("Optional[bool]", kwargs.get("user_interrupted"))
+        skip_reason = cast("str | None", kwargs.get("skip_reason"))
+        cursor = cast("str | None", kwargs.get("cursor"))
+        origin_run_id = cast("str | None", kwargs.get("origin_run_id"))
+        user_interrupted = cast("bool | None", kwargs.get("user_interrupted"))
         kwargs.pop("skip_reason", None)
 
         kwargs.pop("cursor", None)
@@ -191,7 +191,7 @@ class SensorLaunchContext(AbstractContextManager):
         if user_interrupted:
             self._tick = self._tick.with_user_interrupted(user_interrupted)
 
-    def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
+    def add_run_info(self, run_id: str | None = None, run_key: str | None = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
 
     def add_log_key(self, log_key: Sequence[str]) -> None:
@@ -210,8 +210,8 @@ class SensorLaunchContext(AbstractContextManager):
     def set_run_requests(
         self,
         run_requests: Sequence[RunRequest],
-        reserved_run_ids: Sequence[Optional[str]],
-        cursor: Optional[str],
+        reserved_run_ids: Sequence[str | None],
+        cursor: str | None,
     ) -> None:
         self._tick = self._tick.with_run_requests(
             run_requests=run_requests,
@@ -346,9 +346,9 @@ def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     shutdown_event: threading.Event,
-    until: Optional[float] = None,
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    until: float | None = None,
+    threadpool_executor: ThreadPoolExecutor | None = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
     instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
 ) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -398,10 +398,10 @@ def execute_sensor_iteration_loop(
 def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    threadpool_executor: Optional[ThreadPoolExecutor],
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_tick_futures: Optional[dict[str, Future]] = None,
-    debug_crash_flags: Optional[DebugCrashFlags] = None,
+    threadpool_executor: ThreadPoolExecutor | None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    sensor_tick_futures: dict[str, Future] | None = None,
+    debug_crash_flags: DebugCrashFlags | None = None,
     instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
 ):
     instance = workspace_process_context.instance
@@ -503,7 +503,7 @@ def execute_sensor_iteration(
 def _get_evaluation_tick(
     instance: DagsterInstance,
     sensor: RemoteSensor,
-    instigator_data: Optional[SensorInstigatorData],
+    instigator_data: SensorInstigatorData | None,
     evaluation_timestamp: float,
     logger: logging.Logger,
 ) -> InstigatorTick:
@@ -582,9 +582,9 @@ def _process_tick_generator(
     logger: logging.Logger,
     remote_sensor: RemoteSensor,
     sensor_state: InstigatorState,
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
+    sensor_debug_crash_flags: SingleInstigatorDebugCrashFlags | None,
     tick_retention_settings,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
+    submit_threadpool_executor: ThreadPoolExecutor | None,
 ):
     instance = workspace_process_context.instance
     error_info = None
@@ -658,7 +658,7 @@ def _process_tick_generator(
 _process_tick = return_as_list(_process_tick_generator)
 
 
-def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigatorData]:
+def _sensor_instigator_data(state: InstigatorState) -> SensorInstigatorData | None:
     instigator_data = state.instigator_data
     if instigator_data is None or isinstance(instigator_data, SensorInstigatorData):
         return instigator_data
@@ -694,9 +694,9 @@ def mark_sensor_state_for_tick(
 
 
 class SubmitRunRequestResult(NamedTuple):
-    run_key: Optional[str]
-    error_info: Optional[SerializableErrorInfo]
-    run: Union[SkippedSensorRun, DagsterRun, BackfillSubmission]
+    run_key: str | None
+    error_info: SerializableErrorInfo | None
+    run: SkippedSensorRun | DagsterRun | BackfillSubmission
 
 
 def _submit_run_request(
@@ -765,8 +765,8 @@ def _resume_tick(
     context: SensorLaunchContext,
     tick: InstigatorTick,
     remote_sensor: RemoteSensor,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    sensor_debug_crash_flags: SingleInstigatorDebugCrashFlags | None = None,
 ):
     instance = workspace_process_context.instance
 
@@ -818,8 +818,8 @@ def _evaluate_sensor(
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
     state: InstigatorState,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    sensor_debug_crash_flags: SingleInstigatorDebugCrashFlags | None = None,
 ):
     instance = workspace_process_context.instance
     if (
@@ -916,7 +916,7 @@ def _evaluate_sensor(
 
 def _handle_dynamic_partitions_requests(
     dynamic_partitions_requests: Sequence[
-        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest
     ],
     instance: DagsterInstance,
     context: SensorLaunchContext,
@@ -990,7 +990,7 @@ def _handle_run_reactions(
     dagster_run_reactions: Sequence[DagsterRunReaction],
     instance: DagsterInstance,
     context: SensorLaunchContext,
-    cursor: Optional[str],
+    cursor: str | None,
     remote_sensor: RemoteSensor,
 ) -> None:
     for run_reaction in dagster_run_reactions:
@@ -1069,13 +1069,13 @@ def _resolve_run_requests(
 def _handle_run_requests_and_automation_condition_evaluations(
     raw_run_requests: Sequence[RunRequest],
     automation_condition_evaluations: Sequence[AutomationConditionEvaluation[EntityKey]],
-    cursor: Optional[str],
+    cursor: str | None,
     instance: DagsterInstance,
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
     workspace_process_context: IWorkspaceProcessContext,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    sensor_debug_crash_flags: SingleInstigatorDebugCrashFlags | None = None,
 ):
     # first, write out any evaluations without any run ids
     evaluations = [
@@ -1127,8 +1127,8 @@ def _submit_run_requests(
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
     workspace_process_context: IWorkspaceProcessContext,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None,
+    sensor_debug_crash_flags: SingleInstigatorDebugCrashFlags | None = None,
 ):
     resolved_run_ids_with_requests = _resolve_run_requests(
         workspace_process_context,
@@ -1254,7 +1254,7 @@ def _submit_backfill_request(
 def is_under_min_interval(
     state: InstigatorState,
     remote_sensor: RemoteSensor,
-    minimum_allowed_min_interval: Optional[int] = None,
+    minimum_allowed_min_interval: int | None = None,
 ) -> bool:
     elapsed = get_elapsed(state)
     if elapsed is None:
@@ -1270,7 +1270,7 @@ def is_under_min_interval(
     return elapsed < min_interval
 
 
-def get_elapsed(state: InstigatorState) -> Optional[float]:
+def get_elapsed(state: InstigatorState) -> float | None:
     instigator_data = _sensor_instigator_data(state)
     if not instigator_data:
         return None
@@ -1341,7 +1341,7 @@ def _get_or_create_sensor_run(
     run_request: RunRequest,
     target_data: TargetSnap,
     existing_runs_by_key: dict[str, DagsterRun],
-) -> Union[DagsterRun, SkippedSensorRun]:
+) -> DagsterRun | SkippedSensorRun:
     run_key = run_request.run_key
     run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
 

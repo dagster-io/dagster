@@ -1,6 +1,6 @@
 """Translation utilities for Tableau components."""
 
-from typing import Annotated, Optional, TypeAlias, Union
+from typing import Annotated, TypeAlias
 
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components import Resolvable, Resolver
@@ -32,9 +32,9 @@ ResolvedTargetedTableauTranslationFn = Annotated[
 
 @record
 class TableauAssetArgs(AssetSpecUpdateKwargs, Resolvable):
-    for_sheet: Optional[ResolvedTargetedTableauTranslationFn] = None
-    for_dashboard: Optional[ResolvedTargetedTableauTranslationFn] = None
-    for_data_source: Optional[ResolvedTargetedTableauTranslationFn] = None
+    for_sheet: ResolvedTargetedTableauTranslationFn | None = None
+    for_dashboard: ResolvedTargetedTableauTranslationFn | None = None
+    for_data_source: ResolvedTargetedTableauTranslationFn | None = None
 
 
 def resolve_multilayer_translation(context: ResolutionContext, model):
@@ -87,7 +87,7 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_multilayer_translation,
-        model_field_type=Union[str, TableauAssetArgs.model()],
+        model_field_type=str | TableauAssetArgs.model(),
     ),
 ]
 

@@ -4,7 +4,6 @@ import importlib.util
 import inspect
 from collections.abc import Callable
 from pathlib import Path
-from typing import Union
 
 import click
 from dagster._record import IHaveNew, record, record_custom
@@ -17,14 +16,14 @@ class ValidationConfig(IHaveNew):
     """Configuration for docstring validation."""
 
     root_path: Path
-    path_converter: Callable[[Path, Path], Union[str, None]]
+    path_converter: Callable[[Path, Path], str | None]
     file_filter: Callable[[Path], bool]
 
     def __new__(
         cls,
         root_path: Path,
-        path_converter: Callable[[Path, Path], Union[str, None]],
-        file_filter: Union[Callable[[Path], bool], None] = None,
+        path_converter: Callable[[Path, Path], str | None],
+        file_filter: Callable[[Path], bool] | None = None,
     ):
         if file_filter is None:
             file_filter = lambda p: p.suffix == ".py"
@@ -42,7 +41,7 @@ class SymbolInfo:
 
     symbol_path: str
     file_path: Path
-    line_number: Union[int, None] = None
+    line_number: int | None = None
 
 
 @record

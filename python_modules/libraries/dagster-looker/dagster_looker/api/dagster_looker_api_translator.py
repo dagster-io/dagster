@@ -3,11 +3,13 @@ from enum import Enum
 from typing import Any, Optional, Union
 
 from dagster import (
+    AssetDep,
     AssetKey,
     AssetSpec,
     _check as check,
 )
 from dagster._annotations import deprecated, public
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
@@ -83,10 +85,10 @@ class RequestStartPdtBuild(Model, Resolvable):
 
     model_name: str
     view_name: str
-    force_rebuild: Optional[str] = None
-    force_full_incremental: Optional[str] = None
-    workspace: Optional[str] = None
-    source: Optional[str] = None
+    force_rebuild: str | None = None
+    force_full_incremental: str | None = None
+    workspace: str | None = None
+    source: str | None = None
 
 
 class LookerStructureType(Enum):
@@ -98,14 +100,16 @@ class LookerStructureType(Enum):
 @record
 class LookmlView:
     view_name: str
-    sql_table_name: Optional[str]
+    sql_table_name: str | None
 
 
+# Union is required here because looker SDK types use a metaclass that doesn't support the
+# `|` operator at runtime, causing TypeError during module import (e.g. in Sphinx doc builds).
 @record
 class LookerStructureData:
     structure_type: LookerStructureType
-    data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]
-    base_url: Optional[str] = None
+    data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]  # noqa: UP007
+    base_url: Optional[str] = None  # noqa: UP045
 
 
 @record
@@ -115,18 +119,18 @@ class LookerApiTranslatorStructureData:
     """
 
     structure_data: "LookerStructureData"
-    instance_data: Optional["LookerInstanceData"]
+    instance_data: LookerInstanceData | None
 
     @property
     def structure_type(self) -> LookerStructureType:
         return self.structure_data.structure_type
 
     @property
-    def data(self) -> Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]:
+    def data(self) -> Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]:  # noqa: UP007
         return self.structure_data.data
 
     @property
-    def base_url(self) -> Optional[str]:
+    def base_url(self) -> str | None:
         return self.structure_data.base_url
 
 
@@ -140,8 +144,19 @@ class DagsterLookerApiTranslator:
 
     def get_view_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
         lookml_view = check.inst(looker_structure.data, LookmlView)
+        deps: list[AssetDep] = []
+        if lookml_view.sql_table_name is not None:
+            table_key = AssetKey(lookml_view.sql_table_name.split("."))
+            deps.append(
+                AssetDep(
+                    asset=table_key,
+                    metadata={**TableMetadataSet(table_name=lookml_view.sql_table_name)},
+                )
+            )
         return AssetSpec(
             key=AssetKey(["view", lookml_view.view_name]),
+            metadata={},
+            deps=deps if deps else None,
         )
 
     @deprecated(
@@ -170,30 +185,42 @@ class DagsterLookerApiTranslator:
                 for lookml_explore_join in (lookml_explore.joins or [])
             ]
 
+            metadata = {
+                "dagster-looker/web_url": MetadataValue.url(
+                    f"{looker_structure.base_url}/explore/{check.not_none(lookml_explore.id).replace('::', '/')}"
+                ),
+            }
+            view_deps = list(
+                {
+                    self.get_asset_spec(
+                        LookerApiTranslatorStructureData(
+                            structure_data=LookerStructureData(
+                                structure_type=LookerStructureType.VIEW, data=lookml_view
+                            ),
+                            instance_data=looker_structure.instance_data,
+                        )
+                    ).key
+                    for lookml_view in [explore_base_view, *explore_join_views]
+                }
+            )
+            table_deps = []
+            for lookml_view in [explore_base_view, *explore_join_views]:
+                if lookml_view.sql_table_name is not None:
+                    table_key = AssetKey(lookml_view.sql_table_name.split("."))
+                    table_deps.append(
+                        AssetDep(
+                            asset=table_key,
+                            metadata={**TableMetadataSet(table_name=lookml_view.sql_table_name)},
+                        )
+                    )
             return AssetSpec(
                 key=AssetKey(check.not_none(lookml_explore.id)),
-                deps=list(
-                    {
-                        self.get_asset_spec(
-                            LookerApiTranslatorStructureData(
-                                structure_data=LookerStructureData(
-                                    structure_type=LookerStructureType.VIEW, data=lookml_view
-                                ),
-                                instance_data=looker_structure.instance_data,
-                            )
-                        ).key
-                        for lookml_view in [explore_base_view, *explore_join_views]
-                    }
-                ),
+                deps=[*view_deps, *table_deps],
                 tags={
                     "dagster/kind/looker": "",
                     "dagster/kind/explore": "",
                 },
-                metadata={
-                    "dagster-looker/web_url": MetadataValue.url(
-                        f"{looker_structure.base_url}/explore/{check.not_none(lookml_explore.id).replace('::', '/')}"
-                    ),
-                },
+                metadata=metadata,
             )
         elif isinstance(lookml_explore, DashboardFilter):
             lookml_model_name = check.not_none(lookml_explore.model)

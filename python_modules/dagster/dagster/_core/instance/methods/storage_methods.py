@@ -37,7 +37,7 @@ class StorageMethods:
         self,
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
-        partitions: Optional[set[str]] = None,
+        partitions: set[str] | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialization storage id for each partition for a given asset key.
 
@@ -53,7 +53,7 @@ class StorageMethods:
         partitions_def_name: str,
         limit: int,
         ascending: bool,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]:
         """Get a paginatable subset of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
 

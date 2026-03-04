@@ -32,13 +32,13 @@ def _ct_name(ct):
 class ConfigTypeSnap(IHaveNew):
     kind: ConfigTypeKind
     key: str
-    given_name: Optional[str]
-    description: Optional[str]
-    type_param_keys: Optional[Sequence[str]]  # only valid for closed generics
-    enum_values: Optional[Sequence["ConfigEnumValueSnap"]]  # only valid for enums
-    fields: Optional[Sequence["ConfigFieldSnap"]]  # only valid for dicts and selectors
-    scalar_kind: Optional[ConfigScalarKind]  # only valid for scalars
-    field_aliases: Optional[Mapping[str, str]]  # only valid for strict shapes
+    given_name: str | None
+    description: str | None
+    type_param_keys: Sequence[str] | None  # only valid for closed generics
+    enum_values: Sequence["ConfigEnumValueSnap"] | None  # only valid for enums
+    fields: Sequence["ConfigFieldSnap"] | None  # only valid for dicts and selectors
+    scalar_kind: ConfigScalarKind | None  # only valid for scalars
+    field_aliases: Mapping[str, str] | None  # only valid for strict shapes
 
     # serdes log
     # * Adding scalar_kind
@@ -47,14 +47,14 @@ class ConfigTypeSnap(IHaveNew):
         cls,
         kind: ConfigTypeKind,
         key: str,
-        given_name: Optional[str],
-        description: Optional[str],
-        type_param_keys: Optional[Sequence[str]],
-        enum_values: Optional[Sequence["ConfigEnumValueSnap"]],
-        fields: Optional[Sequence["ConfigFieldSnap"]],
+        given_name: str | None,
+        description: str | None,
+        type_param_keys: Sequence[str] | None,
+        enum_values: Sequence["ConfigEnumValueSnap"] | None,
+        fields: Sequence["ConfigFieldSnap"] | None,
         # Old version of object will not have these properties
-        scalar_kind: Optional[ConfigScalarKind] = None,
-        field_aliases: Optional[Mapping[str, str]] = None,
+        scalar_kind: ConfigScalarKind | None = None,
+        field_aliases: Mapping[str, str] | None = None,
     ):
         return super().__new__(
             cls,
@@ -166,19 +166,19 @@ class ConfigTypeSnap(IHaveNew):
 @record
 class ConfigEnumValueSnap:
     value: str
-    description: Optional[str]
+    description: str | None
 
 
 @whitelist_for_serdes(skip_when_none_fields={"is_secret"})
 @record
 class ConfigFieldSnap:
-    name: Optional[str]
+    name: str | None
     type_key: str
     is_required: bool
     default_provided: bool
-    default_value_as_json_str: Optional[str]
-    description: Optional[str]
-    is_secret: Optional[bool] = None
+    default_value_as_json_str: str | None
+    description: str | None
+    is_secret: bool | None = None
 
 
 def snap_from_field(name: str, field: Field):

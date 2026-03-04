@@ -2,7 +2,7 @@ import json
 import time
 from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 import yaml
@@ -182,7 +182,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " deleted clusters can be reused."
         )
     )
-    labels: Optional[dict[str, str]] = Field(
+    labels: dict[str, str] | None = Field(
         default=None,
         description=(
             "Optional. The labels to associate with this cluster. Label keys must"
@@ -193,7 +193,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " with a cluster."
         ),
     )
-    cluster_config_yaml_path: Optional[str] = Field(
+    cluster_config_yaml_path: str | None = Field(
         default=None,
         description=(
             "Full path to a YAML file containing cluster configuration. See"
@@ -202,7 +202,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
-    cluster_config_json_path: Optional[str] = Field(
+    cluster_config_json_path: str | None = Field(
         default=None,
         description=(
             "Full path to a JSON file containing cluster configuration. See"
@@ -211,7 +211,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
-    cluster_config_dict: Optional[dict[str, Any]] = Field(
+    cluster_config_dict: dict[str, Any] | None = Field(
         default=None,
         description=(
             "Python dictionary containing cluster configuration. See"
@@ -233,7 +233,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         with open(path, encoding="utf8") as f:
             return json.load(f)
 
-    def _get_cluster_config(self) -> Optional[Mapping[str, Any]]:
+    def _get_cluster_config(self) -> Mapping[str, Any] | None:
         methods = 0
         methods += 1 if self.cluster_config_dict is not None else 0
         methods += 1 if self.cluster_config_json_path is not None else 0

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Union  # noqa: UP035
 
 from toposort import CircularDependencyError
 
@@ -55,9 +55,9 @@ def is_reserved_asset_job_name(name: str) -> bool:
 
 def get_base_asset_job_lambda(
     asset_graph: AssetGraph,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]],
-    executor_def: Optional[ExecutorDefinition],
-    logger_defs: Optional[Mapping[str, LoggerDefinition]],
+    resource_defs: Mapping[str, ResourceDefinition] | None,
+    executor_def: ExecutorDefinition | None,
+    logger_defs: Mapping[str, LoggerDefinition] | None,
 ) -> Callable[[], JobDefinition]:
     def build_asset_job_lambda() -> JobDefinition:
         job_def = build_asset_job(
@@ -79,19 +79,18 @@ def build_asset_job(
     name: str,
     asset_graph: AssetGraph,
     allow_different_partitions_defs: bool,
-    resource_defs: Optional[Mapping[str, object]] = None,
-    description: Optional[str] = None,
-    config: Optional[
-        Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
-    ] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    run_tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    executor_def: Optional[ExecutorDefinition] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    op_retry_policy: Optional[RetryPolicy] = None,
-    _asset_selection_data: Optional[AssetSelectionData] = None,
+    resource_defs: Mapping[str, object] | None = None,
+    description: str | None = None,
+    config: Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+    | None = None,
+    tags: Mapping[str, str] | None = None,
+    run_tags: Mapping[str, str] | None = None,
+    metadata: Mapping[str, RawMetadataValue] | None = None,
+    executor_def: ExecutorDefinition | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
+    op_retry_policy: RetryPolicy | None = None,
+    _asset_selection_data: AssetSelectionData | None = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets. This is a private function that is used
     during resolution of jobs created with `define_asset_job`.
@@ -291,7 +290,7 @@ def get_asset_graph_for_job(
 def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
-    selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+    selected_asset_check_keys: AbstractSet[AssetCheckKey] | None,
     allow_extraneous_asset_keys: bool = False,
 ) -> tuple[
     Sequence["AssetsDefinition"],
@@ -361,8 +360,8 @@ def _infer_and_validate_common_partitions_def(
     asset_graph: AssetGraph,
     asset_keys: Iterable[AssetKey],
     allow_different_partitions_defs: bool,
-    required_partitions_def: Optional[PartitionsDefinition] = None,
-) -> Optional[PartitionsDefinition]:
+    required_partitions_def: PartitionsDefinition | None = None,
+) -> PartitionsDefinition | None:
     keys_by_partitions_def = defaultdict(set)
     for key in asset_keys:
         partitions_def = asset_graph.get(key).partitions_def

@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import graphene
 from dagster._core.definitions.selector import SensorSelector
@@ -33,7 +33,7 @@ class GrapheneSensorDryRunMutation(graphene.Mutation):
 
     @capture_error
     def mutate(
-        self, graphene_info: "ResolveInfo", selector_data: Mapping[str, Any], cursor: Optional[str]
+        self, graphene_info: "ResolveInfo", selector_data: Mapping[str, Any], cursor: str | None
     ):
         return GrapheneDryRunInstigationTick(
             SensorSelector.from_graphql_input(selector_data), timestamp=None, cursor=cursor

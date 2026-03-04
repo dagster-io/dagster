@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-from typing import Any, Union
+from typing import Any
 
 import dagster as dg
 from dagster import DagsterInstance
@@ -19,7 +19,7 @@ from dagster._core.events import AssetObservationData, DagsterEventType, StepMat
 
 
 def create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> dg.EventLogEntry:
-    event_specific_data: Union[StepMaterializationData, AssetObservationData]
+    event_specific_data: StepMaterializationData | AssetObservationData
     if isinstance(data, dg.AssetMaterialization):
         event_specific_data = StepMaterializationData(data, [])
     elif isinstance(data, dg.AssetObservation):

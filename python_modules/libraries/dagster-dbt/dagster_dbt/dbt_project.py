@@ -2,7 +2,6 @@ import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 import yaml
 from dagster._annotations import public
@@ -50,18 +49,18 @@ class DbtProjectPreparer:
 class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
-        generate_cli_args: Optional[Sequence[str]] = None,
+        prepare_project_cli_args: Sequence[str] | None = None,
     ):
         """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
             * When deploying, expect a manifest that was created at build time to reduce start-up time.
 
         Args:
-            generate_cli_args (Sequence[str]):
+            prepare_project_cli_args (Sequence[str]):
                 The arguments to pass to the dbt cli to generate a manifest.json.
                 Default: ["parse", "--quiet"]
         """
-        self._generate_cli_args = generate_cli_args or ["parse", "--quiet"]
+        self._prepare_project_cli_args = prepare_project_cli_args or ["parse", "--quiet"]
 
     @public
     def prepare_if_dev(self, project: "DbtProject"):
@@ -126,7 +125,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         (
             DbtCliResource(project_dir=project)
             .cli(
-                self._generate_cli_args,
+                self._prepare_project_cli_args,
                 target_path=project.target_path,
             )
             .wait()
@@ -246,24 +245,25 @@ class DbtProject(IHaveNew):
     project_dir: Path
     target_path: Path
     profiles_dir: Path
-    profile: Optional[str]
-    target: Optional[str]
+    profile: str | None
+    target: str | None
     manifest_path: Path
-    packaged_project_dir: Optional[Path]
-    state_path: Optional[Path]
+    packaged_project_dir: Path | None
+    state_path: Path | None
     has_uninstalled_deps: bool
     preparer: DbtProjectPreparer
 
     def __new__(
         cls,
-        project_dir: Union[Path, str],
+        project_dir: Path | str,
         *,
-        target_path: Union[Path, str] = Path("target"),
-        profiles_dir: Optional[Union[Path, str]] = None,
-        profile: Optional[str] = None,
-        target: Optional[str] = None,
-        packaged_project_dir: Optional[Union[Path, str]] = None,
-        state_path: Optional[Union[Path, str]] = None,
+        target_path: Path | str = Path("target"),
+        profiles_dir: Path | str | None = None,
+        profile: str | None = None,
+        target: str | None = None,
+        packaged_project_dir: Path | str | None = None,
+        state_path: Path | str | None = None,
+        prepare_project_cli_args: Sequence[str] | None = None,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():
@@ -282,7 +282,7 @@ class DbtProject(IHaveNew):
                 f"profiles {profiles_dir} does not exist."
             )
 
-        preparer = DagsterDbtProjectPreparer()
+        preparer = DagsterDbtProjectPreparer(prepare_project_cli_args=prepare_project_cli_args)
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 

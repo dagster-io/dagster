@@ -32,7 +32,7 @@ def hash_collection(
 
 
 @overload
-def make_hashable(value: Union[list[Any], set[Any]]) -> tuple[Any, ...]: ...
+def make_hashable(value: list[Any] | set[Any]) -> tuple[Any, ...]: ...
 
 
 @overload

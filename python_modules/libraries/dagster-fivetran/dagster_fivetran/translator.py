@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, NamedTuple, Optional, TypeAlias
+from typing import Any, NamedTuple, TypeAlias
 
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
@@ -25,10 +25,10 @@ class FivetranConnectorTableProps(NamedTuple):
     connector_id: str
     connector_name: str
     connector_url: str
-    destination_id: Optional[str]
+    destination_id: str | None
     schema_config: "FivetranSchemaConfig"
-    database: Optional[str]
-    service: Optional[str]
+    database: str | None
+    service: str | None
 
     @property
     def name(self) -> str:
@@ -62,8 +62,8 @@ class FivetranConnector:
     setup_state: str
     sync_state: str
     paused: bool
-    succeeded_at: Optional[str]
-    failed_at: Optional[str]
+    succeeded_at: str | None
+    failed_at: str | None
 
     @property
     def url(self) -> str:
@@ -141,7 +141,7 @@ class FivetranDestination:
     """Represents a Fivetran destination, based on data as returned from the API."""
 
     id: str
-    database: Optional[str]
+    database: str | None
     service: str
 
     @classmethod
@@ -163,7 +163,7 @@ class FivetranTable:
     enabled: bool
     name_in_destination: str
     # We keep the raw data for columns to add it as `column_info` in the metadata.
-    columns: Optional[Mapping[str, Any]]
+    columns: Mapping[str, Any] | None
 
     @classmethod
     def from_table_details(cls, table_details: Mapping[str, Any]) -> "FivetranTable":
@@ -264,7 +264,7 @@ class FivetranWorkspaceData:
     # Cache workspace data selection for a specific connector_selector_fn
     @cached_method
     def to_workspace_data_selection(
-        self, connector_selector_fn: Optional[ConnectorSelectorFn]
+        self, connector_selector_fn: ConnectorSelectorFn | None
     ) -> "FivetranWorkspaceData":
         if not connector_selector_fn:
             return self
@@ -294,11 +294,11 @@ class FivetranWorkspaceData:
 
 
 class FivetranMetadataSet(NamespacedMetadataSet):
-    connector_id: Optional[str] = None
-    connector_name: Optional[str] = None
-    destination_id: Optional[str] = None
-    destination_schema_name: Optional[str] = None
-    destination_table_name: Optional[str] = None
+    connector_id: str | None = None
+    connector_name: str | None = None
+    destination_id: str | None = None
+    destination_schema_name: str | None = None
+    destination_table_name: str | None = None
 
     @classmethod
     def namespace(cls) -> str:

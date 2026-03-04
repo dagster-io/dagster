@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, TypeAlias, Union, cast
 
 import dagster._check as check
 import graphene
@@ -21,6 +21,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
 )
+from dagster._core.storage.dagster_run import RunRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
@@ -109,6 +110,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     )
     partition = graphene.Field(graphene.String)
     stepKey = graphene.Field(graphene.String)
+    run = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
 
     class Meta:
         name = "AssetCheckExecution"
@@ -132,6 +134,16 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self, graphene_info: "ResolveInfo"
     ) -> AssetCheckExecutionResolvedStatus:
         return await self._execution.resolve_status(graphene_info.context)
+
+    async def resolve_run(self, graphene_info: "ResolveInfo"):
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+
+        if self.runId:
+            run_record = await RunRecord.gen(graphene_info.context, self.runId)
+        else:
+            run_record = None
+
+        return GrapheneRun(run_record) if run_record else None
 
 
 class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
@@ -298,7 +310,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_name(self, _) -> str:
         return self._asset_check.name
 
-    def resolve_description(self, _) -> Optional[str]:
+    def resolve_description(self, _) -> str | None:
         return self._asset_check.description
 
     def resolve_jobNames(self, _) -> Sequence[str]:
@@ -306,7 +318,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     async def resolve_executionForLatestMaterialization(
         self, graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAssetCheckExecution]:
+    ) -> GrapheneAssetCheckExecution | None:
         record = await AssetCheckExecutionRecord.gen(graphene_info.context, self._asset_check.key)
         return (
             GrapheneAssetCheckExecution(record)
@@ -334,7 +346,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAutoMaterializePolicy]:
+    ) -> GrapheneAutoMaterializePolicy | None:
         automation_condition = (
             self._asset_check.automation_condition_snapshot
             or self._asset_check.automation_condition
@@ -361,8 +373,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_partitionKeysByDimension(
         self,
         graphene_info: ResolveInfo,
-        startIdx: Optional[int] = None,
-        endIdx: Optional[int] = None,
+        startIdx: int | None = None,
+        endIdx: int | None = None,
     ) -> Sequence["GrapheneDimensionPartitionKeys"]:
         from dagster_graphql.schema.partition_sets import (
             GrapheneDimensionPartitionKeys,
@@ -415,13 +427,14 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     async def resolve_partitionStatuses(
         self, graphene_info: ResolveInfo
-    ) -> Optional[
+    ) -> (
         Union[
             "GrapheneAssetCheckTimePartitionStatuses",
             "GrapheneAssetCheckDefaultPartitionStatuses",
             "GrapheneAssetCheckMultiPartitionStatuses",
         ]
-    ]:
+        | None
+    ):
         """Resolve partition statuses using union type with efficient representation."""
         from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
         from dagster._core.storage.asset_check_state import AssetCheckState
@@ -490,12 +503,12 @@ class GrapheneAssetCheckNeedsUserCodeUpgrade(graphene.ObjectType):
         name = "AssetCheckNeedsUserCodeUpgrade"
 
 
-AssetChecksOrErrorUnion = Union[
-    GrapheneAssetCheckNeedsMigrationError,
-    GrapheneAssetCheckNeedsUserCodeUpgrade,
-    GrapheneAssetCheckNeedsAgentUpgradeError,
-    GrapheneAssetChecks,
-]
+AssetChecksOrErrorUnion: TypeAlias = (
+    GrapheneAssetCheckNeedsMigrationError
+    | GrapheneAssetCheckNeedsUserCodeUpgrade
+    | GrapheneAssetCheckNeedsAgentUpgradeError
+    | GrapheneAssetChecks
+)
 
 
 class GrapheneAssetChecksOrError(graphene.Union):

@@ -1,3 +1,0 @@
-include dagster_cloud_cli/commands/serverless/Dockerfile
-include dagster_cloud_cli/commands/serverless/Dockerfile.dagster-cloud-cli
-include dagster_cloud_cli/py.typed

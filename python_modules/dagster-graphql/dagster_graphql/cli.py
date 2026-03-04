@@ -1,7 +1,6 @@
 import asyncio
 from collections.abc import Mapping
 from io import TextIOWrapper
-from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import click
@@ -34,7 +33,7 @@ def create_dagster_graphql_cli():
 def execute_query(
     workspace_process_context: WorkspaceProcessContext,
     query: str,
-    variables: Optional[Mapping[str, object]] = None,
+    variables: Mapping[str, object] | None = None,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
@@ -187,12 +186,12 @@ PREDEFINED_QUERIES = {
 )
 @workspace_options
 def ui(
-    text: Optional[str],
-    file: Optional[TextIOWrapper],
-    predefined: Optional[str],
-    variables: Optional[str],
-    remote: Optional[str],
-    output: Optional[str],
+    text: str | None,
+    file: TextIOWrapper | None,
+    predefined: str | None,
+    variables: str | None,
+    remote: str | None,
+    output: str | None,
     ephemeral_instance: bool,
     **other_opts,
 ):

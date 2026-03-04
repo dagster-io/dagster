@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -18,7 +17,7 @@ class AthenaClientResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="Credentials for connecting to Athena."
     )
 
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the Athena resource will be bound to the definitions.",
     )

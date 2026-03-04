@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 
 
@@ -11,7 +9,7 @@ class DbtMetadataSet(NamespacedMetadataSet):
             https://docs.getdbt.com/docs/build/materializations.
     """
 
-    materialization_type: Optional[str]
+    materialization_type: str | None
 
     @classmethod
     def namespace(cls) -> str:

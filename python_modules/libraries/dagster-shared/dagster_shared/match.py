@@ -17,7 +17,7 @@ T = TypeVar("T", bound=Any)
 
 # Use Any for type_ because there isn't a good static type that can handle all the cases listed
 # here.
-def match_type(obj: object, type_: Union[type[T], tuple[type[T]]]) -> TypeGuard[T]:
+def match_type(obj: object, type_: type[T] | tuple[type[T]]) -> TypeGuard[T]:
     if isinstance(type_, tuple):
         return any(match_type(obj, t) for t in type_)
 

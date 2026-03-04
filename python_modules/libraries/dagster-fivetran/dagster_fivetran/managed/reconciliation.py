@@ -1,7 +1,7 @@
 import json
 from collections.abc import Iterable, Mapping
 from itertools import chain
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster import ResourceDefinition
@@ -23,7 +23,7 @@ from dagster_fivetran.managed.types import (
 FIVETRAN_SECRET_MASK = "******"
 
 
-def _ignore_secrets_compare_fn(k: str, _cv: Any, dv: Any) -> Optional[bool]:
+def _ignore_secrets_compare_fn(k: str, _cv: Any, dv: Any) -> bool | None:
     if is_key_secret(k):
         return dv == FIVETRAN_SECRET_MASK
     return None
@@ -40,8 +40,8 @@ def _diff_configs(
 
 
 def diff_destinations(
-    config_dst: Optional[FivetranDestination],
-    curr_dst: Optional[FivetranDestination],
+    config_dst: FivetranDestination | None,
+    curr_dst: FivetranDestination | None,
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
     """Utility to diff two FivetranDestination objects."""
@@ -58,8 +58,8 @@ def diff_destinations(
 
 
 def diff_connectors(
-    config_conn: Optional[FivetranConnector],
-    curr_conn: Optional[FivetranConnector],
+    config_conn: FivetranConnector | None,
+    curr_conn: FivetranConnector | None,
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
     """Utility to diff two FivetranDestination objects."""

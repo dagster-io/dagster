@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.12.17 (core) / 0.28.17 (libraries)
+
+### Bugfixes
+
+- Fix bug with inclusion of built webapp in `dagster-webserver` that caused the Dagster UI to fail to load.
+
+## 1.12.16 (core) / 0.28.16 (libraries) (YANKED)
+
+This version of Dagster inadvertently did not include the webapp code in the published `dagster-webserver` package.
+
+### Bugfixes
+
+- [ui] Fixed redirect to login when the user's session expires.
+- [ui] Fixed console error noise during asset lineage navigation.
+
+### Dagster Plus
+
+- [ui] Improved loading states and autoscroll behavior in the AI chat UI.
+- [ui] Fixed the icon selector in the saved selection creation flow.
+
+## 1.12.15 (core) / 0.28.15 (libraries)
+
+### New
+
+- Pool names can now be any non-whitespace character, instead of requiring alphanumbeic characters, slashes, and underscores.
+- [dagster-aws] The `EcsRunLauncher` will now retry a task launch when a RunTask API call fails due to a throttling error in an underlying EC2 API call.
+- [dagster-tableau] Tableau workbooks and projects can now be filtered using the `workbook_selector` and `project_selector` in `TableauComponent`.
+
+### Bugfixes
+
+- [ui] Fixed issue where saved launchpad config was not used for single-partition asset materializations.
+- [ui] Fix console error noise during asset lineage navigation.
+- [ui] Fixed an issue where the "Start X Automations" and "Stop X Automations" menu options on the Automations tab were sometimes incorrectly disabled.
+- [dagster-dbt] The `DbtProject` constructor now correctly accepts strings for the `target_path` parameter.
+
 ## 1.12.14 (core) / 0.28.14 (libraries)
 
 ### New

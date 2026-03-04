@@ -9,7 +9,7 @@ import sys
 import traceback
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 import yaml
@@ -24,7 +24,7 @@ class RecordingClient(IGraphQLClient):
         self.real_client = real_client
         self.recorded_responses = []
 
-    def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None) -> dict:
+    def execute(self, query: str, variables: Mapping[str, Any] | None = None) -> dict:
         """Execute query on real client and record the response."""
         response = self.real_client.execute(query, variables)
         self.recorded_responses.append(response)

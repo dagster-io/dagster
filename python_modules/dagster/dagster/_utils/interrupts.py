@@ -4,7 +4,7 @@ import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from types import FrameType
-from typing import Any, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 # This should be improved later-- signal._HANDLER unfortunately is not defined in all Python
 # versions.
@@ -41,7 +41,7 @@ def capture_interrupts() -> Iterator[None]:
 
     original_signal_handler = signal.getsignal(signal.SIGINT)
 
-    def _new_signal_handler(_signo: int, _: Optional[FrameType]) -> None:
+    def _new_signal_handler(_signo: int, _: FrameType | None) -> None:
         _received_interrupt["received"] = True
 
     signal_replaced = False
@@ -77,7 +77,7 @@ def raise_interrupts_as(error_cls: type[BaseException]) -> Iterator[None]:
 
     original_signal_handler = signal.getsignal(signal.SIGINT)
 
-    def _new_signal_handler(_signo: int, _: Optional[FrameType]) -> None:
+    def _new_signal_handler(_signo: int, _: FrameType | None) -> None:
         raise error_cls()
 
     signal_replaced = False

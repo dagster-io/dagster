@@ -3,7 +3,7 @@ import itertools
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from functools import lru_cache, reduce
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from dagster_shared.check.functions import CheckError
 
@@ -190,7 +190,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         check.failed(f"Invalid dimension name {dimension_name}")
 
     # We override the default implementation of `has_partition_key` for performance.
-    def has_partition_key(self, partition_key: Union[MultiPartitionKey, str]) -> bool:
+    def has_partition_key(self, partition_key: MultiPartitionKey | str) -> bool:
         if isinstance(partition_key, str):
             try:
                 partition_key = self.get_partition_key_from_str(partition_key)
@@ -232,7 +232,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     @public
     def get_partition_keys(
         self,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[MultiPartitionKey]:
         """Returns a list of MultiPartitionKeys representing the partition keys of the
@@ -257,7 +257,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         context: PartitionLoadingContext,
         limit: int,
         ascending: bool,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.

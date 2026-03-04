@@ -1,5 +1,3 @@
-from typing import List  # noqa: UP035
-
 import dagster as dg
 
 

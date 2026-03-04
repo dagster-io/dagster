@@ -44,7 +44,7 @@ class InstigatorType(Enum):
 
 
 @whitelist_for_serdes
-class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional[str]])])):
+class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[str | None])])):
     """Represents a skipped evaluation, where no runs are requested. May contain a message to indicate
     why no runs were requested.
 
@@ -53,7 +53,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
             in no requested runs.
     """
 
-    def __new__(cls, skip_message: Optional[str] = None):
+    def __new__(cls, skip_message: str | None = None):
         return super().__new__(
             cls,
             skip_message=check.opt_str_param(skip_message, "skip_message"),
@@ -97,26 +97,26 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         partition_key (Optional[str]): The partition key for this run request.
     """
 
-    run_key: Optional[str]
+    run_key: str | None
     run_config: Mapping[str, Any]
     tags: Mapping[str, str]
-    job_name: Optional[str]
-    asset_selection: Optional[Sequence[AssetKey]]
+    job_name: str | None
+    asset_selection: Sequence[AssetKey] | None
     stale_assets_only: bool
-    partition_key: Optional[str]
-    asset_check_keys: Optional[Sequence[AssetCheckKey]]
-    asset_graph_subset: Optional[AssetGraphSubset]
+    partition_key: str | None
+    asset_check_keys: Sequence[AssetCheckKey] | None
+    asset_graph_subset: AssetGraphSubset | None
 
     def __new__(
         cls,
-        run_key: Optional[str] = None,
-        run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
-        tags: Optional[Mapping[str, Any]] = None,
-        job_name: Optional[str] = None,
-        asset_selection: Optional[Sequence[AssetKey]] = None,
+        run_key: str | None = None,
+        run_config: Union["RunConfig", Mapping[str, Any]] | None = None,
+        tags: Mapping[str, Any] | None = None,
+        job_name: str | None = None,
+        asset_selection: Sequence[AssetKey] | None = None,
         stale_assets_only: bool = False,
-        partition_key: Optional[str] = None,
-        asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
+        partition_key: str | None = None,
+        asset_check_keys: Sequence[AssetCheckKey] | None = None,
         **kwargs,
     ):
         from dagster._core.definitions.run_config import convert_config_input
@@ -156,7 +156,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     def for_asset_graph_subset(
         cls,
         asset_graph_subset: AssetGraphSubset,
-        tags: Optional[Mapping[str, str]],
+        tags: Mapping[str, str] | None,
     ) -> "RunRequest":
         """Constructs a RunRequest from an AssetGraphSubset. When processed by the sensor
         daemon, this will launch a backfill instead of a run.
@@ -176,7 +176,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         self,
         target_definition: "JobDefinition",
         dynamic_partitions_requests: Sequence[
-            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+            AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest
         ],
         dynamic_partitions_store: Optional["DynamicPartitionsStore"],
     ) -> "RunRequest":
@@ -225,7 +225,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         return self.tags.get(PARTITION_NAME_TAG) is not None if self.partition_key else True
 
     @property
-    def partition_key_range(self) -> Optional[PartitionKeyRange]:
+    def partition_key_range(self) -> PartitionKeyRange | None:
         if (
             ASSET_PARTITION_RANGE_START_TAG in self.tags
             and ASSET_PARTITION_RANGE_END_TAG in self.tags
@@ -258,9 +258,9 @@ class DagsterRunReaction(
     NamedTuple(
         "_DagsterRunReaction",
         [
-            ("dagster_run", Optional[DagsterRun]),
-            ("error", Optional[SerializableErrorInfo]),
-            ("run_status", Optional[DagsterRunStatus]),
+            ("dagster_run", DagsterRun | None),
+            ("error", SerializableErrorInfo | None),
+            ("run_status", DagsterRunStatus | None),
         ],
     )
 ):
@@ -275,9 +275,9 @@ class DagsterRunReaction(
 
     def __new__(
         cls,
-        dagster_run: Optional[DagsterRun],
-        error: Optional[SerializableErrorInfo] = None,
-        run_status: Optional[DagsterRunStatus] = None,
+        dagster_run: DagsterRun | None,
+        error: SerializableErrorInfo | None = None,
+        run_status: DagsterRunStatus | None = None,
     ):
         return super().__new__(
             cls,
@@ -292,22 +292,20 @@ class SensorResult(
     NamedTuple(
         "_SensorResult",
         [
-            ("run_requests", Optional[Sequence[RunRequest]]),
-            ("skip_reason", Optional[SkipReason]),
-            ("cursor", Optional[str]),
+            ("run_requests", Sequence[RunRequest] | None),
+            ("skip_reason", SkipReason | None),
+            ("cursor", str | None),
             (
                 "dynamic_partitions_requests",
-                Optional[
-                    Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
-                ],
+                Sequence[DeleteDynamicPartitionsRequest | AddDynamicPartitionsRequest] | None,
             ),
             (
                 "asset_events",
-                list[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
+                list[AssetObservation | AssetMaterialization | AssetCheckEvaluation],
             ),
             (
                 "automation_condition_evaluations",
-                Optional[Sequence[AutomationConditionEvaluation[EntityKey]]],
+                Sequence[AutomationConditionEvaluation[EntityKey]] | None,
             ),
         ],
     )
@@ -335,15 +333,15 @@ class SensorResult(
 
     def __new__(
         cls,
-        run_requests: Optional[Sequence[RunRequest]] = None,
-        skip_reason: Optional[Union[str, SkipReason]] = None,
-        cursor: Optional[str] = None,
-        dynamic_partitions_requests: Optional[
-            Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
-        ] = None,
-        asset_events: Optional[
-            Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]
-        ] = None,
+        run_requests: Sequence[RunRequest] | None = None,
+        skip_reason: str | SkipReason | None = None,
+        cursor: str | None = None,
+        dynamic_partitions_requests: Sequence[
+            DeleteDynamicPartitionsRequest | AddDynamicPartitionsRequest
+        ]
+        | None = None,
+        asset_events: Sequence[AssetObservation | AssetMaterialization | AssetCheckEvaluation]
+        | None = None,
         **kwargs,
     ):
         if skip_reason and len(run_requests if run_requests else []) > 0:

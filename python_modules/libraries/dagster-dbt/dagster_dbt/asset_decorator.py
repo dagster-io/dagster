@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     AssetsDefinition,
@@ -31,18 +31,18 @@ def dbt_assets(
     *,
     manifest: DbtManifestParam,
     select: str = DBT_DEFAULT_SELECT,
-    exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
-    selector: Optional[str] = DBT_DEFAULT_SELECTOR,
-    name: Optional[str] = None,
-    io_manager_key: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    required_resource_keys: Optional[set[str]] = None,
-    project: Optional[DbtProject] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    pool: Optional[str] = None,
+    exclude: str | None = DBT_DEFAULT_EXCLUDE,
+    selector: str | None = DBT_DEFAULT_SELECTOR,
+    name: str | None = None,
+    io_manager_key: str | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    required_resource_keys: set[str] | None = None,
+    project: DbtProject | None = None,
+    retry_policy: RetryPolicy | None = None,
+    pool: str | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s

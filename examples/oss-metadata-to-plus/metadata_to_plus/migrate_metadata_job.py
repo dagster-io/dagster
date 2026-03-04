@@ -1,7 +1,6 @@
 # Docs: https://docs.dagster.io/api/python-api/external-assets-rest-api
 
 import os
-from typing import Optional
 
 import requests
 from dagster import (
@@ -21,8 +20,8 @@ def _report_asset_materialization_to_dagster_plus(
     new_deployment: str,
     new_dagster_cloud_api_token: str,
     asset_key: str,
-    partition: Optional[str],
-    metadata: Optional[dict],
+    partition: str | None,
+    metadata: dict | None,
 ):
     url = "https://{organization}.dagster.cloud/{deployment_name}/report_asset_materialization/".format(  # noqa: UP032
         organization=new_organization, deployment_name=new_deployment

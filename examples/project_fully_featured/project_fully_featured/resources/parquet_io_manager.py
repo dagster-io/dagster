@@ -1,5 +1,4 @@
 import os
-from typing import Union
 
 import pandas
 from dagster import (
@@ -30,7 +29,7 @@ class PartitionedParquetIOManager(ConfigurableIOManager):
     def _base_path(self):
         raise NotImplementedError()
 
-    def handle_output(self, context: OutputContext, obj: Union[pandas.DataFrame, PySparkDataFrame]):
+    def handle_output(self, context: OutputContext, obj: pandas.DataFrame | PySparkDataFrame):
         path = self._get_path(context)
         if "://" not in self._base_path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -47,7 +46,7 @@ class PartitionedParquetIOManager(ConfigurableIOManager):
 
         context.add_output_metadata({"row_count": row_count, "path": path})
 
-    def load_input(self, context) -> Union[PySparkDataFrame, str]:
+    def load_input(self, context) -> PySparkDataFrame | str:
         path = self._get_path(context)
         if context.dagster_type.typing_type == PySparkDataFrame:
             # return pyspark dataframe
@@ -58,7 +57,7 @@ class PartitionedParquetIOManager(ConfigurableIOManager):
             "for this input either on the argument of the @asset-decorated function."
         )
 
-    def _get_path(self, context: Union[InputContext, OutputContext]):
+    def _get_path(self, context: InputContext | OutputContext):
         key = context.asset_key.path[-1]
 
         if context.has_asset_partitions:

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from pydantic import BaseModel
 
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 @beta
 def build_column_schema_change_checks(
     *,
-    assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
+    assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
     severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
 ) -> Sequence[AssetChecksDefinition]:
     """Returns asset checks that pass if the column schema of the asset's latest materialization

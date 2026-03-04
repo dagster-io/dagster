@@ -2,7 +2,7 @@ import typing
 from collections.abc import Iterator, Sequence
 from enum import Enum as PythonEnum
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -64,22 +64,22 @@ class ConfigType:
         self,
         key: str,
         kind: ConfigTypeKind,
-        given_name: Optional[str] = None,
-        description: Optional[str] = None,
-        type_params: Optional[Sequence["ConfigType"]] = None,
+        given_name: str | None = None,
+        description: str | None = None,
+        type_params: Sequence["ConfigType"] | None = None,
     ):
         self.key: str = check.str_param(key, "key")
         self.kind: ConfigTypeKind = check.inst_param(kind, "kind", ConfigTypeKind)
-        self.given_name: Optional[str] = check.opt_str_param(given_name, "given_name")
-        self._description: Optional[str] = check.opt_str_param(description, "description")
-        self.type_params: Optional[Sequence[ConfigType]] = (
+        self.given_name: str | None = check.opt_str_param(given_name, "given_name")
+        self._description: str | None = check.opt_str_param(description, "description")
+        self.type_params: Sequence[ConfigType] | None = (
             check.sequence_param(type_params, "type_params", of_type=ConfigType)
             if type_params
             else None
         )
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._description
 
     @staticmethod
@@ -129,7 +129,7 @@ class ConfigScalar(ConfigType):
     def __init__(
         self,
         key: str,
-        given_name: Optional[str],
+        given_name: str | None,
         scalar_kind: ConfigScalarKind,
         **kwargs: typing.Any,
     ):
@@ -260,8 +260,8 @@ class EnumValue:
     def __init__(
         self,
         config_value: str,
-        python_value: Optional[object] = None,
-        description: Optional[str] = None,
+        python_value: object | None = None,
+        description: str | None = None,
     ):
         self.config_value = check.str_param(config_value, "config_value")
         self.python_value = config_value if python_value is None else python_value
@@ -434,7 +434,7 @@ class ScalarUnion(ConfigType):
         self,
         scalar_type: typing.Any,
         non_scalar_schema: UserConfigSchema,
-        _key: Optional[str] = None,
+        _key: str | None = None,
     ):
         from dagster._config.field import resolve_to_config_type
 

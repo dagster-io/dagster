@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from dagster import asset, instance_for_test, materialize
-from dagster_tableau.resources import TableauCloudWorkspace, TableauServerWorkspace, Union
+from dagster_tableau.resources import TableauCloudWorkspace, TableauServerWorkspace
 
 
 @pytest.mark.parametrize(
@@ -14,7 +14,7 @@ from dagster_tableau.resources import TableauCloudWorkspace, TableauServerWorksp
     ],
 )
 def test_basic_resource_request(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -67,7 +67,7 @@ def test_basic_resource_request(
     ],
 )
 def test_add_data_quality_warning(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -113,7 +113,7 @@ def test_add_data_quality_warning(
     ],
 )
 def test_fetch_tableau_workspace_data(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -163,7 +163,7 @@ def test_fetch_tableau_workspace_data(
     ],
 )
 def test_fetch_tableau_workspace_data_with_workbook_selector_by_id(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -211,7 +211,7 @@ def test_fetch_tableau_workspace_data_with_workbook_selector_by_id(
     ],
 )
 def test_fetch_tableau_workspace_data_with_workbook_selector_excludes_non_matching_workbooks(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -259,7 +259,7 @@ def test_fetch_tableau_workspace_data_with_workbook_selector_excludes_non_matchi
     ],
 )
 def test_fetch_tableau_workspace_data_with_project_selector_by_id(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -304,7 +304,7 @@ def test_fetch_tableau_workspace_data_with_project_selector_by_id(
     ],
 )
 def test_fetch_tableau_workspace_data_with_project_selector_by_name(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -349,7 +349,7 @@ def test_fetch_tableau_workspace_data_with_project_selector_by_name(
     ],
 )
 def test_fetch_tableau_workspace_data_with_both_selectors_or_logic(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -401,7 +401,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_or_logic(
     ],
 )
 def test_fetch_tableau_workspace_data_with_both_selectors_workbook_matches_workbook_selector(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -453,7 +453,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_workbook_matches_workb
     ],
 )
 def test_fetch_tableau_workspace_data_with_both_selectors_neither_matches(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -505,7 +505,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_neither_matches(
     ],
 )
 def test_fetch_tableau_workspace_data_with_both_selectors_both_match(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -556,7 +556,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_both_match(
     ],
 )
 def test_fetch_tableau_workspace_data_project_selector_filters_data_sources(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -625,7 +625,7 @@ def test_fetch_tableau_workspace_data_project_selector_filters_data_sources(
     ],
 )
 def test_fetch_tableau_workspace_data_project_selector_excludes_non_matching_data_sources(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -688,7 +688,7 @@ def test_fetch_tableau_workspace_data_project_selector_excludes_non_matching_dat
     ],
 )
 def test_fetch_tableau_workspace_data_project_selector_by_name_filters_data_sources(
-    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
     host_key: str,
     host_value: str,
     site_name: str,

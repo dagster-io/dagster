@@ -1,7 +1,7 @@
 # type: ignore
 import json
 import os
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
 import dagster as dg
 import pytesseract
@@ -92,10 +92,10 @@ class PDFTextExtractor(dg.ConfigurableResource):
     def convert_pdf_to_images(
         self,
         pdf_path: str,
-        output_folder: Optional[str] = None,
-        specific_pages: Optional[list[int]] = None,
-        start_page: Optional[int] = None,
-        end_page: Optional[int] = None,
+        output_folder: str | None = None,
+        specific_pages: list[int] | None = None,
+        start_page: int | None = None,
+        end_page: int | None = None,
     ) -> dict[str, Any]:
         """Convert PDF to images and save them to a folder.
 
@@ -324,7 +324,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
     def validate_purchase_order(
         self,
         pdf_name: str,
-        expected_fields: Optional[list[str]] = None,
+        expected_fields: list[str] | None = None,
     ) -> dict[str, Any]:
         """Validate generic purchase order extraction using OpenAI."""
         self.log.info(f"Validating purchase order extraction for PDF: {pdf_name}")

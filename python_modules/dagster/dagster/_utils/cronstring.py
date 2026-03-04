@@ -1,6 +1,3 @@
-from typing import Optional
-
-
 def is_basic_daily(cron_schedule: str) -> bool:
     return cron_schedule == "0 0 * * *"
 
@@ -13,7 +10,7 @@ def is_basic_minutely(cron_schedule: str) -> bool:
     return cron_schedule == "* * * * *"
 
 
-def get_fixed_minute_interval(cron_schedule: str) -> Optional[int]:
+def get_fixed_minute_interval(cron_schedule: str) -> int | None:
     """Given a cronstring, returns whether or not it is safe to
     assume there is a fixed number of minutes between every tick. For
     many cronstrings this is not the case due to Daylight Savings Time,

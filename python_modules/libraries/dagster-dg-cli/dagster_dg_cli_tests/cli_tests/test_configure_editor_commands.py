@@ -1,6 +1,5 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -44,7 +43,7 @@ def test_utils_configure_editor(editor: str) -> None:
 
 
 @pytest.mark.parametrize("output_path", [None, "schema.json"])
-def test_generate_component_schema(output_path: Optional[str]) -> None:
+def test_generate_component_schema(output_path: str | None) -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, False),

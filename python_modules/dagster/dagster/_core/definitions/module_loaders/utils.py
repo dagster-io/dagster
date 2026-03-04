@@ -2,7 +2,6 @@ import pkgutil
 from collections.abc import Iterable, Iterator, Mapping
 from importlib import import_module
 from types import ModuleType
-from typing import Union
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -12,7 +11,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 
 def find_objects_in_module_of_types(
     module: ModuleType,
-    types: Union[type, tuple[type, ...]],
+    types: type | tuple[type, ...],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
@@ -25,7 +24,7 @@ def find_objects_in_module_of_types(
 
 def find_subclasses_in_module(
     module: ModuleType,
-    types: Union[type, tuple[type, ...]],
+    types: type | tuple[type, ...],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
@@ -35,7 +34,7 @@ def find_subclasses_in_module(
 
 
 def key_iterator(
-    asset: Union[AssetsDefinition, SourceAsset, AssetSpec], included_targeted_keys: bool = False
+    asset: AssetsDefinition | SourceAsset | AssetSpec, included_targeted_keys: bool = False
 ) -> Iterator[AssetKey]:
     return (
         iter(
@@ -71,9 +70,9 @@ def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
 
 
 def replace_keys_in_asset(
-    asset: Union[AssetsDefinition, AssetSpec, SourceAsset],
+    asset: AssetsDefinition | AssetSpec | SourceAsset,
     key_replacements: Mapping[AssetKey, AssetKey],
-) -> Union[AssetsDefinition, AssetSpec, SourceAsset]:
+) -> AssetsDefinition | AssetSpec | SourceAsset:
     if isinstance(asset, SourceAsset):
         return asset.with_attributes(key=key_replacements.get(asset.key, asset.key))
     if isinstance(asset, AssetSpec):

@@ -5,7 +5,6 @@ Consider using `dg plus deploy configure [serverless|hybrid] --git-provider gith
 """
 
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -29,7 +28,7 @@ from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 def _resolve_config_for_github_actions(
-    git_root: Optional[Path],
+    git_root: Path | None,
     dg_context: DgContext,
     cli_config,
 ) -> DgPlusDeployConfigureOptions:
@@ -96,7 +95,7 @@ def _resolve_config_for_github_actions(
 @click.option("--git-root", type=Path, help="Path to the git root of the repository")
 @dg_global_options
 @cli_telemetry_wrapper
-def scaffold_github_actions_command(git_root: Optional[Path], **global_options: object) -> None:
+def scaffold_github_actions_command(git_root: Path | None, **global_options: object) -> None:
     """Scaffold a GitHub Actions workflow for a Dagster project.
 
     This command will create a GitHub Actions workflow in the `.github/workflows` directory.

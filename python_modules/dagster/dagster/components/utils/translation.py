@@ -1,7 +1,7 @@
 import functools
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Optional, TypeAlias, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeAlias, TypeVar, cast
 
 from pydantic import BaseModel
 
@@ -24,11 +24,11 @@ TRANSLATOR_MERGE_ATTRIBUTES = {"metadata", "tags"}
 
 @dataclass
 class TranslatorResolvingInfo:
-    asset_attributes: Union[str, BaseModel]
+    asset_attributes: str | BaseModel
     resolution_context: ResolutionContext
     model_key: str = "asset_attributes"
 
-    def _resolve_asset_attributes(self, context: Mapping[str, Any]) -> Union[AssetSpec, BaseModel]:
+    def _resolve_asset_attributes(self, context: Mapping[str, Any]) -> AssetSpec | BaseModel:
         """Resolves the user-specified asset attributes into an AssetAttributesModel, or an AssetSpec
         if the UDF returns one.
         """
@@ -169,19 +169,16 @@ class TranslationFnResolver(Resolver, Generic[T]):
             _build_translation_fn(
                 template_vars_for_translation_fn=template_vars_for_translation_fn
             ),
-            model_field_type=Union[str, model_field_type],
+            model_field_type=str | model_field_type,
             inject_before_resolve=False,
         )
 
 
 # Common case of a TranslationFn that takes a single underlying entity and passes it through
 # as a template var called "data".
-ResolvedTranslationFn: TypeAlias = Optional[
-    Annotated[
-        TranslationFn[T],
-        TranslationFnResolver[T](lambda data: {"data": data}),
-    ]
-]
+ResolvedTranslationFn: TypeAlias = (
+    Annotated[TranslationFn[T], TranslationFnResolver[T](lambda data: {"data": data})] | None
+)
 
 T_Component = TypeVar("T_Component", bound="Component", covariant=True)
 T_Translator = TypeVar("T_Translator")
@@ -219,7 +216,7 @@ def create_component_translator_cls(
         def get_asset_spec(self, *args, **kwargs) -> AssetSpec:
             return self._shim_method("get_asset_spec")(*args, **kwargs)
 
-        def get_asset_check_spec(self, *args, **kwargs) -> Optional[AssetCheckSpec]:
+        def get_asset_check_spec(self, *args, **kwargs) -> AssetCheckSpec | None:
             return self._shim_method("get_asset_check_spec")(*args, **kwargs)
 
     return cast("type[T_Translator]", _GeneratedComponentTranslator)

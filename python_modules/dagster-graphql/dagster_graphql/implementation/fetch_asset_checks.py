@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -48,12 +48,12 @@ if TYPE_CHECKING:
 
 def check_asset_checks_support(
     graphene_info: "ResolveInfo", repository_handle: RepositoryHandle
-) -> Union[
-    GrapheneAssetCheckNeedsMigrationError,
-    GrapheneAssetCheckNeedsUserCodeUpgrade,
-    GrapheneAssetCheckNeedsAgentUpgradeError,
-    None,
-]:
+) -> (
+    GrapheneAssetCheckNeedsMigrationError
+    | GrapheneAssetCheckNeedsUserCodeUpgrade
+    | GrapheneAssetCheckNeedsAgentUpgradeError
+    | None
+):
     asset_check_support = graphene_info.context.instance.get_asset_check_support()
     if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
         return GrapheneAssetCheckNeedsMigrationError(
@@ -86,8 +86,8 @@ def fetch_asset_check_executions(
     loading_context: LoadingContext,
     asset_check_key: AssetCheckKey,
     limit: int,
-    cursor: Optional[str],
-    partition_filter: Optional[PartitionKeyFilter],
+    cursor: str | None,
+    partition_filter: PartitionKeyFilter | None,
 ) -> list["GrapheneAssetCheckExecution"]:
     from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 
@@ -146,11 +146,11 @@ def build_asset_check_partition_statuses(
     asset_check_state: AssetCheckState,
     partitions_def: PartitionsDefinition,
     dynamic_partitions_store: DynamicPartitionsStore,
-) -> Union[
-    GrapheneAssetCheckTimePartitionStatuses,
-    GrapheneAssetCheckDefaultPartitionStatuses,
-    GrapheneAssetCheckMultiPartitionStatuses,
-]:
+) -> (
+    GrapheneAssetCheckTimePartitionStatuses
+    | GrapheneAssetCheckDefaultPartitionStatuses
+    | GrapheneAssetCheckMultiPartitionStatuses
+):
     """Build appropriate partition status type based on partitions definition.
 
     Decision tree:

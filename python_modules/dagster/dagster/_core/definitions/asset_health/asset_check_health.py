@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, TypeAlias
 
 from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
@@ -25,9 +25,9 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
     failing_checks: set[AssetCheckKey]
     warning_checks: set[AssetCheckKey]
     all_checks: set[AssetCheckKey]
-    latest_passing_check_timestamp: Optional[float] = None
-    latest_failing_check_timestamp: Optional[float] = None
-    latest_warning_check_timestamp: Optional[float] = None
+    latest_passing_check_timestamp: float | None = None
+    latest_failing_check_timestamp: float | None = None
+    latest_warning_check_timestamp: float | None = None
 
     @classmethod
     def default(cls) -> "AssetCheckHealthState":
@@ -218,11 +218,11 @@ class AssetHealthCheckUnknownMetadata:
     total_num_checks: int
 
 
-AssetHealthCheckMetadata = Union[
-    AssetHealthCheckDegradedMetadata,
-    AssetHealthCheckWarningMetadata,
-    AssetHealthCheckUnknownMetadata,
-]
+AssetHealthCheckMetadata: TypeAlias = (
+    AssetHealthCheckDegradedMetadata
+    | AssetHealthCheckWarningMetadata
+    | AssetHealthCheckUnknownMetadata
+)
 
 
 async def get_asset_check_status_and_metadata(

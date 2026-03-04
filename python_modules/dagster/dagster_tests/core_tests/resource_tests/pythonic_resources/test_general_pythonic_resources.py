@@ -1,7 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Optional
 from unittest import mock
 
 import dagster as dg
@@ -663,7 +662,7 @@ def test_using_enum_complex() -> None:
 
     class MyResource(dg.ConfigurableResource):
         list_of_enums: list[MyEnum]
-        optional_enum: Optional[MyEnum] = None
+        optional_enum: MyEnum | None = None
 
     @dg.asset
     def an_asset(my_resource: MyResource):
@@ -955,7 +954,7 @@ def test_context_on_resource_use_instance() -> None:
     executed = {}
 
     class OutputDirResource(dg.ConfigurableResource):
-        output_dir: Optional[str] = None
+        output_dir: str | None = None
 
         def get_effective_output_dir(self) -> str:
             if self.output_dir:
@@ -1001,7 +1000,7 @@ def test_context_on_resource_runtime_config() -> None:
     executed = {}
 
     class OutputDirResource(dg.ConfigurableResource):
-        output_dir: Optional[str] = None
+        output_dir: str | None = None
 
         def get_effective_output_dir(self) -> str:
             if self.output_dir:
@@ -1040,7 +1039,7 @@ def test_context_on_resource_nested() -> None:
     executed = {}
 
     class OutputDirResource(dg.ConfigurableResource):
-        output_dir: Optional[str] = None
+        output_dir: str | None = None
 
         def get_effective_output_dir(self) -> str:
             if self.output_dir:

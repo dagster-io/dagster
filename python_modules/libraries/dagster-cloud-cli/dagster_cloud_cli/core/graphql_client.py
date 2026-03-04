@@ -4,7 +4,7 @@ import time
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from email.utils import mktime_tz, parsedate_tz
-from typing import Any, Optional
+from typing import Any
 
 import requests
 from dagster_shared import check
@@ -44,11 +44,11 @@ class DagsterCloudAgentHttpClient:
     def __init__(
         self,
         session: requests.Session,
-        headers: Optional[dict[str, Any]] = None,
+        headers: dict[str, Any] | None = None,
         verify: bool = True,
         timeout: int = DEFAULT_TIMEOUT,
-        cookies: Optional[dict[str, Any]] = None,
-        proxies: Optional[dict[str, Any]] = None,
+        cookies: dict[str, Any] | None = None,
+        proxies: dict[str, Any] | None = None,
         max_retries: int = 0,
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
     ):
@@ -78,7 +78,7 @@ class DagsterCloudAgentHttpClient:
         self,
         method: str,
         url: str,
-        headers: Optional[Mapping[str, str]] = None,
+        headers: Mapping[str, str] | None = None,
         idempotent: bool = False,
         **kwargs,
     ):
@@ -97,7 +97,7 @@ class DagsterCloudAgentHttpClient:
         self,
         method: str,
         url: str,
-        headers: Optional[Mapping[str, Any]],
+        headers: Mapping[str, Any] | None,
         **kwargs,
     ):
         response = self._session.request(
@@ -212,11 +212,11 @@ class DagsterCloudGraphQLClient:
         self,
         url: str,
         session: requests.Session,
-        headers: Optional[dict[str, Any]] = None,
+        headers: dict[str, Any] | None = None,
         verify: bool = True,
         timeout: int = DEFAULT_TIMEOUT,
-        cookies: Optional[dict[str, Any]] = None,
-        proxies: Optional[dict[str, Any]] = None,
+        cookies: dict[str, Any] | None = None,
+        proxies: dict[str, Any] | None = None,
         max_retries: int = 0,
         backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
     ):
@@ -237,8 +237,8 @@ class DagsterCloudGraphQLClient:
     def execute(
         self,
         query: str,
-        variable_values: Optional[Mapping[str, Any]] = None,
-        headers: Optional[Mapping[str, str]] = None,
+        variable_values: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
         idempotent_mutation: bool = False,
     ):
         if "mutation " in query and not idempotent_mutation:
@@ -262,8 +262,8 @@ class DagsterCloudGraphQLClient:
     def _execute_retry(
         self,
         query: str,
-        variable_values: Optional[Mapping[str, Any]],
-        headers: Optional[Mapping[str, Any]],
+        variable_values: Mapping[str, Any] | None,
+        headers: Mapping[str, Any] | None,
     ):
         response = self._session.post(
             self.url,
@@ -327,7 +327,7 @@ class HTTPAdapterWithSocketOptions(HTTPAdapter):
 
 
 @contextmanager
-def create_graphql_requests_session(adapter_kwargs: Optional[Mapping[str, Any]] = None):
+def create_graphql_requests_session(adapter_kwargs: Mapping[str, Any] | None = None):
     with requests.Session() as session:
         adapter = HTTPAdapterWithSocketOptions(**(adapter_kwargs or {}))
         session.mount("https://", adapter)
@@ -401,8 +401,8 @@ def create_cloud_webserver_client(
     url: str,
     api_token: str,
     retries=3,
-    deployment_name: Optional[str] = None,
-    headers: Optional[dict[str, Any]] = None,
+    deployment_name: str | None = None,
+    headers: dict[str, Any] | None = None,
 ):
     with create_graphql_requests_session(adapter_kwargs={}) as session:
         yield DagsterCloudGraphQLClient(

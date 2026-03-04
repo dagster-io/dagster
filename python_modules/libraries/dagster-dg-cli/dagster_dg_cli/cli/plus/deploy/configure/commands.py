@@ -6,7 +6,6 @@ subcommands for serverless and hybrid deployments.
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_cloud_cli.utils import SUPPORTED_PYTHON_VERSIONS
@@ -31,10 +30,10 @@ from dagster_dg_cli.cli.plus.deploy.configure.utils import (
 
 
 def resolve_agent_type_and_platform(
-    agent_type: Optional[DgPlusAgentType],
-    agent_platform: Optional[DgPlusAgentPlatform],
-    plus_config: Optional[DagsterPlusCliConfig],
-) -> tuple[DgPlusAgentType, Optional[DgPlusAgentPlatform]]:
+    agent_type: DgPlusAgentType | None,
+    agent_platform: DgPlusAgentPlatform | None,
+    plus_config: DagsterPlusCliConfig | None,
+) -> tuple[DgPlusAgentType, DgPlusAgentPlatform | None]:
     """Resolve agent type and platform from config or prompts (for deployment-config commands)."""
     resolved_type = agent_type
     resolved_platform = agent_platform
@@ -68,8 +67,8 @@ def resolve_agent_type_and_platform(
 
 
 def resolve_organization(
-    organization: Optional[str],
-    plus_config: Optional[DagsterPlusCliConfig],
+    organization: str | None,
+    plus_config: DagsterPlusCliConfig | None,
     *,
     show_detected_message: bool = True,
 ) -> str:
@@ -88,8 +87,8 @@ def resolve_organization(
 
 
 def resolve_url(
-    url: Optional[str],
-    plus_config: Optional[DagsterPlusCliConfig],
+    url: str | None,
+    plus_config: DagsterPlusCliConfig | None,
     resolved_organization: str,
     *,
     show_detected_message: bool = True,
@@ -107,8 +106,8 @@ def resolve_url(
 
 
 def resolve_deployment(
-    deployment: Optional[str],
-    plus_config: Optional[DagsterPlusCliConfig],
+    deployment: str | None,
+    plus_config: DagsterPlusCliConfig | None,
     *,
     show_detected_message: bool = True,
 ) -> str:
@@ -127,9 +126,9 @@ def resolve_deployment(
 
 
 def resolve_git_provider(
-    git_provider: Optional[GitProvider],
-    git_root: Optional[Path],
-) -> Optional[GitProvider]:
+    git_provider: GitProvider | None,
+    git_root: Path | None,
+) -> GitProvider | None:
     """Resolve git provider for CI/CD scaffolding (for deployment-config commands)."""
     if git_provider is not None:
         return git_provider
@@ -151,9 +150,9 @@ def resolve_git_provider(
 
 
 def resolve_git_root(
-    git_root: Optional[Path],
-    git_provider: Optional[GitProvider],
-) -> Optional[Path]:
+    git_root: Path | None,
+    git_provider: GitProvider | None,
+) -> Path | None:
     """Resolve git root path."""
     if git_provider is None:
         return None
@@ -171,26 +170,26 @@ def resolve_git_root(
     return resolved_git_root
 
 
-def resolve_python_version(python_version: Optional[str]) -> str:
+def resolve_python_version(python_version: str | None) -> str:
     """Resolve Python version."""
     return python_version or f"3.{sys.version_info.minor}"
 
 
 def _resolve_config_with_prompts(
-    agent_type: Optional[DgPlusAgentType],
-    agent_platform: Optional[DgPlusAgentPlatform],
-    organization: Optional[str],
-    url: Optional[str],
-    deployment: Optional[str],
-    git_root: Optional[Path],
-    python_version: Optional[str],
+    agent_type: DgPlusAgentType | None,
+    agent_platform: DgPlusAgentPlatform | None,
+    organization: str | None,
+    url: str | None,
+    deployment: str | None,
+    git_root: Path | None,
+    python_version: str | None,
     skip_confirmation_prompt: bool,
     use_editable_dagster: bool,
-    git_provider: Optional[GitProvider],
+    git_provider: GitProvider | None,
     dg_context: DgContext,
     cli_config,
-    pex_deploy: Optional[bool] = None,
-    registry_url: Optional[str] = None,
+    pex_deploy: bool | None = None,
+    registry_url: str | None = None,
 ) -> DgPlusDeployConfigureOptions:
     """Resolve all configuration for deployment-config commands, prompting for missing values.
 
@@ -273,7 +272,7 @@ def _resolve_config_with_prompts(
 @click.pass_context
 def deploy_configure_group(
     ctx: click.Context,
-    git_provider: Optional[str],
+    git_provider: str | None,
     **global_options: object,
 ) -> None:
     """Scaffold deployment configuration files for Dagster Plus.
@@ -358,15 +357,15 @@ def deploy_configure_group(
 @dg_global_options
 @cli_telemetry_wrapper
 def deploy_configure_serverless(
-    git_provider: Optional[str],
-    python_version: Optional[str],
-    organization: Optional[str],
-    url: Optional[str],
-    deployment: Optional[str],
-    git_root: Optional[Path],
+    git_provider: str | None,
+    python_version: str | None,
+    organization: str | None,
+    url: str | None,
+    deployment: str | None,
+    git_root: Path | None,
     pex_deploy: bool,
     skip_confirmation_prompt: bool,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: str | None,
     **global_options: object,
 ) -> None:
     """Scaffold deployment configuration for Dagster Plus Serverless.
@@ -447,16 +446,16 @@ def deploy_configure_serverless(
 @dg_global_options
 @cli_telemetry_wrapper
 def deploy_configure_hybrid(
-    git_provider: Optional[str],
-    agent_platform: Optional[str],
-    registry_url: Optional[str],
-    python_version: Optional[str],
-    organization: Optional[str],
-    url: Optional[str],
-    deployment: Optional[str],
-    git_root: Optional[Path],
+    git_provider: str | None,
+    agent_platform: str | None,
+    registry_url: str | None,
+    python_version: str | None,
+    organization: str | None,
+    url: str | None,
+    deployment: str | None,
+    git_root: Path | None,
     skip_confirmation_prompt: bool,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: str | None,
     **global_options: object,
 ) -> None:
     """Scaffold deployment configuration for Dagster Plus Hybrid.

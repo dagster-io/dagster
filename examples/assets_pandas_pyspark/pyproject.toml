@@ -1,6 +1,19 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "assets_pandas_pyspark"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "pandas",
+    "pyspark<4",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+test = ["pandas", "pyarrow; python_version < '3.9'", "pyspark<4"]
 
 [tool.dagster]
 module_name = "assets_pandas_pyspark.definitions"

@@ -2,7 +2,7 @@ import os
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dagster_dbt import DbtCliResource
@@ -63,7 +63,7 @@ def disable_openblas_threading_affinity_fixture() -> None:
 
 
 def _create_dbt_invocation(
-    project_dir: Path, build_project: bool = False, target: Optional[str] = None
+    project_dir: Path, build_project: bool = False, target: str | None = None
 ) -> DbtCliInvocation:
     dbt = DbtCliResource(
         project_dir=os.fspath(project_dir), global_config_flags=["--quiet"], target=target

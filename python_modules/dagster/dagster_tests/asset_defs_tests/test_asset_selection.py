@@ -2,7 +2,7 @@ import operator
 from collections.abc import Iterable
 from functools import reduce
 from inspect import isclass
-from typing import AbstractSet, TypeAlias, Union  # noqa: UP035
+from typing import AbstractSet, TypeAlias  # noqa: UP035
 
 import dagster as dg
 import pytest
@@ -110,7 +110,7 @@ def zebra():
     return "zebra"
 
 
-_AssetList: TypeAlias = Iterable[Union[dg.AssetsDefinition, dg.SourceAsset]]
+_AssetList: TypeAlias = Iterable[dg.AssetsDefinition | dg.SourceAsset]
 
 
 @pytest.fixture

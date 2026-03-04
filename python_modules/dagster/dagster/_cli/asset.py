@@ -1,5 +1,3 @@
-from typing import Optional
-
 import click
 from dagster_shared.cli import python_pointer_options
 
@@ -63,10 +61,10 @@ def asset_cli():
 )
 def asset_materialize_command(
     select: str,
-    partition: Optional[str],
-    partition_range: Optional[str],
+    partition: str | None,
+    partition_range: str | None,
     config: tuple[str, ...],
-    config_json: Optional[str],
+    config_json: str | None,
     **other_opts: object,
 ) -> None:
     asset_materialize_command_impl(
@@ -76,10 +74,10 @@ def asset_materialize_command(
 
 def asset_materialize_command_impl(
     select: str,
-    partition: Optional[str],
-    partition_range: Optional[str],
+    partition: str | None,
+    partition_range: str | None,
     config: tuple[str, ...],
-    config_json: Optional[str],
+    config_json: str | None,
     **other_opts: object,
 ) -> None:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -105,10 +103,10 @@ def execute_materialize_command(
     *,
     instance: DagsterInstance,
     select: str,
-    partition: Optional[str],
-    partition_range: Optional[str],
+    partition: str | None,
+    partition_range: str | None,
     config: tuple[str, ...],
-    config_json: Optional[str],
+    config_json: str | None,
     python_pointer_opts: PythonPointerOpts,
 ) -> None:
     run_config = get_run_config_from_cli_opts(config, config_json)
@@ -218,7 +216,7 @@ def execute_materialize_command(
 @asset_cli.command(name="list", help="List assets")
 @click.option("--select", help="Asset selection to target", required=False)
 @python_pointer_options
-def asset_list_command(select: Optional[str], **other_opts):
+def asset_list_command(select: str | None, **other_opts):
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 

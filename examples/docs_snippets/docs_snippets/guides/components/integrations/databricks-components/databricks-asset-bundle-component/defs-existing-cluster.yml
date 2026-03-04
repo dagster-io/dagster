@@ -1,0 +1,11 @@
+# my_project/defs/my_databricks_bundle/defs.yml
+
+type: dagster_databricks.DatabricksAssetBundleComponent
+
+attributes:
+  databricks_config_path: '{{ project_root }}/../../../../../path/to/databricks.yml'
+  workspace:
+    host: https://your-workspace.cloud.databricks.com
+    token: '{{ env.DATABRICKS_TOKEN }}'
+  compute_config:
+    existing_cluster_id: "1234-567890-abcde123"

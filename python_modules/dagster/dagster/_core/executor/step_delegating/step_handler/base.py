@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster import (
     DagsterInstance,
@@ -20,7 +20,7 @@ class StepHandlerContext:
         plan_context: PlanOrchestrationContext,
         steps: Sequence[ExecutionStep],
         execute_step_args: ExecuteStepArgs,
-        dagster_run: Optional[DagsterRun] = None,
+        dagster_run: DagsterRun | None = None,
     ) -> None:
         self._instance = instance
         self._plan_context = plan_context
@@ -57,11 +57,9 @@ class StepHandlerContext:
 
 
 class CheckStepHealthResult(
-    NamedTuple(
-        "_CheckStepHealthResult", [("is_healthy", bool), ("unhealthy_reason", Optional[str])]
-    )
+    NamedTuple("_CheckStepHealthResult", [("is_healthy", bool), ("unhealthy_reason", str | None)])
 ):
-    def __new__(cls, is_healthy: bool, unhealthy_reason: Optional[str] = None):
+    def __new__(cls, is_healthy: bool, unhealthy_reason: str | None = None):
         return super().__new__(
             cls,
             check.bool_param(is_healthy, "is_healthy"),

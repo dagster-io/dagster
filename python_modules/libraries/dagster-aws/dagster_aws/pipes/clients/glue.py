@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 import dagster._check as check
@@ -44,7 +44,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         context_injector: PipesContextInjector,
-        message_reader: Optional[PipesMessageReader] = None,
+        message_reader: PipesMessageReader | None = None,
         client: Optional["GlueClient"] = None,
         forward_termination: bool = True,
     ):
@@ -61,9 +61,9 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         start_job_run_params: "StartJobRunRequestTypeDef",
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Start a Glue job, enriched with the pipes protocol.
 
@@ -187,7 +187,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         return metadata
 
     def _terminate_job_run(
-        self, context: Union[OpExecutionContext, AssetExecutionContext], job_name: str, run_id: str
+        self, context: OpExecutionContext | AssetExecutionContext, job_name: str, run_id: str
     ):
         """Creates a handler which will gracefully stop the Run in case of external termination.
         It will stop the Glue job before doing so.

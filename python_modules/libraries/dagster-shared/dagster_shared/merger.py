@@ -1,6 +1,6 @@
 import copy
 from collections.abc import Mapping
-from typing import TypeVar, Union, cast
+from typing import TypeVar, cast
 
 import dagster_shared.check as check
 
@@ -12,11 +12,11 @@ V2 = TypeVar("V2")
 
 def _deep_merge_dicts(
     onto_dict: dict[K, V], from_dict: Mapping[K2, V2]
-) -> dict[Union[K, K2], Union[V, V2, dict[object, object]]]:
+) -> dict[K | K2, V | V2 | dict[object, object]]:
     check.mapping_param(from_dict, "from_dict")
     check.dict_param(onto_dict, "onto_dict")
 
-    _onto_dict = cast("dict[Union[K, K2], Union[V, V2, dict[object, object]]]", onto_dict)
+    _onto_dict = cast("dict[K | K2, V | V2 | dict[object, object]]", onto_dict)
     for from_key, from_value in from_dict.items():
         if from_key not in onto_dict:
             _onto_dict[from_key] = from_value
@@ -33,7 +33,7 @@ def _deep_merge_dicts(
 
 def deep_merge_dicts(
     onto_dict: Mapping[K, V], from_dict: Mapping[K2, V2]
-) -> dict[Union[K, K2], Union[V, V2, dict[object, object]]]:
+) -> dict[K | K2, V | V2 | dict[object, object]]:
     """Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.
     * For any key whose value is a dictionary in both of the inputs, the returned value will

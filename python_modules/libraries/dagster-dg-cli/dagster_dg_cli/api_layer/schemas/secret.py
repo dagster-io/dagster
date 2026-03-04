@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -25,20 +24,18 @@ class DgApiSecret(BaseModel):
 
     id: str
     name: str = Field(alias="secretName")  # GraphQL field is secretName
-    value: Optional[str] = Field(
-        alias="secretValue", default=None
-    )  # Hidden by default for security
+    value: str | None = Field(alias="secretValue", default=None)  # Hidden by default for security
     location_names: list[str] = Field(alias="locationNames")
     full_deployment_scope: bool = Field(alias="fullDeploymentScope")
     all_branch_deployments_scope: bool = Field(alias="allBranchDeploymentsScope")
-    specific_branch_deployment_scope: Optional[str] = Field(
+    specific_branch_deployment_scope: str | None = Field(
         alias="specificBranchDeploymentScope", default=None
     )
     local_deployment_scope: bool = Field(alias="localDeploymentScope")
     can_view_secret_value: bool = Field(alias="canViewSecretValue")
     can_edit_secret: bool = Field(alias="canEditSecret")
-    updated_by: Optional[DgApiUpdatedBy] = Field(alias="updatedBy", default=None)
-    update_timestamp: Optional[datetime] = Field(alias="updateTimestamp", default=None)
+    updated_by: DgApiUpdatedBy | None = Field(alias="updatedBy", default=None)
+    update_timestamp: datetime | None = Field(alias="updateTimestamp", default=None)
 
     class Config:
         from_attributes = True  # For future ORM compatibility
@@ -55,14 +52,14 @@ class DgApiSecretList(BaseModel):
 class DgApiSecretScopesInput(BaseModel):
     """GraphQL SecretScopesInput type for filtering."""
 
-    full_deployment_scope: Optional[bool] = Field(alias="fullDeploymentScope", default=None)
-    all_branch_deployments_scope: Optional[bool] = Field(
+    full_deployment_scope: bool | None = Field(alias="fullDeploymentScope", default=None)
+    all_branch_deployments_scope: bool | None = Field(
         alias="allBranchDeploymentsScope", default=None
     )
-    specific_branch_deployment_scope: Optional[str] = Field(
+    specific_branch_deployment_scope: str | None = Field(
         alias="specificBranchDeploymentScope", default=None
     )
-    local_deployment_scope: Optional[bool] = Field(alias="localDeploymentScope", default=None)
+    local_deployment_scope: bool | None = Field(alias="localDeploymentScope", default=None)
 
     class Config:
         populate_by_name = True  # Pydantic V2 equivalent of allow_population_by_field_name

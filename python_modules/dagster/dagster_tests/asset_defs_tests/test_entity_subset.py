@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -38,7 +37,7 @@ partitions_defs = [
 
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
-def test_empty_subset_subset(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
+def test_empty_subset_subset(partitions_def: dg.PartitionsDefinition | None) -> None:
     key = dg.AssetKey(["foo"])
     empty_subset = ValidAssetSubset.empty(key, partitions_def)
     assert empty_subset.size == 0
@@ -49,7 +48,7 @@ def test_empty_subset_subset(partitions_def: Optional[dg.PartitionsDefinition]) 
 
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
-def test_all_subset(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
+def test_all_subset(partitions_def: dg.PartitionsDefinition | None) -> None:
     key = dg.AssetKey(["foo"])
     with partition_loading_context(dynamic_partitions_store=DagsterInstance.ephemeral()):
         all_subset = ValidAssetSubset.all(key, partitions_def)

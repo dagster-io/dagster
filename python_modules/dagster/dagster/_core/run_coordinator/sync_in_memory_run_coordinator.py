@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Mapping
-from typing import Optional
 
 from typing_extensions import Self
 
@@ -14,13 +13,13 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 class SyncInMemoryRunCoordinator(RunCoordinator, ConfigurableClass):
     """Immediately send runs to the run launcher."""
 
-    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._logger = logging.getLogger("dagster.run_coordinator.sync_in_memory_run_coordinator")
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -29,7 +28,7 @@ class SyncInMemoryRunCoordinator(RunCoordinator, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, object]
+        cls, inst_data: ConfigurableClassData | None, config_value: Mapping[str, object]
     ) -> Self:
         return cls(inst_data=inst_data, **config_value)
 

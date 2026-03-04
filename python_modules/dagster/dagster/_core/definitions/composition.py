@@ -126,7 +126,7 @@ InputSource: TypeAlias = Union[
     InputMappingNode,
     DynamicFanIn,
     "AssetsDefinition",
-    list[Union[InvokedNodeOutputHandle, InputMappingNode]],
+    list[InvokedNodeOutputHandle | InputMappingNode],
 ]
 
 
@@ -163,7 +163,7 @@ def enter_composition(name: str, source: str) -> None:
 
 
 def exit_composition(
-    output: Optional[Mapping[str, OutputMapping]] = None,
+    output: Mapping[str, OutputMapping] | None = None,
 ) -> "CompleteCompositionContext":
     return _composition_stack.pop().complete(output)
 
@@ -208,12 +208,12 @@ class InProgressCompositionContext:
 
     def observe_invocation(
         self,
-        given_alias: Optional[str],
+        given_alias: str | None,
         node_def: NodeDefinition,
         input_bindings: Mapping[str, InputSource],
-        tags: Optional[Mapping[str, str]],
-        hook_defs: Optional[AbstractSet[HookDefinition]],
-        retry_policy: Optional[RetryPolicy],
+        tags: Mapping[str, str] | None,
+        hook_defs: AbstractSet[HookDefinition] | None,
+        retry_policy: RetryPolicy | None,
     ) -> str:
         if given_alias is None:
             node_name = node_def.name
@@ -241,9 +241,7 @@ class InProgressCompositionContext:
         node_name = node.given_alias if node.given_alias else node.node_def.name
         self._pending_invocations[node_name] = node
 
-    def complete(
-        self, output: Optional[Mapping[str, OutputMapping]]
-    ) -> "CompleteCompositionContext":
+    def complete(self, output: Mapping[str, OutputMapping] | None) -> "CompleteCompositionContext":
         return CompleteCompositionContext.create(
             self.name,
             self.source,
@@ -300,7 +298,7 @@ class CompleteCompositionContext(NamedTuple):
                 elif isinstance(node, AssetsDefinition):
                     node_input_assets[invocation.node_name][input_name] = node
                 elif isinstance(node, list):
-                    entries: list[Union[DependencyDefinition, type[MappedInputPlaceholder]]] = []
+                    entries: list[DependencyDefinition | type[MappedInputPlaceholder]] = []
                     for idx, fanned_in_node in enumerate(node):
                         if isinstance(fanned_in_node, InvokedNodeOutputHandle):
                             entries.append(
@@ -373,18 +371,18 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     """
 
     node_def: T_NodeDefinition
-    given_alias: Optional[str]
-    tags: Optional[Mapping[str, str]]
+    given_alias: str | None
+    tags: Mapping[str, str] | None
     hook_defs: AbstractSet[HookDefinition]
-    retry_policy: Optional[RetryPolicy]
+    retry_policy: RetryPolicy | None
 
     def __init__(
         self,
         node_def: T_NodeDefinition,
-        given_alias: Optional[str],
-        tags: Optional[Mapping[str, str]],
-        hook_defs: Optional[AbstractSet[HookDefinition]],
-        retry_policy: Optional[RetryPolicy],
+        given_alias: str | None,
+        tags: Mapping[str, str] | None,
+        hook_defs: AbstractSet[HookDefinition] | None,
+        retry_policy: RetryPolicy | None,
     ):
         self.node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
@@ -474,7 +472,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
         outputs = [output_def for output_def in self.node_def.output_defs]
         invoked_output_handles: dict[
-            str, Union[InvokedNodeDynamicOutputWrapper, InvokedNodeOutputHandle]
+            str, InvokedNodeDynamicOutputWrapper | InvokedNodeOutputHandle
         ] = {}
         for output_def in outputs:
             if output_def.is_dynamic:
@@ -575,7 +573,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         )
 
     @public
-    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation[T_NodeDefinition]":
+    def tag(self, tags: Mapping[str, str] | None) -> "PendingNodeInvocation[T_NodeDefinition]":
         tags = normalize_tags(tags)
         return PendingNodeInvocation(
             node_def=self.node_def,
@@ -613,17 +611,17 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     @public
     def to_job(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
-        tags: Optional[Mapping[str, Any]] = None,
-        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
+        config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"] | None = None,
+        tags: Mapping[str, Any] | None = None,
+        logger_defs: Mapping[str, LoggerDefinition] | None = None,
         executor_def: Optional["ExecutorDefinition"] = None,
-        hooks: Optional[AbstractSet[HookDefinition]] = None,
-        op_retry_policy: Optional[RetryPolicy] = None,
+        hooks: AbstractSet[HookDefinition] | None = None,
+        op_retry_policy: RetryPolicy | None = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-        input_values: Optional[Mapping[str, object]] = None,
+        input_values: Mapping[str, object] | None = None,
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -655,12 +653,12 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     @public
     def execute_in_process(
         self,
-        run_config: Optional[Any] = None,
+        run_config: Any | None = None,
         instance: Optional["DagsterInstance"] = None,
-        resources: Optional[Mapping[str, Any]] = None,
+        resources: Mapping[str, Any] | None = None,
         raise_on_error: bool = True,
-        run_id: Optional[str] = None,
-        input_values: Optional[Mapping[str, object]] = None,
+        run_id: str | None = None,
+        input_values: Mapping[str, object] | None = None,
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -699,9 +697,9 @@ class InvokedNode(NamedTuple):
     node_name: str
     node_def: NodeDefinition
     input_bindings: Mapping[str, InputSource]
-    tags: Optional[Mapping[str, str]]
-    hook_defs: Optional[AbstractSet[HookDefinition]]
-    retry_policy: Optional[RetryPolicy]
+    tags: Mapping[str, str] | None
+    hook_defs: AbstractSet[HookDefinition] | None
+    retry_policy: RetryPolicy | None
 
 
 class InvokedNodeDynamicOutputWrapper:
@@ -792,7 +790,7 @@ def composite_mapping_from_output(
     output_defs: Sequence[OutputDefinition],
     node_name: str,
     decorator_name: str,
-) -> Optional[Mapping[str, OutputMapping]]:
+) -> Mapping[str, OutputMapping] | None:
     # single output
     if isinstance(output, InvokedNodeOutputHandle):
         if len(output_defs) == 1:
@@ -878,15 +876,15 @@ def do_composition(
     graph_name: str,
     fn: Callable[..., Any],
     provided_input_defs: Sequence[InputDefinition],
-    provided_output_defs: Optional[Sequence[OutputDefinition]],
-    config_mapping: Optional[ConfigMapping],
+    provided_output_defs: Sequence[OutputDefinition] | None,
+    config_mapping: ConfigMapping | None,
     ignore_output_from_composition_fn: bool,
 ) -> tuple[
     Sequence[InputMapping],
     Sequence[OutputMapping],
     DependencyMapping[NodeInvocation],
     Sequence[NodeDefinition],
-    Optional[ConfigMapping],
+    ConfigMapping | None,
     Sequence[str],
     Mapping[str, Mapping[str, "AssetsDefinition"]],
 ]:
@@ -1004,9 +1002,9 @@ def do_composition(
 def get_validated_config_mapping(
     name: str,
     config_schema: Any,
-    config_fn: Optional[Callable[[Any], Any]],
+    config_fn: Callable[[Any], Any] | None,
     decorator_name: str,
-) -> Optional[ConfigMapping]:
+) -> ConfigMapping | None:
     if config_fn is None and config_schema is None:
         return None
     elif config_fn is not None:

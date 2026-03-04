@@ -1,7 +1,6 @@
 import warnings
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
 
 from dagster_shared.record import record, replace
 from typing_extensions import TypeVar
@@ -31,11 +30,11 @@ class DuplicateDefsStateKeyWarning(Warning):
 class _CacheData:
     """Data that is cached for a given component path."""
 
-    defs: Optional[Definitions] = None
-    component: Optional[Component] = None
-    load_context: Optional[ComponentLoadContext] = None
-    component_decl: Optional[ComponentDecl] = None
-    decl_load_context: Optional[ComponentDeclLoadContext] = None
+    defs: Definitions | None = None
+    component: Component | None = None
+    load_context: ComponentLoadContext | None = None
+    component_decl: ComponentDecl | None = None
+    decl_load_context: ComponentDeclLoadContext | None = None
 
 
 class ComponentTreeStateTracker:

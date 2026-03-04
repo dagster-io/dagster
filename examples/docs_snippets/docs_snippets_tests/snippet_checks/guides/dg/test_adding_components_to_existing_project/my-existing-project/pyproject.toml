@@ -2,7 +2,6 @@
 name = "my_existing_project"
 version = "0.1.0"
 description = "Add your description here"
-readme = "README.md"
 requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
@@ -15,8 +14,8 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [tool.dg]
 directory_type = "project"
@@ -28,6 +27,3 @@ defs_module = "my_existing_project.defs"
 [tool.dagster]
 module_name = "my_existing_project.definitions"
 code_location_name = "my_existing_project"
-
-[tool.setuptools.packages.find]
-exclude=["my_existing_project_tests"]

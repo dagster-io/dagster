@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -60,7 +60,7 @@ SAMPLE_GROUPS = {
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-connectors-in-group
 def list_connectors_for_group_sample(
-    setup_state: str, next_cursor: Optional[str] = None, include_extra_connector: bool = False
+    setup_state: str, next_cursor: str | None = None, include_extra_connector: bool = False
 ) -> Mapping[str, Any]:
     return {
         "code": "Success",

@@ -1,6 +1,6 @@
 from abc import ABC, abstractproperty
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster_shared.serdes.serdes import (
     NamedTupleSerializer,
@@ -154,4 +154,4 @@ class AutoMaterializeRuleSnapshot(NamedTuple):
 @whitelist_for_serdes(serializer=BackcompatNullSerializer)
 class AutoMaterializeRuleEvaluation(NamedTuple):
     rule_snapshot: AutoMaterializeRuleSnapshot
-    evaluation_data: Optional[AutoMaterializeRuleEvaluationData]
+    evaluation_data: AutoMaterializeRuleEvaluationData | None

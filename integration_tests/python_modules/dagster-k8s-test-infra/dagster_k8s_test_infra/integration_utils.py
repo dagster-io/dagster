@@ -4,7 +4,7 @@ import os
 import random
 import subprocess
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import requests
 from dagster._utils.merger import merge_dicts
@@ -146,8 +146,8 @@ def launch_run_over_graphql(
     job_name: str,
     repository_name: str = "demo_execution_repo",
     code_location_name: str = "user-code-deployment-1",
-    op_selection: Optional[Sequence[str]] = None,
-    tags: Optional[Mapping[str, str]] = None,
+    op_selection: Sequence[str] | None = None,
+    tags: Mapping[str, str] | None = None,
 ) -> str:
     tags = tags or {}
     variables = json.dumps(

@@ -3,7 +3,6 @@ import json
 import os
 import time
 from collections.abc import Sequence
-from typing import Optional
 
 import pytest
 from dagster import (
@@ -1017,9 +1016,9 @@ def _create_run(
     graphql_context: WorkspaceRequestContext,
     pipeline_name: str,
     mode: str = "default",
-    step_keys: Optional[Sequence[str]] = None,
-    asset_selection: Optional[Sequence[GqlAssetKey]] = None,
-    tags: Optional[Sequence[GqlTag]] = None,
+    step_keys: Sequence[str] | None = None,
+    asset_selection: Sequence[GqlAssetKey] | None = None,
+    tags: Sequence[GqlTag] | None = None,
 ) -> str:
     if asset_selection:
         selector = infer_job_selector(
@@ -1054,8 +1053,8 @@ def _create_partitioned_run(
     graphql_context: WorkspaceRequestContext,
     job_name: str,
     partition_key: str,
-    asset_selection: Optional[list[AssetKey]] = None,
-    tags: Optional[dict[str, str]] = None,
+    asset_selection: list[AssetKey] | None = None,
+    tags: dict[str, str] | None = None,
 ) -> str:
     base_partition_tags: Sequence[GqlTag] = [
         {"key": "dagster/partition", "value": partition_key},
@@ -1336,8 +1335,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         graphql_context: WorkspaceRequestContext,
         event_type: DagsterEventType,
         asset_key: AssetKey,
-        partitions: Optional[Sequence[str]],
-        description: Optional[str],
+        partitions: Sequence[str] | None,
+        description: str | None,
     ):
         assert graphql_context.instance.all_asset_keys() == []
 
@@ -1497,6 +1496,44 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert evaluation is not None
         assert evaluation.metadata is not None
         assert len(evaluation.metadata) == 2
+
+    def test_report_asset_check_evaluation_with_partition(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        asset_key = AssetKey("asset1")
+        check_name = "my_partition_check"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_ASSET_CHECK_EVALUATION,
+            variables={
+                "eventParams": {
+                    "assetKey": {"path": asset_key.path},
+                    "checkName": check_name,
+                    "passed": True,
+                    "severity": "WARN",
+                    "partition": "2024-01-01",
+                }
+            },
+        )
+
+        assert result.data
+        assert (
+            result.data["reportAssetCheckEvaluation"]["__typename"]
+            == "ReportAssetCheckEvaluationSuccess"
+        )
+
+        check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
+        record = graphql_context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
+            [check_key]
+        ).get(check_key)
+        assert record is not None
+        assert record.event is not None
+        evaluation = record.event.asset_check_evaluation
+        assert evaluation is not None
+        assert evaluation.passed is True
+        assert evaluation.severity == AssetCheckSeverity.WARN
+        assert evaluation.partition == "2024-01-01"
 
     def test_asset_asof_timestamp(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "asset_tag_job")
@@ -3421,7 +3458,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 )
             )
 
-        expected_order: dict[AssetKey, Optional[str]] = {}
+        expected_order: dict[AssetKey, str | None] = {}
 
         for asset_key, event_type in asset_keys_to_event_type.items():
             event_records = storage.get_event_records(

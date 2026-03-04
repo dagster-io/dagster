@@ -1,6 +1,6 @@
 """Translation utilities for Looker components."""
 
-from typing import Annotated, Optional, TypeAlias, Union
+from typing import Annotated, TypeAlias
 
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components import Resolvable, Resolver
@@ -32,9 +32,9 @@ ResolvedTargetedLookerTranslationFn = Annotated[
 
 @record
 class LookerAssetArgs(AssetSpecUpdateKwargs, Resolvable):
-    for_view: Optional[ResolvedTargetedLookerTranslationFn] = None
-    for_explore: Optional[ResolvedTargetedLookerTranslationFn] = None
-    for_dashboard: Optional[ResolvedTargetedLookerTranslationFn] = None
+    for_view: ResolvedTargetedLookerTranslationFn | None = None
+    for_explore: ResolvedTargetedLookerTranslationFn | None = None
+    for_dashboard: ResolvedTargetedLookerTranslationFn | None = None
 
 
 def resolve_multilayer_translation(context: ResolutionContext, model):
@@ -87,7 +87,7 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_multilayer_translation,
-        model_field_type=Union[str, LookerAssetArgs.model()],
+        model_field_type=str | LookerAssetArgs.model(),
     ),
 ]
 

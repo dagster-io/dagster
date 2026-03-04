@@ -1,7 +1,6 @@
 import datetime
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional
 
 import dagster as dg
 from dagster._core.definitions.freshness import FreshnessPolicy, TimeWindowFreshnessPolicy
@@ -180,9 +179,9 @@ def test_resolved_asset_spec() -> None:
     @dataclass
     class SomeObject(dg.Resolvable):
         spec: dg.ResolvedAssetSpec
-        maybe_spec: Optional[dg.ResolvedAssetSpec]
+        maybe_spec: dg.ResolvedAssetSpec | None
         specs: Sequence[dg.ResolvedAssetSpec]
-        maybe_specs: Optional[Sequence[dg.ResolvedAssetSpec]]
+        maybe_specs: Sequence[dg.ResolvedAssetSpec] | None
 
     some_object = SomeObject.resolve_from_model(
         context=ResolutionContext.default(),

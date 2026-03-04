@@ -7,7 +7,7 @@ import sys
 import uuid
 from collections.abc import Callable, Mapping
 from logging.handlers import RotatingFileHandler
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import click
 
@@ -50,7 +50,7 @@ def get_is_known_ci_env() -> bool:
     return False
 
 
-def dagster_home_if_set() -> Optional[str]:
+def dagster_home_if_set() -> str | None:
     dagster_home_path = os.getenv("DAGSTER_HOME")
 
     if not dagster_home_path:
@@ -98,11 +98,11 @@ def get_or_create_user_telemetry_dir() -> str:
 
 class TelemetrySettings(NamedTuple):
     dagster_telemetry_enabled: bool
-    instance_id: Optional[str]
-    run_storage_id: Optional[str]
+    instance_id: str | None
+    run_storage_id: str | None
 
 
-def _get_rotating_file_handler(logger: logging.Logger) -> Optional[RotatingFileHandler]:
+def _get_rotating_file_handler(logger: logging.Logger) -> RotatingFileHandler | None:
     return next(
         iter(handler for handler in logger.handlers if isinstance(handler, RotatingFileHandler)),
         None,
@@ -207,9 +207,9 @@ class TelemetryEntry(
         event_id: str,
         instance_id: str,
         user_id: str,
-        metadata: Optional[Mapping[str, str]] = None,
-        elapsed_time: Optional[str] = None,
-        run_storage_id: Optional[str] = None,
+        metadata: Mapping[str, str] | None = None,
+        elapsed_time: str | None = None,
+        run_storage_id: str | None = None,
     ):
         OS_DESC = platform.platform()
         OS_PLATFORM = platform.system()
@@ -235,9 +235,9 @@ class TelemetryEntry(
 def log_telemetry_action(
     get_telemetry_settings: Callable[[], TelemetrySettings],
     action: str,
-    client_time: Optional[datetime.datetime] = None,
-    elapsed_time: Optional[datetime.timedelta] = None,
-    metadata: Optional[Mapping[str, str]] = None,
+    client_time: datetime.datetime | None = None,
+    elapsed_time: datetime.timedelta | None = None,
+    metadata: Mapping[str, str] | None = None,
 ) -> None:
     if client_time is None:
         client_time = datetime.datetime.now()
@@ -307,7 +307,7 @@ def get_or_set_user_id() -> str:
     return user_id
 
 
-def _get_telemetry_user_id() -> Optional[str]:
+def _get_telemetry_user_id() -> str | None:
     """Gets the user_id from ~/.dagster/.telemetry/user_id.yaml."""
     import yaml
 
@@ -329,7 +329,7 @@ def _get_telemetry_user_id() -> Optional[str]:
     return None
 
 
-def _set_telemetry_user_id() -> Optional[str]:
+def _set_telemetry_user_id() -> str | None:
     """Sets the user_id at ~/.dagster/.telemetry/user_id.yaml."""
     import yaml
 
@@ -345,7 +345,7 @@ def _set_telemetry_user_id() -> Optional[str]:
 
 
 # Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
-def _get_telemetry_instance_id() -> Optional[str]:
+def _get_telemetry_instance_id() -> str | None:
     import yaml
 
     telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")

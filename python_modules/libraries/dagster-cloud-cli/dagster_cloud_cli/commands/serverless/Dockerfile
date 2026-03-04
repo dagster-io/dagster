@@ -1,16 +1,18 @@
 # base image is templated in (default: python:3.11-slim)
 
-# copy both requirements.txt / setup.py to guarantee that at least one file will be copied over
+# copy both requirements.txt / setup.py / pyproject.toml to guarantee that at least one file will be copied over
 # for any pre-src COPY.  On some flavors of Docker (Linux), the COPY command will fail unless there
 # exists at least one file to copy over.
-COPY *dagster_cloud_pre_install.sh *setup.py *requirements.txt /
+COPY *dagster_cloud_pre_install.sh *setup.py *pyproject.toml *requirements.txt /
 RUN if [ -f "dagster_cloud_pre_install.sh" ]; then \
         ./dagster_cloud_pre_install.sh; \
     fi
 
-# This is to enable Docker caching - if setup.py exists, we install the dependencies before
-# copying all other files
+# This is to enable Docker caching - if setup.py or pyproject.toml exists, we install the
+# dependencies before copying all other files
 RUN if [ -f "setup.py" ]; then \
+        pip install .; \
+    elif [ -f "pyproject.toml" ]; then \
         pip install .; \
     fi
 
@@ -31,6 +33,6 @@ RUN if [ -f "dagster_cloud_post_install.sh" ]; then \
 
 # Make sure dagster-cloud is installed. Fail early here if not.
 RUN if ! dagster-cloud --version; then \
-        echo "Could not find the dagster-cloud package.  Make sure you include the dagster-cloud package in your setup.py or requirements.txt file to ensure that it is installed as part of your workspace."; \
+        echo "Could not find the dagster-cloud package.  Make sure you include the dagster-cloud package in your setup.py, pyproject.toml, or requirements.txt file to ensure that it is installed as part of your workspace."; \
         exit 1; \
     fi

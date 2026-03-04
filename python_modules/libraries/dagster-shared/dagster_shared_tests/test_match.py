@@ -23,9 +23,9 @@ class MyTuple(NamedTuple):
         ("abc", Any, True),
         ([1], Any, True),
         # Union
-        (5, Union[int, str], True),
-        ("hi", Union[int, str], True),
-        (5.0, Union[int, str], False),
+        (5, Union[int, str], True),  # noqa: UP007
+        ("hi", Union[int, str], True),  # noqa: UP007
+        (5.0, Union[int, str], False),  # noqa: UP007
         # Union via pipe syntax (types.UnionType)
         (5, int | str, True),
         ("hi", int | str, True),

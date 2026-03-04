@@ -62,11 +62,11 @@ class AssetDefinitionDiffDetails:
     """
 
     change_types: Set[AssetDefinitionChangeType]
-    code_version: Optional[ValueDiff[Optional[str]]] = None
-    dependencies: Optional[DictDiff[AssetKey]] = None
-    partitions_definition: Optional[ValueDiff[Optional[str]]] = None
-    tags: Optional[DictDiff[str]] = None
-    metadata: Optional[DictDiff[str]] = None
+    code_version: ValueDiff[str | None] | None = None
+    dependencies: DictDiff[AssetKey] | None = None
+    partitions_definition: ValueDiff[str | None] | None = None
+    tags: DictDiff[str] | None = None
+    metadata: DictDiff[str] | None = None
 
 
 class AssetGraphDiffer:
@@ -108,11 +108,11 @@ class AssetGraphDiffer:
         ).resolve_to_singular_repo_scoped_node()
 
         change_types: set[AssetDefinitionChangeType] = set()
-        code_version_diff: Optional[ValueDiff] = None
-        dependencies_diff: Optional[DictDiff] = None
-        partitions_definition_diff: Optional[ValueDiff] = None
-        tags_diff: Optional[DictDiff] = None
-        metadata_diff: Optional[DictDiff] = None
+        code_version_diff: ValueDiff | None = None
+        dependencies_diff: DictDiff | None = None
+        partitions_definition_diff: ValueDiff | None = None
+        tags_diff: DictDiff | None = None
+        metadata_diff: DictDiff | None = None
 
         if branch_asset.code_version != base_asset.code_version:
             change_types.add(AssetDefinitionChangeType.CODE_VERSION)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from typing_extensions import TypedDict
 
@@ -65,7 +65,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
     @abstractmethod
     def handle_run_event(
-        self, run_id: str, event: DagsterEvent, update_timestamp: Optional[datetime] = None
+        self, run_id: str, event: DagsterEvent, update_timestamp: datetime | None = None
     ) -> None:
         """Update run storage in accordance to a pipeline run related DagsterEvent.
 
@@ -77,10 +77,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_runs(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        bucket_by: JobBucket | TagBucket | None = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
@@ -101,9 +101,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_run_ids(
         self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filters: RunsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[str]:
         """Return all the run IDs for runs present in the storage that match the given filters.
 
@@ -119,7 +119,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
+    def get_runs_count(self, filters: RunsFilter | None = None) -> int:
         """Return the number of runs present in the storage that match the given filters.
 
         Args:
@@ -132,7 +132,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def get_run_group(self, run_id: str) -> Optional[tuple[str, Sequence[DagsterRun]]]:
+    def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]] | None:
         """Get the run group to which a given run belongs.
 
         Args:
@@ -150,12 +150,12 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_run_records(
         self,
-        filters: Optional[RunsFilter] = None,
-        limit: Optional[int] = None,
-        order_by: Optional[str] = None,
+        filters: RunsFilter | None = None,
+        limit: int | None = None,
+        order_by: str | None = None,
         ascending: bool = False,
-        cursor: Optional[str] = None,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        cursor: str | None = None,
+        bucket_by: JobBucket | TagBucket | None = None,
     ) -> Sequence[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -174,8 +174,8 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def get_run_tags(
         self,
         tag_keys: Sequence[str],
-        value_prefix: Optional[str] = None,
-        limit: Optional[int] = None,
+        value_prefix: str | None = None,
+        limit: int | None = None,
     ) -> Sequence[tuple[str, set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
 
@@ -214,7 +214,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
             bool
         """
 
-    def add_snapshot(self, snapshot: Union[JobSnap, ExecutionPlanSnapshot]) -> None:
+    def add_snapshot(self, snapshot: JobSnap | ExecutionPlanSnapshot) -> None:
         """Add a snapshot to the storage.
 
         Args:
@@ -320,10 +320,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
 
-    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any required data migrations."""
 
-    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
+    def optimize(self, print_fn: PrintFn | None = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
     def dispose(self) -> None:
@@ -356,7 +356,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def add_run_telemetry(
         self,
         run_telemetry: RunTelemetryData,
-        tags: Optional[dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Not implemented in base class. Should be implemented in subclasses that support telemetry."""
         pass
@@ -369,15 +369,15 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_backfills(
         self,
-        filters: Optional[BulkActionsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        status: Optional[BulkActionStatus] = None,
+        filters: BulkActionsFilter | None = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        status: BulkActionStatus | None = None,
     ) -> Sequence[PartitionBackfill]:
         """Get a list of partition backfills."""
 
     @abstractmethod
-    def get_backfills_count(self, filters: Optional[BulkActionsFilter] = None) -> int:
+    def get_backfills_count(self, filters: BulkActionsFilter | None = None) -> int:
         """Return the number of backfills present in the storage that match the given filters.
 
         Args:
@@ -388,7 +388,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
+    def get_backfill(self, backfill_id: str) -> PartitionBackfill | None:
         """Get the partition backfill of the given backfill id."""
 
     @abstractmethod
@@ -399,7 +399,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage."""
 
-    def alembic_version(self) -> Optional[AlembicVersion]:
+    def alembic_version(self) -> AlembicVersion | None:
         return None
 
     @abstractmethod

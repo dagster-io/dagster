@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.sensor_definition import SensorExecutionData
@@ -19,12 +19,12 @@ def sync_get_external_sensor_execution_data_ephemeral_grpc(
     instance: "DagsterInstance",
     repository_handle: RepositoryHandle,
     sensor_name: str,
-    last_tick_completion_time: Optional[float],
-    last_run_key: Optional[str],
-    cursor: Optional[str],
-    log_key: Optional[Sequence[str]],
-    last_sensor_start_time: Optional[float] = None,
-    timeout: Optional[int] = DEFAULT_GRPC_TIMEOUT,
+    last_tick_completion_time: float | None,
+    last_run_key: str | None,
+    cursor: str | None,
+    log_key: Sequence[str] | None,
+    last_sensor_start_time: float | None = None,
+    timeout: int | None = DEFAULT_GRPC_TIMEOUT,
 ) -> SensorExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
@@ -51,12 +51,12 @@ def sync_get_external_sensor_execution_data_grpc(
     instance: "DagsterInstance",
     repository_handle: RepositoryHandle,
     sensor_name: str,
-    last_tick_completion_time: Optional[float],
-    last_run_key: Optional[str],
-    cursor: Optional[str],
-    log_key: Optional[Sequence[str]],
-    last_sensor_start_time: Optional[float] = None,
-    timeout: Optional[int] = None,
+    last_tick_completion_time: float | None,
+    last_run_key: str | None,
+    cursor: str | None,
+    log_key: Sequence[str] | None,
+    last_sensor_start_time: float | None = None,
+    timeout: int | None = None,
 ) -> SensorExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(sensor_name, "sensor_name")

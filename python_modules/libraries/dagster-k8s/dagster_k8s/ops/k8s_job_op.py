@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, Optional
+from typing import Any
 
 import kubernetes.config
 import kubernetes.watch
@@ -142,32 +142,32 @@ K8S_JOB_OP_CONFIG = merge_dicts(
 def execute_k8s_job(
     context: OpExecutionContext,
     image: str,
-    command: Optional[list[str]] = None,
-    args: Optional[list[str]] = None,
-    namespace: Optional[str] = None,
-    image_pull_policy: Optional[str] = None,
-    image_pull_secrets: Optional[list[dict[str, str]]] = None,
-    service_account_name: Optional[str] = None,
-    env_config_maps: Optional[list[str]] = None,
-    env_secrets: Optional[list[str]] = None,
-    env_vars: Optional[list[str]] = None,
-    volume_mounts: Optional[list[dict[str, Any]]] = None,
-    volumes: Optional[list[dict[str, Any]]] = None,
-    labels: Optional[dict[str, str]] = None,
-    resources: Optional[dict[str, Any]] = None,
-    scheduler_name: Optional[str] = None,
+    command: list[str] | None = None,
+    args: list[str] | None = None,
+    namespace: str | None = None,
+    image_pull_policy: str | None = None,
+    image_pull_secrets: list[dict[str, str]] | None = None,
+    service_account_name: str | None = None,
+    env_config_maps: list[str] | None = None,
+    env_secrets: list[str] | None = None,
+    env_vars: list[str] | None = None,
+    volume_mounts: list[dict[str, Any]] | None = None,
+    volumes: list[dict[str, Any]] | None = None,
+    labels: dict[str, str] | None = None,
+    resources: dict[str, Any] | None = None,
+    scheduler_name: str | None = None,
     load_incluster_config: bool = True,
-    kubeconfig_file: Optional[str] = None,
-    timeout: Optional[int] = None,
-    container_config: Optional[dict[str, Any]] = None,
-    pod_template_spec_metadata: Optional[dict[str, Any]] = None,
-    pod_spec_config: Optional[dict[str, Any]] = None,
-    job_metadata: Optional[dict[str, Any]] = None,
-    job_spec_config: Optional[dict[str, Any]] = None,
-    k8s_job_name: Optional[str] = None,
+    kubeconfig_file: str | None = None,
+    timeout: int | None = None,
+    container_config: dict[str, Any] | None = None,
+    pod_template_spec_metadata: dict[str, Any] | None = None,
+    pod_spec_config: dict[str, Any] | None = None,
+    job_metadata: dict[str, Any] | None = None,
+    job_spec_config: dict[str, Any] | None = None,
+    k8s_job_name: str | None = None,
     merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
-    delete_failed_k8s_jobs: Optional[bool] = True,
-    _kubeconfig_file_context: Optional[str] = None,
+    delete_failed_k8s_jobs: bool | None = True,
+    _kubeconfig_file_context: str | None = None,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
 

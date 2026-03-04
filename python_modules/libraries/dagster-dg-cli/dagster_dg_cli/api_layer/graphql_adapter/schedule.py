@@ -1,6 +1,6 @@
 """GraphQL implementation for schedule operations."""
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
@@ -231,8 +231,8 @@ def process_schedule_response(graphql_response: dict[str, Any]) -> "DgApiSchedul
 
 def list_schedules_via_graphql(
     client: IGraphQLClient,
-    repository_location_name: Optional[str] = None,
-    repository_name: Optional[str] = None,
+    repository_location_name: str | None = None,
+    repository_name: str | None = None,
 ) -> "DgApiScheduleList":
     """Fetch schedules using GraphQL."""
     if repository_location_name and repository_name:

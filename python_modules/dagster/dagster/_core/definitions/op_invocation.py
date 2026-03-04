@@ -353,7 +353,7 @@ def _key_for_result(result: AssetResult, context: "BaseDirectExecutionContext") 
 
 
 def _output_name_for_result_obj(
-    event: Union[AssetResult, AssetCheckResult],
+    event: AssetResult | AssetCheckResult,
     context: "BaseDirectExecutionContext",
 ):
     if not context.per_invocation_properties.assets_def:
@@ -536,7 +536,7 @@ def _type_check_function_output(
 
 def _type_check_output(
     output_def: "OutputDefinition",
-    output: Union[Output, DynamicOutput],
+    output: Output | DynamicOutput,
     context: "BaseDirectExecutionContext",
 ) -> None:
     """Validates and performs core type check on a provided output.

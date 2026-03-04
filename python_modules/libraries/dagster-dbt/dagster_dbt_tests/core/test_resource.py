@@ -2,7 +2,7 @@ import os
 import shutil
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import pydantic
 import pytest
@@ -257,7 +257,7 @@ def test_dbt_profile_configuration() -> None:
 @pytest.mark.parametrize(
     "profiles_dir", [None, test_jaffle_shop_path, os.fspath(test_jaffle_shop_path)]
 )
-def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
+def test_dbt_profiles_dir_configuration(profiles_dir: str | Path) -> None:
     assert (
         DbtCliResource(
             project_dir=os.fspath(test_jaffle_shop_path),
@@ -456,7 +456,7 @@ def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: dict
     ],
 )
 def test_dbt_cli_asset_selection(
-    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
+    context_type: type[AssetExecutionContext] | type[OpExecutionContext],
     test_jaffle_shop_manifest: dict[str, Any],
     dbt: DbtCliResource,
 ) -> None:

@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, TextIO
+from typing import TextIO
 
 import psutil
 import pytest
@@ -224,9 +224,9 @@ def test_dagster_dev_command_legacy_code_server_behavior():
 def _launch_dev_command(
     options: list[str],
     capture_output: bool = False,
-    stdout_file: Optional[TextIO] = None,
-    stderr_file: Optional[TextIO] = None,
-    env: Optional[dict[str, str]] = None,
+    stdout_file: TextIO | None = None,
+    stderr_file: TextIO | None = None,
+    env: dict[str, str] | None = None,
 ) -> Iterator[subprocess.Popen]:
     read_fd, write_fd = get_ipc_shutdown_pipe()
     proc = open_ipc_subprocess(

@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum as PyEnum
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, TypeAlias, Union, overload
 
 from typing_extensions import Self
 
@@ -87,12 +87,10 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def __init__(
         self,
         name: str,
-        config_schema: Optional[UserConfigSchema] = None,
-        requirements: Union[
-            ExecutorRequirementsFunction, Optional[Sequence[ExecutorRequirement]]
-        ] = None,
-        executor_creation_fn: Optional[ExecutorCreationFunction] = None,
-        description: Optional[str] = None,
+        config_schema: UserConfigSchema | None = None,
+        requirements: ExecutorRequirementsFunction | Sequence[ExecutorRequirement] | None = None,
+        executor_creation_fn: ExecutorCreationFunction | None = None,
+        description: str | None = None,
     ):
         self._name = check.str_param(name, "name")
         self._requirements_fn: ExecutorRequirementsFunction
@@ -117,7 +115,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
     @public
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Description of executor, if provided."""
         return self._description
 
@@ -132,7 +130,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
     @public
     @property
-    def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
+    def executor_creation_fn(self) -> ExecutorCreationFunction | None:
         """Callable that takes an :py:class:`InitExecutorContext` and returns an instance of
         :py:class:`Executor`.
         """
@@ -162,9 +160,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def configured(
         self,
         config_or_config_fn: Any,
-        name: Optional[str] = None,
-        config_schema: Optional[UserConfigSchema] = None,
-        description: Optional[str] = None,
+        name: str | None = None,
+        config_schema: UserConfigSchema | None = None,
+        description: str | None = None,
     ) -> Self:
         """Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -205,21 +203,17 @@ def executor(name: ExecutorCreationFunction) -> ExecutorDefinition: ...
 
 @overload
 def executor(
-    name: Optional[str] = ...,
-    config_schema: Optional[UserConfigSchema] = ...,
-    requirements: Optional[
-        Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
-    ] = ...,
+    name: str | None = ...,
+    config_schema: UserConfigSchema | None = ...,
+    requirements: ExecutorRequirementsFunction | Sequence[ExecutorRequirement] | None = ...,
 ) -> "_ExecutorDecoratorCallable": ...
 
 
 @public
 def executor(
-    name: Union[ExecutorCreationFunction, Optional[str]] = None,
-    config_schema: Optional[UserConfigSchema] = None,
-    requirements: Optional[
-        Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
-    ] = None,
+    name: ExecutorCreationFunction | str | None = None,
+    config_schema: UserConfigSchema | None = None,
+    requirements: ExecutorRequirementsFunction | Sequence[ExecutorRequirement] | None = None,
 ) -> Union[ExecutorDefinition, "_ExecutorDecoratorCallable"]:
     """Define an executor.
 

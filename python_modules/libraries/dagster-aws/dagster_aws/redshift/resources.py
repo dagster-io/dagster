@@ -1,7 +1,7 @@
 import abc
 from contextlib import contextmanager
 from logging import Logger
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import psycopg2
 import psycopg2.extensions
@@ -33,7 +33,7 @@ class BaseRedshiftClient(abc.ABC):
 
 
 class RedshiftClient(BaseRedshiftClient):
-    def __init__(self, conn_args: dict[str, Any], autocommit: Optional[bool], log: Logger):
+    def __init__(self, conn_args: dict[str, Any], autocommit: bool | None, log: Logger):
         # Extract parameters from resource config
         self.conn_args = conn_args
 
@@ -310,16 +310,16 @@ class RedshiftClientResource(ConfigurableResource):
 
     host: str = Field(description="Redshift host")
     port: int = Field(default=5439, description="Redshift port")
-    user: Optional[str] = Field(default=None, description="Username for Redshift connection")
-    password: Optional[str] = Field(default=None, description="Password for Redshift connection")
-    database: Optional[str] = Field(
+    user: str | None = Field(default=None, description="Username for Redshift connection")
+    password: str | None = Field(default=None, description="Password for Redshift connection")
+    database: str | None = Field(
         default=None,
         description=(
             "Name of the default database to use. After login, you can use USE DATABASE to change"
             " the database."
         ),
     )
-    autocommit: Optional[bool] = Field(default=None, description="Whether to autocommit queries")
+    autocommit: bool | None = Field(default=None, description="Whether to autocommit queries")
     connect_timeout: int = Field(
         default=5, description="Timeout for connection to Redshift cluster. Defaults to 5 seconds."
     )

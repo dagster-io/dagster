@@ -2,8 +2,8 @@ import gzip
 import io
 import mimetypes
 import uuid
-from os import path, walk
-from typing import Generic, Optional, TypeVar
+from os import listdir, path
+from typing import Generic, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -32,6 +32,7 @@ from starlette.responses import (
     StreamingResponse,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
+from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
 from dagster_webserver.external_assets import (
@@ -59,7 +60,7 @@ class DagsterWebserver(
         self,
         process_context: TProcessContext,
         app_path_prefix: str = "",
-        live_data_poll_rate: Optional[int] = None,
+        live_data_poll_rate: int | None = None,
         uses_app_path_prefix: bool = True,
     ) -> None:
         self._process_context = process_context
@@ -248,30 +249,28 @@ class DagsterWebserver(
                 )
 
     def build_static_routes(self):
-        def _static_file(path, file_path):
+        def _static_file(mount_path: str, full_path: str, name: str) -> Route:
             return Route(
-                path,
-                lambda _: FileResponse(path=file_path),
-                name="root_static",
+                mount_path,
+                lambda _: FileResponse(path=full_path),
+                name=name,
+            )
+
+        def _static_dir(mount_path: str, full_path: str, name: str) -> Mount:
+            return Mount(
+                mount_path,
+                StaticFiles(directory=full_path),
+                name=name,
             )
 
         mimetypes.add_type("application/javascript", ".js")
         mimetypes.add_type("text/css", ".css")
         mimetypes.add_type("image/svg+xml", ".svg")
 
-        routes = []
         base_dir = self.relative_path("webapp/build/")
-        for subdir, _, files in walk(base_dir):
-            for file in files:
-                full_path = path.join(subdir, file)
-                # Replace path.sep to make sure our routes use forward slashes on windows
-                mount_path = "/" + full_path[len(base_dir) :].replace(path.sep, "/")
-                routes.append(_static_file(mount_path, full_path))
-
-        # No build directory, this happens in a test environment. Don't fail loudly since we already have other tests that will fail loudly if
-        # there is in fact no build
-        if len(routes) == 0:
-            # These are tested by an internal test without building the app.
+        if not path.isdir(base_dir):
+            # No build directory, this happens in a test environment
+            # Don't fail loudly since we have other tests that will fail loudly if there is no build directory
             return [
                 Route("/favicon.png", lambda _: FileResponse(path="/favicon")),
                 Route(
@@ -279,6 +278,16 @@ class DagsterWebserver(
                     lambda _: FileResponse(path="/vendor/graphiql/graphiql.min.css"),
                 ),
             ]
+
+        routes = []
+        for entry in listdir(base_dir):
+            mount_path = f"/{entry}"
+            full_path = path.join(base_dir, entry)
+
+            if path.isdir(full_path):
+                routes.append(_static_dir(mount_path, full_path, f"{entry}_static"))
+            if path.isfile(full_path):
+                routes.append(_static_file(mount_path, full_path, "root_static"))
 
         return routes
 

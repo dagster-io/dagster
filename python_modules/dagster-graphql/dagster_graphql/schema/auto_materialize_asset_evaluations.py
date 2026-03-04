@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import graphene
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
@@ -83,7 +82,7 @@ class GrapheneAutoMaterializeRuleWithRuleEvaluations(graphene.ObjectType):
 
 def create_graphene_auto_materialize_rule_evaluation(
     asset_subset_with_metadata: AssetSubsetWithMetadata,
-) -> Optional[GrapheneAutoMaterializeRuleEvaluation]:
+) -> GrapheneAutoMaterializeRuleEvaluation | None:
     if not asset_subset_with_metadata.subset.is_partitioned:
         partition_keys_or_error = None
     else:

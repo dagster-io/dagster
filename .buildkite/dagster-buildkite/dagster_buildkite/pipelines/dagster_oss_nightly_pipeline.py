@@ -1,3 +1,4 @@
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.step_builder import StepConfiguration
@@ -10,7 +11,7 @@ from dagster_buildkite.steps.packages import (
 from dagster_buildkite.steps.tox import ToxFactor
 
 
-def build_dagster_oss_nightly_steps() -> list[StepConfiguration]:
+def build_dagster_oss_nightly_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     steps: list[StepConfiguration] = []
 
     steps += build_steps_from_package_specs(
@@ -82,7 +83,8 @@ def build_dagster_oss_nightly_steps() -> list[StepConfiguration]:
                 ],
                 always_run_if=lambda: True,
             ),
-        ]
+        ],
+        ctx,
     )
 
     return steps

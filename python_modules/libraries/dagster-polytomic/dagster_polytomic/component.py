@@ -1,7 +1,6 @@
 import itertools
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview
@@ -30,7 +29,7 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     workspace: PolytomicWorkspace = Field(
         description="Defines configuration for interacting with a Polytomic organization.",
     )
-    translation: Optional[ResolvedPolytomicTranslationFn] = Field(
+    translation: ResolvedPolytomicTranslationFn | None = Field(
         default=None,
         description="Defines how to translate a Polytomic object into an AssetSpec object.",
     )
@@ -50,7 +49,7 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         """Load state from path using Dagster's deserialization system."""
         return dg.deserialize_value(state_path.read_text(), PolytomicWorkspaceData)
 
-    def _get_default_polytomic_spec(self, data: PolytomicTranslatorData) -> Optional[dg.AssetSpec]:
+    def _get_default_polytomic_spec(self, data: PolytomicTranslatorData) -> dg.AssetSpec | None:
         """Core function for converting a Polytomic schema into an AssetSpec object."""
         if isinstance(data.obj, PolytomicBulkSyncEnrichedSchema):
             enriched_schema = data.obj
@@ -76,7 +75,7 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             )
         return None
 
-    def get_asset_spec(self, data: PolytomicTranslatorData) -> Optional[dg.AssetSpec]:
+    def get_asset_spec(self, data: PolytomicTranslatorData) -> dg.AssetSpec | None:
         """Core function for converting a Polytomic object into an AssetSpec object."""
         base_asset_spec = self._get_default_polytomic_spec(data)
         if self.translation and base_asset_spec:
@@ -125,7 +124,7 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         return dg.Definitions(assets=self._build_asset_specs(workspace_data))
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

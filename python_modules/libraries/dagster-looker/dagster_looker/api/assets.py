@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Optional, Union, cast
+from typing import cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, DagsterLogManager, Failure, multi_asset
 from dagster._annotations import beta
@@ -20,7 +20,7 @@ def core_looker_pdt_execution(
     looker: LookerResource,
     request: RequestStartPdtBuild,
     log: DagsterLogManager,
-    run_id: Optional[str],
+    run_id: str | None,
 ) -> None:
     log.info(
         f"Starting pdt build for Looker view `{request.view_name}` "
@@ -52,9 +52,9 @@ def core_looker_pdt_execution(
 def build_looker_pdt_assets_definitions(
     resource_key: str,
     request_start_pdt_builds: Sequence[RequestStartPdtBuild],
-    dagster_looker_translator: Optional[
-        Union[DagsterLookerApiTranslator, type[DagsterLookerApiTranslator]]
-    ] = None,
+    dagster_looker_translator: DagsterLookerApiTranslator
+    | type[DagsterLookerApiTranslator]
+    | None = None,
 ) -> Sequence[AssetsDefinition]:
     """Returns the AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
 

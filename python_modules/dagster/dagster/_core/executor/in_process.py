@@ -1,6 +1,5 @@
 import os
 from collections.abc import Iterator
-from typing import Optional
 
 from dagster_shared.utils.timing import format_duration
 
@@ -21,7 +20,7 @@ from dagster._utils.timing import time_execution_scope
 def inprocess_execution_iterator(
     job_context: PlanExecutionContext,
     execution_plan: ExecutionPlan,
-    instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+    instance_concurrency_context: InstanceConcurrencyContext | None = None,
 ) -> Iterator[DagsterEvent]:
     with InstanceConcurrencyContext(
         job_context.instance, job_context.dagster_run
@@ -38,7 +37,7 @@ class InProcessExecutor(Executor):
         self,
         retries: RetryMode,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
-        marker_to_close: Optional[str] = None,
+        marker_to_close: str | None = None,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         self._step_dependency_config = check.inst_param(

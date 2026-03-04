@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import Callable
-from typing import Generic, Optional, TypeVar, Union, cast
+from typing import Generic, TypeVar, cast
 
 from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
@@ -21,7 +21,7 @@ class LazyDefinitions(Generic[T_Defs]):
     load_fn: Callable[..., T_Defs]
     has_context_arg: bool
 
-    def __call__(self, context: Optional[ComponentLoadContext] = None) -> T_Defs:
+    def __call__(self, context: ComponentLoadContext | None = None) -> T_Defs:
         """Load a set of definitions using the load_fn provided at construction time.
 
         Args:
@@ -48,7 +48,7 @@ class LazyDefinitions(Generic[T_Defs]):
 
 @public
 def definitions(
-    fn: Union[Callable[[], Definitions], Callable[[ComponentLoadContext], Definitions]],
+    fn: Callable[[], Definitions] | Callable[[ComponentLoadContext], Definitions],
 ) -> Callable[..., Definitions]:
     """Decorator that marks a function as an entry point for loading Dagster definitions.
 

@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
 from functools import cached_property
 from pathlib import Path
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, TypeVar
 
 from dagster_shared.record import record
 from dagster_shared.serdes.objects import EnvRegistryKey
@@ -129,10 +129,10 @@ def _get_component_class(
 
 
 def _process_attributes_with_enriched_validation_err(
-    source_tree: Optional[ValueAndSourcePositionTree],
-    component_file_model: Optional[ComponentFileModel],
-    model_cls: Optional[type[BaseModel]],
-) -> Optional[BaseModel]:
+    source_tree: ValueAndSourcePositionTree | None,
+    component_file_model: ComponentFileModel | None,
+    model_cls: type[BaseModel] | None,
+) -> BaseModel | None:
     if (
         model_cls is None
         or not source_tree
@@ -158,8 +158,8 @@ def _process_attributes_with_enriched_validation_err(
 
 @record
 class YamlBackedComponentDecl(ComponentDecl[T]):
-    source_tree: Optional[ValueAndSourcePositionTree]
-    component_file_model: Optional[ComponentFileModel]
+    source_tree: ValueAndSourcePositionTree | None
+    component_file_model: ComponentFileModel | None
 
     @cached_property
     def context_with_component_injected_scope(self) -> ComponentDeclLoadContext:
@@ -293,7 +293,7 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
         yield from self.children.values()
 
 
-def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Optional[ComponentDecl]:
+def build_component_decl_from_context(context: ComponentDeclLoadContext) -> ComponentDecl | None:
     """Attempts to determine the type of component that should be loaded for the given context.  Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
@@ -331,7 +331,7 @@ def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Opti
 
 
 def build_component_decls_from_directory_items(
-    context: ComponentDeclLoadContext, component_file_model: Optional[ComponentFileModel]
+    context: ComponentDeclLoadContext, component_file_model: ComponentFileModel | None
 ) -> Mapping[Path, ComponentDecl]:
     found = {}
     for subpath in sorted(context.path.iterdir()):
@@ -352,7 +352,7 @@ def build_component_decls_from_directory_items(
 
 def build_component_decl_from_python_file(
     context: ComponentDeclLoadContext,
-) -> Union[ComponentLoaderDecl, PythonFileDecl]:
+) -> ComponentLoaderDecl | PythonFileDecl:
     # backcompat for component.yaml
     component_def_path = context.path
     module = context.load_defs_relative_python_module(component_def_path)

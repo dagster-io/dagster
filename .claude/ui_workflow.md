@@ -7,7 +7,7 @@
 1. **[CONDITIONAL] Regenerate GraphQL types if schema changed**:
 
    ```bash
-   cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+   cd $DAGSTER_GIT_REPO_DIR/js_modules
    make generate-graphql
    ```
 
@@ -17,7 +17,7 @@
 2. **TypeScript checking**:
 
    ```bash
-   cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+   cd $DAGSTER_GIT_REPO_DIR/js_modules
    yarn tsgo
    ```
 
@@ -27,7 +27,7 @@
 3. **Linting**:
 
    ```bash
-   cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+   cd $DAGSTER_GIT_REPO_DIR/js_modules
    yarn lint
    ```
 
@@ -37,7 +37,7 @@
 4. **Jest tests**:
 
    ```bash
-   cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+   cd $DAGSTER_GIT_REPO_DIR/js_modules
    yarn jest
    ```
 
@@ -65,7 +65,7 @@ This ensures changes to shared UI packages don't break the Cloud application.
 - **Purpose**: Type checking with auto-fix in watch mode
 - **When**: After completing TypeScript/React file edits, when ready to verify
 - **Scope**: Checks app-oss, ui-core, and ui-components workspaces
-- **Location**: Must run from `js_modules/dagster-ui/`
+- **Location**: Must run from `js_modules/`
 - **Command**: `yarn tsgo` (not `make tsgo`)
 
 ### Linting (`yarn lint`)
@@ -73,7 +73,7 @@ This ensures changes to shared UI packages don't break the Cloud application.
 - **Purpose**: ESLint checking and auto-fixing
 - **When**: After completing TypeScript/React file edits, when ready to verify
 - **Scope**: Lints app-oss, ui-core, and ui-components workspaces
-- **Location**: Must run from `js_modules/dagster-ui/`
+- **Location**: Must run from `js_modules/`
 - **Command**: `yarn lint` (not `make lint`)
 
 ### Jest Tests (`yarn jest`)
@@ -81,14 +81,14 @@ This ensures changes to shared UI packages don't break the Cloud application.
 - **Purpose**: Run all Jest tests in silent mode
 - **When**: After completing TypeScript/React file edits, when ready to verify
 - **Scope**: Tests ui-core and ui-components workspaces
-- **Location**: Must run from `js_modules/dagster-ui/`
+- **Location**: Must run from `js_modules/`
 - **Command**: `yarn jest` (not `make jest`)
 
 ### GraphQL Generation (`make generate-graphql`)
 
 - **Purpose**: Regenerate GraphQL types from schema
 - **When**: After GraphQL schema changes in the backend
-- **Location**: Must run from `js_modules/dagster-ui/`
+- **Location**: Must run from `js_modules/`
 - **Critical Order**: MUST complete BEFORE running `yarn tsgo` or `yarn lint`, as it updates TypeScript type definitions that these commands depend on
 - **Note**: This is only needed when backend schema changes, not for routine UI edits
 
@@ -96,7 +96,7 @@ This ensures changes to shared UI packages don't break the Cloud application.
 
 - **Purpose**: Verify production build succeeds
 - **When**: When making changes within the `ui-components` package
-- **Location**: Must run from `js_modules/dagster-ui/`
+- **Location**: Must run from `js_modules/`
 - **Note**: Not needed for ui-core or app-oss changes during development
 
 ## Common Manual Fixes
@@ -115,8 +115,8 @@ When commands cannot auto-fix issues, Claude should address:
 ### Standard UI Edit Workflow
 
 ```bash
-# After completing TypeScript/React file edits in js_modules/dagster-ui:
-cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+# After completing TypeScript/React file edits in js_modules:
+cd $DAGSTER_GIT_REPO_DIR/js_modules
 
 # 1. Type checking
 yarn tsgo
@@ -136,7 +136,7 @@ yarn jest
 
 ```bash
 # After completing edits in ui-core or ui-components packages:
-cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+cd $DAGSTER_GIT_REPO_DIR/js_modules
 
 # 1. OSS repository checks
 yarn tsgo
@@ -151,7 +151,7 @@ yarn tsgo
 ### After GraphQL Schema Changes
 
 ```bash
-cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+cd $DAGSTER_GIT_REPO_DIR/js_modules
 
 # CRITICAL ORDER: generate-graphql MUST complete BEFORE yarn tsgo/yarn lint
 
@@ -173,7 +173,7 @@ yarn jest
 ### UI Components Package Changes
 
 ```bash
-cd $DAGSTER_GIT_REPO_DIR/js_modules/dagster-ui
+cd $DAGSTER_GIT_REPO_DIR/js_modules
 
 # 1. Standard checks
 yarn tsgo

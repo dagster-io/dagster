@@ -4,16 +4,7 @@ import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, TypeVar, cast  # noqa: UP035
 
 from dagster_shared.record import replace
 
@@ -121,27 +112,27 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     _resource_defs: Mapping[str, ResourceDefinition]
 
     _specs_by_key: Mapping[AssetKey, AssetSpec]
-    _computation: Optional[AssetGraphComputation]
+    _computation: AssetGraphComputation | None
     _hook_defs: AbstractSet[HookDefinition]
 
     @beta_param(param="execution_type")
     def __init__(
         self,
         *,
-        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
-        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
-        node_def: Optional[NodeDefinition] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
-        asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
+        keys_by_input_name: Mapping[str, AssetKey] | None = None,
+        keys_by_output_name: Mapping[str, AssetKey] | None = None,
+        node_def: NodeDefinition | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        partition_mappings: Mapping[AssetKey, PartitionMapping] | None = None,
+        asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]] | None = None,
+        selected_asset_keys: AbstractSet[AssetKey] | None = None,
         can_subset: bool = False,
-        resource_defs: Optional[Mapping[str, object]] = None,
-        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
-        tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
-        legacy_freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
+        resource_defs: Mapping[str, object] | None = None,
+        group_names_by_key: Mapping[AssetKey, str] | None = None,
+        metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping] | None = None,
+        tags_by_key: Mapping[AssetKey, Mapping[str, str]] | None = None,
+        legacy_freshness_policies_by_key: Mapping[AssetKey, LegacyFreshnessPolicy] | None = None,
+        backfill_policy: BackfillPolicy | None = None,
         # descriptions by key is more accurately understood as _overriding_ the descriptions
         # by key that are in the OutputDefinitions associated with the asset key.
         # This is a dangerous construction liable for bugs. Instead there should be a
@@ -151,16 +142,16 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         #
         # This is actually an override. We do not override descriptions
         # in OutputDefinitions in @multi_asset
-        descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
-        check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
-        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
+        descriptions_by_key: Mapping[AssetKey, str] | None = None,
+        check_specs_by_output_name: Mapping[str, AssetCheckSpec] | None = None,
+        selected_asset_check_keys: AbstractSet[AssetCheckKey] | None = None,
         is_subset: bool = False,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
-        specs: Optional[Sequence[AssetSpec]] = None,
-        execution_type: Optional[AssetExecutionType] = None,
+        owners_by_key: Mapping[AssetKey, Sequence[str]] | None = None,
+        specs: Sequence[AssetSpec] | None = None,
+        execution_type: AssetExecutionType | None = None,
         # TODO: FOU-243
-        auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        auto_materialize_policies_by_key: Mapping[AssetKey, AutoMaterializePolicy] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):
@@ -386,16 +377,16 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         keys_by_input_name: Mapping[str, AssetKey],
         keys_by_output_name: Mapping[str, AssetKey],
         node_def: NodeDefinition,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        selected_asset_keys: AbstractSet[AssetKey] | None,
         can_subset: bool,
-        resource_defs: Optional[Mapping[str, object]],
-        backfill_policy: Optional[BackfillPolicy],
-        check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
-        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+        resource_defs: Mapping[str, object] | None,
+        backfill_policy: BackfillPolicy | None,
+        check_specs_by_output_name: Mapping[str, AssetCheckSpec] | None,
+        selected_asset_check_keys: AbstractSet[AssetCheckKey] | None,
         is_subset: bool,
-        specs: Optional[Sequence[AssetSpec]],
-        execution_type: Optional[AssetExecutionType],
-        hook_defs: Optional[AbstractSet[HookDefinition]],
+        specs: Sequence[AssetSpec] | None,
+        execution_type: AssetExecutionType | None,
+        hook_defs: AbstractSet[HookDefinition] | None,
     ) -> "AssetsDefinition":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=PreviewWarning)
@@ -436,34 +427,31 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def from_graph(
         graph_def: "GraphDefinition",
         *,
-        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
-        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        group_name: Optional[str] = None,
-        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
-        descriptions_by_output_name: Optional[Mapping[str, str]] = None,
-        metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
-        tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
-        legacy_freshness_policies_by_output_name: Optional[
-            Mapping[str, Optional[LegacyFreshnessPolicy]]
-        ] = None,
-        automation_conditions_by_output_name: Optional[
-            Mapping[str, Optional[AutomationCondition]]
-        ] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
+        keys_by_input_name: Mapping[str, AssetKey] | None = None,
+        keys_by_output_name: Mapping[str, AssetKey] | None = None,
+        key_prefix: CoercibleToAssetKeyPrefix | None = None,
+        internal_asset_deps: Mapping[str, set[AssetKey]] | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        partition_mappings: Mapping[str, PartitionMapping] | None = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
+        group_name: str | None = None,
+        group_names_by_output_name: Mapping[str, str | None] | None = None,
+        descriptions_by_output_name: Mapping[str, str] | None = None,
+        metadata_by_output_name: Mapping[str, ArbitraryMetadataMapping | None] | None = None,
+        tags_by_output_name: Mapping[str, Mapping[str, str] | None] | None = None,
+        legacy_freshness_policies_by_output_name: Mapping[str, LegacyFreshnessPolicy | None]
+        | None = None,
+        automation_conditions_by_output_name: Mapping[str, AutomationCondition | None]
+        | None = None,
+        backfill_policy: BackfillPolicy | None = None,
         can_subset: bool = False,
-        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
-        code_versions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+        check_specs: Sequence[AssetCheckSpec] | None = None,
+        owners_by_output_name: Mapping[str, Sequence[str]] | None = None,
+        code_versions_by_output_name: Mapping[str, str | None] | None = None,
         # TODO: FOU-243
-        auto_materialize_policies_by_output_name: Optional[
-            Mapping[str, Optional[AutoMaterializePolicy]]
-        ] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        auto_materialize_policies_by_output_name: Mapping[str, AutoMaterializePolicy | None]
+        | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -557,30 +545,27 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def from_op(
         op_def: OpDefinition,
         *,
-        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
-        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-        group_name: Optional[str] = None,
-        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
-        descriptions_by_output_name: Optional[Mapping[str, str]] = None,
-        metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
-        tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
-        legacy_freshness_policies_by_output_name: Optional[
-            Mapping[str, Optional[LegacyFreshnessPolicy]]
-        ] = None,
-        automation_conditions_by_output_name: Optional[
-            Mapping[str, Optional[AutomationCondition]]
-        ] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
+        keys_by_input_name: Mapping[str, AssetKey] | None = None,
+        keys_by_output_name: Mapping[str, AssetKey] | None = None,
+        key_prefix: CoercibleToAssetKeyPrefix | None = None,
+        internal_asset_deps: Mapping[str, set[AssetKey]] | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        partition_mappings: Mapping[str, PartitionMapping] | None = None,
+        group_name: str | None = None,
+        group_names_by_output_name: Mapping[str, str | None] | None = None,
+        descriptions_by_output_name: Mapping[str, str] | None = None,
+        metadata_by_output_name: Mapping[str, ArbitraryMetadataMapping | None] | None = None,
+        tags_by_output_name: Mapping[str, Mapping[str, str] | None] | None = None,
+        legacy_freshness_policies_by_output_name: Mapping[str, LegacyFreshnessPolicy | None]
+        | None = None,
+        automation_conditions_by_output_name: Mapping[str, AutomationCondition | None]
+        | None = None,
+        backfill_policy: BackfillPolicy | None = None,
         can_subset: bool = False,
         # TODO: FOU-243
-        auto_materialize_policies_by_output_name: Optional[
-            Mapping[str, Optional[AutoMaterializePolicy]]
-        ] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        auto_materialize_policies_by_output_name: Mapping[str, AutoMaterializePolicy | None]
+        | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
 
@@ -661,30 +646,28 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def _from_node(
         node_def: NodeDefinition,
         *,
-        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
-        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        group_name: Optional[str] = None,
-        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
-        descriptions_by_output_name: Optional[Mapping[str, str]] = None,
-        metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
-        tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
-        legacy_freshness_policies_by_output_name: Optional[
-            Mapping[str, Optional[LegacyFreshnessPolicy]]
-        ] = None,
-        code_versions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
-        automation_conditions_by_output_name: Optional[
-            Mapping[str, Optional[AutomationCondition]]
-        ] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
+        keys_by_input_name: Mapping[str, AssetKey] | None = None,
+        keys_by_output_name: Mapping[str, AssetKey] | None = None,
+        key_prefix: CoercibleToAssetKeyPrefix | None = None,
+        internal_asset_deps: Mapping[str, set[AssetKey]] | None = None,
+        partitions_def: PartitionsDefinition | None = None,
+        partition_mappings: Mapping[str, PartitionMapping] | None = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
+        group_name: str | None = None,
+        group_names_by_output_name: Mapping[str, str | None] | None = None,
+        descriptions_by_output_name: Mapping[str, str] | None = None,
+        metadata_by_output_name: Mapping[str, ArbitraryMetadataMapping | None] | None = None,
+        tags_by_output_name: Mapping[str, Mapping[str, str] | None] | None = None,
+        legacy_freshness_policies_by_output_name: Mapping[str, LegacyFreshnessPolicy | None]
+        | None = None,
+        code_versions_by_output_name: Mapping[str, str | None] | None = None,
+        automation_conditions_by_output_name: Mapping[str, AutomationCondition | None]
+        | None = None,
+        backfill_policy: BackfillPolicy | None = None,
         can_subset: bool = False,
-        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        check_specs: Sequence[AssetCheckSpec] | None = None,
+        owners_by_output_name: Mapping[str, Sequence[str]] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
             _validate_check_specs_target_relevant_asset_keys,
@@ -747,8 +730,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         T = TypeVar("T")
 
         def _output_dict_to_asset_dict(
-            attr_by_output_name: Optional[Mapping[str, Optional[T]]],
-        ) -> Optional[Mapping[AssetKey, T]]:
+            attr_by_output_name: Mapping[str, T | None] | None,
+        ) -> Mapping[AssetKey, T] | None:
             if not attr_by_output_name:
                 return None
             return {
@@ -827,7 +810,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return self._computation.can_subset if self._computation else False
 
     @property
-    def computation(self) -> Optional[AssetGraphComputation]:
+    def computation(self) -> AssetGraphComputation | None:
         return self._computation
 
     @property
@@ -1070,7 +1053,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     # Applies only to external observable assets. Can be removed when we fold
     # `auto_observe_interval_minutes` into auto-materialize policies.
     @property
-    def auto_observe_interval_minutes(self) -> Optional[float]:
+    def auto_observe_interval_minutes(self) -> float | None:
         value = self._get_external_asset_metadata_value(
             SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES
         )
@@ -1096,12 +1079,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return (self._specs_by_key[first_key].metadata or {}).get(metadata_key)
 
     @property
-    def backfill_policy(self) -> Optional[BackfillPolicy]:
+    def backfill_policy(self) -> BackfillPolicy | None:
         return self._computation.backfill_policy if self._computation else None
 
     @public
     @cached_property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> PartitionsDefinition | None:
         """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any)."""
         partitions_defs = {
             spec.partitions_def for spec in self.specs if spec.partitions_def is not None
@@ -1128,7 +1111,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return {key: spec.tags or {} for key, spec in self._specs_by_key.items()}
 
     @property
-    def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
+    def code_versions_by_key(self) -> Mapping[AssetKey, str | None]:
         return {key: spec.code_version for key, spec in self._specs_by_key.items()}
 
     @property
@@ -1136,7 +1119,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return {key: spec.owners or [] for key, spec in self._specs_by_key.items()}
 
     @public
-    def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
+    def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping | None:
         """Returns the partition mapping between keys in this AssetsDefinition and a given input
         asset key (if any).
         """
@@ -1200,14 +1183,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def is_executable(self) -> bool:
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
-    def get_partition_mapping_for_dep(self, dep_key: AssetKey) -> Optional[PartitionMapping]:
+    def get_partition_mapping_for_dep(self, dep_key: AssetKey) -> PartitionMapping | None:
         return self._partition_mappings.get(dep_key)
 
     def infer_partition_mapping(
         self,
         asset_key: AssetKey,
         upstream_asset_key: AssetKey,
-        upstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition | None,
     ) -> PartitionMapping:
         with disable_dagster_warnings():
             partition_mapping = self._partition_mappings.get(upstream_asset_key)
@@ -1241,7 +1224,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             f"Asset check key {key.to_user_string()} not found in AssetsDefinition"
         )
 
-    def get_op_def_for_asset_key(self, key: AssetKey) -> Optional[OpDefinition]:
+    def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition | None:
         """If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
         returns the op def within the graph that produces the given asset key.
         """
@@ -1281,17 +1264,15 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
         group_names_by_key: Mapping[AssetKey, str] = {},
         tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
-        legacy_freshness_policy: Optional[
-            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
-        ] = None,
-        automation_condition: Optional[
-            Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
-        ] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        metadata_by_key: Optional[
-            Mapping[Union[AssetKey, AssetCheckKey], ArbitraryMetadataMapping]
-        ] = None,
+        legacy_freshness_policy: LegacyFreshnessPolicy
+        | Mapping[AssetKey, LegacyFreshnessPolicy]
+        | None = None,
+        automation_condition: AutomationCondition
+        | Mapping[AssetKey, AutomationCondition]
+        | None = None,
+        backfill_policy: BackfillPolicy | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
+        metadata_by_key: Mapping[AssetKey | AssetCheckKey, ArbitraryMetadataMapping] | None = None,
     ) -> "AssetsDefinition":
         conflicts_by_attr_name: dict[str, set[AssetKey]] = defaultdict(set)
         replaced_specs = []
@@ -1300,7 +1281,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             replace_dict = {}
 
             def update_replace_dict_and_conflicts(
-                new_value: Union[Mapping[AssetKey, object], object],
+                new_value: Mapping[AssetKey, object] | object,
                 attr_name: str,
                 default_value: object = None,
             ) -> None:
@@ -1413,7 +1394,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def subset_for(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
-        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+        selected_asset_check_keys: AbstractSet[AssetCheckKey] | None,
     ) -> "AssetsDefinition":
         """Create a subset of this AssetsDefinition that will only materialize the assets and checks
         in the selected set.
@@ -1452,7 +1433,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         ]
 
     @public
-    def to_source_asset(self, key: Optional[CoercibleToAssetKey] = None) -> SourceAsset:
+    def to_source_asset(self, key: CoercibleToAssetKey | None = None) -> SourceAsset:
         """Returns a representation of this asset as a :py:class:`SourceAsset`.
 
         If this is a multi-asset, the "key" argument allows selecting which asset to return a
@@ -1516,7 +1497,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
 
     @public
-    def get_asset_spec(self, key: Optional[AssetKey] = None) -> AssetSpec:
+    def get_asset_spec(self, key: AssetKey | None = None) -> AssetSpec:
         """Returns a representation of this asset as an :py:class:`AssetSpec`.
 
         If this is a multi-asset, the "key" argument allows selecting which asset to return the
@@ -1724,7 +1705,7 @@ def _infer_keys_by_output_names(
     return inferred_keys_by_output_names
 
 
-def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):
+def _validate_graph_def(graph_def: "GraphDefinition", prefix: Sequence[str] | None = None):
     """Ensure that all leaf nodes are mapped to graph outputs."""
     from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
 
@@ -1760,11 +1741,9 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
 
 
 def _resolve_automation_conditions_by_output_name(
-    automation_conditions_by_output_name: Optional[Mapping[str, Optional[AutomationCondition]]],
-    auto_materialize_policies_by_output_name: Optional[
-        Mapping[str, Optional[AutoMaterializePolicy]]
-    ],
-) -> Optional[Mapping[str, Optional[AutomationCondition]]]:
+    automation_conditions_by_output_name: Mapping[str, AutomationCondition | None] | None,
+    auto_materialize_policies_by_output_name: Mapping[str, AutoMaterializePolicy | None] | None,
+) -> Mapping[str, AutomationCondition | None] | None:
     if auto_materialize_policies_by_output_name is not None:
         check.param_invariant(
             automation_conditions_by_output_name is None,
@@ -1782,8 +1761,8 @@ def _resolve_automation_conditions_by_output_name(
 def _resolve_selections(
     all_asset_keys: AbstractSet[AssetKey],
     all_check_keys: AbstractSet[AssetCheckKey],
-    selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+    selected_asset_keys: AbstractSet[AssetKey] | None,
+    selected_asset_check_keys: AbstractSet[AssetCheckKey] | None,
 ) -> tuple[AbstractSet[AssetKey], AbstractSet[AssetCheckKey]]:
     # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
     if selected_asset_keys is None and selected_asset_check_keys is None:
@@ -1824,17 +1803,17 @@ def _validate_partition_mappings(
 def _asset_specs_from_attr_key_params(
     all_asset_keys: AbstractSet[AssetKey],
     keys_by_input_name: Mapping[str, AssetKey],
-    deps_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
-    partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]],
-    group_names_by_key: Optional[Mapping[AssetKey, str]],
-    metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]],
-    tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]],
-    legacy_freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]],
-    automation_conditions_by_key: Optional[Mapping[AssetKey, AutomationCondition]],
-    code_versions_by_key: Optional[Mapping[AssetKey, str]],
-    descriptions_by_key: Optional[Mapping[AssetKey, str]],
-    owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
-    partitions_def: Optional[PartitionsDefinition],
+    deps_by_asset_key: Mapping[AssetKey, AbstractSet[AssetKey]] | None,
+    partition_mappings: Mapping[AssetKey, PartitionMapping] | None,
+    group_names_by_key: Mapping[AssetKey, str] | None,
+    metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping] | None,
+    tags_by_key: Mapping[AssetKey, Mapping[str, str]] | None,
+    legacy_freshness_policies_by_key: Mapping[AssetKey, LegacyFreshnessPolicy] | None,
+    automation_conditions_by_key: Mapping[AssetKey, AutomationCondition] | None,
+    code_versions_by_key: Mapping[AssetKey, str] | None,
+    descriptions_by_key: Mapping[AssetKey, str] | None,
+    owners_by_key: Mapping[AssetKey, Sequence[str]] | None,
+    partitions_def: PartitionsDefinition | None,
 ) -> Sequence[AssetSpec]:
     validated_group_names_by_key = check.opt_mapping_param(
         group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
@@ -1942,9 +1921,9 @@ def _validate_self_deps(specs: Iterable[AssetSpec]) -> None:
 
 
 def get_self_dep_time_window_partition_mapping(
-    partition_mapping: Optional[PartitionMapping],
-    partitions_def: Optional[PartitionsDefinition],
-) -> Optional[TimeWindowPartitionMapping]:
+    partition_mapping: PartitionMapping | None,
+    partitions_def: PartitionsDefinition | None,
+) -> TimeWindowPartitionMapping | None:
     """Returns a time window partition mapping dimension of the provided partition mapping,
     if exists.
     """

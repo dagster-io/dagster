@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
-from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias
 
 from dagster_shared.record import record
 
@@ -39,16 +39,16 @@ PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
 class HourlyPartitionsDefinitionModel(Resolvable, Model):
     type: Literal["hourly"] = "hourly"
     start_date: str
-    end_date: Optional[str] = None
-    timezone: Optional[str] = None
+    end_date: str | None = None
+    timezone: str | None = None
     minute_offset: int = 0
 
 
 class DailyPartitionsDefinitionModel(Resolvable, Model):
     type: Literal["daily"] = "daily"
     start_date: str
-    end_date: Optional[str] = None
-    timezone: Optional[str] = None
+    end_date: str | None = None
+    timezone: str | None = None
     minute_offset: int = 0
     hour_offset: int = 0
 
@@ -56,8 +56,8 @@ class DailyPartitionsDefinitionModel(Resolvable, Model):
 class WeeklyPartitionsDefinitionModel(Resolvable, Model):
     type: Literal["weekly"] = "weekly"
     start_date: str
-    end_date: Optional[str] = None
-    timezone: Optional[str] = None
+    end_date: str | None = None
+    timezone: str | None = None
     minute_offset: int = 0
     hour_offset: int = 0
     day_offset: int = 0
@@ -66,8 +66,8 @@ class WeeklyPartitionsDefinitionModel(Resolvable, Model):
 class TimeWindowPartitionsDefinitionModel(Resolvable, Model):
     type: Literal["time_window"] = "time_window"
     start_date: str
-    end_date: Optional[str] = None
-    timezone: Optional[str] = None
+    end_date: str | None = None
+    timezone: str | None = None
     fmt: str
     cron_schedule: str
 
@@ -77,7 +77,7 @@ class StaticPartitionsDefinitionModel(Resolvable, Model):
     partition_keys: Sequence[str]
 
 
-def resolve_partitions_def(context: ResolutionContext, model) -> Optional[PartitionsDefinition]:
+def resolve_partitions_def(context: ResolutionContext, model) -> PartitionsDefinition | None:
     if model is None:
         return None
 
@@ -131,7 +131,7 @@ class MultiRunBackfillPolicyModel(Resolvable, Model):
 def resolve_backfill_policy(
     context: ResolutionContext,
     backfill_policy,
-) -> Optional[BackfillPolicy]:
+) -> BackfillPolicy | None:
     if backfill_policy is None:
         return None
 
@@ -146,15 +146,15 @@ def resolve_backfill_policy(
 
 
 class OpSpec(Model, Resolvable):
-    name: Optional[str] = None
-    tags: Optional[dict[str, Any]] = None
-    description: Optional[str] = None
-    pool: Optional[str] = None
+    name: str | None = None
+    tags: dict[str, Any] | None = None
+    description: str | None = None
+    pool: str | None = None
     backfill_policy: Annotated[
-        Optional[BackfillPolicy],
+        BackfillPolicy | None,
         Resolver(
             resolve_backfill_policy,
-            model_field_type=Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel],
+            model_field_type=SingleRunBackfillPolicyModel | MultiRunBackfillPolicyModel,
         ),
     ] = None
 
@@ -176,14 +176,14 @@ ResolvedAssetKey: TypeAlias = Annotated[
 @record
 class SharedAssetKwargs(Resolvable):
     deps: Annotated[
-        Optional[Sequence[ResolvedAssetKey]],
+        Sequence[ResolvedAssetKey] | None,
         Resolver.default(
             description="The asset keys for the upstream assets that this asset depends on.",
             examples=[["my_database/my_schema/upstream_table"]],
         ),
     ] = None
     description: Annotated[
-        Optional[str],
+        str | None,
         Resolver.default(
             description="Human-readable description of the asset.",
             examples=["Refined sales data"],
@@ -196,27 +196,27 @@ class SharedAssetKwargs(Resolvable):
         ),
     ] = {}
     group_name: Annotated[
-        Optional[str],
+        str | None,
         Resolver.default(
             description="Used to organize assets into groups, defaults to 'default'.",
             examples=["staging"],
         ),
     ] = None
     skippable: Annotated[
-        Optional[bool],
+        bool | None,
         Resolver.default(
             description="Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
         ),
     ] = None
     code_version: Annotated[
-        Optional[str],
+        str | None,
         Resolver.default(
             description="A version representing the code that produced the asset. Increment this value when the code changes.",
             examples=["3"],
         ),
     ] = None
     owners: Annotated[
-        Optional[Sequence[str]],
+        Sequence[str] | None,
         Resolver.default(
             description="A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
             examples=[["team:analytics", "nelson@hooli.com"]],
@@ -237,30 +237,28 @@ class SharedAssetKwargs(Resolvable):
         ),
     ] = []
     automation_condition: Annotated[
-        Optional[AutomationCondition],
+        AutomationCondition | None,
         Resolver.default(
-            model_field_type=Optional[str],
+            model_field_type=Optional[str],  # noqa: UP045
             description="The condition under which the asset will be automatically materialized.",
         ),
     ] = None
     partitions_def: Annotated[
-        Optional[PartitionsDefinition],
+        PartitionsDefinition | None,
         Resolver(
             resolve_partitions_def,
             description="The partitions definition for the asset.",
-            model_field_type=Union[
-                HourlyPartitionsDefinitionModel,
-                DailyPartitionsDefinitionModel,
-                WeeklyPartitionsDefinitionModel,
-                TimeWindowPartitionsDefinitionModel,
-                StaticPartitionsDefinitionModel,
-            ],
+            model_field_type=HourlyPartitionsDefinitionModel
+            | DailyPartitionsDefinitionModel
+            | WeeklyPartitionsDefinitionModel
+            | TimeWindowPartitionsDefinitionModel
+            | StaticPartitionsDefinitionModel,
         ),
     ] = None
     freshness_policy: Annotated[
-        Optional[FreshnessPolicy],
+        FreshnessPolicy | None,
         Resolver.default(
-            model_field_type=Optional[str],
+            model_field_type=Optional[str],  # noqa: UP045
             description="The freshness policy for the asset.",
             examples=["{{ custom_freshness_template_var() }}"],
         ),
@@ -288,9 +286,9 @@ class AssetSpecUpdateKwargs(SharedAssetKwargs):
     overriding a default resolution of each AssetSpec.
     """
 
-    key: Optional[ResolvedAssetKey] = None
+    key: ResolvedAssetKey | None = None
     key_prefix: Annotated[
-        Optional[CoercibleToAssetKeyPrefix],
+        CoercibleToAssetKeyPrefix | None,
         Resolver.default(description="Prefix the existing asset key with the provided value."),
     ] = None
 
@@ -299,9 +297,9 @@ class AssetSpecUpdateKwargs(SharedAssetKwargs):
 class AssetSpecKeyUpdateKwargs(Resolvable):
     """Resolvable object representing only a configurable asset key."""
 
-    key: Optional[ResolvedAssetKey] = None
+    key: ResolvedAssetKey | None = None
     key_prefix: Annotated[
-        Optional[CoercibleToAssetKeyPrefix],
+        CoercibleToAssetKeyPrefix | None,
         Resolver.default(description="Prefix the existing asset key with the provided value."),
     ] = None
 
@@ -323,11 +321,11 @@ ResolvedAssetSpec: TypeAlias = Annotated[
 class AssetCheckSpecKwargs(Resolvable):
     name: str
     asset: ResolvedAssetKey
-    additional_deps: Optional[Sequence[ResolvedAssetKey]] = None
-    description: Optional[str] = None
+    additional_deps: Sequence[ResolvedAssetKey] | None = None
+    description: str | None = None
     blocking: bool = False
-    metadata: Optional[Mapping[str, Any]] = None
-    automation_condition: Optional[Injected[AutomationCondition]] = None
+    metadata: Mapping[str, Any] | None = None
+    automation_condition: Injected[AutomationCondition] | None = None
 
 
 def resolve_asset_check_spec(context: ResolutionContext, model):
@@ -445,7 +443,7 @@ AssetPostProcessor: TypeAlias = Annotated[
 ]
 
 
-def post_process_defs(defs: Definitions, post_processors: Optional[list[AssetPostProcessor]]):
+def post_process_defs(defs: Definitions, post_processors: list[AssetPostProcessor] | None):
     for post_processor in post_processors or []:
         defs = post_processor(defs)
     return defs

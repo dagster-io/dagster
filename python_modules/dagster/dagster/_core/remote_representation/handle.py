@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class RepositoryHandle:
     repository_name: str
     code_location_origin: CodeLocationOrigin
-    repository_python_origin: Optional[RepositoryPythonOrigin]
+    repository_python_origin: RepositoryPythonOrigin | None
     display_metadata: Mapping[str, str]
 
     @classmethod
@@ -72,7 +72,7 @@ class RepositoryHandle:
         *,
         location_name: str = "fake_location",
         repository_name: str = "fake_repository",
-        display_metadata: Optional[Mapping[str, str]] = None,
+        display_metadata: Mapping[str, str] | None = None,
     ) -> "RepositoryHandle":
         return RepositoryHandle(
             repository_name=repository_name,

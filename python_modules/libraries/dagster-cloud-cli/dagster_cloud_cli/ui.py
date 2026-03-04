@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any
 
 import questionary
 import typer
@@ -52,7 +52,7 @@ def censor_token(token: str) -> str:
 def list_input(
     prompt: str,
     choices: list[Any],
-    default: Optional[Union[str, questionary.Choice, dict[str, Any]]] = None,
+    default: str | questionary.Choice | dict[str, Any] | None = None,
 ) -> str:
     """Presents the user with a list of choices that can be navigated with
     the up and down arrows.
@@ -64,7 +64,7 @@ def choice(value: Any, name: str) -> Any:
     return questionary.Choice(title=name, value=value)
 
 
-def input(prompt: str, default: str = "", validate: Optional[Callable] = None) -> str:  # noqa: A001
+def input(prompt: str, default: str = "", validate: Callable | None = None) -> str:  # noqa: A001
     """Prompts the user for text input."""
     return questionary.text(prompt, default=default, validate=validate).unsafe_ask()
 

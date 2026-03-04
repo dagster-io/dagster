@@ -1101,7 +1101,7 @@ def test_typing_types_into_config():
             pass
 
     for ttype in [
-        typing.Optional[int],
+        int | None,
         typing.Set,
         typing.Set[int],
         typing.Dict,

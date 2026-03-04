@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
@@ -69,7 +68,7 @@ def build_test_project_steps() -> list[GroupStepConfiguration]:
                 'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
                 "docker push $${TEST_PROJECT_IMAGE}",
             )
-            .skip_if(skip_if_version_not_needed(version))
+            .skip(skip_if_version_not_needed(version))
             .on_python_image(
                 image=f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11.value}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
                 env=[
@@ -105,7 +104,7 @@ def test_project_depends_fn(version: AvailablePythonVersion, _) -> list[str]:
         return []
 
 
-def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
+def skip_if_version_not_needed(version: AvailablePythonVersion) -> str | None:
     if version in build_test_project_for:
         return None
 

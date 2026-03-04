@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union, cast
+from typing import Any, Generic, NamedTuple, TypeVar, cast
 
 import dagster._check as check
 from dagster._check import CheckError
@@ -23,22 +23,22 @@ T = TypeVar("T")
 
 class TablePartitionDimension(NamedTuple):
     partition_expr: str
-    partitions: Union[TimeWindow, Sequence[str]]
+    partitions: TimeWindow | Sequence[str]
 
 
 class TableSlice(NamedTuple):
     table: str
     schema: str
-    database: Optional[str] = None
-    columns: Optional[Sequence[str]] = None
-    partition_dimensions: Optional[Sequence[TablePartitionDimension]] = None
+    database: str | None = None
+    columns: Sequence[str] | None = None
+    partition_dimensions: Sequence[TablePartitionDimension] | None = None
 
 
 class DbTypeHandler(ABC, Generic[T]):
     @abstractmethod
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: T, connection
-    ) -> Optional[Mapping[str, RawMetadataValue]]:
+    ) -> Mapping[str, RawMetadataValue] | None:
         """Stores the given object at the given table in the given schema."""
 
     @abstractmethod
@@ -82,9 +82,7 @@ class DbClient(Generic[T]):
     @staticmethod
     @abstractmethod
     @contextmanager
-    def connect(
-        context: Union[OutputContext, InputContext], table_slice: TableSlice
-    ) -> Iterator[T]: ...
+    def connect(context: OutputContext | InputContext, table_slice: TableSlice) -> Iterator[T]: ...
 
 
 class DbIOManager(IOManager):
@@ -94,9 +92,9 @@ class DbIOManager(IOManager):
         type_handlers: Sequence[DbTypeHandler],
         db_client: DbClient,
         database: str,
-        schema: Optional[str] = None,
-        io_manager_name: Optional[str] = None,
-        default_load_type: Optional[type] = None,
+        schema: str | None = None,
+        io_manager_name: str | None = None,
+        default_load_type: type | None = None,
     ):
         self._handlers_by_type: dict[type[Any], DbTypeHandler] = {}
         self._io_manager_name = io_manager_name or self.__class__.__name__
@@ -182,7 +180,7 @@ class DbIOManager(IOManager):
         )
 
     def _get_table_slice(
-        self, context: Union[OutputContext, InputContext], output_context: OutputContext
+        self, context: OutputContext | InputContext, output_context: OutputContext
     ) -> TableSlice:
         output_context_metadata = output_context.definition_metadata or {}
 

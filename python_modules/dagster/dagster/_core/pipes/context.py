@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import cached_property
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, TypedDict, cast
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     from dagster._core.pipes.client import PipesMessageReader
 
 
-PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
+PipesExecutionResult: TypeAlias = MaterializeResult | AssetCheckResult
 
 
 class PipesLaunchedData(TypedDict):
@@ -82,7 +82,7 @@ class PipesMessageHandler:
     # but it would also be awkward to have a monolith that users extend.
     def __init__(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         message_reader: "PipesMessageReader",
     ) -> None:
         self._context = context
@@ -94,7 +94,7 @@ class PipesMessageHandler:
         self._received_opened_msg = False
         self._messages_include_stdio_logs = False
         self._received_closed_msg = False
-        self._opened_payload: Optional[PipesOpenedData] = None
+        self._opened_payload: PipesOpenedData | None = None
 
     @contextmanager
     def handle_messages(self) -> Iterator[PipesParams]:
@@ -150,7 +150,7 @@ class PipesMessageHandler:
         self._context.log.info("[pipes] external process successfully opened dagster pipes.")
         self._message_reader.on_opened(opened_payload)
 
-    def _handle_closed(self, params: Optional[Mapping[str, Any]]) -> None:
+    def _handle_closed(self, params: Mapping[str, Any] | None) -> None:
         self._received_closed_msg = True
         if params and "exception" in params:
             err_info = _ser_err_from_pipes_exc(params["exception"])
@@ -164,8 +164,8 @@ class PipesMessageHandler:
     def _handle_report_asset_materialization(
         self,
         asset_key: str,
-        metadata: Optional[Mapping[str, ExternalMetadataValue]],
-        data_version: Optional[str],
+        metadata: Mapping[str, ExternalMetadataValue] | None,
+        data_version: str | None,
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.opt_str_param(data_version, "data_version")
@@ -210,7 +210,7 @@ class PipesMessageHandler:
         self._context.log.log(level, message)
 
     def _handle_log_external_stream(
-        self, stream: Literal["stdout", "stderr"], text: str, extras: Optional[PipesExtras] = None
+        self, stream: Literal["stdout", "stderr"], text: str, extras: PipesExtras | None = None
     ):
         if stream == "stdout":
             sys.stdout.write(text)
@@ -278,7 +278,7 @@ class PipesSession:
     message_handler: PipesMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
-    context: Union[OpExecutionContext, AssetExecutionContext]
+    context: OpExecutionContext | AssetExecutionContext
     created_at: datetime = field(default_factory=datetime.now)
 
     @cached_property
@@ -337,7 +337,7 @@ class PipesSession:
         self,
         *,
         implicit_materializations: bool = True,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Mapping[str, MetadataValue] | None = None,
     ) -> Sequence[PipesExecutionResult]:
         """:py:class:`PipesExecutionResult` objects reported from the external process,
             potentially modified by Pipes.
@@ -416,8 +416,8 @@ class PipesSession:
 
 
 def build_external_execution_context_data(
-    context: Union[OpExecutionContext, AssetExecutionContext],
-    extras: Optional[PipesExtras],
+    context: OpExecutionContext | AssetExecutionContext,
+    extras: PipesExtras | None,
 ) -> "PipesContextData":
     asset_keys = (
         [_convert_asset_key(key) for key in sorted(context.selected_asset_keys)]
@@ -477,7 +477,7 @@ def _convert_asset_key(asset_key: AssetKey) -> str:
 
 
 def _convert_data_provenance(
-    provenance: Optional[DataProvenance],
+    provenance: DataProvenance | None,
 ) -> Optional["PipesDataProvenance"]:
     return (
         None

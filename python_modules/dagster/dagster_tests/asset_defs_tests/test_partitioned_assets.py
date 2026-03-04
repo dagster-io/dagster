@@ -1,7 +1,6 @@
 import re
 import traceback
 from datetime import date, datetime
-from typing import Optional
 
 import dagster as dg
 import dagster._check as check
@@ -44,7 +43,7 @@ def get_upstream_partitions_for_partition_range(
     downstream_asset_key: AssetKey,
     upstream_partitions_def: PartitionsDefinition,
     upstream_asset_key: AssetKey,
-    downstream_partition_key_range: Optional[dg.PartitionKeyRange],
+    downstream_partition_key_range: dg.PartitionKeyRange | None,
 ) -> dg.PartitionKeyRange:
     if upstream_partitions_def is None:
         check.failed("upstream asset is not partitioned")

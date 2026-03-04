@@ -1,9 +1,31 @@
 """Shared utilities for API commands."""
 
+import contextlib
+import json
+from collections.abc import Iterator
+
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.api.client import DgApiTestContext
+
+
+@contextlib.contextmanager
+def handle_api_errors(ctx: click.Context, output_json: bool = False) -> Iterator[None]:
+    """Context manager for uniform API error handling.
+
+    Derives the operation name from ``ctx.command_path`` (e.g. ``"dg api agent list"``).
+    Re-raises ClickExceptions as-is. For all other exceptions, emits a JSON error
+    object to stderr when ``output_json`` is True, then raises a ClickException.
+    """
+    try:
+        yield
+    except click.ClickException:
+        raise
+    except Exception as e:
+        if output_json:
+            click.echo(json.dumps({"error": str(e)}), err=True)
+        raise click.ClickException(f"{ctx.command_path}: {e}")
 
 
 def get_config_or_error() -> DagsterPlusCliConfig:

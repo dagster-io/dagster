@@ -1,7 +1,7 @@
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
 
 import sqlalchemy as db
@@ -66,14 +66,14 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     The ``base_dir`` param tells the run storage where on disk to store the database.
     """
 
-    def __init__(self, conn_string: str, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, conn_string: str, inst_data: ConfigurableClassData | None = None):
         check.str_param(conn_string, "conn_string")
         self._conn_string = conn_string
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -82,12 +82,12 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
+        cls, inst_data: ConfigurableClassData | None, config_value: "SqliteStorageConfig"
     ) -> "SqliteRunStorage":
         return SqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
     @classmethod
-    def from_local(cls, base_dir: str, inst_data: Optional[ConfigurableClassData] = None) -> Self:
+    def from_local(cls, base_dir: str, inst_data: ConfigurableClassData | None = None) -> Self:
         check.str_param(base_dir, "base_dir")
         mkdir_p(base_dir)
         conn_string = create_db_conn_string(base_dir, "runs")

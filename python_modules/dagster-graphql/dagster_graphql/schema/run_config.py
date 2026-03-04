@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
 import graphene
@@ -93,7 +93,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
     def resolve_isRunConfigValid(
         self,
         graphene_info: ResolveInfo,
-        runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
+        runConfigData: Any | None = None,  # custom scalar (GrapheneRunConfigData)
     ):
         return resolve_is_run_config_valid(
             graphene_info,

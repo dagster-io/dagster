@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, overload  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import (
@@ -68,33 +68,33 @@ from dagster._utils.warnings import disable_dagster_warnings
 @overload
 def asset(
     *,
-    name: Optional[str] = ...,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    ins: Optional[Mapping[str, AssetIn]] = ...,
-    deps: Optional[Iterable[CoercibleToAssetDep]] = ...,
-    metadata: Optional[Mapping[str, Any]] = ...,
-    tags: Optional[Mapping[str, str]] = ...,
-    description: Optional[str] = ...,
-    config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = ...,
-    resource_defs: Optional[Mapping[str, object]] = ...,
-    hooks: Optional[AbstractSet[HookDefinition]] = ...,
-    io_manager_def: Optional[object] = ...,
-    io_manager_key: Optional[str] = ...,
-    dagster_type: Optional[DagsterType] = ...,
-    partitions_def: Optional[PartitionsDefinition[str]] = ...,
-    op_tags: Optional[Mapping[str, Any]] = ...,
-    group_name: Optional[str] = ...,
+    name: str | None = ...,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    ins: Mapping[str, AssetIn] | None = ...,
+    deps: Iterable[CoercibleToAssetDep] | None = ...,
+    metadata: Mapping[str, Any] | None = ...,
+    tags: Mapping[str, str] | None = ...,
+    description: str | None = ...,
+    config_schema: UserConfigSchema | None = None,
+    required_resource_keys: AbstractSet[str] | None = ...,
+    resource_defs: Mapping[str, object] | None = ...,
+    hooks: AbstractSet[HookDefinition] | None = ...,
+    io_manager_def: object | None = ...,
+    io_manager_key: str | None = ...,
+    dagster_type: DagsterType | None = ...,
+    partitions_def: PartitionsDefinition[str] | None = ...,
+    op_tags: Mapping[str, Any] | None = ...,
+    group_name: str | None = ...,
     output_required: bool = ...,
-    automation_condition: Optional[AutomationCondition[AssetKey]] = ...,
-    backfill_policy: Optional[BackfillPolicy] = ...,
-    retry_policy: Optional[RetryPolicy] = ...,
-    code_version: Optional[str] = ...,
-    key: Optional[CoercibleToAssetKey] = None,
-    check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
-    owners: Optional[Sequence[str]] = ...,
-    kinds: Optional[AbstractSet[str]] = ...,
-    pool: Optional[str] = ...,
+    automation_condition: AutomationCondition[AssetKey] | None = ...,
+    backfill_policy: BackfillPolicy | None = ...,
+    retry_policy: RetryPolicy | None = ...,
+    code_version: str | None = ...,
+    key: CoercibleToAssetKey | None = None,
+    check_specs: Sequence[AssetCheckSpec] | None = ...,
+    owners: Sequence[str] | None = ...,
+    kinds: AbstractSet[str] | None = ...,
+    pool: str | None = ...,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
@@ -108,7 +108,7 @@ def asset(
 
 def _validate_hidden_non_argument_dep_param(
     non_argument_deps: Any,
-) -> Optional[Union[set[AssetKey], set[str]]]:
+) -> set[AssetKey] | set[str] | None:
     if non_argument_deps is None:
         return non_argument_deps
 
@@ -152,38 +152,38 @@ def _validate_hidden_non_argument_dep_param(
     breaking_version="1.10.0",
 )
 def asset(
-    compute_fn: Optional[Callable[..., Any]] = None,
+    compute_fn: Callable[..., Any] | None = None,
     *,
-    name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Iterable[CoercibleToAssetDep]] = None,
-    metadata: Optional[ArbitraryMetadataMapping] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    description: Optional[str] = None,
-    config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    resource_defs: Optional[Mapping[str, object]] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    io_manager_def: Optional[object] = None,
-    io_manager_key: Optional[str] = None,
-    dagster_type: Optional[DagsterType] = None,
-    partitions_def: Optional[PartitionsDefinition[str]] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    group_name: Optional[str] = None,
+    name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    ins: Mapping[str, AssetIn] | None = None,
+    deps: Iterable[CoercibleToAssetDep] | None = None,
+    metadata: ArbitraryMetadataMapping | None = None,
+    tags: Mapping[str, str] | None = None,
+    description: str | None = None,
+    config_schema: UserConfigSchema | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    resource_defs: Mapping[str, object] | None = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
+    io_manager_def: object | None = None,
+    io_manager_key: str | None = None,
+    dagster_type: DagsterType | None = None,
+    partitions_def: PartitionsDefinition[str] | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    group_name: str | None = None,
     output_required: bool = True,
-    automation_condition: Optional[AutomationCondition[AssetKey]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    code_version: Optional[str] = None,
-    key: Optional[CoercibleToAssetKey] = None,
-    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    owners: Optional[Sequence[str]] = None,
-    kinds: Optional[AbstractSet[str]] = None,
-    pool: Optional[str] = None,
+    automation_condition: AutomationCondition[AssetKey] | None = None,
+    freshness_policy: FreshnessPolicy | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    retry_policy: RetryPolicy | None = None,
+    code_version: str | None = None,
+    key: CoercibleToAssetKey | None = None,
+    check_specs: Sequence[AssetCheckSpec] | None = None,
+    owners: Sequence[str] | None = None,
+    kinds: AbstractSet[str] | None = None,
+    pool: str | None = None,
     **kwargs: Any,
-) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
+) -> AssetsDefinition | Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
@@ -363,9 +363,9 @@ def asset(
 
 def resolve_asset_key_and_name_for_decorator(
     *,
-    key: Optional[CoercibleToAssetKey],
-    key_prefix: Optional[CoercibleToAssetKeyPrefix],
-    name: Optional[str],
+    key: CoercibleToAssetKey | None,
+    key_prefix: CoercibleToAssetKeyPrefix | None,
+    name: str | None,
     decorator_name: str,
     fn: Callable[..., Any],
 ) -> tuple[AssetKey, str]:
@@ -392,39 +392,39 @@ def resolve_asset_key_and_name_for_decorator(
 
 class AssetDecoratorArgs(NamedTuple):
     required_resource_keys: AbstractSet[str]
-    name: Optional[str]
-    key_prefix: Optional[CoercibleToAssetKeyPrefix]
+    name: str | None
+    key_prefix: CoercibleToAssetKeyPrefix | None
     ins: Mapping[str, AssetIn]
     deps: Iterable[AssetDep]
-    metadata: Optional[ArbitraryMetadataMapping]
-    tags: Optional[Mapping[str, str]]
-    description: Optional[str]
-    config_schema: Optional[UserConfigSchema]
+    metadata: ArbitraryMetadataMapping | None
+    tags: Mapping[str, str] | None
+    description: str | None
+    config_schema: UserConfigSchema | None
     resource_defs: dict[str, object]
-    hooks: Optional[AbstractSet[HookDefinition]]
-    io_manager_key: Optional[str]
-    io_manager_def: Optional[object]
-    compute_kind: Optional[str]
-    dagster_type: Optional[DagsterType]
-    partitions_def: Optional[PartitionsDefinition]
-    op_tags: Optional[Mapping[str, Any]]
-    group_name: Optional[str]
+    hooks: AbstractSet[HookDefinition] | None
+    io_manager_key: str | None
+    io_manager_def: object | None
+    compute_kind: str | None
+    dagster_type: DagsterType | None
+    partitions_def: PartitionsDefinition | None
+    op_tags: Mapping[str, Any] | None
+    group_name: str | None
     output_required: bool
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
-    freshness_policy: Optional[FreshnessPolicy]
-    automation_condition: Optional[AutomationCondition]
-    backfill_policy: Optional[BackfillPolicy]
-    retry_policy: Optional[RetryPolicy]
-    code_version: Optional[str]
-    key: Optional[CoercibleToAssetKey]
-    check_specs: Optional[Sequence[AssetCheckSpec]]
-    owners: Optional[Sequence[str]]
-    pool: Optional[str]
+    legacy_freshness_policy: LegacyFreshnessPolicy | None
+    freshness_policy: FreshnessPolicy | None
+    automation_condition: AutomationCondition | None
+    backfill_policy: BackfillPolicy | None
+    retry_policy: RetryPolicy | None
+    code_version: str | None
+    key: CoercibleToAssetKey | None
+    check_specs: Sequence[AssetCheckSpec] | None
+    owners: Sequence[str] | None
+    pool: str | None
 
 
 class ResourceRelatedState(NamedTuple):
-    io_manager_def: Optional[object]
-    io_manager_key: Optional[str]
+    io_manager_def: object | None
+    io_manager_key: str | None
     resources: Mapping[str, object]
     out_asset_key: AssetKey
 
@@ -582,26 +582,26 @@ def create_assets_def_from_fn_and_decorator_args(
 @public
 def multi_asset(
     *,
-    outs: Optional[Mapping[str, AssetOut]] = None,
-    name: Optional[str] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Iterable[CoercibleToAssetDep]] = None,
-    description: Optional[str] = None,
-    config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
-    partitions_def: Optional[PartitionsDefinition[str]] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
+    outs: Mapping[str, AssetOut] | None = None,
+    name: str | None = None,
+    ins: Mapping[str, AssetIn] | None = None,
+    deps: Iterable[CoercibleToAssetDep] | None = None,
+    description: str | None = None,
+    config_schema: UserConfigSchema | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    internal_asset_deps: Mapping[str, set[AssetKey]] | None = None,
+    partitions_def: PartitionsDefinition[str] | None = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    op_tags: Mapping[str, Any] | None = None,
     can_subset: bool = False,
-    resource_defs: Optional[Mapping[str, object]] = None,
-    group_name: Optional[str] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    code_version: Optional[str] = None,
-    specs: Optional[Sequence[AssetSpec]] = None,
-    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    pool: Optional[str] = None,
+    resource_defs: Mapping[str, object] | None = None,
+    group_name: str | None = None,
+    retry_policy: RetryPolicy | None = None,
+    code_version: str | None = None,
+    specs: Sequence[AssetSpec] | None = None,
+    check_specs: Sequence[AssetCheckSpec] | None = None,
+    pool: str | None = None,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
@@ -763,26 +763,26 @@ def graph_asset(
 @overload
 def graph_asset(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    group_name: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition[str]] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    metadata: Optional[RawMetadataMapping] = ...,
-    tags: Optional[Mapping[str, str]] = ...,
-    owners: Optional[Sequence[str]] = None,
-    kinds: Optional[AbstractSet[str]] = None,
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
-    automation_condition: Optional[AutomationCondition[AssetKey]] = ...,
-    backfill_policy: Optional[BackfillPolicy] = ...,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
-    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    code_version: Optional[str] = None,
-    key: Optional[CoercibleToAssetKey] = None,
+    name: str | None = None,
+    description: str | None = None,
+    ins: Mapping[str, AssetIn] | None = None,
+    config: ConfigMapping | Mapping[str, Any] | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    group_name: str | None = None,
+    partitions_def: PartitionsDefinition[str] | None = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
+    metadata: RawMetadataMapping | None = ...,
+    tags: Mapping[str, str] | None = ...,
+    owners: Sequence[str] | None = None,
+    kinds: AbstractSet[str] | None = None,
+    legacy_freshness_policy: LegacyFreshnessPolicy | None = ...,
+    auto_materialize_policy: AutoMaterializePolicy | None = ...,
+    automation_condition: AutomationCondition[AssetKey] | None = ...,
+    backfill_policy: BackfillPolicy | None = ...,
+    resource_defs: Mapping[str, ResourceDefinition] | None = ...,
+    check_specs: Sequence[AssetCheckSpec] | None = None,
+    code_version: str | None = None,
+    key: CoercibleToAssetKey | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -798,28 +798,28 @@ def graph_asset(
 )
 @public
 def graph_asset(
-    compose_fn: Optional[Callable] = None,
+    compose_fn: Callable | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    group_name: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition[str]] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    owners: Optional[Sequence[str]] = None,
-    automation_condition: Optional[AutomationCondition[AssetKey]] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    code_version: Optional[str] = None,
-    key: Optional[CoercibleToAssetKey] = None,
-    kinds: Optional[AbstractSet[str]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    ins: Mapping[str, AssetIn] | None = None,
+    config: ConfigMapping | Mapping[str, Any] | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
+    group_name: str | None = None,
+    partitions_def: PartitionsDefinition[str] | None = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
+    metadata: RawMetadataMapping | None = None,
+    tags: Mapping[str, str] | None = None,
+    owners: Sequence[str] | None = None,
+    automation_condition: AutomationCondition[AssetKey] | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = None,
+    check_specs: Sequence[AssetCheckSpec] | None = None,
+    code_version: str | None = None,
+    key: CoercibleToAssetKey | None = None,
+    kinds: AbstractSet[str] | None = None,
     **kwargs: Any,
-) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
+) -> AssetsDefinition | Callable[[Callable[..., Any]], AssetsDefinition]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
     This decorator is meant to decorate a function that composes a set of ops or graphs to define
@@ -946,25 +946,25 @@ def graph_asset(
 def graph_asset_no_defaults(
     *,
     compose_fn: Callable[..., Any],
-    name: Optional[str],
-    description: Optional[str],
-    ins: Optional[Mapping[str, AssetIn]],
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]],
-    key_prefix: Optional[CoercibleToAssetKeyPrefix],
-    group_name: Optional[str],
-    partitions_def: Optional[PartitionsDefinition],
-    hooks: Optional[AbstractSet[HookDefinition]],
-    metadata: Optional[RawMetadataMapping],
-    tags: Optional[Mapping[str, str]],
-    owners: Optional[Sequence[str]],
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
-    automation_condition: Optional[AutomationCondition],
-    backfill_policy: Optional[BackfillPolicy],
-    resource_defs: Optional[Mapping[str, ResourceDefinition]],
-    check_specs: Optional[Sequence[AssetCheckSpec]],
-    code_version: Optional[str],
-    key: Optional[CoercibleToAssetKey],
-    kinds: Optional[AbstractSet[str]],
+    name: str | None,
+    description: str | None,
+    ins: Mapping[str, AssetIn] | None,
+    config: ConfigMapping | Mapping[str, Any] | None,
+    key_prefix: CoercibleToAssetKeyPrefix | None,
+    group_name: str | None,
+    partitions_def: PartitionsDefinition | None,
+    hooks: AbstractSet[HookDefinition] | None,
+    metadata: RawMetadataMapping | None,
+    tags: Mapping[str, str] | None,
+    owners: Sequence[str] | None,
+    legacy_freshness_policy: LegacyFreshnessPolicy | None,
+    automation_condition: AutomationCondition | None,
+    backfill_policy: BackfillPolicy | None,
+    resource_defs: Mapping[str, ResourceDefinition] | None,
+    check_specs: Sequence[AssetCheckSpec] | None,
+    code_version: str | None,
+    key: CoercibleToAssetKey | None,
+    kinds: AbstractSet[str] | None,
 ) -> AssetsDefinition:
     ins = ins or {}
     named_ins = build_and_validate_named_ins(compose_fn, set(), ins or {})
@@ -1037,16 +1037,16 @@ def graph_asset_no_defaults(
 def graph_multi_asset(
     *,
     outs: Mapping[str, AssetOut],
-    name: Optional[str] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    group_name: Optional[str] = None,
+    name: str | None = None,
+    ins: Mapping[str, AssetIn] | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    group_name: str | None = None,
     can_subset: bool = False,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = None,
+    check_specs: Sequence[AssetCheckSpec] | None = None,
+    config: ConfigMapping | Mapping[str, Any] | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of
     ops, and the same upstream assets.
@@ -1189,9 +1189,9 @@ def graph_multi_asset(
 
 
 def _deps_and_non_argument_deps_to_asset_deps(
-    deps: Optional[Iterable[CoercibleToAssetDep]],
-    non_argument_deps: Optional[Union[set[AssetKey], set[str]]],
-) -> Optional[Iterable[AssetDep]]:
+    deps: Iterable[CoercibleToAssetDep] | None,
+    non_argument_deps: set[AssetKey] | set[str] | None,
+) -> Iterable[AssetDep] | None:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
     Ensures only one of deps and non_argument_deps is provided, then converts the deps to AssetDeps.
     """
@@ -1208,7 +1208,7 @@ def _deps_and_non_argument_deps_to_asset_deps(
         return make_asset_deps(non_argument_deps)
 
 
-def make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[Iterable[AssetDep]]:
+def make_asset_deps(deps: Iterable[CoercibleToAssetDep] | None) -> Iterable[AssetDep] | None:
     if deps is None:
         return None
 

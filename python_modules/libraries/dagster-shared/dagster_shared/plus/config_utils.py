@@ -1,6 +1,5 @@
 import functools
 import os
-from typing import Optional
 
 import click
 
@@ -17,7 +16,7 @@ TOKEN_CLI_ARGUMENT = "api_token"
 TOKEN_ENV_VAR_NAME = "DAGSTER_CLOUD_API_TOKEN"
 
 
-def get_deployment(ctx: Optional[click.Context] = None) -> Optional[str]:
+def get_deployment(ctx: click.Context | None = None) -> str | None:
     """Gets the configured deployment to target.
     Highest precedence is a deployment argument, then `DAGSTER_CLOUD_DEPLOYMENT` env var, then config file default.
     """
@@ -39,7 +38,7 @@ def get_deployment(ctx: Optional[click.Context] = None) -> Optional[str]:
     return None
 
 
-def get_organization(ctx: Optional[click.Context] = None) -> Optional[str]:
+def get_organization(ctx: click.Context | None = None) -> str | None:
     """Gets the configured organization to target.
     Highest precedence is an organization argument, then `DAGSTER_CLOUD_ORGANIZATION` env var, then config file.
     """
@@ -61,7 +60,7 @@ def get_organization(ctx: Optional[click.Context] = None) -> Optional[str]:
     return None
 
 
-def get_user_token(ctx: Optional[click.Context] = None) -> Optional[str]:
+def get_user_token(ctx: click.Context | None = None) -> str | None:
     """Gets the configured user token to use.
     Highest precedence is an api-token argument, then `DAGSTER_CLOUD_API_TOKEN` env var, then config file.
     """

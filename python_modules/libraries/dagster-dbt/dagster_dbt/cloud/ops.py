@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster import Config, In, Nothing, Out, Output, op
 from dagster._annotations import beta
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -23,7 +21,7 @@ class DbtCloudRunOpConfig(Config):
         default=DEFAULT_POLL_INTERVAL,
         description="The time (in seconds) that will be waited between successive polls.",
     )
-    poll_timeout: Optional[float] = Field(
+    poll_timeout: float | None = Field(
         default=None,
         description=(
             "The maximum time that will waited before this operation is timed out. By "

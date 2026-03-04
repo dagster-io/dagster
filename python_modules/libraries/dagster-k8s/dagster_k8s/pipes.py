@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any
 
 import kubernetes
 from dagster import (
@@ -87,7 +87,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         finally:
             self._handler = None
 
-    def _get_consume_logs_request_timeout(self) -> Optional[int]:
+    def _get_consume_logs_request_timeout(self) -> int | None:
         request_timeout_env_var = os.getenv("DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT")
         if request_timeout_env_var:
             return int(request_timeout_env_var)
@@ -96,7 +96,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
 
     def consume_pod_logs(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
@@ -182,7 +182,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
     @contextmanager
     def async_consume_pod_logs(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
@@ -376,13 +376,13 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        env: Optional[Mapping[str, str]] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
-        load_incluster_config: Optional[bool] = None,
-        kubeconfig_file: Optional[str] = None,
-        kube_context: Optional[str] = None,
-        poll_interval: Optional[float] = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+        env: Mapping[str, str] | None = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
+        load_incluster_config: bool | None = None,
+        kubeconfig_file: str | None = None,
+        kube_context: str | None = None,
+        poll_interval: float | None = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.context_injector = (
@@ -442,15 +442,15 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
-        extras: Optional[PipesExtras] = None,
-        image: Optional[str] = None,
-        command: Optional[Union[str, Sequence[str]]] = None,
-        namespace: Optional[str] = None,
-        env: Optional[Mapping[str, str]] = None,
-        base_pod_meta: Optional[Mapping[str, Any]] = None,
-        base_pod_spec: Optional[Mapping[str, Any]] = None,
-        ignore_containers: Optional[set] = None,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None = None,
+        image: str | None = None,
+        command: str | Sequence[str] | None = None,
+        namespace: str | None = None,
+        env: Mapping[str, str] | None = None,
+        base_pod_meta: Mapping[str, Any] | None = None,
+        base_pod_spec: Mapping[str, Any] | None = None,
+        ignore_containers: set | None = None,
         enable_multi_container_logs: bool = False,
         pod_wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
     ) -> PipesClientCompletedInvocation:
@@ -547,12 +547,12 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
     @contextmanager
     def consume_pod_logs(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: OpExecutionContext | AssetExecutionContext,
         client: DagsterKubernetesClient,
         namespace: str,
         pod_name: str,
         enable_multi_container_logs: bool = False,
-        ignore_containers: Optional[set] = None,
+        ignore_containers: set | None = None,
     ) -> Iterator:
         """Consume pod logs in the background if possible simple context manager to setup pod log consumption.
 
@@ -602,11 +602,11 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
 
 def build_pod_body(
     pod_name: str,
-    image: Optional[str],
-    command: Optional[Union[str, Sequence[str]]],
+    image: str | None,
+    command: str | Sequence[str] | None,
     env_vars: Mapping[str, str],
-    base_pod_meta: Optional[Mapping[str, Any]],
-    base_pod_spec: Optional[Mapping[str, Any]],
+    base_pod_meta: Mapping[str, Any] | None,
+    base_pod_spec: Mapping[str, Any] | None,
 ):
     meta = {
         **(k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, base_pod_meta or {})),

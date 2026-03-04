@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dagster._core.events import EngineEventData
 from dagster._core.storage.dagster_run import DagsterRun
@@ -13,7 +13,7 @@ from dagster_aws.ecs.launcher import EcsRunLauncher
 class CustomECSRunLauncher(EcsRunLauncher):
     def __init__(
         self,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
         task_definition=None,
         container_name="run",
         secrets=None,
@@ -56,7 +56,7 @@ class CustomECSRunLauncher(EcsRunLauncher):
         return {"ephemeralStorage": {"sizeInGiB": 128}}
 
     def report_launch_events(
-        self, run: DagsterRun, arn: Optional[str] = None, cluster: Optional[str] = None
+        self, run: DagsterRun, arn: str | None = None, cluster: str | None = None
     ):
         self._instance.report_engine_event(
             message="Launching run in custom ECS task",

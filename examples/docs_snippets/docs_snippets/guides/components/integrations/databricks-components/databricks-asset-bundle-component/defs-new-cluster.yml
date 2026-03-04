@@ -1,0 +1,13 @@
+# my_project/defs/my_databricks_bundle/defs.yml
+
+type: dagster_databricks.DatabricksAssetBundleComponent
+
+attributes:
+  databricks_config_path: '{{ project_root }}/../../../../../path/to/databricks.yml'
+  workspace:
+    host: https://your-workspace.cloud.databricks.com
+    token: '{{ env.DATABRICKS_TOKEN }}'
+  compute_config:
+    spark_version: "13.3.x-scala2.12"
+    node_type_id: "i3.xlarge"
+    num_workers: 2

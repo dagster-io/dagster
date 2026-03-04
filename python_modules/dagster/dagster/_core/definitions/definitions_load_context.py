@@ -159,7 +159,7 @@ class DefinitionsLoadContext:
         )
 
     @property
-    def accessed_defs_state_info(self) -> Optional[DefsStateInfo]:
+    def accessed_defs_state_info(self) -> DefsStateInfo | None:
         return (
             self._defs_state_info.for_keys(self._accessed_defs_state_keys)
             if self._defs_state_info
@@ -169,7 +169,7 @@ class DefinitionsLoadContext:
     def _mark_defs_key_accessed(self, key: str) -> None:
         self._accessed_defs_state_keys.add(key)
 
-    def _get_defs_key_state_info(self, key: str) -> Optional[DefsKeyStateInfo]:
+    def _get_defs_key_state_info(self, key: str) -> DefsKeyStateInfo | None:
         """Ensures that if we attempt to access a key that doesn't exist, we mark it as None."""
         self._mark_defs_key_accessed(key)
         current_info = self._defs_state_info or DefsStateInfo.empty()
@@ -186,7 +186,7 @@ class DefinitionsLoadContext:
             return self._pending_reconstruction_metadata[metadata_key]
 
     def add_defs_state_info(
-        self, key: str, version: str, create_timestamp: Optional[float] = None
+        self, key: str, version: str, create_timestamp: float | None = None
     ) -> None:
         self._mark_defs_key_accessed(key)
         self._defs_state_info = DefsStateInfo.add_version(
@@ -195,8 +195,8 @@ class DefinitionsLoadContext:
 
     @contextmanager
     def state_path(
-        self, config: DefsStateConfig, state_storage: Optional[DefsStateStorage], project_root: Path
-    ) -> Iterator[Optional[Path]]:
+        self, config: DefsStateConfig, state_storage: DefsStateStorage | None, project_root: Path
+    ) -> Iterator[Path | None]:
         """Context manager that creates a temporary path to hold local state for a component.
 
         Args:

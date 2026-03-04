@@ -3,7 +3,6 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
 
 from dagster import Component, Resolvable
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -57,7 +56,7 @@ def configured_airflow_home(airflow_home: Path) -> Generator[None, None, None]:
             remove_airflow_home_remnants(airflow_home)
 
 
-def asset_spec(asset_str: str, defs: Definitions) -> Optional[AssetSpec]:
+def asset_spec(asset_str: str, defs: Definitions) -> AssetSpec | None:
     """Get the spec of an asset from the definitions by its string representation."""
     return next(
         iter(
@@ -71,7 +70,7 @@ def asset_spec(asset_str: str, defs: Definitions) -> Optional[AssetSpec]:
 
 def get_job_from_defs(
     name: str, defs: Definitions
-) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+) -> JobDefinition | UnresolvedAssetJobDefinition | None:
     """Get the job from the definitions by its name."""
     return next(
         iter(job for job in (defs.jobs or []) if job.name == name),

@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Mapping
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster._config.config_type import ConfigType, ConfigTypeKind
@@ -137,7 +137,7 @@ def _recurse_in_to_selector(
 
 
 def _recurse_in_to_shape(
-    context: TraversalContext, config_value: Optional[Mapping[str, object]]
+    context: TraversalContext, config_value: Mapping[str, object] | None
 ) -> EvaluateValueResult[Any]:
     check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), "Unexpected non shape type")
     config_value = check.opt_mapping_param(config_value, "config_value", key_type=str)

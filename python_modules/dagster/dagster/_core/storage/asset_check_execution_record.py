@@ -59,9 +59,9 @@ class AssetCheckExecutionRecord(
             # Either an AssetCheckEvaluationPlanned or AssetCheckEvaluation event.
             # Optional for backwards compatibility, before we started storing planned events.
             # Old records won't have an event if the status is PLANNED.
-            ("event", Optional[EventLogEntry]),
+            ("event", EventLogEntry | None),
             ("create_timestamp", float),
-            ("partition", Optional[str]),
+            ("partition", str | None),
         ],
     ),
     LoadableBy[AssetCheckKey],
@@ -72,9 +72,9 @@ class AssetCheckExecutionRecord(
         id: int,
         run_id: str,
         status: AssetCheckExecutionRecordStatus,
-        event: Optional[EventLogEntry],
+        event: EventLogEntry | None,
         create_timestamp: float,
-        partition: Optional[str],
+        partition: str | None,
     ):
         check.inst_param(key, "key", AssetCheckKey)
         check.int_param(id, "id")
@@ -113,7 +113,7 @@ class AssetCheckExecutionRecord(
         )
 
     @property
-    def evaluation(self) -> Optional[AssetCheckEvaluation]:
+    def evaluation(self) -> AssetCheckEvaluation | None:
         if self.event and self.event.dagster_event:
             return cast(
                 "AssetCheckEvaluation",
@@ -244,7 +244,7 @@ class AssetCheckExecutionRecord(
 @record
 class AssetCheckPartitionInfo:
     check_key: AssetCheckKey
-    partition_key: Optional[str]
+    partition_key: str | None
     # the status of the last execution of the check
     latest_execution_status: AssetCheckExecutionRecordStatus
     # the run id of the last planned event for the check
@@ -254,9 +254,9 @@ class AssetCheckPartitionInfo:
     # the storage id of the last materialization for the asset / partition that this check targets
     # this is the latest overall materialization, independent of if there has been a check event
     # that targets it
-    latest_materialization_storage_id: Optional[int]
+    latest_materialization_storage_id: int | None
     # the storage id of the materialization that the last execution of the check targeted
-    latest_target_materialization_storage_id: Optional[int]
+    latest_target_materialization_storage_id: int | None
 
     @property
     def is_current(self) -> bool:

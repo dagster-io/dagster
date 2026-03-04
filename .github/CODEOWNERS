@@ -4,3 +4,6 @@
 # Automatically request education team for examples and basics tutorial PR review
 /docs/docs/examples                     @dehume
 /docs/docs/dagster-basics-tutorial      @dehume
+
+# Automatically request frontend team for js_modules PR review
+/js_modules/                            @dagster-io/frontend

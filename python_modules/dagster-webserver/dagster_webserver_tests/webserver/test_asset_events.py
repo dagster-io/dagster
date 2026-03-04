@@ -228,6 +228,26 @@ def test_report_asset_check_endpoint(instance: DagsterInstance, test_client: Tes
     )
 
 
+def test_report_asset_check_endpoint_with_partition(
+    instance: DagsterInstance, test_client: TestClient
+):
+    my_asset_key = "my_asset"
+    my_check = "my_partition_check"
+    response = test_client.post(
+        f"/report_asset_check/{my_asset_key}",
+        json={
+            "check_name": my_check,
+            "passed": True,
+            "partition": "2024-01-01",
+        },
+    )
+    assert response.status_code == 200, response.json()
+
+    evaluation = _assert_stored_check_eval(instance, my_asset_key, my_check)
+    assert evaluation.passed
+    assert evaluation.partition == "2024-01-01"
+
+
 def test_report_asset_check_evaluation_apis_consistent(
     instance: DagsterInstance, test_client: TestClient
 ):
@@ -238,6 +258,7 @@ def test_report_asset_check_evaluation_apis_consistent(
         "metadata": {"meta": "data"},
         "severity": "WARN",
         "passed": False,
+        "partition": "2024-01-01",
     }
 
     # sample has entry for all supported params (banking on usage of enum)
@@ -260,6 +281,8 @@ def test_report_asset_check_evaluation_apis_consistent(
             assert evaluation.passed == v
         elif k == "severity":
             assert evaluation.severity.value == v
+        elif k == "partition":
+            assert evaluation.partition == v
         else:
             assert False, (
                 "need to add validation that sample payload content was written successfully"
@@ -270,7 +293,7 @@ def test_report_asset_check_evaluation_apis_consistent(
     skip_set = {"self"}
     params = [p for p in sig.parameters if p not in skip_set]
 
-    KNOWN_DIFF = set()
+    KNOWN_DIFF = {"partition"}
 
     assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF
 

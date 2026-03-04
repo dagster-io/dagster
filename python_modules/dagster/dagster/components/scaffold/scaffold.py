@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Generic, Literal, Optional, TypeAlias, Union
+from typing import Any, Generic, Literal, TypeAlias, Union
 
 from pydantic import BaseModel
 from typing_extensions import TypeVar
@@ -109,7 +109,7 @@ class ScaffoldRequest(Generic[TModel]):
     # yaml or python
     scaffold_format: ScaffoldFormatOptions
     # the root of the dg project
-    project_root: Optional[Path]
+    project_root: Path | None
     # optional params for scaffolding
     params: TModel
     # whether to append to an existing file

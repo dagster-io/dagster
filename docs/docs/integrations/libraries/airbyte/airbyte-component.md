@@ -71,7 +71,7 @@ Airbyte OSS and Self-Managed Enterprise support several authentication methods. 
 <TabItem value="OAuth Client Credentials">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-component/7-oss-oauth-component.yaml"
+  path="docs_snippets/docs_snippets/integrations/airbyte/component/7-oss-oauth-component.yaml"
   title="my_project/defs/airbyte_ingest/defs.yaml"
   language="yaml"
 />
@@ -80,7 +80,7 @@ Airbyte OSS and Self-Managed Enterprise support several authentication methods. 
 <TabItem value="Basic Authentication">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-component/8-oss-basic-auth-component.yaml"
+  path="docs_snippets/docs_snippets/integrations/airbyte/component/8-oss-basic-auth-component.yaml"
   title="my_project/defs/airbyte_ingest/defs.yaml"
   language="yaml"
 />
@@ -89,7 +89,7 @@ Airbyte OSS and Self-Managed Enterprise support several authentication methods. 
 <TabItem value="No Authentication">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-component/9-oss-no-auth-component.yaml"
+  path="docs_snippets/docs_snippets/integrations/airbyte/component/9-oss-no-auth-component.yaml"
   title="my_project/defs/airbyte_ingest/defs.yaml"
   language="yaml"
 />

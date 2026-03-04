@@ -3,7 +3,7 @@ import json
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import responses
@@ -115,7 +115,7 @@ def test_scaffold_build_artifacts_container_context_platforms(
     setup_populated_git_workspace: ProxyRunner,
     agent_class_name: str,
     agent_platform: DgPlusAgentPlatform,
-    container_context_class: Optional[Any],
+    container_context_class: Any | None,
 ):
     mock_hybrid_response(agent_class=agent_class_name)
     runner = setup_populated_git_workspace
@@ -287,7 +287,7 @@ def setup_populated_git_workspace():
 def test_scaffold_github_actions_command_success_serverless(
     dg_plus_cli_config,
     setup_populated_git_workspace: ProxyRunner,
-    version_override: Optional[str],
+    version_override: str | None,
 ):
     from dagster_dg_cli import version
 

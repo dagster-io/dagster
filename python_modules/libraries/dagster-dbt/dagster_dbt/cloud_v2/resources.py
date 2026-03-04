@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 from functools import cached_property
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple
 
 from dagster import (
     AssetCheckSpec,
@@ -21,6 +21,9 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY,
+    DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
@@ -46,9 +49,9 @@ DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
 
 def get_dagster_adhoc_job_name(
     project_id: int,
-    project_name: Optional[str],
+    project_name: str | None,
     environment_id: int,
-    environment_name: Optional[str],
+    environment_name: str | None,
 ) -> str:
     name = (
         f"{DAGSTER_ADHOC_PREFIX}{project_name or project_id}__{environment_name or environment_id}"
@@ -100,7 +103,7 @@ class DbtCloudWorkspace(ConfigurableResource):
     environment_id: int = Field(
         description="The ID of environment to use for the dbt Cloud project used in this resource."
     )
-    adhoc_job_name: Optional[str] = Field(
+    adhoc_job_name: str | None = Field(
         default=None,
         description=(
             "The name of the ad hoc job that will be created by Dagster in your dbt Cloud workspace. "
@@ -139,7 +142,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         return f"{self.project_id}-{self.environment_id}"
 
     @cached_property
-    def account_name(self) -> Optional[str]:
+    def account_name(self) -> str | None:
         """The name of the account for this dbt Cloud workspace.
 
         Returns:
@@ -156,7 +159,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         return account.name
 
     @cached_property
-    def project_name(self) -> Optional[str]:
+    def project_name(self) -> str | None:
         """The name of the project for this dbt Cloud workspace.
 
         Returns:
@@ -173,7 +176,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         return project.name
 
     @cached_property
-    def environment_name(self) -> Optional[str]:
+    def environment_name(self) -> str | None:
         """The name of the environment for this dbt Cloud workspace.
 
         Returns:
@@ -279,8 +282,8 @@ class DbtCloudWorkspace(ConfigurableResource):
         select: str,
         exclude: str,
         selector: str,
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
+    ) -> Sequence[AssetSpec | AssetCheckSpec]:
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
         with self.process_config_and_initialize_cm() as initialized_workspace:
@@ -310,7 +313,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         select: str,
         exclude: str,
         selector: str,
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
     ) -> Sequence[AssetSpec]:
         return [
             spec
@@ -328,7 +331,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         select: str,
         exclude: str,
         selector: str,
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
     ) -> Sequence[AssetCheckSpec]:
         return [
             spec
@@ -345,8 +348,8 @@ class DbtCloudWorkspace(ConfigurableResource):
     def cli(
         self,
         args: Sequence[str],
-        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        context: Optional[AssetExecutionContext] = None,
+        dagster_dbt_translator: DagsterDbtTranslator | None = None,
+        context: AssetExecutionContext | None = None,
     ) -> DbtCloudCliInvocation:
         """Creates a dbt CLI invocation with the dbt Cloud client.
 
@@ -395,7 +398,7 @@ class DbtCloudWorkspace(ConfigurableResource):
 
 def load_dbt_cloud_asset_specs(
     workspace: DbtCloudWorkspace,
-    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
     select: str = DBT_DEFAULT_SELECT,
     exclude: str = DBT_DEFAULT_EXCLUDE,
     selector: str = DBT_DEFAULT_SELECTOR,
@@ -410,7 +413,7 @@ def load_dbt_cloud_asset_specs(
 
 def load_dbt_cloud_check_specs(
     workspace: DbtCloudWorkspace,
-    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
     select: str = DBT_DEFAULT_SELECT,
     exclude: str = DBT_DEFAULT_EXCLUDE,
     selector: str = DBT_DEFAULT_SELECTOR,
@@ -450,7 +453,13 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
         )
 
         all_asset_specs = [
-            spec.replace_attributes(kinds={"dbtcloud"} | spec.kinds - {"dbt"})
+            spec.replace_attributes(kinds={"dbtcloud"} | spec.kinds - {"dbt"}).merge_attributes(
+                metadata={
+                    DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY: self.workspace.credentials.account_id,
+                    DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY: state.project_id,
+                    DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY: state.environment_id,
+                }
+            )
             for spec in all_asset_specs
         ]
 

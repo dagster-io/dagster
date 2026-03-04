@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import ContextManager, Optional  # noqa: UP035
+from typing import ContextManager  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -71,7 +71,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self,
         postgres_url: str,
         should_autocreate_tables: bool = True,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = postgres_url
@@ -125,7 +125,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -134,7 +134,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+        cls, inst_data: ConfigurableClassData | None, config_value: PostgresStorageConfig
     ) -> "PostgresScheduleStorage":
         return PostgresScheduleStorage(
             inst_data=inst_data,
@@ -155,7 +155,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             engine.dispose()
         return PostgresScheduleStorage(postgres_url, should_autocreate_tables)
 
-    def connect(self, run_id: Optional[str] = None) -> ContextManager[Connection]:
+    def connect(self, run_id: str | None = None) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)
 
     def upgrade(self) -> None:

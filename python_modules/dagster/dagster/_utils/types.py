@@ -1,4 +1,6 @@
 from types import TracebackType
-from typing import Union
+from typing import TypeAlias
 
-ExcInfo = Union[tuple[type[BaseException], BaseException, TracebackType], tuple[None, None, None]]
+ExcInfo: TypeAlias = (
+    tuple[type[BaseException], BaseException, TracebackType] | tuple[None, None, None]
+)

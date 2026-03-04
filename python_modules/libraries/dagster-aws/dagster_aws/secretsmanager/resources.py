@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from dagster import (
     Field as LegacyDagsterField,
@@ -176,7 +176,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     secrets: list[str] = Field(
         default=[], description="An array of AWS Secrets Manager secrets arns to fetch."
     )
-    secrets_tag: Optional[str] = Field(
+    secrets_tag: str | None = Field(
         default=None,
         description="AWS Secrets Manager secrets with this tag will be fetched and made available.",
     )
@@ -188,8 +188,8 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     @contextmanager
     def secrets_in_environment(
         self,
-        secrets: Optional[list[str]] = None,
-        secrets_tag: Optional[str] = None,
+        secrets: list[str] | None = None,
+        secrets_tag: str | None = None,
     ) -> Generator[dict[str, str], None, None]:
         """Yields a dict which maps selected SecretsManager secrets to their string values. Also
         sets chosen secrets as environment variables.
@@ -228,8 +228,8 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
 
     def fetch_secrets(
         self,
-        secrets: Optional[list[str]] = None,
-        secrets_tag: Optional[str] = None,
+        secrets: list[str] | None = None,
+        secrets_tag: str | None = None,
     ) -> dict[str, str]:
         """Fetches secrets from AWS Secrets Manager and returns them as a dict.
 

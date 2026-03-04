@@ -2,7 +2,6 @@ import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from dagster_test.dg_utils.utils import (
@@ -36,8 +35,8 @@ def temp_project(tmp_path: Path) -> Path:
 def gen_expected_output(
     in_project: bool,
     in_workspace: bool,
-    project_errors: Optional[str] = None,
-    workspace_errors: Optional[str] = None,
+    project_errors: str | None = None,
+    workspace_errors: str | None = None,
 ) -> str:
     lines = ["Checking TOML configuration files..."]
 

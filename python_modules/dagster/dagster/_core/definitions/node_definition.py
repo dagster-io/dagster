@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
     _name: str
-    _description: Optional[str]
+    _description: str | None
     _tags: Mapping[str, str]
     _input_defs: Sequence["InputDefinition"]
     _input_dict: Mapping[str, "InputDefinition"]
@@ -37,9 +37,9 @@ class NodeDefinition(NamedConfigurableDefinition):
         name: str,
         input_defs: Sequence["InputDefinition"],
         output_defs: Sequence["OutputDefinition"],
-        description: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        positional_inputs: Optional[Sequence[str]] = None,
+        description: str | None = None,
+        tags: Mapping[str, str] | None = None,
+        positional_inputs: Sequence[str] | None = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -78,7 +78,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         return f"{self.node_type_str} '{self.name}'"
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._description
 
     @property
@@ -97,7 +97,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     def input_dict(self) -> Mapping[str, "InputDefinition"]:
         return self._input_dict
 
-    def resolve_input_name_at_position(self, idx: int) -> Optional[str]:
+    def resolve_input_name_at_position(self, idx: int) -> str | None:
         if idx >= len(self._positional_inputs):
             if not (
                 len(self._input_defs) - len(self._positional_inputs) == 1
@@ -184,10 +184,10 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     def get_pending_invocation(
         self,
-        given_alias: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        retry_policy: Optional[RetryPolicy] = None,
+        given_alias: str | None = None,
+        tags: Mapping[str, str] | None = None,
+        hook_defs: AbstractSet[HookDefinition] | None = None,
+        retry_policy: RetryPolicy | None = None,
     ) -> "PendingNodeInvocation":
         from dagster._core.definitions.composition import PendingNodeInvocation
 
@@ -205,7 +205,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     def alias(self, name: str) -> "PendingNodeInvocation":
         return self.get_pending_invocation(given_alias=name)
 
-    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Mapping[str, str] | None) -> "PendingNodeInvocation":
         return self.get_pending_invocation(tags=tags)
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":

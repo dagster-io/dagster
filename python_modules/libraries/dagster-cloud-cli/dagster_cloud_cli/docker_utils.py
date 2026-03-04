@@ -6,7 +6,6 @@ import sys
 import uuid
 from collections.abc import Generator
 from contextlib import ExitStack, contextmanager
-from typing import Optional
 
 from dagster_cloud_cli import ui
 from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
@@ -40,9 +39,9 @@ def build_image(
     image: str,
     registry_info,
     env_vars: list[str],
-    base_image: Optional[str],
+    base_image: str | None,
     use_editable_dagster: bool,
-    dockerfile_path: Optional[str] = None,
+    dockerfile_path: str | None = None,
 ) -> int:
     registry = registry_info["registry_url"]
 
@@ -94,6 +93,6 @@ def upload_image(image, registry_info) -> int:
     )
 
 
-def default_image_tag(deployment: str, location_name: str, commit_hash: Optional[str]) -> str:
+def default_image_tag(deployment: str, location_name: str, commit_hash: str | None) -> str:
     commit_hash = commit_hash if commit_hash else str(uuid.uuid4().hex)
     return f"{deployment}-{location_name}-{commit_hash}"

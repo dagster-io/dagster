@@ -1,6 +1,5 @@
 import threading
 from collections.abc import Callable
-from typing import Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -19,8 +18,8 @@ def watch_grpc_server_thread(
     on_updated: Callable[[str, str], None],
     on_error: Callable[[str], None],
     shutdown_event: threading.Event,
-    watch_interval: Optional[float] = None,
-    max_reconnect_attempts: Optional[int] = None,
+    watch_interval: float | None = None,
+    max_reconnect_attempts: int | None = None,
 ) -> None:
     """This thread watches the state of the unmanaged gRPC server and calls the appropriate handler
     functions in case of a change.
@@ -127,12 +126,12 @@ def watch_grpc_server_thread(
 def create_grpc_watch_thread(
     location_name: str,
     client: DagsterGrpcClient,
-    on_disconnect: Optional[Callable[[str], None]] = None,
-    on_reconnected: Optional[Callable[[str], None]] = None,
-    on_updated: Optional[Callable[[str, str], None]] = None,
-    on_error: Optional[Callable[[str], None]] = None,
-    watch_interval: Optional[float] = None,
-    max_reconnect_attempts: Optional[int] = None,
+    on_disconnect: Callable[[str], None] | None = None,
+    on_reconnected: Callable[[str], None] | None = None,
+    on_updated: Callable[[str, str], None] | None = None,
+    on_error: Callable[[str], None] | None = None,
+    watch_interval: float | None = None,
+    max_reconnect_attempts: int | None = None,
 ) -> tuple[threading.Event, threading.Thread]:
     check.str_param(location_name, "location_name")
     check.inst_param(client, "client", DagsterGrpcClient)

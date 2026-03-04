@@ -67,7 +67,7 @@ def has_valid_name_chars(name: str) -> bool:
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name: str, allow_list: Optional[list[str]] = None) -> str:
+def check_valid_name(name: str, allow_list: list[str] | None = None) -> str:
     check.str_param(name, "name")
 
     if allow_list and name in allow_list:
@@ -99,7 +99,7 @@ def is_valid_name(name: str) -> bool:
     return name not in DISALLOWED_NAMES and has_valid_name_chars(name)
 
 
-def is_valid_title_and_reason(title: Optional[str]) -> tuple[bool, Optional[str]]:
+def is_valid_title_and_reason(title: str | None) -> tuple[bool, str | None]:
     check.opt_str_param(title, "title")
 
     if title is None:
@@ -120,7 +120,7 @@ def is_valid_title_and_reason(title: Optional[str]) -> tuple[bool, Optional[str]
     return True, None
 
 
-def check_valid_title(title: Optional[str]) -> Optional[str]:
+def check_valid_title(title: str | None) -> str | None:
     """A title is distinguished from a name in that the title is a descriptive string meant for display in the UI.
     It is not used as an identifier for an object.
     """
@@ -131,7 +131,7 @@ def check_valid_title(title: Optional[str]) -> Optional[str]:
     return title
 
 
-def is_valid_title(title: Optional[str]) -> bool:
+def is_valid_title(title: str | None) -> bool:
     return is_valid_title_and_reason(title)[0]
 
 
@@ -215,7 +215,7 @@ def validate_definition_owner(owner: str, definition_type: str, definition_name:
             )
 
 
-def validate_group_name(group_name: Optional[str]) -> None:
+def validate_group_name(group_name: str | None) -> None:
     """Ensures a string name is valid and returns a default if no name provided."""
     if group_name:
         check_valid_chars(group_name)
@@ -226,7 +226,7 @@ def validate_group_name(group_name: Optional[str]) -> None:
         )
 
 
-def normalize_group_name(group_name: Optional[str]) -> str:
+def normalize_group_name(group_name: str | None) -> str:
     """Ensures a string name is valid and returns a default if no name provided."""
     validate_group_name(group_name)
     return group_name or DEFAULT_GROUP_NAME
@@ -360,7 +360,7 @@ def resolve_automation_condition(
 T = TypeVar("T")
 
 
-def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
+def dedupe_object_refs(objects: Iterable[T] | None) -> Sequence[T]:
     """Dedupe definitions by reference equality."""
     return list({id(obj): obj for obj in objects}.values()) if objects is not None else []
 

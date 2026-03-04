@@ -38,7 +38,7 @@ def parse_python_packages_md() -> dict[str, str]:
 
 
 def find_actual_packages() -> dict[str, str]:
-    """Find all Python packages in the repository by looking for setup.py files."""
+    """Find all Python packages in the repository by looking for setup.py or pyproject.toml files."""
     repo_root = get_repo_root()
     python_modules_dir = repo_root / "python_modules"
 
@@ -47,10 +47,14 @@ def find_actual_packages() -> dict[str, str]:
 
     packages = {}
 
-    # Find all setup.py files in python_modules
+    # Find all package directories (containing setup.py or pyproject.toml)
+    package_dirs = set()
     for setup_file in python_modules_dir.rglob("setup.py"):
-        package_dir = setup_file.parent
+        package_dirs.add(setup_file.parent)
+    for pyproject_file in python_modules_dir.rglob("pyproject.toml"):
+        package_dirs.add(pyproject_file.parent)
 
+    for package_dir in package_dirs:
         # Get absolute path
         abs_path = str(package_dir)
 
@@ -67,6 +71,9 @@ def find_actual_packages() -> dict[str, str]:
             ".pytest_cache",
             "dist",
             ".git",
+            "_generate",
+            "templates",
+            "example",
         }
 
         # Skip CI-specific build artifacts that appear in CI but not locally

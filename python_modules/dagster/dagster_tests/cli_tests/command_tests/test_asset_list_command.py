@@ -1,11 +1,9 @@
-from typing import Optional
-
 import dagster as dg
 from click.testing import CliRunner
 from dagster._cli.asset import asset_list_command
 
 
-def invoke_list(select: Optional[str] = None, partition: Optional[str] = None):
+def invoke_list(select: str | None = None, partition: str | None = None):
     runner = CliRunner()
     options = ["-f", dg.file_relative_path(__file__, "assets.py")]
     if select:

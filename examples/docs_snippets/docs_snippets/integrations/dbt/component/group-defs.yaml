@@ -1,0 +1,8 @@
+type: dagster_dbt.DbtProjectComponent
+template_vars_module: .template_vars
+
+attributes:
+  project: '{{ context.project_root }}/dbt'
+  translation:
+    group_name: "{{ group_from_fqn()(node.fqn) }}"
+    description: "Transforms data using dbt model {{ node.name }}"
