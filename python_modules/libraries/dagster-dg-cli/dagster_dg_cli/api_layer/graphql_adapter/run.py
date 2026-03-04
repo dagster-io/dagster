@@ -1,6 +1,8 @@
 """GraphQL adapter for run metadata."""
 
-from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunStatus
+from typing import Any
+
+from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList, DgApiRunStatus
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 RUN_METADATA_QUERY = """
@@ -58,3 +60,95 @@ def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> DgApiRun:
         ended_at=run_result.get("endTime"),
         job_name=run_result.get("jobName"),
     )
+
+
+LIST_RUNS_QUERY = """
+query DgApiListRunsQuery($filter: RunsFilter, $cursor: String, $limit: Int) {
+    runsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
+        __typename
+        ... on Runs {
+            results {
+                runId
+                status
+                creationTime
+                startTime
+                endTime
+                jobName
+            }
+            count
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+    }
+}
+"""
+
+
+def process_runs_response(graphql_response: dict[str, Any]) -> DgApiRunList:
+    """Process GraphQL response into DgApiRunList.
+
+    This is a pure function that can be easily tested without mocking GraphQL clients.
+    """
+    runs_or_error = graphql_response.get("runsOrError", {})
+    typename = runs_or_error.get("__typename")
+
+    if typename == "PythonError":
+        error_msg = runs_or_error.get("message", "Unknown GraphQL error")
+        raise Exception(f"GraphQL error: {error_msg}")
+
+    if typename != "Runs":
+        raise Exception(f"Unexpected response type: {typename}")
+
+    results = runs_or_error.get("results", [])
+    count = runs_or_error.get("count", 0)
+
+    runs = [
+        DgApiRun(
+            id=r["runId"],
+            status=DgApiRunStatus(r["status"]),
+            created_at=r["creationTime"],
+            started_at=r.get("startTime"),
+            ended_at=r.get("endTime"),
+            job_name=r.get("jobName"),
+        )
+        for r in results
+    ]
+
+    # Determine cursor for next page (last run ID if there are more results)
+    cursor = runs[-1].id if runs else None
+    has_more = len(runs) > 0 and count > len(runs)
+
+    return DgApiRunList(
+        items=runs,
+        total=count,
+        cursor=cursor,
+        has_more=has_more,
+    )
+
+
+def list_runs_via_graphql(
+    client: IGraphQLClient,
+    limit: int = 50,
+    cursor: str | None = None,
+    statuses: tuple[str, ...] = (),
+    job_name: str | None = None,
+) -> DgApiRunList:
+    """Fetch runs using GraphQL with optional filtering."""
+    variables: dict[str, Any] = {"limit": limit}
+
+    if cursor:
+        variables["cursor"] = cursor
+
+    run_filter: dict[str, Any] = {}
+    if statuses:
+        run_filter["statuses"] = list(statuses)
+    if job_name:
+        run_filter["pipelineName"] = job_name
+
+    if run_filter:
+        variables["filter"] = run_filter
+
+    result = client.execute(LIST_RUNS_QUERY, variables)
+    return process_runs_response(result)

@@ -29,3 +29,12 @@ class DgApiRun(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DgApiRunList(BaseModel):
+    """List of runs with pagination support."""
+
+    items: list[DgApiRun]
+    total: int
+    cursor: str | None = None
+    has_more: bool = False
