@@ -5,11 +5,12 @@ from collections.abc import Sequence
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.utils import dump_pipeline_yaml
 
-# Configure logging based on LOGLEVEL env var (default to WARNING)
+# Configure logging based on LOGLEVEL env var (default to INFO)
 logging.basicConfig(
-    level=getattr(logging, os.environ.get("LOGLEVEL", "WARNING").upper(), logging.WARNING),
+    level=getattr(logging, os.environ.get("LOGLEVEL", "INFO").upper(), logging.INFO),
     format="%(levelname)s: %(message)s",
 )
+
 
 from buildkite_shared.context import BuildkiteContext
 from dagster_buildkite.pipelines.dagster_oss_main import build_dagster_oss_main_steps
