@@ -84,7 +84,8 @@ class SparkPipelinesResource(ConfigurableResource):
 
         Uses Popen to stream stdout/stderr line-by-line and logs each line via context.log.info.
         Passes --full-refresh or --refresh based on execution_mode, then optional comma-separated
-        dataset list from asset_keys.         returncode == 0; otherwise raises SparkPipelinesExecutionError with the captured log.
+        dataset list from asset_keys. Yields MaterializeResult per asset on success when
+        returncode == 0; otherwise raises SparkPipelinesExecutionError with the captured log.
 
         Args:
             context: Asset execution context (used for context.log.info).
