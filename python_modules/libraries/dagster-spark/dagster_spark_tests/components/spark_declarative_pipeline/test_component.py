@@ -12,6 +12,22 @@ from dagster_spark.components.spark_declarative_pipeline import (
 )
 
 
+def _ds(
+    name: str,
+    dataset_type: str = "table",
+    inferred_deps: list[str] | None = None,
+) -> DiscoveredDataset:
+    """Helper to build DiscoveredDataset with required typed fields."""
+    return DiscoveredDataset(
+        name=name,
+        dataset_type=dataset_type,
+        source_file=None,
+        source_line=None,
+        inferred_deps=inferred_deps or [],
+        discovery_method="dry_run",
+    )
+
+
 def test_build_defs_from_state_returns_valid_definitions_with_multi_asset() -> None:
     """build_defs_from_state returns a valid Definitions object containing a multi_asset."""
     component = SparkDeclarativePipelineComponent(
@@ -19,8 +35,8 @@ def test_build_defs_from_state_returns_valid_definitions_with_multi_asset() -> N
         discovery_mode="source_only",
     )
     datasets = [
-        DiscoveredDataset(name="table_a", attributes={"dataset_type": "table"}),
-        DiscoveredDataset(name="table_b", attributes={"dataset_type": "table"}),
+        _ds("table_a"),
+        _ds("table_b"),
     ]
     state = SparkPipelineState(
         datasets=datasets,
@@ -44,17 +60,19 @@ def test_build_defs_from_state_returns_valid_definitions_with_multi_asset() -> N
     assert "table_b" in keys
 
 
-def test_get_asset_spec_includes_deps_from_attributes() -> None:
-    """get_asset_spec sets deps from dataset.attributes (dependencies, upstream_dataset_names, or deps)."""
+def test_get_asset_spec_includes_deps_from_inferred_deps() -> None:
+    """get_asset_spec sets deps from dataset.inferred_deps."""
     component = SparkDeclarativePipelineComponent(
         pipeline_spec_path="pipeline.yaml",
         discovery_mode="source_only",
     )
     dataset = DiscoveredDataset(
         name="catalog.schema.orders",
-        attributes={
-            "upstream_dataset_names": ["catalog.schema.customers", "catalog.schema.products"],
-        },
+        dataset_type="table",
+        source_file=None,
+        source_line=None,
+        inferred_deps=["catalog.schema.customers", "catalog.schema.products"],
+        discovery_method="dry_run",
     )
     spec = component.get_asset_spec(dataset)
     assert list(spec.key.path) == ["catalog", "schema", "orders"]
@@ -72,11 +90,8 @@ def test_build_defs_from_state_filters_temporary_views() -> None:
         asset_attributes_by_dataset={},  # no overrides
     )
     datasets = [
-        DiscoveredDataset(name="table_a", attributes={"dataset_type": "table"}),
-        DiscoveredDataset(
-            name="temp_view_x",
-            attributes={"dataset_type": "temporary_view"},
-        ),
+        _ds("table_a"),
+        _ds("temp_view_x", dataset_type="temporary_view"),
     ]
     state = SparkPipelineState(
         datasets=datasets,
@@ -104,11 +119,8 @@ def test_build_defs_from_state_includes_temporary_view_when_overridden() -> None
         asset_attributes_by_dataset={"temp_view_x": {"description": "Included view"}},
     )
     datasets = [
-        DiscoveredDataset(name="table_a", attributes={"dataset_type": "table"}),
-        DiscoveredDataset(
-            name="temp_view_x",
-            attributes={"dataset_type": "temporary_view"},
-        ),
+        _ds("table_a"),
+        _ds("temp_view_x", dataset_type="temporary_view"),
     ]
     state = SparkPipelineState(
         datasets=datasets,

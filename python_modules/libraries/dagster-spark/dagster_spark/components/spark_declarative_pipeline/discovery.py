@@ -54,10 +54,12 @@ class DryRunDatasetNode:
     Attributes:
         name: Dataset identifier.
         raw: Raw dict from CLI output (e.g. JSON object for this node).
+        inferred_deps: Upstream dataset names extracted from the node (e.g. deps, dependencies).
     """
 
     name: str
     raw: dict[str, Any]
+    inferred_deps: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -83,11 +85,19 @@ class DiscoveredDataset:
 
     Attributes:
         name: Dataset name (used as asset key component).
-        attributes: Arbitrary metadata (e.g. dataset_type, schema info).
+        dataset_type: Type of dataset (e.g. table, materialized_view, temporary_view).
+        source_file: Path to source file where dataset was defined, if known.
+        source_line: Line number in source file, if known.
+        inferred_deps: Upstream dataset names (e.g. catalog.schema.table).
+        discovery_method: How the dataset was discovered (e.g. dry_run, source_fallback).
     """
 
     name: str
-    attributes: dict[str, Any]
+    dataset_type: str
+    source_file: str | None
+    source_line: int | None
+    inferred_deps: list[str]
+    discovery_method: str
 
 
 @whitelist_for_serdes
@@ -128,7 +138,7 @@ def discover_datasets_via_dry_run(
         SparkPipelinesDryRunError: If the command fails or times out.
     """
     path_str = str(pipeline_spec_path)
-    cmd = [spark_pipelines_cmd, "dry-run", path_str]
+    cmd = [spark_pipelines_cmd, "dry-run", "--spec", path_str]
     if extra_args:
         cmd.extend(extra_args)
 
@@ -225,6 +235,16 @@ def _extract_report_json(stdout: str) -> DryRunReport | None:
     return None
 
 
+def _extract_deps_from_node(item: dict[str, Any]) -> tuple[str, ...]:
+    """Extract upstream dataset names from a JSON node (deps, dependencies, upstream_dataset_names)."""
+    deps = item.get("upstream_dataset_names") or item.get("dependencies") or item.get("deps") or []
+    if isinstance(deps, str):
+        deps = [deps]
+    if not isinstance(deps, list):
+        return ()
+    return tuple(str(d) for d in deps if isinstance(d, str))
+
+
 def _json_to_report(data: Any) -> DryRunReport | None:
     """Map a JSON structure to DryRunReport. Placeholder: adapt to real CLI output shape."""
     if isinstance(data, dict):
@@ -244,9 +264,12 @@ def _json_to_report(data: Any) -> DryRunReport | None:
             name = item.get("name") or item.get("id") or item.get("dataset") or str(item)
             if isinstance(name, dict):
                 name = name.get("name") or name.get("id") or str(name)
-            dataset_nodes.append(DryRunDatasetNode(name=str(name), raw=item))
+            inferred_deps = _extract_deps_from_node(item)
+            dataset_nodes.append(
+                DryRunDatasetNode(name=str(name), raw=item, inferred_deps=inferred_deps)
+            )
         elif isinstance(item, str):
-            dataset_nodes.append(DryRunDatasetNode(name=item, raw={"name": item}))
+            dataset_nodes.append(DryRunDatasetNode(name=item, raw={"name": item}, inferred_deps=()))
 
     return DryRunReport(datasets=dataset_nodes, raw=data if isinstance(data, dict) else None)
 
@@ -264,7 +287,9 @@ def _extract_report_text(stdout: str) -> DryRunReport | None:
             if match:
                 name = match.group(1).strip()
                 if name:
-                    datasets.append(DryRunDatasetNode(name=name, raw={"name": name}))
+                    datasets.append(
+                        DryRunDatasetNode(name=name, raw={"name": name}, inferred_deps=())
+                    )
                 break
 
     if not datasets:
@@ -277,9 +302,9 @@ _PY_DATASET_DECORATOR = re.compile(
     r"@(?:dp\.)?(materialized_view|table|streaming_table|temporary_view)(?:\([^)]*\))?\s*\n\s*def\s+(\w+)\s*\(",
     re.MULTILINE,
 )
-# Regex for source-only discovery: SQL CREATE statement (capture supports catalog.schema.table)
+# Regex for source-only discovery: SQL CREATE statement (capture type and catalog.schema.table)
 _SQL_CREATE_DATASET = re.compile(
-    r"CREATE\s+(?:MATERIALIZED\s+VIEW|STREAMING\s+TABLE|TABLE|VIEW)\s+(?:IF\s+NOT\s+EXISTS\s+)?([\w.]+)",
+    r"CREATE\s+(MATERIALIZED\s+VIEW|STREAMING\s+TABLE|TABLE|VIEW)\s+(?:IF\s+NOT\s+EXISTS\s+)?([\w.]+)",
     re.IGNORECASE,
 )
 
@@ -340,18 +365,28 @@ def discover_datasets_from_sources(pipeline_spec_path: Path) -> list[DiscoveredD
                             result.append(
                                 DiscoveredDataset(
                                     name=name,
-                                    attributes={"dataset_type": m.group(1), "source": str(path)},
+                                    dataset_type=m.group(1),
+                                    source_file=str(path),
+                                    source_line=None,
+                                    inferred_deps=[],
+                                    discovery_method="source_fallback",
                                 )
                             )
                 else:
                     for m in _SQL_CREATE_DATASET.finditer(text):
-                        name = m.group(1)
+                        raw_type = m.group(1)
+                        dataset_type_sql = raw_type.lower().replace(" ", "_")
+                        name = m.group(2)
                         if name not in seen:
                             seen.add(name)
                             result.append(
                                 DiscoveredDataset(
                                     name=name,
-                                    attributes={"source": str(path)},
+                                    dataset_type=dataset_type_sql,
+                                    source_file=str(path),
+                                    source_line=None,
+                                    inferred_deps=[],
+                                    discovery_method="source_fallback",
                                 )
                             )
     except Exception as e:
@@ -366,10 +401,19 @@ def discover_datasets_from_sources(pipeline_spec_path: Path) -> list[DiscoveredD
     return result
 
 
+def _node_dataset_type(raw: dict[str, Any]) -> str:
+    """Extract dataset_type from a raw node (type, dataset_type, or default 'table')."""
+    t = raw.get("type") or raw.get("dataset_type")
+    if isinstance(t, str):
+        return t.lower().replace(" ", "_")
+    return "table"
+
+
 def parse_dry_run_output_to_datasets(stdout: str) -> list[DiscoveredDataset]:
     """Parse dry-run stdout into a list of DiscoveredDataset.
 
-    Uses extract_report for JSON and text fallback; maps each node to DiscoveredDataset.
+    Uses extract_report for JSON and text fallback; maps each node to DiscoveredDataset
+    with explicit dataset_type, source_file, source_line, inferred_deps, discovery_method.
 
     Args:
         stdout: Raw stdout string from spark-pipelines dry-run.
@@ -381,9 +425,30 @@ def parse_dry_run_output_to_datasets(stdout: str) -> list[DiscoveredDataset]:
     if report is None:
         return []
 
-    return [
-        DiscoveredDataset(name=node.name, attributes=dict(node.raw)) for node in report.datasets
-    ]
+    result: list[DiscoveredDataset] = []
+    for node in report.datasets:
+        raw = node.raw
+        source_file = raw.get("source_file") or raw.get("source")
+        if isinstance(source_file, str):
+            pass
+        else:
+            source_file = None
+        source_line = raw.get("source_line")
+        if isinstance(source_line, int):
+            pass
+        else:
+            source_line = None
+        result.append(
+            DiscoveredDataset(
+                name=node.name,
+                dataset_type=_node_dataset_type(raw),
+                source_file=source_file,
+                source_line=source_line,
+                inferred_deps=list(node.inferred_deps),
+                discovery_method="dry_run",
+            )
+        )
+    return result
 
 
 def _validate_no_duplicate_dataset_names(datasets: list[DiscoveredDataset]) -> None:

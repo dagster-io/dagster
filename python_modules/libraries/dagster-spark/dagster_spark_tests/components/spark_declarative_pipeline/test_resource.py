@@ -145,6 +145,8 @@ def test_run_and_observe_passes_dot_notation_datasets_to_cli() -> None:
         )
 
     call_cmd = mock_popen.call_args[0][0]
+    assert call_cmd[1] == "run"
+    assert "--spec" in call_cmd
     datasets_arg = call_cmd[-1]
     assert datasets_arg == "my_catalog.my_db.orders"
     assert "/" not in datasets_arg
@@ -176,8 +178,38 @@ def test_run_and_observe_uses_configurable_cmd_and_run_extra_args() -> None:
 
     call_cmd = mock_popen.call_args[0][0]
     assert call_cmd[0] == "/usr/local/bin/spark-pipelines"
+    assert call_cmd[1] == "run"
+    assert "--spec" in call_cmd
     assert "--option" in call_cmd
     assert "value" in call_cmd
+
+
+def test_run_and_observe_full_refresh_no_asset_keys_uses_full_refresh_all() -> None:
+    """When execution_mode is full_refresh and asset_keys is empty, CLI gets --full-refresh-all."""
+    mock_context = MagicMock()
+    with patch(
+        "dagster_spark.components.spark_declarative_pipeline.resource.subprocess.Popen"
+    ) as mock_popen:
+        proc = MagicMock()
+        proc.stdout = iter([])
+        proc.wait.return_value = 0
+        proc.returncode = 0
+        mock_popen.return_value = proc
+
+        resource = SparkPipelinesResource()
+        list(
+            resource.run_and_observe(
+                context=mock_context,
+                pipeline_spec_path="/path/spec.yaml",
+                execution_mode="full_refresh",
+                asset_keys=None,
+            )
+        )
+
+    call_cmd = mock_popen.call_args[0][0]
+    assert "--spec" in call_cmd
+    assert "--full-refresh-all" in call_cmd
+    assert "--full-refresh" not in call_cmd
 
 
 def test_run_and_observe_only_yields_on_success() -> None:

@@ -27,7 +27,7 @@ def test_parse_dry_run_output_to_datasets_parses_json_report() -> None:
     datasets = parse_dry_run_output_to_datasets(stdout)
     assert len(datasets) == 2
     assert datasets[0].name == "dataset_a"
-    assert datasets[0].attributes.get("type") == "table"
+    assert datasets[0].dataset_type == "table"
     assert datasets[1].name == "dataset_b"
 
 
@@ -55,9 +55,20 @@ def test_discover_datasets_fn_dry_run_only_raises_on_failure() -> None:
         assert "error" in (exc_info.value.stderr or "")
 
 
+def _discovered(name: str) -> DiscoveredDataset:
+    return DiscoveredDataset(
+        name=name,
+        dataset_type="table",
+        source_file=None,
+        source_line=None,
+        inferred_deps=[],
+        discovery_method="source_fallback",
+    )
+
+
 def test_discover_datasets_fn_dry_run_with_fallback_uses_source_on_failure() -> None:
     """In dry_run_with_fallback mode, source_only_datasets are returned when dry-run fails."""
-    fallback = [DiscoveredDataset(name="fallback_ds", attributes={})]
+    fallback = [_discovered("fallback_ds")]
     with patch(
         "dagster_spark.components.spark_declarative_pipeline.discovery.subprocess.run"
     ) as mock_run:
@@ -72,10 +83,7 @@ def test_discover_datasets_fn_dry_run_with_fallback_uses_source_on_failure() -> 
 
 def test_discover_datasets_fn_source_only_returns_source_list() -> None:
     """In source_only mode, discover_datasets_fn returns source_only_datasets without running dry-run."""
-    source = [
-        DiscoveredDataset(name="a", attributes={}),
-        DiscoveredDataset(name="b", attributes={}),
-    ]
+    source = [_discovered("a"), _discovered("b")]
     result = discover_datasets_fn(
         pipeline_spec_path="/any/path",
         discovery_mode="source_only",
@@ -102,10 +110,7 @@ def test_discover_datasets_via_dry_run_raises_on_nonzero_exit() -> None:
 
 def test_discover_datasets_fn_raises_on_duplicate_dataset_names() -> None:
     """Duplicate dataset names (after normalization) raise DuplicateDatasetNamesError."""
-    source = [
-        DiscoveredDataset(name="Foo", attributes={}),
-        DiscoveredDataset(name="foo", attributes={}),
-    ]
+    source = [_discovered("Foo"), _discovered("foo")]
     with pytest.raises(DuplicateDatasetNamesError) as exc_info:
         discover_datasets_fn(
             pipeline_spec_path="/any/path",
@@ -147,5 +152,7 @@ def test_discover_datasets_via_dry_run_uses_custom_cmd_and_extra_args() -> None:
         )
         call_cmd = mock_run.call_args[0][0]
         assert call_cmd[0] == "/custom/spark-pipelines"
+        assert call_cmd[1] == "dry-run"
+        assert "--spec" in call_cmd
         assert "--output" in call_cmd
         assert "json" in call_cmd

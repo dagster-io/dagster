@@ -64,7 +64,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
     ] = field(default_factory=SparkPipelinesResource)
     op: Optional[OpSpec] = None
     execution_mode: ExecutionMode = "incremental"
-    discovery_mode: DiscoveryMode = "dry_run_only"
+    discovery_mode: DiscoveryMode = "dry_run_with_fallback"
     asset_attributes_by_dataset: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @property
@@ -104,29 +104,25 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             dataset: Discovered dataset from state.
 
         Returns:
-            AssetSpec with key from dataset.name (split by '.' for multi-segment), optional deps
-            from attributes (dependencies, upstream_dataset_names, or deps), and optional
-            description/metadata/group/tags from asset_attributes_by_dataset.
+            AssetSpec with key from dataset.name (split by '.'), deps from dataset.inferred_deps,
+            kinds and metadata including dataset_type and source_file, and optional
+            description/group/tags from asset_attributes_by_dataset.
         """
         attrs = self.asset_attributes_by_dataset.get(dataset.name, {})
-        source_attrs = dataset.attributes or {}
-        dep_names = (
-            source_attrs.get("dependencies")
-            or source_attrs.get("upstream_dataset_names")
-            or source_attrs.get("deps")
-            or []
-        )
-        if isinstance(dep_names, str):
-            dep_names = [dep_names]
-        deps = [AssetKey(d.split(".")) for d in dep_names] if dep_names else []
+        deps = [AssetKey(d.split(".")) for d in dataset.inferred_deps]
+        metadata: dict[str, Any] = dict(attrs.get("metadata") or {})
+        metadata["dataset_type"] = dataset.dataset_type
+        if dataset.source_file is not None:
+            metadata["source_file"] = dataset.source_file
         return AssetSpec(
             key=dataset.name.split("."),
             deps=deps,
             description=attrs.get("description")
             or f"Spark Declarative Pipeline dataset: {dataset.name}",
-            metadata=attrs.get("metadata"),
+            metadata=metadata,
             group_name=attrs.get("group_name"),
             tags=attrs.get("tags"),
+            kinds={"spark", dataset.dataset_type},
         )
 
     def build_defs_from_state(
@@ -157,8 +153,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         def include_dataset(ds: DiscoveredDataset) -> bool:
             if ds.name in self.asset_attributes_by_dataset:
                 return True
-            dataset_type = (ds.attributes or {}).get("dataset_type") if ds.attributes else None
-            if dataset_type == "temporary_view":
+            if ds.dataset_type == "temporary_view":
                 return False
             return True
 

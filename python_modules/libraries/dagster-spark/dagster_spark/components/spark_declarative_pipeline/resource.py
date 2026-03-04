@@ -100,9 +100,12 @@ class SparkPipelinesResource(ConfigurableResource):
             SparkPipelinesDryRunError: If spark-pipelines run exits with non-zero return code.
         """
         path_str = str(pipeline_spec_path)
-        cmd = [self.spark_pipelines_cmd, "run", path_str]
+        cmd = [self.spark_pipelines_cmd, "run", "--spec", path_str]
         if execution_mode == "full_refresh":
-            cmd.append("--full-refresh")
+            if asset_keys:
+                cmd.append("--full-refresh")
+            else:
+                cmd.append("--full-refresh-all")
         else:
             cmd.append("--refresh")
         if asset_keys:

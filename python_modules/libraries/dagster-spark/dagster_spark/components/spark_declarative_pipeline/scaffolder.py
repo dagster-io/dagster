@@ -13,6 +13,6 @@ class SparkDeclarativePipelineScaffolder(Scaffolder):
             request,
             {
                 "pipeline_spec_path": "spark-pipeline.yml",
-                "discovery_mode": "dry_run_only",
+                "discovery_mode": "dry_run_with_fallback",
             },
         )
