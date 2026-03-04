@@ -43,10 +43,6 @@ By default, Compass chats appear in a panel docked to the right edge of the page
 
 ![Compass dialog display mode](/images/dagster-cloud/compass-dialog-open.png)
 
-:::note
-Run log data syncs approximately once an hour. If a run completed recently, Compass may not have access to its logs yet. Compass reports the run's creation time and last sync time when this occurs.
-:::
-
 ## Troubleshooting
 
 | Symptom                                 | Cause                                               | Resolution                                              |
