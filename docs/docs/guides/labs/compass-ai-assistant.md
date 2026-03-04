@@ -5,9 +5,9 @@ sidebar_position: 400
 tags: [dagster-plus-feature]
 ---
 
-import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
 
-<DagsterPlus />
+<EarlyAccess />
 
 Compass is the Dagster+ AI assistant. It analyzes run logs, identifies root causes of failures, suggests debugging steps, and lets you ask follow-up questions in a conversational chat interface. You can trigger Compass from any completed run or directly from a degraded asset on the home page.
 

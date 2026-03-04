@@ -26,10 +26,6 @@ Ensure your most critical data stays fresh and trustworthy so teams can make tim
 
 Quickly identify which pipelines are running smoothly and which need attention with intuitive health indicators that highlight data quality and platform reliability in real time. For more information, see the [asset health status guide](/guides/observe/asset-health-status).
 
-### Compass AI assistant (Dagster+)
-
-Compass analyzes run logs, identifies root causes of failures, and suggests debugging steps. Trigger a summary from any completed run or from a degraded asset on the home page, then ask follow-up questions in a conversational chat interface. For more information, see the [Compass AI assistant guide](/guides/observe/compass-ai-assistant).
-
 ### Insights (Dagster+)
 
 Unlock a comprehensive, dashboard-style view of your data platform’s health. Dagster+ Insights surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Insights guide](/guides/observe/insights).
