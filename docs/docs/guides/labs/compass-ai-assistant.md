@@ -43,6 +43,11 @@ By default, Compass chats appear in a panel docked to the right edge of the page
 
 ![Compass dialog display mode](/images/dagster-cloud/compass-dialog-open.png)
 
+## Limitations during early access
+Compass is under active development, and has several known limitations that will be addressed before this feature becomes generally available.
+- Run log data syncs approximately once an hour. If a run completed recently, Compass may not have access to its logs yet.
+- Compass does not currently enforce [role-based access control](/rbac/user-roles-permissions). Users that do not have viewers access to certain deployments are able to ask Compass about runs they don't have permission to see.
+
 ## Troubleshooting
 
 | Symptom                                 | Cause                                               | Resolution                                              |
