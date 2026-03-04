@@ -27,7 +27,8 @@ import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
-import {IntMetadataEntry, MaterializationEvent} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {IntMetadataEntry, MaterializationEvent} from '../graphql/types-do-not-use';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';

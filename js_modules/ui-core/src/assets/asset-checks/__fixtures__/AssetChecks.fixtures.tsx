@@ -1,13 +1,12 @@
 import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
   buildAssetCheck,
   buildAssetCheckEvaluation,
   buildAssetCheckEvaluationTargetMaterializationData,
   buildAssetCheckExecution,
   buildAssetKey,
   buildIntMetadataEntry,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
+import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../../../graphql/types';
 
 export const testAssetKey = {path: ['test']};
 export const testLatestMaterializationTimeStamp = Date.now();

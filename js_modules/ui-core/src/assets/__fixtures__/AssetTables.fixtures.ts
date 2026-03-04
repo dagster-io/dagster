@@ -5,9 +5,6 @@ import {
 } from '../../asset-data/types/AssetBaseDataProvider.types';
 import {MockStaleReasonData} from '../../asset-graph/__fixtures__/AssetNode.fixtures';
 import {
-  Asset,
-  RunStatus,
-  StaleStatus,
   buildAsset,
   buildAssetChecks,
   buildAssetFreshnessInfo,
@@ -24,7 +21,10 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildRun,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {RunStatus, StaleStatus} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {Asset} from '../../graphql/types-do-not-use';
 import {buildQueryMock} from '../../testing/mocking';
 import {SINGLE_NON_SDA_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {

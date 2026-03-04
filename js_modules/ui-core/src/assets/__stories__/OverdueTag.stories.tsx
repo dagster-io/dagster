@@ -3,14 +3,14 @@ import {Box} from '@dagster-io/ui-components';
 
 import {createAppCache} from '../../app/AppCache';
 import {
-  AssetFreshnessInfo,
-  FreshnessPolicy,
   buildAssetFreshnessInfo,
   buildAssetKey,
   buildAssetNode,
   buildFreshnessPolicy,
   buildQuery,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+// eslint-disable-next-line no-restricted-imports
+import {AssetFreshnessInfo, FreshnessPolicy} from '../../graphql/types-do-not-use';
 import {OVERDUE_POPOVER_QUERY, OverdueTag} from '../OverdueTag';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from '../types/OverdueTag.types';
 

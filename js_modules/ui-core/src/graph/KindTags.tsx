@@ -2,7 +2,8 @@ import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpTags} from './OpTags';
-import {DefinitionTag} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {DefinitionTag} from '../graphql/types-do-not-use';
 import {linkToAssetTableWithKindFilter} from '../search/links';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';

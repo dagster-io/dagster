@@ -38,7 +38,9 @@ import {
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
-import {AssetConditionEvaluationStatus, AssetKey, EntityKey} from '../../graphql/types';
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetKey, EntityKey} from '../../graphql/types-do-not-use';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';

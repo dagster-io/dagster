@@ -1,11 +1,14 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  WorkspaceLocationEntry,
-  WorkspaceLocationStatusEntry,
   buildWorkspaceLocationStatusEntries,
   buildWorkspaceLocationStatusEntry,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
+// eslint-disable-next-line no-restricted-imports
+import {
+  WorkspaceLocationEntry,
+  WorkspaceLocationStatusEntry,
+} from '../../../graphql/types-do-not-use';
 import {buildQueryMock} from '../../../testing/mocking';
 import {
   CODE_LOCATION_STATUS_QUERY,

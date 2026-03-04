@@ -4,12 +4,8 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
-import {
-  ReexecutionParams,
-  ReexecutionStrategy,
-  buildLaunchBackfillSuccess,
-  buildMutation,
-} from '../../../graphql/types';
+import {buildLaunchBackfillSuccess, buildMutation} from '../../../graphql/builders';
+import {ReexecutionParams, ReexecutionStrategy} from '../../../graphql/types';
 import {BackfillActionsMenu} from '../BackfillActionsMenu';
 import {
   BackfillTableFragmentCompletedAssetJob,

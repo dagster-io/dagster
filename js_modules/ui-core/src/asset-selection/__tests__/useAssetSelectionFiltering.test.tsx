@@ -2,7 +2,7 @@ import {renderHook, waitFor} from '@testing-library/react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {useAssetGraphData} from '../../asset-graph/useAssetGraphData';
-import {buildAssetKey} from '../../graphql/types';
+import {buildAssetKey} from '../../graphql/builders';
 import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 
 const mockTokenForAssetKeyNotMock = tokenForAssetKey;

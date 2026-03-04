@@ -13,7 +13,9 @@ import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
+import {AssetKeyInput} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {FreshnessPolicy} from '../graphql/types-do-not-use';
 import {humanCronString} from '../schedules/humanCronString';
 import {LoadingSpinner} from '../ui/Loading';
 

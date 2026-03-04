@@ -1,7 +1,8 @@
 import {Box} from '@dagster-io/ui-components';
 
 import {AssetLink} from '../assets/AssetLink';
-import {SensorMetadata} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {SensorMetadata} from '../graphql/types-do-not-use';
 
 export const SensorMonitoredAssets = ({metadata}: {metadata: SensorMetadata | undefined}) => {
   if (!metadata?.assetKeys?.length) {

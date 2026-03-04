@@ -23,7 +23,8 @@ import {FreshnessPolicyStatus} from './FreshnessPolicyStatus';
 import {LineageSection} from './LineageSection';
 import {useAssetsLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../../asset-graph/Utils';
-import {IntMetadataEntry} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {IntMetadataEntry} from '../../graphql/types-do-not-use';
 import {isCanonicalRowCountMetadataEntry} from '../../metadata/MetadataEntry';
 import {TableSchema, TableSchemaAssetContext} from '../../metadata/TableSchema';
 import {useRepositoryLocationForAddress} from '../../nav/useRepositoryLocationForAddress';

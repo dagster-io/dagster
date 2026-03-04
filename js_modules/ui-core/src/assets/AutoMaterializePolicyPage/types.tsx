@@ -1,4 +1,5 @@
-import {PartitionKeyRange} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {PartitionKeyRange} from '../../graphql/types-do-not-use';
 import {AssetKey} from '../types';
 
 export type NoConditionsMetEvaluation = {

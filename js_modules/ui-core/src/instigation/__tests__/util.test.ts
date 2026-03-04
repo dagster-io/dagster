@@ -1,4 +1,5 @@
-import {InstigationTickStatus, buildInstigationTick} from '../../graphql/types';
+import {buildInstigationTick} from '../../graphql/builders';
+import {InstigationTickStatus} from '../../graphql/types';
 import {isStuckStartedTick} from '../util';
 
 const DAY = 1000 * 60 * 60 * 24;

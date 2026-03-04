@@ -16,7 +16,7 @@ import {
   AUTOMATERIALIZE_PAUSED_QUERY,
   SET_AUTOMATERIALIZE_PAUSED_MUTATION,
 } from '../../assets/useAutomaterializeDaemonStatus';
-import {buildDaemonStatus, buildInstance} from '../../graphql/types';
+import {buildDaemonStatus, buildInstance} from '../../graphql/builders';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {DaemonList} from '../DaemonList';
 

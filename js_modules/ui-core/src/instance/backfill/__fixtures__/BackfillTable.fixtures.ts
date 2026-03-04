@@ -1,8 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  BulkActionStatus,
-  RunStatus,
   buildAssetKey,
   buildErrorChainLink,
   buildPartitionBackfill,
@@ -12,7 +10,8 @@ import {
   buildQuery,
   buildRepositoryOrigin,
   buildRun,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
+import {BulkActionStatus, RunStatus} from '../../../graphql/types';
 import {DagsterTag} from '../../../runs/RunTag';
 import {SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY} from '../BackfillRow';
 import {SingleBackfillQuery} from '../types/BackfillRow.types';

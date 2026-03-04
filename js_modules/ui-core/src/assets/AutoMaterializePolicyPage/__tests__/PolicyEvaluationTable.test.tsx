@@ -5,7 +5,7 @@ import {
   buildAutomationConditionEvaluationNode,
   buildPartitionedAssetConditionEvaluationNode,
   buildUnpartitionedAssetConditionEvaluationNode,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
 
 describe('PolicyEvaluationTable', () => {

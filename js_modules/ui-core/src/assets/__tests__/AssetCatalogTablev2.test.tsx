@@ -12,8 +12,6 @@ import {
 } from '../../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
 import {
-  AssetHealthStatus,
-  AssetKey,
   buildAsset,
   buildAssetConnection,
   buildAssetHealth,
@@ -24,7 +22,10 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {AssetHealthStatus} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetKey} from '../../graphql/types-do-not-use';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';

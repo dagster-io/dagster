@@ -3,14 +3,17 @@ import {useState} from 'react';
 
 import {assertUnreachable} from '../../app/Util';
 import {
+  buildLocalFileCodeReference,
+  buildPoolMetadataEntry,
+  buildUrlCodeReference,
+} from '../../graphql/builders';
+// eslint-disable-next-line no-restricted-imports
+import {
   BoolMetadataEntry,
   IntMetadataEntry,
   JsonMetadataEntry,
   TableSchemaMetadataEntry,
-  buildLocalFileCodeReference,
-  buildPoolMetadataEntry,
-  buildUrlCodeReference,
-} from '../../graphql/types';
+} from '../../graphql/types-do-not-use';
 import {MetadataEntries} from '../MetadataEntry';
 import {MetadataEntryFragment} from '../types/MetadataEntryFragment.types';
 

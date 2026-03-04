@@ -1,4 +1,8 @@
-import {buildAssetKey, buildMaterializationEvent, buildObservationEvent} from '../../graphql/types';
+import {
+  buildAssetKey,
+  buildMaterializationEvent,
+  buildObservationEvent,
+} from '../../graphql/builders';
 import {RecentUpdatesTimeline} from '../RecentUpdatesTimeline';
 
 // eslint-disable-next-line import/no-default-export

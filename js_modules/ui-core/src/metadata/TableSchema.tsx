@@ -17,14 +17,15 @@ import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
+import {AssetKeyInput} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
 import {
-  AssetKeyInput,
   CodeReferencesMetadataEntry,
   TableColumnLineageMetadataEntry,
   TableSchemaMetadataEntry,
   TextMetadataEntry,
   UrlMetadataEntry,
-} from '../graphql/types';
+} from '../graphql/types-do-not-use';
 import {Description} from '../pipelines/Description';
 import {buildTagString} from '../ui/tagAsString';
 

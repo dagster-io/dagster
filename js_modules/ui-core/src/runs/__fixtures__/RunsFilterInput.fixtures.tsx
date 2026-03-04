@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {buildPipelineTagAndValues, buildRunTags} from '../../graphql/types';
+import {buildPipelineTagAndValues, buildRunTags} from '../../graphql/builders';
 import {DagsterTag} from '../RunTag';
 import {RUN_TAG_VALUES_QUERY} from '../RunsFilterInput';
 import {RunTagValuesQuery} from '../types/RunsFilterInput.types';

@@ -16,7 +16,8 @@ import {
   GetEvaluationsSpecificPartitionQueryVariables,
 } from './types/GetEvaluationsQuery.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {EntityKey} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {EntityKey} from '../../graphql/types-do-not-use';
 import {AssetKey} from '../types';
 import {EvaluationHistoryStackItem} from './types';
 

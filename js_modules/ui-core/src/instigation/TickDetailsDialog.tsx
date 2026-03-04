@@ -28,11 +28,12 @@ import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {
-  DynamicPartitionsRequestResult,
   DynamicPartitionsRequestType,
   InstigationSelector,
   InstigationTickStatus,
 } from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {DynamicPartitionsRequestResult} from '../graphql/types-do-not-use';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickResultType} from '../ticks/TickStatusTag';
 

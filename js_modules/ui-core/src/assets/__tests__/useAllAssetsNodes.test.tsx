@@ -1,7 +1,7 @@
 import {renderHook} from '@testing-library/react';
 import {useContext} from 'react';
 
-import {buildAssetKey} from '../../graphql/types';
+import {buildAssetKey} from '../../graphql/builders';
 import {WorkspaceContext} from '../../workspace/WorkspaceContext/WorkspaceContext';
 
 // Mock WorkspaceContext

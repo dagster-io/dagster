@@ -6,7 +6,8 @@ import React from 'react';
 import {AssetHealthData, useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
-import {AssetKeyInput, buildAsset, buildAssetKey, buildAssetRecord} from '../../graphql/types';
+import {buildAsset, buildAssetKey, buildAssetRecord} from '../../graphql/builders';
+import {AssetKeyInput} from '../../graphql/types';
 import {
   SelectionHealthDataProvider,
   useSelectionFilterData,

@@ -2,12 +2,8 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 
-import {
-  InstigationStatus,
-  buildInstigationState,
-  buildSchedule,
-  buildSensor,
-} from '../../graphql/types';
+import {buildInstigationState, buildSchedule, buildSensor} from '../../graphql/builders';
+import {InstigationStatus} from '../../graphql/types';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {ScheduleOrSensorTag} from '../ScheduleOrSensorTag';
 

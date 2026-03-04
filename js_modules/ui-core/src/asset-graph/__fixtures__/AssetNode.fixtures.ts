@@ -1,13 +1,5 @@
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  AssetHealth,
-  AssetHealthStatus,
-  ChangeReason,
-  RunStatus,
-  StaleCauseCategory,
-  StaleStatus,
   buildAsset,
   buildAssetCheck,
   buildAssetCheckEvaluation,
@@ -28,7 +20,18 @@ import {
   buildStaleCause,
   buildTeamAssetOwner,
   buildUserAssetOwner,
+} from '../../graphql/builders';
+import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+  AssetHealthStatus,
+  ChangeReason,
+  RunStatus,
+  StaleCauseCategory,
+  StaleStatus,
 } from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetHealth} from '../../graphql/types-do-not-use';
 import {LiveDataForNodeWithStaleData} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
 

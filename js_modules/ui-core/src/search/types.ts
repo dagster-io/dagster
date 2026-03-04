@@ -1,7 +1,8 @@
 import Fuse from 'fuse.js';
 
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
-import {AssetKey, DefinitionTag} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetKey, DefinitionTag} from '../graphql/types-do-not-use';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesQuery.types';
 import {
   WorkspaceAssetGroupFragment,

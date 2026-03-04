@@ -9,7 +9,9 @@ import {AssetHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
-import {StaleCause, buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
+import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/builders';
+// eslint-disable-next-line no-restricted-imports
+import {StaleCause} from '../../graphql/types-do-not-use';
 import {AssetNode} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {tokenForAssetKey} from '../Utils';

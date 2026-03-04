@@ -1,9 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  InstigationStatus,
-  RunRequest,
-  RunStatus,
   buildDryRunInstigationTick,
   buildErrorChainLink,
   buildInstigationState,
@@ -17,7 +14,10 @@ import {
   buildSensor,
   buildSensorData,
   buildTickEvaluation,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {InstigationStatus, RunStatus} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {RunRequest} from '../../graphql/types-do-not-use';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';

@@ -2,7 +2,7 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {PERMISSIONS_QUERY} from '../../app/Permissions';
 import {PermissionsQuery} from '../../app/types/Permissions.types';
-import {buildPermission} from '../../graphql/types';
+import {buildPermission} from '../../graphql/builders';
 
 export const buildPermissionsQuery = (canReload: boolean): MockedResponse<PermissionsQuery> => {
   return {

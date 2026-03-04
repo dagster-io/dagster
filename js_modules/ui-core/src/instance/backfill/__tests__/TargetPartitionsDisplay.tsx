@@ -1,7 +1,10 @@
 import {render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import {buildAssetBackfillTargetPartitions, buildPartitionKeyRange} from '../../../graphql/types';
+import {
+  buildAssetBackfillTargetPartitions,
+  buildPartitionKeyRange,
+} from '../../../graphql/builders';
 import {TargetPartitionsDisplay} from '../TargetPartitionsDisplay';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.

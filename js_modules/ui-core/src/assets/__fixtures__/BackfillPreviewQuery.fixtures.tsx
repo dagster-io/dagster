@@ -6,7 +6,7 @@ import {
   buildAssetPartitions,
   buildPartitionKeyRange,
   buildQuery,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {BACKFILL_PREVIEW_QUERY} from '../BackfillPreviewDialog';
 import {
   BackfillPreviewQuery,

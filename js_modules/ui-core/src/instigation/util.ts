@@ -1,9 +1,6 @@
-import {
-  DynamicPartitionsRequestResult,
-  DynamicPartitionsRequestType,
-  InstigationTick,
-  InstigationTickStatus,
-} from '../graphql/types';
+import {DynamicPartitionsRequestType, InstigationTickStatus} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {DynamicPartitionsRequestResult, InstigationTick} from '../graphql/types-do-not-use';
 
 const TRUNCATION_THRESHOLD = 100;
 const TRUNCATION_BUFFER = 5;

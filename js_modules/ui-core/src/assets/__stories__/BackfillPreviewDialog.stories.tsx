@@ -5,7 +5,7 @@ import {
   buildAssetNode,
   buildBackfillPolicy,
   buildPartitionDefinition,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {BackfillPreviewDialog} from '../BackfillPreviewDialog';
 import {
   BackfillPreviewQueryMock,

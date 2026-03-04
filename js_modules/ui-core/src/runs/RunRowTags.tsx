@@ -17,7 +17,8 @@ import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {PipelineTag} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {PipelineTag} from '../graphql/types-do-not-use';
 import {CopyButton} from '../ui/CopyButton';
 
 export const RunRowTags = ({

@@ -3,7 +3,7 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import * as CustomAlertProvider from '../../app/CustomAlertProvider';
-import {buildUnauthorizedError} from '../../graphql/types';
+import {buildUnauthorizedError} from '../../graphql/builders';
 import {CreatePartitionDialog} from '../CreatePartitionDialog';
 import {
   buildCreatePartitionFixture,

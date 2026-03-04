@@ -8,12 +8,14 @@ const config: CodegenConfig = {
     afterAllFileWrite: ['prettier --write'],
   },
   generates: {
-    './src/graphql/types.ts': {
+    // To be deleted once existing imports are updated to use fragments.
+    './src/graphql/types-do-not-use.ts': {
       config: {
         nonOptionalTypename: true,
         avoidOptionals: {
           field: true,
         },
+        enumValues: './types',
         dedupeFragments: true,
         namingConvention: {
           enumValues: 'keep',
@@ -27,13 +29,51 @@ const config: CodegenConfig = {
             content: `// Generated GraphQL types, do not edit manually.\n`,
           },
         },
+      ],
+    },
+    './src/graphql/types.ts': {
+      config: {
+        onlyOperationTypes: true,
+        namingConvention: {
+          enumValues: 'keep',
+        },
+      },
+      plugins: [
+        'typescript',
+        {
+          add: {
+            content: `// Generated GraphQL enums, do not edit manually.\n`,
+          },
+        },
+      ],
+    },
+    './src/graphql/builders.ts': {
+      config: {
+        nonOptionalTypename: true,
+        avoidOptionals: {
+          field: true,
+        },
+        enumValues: './types',
+        dedupeFragments: true,
+        namingConvention: {
+          enumValues: 'keep',
+        },
+        useImplementingTypes: true,
+        noExport: true,
+      },
+      plugins: [
+        'typescript',
+        {
+          add: {
+            content: `// Generated GraphQL builders, do not edit manually.\n`,
+          },
+        },
         {
           'typescript-mock-data': {
             addTypename: true,
             prefix: 'build',
-            listElementCount: 0,
-            typeNames: 'keep',
             enumValues: 'keep',
+            listElementCount: 0,
             terminateCircularRelationships: true,
             useImplementingTypes: true,
           },

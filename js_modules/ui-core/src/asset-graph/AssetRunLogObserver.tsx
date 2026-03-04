@@ -5,7 +5,8 @@ import {
   AssetLiveRunLogsSubscription,
   AssetLiveRunLogsSubscriptionVariables,
 } from './types/AssetRunLogObserver.types';
-import {AssetKey} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetKey} from '../graphql/types-do-not-use';
 
 const OBSERVED_RUNS_CHANGED = 'observed-runs-changed';
 

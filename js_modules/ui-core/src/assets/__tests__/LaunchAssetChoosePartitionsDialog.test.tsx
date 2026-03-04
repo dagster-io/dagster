@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 
 import {
-  PartitionDefinitionType,
   buildAddDynamicPartitionSuccess,
   buildAssetKey,
   buildAssetNode,
@@ -12,7 +11,8 @@ import {
   buildDimensionPartitionKeys,
   buildMultiPartitionStatuses,
   buildPartitionDefinition,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {PartitionDefinitionType} from '../../graphql/types';
 import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
 import {
   AddDynamicPartitionMutation,

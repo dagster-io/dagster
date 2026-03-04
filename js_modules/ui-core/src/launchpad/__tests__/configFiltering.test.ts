@@ -3,7 +3,7 @@ import {
   buildConfigTypeField,
   buildPipelineNotFoundError,
   buildRunConfigSchema,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {
   filterDefaultYamlForSubselection,
   filterDefaultYamlOptionalResources,

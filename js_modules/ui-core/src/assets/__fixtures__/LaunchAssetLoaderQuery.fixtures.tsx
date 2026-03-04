@@ -1,8 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  AssetNode,
-  PartitionDefinitionType,
   buildAssetKey,
   buildAssetNode,
   buildConfigTypeField,
@@ -12,7 +10,10 @@ import {
   buildRegularConfigType,
   buildRepository,
   buildRepositoryLocation,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {PartitionDefinitionType} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetNode} from '../../graphql/types-do-not-use';
 import {LAUNCH_ASSET_LOADER_QUERY} from '../LaunchAssetExecutionButton';
 import {LaunchAssetLoaderQuery} from '../types/LaunchAssetExecutionButton.types';
 

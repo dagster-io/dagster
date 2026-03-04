@@ -3,7 +3,8 @@ import * as React from 'react';
 
 import {CodeLinkProtocolContext, ProtocolData} from './CodeLinkProtocol';
 import {assertUnreachable} from '../app/Util';
-import {SourceLocation} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {SourceLocation} from '../graphql/types-do-not-use';
 
 const getCodeReferenceIcon = (codeReference: SourceLocation): IconName => {
   switch (codeReference.__typename) {

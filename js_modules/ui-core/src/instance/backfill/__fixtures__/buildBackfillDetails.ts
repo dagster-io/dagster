@@ -1,6 +1,8 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {PartitionBackfill, buildPartitionBackfill} from '../../../graphql/types';
+import {buildPartitionBackfill} from '../../../graphql/builders';
+// eslint-disable-next-line no-restricted-imports
+import {PartitionBackfill} from '../../../graphql/types-do-not-use';
 import {BackfillDetailsQuery} from '../types/useBackfillDetailsQuery.types';
 import {BACKFILL_DETAILS_QUERY} from '../useBackfillDetailsQuery';
 

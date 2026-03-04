@@ -10,7 +10,7 @@ import {
   buildRepositoryLocation,
   buildRunTagKeys,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {calculateTimeRanges} from '../../ui/BaseFilters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';

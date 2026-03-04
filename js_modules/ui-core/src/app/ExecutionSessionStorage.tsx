@@ -2,7 +2,9 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 
 import {AppContext} from './AppContext';
-import {AssetCheck, AssetKeyInput} from '../graphql/types';
+import {AssetKeyInput} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetCheck} from '../graphql/types-do-not-use';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {

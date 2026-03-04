@@ -1,7 +1,8 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {isKindTag} from '../graph/KindTags';
-import {AssetOwner, DefinitionTag} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetOwner, DefinitionTag} from '../graphql/types-do-not-use';
 import {buildTagString} from '../ui/tagAsString';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';

@@ -6,7 +6,9 @@ import {
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
-import {AssetCheckhandle, AssetConditionEvaluationStatus, EntityKey} from '../../graphql/types';
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetCheckhandle, EntityKey} from '../../graphql/types-do-not-use';
 
 export type FlattenedConditionEvaluation<T> = {
   evaluation: T;

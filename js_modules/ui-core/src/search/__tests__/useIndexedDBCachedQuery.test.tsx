@@ -9,7 +9,7 @@ import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from '../../assets/types/AssetsCatalogTable.types';
-import {buildAssetConnection} from '../../graphql/types';
+import {buildAssetConnection} from '../../graphql/builders';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {cache as _cache} from '../../util/idb-lru-cache';
 import {__resetForJest, useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';

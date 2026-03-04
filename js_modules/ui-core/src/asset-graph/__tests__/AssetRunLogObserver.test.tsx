@@ -6,7 +6,7 @@ import {
   buildMaterializationEvent,
   buildPipelineRunLogsSubscriptionSuccess,
   buildSubscription,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {
   ASSET_LIVE_RUN_LOGS_SUBSCRIPTION,
   AssetRunLogObserver,

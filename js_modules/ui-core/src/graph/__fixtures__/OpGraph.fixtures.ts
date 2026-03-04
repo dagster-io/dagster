@@ -11,7 +11,7 @@ import {
   buildRegularDagsterType,
   buildSolid,
   buildSolidDefinition,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {OpGraphOpFragment} from '../types/OpGraph.types';
 
 const IO_TYPE = buildRegularDagsterType({

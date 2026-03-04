@@ -6,7 +6,9 @@ import {
 } from './types/useColumnLineageDataForAssets.types';
 import {gql, useApolloClient} from '../../apollo-client';
 import {toGraphId} from '../../asset-graph/Utils';
-import {AssetKeyInput, DefinitionTag, TableColumnLineageMetadataEntry} from '../../graphql/types';
+import {AssetKeyInput} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {DefinitionTag, TableColumnLineageMetadataEntry} from '../../graphql/types-do-not-use';
 import {isCanonicalColumnLineageEntry} from '../../metadata/TableSchema';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';

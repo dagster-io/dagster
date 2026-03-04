@@ -5,10 +5,6 @@ import {ReactNode} from 'react';
 
 import {AppContext, AppContextValue} from '../../app/AppContext';
 import {
-  InstigationStatus,
-  RepositoryLocationLoadStatus,
-  RunStatus,
-  RunsFilter,
   buildDryRunInstigationTick,
   buildDryRunInstigationTicks,
   buildInstigationState,
@@ -22,6 +18,12 @@ import {
   buildSchedule,
   buildWorkspace,
   buildWorkspaceLocationEntry,
+} from '../../graphql/builders';
+import {
+  InstigationStatus,
+  RepositoryLocationLoadStatus,
+  RunStatus,
+  RunsFilter,
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache/HourlyDataCache';

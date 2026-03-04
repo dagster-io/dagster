@@ -1,7 +1,8 @@
 import {render, screen} from '@testing-library/react';
 
 import {TimeProvider} from '../../app/time/TimeContext';
-import {RunStatus, buildRun} from '../../graphql/types';
+import {buildRun} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
 import {RunTimingDetails} from '../RunTimingDetails';
 
 jest.mock('../../app/time/browserTimezone.ts', () => ({

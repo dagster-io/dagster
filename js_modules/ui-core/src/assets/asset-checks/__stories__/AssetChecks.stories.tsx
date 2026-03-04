@@ -8,7 +8,7 @@ import {
   buildAssetChecks,
   buildAssetKey,
   buildAssetNode,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 import {AssetFeatureProvider} from '../../AssetFeatureContext';
 import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {ASSET_CHECK_DETAILS_QUERY} from '../AssetCheckDetailDialog';

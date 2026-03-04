@@ -4,11 +4,6 @@ import without from 'lodash/without';
 import {generateDailyTimePartitions} from './PartitionHealthSummary.fixtures';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {
-  AssetKeyInput,
-  LaunchBackfillParams,
-  PartitionDefinitionType,
-  PartitionRangeStatus,
-  Query,
   buildAssetCheck,
   buildAssetChecks,
   buildAssetKey,
@@ -39,7 +34,15 @@ import {
   buildRunLauncher,
   buildTimePartitionRangeStatus,
   buildTimePartitionStatuses,
+} from '../../graphql/builders';
+import {
+  AssetKeyInput,
+  LaunchBackfillParams,
+  PartitionDefinitionType,
+  PartitionRangeStatus,
 } from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {Query} from '../../graphql/types-do-not-use';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {CONFIG_PARTITION_FOR_ASSET_JOB_QUERY} from '../../launchpad/ConfigFetch';

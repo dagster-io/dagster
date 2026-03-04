@@ -1,7 +1,8 @@
 import qs from 'qs';
 
 import {GroupMetadata} from './BuildAssetSearchResults';
-import {AssetOwner, DefinitionTag} from '../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetOwner, DefinitionTag} from '../graphql/types-do-not-use';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';

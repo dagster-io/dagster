@@ -5,7 +5,10 @@ import {act, render, waitFor} from '@testing-library/react';
 import {GraphQLError} from 'graphql/error';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
-import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
+import {buildAssetKey} from '../../graphql/builders';
+import {AssetKeyInput} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetKey} from '../../graphql/types-do-not-use';
 import {LiveDataThreadID} from '../../live-data-provider/LiveDataThread';
 import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../../live-data-provider/util';
 import {getMockResultFn} from '../../testing/mocking';

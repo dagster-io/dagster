@@ -7,8 +7,6 @@ import {buildPartitionHealthMock} from '../../assets/__fixtures__/PartitionHealt
 import {RecentAssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
 import {RECENT_ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
-  AssetNode,
-  RunStatus,
   buildAssetLatestInfo,
   buildAssetNode,
   buildAssetResultEventHistoryConnection,
@@ -23,7 +21,10 @@ import {
   buildRun,
   buildRunNotFoundError,
   buildSolidDefinition,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetNode} from '../../graphql/types-do-not-use';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';

@@ -23,12 +23,12 @@ import {
 import {assertUnreachable} from '../../app/Util';
 import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
-  AssetCheckEvaluation,
-  AssetCheckExecution,
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
   AssetKeyInput,
 } from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {AssetCheckEvaluation, AssetCheckExecution} from '../../graphql/types-do-not-use';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {TagAction, TagActionsPopover} from '../../ui/TagActions';

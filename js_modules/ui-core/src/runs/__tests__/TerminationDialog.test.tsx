@@ -5,14 +5,15 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 
 import {
-  TerminateRunPolicy,
-  TerminateRunsResultOrError,
   buildPythonError,
   buildRun,
   buildTerminateRunFailure,
   buildTerminateRunSuccess,
   buildTerminateRunsResult,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {TerminateRunPolicy} from '../../graphql/types';
+// eslint-disable-next-line no-restricted-imports
+import {TerminateRunsResultOrError} from '../../graphql/types-do-not-use';
 import {TERMINATE_MUTATION} from '../RunUtils';
 import {TerminationDialog, Props as TerminationDialogProps} from '../TerminationDialog';
 import {TerminateMutation, TerminateMutationVariables} from '../types/RunUtils.types';
