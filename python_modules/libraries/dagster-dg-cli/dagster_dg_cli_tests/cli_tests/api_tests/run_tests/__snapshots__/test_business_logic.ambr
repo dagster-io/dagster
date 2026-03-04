@@ -76,6 +76,82 @@
   Pipeline: my_pipeline
   '''
 # ---
+# name: TestFormatRunsList.test_format_runs_list_empty_json[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+    ]),
+    'total': 0,
+  })
+# ---
+# name: TestFormatRunsList.test_format_runs_list_empty_text[0]
+  'No runs found.'
+# ---
+# name: TestFormatRunsList.test_format_runs_list_json[0]
+  dict({
+    'cursor': 'run-003',
+    'has_more': False,
+    'items': list([
+      dict({
+        'created_at': 1705311000.0,
+        'ended_at': 1705311900.0,
+        'id': 'run-001',
+        'job_name': 'my_pipeline',
+        'started_at': 1705311060.0,
+        'status': 'SUCCESS',
+      }),
+      dict({
+        'created_at': 1705312000.0,
+        'ended_at': 1705312180.0,
+        'id': 'run-002',
+        'job_name': 'failing_pipeline',
+        'started_at': 1705312060.0,
+        'status': 'FAILURE',
+      }),
+      dict({
+        'created_at': 1705313000.0,
+        'ended_at': None,
+        'id': 'run-003',
+        'job_name': None,
+        'started_at': None,
+        'status': 'QUEUED',
+      }),
+    ]),
+    'total': 3,
+  })
+# ---
+# name: TestFormatRunsList.test_format_runs_list_text[0]
+  '''
+  Run ID: run-001
+  Status: SUCCESS
+  Job: my_pipeline
+  Created: 1705311000.0
+  
+  Run ID: run-002
+  Status: FAILURE
+  Job: failing_pipeline
+  Created: 1705312000.0
+  
+  Run ID: run-003
+  Status: QUEUED
+  Job: N/A
+  Created: 1705313000.0
+  
+  Total: 3
+  '''
+# ---
+# name: TestFormatRunsList.test_format_runs_list_with_pagination[0]
+  '''
+  Run ID: run-001
+  Status: SUCCESS
+  Job: my_pipeline
+  Created: 1705311000.0
+  
+  Total: 100
+  Note: More runs available (use --limit to increase or --cursor to paginate)
+  '''
+# ---
 # name: TestRunDataProcessing.test_run_creation_with_all_fields[0]
   dict({
     'created_at': 1705311000.0,

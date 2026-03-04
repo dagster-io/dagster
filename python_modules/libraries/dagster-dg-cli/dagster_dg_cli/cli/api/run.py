@@ -2,6 +2,7 @@
 
 import datetime
 import json
+from typing import Final
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -12,6 +13,8 @@ from dagster_shared.plus.config_utils import dg_api_options
 from dagster_dg_cli.api_layer.api.run_event import DgApiRunEventApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.utils import dg_api_response_schema
+
+DG_API_MAX_RUN_LIMIT: Final = 1000
 
 
 def format_run_table(run) -> str:
@@ -112,6 +115,114 @@ def format_logs_json(events, run_id: str) -> str:
         },
         indent=2,
     )
+
+
+def format_runs_list(runs_list, as_json: bool) -> str:
+    """Format run list for output."""
+    if as_json:
+        return runs_list.model_dump_json(indent=2)
+
+    if not runs_list.items:
+        return "No runs found."
+
+    lines = []
+    for run in runs_list.items:
+        lines.extend(
+            [
+                f"Run ID: {run.id}",
+                f"Status: {run.status.value}",
+                f"Job: {run.job_name or 'N/A'}",
+                f"Created: {run.created_at}",
+                "",  # Empty line between runs
+            ]
+        )
+
+    lines.append(f"Total: {runs_list.total}")
+    if runs_list.has_more:
+        lines.append("Note: More runs available (use --limit to increase or --cursor to paginate)")
+
+    return "\n".join(lines).rstrip()
+
+
+@click.command(name="list", cls=DgClickCommand)
+@click.option(
+    "--limit",
+    type=click.IntRange(1, DG_API_MAX_RUN_LIMIT),
+    default=50,
+    help=f"Number of runs to return (default: 50, max: {DG_API_MAX_RUN_LIMIT})",
+)
+@click.option(
+    "--cursor",
+    type=str,
+    help="Cursor for pagination (run ID)",
+)
+@click.option(
+    "--status",
+    "statuses",
+    multiple=True,
+    type=click.Choice(
+        ["QUEUED", "STARTING", "STARTED", "SUCCESS", "FAILURE", "CANCELING", "CANCELED"],
+        case_sensitive=False,
+    ),
+    help="Filter by run status. Repeatable.",
+)
+@click.option(
+    "--job",
+    "job_name",
+    type=str,
+    help="Filter by job name",
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output in JSON format for machine readability",
+)
+@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRunList")
+@dg_api_options(deployment_scoped=True)
+@cli_telemetry_wrapper
+@click.pass_context
+def list_runs_command(
+    ctx: click.Context,
+    limit: int,
+    cursor: str,
+    statuses: tuple[str, ...],
+    job_name: str | None,
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
+    view_graphql: bool,
+) -> None:
+    """List runs with optional filtering and pagination."""
+    from dagster_dg_cli.api_layer.api.run import DgApiRunApi
+
+    config = DagsterPlusCliConfig.create_for_deployment(
+        deployment=deployment,
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
+    api = DgApiRunApi(client)
+
+    try:
+        # Normalize statuses to uppercase
+        normalized_statuses = tuple(s.upper() for s in statuses)
+        runs = api.list_runs(
+            limit=limit,
+            cursor=cursor,
+            statuses=normalized_statuses,
+            job_name=job_name,
+        )
+        output = format_runs_list(runs, as_json=output_json)
+        click.echo(output)
+    except Exception as e:
+        if output_json:
+            error_response = {"error": str(e)}
+            click.echo(json.dumps(error_response), err=True)
+        else:
+            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
+        raise click.ClickException(f"Failed to list runs: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -256,6 +367,7 @@ def get_events_run_command(
     name="run",
     cls=DgClickGroup,
     commands={
+        "list": list_runs_command,
         "get": get_run_command,
         "get-events": get_events_run_command,
     },
