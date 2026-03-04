@@ -28,7 +28,7 @@ Quickly identify which pipelines are running smoothly and which need attention w
 
 ### Compass AI assistant (Dagster+)
 
-Compass analyzes run logs, identifies root causes of failures, and suggests debugging steps. Trigger a summary from any completed run, then ask follow-up questions in a conversational chat interface. For more information, see the [Compass AI assistant guide](/guides/observe/compass-ai-assistant).
+Compass analyzes run logs, identifies root causes of failures, and suggests debugging steps. Trigger a summary from any completed run or from a degraded asset on the home page, then ask follow-up questions in a conversational chat interface. For more information, see the [Compass AI assistant guide](/guides/observe/compass-ai-assistant).
 
 ### Insights (Dagster+)
 

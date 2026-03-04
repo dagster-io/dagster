@@ -1,6 +1,6 @@
 ---
 title: Compass AI assistant (Dagster+)
-description: Use the Compass AI assistant to generate plain-language summaries of run failures in Dagster+.
+description: Use the Compass AI assistant to generate plain-language summaries of run failures and degraded asset materializations in Dagster+.
 sidebar_position: 400
 tags: [dagster-plus-feature]
 ---
@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Compass is the Dagster+ AI assistant. It analyzes run logs, identifies root causes of failures, suggests debugging steps, and lets you ask follow-up questions in a conversational chat interface.
+Compass is the Dagster+ AI assistant. It analyzes run logs, identifies root causes of failures, suggests debugging steps, and lets you ask follow-up questions in a conversational chat interface. You can trigger Compass from any completed run or directly from a degraded asset on the home page.
 
 ## Prerequisites
 
@@ -22,6 +22,20 @@ From a row in the runs list or on a run detail page, open the menu and click **S
 The **Summarize with AI** option is only available for completed runs and will be disabled while a run is in progress.
 
 ![The run actions menu with the Summarize with AI option](/images/dagster-cloud/compass-run-menu.png)
+
+## Generate a summary for a degraded asset
+
+You can also generate a summary for a failed asset materialization directly from the **Asset Health** section of the **Home** page by clicking the **Summarize with AI** button in the row's action controls.
+
+![The Summarize with AI button in the Asset Health section of the Home page](/images/dagster-cloud/degraded-asset-compass-trigger.png)
+
+Compass automatically finds the most recent failed run for the selected asset and generates a summary focused on that asset's failure type, root cause, and debugging steps. For partitioned assets, the summary also includes the number of failed partitions and which partition ranges were affected.
+
+After you trigger the summary, Compass opens a panel with a root cause analysis and debugging steps for the selected asset.
+
+![A Compass conversation showing a root cause analysis for a degraded asset](/images/dagster-cloud/degraded-asset-compass-conversation.png)
+
+## Read the summary
 
 After you trigger a summary, Compass opens as a side panel and begins streaming results. Compass will search run logs and other artifacts to gather context and then return a summary of the steps, root causes, and debugging steps. After the initial summary loads, you can drill down with follow-up questions. Compass maintains the full conversation context across messages.
  
