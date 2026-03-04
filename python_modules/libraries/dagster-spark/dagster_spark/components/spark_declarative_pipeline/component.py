@@ -42,7 +42,12 @@ def _resolve_spark_pipelines_resource(_context: Any, value: Any) -> SparkPipelin
         return value
     if value is None:
         return SparkPipelinesResource()
-    return SparkPipelinesResource(**value) if isinstance(value, dict) else SparkPipelinesResource()
+    if isinstance(value, dict):
+        return SparkPipelinesResource(**value)
+    raise ValueError(
+        f"Cannot resolve spark_pipelines field: expected a SparkPipelinesResource, dict, or None, "
+        f"got {type(value).__name__!r}: {value!r}"
+    )
 
 
 @scaffold_with(SparkDeclarativePipelineScaffolder)
