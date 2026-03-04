@@ -49,18 +49,18 @@ class DbtProjectPreparer:
 class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
-        generate_cli_args: Sequence[str] | None = None,
+        prepare_project_cli_args: Sequence[str] | None = None,
     ):
         """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
             * When deploying, expect a manifest that was created at build time to reduce start-up time.
 
         Args:
-            generate_cli_args (Sequence[str]):
+            prepare_project_cli_args (Sequence[str]):
                 The arguments to pass to the dbt cli to generate a manifest.json.
                 Default: ["parse", "--quiet"]
         """
-        self._generate_cli_args = generate_cli_args or ["parse", "--quiet"]
+        self._prepare_project_cli_args = prepare_project_cli_args or ["parse", "--quiet"]
 
     @public
     def prepare_if_dev(self, project: "DbtProject"):
@@ -125,7 +125,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         (
             DbtCliResource(project_dir=project)
             .cli(
-                self._generate_cli_args,
+                self._prepare_project_cli_args,
                 target_path=project.target_path,
             )
             .wait()
@@ -263,6 +263,7 @@ class DbtProject(IHaveNew):
         target: str | None = None,
         packaged_project_dir: Path | str | None = None,
         state_path: Path | str | None = None,
+        prepare_project_cli_args: Sequence[str] | None = None,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():
@@ -281,7 +282,7 @@ class DbtProject(IHaveNew):
                 f"profiles {profiles_dir} does not exist."
             )
 
-        preparer = DagsterDbtProjectPreparer()
+        preparer = DagsterDbtProjectPreparer(prepare_project_cli_args=prepare_project_cli_args)
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 

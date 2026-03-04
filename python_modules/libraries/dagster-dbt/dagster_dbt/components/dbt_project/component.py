@@ -73,6 +73,7 @@ class DbtProjectArgs(dg.Resolvable):
     target: str | None = None
     packaged_project_dir: str | None = None
     state_path: str | None = None
+    prepare_project_cli_args: list[str] | None = None
 
 
 def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
@@ -140,6 +141,10 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                     "project_dir": "path/to/dbt_project",
                     "profile": "your_profile",
                     "target": "your_target",
+                },
+                {
+                    "project_dir": "path/to/dbt_project",
+                    "prepare_project_cli_args": ["compile", "--quiet"],
                 },
             ],
         ),
