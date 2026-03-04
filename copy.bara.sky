@@ -4,13 +4,13 @@ Copybara configuration for syncing commits from dagster-io/dagster master to dag
 
 def _skip_synced_from_internal(ctx):
     """Skip commits that originated from dagster-io/internal so we don't double-commit them."""
-    if "\nSynced-From-Internal" in ctx.message or ctx.find_label("Internal-RevId"):
+    if ctx.find_label("Internal-RevId"):
         core.fail_with_noop("Skipping commit that originated from dagster-io/internal.")
 
 core.workflow(
     name="sync-internal",
     origin = git.origin(
-        url =  "file:///workspace/build/buildkite/dagster/copybara-dagster-sync",
+        url =  "file:///workspace/build/buildkite/dagster/copybara-dagster-to-internal",
         ref = "master",
     ),
     destination = git.destination(
