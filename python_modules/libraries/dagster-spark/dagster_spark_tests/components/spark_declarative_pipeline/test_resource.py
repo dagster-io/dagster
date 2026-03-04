@@ -120,6 +120,9 @@ def test_run_and_observe_yields_nothing_when_no_asset_keys() -> None:
     mock_context.log.info.assert_any_call(
         "No specific asset keys requested; spark-pipelines run completed successfully."
     )
+    # Incremental run with no asset_keys must not append --refresh (bare run = full pipeline)
+    call_cmd = mock_popen.call_args[0][0]
+    assert "--refresh" not in call_cmd
 
 
 def test_run_and_observe_passes_dot_notation_datasets_to_cli() -> None:

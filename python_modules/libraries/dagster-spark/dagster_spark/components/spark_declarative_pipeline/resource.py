@@ -105,14 +105,17 @@ class SparkPipelinesResource(ConfigurableResource):
         if execution_mode == "full_refresh":
             if asset_keys:
                 cmd.append("--full-refresh")
+                datasets_str = ",".join(".".join(k.path) for k in asset_keys)
+                if datasets_str:
+                    cmd.append(datasets_str)
             else:
                 cmd.append("--full-refresh-all")
         else:
-            cmd.append("--refresh")
-        if asset_keys:
-            datasets_str = ",".join(".".join(k.path) for k in asset_keys)
-            if datasets_str:
-                cmd.append(datasets_str)
+            if asset_keys:
+                cmd.append("--refresh")
+                datasets_str = ",".join(".".join(k.path) for k in asset_keys)
+                if datasets_str:
+                    cmd.append(datasets_str)
         cmd.extend(self.run_extra_args)
         if extra_args:
             cmd.extend(extra_args)

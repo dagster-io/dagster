@@ -7,7 +7,7 @@ that runs spark-pipelines run and yields MaterializeResults.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Literal
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec, Definitions, deserialize_value, serialize_value
@@ -62,7 +62,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         SparkPipelinesResource,
         Resolver(_resolve_spark_pipelines_resource),
     ] = field(default_factory=SparkPipelinesResource)
-    op: Optional[OpSpec] = None
+    op: OpSpec | None = None
     execution_mode: ExecutionMode = "incremental"
     discovery_mode: DiscoveryMode = "dry_run_with_fallback"
     asset_attributes_by_dataset: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -127,8 +127,8 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
 
     def build_defs_from_state(
         self,
-        load_context: ComponentLoadContext,
-        state_path: Optional[Path],
+        context: ComponentLoadContext,
+        state_path: Path | None,
     ) -> Definitions:
         """Build Definitions with a multi_asset that runs spark_pipelines.run_and_observe.
 
@@ -137,7 +137,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         can_subset=True that yields MaterializeResults via run_and_observe.
 
         Args:
-            load_context: Component load context (path, etc.).
+            context: Component load context (path, etc.).
             state_path: Path to serialized state file; if None or missing, returns empty Definitions.
 
         Returns:
@@ -166,10 +166,10 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
         pipeline_spec_path = state.pipeline_spec_path
         # Resolve path relative to component path
         if not Path(pipeline_spec_path).is_absolute():
-            resolved_spec_path = (load_context.path / Path(pipeline_spec_path)).resolve()
+            resolved_spec_path = (context.path / Path(pipeline_spec_path)).resolve()
         else:
             resolved_spec_path = Path(pipeline_spec_path)
-        working_dir = load_context.path
+        working_dir = context.path
         execution_mode = self.execution_mode
 
         @dg.multi_asset(
@@ -181,22 +181,23 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             pool=op_spec.pool,
         )
         def _spark_pipeline_asset(
-            context: dg.AssetExecutionContext,
+            _context: dg.AssetExecutionContext,
             spark_pipelines: SparkPipelinesResource,
         ) -> Any:
             # When the entire graph is executed (not a subset), pass keys=None to allow
             # --full-refresh-all and avoid OS argument length limits.
-            is_subset = getattr(context, "is_subset", True)
+            # Inner param _context avoids shadowing outer context (ComponentLoadContext);
+            is_subset = getattr(_context, "is_subset", True)
             if is_subset:
                 keys = (
-                    list(context.selected_asset_keys)
-                    if context.selected_asset_keys
+                    list(_context.selected_asset_keys)
+                    if _context.selected_asset_keys
                     else [s.key for s in asset_specs]
                 )
             else:
                 keys = None
             yield from spark_pipelines.run_and_observe(
-                context=context,
+                context=_context,
                 pipeline_spec_path=resolved_spec_path,
                 working_dir=working_dir,
                 execution_mode=execution_mode,
