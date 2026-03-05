@@ -17,6 +17,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import preview
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
@@ -225,7 +226,16 @@ class DatabricksWorkspace(ConfigurableResource):
         job_run_url = f"{workspace_url}/jobs/{job_id}/runs/{run_id}"
         context.log.info(f"Databricks job run URL: {job_run_url}")
 
-        final_run = self._poll_run(run_id=run_id)
+        try:
+            final_run = self._poll_run(run_id=run_id)
+        except DagsterExecutionInterruptedError:
+            context.log.info(f"Run interrupted! Cancelling Databricks job run {run_id}.")
+            try:
+                self.get_client().jobs.cancel_run(run_id)
+            except Exception as e:
+                context.log.warning(f"Failed to cancel Databricks job run {run_id}: {e}")
+            raise
+
         final_run_state = check.not_none(final_run.state)
         final_run_tasks = check.not_none(final_run.tasks)
         context.log.info(f"Job completed with overall state: {final_run_state.result_state}")

@@ -14,6 +14,7 @@ from dagster import (
     ResolvedAssetSpec,
     multi_asset,
 )
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._serdes import whitelist_for_serdes
 from dagster._symbol_annotations.lifecycle import preview
 from dagster.components import Resolver
@@ -147,7 +148,14 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
             run_url = f"{workspace_url}/jobs/{job.job_id}/runs/{run.run_id}"
             context.log.info(f"Run URL: {run_url}")
 
-            client.jobs.wait_get_run_job_terminated_or_skipped(run.run_id)
+            try:
+                client.jobs.wait_get_run_job_terminated_or_skipped(run.run_id)
+            except DagsterExecutionInterruptedError:
+                context.log.info(
+                    f"Run interrupted! Cancelling Databricks job {job.job_id} run {run.run_id}."
+                )
+                client.jobs.cancel_run(run.run_id)
+                raise
 
             final_run = client.jobs.get_run(run.run_id)
             state_obj = final_run.state
