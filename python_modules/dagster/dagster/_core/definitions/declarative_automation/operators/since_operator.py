@@ -105,20 +105,6 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         # subset
         return self._get_stable_unique_id(target_key)
 
-    def get_backcompat_node_unique_ids(
-        self,
-        *,
-        parent_unique_id: str | None = None,
-        index: int | None = None,
-        target_key: EntityKey | None = None,
-    ) -> Sequence[str]:
-        return [
-            # get the standard globally-aware unique id for backcompat purposes
-            super().get_node_unique_id(
-                parent_unique_id=parent_unique_id, index=index, target_key=target_key
-            )
-        ]
-
     async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
