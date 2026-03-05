@@ -241,10 +241,11 @@ def test_load_component(
             # task_key is expected in every submit tasks
             assert all(call for call in mock_submit_task.mock_calls if "task_key" in call.kwargs)
 
-            # depends_on is expected in 4 of the 6 submit tasks we create
+            # depends_on is not included when submitting individual tasks via Dagster
+            # because Dagster manages asset-level dependencies instead
             assert (
                 len([call for call in mock_submit_task.mock_calls if "depends_on" in call.kwargs])
-                == 4
+                == 0
             )
 
             # libraries is expected in 4 of the 6 submit tasks we create
