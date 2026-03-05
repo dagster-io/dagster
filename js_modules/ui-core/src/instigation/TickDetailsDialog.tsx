@@ -32,8 +32,12 @@ import {
   InstigationSelector,
   InstigationTickStatus,
 } from '../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {DynamicPartitionsRequestResult} from '../graphql/types-do-not-use';
+type DynamicPartitionsRequestResult = {
+  partitionKeys: string[] | null;
+  partitionsDefName: string;
+  skippedPartitionKeys: string[];
+  type: DynamicPartitionsRequestType;
+};
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickResultType} from '../ticks/TickStatusTag';
 

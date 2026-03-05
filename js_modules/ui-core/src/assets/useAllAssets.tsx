@@ -5,8 +5,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetGroupSelector} from '../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetKey} from '../graphql/types-do-not-use';
 import {CacheData} from '../search/useIndexedDBCachedQuery';
 import {hashObject} from '../util/hashObject';
 import {cache} from '../util/idb-lru-cache';
@@ -311,12 +309,7 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
     }
   }
 
-  const softwareDefinedAssets: {
-    __typename: 'Asset';
-    key: AssetKey;
-    definition: WorkspaceAssetFragment;
-    id: string;
-  }[] = [];
+  const softwareDefinedAssets: (typeof softwareDefinedAssetsWithDuplicates)[number][] = [];
 
   const addedKeys = new Set();
 

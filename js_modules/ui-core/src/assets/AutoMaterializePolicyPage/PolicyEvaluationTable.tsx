@@ -30,8 +30,16 @@ import {
   statusForEvaluation,
   tokenForEntityKey,
 } from './flattenEvaluations';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
+import {TimeElapsed} from '../../runs/TimeElapsed';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {numberFormatter} from '../../ui/formatters';
+import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
+import {EvaluationHistoryStackItem} from './types';
 import {
   AssetLastEvaluationFragment,
+  EntityKeyFragment as EntityKey,
+  EntityKeyFragment_AssetKey,
   NewEvaluationNodeFragment,
   PartitionedAssetConditionEvaluationNodeFragment,
   SpecificPartitionAssetConditionEvaluationNodeFragment,
@@ -39,14 +47,6 @@ import {
 } from './types/GetEvaluationsQuery.types';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {AssetConditionEvaluationStatus} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetKey, EntityKey} from '../../graphql/types-do-not-use';
-import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
-import {TimeElapsed} from '../../runs/TimeElapsed';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {numberFormatter} from '../../ui/formatters';
-import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
-import {EvaluationHistoryStackItem} from './types';
 
 interface Props {
   assetKeyPath: string[] | null;
@@ -171,7 +171,7 @@ const NewPolicyEvaluationTable = ({
     if (!rootAssetKeyPath) {
       return null;
     }
-    const rootAssetKey: AssetKey = {
+    const rootAssetKey: EntityKeyFragment_AssetKey = {
       __typename: 'AssetKey',
       path: rootAssetKeyPath,
     };

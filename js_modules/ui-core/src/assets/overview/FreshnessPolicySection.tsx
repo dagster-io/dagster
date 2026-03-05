@@ -9,17 +9,16 @@ import {
   FreshnessStatusQueryVariables,
 } from './types/FreshnessQueries.types';
 import {useQuery} from '../../apollo-client';
-// eslint-disable-next-line no-restricted-imports
-import {
-  AssetKey,
-  CronFreshnessPolicy,
-  TimeWindowFreshnessPolicy,
-} from '../../graphql/types-do-not-use';
 import {humanCronString} from '../../schedules/humanCronString';
 import {TimeFromNow} from '../../ui/TimeFromNow';
 import {statusToIconAndColor} from '../AssetHealthSummary';
+import {AssetKey} from '../types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
-import {FreshnessPolicyFragment} from '../types/FreshnessPolicyFragment.types';
+import {
+  FreshnessPolicyFragment_CronFreshnessPolicy as CronFreshnessPolicy,
+  FreshnessPolicyFragment,
+  FreshnessPolicyFragment_TimeWindowFreshnessPolicy as TimeWindowFreshnessPolicy,
+} from '../types/FreshnessPolicyFragment.types';
 
 import '../../util/dayjsExtensions';
 

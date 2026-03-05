@@ -17,8 +17,7 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {RepoAddress} from '../workspace/types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetKey} from '../graphql/types-do-not-use';
+import {AssetKey} from '../assets/types';
 
 // ########################
 // ##### LAUNCHPAD ROOTS

@@ -5,8 +5,7 @@ import {buildRepoPathForURL} from './buildRepoAddress';
 import {RepoAddress} from './types';
 import {isHiddenAssetGroupJob, tokenForAssetKey} from '../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToString';
-// eslint-disable-next-line no-restricted-imports
-import {AssetKey} from '../graphql/types-do-not-use';
+import {AssetKey} from '../assets/types';
 import {isExternalRun} from '../runs/externalRuns';
 
 export const workspacePath = (repoName: string, repoLocation: string, path = '') => {

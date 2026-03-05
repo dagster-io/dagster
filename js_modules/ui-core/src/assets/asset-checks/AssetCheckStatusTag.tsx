@@ -27,12 +27,22 @@ import {
   AssetCheckSeverity,
   AssetKeyInput,
 } from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetCheckEvaluation, AssetCheckExecution} from '../../graphql/types-do-not-use';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {TagAction, TagActionsPopover} from '../../ui/TagActions';
 import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
+
+type AssetCheckExecution = {
+  runId: string;
+  status: AssetCheckExecutionResolvedStatus;
+  timestamp: number;
+  stepKey: string | null;
+  evaluation: {severity: AssetCheckSeverity} | null;
+};
+
+type AssetCheckEvaluation = {
+  severity: AssetCheckSeverity;
+};
 
 interface StatusTagConfig {
   icon?: IconName;

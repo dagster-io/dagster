@@ -1,8 +1,7 @@
 import Fuse from 'fuse.js';
 
+import {AssetKey} from '../assets/types';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetKey, DefinitionTag} from '../graphql/types-do-not-use';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesQuery.types';
 import {
   WorkspaceAssetGroupFragment,
@@ -60,7 +59,7 @@ export type SearchResult = {
   description: string;
   href: string;
   type: SearchResultType | AssetFilterSearchResultType;
-  tags?: DefinitionTag[];
+  tags?: {key: string; value: string}[];
   kinds?: string[];
   numResults?: number;
   repoPath?: string;

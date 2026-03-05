@@ -1,5 +1,6 @@
-// eslint-disable-next-line no-restricted-imports
-import {AssetOwner} from '../graphql/types-do-not-use';
+type AssetOwner =
+  | {__typename: 'TeamAssetOwner'; team: string}
+  | {__typename: 'UserAssetOwner'; email: string};
 
 export const assetOwnerAsString = (owner: AssetOwner) => {
   return owner.__typename === 'UserAssetOwner' ? owner.email : owner.team;

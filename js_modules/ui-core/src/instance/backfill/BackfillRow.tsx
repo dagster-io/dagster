@@ -11,8 +11,6 @@ import {QueryResult, gql, useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {RunStatus} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {PartitionBackfill} from '../../graphql/types-do-not-use';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference, PipelineTag} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
@@ -268,7 +266,7 @@ const BackfillRequestedRange = ({
   backfill,
   onExpand,
 }: {
-  backfill: Pick<PartitionBackfill, 'numPartitions' | 'partitionNames'>;
+  backfill: {numPartitions: number | null; partitionNames: string[] | null};
   allPartitions?: string[];
   onExpand: () => void;
 }) => {

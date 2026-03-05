@@ -12,9 +12,10 @@ import {
 import styled from 'styled-components';
 
 import {EvaluationHistoryStackItem} from './types';
-import {SinceMetadataFragment} from './types/GetEvaluationsQuery.types';
-// eslint-disable-next-line no-restricted-imports
-import {EntityKey} from '../../graphql/types-do-not-use';
+import {
+  EntityKeyFragment as EntityKey,
+  SinceMetadataFragment,
+} from './types/GetEvaluationsQuery.types';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 interface Props {

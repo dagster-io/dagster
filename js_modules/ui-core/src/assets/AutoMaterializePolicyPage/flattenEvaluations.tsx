@@ -1,5 +1,7 @@
 import {ConditionType} from './PolicyEvaluationCondition';
 import {
+  EntityKeyFragment_AssetCheckhandle as AssetCheckhandle,
+  EntityKeyFragment as EntityKey,
   NewEvaluationNodeFragment,
   PartitionedAssetConditionEvaluationNodeFragment,
   SpecificPartitionAssetConditionEvaluationNodeFragment,
@@ -7,8 +9,6 @@ import {
 } from './types/GetEvaluationsQuery.types';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetConditionEvaluationStatus} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetCheckhandle, EntityKey} from '../../graphql/types-do-not-use';
 
 export type FlattenedConditionEvaluation<T> = {
   evaluation: T;

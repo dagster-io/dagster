@@ -2,9 +2,7 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 
 import {AppContext} from './AppContext';
-import {AssetKeyInput} from '../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetCheck} from '../graphql/types-do-not-use';
+import {AssetCheckCanExecuteIndividually, AssetKeyInput} from '../graphql/types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
@@ -14,6 +12,12 @@ import {
 import {getJSONForKey} from '../util/getJSONForKey';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
+
+type AssetCheck = {
+  name: string;
+  canExecuteIndividually: AssetCheckCanExecuteIndividually;
+  assetKey: {path: string[]};
+};
 
 // Internal LocalStorage data format and mutation helpers
 

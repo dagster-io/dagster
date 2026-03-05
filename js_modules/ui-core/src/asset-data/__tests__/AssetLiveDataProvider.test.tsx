@@ -7,8 +7,6 @@ import {GraphQLError} from 'graphql/error';
 import {buildMockedAssetGraphLiveQuery} from './util';
 import {buildAssetKey} from '../../graphql/builders';
 import {AssetKeyInput} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetKey} from '../../graphql/types-do-not-use';
 import {LiveDataThreadID} from '../../live-data-provider/LiveDataThread';
 import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../../live-data-provider/util';
 import {getMockResultFn} from '../../testing/mocking';
@@ -318,13 +316,15 @@ describe('AssetLiveDataProvider', () => {
 
   it('prioritizes assets which were never fetched over previously fetched assets', async () => {
     const hookResult = jest.fn();
-    const assetKeys = [];
+    const assetKeys: ReturnType<typeof buildAssetKey>[] = [];
     for (let i = 0; i < 2 * BATCH_SIZE; i++) {
       assetKeys.push(buildAssetKey({path: [`key${i}`]}));
     }
 
     // First we fetch these specific keys
-    const fetch1Keys = [assetKeys[0], assetKeys[2]] as AssetKey[];
+    const fetch1Keys = [assetKeys[0], assetKeys[2]].filter(
+      (key): key is ReturnType<typeof buildAssetKey> => key !== undefined,
+    );
 
     // Next we fetch all of the keys after waiting SUBSCRIPTION_IDLE_POLL_RATE
     // which would have made the previously fetched keys elgible for fetching again

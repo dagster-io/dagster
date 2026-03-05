@@ -1,6 +1,15 @@
 import {DynamicPartitionsRequestType, InstigationTickStatus} from '../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {DynamicPartitionsRequestResult, InstigationTick} from '../graphql/types-do-not-use';
+
+type DynamicPartitionsRequestResult = {
+  partitionKeys: string[] | null;
+  type: DynamicPartitionsRequestType;
+};
+
+type InstigationTick = {
+  timestamp: number;
+  endTimestamp: number | null;
+  status: InstigationTickStatus;
+};
 
 const TRUNCATION_THRESHOLD = 100;
 const TRUNCATION_BUFFER = 5;
