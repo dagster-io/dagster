@@ -142,8 +142,10 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
             run = client.jobs.run_now(
                 job_id=job.job_id, only=tasks_to_run if tasks_to_run else None
             )
-            if run.run_page_url:
-                context.log.info(f"Run URL: {run.run_page_url}")
+
+            workspace_url = self.workspace.host.rstrip("/")
+            run_url = f"{workspace_url}/jobs/{job.job_id}/runs/{run.run_id}"
+            context.log.info(f"Run URL: {run_url}")
 
             client.jobs.wait_get_run_job_terminated_or_skipped(run.run_id)
 
@@ -153,7 +155,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
 
             if result_state != RunResultState.SUCCESS:
                 status_str = result_state.value if result_state else "UNKNOWN"
-                error_msg = f"Job {job.job_id} failed: {status_str}. URL: {run.run_page_url}"
+                error_msg = f"Job {job.job_id} failed: {status_str}. URL: {run_url}"
                 context.log.error(error_msg)
                 raise Exception(error_msg)
 
@@ -166,7 +168,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                         metadata={
                             "dagster-databricks/job_id": MetadataValue.int(job.job_id),
                             "dagster-databricks/run_id": MetadataValue.int(run.run_id),
-                            "dagster-databricks/run_url": MetadataValue.url(run.run_page_url or ""),
+                            "dagster-databricks/run_url": MetadataValue.url(run_url),
                             "dagster-databricks/task_key": current_task_key,
                         },
                     )
