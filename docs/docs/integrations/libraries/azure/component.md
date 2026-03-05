@@ -3,7 +3,7 @@ title: Azure Components
 sidebar_label: Components
 sidebar_position: 1
 description: Configuration-driven Azure resources using Dagster Components.
-tags: [dagster-supported, azure, components]
+tags: [dagster-supported, component]
 ---
 
 <p>{frontMatter.description}</p>

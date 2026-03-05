@@ -3,7 +3,7 @@ title: GCP Components
 sidebar_label: Components
 sidebar_position: 1
 description: Configuration-driven GCP resources using Dagster Components.
-tags: [dagster-supported, gcp, components]
+tags: [dagster-supported, component]
 ---
 
 <p>{frontMatter.description}</p>
