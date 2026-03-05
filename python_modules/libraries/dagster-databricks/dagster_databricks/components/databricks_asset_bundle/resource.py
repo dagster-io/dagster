@@ -58,7 +58,7 @@ class DatabricksWorkspace(ConfigurableResource):
         base_url = self.host.rstrip("/")
 
         async with aiohttp.ClientSession(headers=headers) as session:
-            list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}list"
+            list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/list"
             async with session.get(list_url) as resp:
                 resp.raise_for_status()
                 data = await resp.json()
