@@ -27,8 +27,6 @@
 ### Dagster Plus
 
 - Organization-level timezone settings are now supported, allowing organizations to set a default timezone for users who haven't explicitly set a preference.
-- Unknown settings in Helm overrides no longer cause crashes.
-- Fixed webhook template secret resolution to use the correct secret identifier.
 - [ui] Asset job run data is now included in Job insights.
 - [ui] Code locations with loaded but failed agents now display a warning icon with agent status details in a popover.
 - [ui] Added run queue time metric visualization to Job insights.
