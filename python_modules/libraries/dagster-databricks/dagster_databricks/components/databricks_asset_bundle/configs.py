@@ -605,6 +605,13 @@ class DatabricksConfig(IHaveNew):
     def tasks_by_task_key(self) -> dict[str, DatabricksBaseTask]:
         return {task.task_key: task for task in self.tasks}
 
+    @cached_property
+    def tasks_by_job_and_task_key(self) -> dict[str, dict[str, DatabricksBaseTask]]:
+        result: dict[str, dict[str, DatabricksBaseTask]] = {}
+        for task in self.tasks:
+            result.setdefault(task.job_name, {})[task.task_key] = task
+        return result
+
 
 @preview
 class ResolvedDatabricksNewClusterConfig(Resolvable, Model):

@@ -156,9 +156,11 @@ class DatabricksWorkspace(ConfigurableResource):
         not_selected_asset_keys = assets_def.keys - selected_asset_keys
         context.log.info(f"Selected assets: {selected_asset_keys}")
 
-        # Get the task that correspond to selected assets
-        task_key = next(iter(assets_def.specs)).metadata["task_key"].value
-        task = component.databricks_config.tasks_by_task_key[task_key]
+        # Get the task that corresponds to selected assets
+        first_spec_metadata = next(iter(assets_def.specs)).metadata
+        task_key = first_spec_metadata["task_key"].value
+        job_name = first_spec_metadata["job_name"].value
+        task = component.databricks_config.tasks_by_job_and_task_key[job_name][task_key]
 
         context.log.info(f"Running task with key {task_key}")
 

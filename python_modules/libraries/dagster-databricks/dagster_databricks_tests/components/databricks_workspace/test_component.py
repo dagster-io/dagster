@@ -120,7 +120,10 @@ def test_databricks_filtering(mock_workspace, mock_serializer, mock_deserializer
 def test_databricks_custom_asset_mapping(
     mock_workspace, mock_serializer, mock_deserializer, tmp_path
 ):
-    """Test that assets can be renamed and customized via YAML."""
+    """Test that assets can be renamed and customized via YAML.
+
+    assets_by_job_task_key requires both job name and task key to uniquely identify a task.
+    """
     custom_spec = AssetSpec(
         key=AssetKey("my_custom_ingestion"),
         group_name="etl_group",
@@ -129,8 +132,10 @@ def test_databricks_custom_asset_mapping(
 
     mock_deserializer.return_value = SimpleNamespace(jobs=MOCK_JOBS_HYBRID)
 
+    # New structure: {job_name: {task_key: [specs]}}
     component = DatabricksWorkspaceComponent(
-        workspace=mock_workspace, assets_by_task_key={"ingest_task": [custom_spec]}
+        workspace=mock_workspace,
+        assets_by_job_task_key={"Data Ingestion Job": {"ingest_task": [custom_spec]}},
     )
 
     state_path = tmp_path / "custom_state.json"
@@ -140,6 +145,7 @@ def test_databricks_custom_asset_mapping(
     assert defs.assets is not None
     asset_graph = defs.resolve_asset_graph()
 
+    # Asset key is as specified by user (no automatic namespacing)
     custom_key = AssetKey("my_custom_ingestion")
     assert custom_key in asset_graph.get_all_asset_keys()
 
