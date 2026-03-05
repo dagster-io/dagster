@@ -137,14 +137,52 @@ def test_node_unique_id() -> None:
         .allow(AssetSelection.keys("a"))
         .ignore(AssetSelection.keys("b"))
     )
+    # Current ID includes allow/ignore selections in the hash (fixes cursor collisions)
     assert (
         condition.get_node_unique_id(parent_unique_id=None, index=None, target_key=None)
-        == "80f87fb32baaf7ce3f65f68c12d3eb11"
+        == "35b152923d1d99348e85c3cbe426bcb7"
     )
-    assert (
-        condition.get_backcompat_node_unique_ids(parent_unique_id=None, index=None, target_key=None)
-        == []
-    )
+    # Backcompat ID is the old format (base_name only, ignoring allow/ignore selections)
+    assert condition.get_backcompat_node_unique_ids(
+        parent_unique_id=None, index=None, target_key=None
+    ) == ["80f87fb32baaf7ce3f65f68c12d3eb11"]
+
+
+@pytest.mark.parametrize(
+    "make_cond",
+    [
+        pytest.param(AC.any_deps_match, id="any_deps_match"),
+        pytest.param(AC.all_deps_match, id="all_deps_match"),
+    ],
+)
+def test_dep_condition_id_collision_fix(make_cond) -> None:
+    """Verify that any_deps_match and all_deps_match conditions with different allow() or
+    ignore() selections get different unique IDs (the original bug: they used to hash
+    identically, causing cursor state to be shared or corrupted).
+    Also verify they share the same backcompat ID (the old base-name-only format).
+    """
+    cond_a = make_cond(AC.missing()).allow(AssetSelection.keys("assetA"))
+    cond_b = make_cond(AC.missing()).allow(AssetSelection.keys("assetB"))
+
+    id_a = cond_a.get_node_unique_id(parent_unique_id=None, index=0, target_key=None)
+    id_b = cond_b.get_node_unique_id(parent_unique_id=None, index=0, target_key=None)
+    assert id_a != id_b, "Conditions with different allow() selections must have different unique IDs"
+
+    bc_a = cond_a.get_backcompat_node_unique_ids(parent_unique_id=None, index=0, target_key=None)
+    bc_b = cond_b.get_backcompat_node_unique_ids(parent_unique_id=None, index=0, target_key=None)
+    assert bc_a == bc_b, "Backcompat IDs (old pre-fix format) should be the same when only filter differs"
+
+    # Also verify ignore() produces the same behavior
+    cond_c = make_cond(AC.missing()).ignore(AssetSelection.keys("assetC"))
+    cond_d = make_cond(AC.missing()).ignore(AssetSelection.keys("assetD"))
+
+    id_c = cond_c.get_node_unique_id(parent_unique_id=None, index=0, target_key=None)
+    id_d = cond_d.get_node_unique_id(parent_unique_id=None, index=0, target_key=None)
+    assert id_c != id_d, "Conditions with different ignore() selections must have different unique IDs"
+
+    bc_c = cond_c.get_backcompat_node_unique_ids(parent_unique_id=None, index=0, target_key=None)
+    bc_d = cond_d.get_backcompat_node_unique_ids(parent_unique_id=None, index=0, target_key=None)
+    assert bc_c == bc_d, "Backcompat IDs (old pre-fix format) should be the same when only filter differs"
 
 
 def test_since_condition_cursor_backcompat() -> None:
