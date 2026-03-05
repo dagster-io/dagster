@@ -145,7 +145,6 @@ class SparkPipelinesResource(ConfigurableResource):
         finally:
             process.wait()
         returncode = process.returncode
-        returncode = process.returncode
 
         if returncode != 0:
             captured = "\n".join(log_lines) if log_lines else "(no output)"
