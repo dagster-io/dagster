@@ -68,7 +68,6 @@ def test_component_asset_spec(
         assert asset_spec.key == AssetKey(task.task_key)
         assert asset_spec.description == f"{task.task_key} task from {task.job_name} job"
         assert "databricks" in asset_spec.kinds
-        assert asset_spec.skippable
         assert asset_spec.metadata["task_key"].value == task.task_key
         assert asset_spec.metadata["job_name"].value == task.job_name
         assert asset_spec.metadata["task_type"].value == task.task_type
@@ -185,7 +184,7 @@ def test_load_component(
             assert component.compute_config == expected_resolved_compute_config
 
             assets = list(defs.assets or [])
-            assert len(assets) == 6
+            assert len(assets) == 1
             databricks_assets = assets[0]
             assert isinstance(databricks_assets, AssetsDefinition)
 

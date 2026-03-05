@@ -6,6 +6,7 @@ from typing import Annotated
 
 from dagster import (
     AssetExecutionContext,
+    AssetKey,
     AssetSpec,
     MetadataValue,
     Resolvable,
@@ -222,7 +223,6 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 "databricks",
                 *([task.task_type] if task.task_type is not DATABRICKS_UNKNOWN_TASK_TYPE else []),
             },
-            skippable=True,
             metadata={
                 "task_key": MetadataValue.text(task.task_key),
                 "job_name": MetadataValue.text(task.job_name),
@@ -251,29 +251,36 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
         databricks_assets = []
         for job_name, tasks_map in self.asset_specs_by_job_task_key.items():
+            # Collect all specs for this job and build a task_key_map
+            job_specs: list[AssetSpec] = []
+            task_key_map: dict[AssetKey, str] = {}
             for task_key, asset_specs in tasks_map.items():
-                op_prefix = self.op.name if self.op and self.op.name else "databricks"
-                safe_key = snake_case(f"{job_name}/{task_key}")
+                for spec in asset_specs:
+                    job_specs.append(spec)
+                    task_key_map[spec.key] = task_key
 
-                @multi_asset(
-                    name=f"{op_prefix}_{safe_key}_multi_asset_{component_defs_path_as_python_str}",
-                    specs=asset_specs,
-                    can_subset=False,
-                    op_tags=self.op.tags if self.op else None,
-                    description=self.op.description if self.op else None,
-                    pool=self.op.pool if self.op else None,
-                    backfill_policy=self.op.backfill_policy if self.op else None,
+            op_prefix = self.op.name if self.op and self.op.name else "databricks"
+            safe_job_name = snake_case(job_name)
+
+            @multi_asset(
+                name=f"{op_prefix}_{safe_job_name}_multi_asset_{component_defs_path_as_python_str}",
+                specs=job_specs,
+                can_subset=True,
+                op_tags=self.op.tags if self.op else None,
+                description=self.op.description if self.op else None,
+                pool=self.op.pool if self.op else None,
+                backfill_policy=self.op.backfill_policy if self.op else None,
+            )
+            def _databricks_job_multi_asset(
+                context: AssetExecutionContext,
+                databricks: DatabricksWorkspace,
+            ):
+                """Multi-asset that runs tasks of a Databricks job."""
+                yield from databricks.submit_and_poll(
+                    component=self,
+                    context=context,
                 )
-                def _databricks_task_multi_asset(
-                    context: AssetExecutionContext,
-                    databricks: DatabricksWorkspace,
-                ):
-                    """Multi-asset that runs multiple assets of a task as a single Databricks job."""
-                    yield from databricks.submit_and_poll(
-                        component=self,
-                        context=context,
-                    )
 
-                databricks_assets.append(_databricks_task_multi_asset)
+            databricks_assets.append(_databricks_job_multi_asset)
 
         return Definitions(assets=databricks_assets, resources={"databricks": self.workspace})
