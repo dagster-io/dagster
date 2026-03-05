@@ -258,8 +258,13 @@ def test_s3_pickle_io_manager_dynamic_output(mock_s3_bucket, s3_and_io_manager):
 
     assert result.success
 
-    keys = [o.key for o in mock_s3_bucket.objects.all()]
+    outputs = result.output_for_node("return_value")
+    assert outputs == {"foo": "foo", "bar": "bar"}
 
+    keys = [o.key for o in mock_s3_bucket.objects.all()]
     for key in keys:
         assert "[" not in key, f"S3 key contains '[': {key}"
         assert "]" not in key, f"S3 key contains ']': {key}"
+
+    assert any("return_value--foo" in key for key in keys)
+    assert any("return_value--bar" in key for key in keys)
