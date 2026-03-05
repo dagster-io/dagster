@@ -23,8 +23,6 @@ import {
   buildSolidDefinition,
 } from '../../graphql/builders';
 import {RunStatus} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetNode} from '../../graphql/types-do-not-use';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
@@ -46,7 +44,9 @@ const MockRepo = buildRepository({
 
 const MockAssetKey = {__typename: 'AssetKey' as const, path: ['asset1']};
 
-const buildGraphNodeMock = (definitionOverrides: Partial<AssetNode>): GraphNode => ({
+const buildGraphNodeMock = (
+  definitionOverrides: Partial<ReturnType<typeof buildAssetNode>>,
+): GraphNode => ({
   id: 'test.py.repo.["asset1"]',
   assetKey: MockAssetKey,
   definition: buildAssetNode({

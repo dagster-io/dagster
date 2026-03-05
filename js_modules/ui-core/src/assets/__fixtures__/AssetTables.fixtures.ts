@@ -23,8 +23,6 @@ import {
   buildRun,
 } from '../../graphql/builders';
 import {RunStatus, StaleStatus} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {Asset} from '../../graphql/types-do-not-use';
 import {buildQueryMock} from '../../testing/mocking';
 import {SINGLE_NON_SDA_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {
@@ -231,7 +229,7 @@ export const SingleAssetQueryLastRunFailed = buildQueryMock<
   },
 });
 
-export const AssetCatalogTableMockAssets: Asset[] = [
+export const AssetCatalogTableMockAssets: ReturnType<typeof buildAsset>[] = [
   buildAsset({
     id: '["dashboards", "cost_dashboard"]',
     key: buildAssetKey({path: ['dashboards', 'cost_dashboard']}),

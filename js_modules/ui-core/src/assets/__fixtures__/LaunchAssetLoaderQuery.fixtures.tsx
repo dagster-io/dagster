@@ -12,12 +12,10 @@ import {
   buildRepositoryLocation,
 } from '../../graphql/builders';
 import {PartitionDefinitionType} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetNode} from '../../graphql/types-do-not-use';
 import {LAUNCH_ASSET_LOADER_QUERY} from '../LaunchAssetExecutionButton';
 import {LaunchAssetLoaderQuery} from '../types/LaunchAssetExecutionButton.types';
 
-export const assetNodes: AssetNode[] = [
+export const assetNodes: ReturnType<typeof buildAssetNode>[] = [
   buildAssetNode({
     id: 'assets_dynamic_partitions.__repository__.["release_files"]',
     opNames: ['release_files'],

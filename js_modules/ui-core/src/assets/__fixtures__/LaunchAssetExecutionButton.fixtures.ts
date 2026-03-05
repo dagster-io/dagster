@@ -41,8 +41,6 @@ import {
   PartitionDefinitionType,
   PartitionRangeStatus,
 } from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {Query} from '../../graphql/types-do-not-use';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {CONFIG_PARTITION_FOR_ASSET_JOB_QUERY} from '../../launchpad/ConfigFetch';
@@ -611,7 +609,7 @@ export const PartitionHealthAssetMocks = [
 
 export function buildLaunchAssetLoaderMock(
   assetKeys: AssetKeyInput[],
-  overrides: Partial<Query> & Partial<LaunchAssetLoaderQuery> = {},
+  overrides: Partial<ReturnType<typeof buildQuery>> & Partial<LaunchAssetLoaderQuery> = {},
 ): MockedResponse<LaunchAssetLoaderQuery> {
   return {
     request: {

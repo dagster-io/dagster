@@ -8,29 +8,6 @@ const config: CodegenConfig = {
     afterAllFileWrite: ['prettier --write'],
   },
   generates: {
-    // To be deleted once existing imports are updated to use fragments.
-    './src/graphql/types-do-not-use.ts': {
-      config: {
-        nonOptionalTypename: true,
-        avoidOptionals: {
-          field: true,
-        },
-        enumValues: './types',
-        dedupeFragments: true,
-        namingConvention: {
-          enumValues: 'keep',
-        },
-        useImplementingTypes: true,
-      },
-      plugins: [
-        'typescript',
-        {
-          add: {
-            content: `// Generated GraphQL types, do not edit manually.\n`,
-          },
-        },
-      ],
-    },
     './src/graphql/types.ts': {
       config: {
         onlyOperationTypes: true,

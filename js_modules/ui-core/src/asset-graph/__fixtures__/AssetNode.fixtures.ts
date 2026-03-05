@@ -30,8 +30,6 @@ import {
   StaleCauseCategory,
   StaleStatus,
 } from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {AssetHealth} from '../../graphql/types-do-not-use';
 import {LiveDataForNodeWithStaleData} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
 
@@ -59,7 +57,9 @@ const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
 const createHealthData = (
   assetKeyPath: string[],
   healthStatus: AssetHealthStatus,
-  overrides: Partial<AssetHealthFragment> & {assetHealth?: AssetHealth} = {},
+  overrides: Partial<AssetHealthFragment> & {
+    assetHealth?: ReturnType<typeof buildAssetHealth>;
+  } = {},
 ): AssetHealthFragment =>
   buildAsset({
     key: buildAssetKey({path: assetKeyPath}),

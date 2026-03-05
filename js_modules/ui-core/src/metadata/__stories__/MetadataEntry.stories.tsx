@@ -7,15 +7,14 @@ import {
   buildPoolMetadataEntry,
   buildUrlCodeReference,
 } from '../../graphql/builders';
-// eslint-disable-next-line no-restricted-imports
-import {
-  BoolMetadataEntry,
-  IntMetadataEntry,
-  JsonMetadataEntry,
-  TableSchemaMetadataEntry,
-} from '../../graphql/types-do-not-use';
 import {MetadataEntries} from '../MetadataEntry';
-import {MetadataEntryFragment} from '../types/MetadataEntryFragment.types';
+import {
+  MetadataEntryFragment_BoolMetadataEntry as BoolMetadataEntry,
+  MetadataEntryFragment_IntMetadataEntry as IntMetadataEntry,
+  MetadataEntryFragment_JsonMetadataEntry as JsonMetadataEntry,
+  MetadataEntryFragment,
+  MetadataEntryFragment_TableSchemaMetadataEntry as TableSchemaMetadataEntry,
+} from '../types/MetadataEntryFragment.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

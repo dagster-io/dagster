@@ -9,8 +9,6 @@ import {
   buildFreshnessPolicy,
   buildQuery,
 } from '../../graphql/builders';
-// eslint-disable-next-line no-restricted-imports
-import {AssetFreshnessInfo, FreshnessPolicy} from '../../graphql/types-do-not-use';
 import {OVERDUE_POPOVER_QUERY, OverdueTag} from '../OverdueTag';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from '../types/OverdueTag.types';
 
@@ -33,8 +31,8 @@ const LAST_MATERIALIZATION_TIME = TEST_TIME - 4 * 60 * 1000;
 // };
 
 function buildOverduePopoverMock(
-  policy: FreshnessPolicy,
-  freshnessInfo: Partial<AssetFreshnessInfo>,
+  policy: ReturnType<typeof buildFreshnessPolicy>,
+  freshnessInfo: Partial<ReturnType<typeof buildAssetFreshnessInfo>>,
   hasUsedData = true,
 ): MockedResponse<OverduePopoverQuery, OverduePopoverQueryVariables> {
   return {

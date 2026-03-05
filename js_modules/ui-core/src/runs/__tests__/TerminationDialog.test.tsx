@@ -12,8 +12,6 @@ import {
   buildTerminateRunsResult,
 } from '../../graphql/builders';
 import {TerminateRunPolicy} from '../../graphql/types';
-// eslint-disable-next-line no-restricted-imports
-import {TerminateRunsResultOrError} from '../../graphql/types-do-not-use';
 import {TERMINATE_MUTATION} from '../RunUtils';
 import {TerminationDialog, Props as TerminationDialogProps} from '../TerminationDialog';
 import {TerminateMutation, TerminateMutationVariables} from '../types/RunUtils.types';
@@ -37,7 +35,7 @@ jest.mock('@dagster-io/ui-components', () => ({
 function buildMockTerminateMutation(
   runIds: string[],
   terminatePolicy: TerminateRunPolicy,
-  result?: TerminateRunsResultOrError,
+  result?: TerminateMutation['terminateRuns'],
 ): Omit<MockedResponse<TerminateMutation, TerminateMutationVariables>, 'result'> & {
   result: jest.Mock;
 } {
