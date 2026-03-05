@@ -50,7 +50,7 @@ In Kubernetes, the number of replicas is set in the Helm chart. You can set the 
 ```shell
 helm upgrade \
     ...
-    --set dagsterCloudAgent.replicas=2
+    --set replicas=2
 ```
 
 or if using a `values.yaml` file:
