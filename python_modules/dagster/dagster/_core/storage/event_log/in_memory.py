@@ -54,8 +54,8 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self._db_lock:
             with self._engine.connect() as conn:
                 with conn.begin():
-                    conn.execute(db.text("PRAGMA journal_mode=WAL;"))
-                    conn.execute(db.text("PRAGMA foreign_keys=ON;"))
+                    conn.execute(db.text("PRAGMA journal_mode=WAL;")).close()
+                    conn.execute(db.text("PRAGMA foreign_keys=ON;")).close()
                     yield conn
 
     def run_connection(self, run_id=None):
