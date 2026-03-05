@@ -518,6 +518,35 @@ class DatabricksUnknownTask(DatabricksBaseTask):
         return jobs.Task(task_key=self.task_key)
 
 
+def parse_task_from_config(
+    job_task_config: Mapping[str, Any],
+) -> "DatabricksBaseTask | None":
+    """Parse a raw task config dict into the appropriate DatabricksBaseTask subclass.
+
+    The config dict must include 'task_key' and 'job_name' keys, plus a task type key
+    (e.g., 'notebook_task', 'spark_python_task'). Returns None if the task_key is empty
+    or the task type is unrecognized.
+    """
+    task_key = job_task_config.get("task_key", "")
+    if not task_key:
+        return None
+
+    if "notebook_task" in job_task_config:
+        return DatabricksNotebookTask.from_job_task_config(job_task_config)
+    elif "condition_task" in job_task_config:
+        return DatabricksConditionTask.from_job_task_config(job_task_config)
+    elif "spark_python_task" in job_task_config:
+        return DatabricksSparkPythonTask.from_job_task_config(job_task_config)
+    elif "python_wheel_task" in job_task_config:
+        return DatabricksPythonWheelTask.from_job_task_config(job_task_config)
+    elif "spark_jar_task" in job_task_config:
+        return DatabricksSparkJarTask.from_job_task_config(job_task_config)
+    elif "run_job_task" in job_task_config:
+        return DatabricksJobTask.from_job_task_config(job_task_config)
+    else:
+        return None
+
+
 @record_custom
 class DatabricksConfig(IHaveNew):
     databricks_config_path: Path
@@ -560,52 +589,14 @@ class DatabricksConfig(IHaveNew):
             job_tasks = job_config.get("tasks", [])
 
             for job_task_config in job_tasks:
-                task_key = job_task_config.get("task_key", "")
-                if not task_key:
-                    continue
-
                 augmented_job_task_config = {**job_task_config, "job_name": job_name}
-
-                if "notebook_task" in job_task_config:
-                    tasks.append(
-                        DatabricksNotebookTask.from_job_task_config(
-                            job_task_config=augmented_job_task_config
-                        )
-                    )
-                elif "condition_task" in job_task_config:
-                    tasks.append(
-                        DatabricksConditionTask.from_job_task_config(
-                            job_task_config=augmented_job_task_config
-                        )
-                    )
-                elif "spark_python_task" in job_task_config:
-                    tasks.append(
-                        DatabricksSparkPythonTask.from_job_task_config(
-                            job_task_config=augmented_job_task_config
-                        )
-                    )
-                elif "python_wheel_task" in job_task_config:
-                    tasks.append(
-                        DatabricksPythonWheelTask.from_job_task_config(
-                            job_task_config=augmented_job_task_config
-                        )
-                    )
-                elif "spark_jar_task" in job_task_config:
-                    tasks.append(
-                        DatabricksSparkJarTask.from_job_task_config(
-                            job_task_config=augmented_job_task_config
-                        )
-                    )
-                elif "run_job_task" in job_task_config:
-                    tasks.append(
-                        DatabricksJobTask.from_job_task_config(
-                            job_task_config=augmented_job_task_config
-                        )
-                    )
+                task = parse_task_from_config(augmented_job_task_config)
+                if task is not None:
+                    tasks.append(task)
                 else:
-                    # Skip unknown task types
-                    logger.warning(f"Warning: Unknown task type for task {task_key}, skipping")
-                    continue
+                    task_key = job_task_config.get("task_key", "")
+                    if task_key:
+                        logger.warning(f"Warning: Unknown task type for task {task_key}, skipping")
 
         if not tasks:
             raise ValueError(f"No tasks found in databricks config: {databricks_config_path}")

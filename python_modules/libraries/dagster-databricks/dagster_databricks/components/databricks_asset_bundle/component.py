@@ -34,28 +34,16 @@ from dagster_databricks.components.databricks_asset_bundle.resource import Datab
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,
 )
+from dagster_databricks.components.shared import (
+    DatabricksWorkspaceArgs,
+    resolve_databricks_workspace,
+)
 from dagster_databricks.utils import snake_case
-
-
-@dataclass
-class DatabricksWorkspaceArgs(Resolvable):
-    """Aligns with DatabricksWorkspace.__new__."""
-
-    host: str
-    token: str
 
 
 def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
-    )
-
-
-def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
-    args = DatabricksWorkspaceArgs.resolve_from_model(context, model)
-    return DatabricksWorkspace(
-        host=args.host,
-        token=args.token,
     )
 
 

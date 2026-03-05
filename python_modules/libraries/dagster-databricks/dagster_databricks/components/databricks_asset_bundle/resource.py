@@ -23,19 +23,15 @@ from databricks.sdk.service import compute, jobs
 from pydantic import Field
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
-    DatabricksConditionTask,
     DatabricksJob,
-    DatabricksJobTask,
-    DatabricksNotebookTask,
-    DatabricksPythonWheelTask,
-    DatabricksSparkJarTask,
-    DatabricksSparkPythonTask,
     DatabricksUnknownTask,
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
     ResolvedDatabricksServerlessConfig,
     parse_libraries,
+    parse_task_from_config,
 )
+from dagster_databricks.utils import build_job_run_url
 
 if TYPE_CHECKING:
     from dagster_databricks.components.databricks_asset_bundle.component import (
@@ -111,30 +107,11 @@ class DatabricksWorkspace(ConfigurableResource):
             # Convert raw task dicts to DatabricksBaseTask objects
             parsed_tasks = []
             for task_dict in raw_tasks:
-                task_key = task_dict.get("task_key", "")
-                if not task_key:
-                    continue
                 augmented_task = {**task_dict, "job_name": job_name}
-
-                if "notebook_task" in task_dict:
-                    parsed_tasks.append(DatabricksNotebookTask.from_job_task_config(augmented_task))
-                elif "condition_task" in task_dict:
-                    parsed_tasks.append(
-                        DatabricksConditionTask.from_job_task_config(augmented_task)
-                    )
-                elif "spark_python_task" in task_dict:
-                    parsed_tasks.append(
-                        DatabricksSparkPythonTask.from_job_task_config(augmented_task)
-                    )
-                elif "python_wheel_task" in task_dict:
-                    parsed_tasks.append(
-                        DatabricksPythonWheelTask.from_job_task_config(augmented_task)
-                    )
-                elif "spark_jar_task" in task_dict:
-                    parsed_tasks.append(DatabricksSparkJarTask.from_job_task_config(augmented_task))
-                elif "run_job_task" in task_dict:
-                    parsed_tasks.append(DatabricksJobTask.from_job_task_config(augmented_task))
-                else:
+                task = parse_task_from_config(augmented_task)
+                if task is not None:
+                    parsed_tasks.append(task)
+                elif task_dict.get("task_key"):
                     # Use unknown task for unsupported task types
                     parsed_tasks.append(DatabricksUnknownTask.from_job_task_config(augmented_task))
 
@@ -228,8 +205,7 @@ class DatabricksWorkspace(ConfigurableResource):
         context.log.info(f"Databricks job submitted with run ID: {run_id}")
 
         # Build Databricks job run URL
-        workspace_url = self.host.rstrip("/")
-        job_run_url = f"{workspace_url}/jobs/{job_id}/runs/{run_id}"
+        job_run_url = build_job_run_url(self.host, job_id, run_id)
         context.log.info(f"Databricks job run URL: {job_run_url}")
 
         try:

@@ -28,17 +28,17 @@ from dagster_shared.record import record
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 from databricks.sdk.service.jobs import RunResultState
 
-from dagster_databricks.components.databricks_asset_bundle.component import (
-    DatabricksWorkspaceArgs,
-    resolve_databricks_workspace,
-)
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
     DatabricksJob,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_workspace.schema import ResolvedDatabricksFilter
-from dagster_databricks.utils import snake_case
+from dagster_databricks.components.shared import (
+    DatabricksWorkspaceArgs,
+    resolve_databricks_workspace,
+)
+from dagster_databricks.utils import build_job_run_url, snake_case
 
 
 @whitelist_for_serdes
@@ -144,8 +144,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                 job_id=job.job_id, only=tasks_to_run if tasks_to_run else None
             )
 
-            workspace_url = self.workspace.host.rstrip("/")
-            run_url = f"{workspace_url}/jobs/{job.job_id}/runs/{run.run_id}"
+            run_url = build_job_run_url(self.workspace.host, job.job_id, run.run_id)
             context.log.info(f"Run URL: {run_url}")
 
             try:
