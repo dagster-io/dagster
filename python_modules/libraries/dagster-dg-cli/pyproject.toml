@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-dg-cli"
-version = "1!0+dev"
+version = "1.12.18"
 description = ""
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -17,9 +21,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-dg-core==1!0+dev",
-    "dagster==1!0+dev",
-    "dagster-cloud-cli==1!0+dev",
+    "dagster-dg-core==1.12.18",
+    "dagster==1.12.18",
+    "dagster-cloud-cli==1.12.18",
     "typer",
 ]
 

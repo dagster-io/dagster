@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagit"
-version = "1!0+dev"
+version = "1.12.18"
 description = "Web UI for dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 readme = "README.rst"
 requires-python = ">=3.10,<3.15"
@@ -19,7 +23,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-webserver==1!0+dev",
+    "dagster-webserver==1.12.18",
 ]
 
 [project.urls]
@@ -31,8 +35,8 @@ dagit-debug = "dagster_webserver.debug:main"
 
 [project.optional-dependencies]
 notebook = [
-    "dagster-webserver[notebook]==1!0+dev",
+    "dagster-webserver[notebook]==1.12.18",
 ]
 test = [
-    "dagster-webserver[test]==1!0+dev",
+    "dagster-webserver[test]==1.12.18",
 ]
