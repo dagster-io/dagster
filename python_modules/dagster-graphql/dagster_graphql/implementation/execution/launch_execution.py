@@ -89,10 +89,13 @@ async def launch_reexecution_from_parent_run(
         instance.get_run_by_id(parent_run_id), f"Could not find parent run with id: {parent_run_id}"
     )
     origin = check.not_none(parent_run.remote_job_origin)
+    # Use origin.job_name (the actual repository job name) rather than parent_run.job_name,
+    # because the run's job_name may be a context-specific display name (e.g. __MANUAL_MATERIALIZATION)
+    # that doesn't correspond to an actual job definition in the repository.
     selector = JobSubsetSelector(
         location_name=origin.repository_origin.code_location_origin.location_name,
         repository_name=origin.repository_origin.repository_name,
-        job_name=parent_run.job_name,
+        job_name=origin.job_name,
         asset_selection=parent_run.asset_selection,
         asset_check_selection=parent_run.asset_check_selection,
         op_selection=None,

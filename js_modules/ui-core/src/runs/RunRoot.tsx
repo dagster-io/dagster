@@ -26,7 +26,7 @@ import {gql, useQuery} from '../apollo-client';
 import {RunPageFragment} from './types/RunFragments.types';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {getAssetJobDisplayName, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
 import {InstigationSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -119,18 +119,27 @@ export const RunRoot = () => {
             run ? (
               <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
                 <RunStatusTag status={run.status} />
-                {!isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <Tag icon="run">
-                    Run of{' '}
-                    <PipelineReference
-                      pipelineName={run?.pipelineName}
-                      pipelineHrefContext={repoAddress || 'repo-unknown'}
-                      snapshotId={snapshotID}
-                      size="small"
-                      isJob={isJob}
-                    />
-                  </Tag>
-                ) : null}
+                {(() => {
+                  const displayName = getAssetJobDisplayName(run.pipelineName);
+                  if (displayName) {
+                    return <Tag icon="run">{displayName}</Tag>;
+                  }
+                  if (!isHiddenAssetGroupJob(run.pipelineName)) {
+                    return (
+                      <Tag icon="run">
+                        Run of{' '}
+                        <PipelineReference
+                          pipelineName={run?.pipelineName}
+                          pipelineHrefContext={repoAddress || 'repo-unknown'}
+                          snapshotId={snapshotID}
+                          size="small"
+                          isJob={isJob}
+                        />
+                      </Tag>
+                    );
+                  }
+                  return null;
+                })()}
                 {tickDetails ? (
                   <TickTagForRun
                     instigationSelector={tickDetails.instigationSelector}

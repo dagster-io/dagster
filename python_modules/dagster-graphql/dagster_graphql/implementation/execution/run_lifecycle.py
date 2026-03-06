@@ -2,9 +2,11 @@ from collections.abc import Sequence
 from typing import cast
 
 import dagster._check as check
+from dagster._core.definitions.assets.job.asset_job import MANUAL_MATERIALIZATION_JOB_NAME
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
@@ -78,11 +80,16 @@ def create_valid_pipeline_run(
     )
     tags = merge_dicts(remote_job.tags, execution_params.execution_metadata.tags)
 
+    # Use context-specific job name for manual materializations via the UI
+    job_name = execution_params.selector.job_name
+    if is_implicit_asset_job_name(job_name) and execution_params.selector.asset_selection:
+        job_name = MANUAL_MATERIALIZATION_JOB_NAME
+
     dagster_run = graphql_context.instance.create_run(
         job_snapshot=remote_job.job_snapshot,
         execution_plan_snapshot=execution_plan.execution_plan_snapshot,
         parent_job_snapshot=remote_job.parent_job_snapshot,
-        job_name=execution_params.selector.job_name,
+        job_name=job_name,
         run_id=(
             execution_params.execution_metadata.run_id
             if execution_params.execution_metadata.run_id

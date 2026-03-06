@@ -851,13 +851,20 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
 
                 # check if the run is in the current repository and (if provided) one of jobs specified in monitored_jobs
                 # note: this also matches when both are None for testing uses cases
+                # Use remote_job_origin.job_name (actual repo job name) when available,
+                # since run.job_name may be a context-specific display name (e.g. __MANUAL_MATERIALIZATION)
+                repo_job_name = (
+                    dagster_run.remote_job_origin.job_name
+                    if dagster_run.remote_job_origin
+                    else dagster_run.job_name
+                )
                 if (
                     not job_match
                     and (sensor_location_name == dagster_run_location_name)
                     and (sensor_repo_name == dagster_run_repo_name)
                 ):
                     if monitored_jobs:
-                        if dagster_run.job_name in map(lambda x: x.name, current_repo_jobs):
+                        if repo_job_name in map(lambda x: x.name, current_repo_jobs):
                             job_match = True
                     else:
                         job_match = True
@@ -874,7 +881,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                     run_job_selector = JobSelector(
                         location_name=remote_repository_origin.code_location_origin.location_name,
                         repository_name=remote_repository_origin.repository_name,
-                        job_name=dagster_run.job_name,
+                        job_name=repo_job_name,
                     )
                     if run_job_selector in other_repo_jobs:
                         job_match = True

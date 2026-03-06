@@ -154,9 +154,13 @@ def retry_run(
 
     repo = code_location.get_repository(repo_name)
 
-    if not repo.has_job(failed_run.job_name):
+    # Use the actual repository job name from remote_job_origin, not the run's
+    # display job_name which may be a context-specific name like __BACKFILL
+    repo_job_name = failed_run.remote_job_origin.job_name
+
+    if not repo.has_job(repo_job_name):
         instance.report_engine_event(
-            f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
+            f"Could not find job {repo_job_name} in repository {repo_name}, unable"
             " to retry the run. It was likely renamed or deleted.",
             failed_run,
         )
@@ -166,7 +170,7 @@ def retry_run(
         JobSubsetSelector(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,
-            job_name=failed_run.job_name,
+            job_name=repo_job_name,
             op_selection=failed_run.op_selection,
             asset_selection=(
                 None if failed_run.asset_selection is None else list(failed_run.asset_selection)

@@ -1132,4 +1132,17 @@ class GrpcServerCodeLocation(CodeLocation):
 
 
 def is_implicit_asset_job_name(job_name: str) -> bool:
-    return job_name.startswith(IMPLICIT_ASSET_JOB_NAME)
+    from dagster._core.definitions.assets.job.asset_job import (
+        BACKFILL_JOB_NAME,
+        MANUAL_MATERIALIZATION_JOB_NAME,
+        SCHEDULE_JOB_NAME_PREFIX,
+        SENSOR_JOB_NAME_PREFIX,
+    )
+
+    return (
+        job_name.startswith(IMPLICIT_ASSET_JOB_NAME)
+        or job_name == MANUAL_MATERIALIZATION_JOB_NAME
+        or job_name == BACKFILL_JOB_NAME
+        or job_name.startswith(SENSOR_JOB_NAME_PREFIX)
+        or job_name.startswith(SCHEDULE_JOB_NAME_PREFIX)
+    )

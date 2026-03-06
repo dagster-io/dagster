@@ -8,7 +8,12 @@ from typing import AbstractSet, NamedTuple  # noqa: UP035
 import dagster._check as check
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
-from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.assets.job.asset_job import (
+    BACKFILL_JOB_NAME,
+    IMPLICIT_ASSET_JOB_NAME,
+    SENSOR_JOB_NAME_PREFIX,
+    is_reserved_asset_job_name,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -17,6 +22,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG, BACKFILL_ID_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
@@ -192,11 +198,21 @@ async def _create_asset_run(
             remote_job = check.not_none(execution_data).remote_job
             remote_execution_plan = check.not_none(execution_data).remote_execution_plan
 
+            # Use context-specific job name based on the run source
+            job_name = remote_job.name
+            if is_reserved_asset_job_name(job_name):
+                if BACKFILL_ID_TAG in run_request.tags:
+                    job_name = BACKFILL_JOB_NAME
+                elif SENSOR_NAME_TAG in run_request.tags:
+                    job_name = f"{SENSOR_JOB_NAME_PREFIX}{run_request.tags[SENSOR_NAME_TAG]}"
+                elif AUTO_MATERIALIZE_TAG in run_request.tags:
+                    job_name = f"{SENSOR_JOB_NAME_PREFIX}declarative_automation"
+
             run = instance.create_run(
                 job_snapshot=remote_job.job_snapshot,
                 execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
                 parent_job_snapshot=remote_job.parent_job_snapshot,
-                job_name=remote_job.name,
+                job_name=job_name,
                 run_id=run_id,
                 resolved_op_selection=None,
                 op_selection=None,

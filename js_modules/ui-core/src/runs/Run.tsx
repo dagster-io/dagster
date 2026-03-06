@@ -24,7 +24,7 @@ import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {runsPathWithFilters} from './RunsFilterInput';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {getAssetJobDisplayName, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {RunStatus} from '../graphql/types';
@@ -71,7 +71,7 @@ export const Run = memo((props: RunProps) => {
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
   useDocumentTitle(
     run
-      ? `${!isHiddenAssetGroupJob(run.pipelineName) ? run.pipelineName : ''} ${runId.slice(
+      ? `${getAssetJobDisplayName(run.pipelineName) ?? (!isHiddenAssetGroupJob(run.pipelineName) ? run.pipelineName : '')} ${runId.slice(
           0,
           8,
         )} [${run.status}]`
