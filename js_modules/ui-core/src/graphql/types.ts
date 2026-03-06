@@ -416,7 +416,8 @@ export enum ReexecutionStrategy {
 export type ReportAssetCheckEvaluationParams = {
   assetKey: AssetKeyInput;
   checkName: Scalars['String']['input'];
-  partition?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  partitionKeys?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   passed: Scalars['Boolean']['input'];
   serializedMetadata?: InputMaybe<Scalars['String']['input']>;
   severity?: InputMaybe<AssetCheckSeverity>;

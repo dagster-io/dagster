@@ -1512,7 +1512,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                     "checkName": check_name,
                     "passed": True,
                     "severity": "WARN",
-                    "partition": "2024-01-01",
+                    "partitionKeys": ["2024-01-01"],
                 }
             },
         )

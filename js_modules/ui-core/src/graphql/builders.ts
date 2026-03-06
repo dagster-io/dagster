@@ -4485,7 +4485,8 @@ type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Workspace
 type ReportAssetCheckEvaluationParams = {
   assetKey: AssetKeyInput;
   checkName: Scalars['String']['input'];
-  partition?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  partitionKeys?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   passed: Scalars['Boolean']['input'];
   serializedMetadata?: InputMaybe<Scalars['String']['input']>;
   severity?: InputMaybe<AssetCheckSeverity>;
@@ -13777,7 +13778,10 @@ export const buildReportAssetCheckEvaluationParams = (
           ? ({} as AssetKeyInput)
           : buildAssetKeyInput({}, relationshipsToOmit),
     checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'aut',
-    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'rerum',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolorem',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
     passed: overrides && overrides.hasOwnProperty('passed') ? overrides.passed! : false,
     serializedMetadata:
       overrides && overrides.hasOwnProperty('serializedMetadata')
