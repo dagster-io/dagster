@@ -214,7 +214,7 @@ spec:
         {{- end }}
         {{- if $deployment.volumes }}
         {{- range $volume := $deployment.volumes }}
-        - {{- $volume | toYaml | nindent 10 }}
+        - {{- tpl ($volume | toYaml) $ | nindent 10 }}
         {{- end }}
         {{- end }}
       {{- if $deployment.schedulerName }}

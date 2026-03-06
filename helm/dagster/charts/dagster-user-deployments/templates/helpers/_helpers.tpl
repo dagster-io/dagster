@@ -171,7 +171,7 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     volume_mounts: {{- .volumeMounts | toYaml | nindent 6 }}
     {{- end }}
     {{- if .volumes }}
-    volumes: {{- .volumes | toYaml | nindent 6 }}
+    volumes: {{- tpl (.volumes | toYaml) $ | nindent 6 }}
     {{- end }}
     {{- if .labels }}
     labels: {{- .labels | toYaml | nindent 6 }}
