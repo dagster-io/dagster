@@ -23,3 +23,6 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-spark"
+
+[project.entry-points."dagster_dg_cli.registry_modules"]
+dagster_spark = "dagster_spark"
