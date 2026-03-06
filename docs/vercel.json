@@ -4215,22 +4215,6 @@
       "destination": "/examples/mini-examples/shared-module"
     },
     {
-      "source": "/examples/bi",
-      "destination": "/examples/reference-architectures/bi"
-    },
-    {
-      "source": "/examples/etl-reverse-etl",
-      "destination": "/examples/reference-architectures/etl-reverse-etl"
-    },
-    {
-      "source": "/examples/real-time",
-      "destination": "/examples/reference-architectures/real-time"
-    },
-    {
-      "source": "/examples/retrieval-augmented-generation",
-      "destination": "/examples/reference-architectures/rag"
-    },
-    {
       "source": "/guides/build/components/building-pipelines-with-components/adding-attributes-to-assets",
       "destination": "/guides/build/assets/metadata-and-tags/adding-attributes-to-assets"
     },
@@ -4441,6 +4425,14 @@
     {
       "source": "/guides/build/components/asset-factories-to-components",
       "destination": "/guides/build/assets/creating-asset-factories"
+    },
+    {
+      "source": "/examples/reference-architectures/:path*",
+      "destination": "/examples"
+    },
+    {
+      "source": "/examples/reference-architectures",
+      "destination": "/examples"
     }
   ],
   "trailingSlash": false

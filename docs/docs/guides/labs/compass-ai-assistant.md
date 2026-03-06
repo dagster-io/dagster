@@ -16,12 +16,15 @@ The Dagster+ AI assistant, powered by [Compass](https://docs.compass.dagster.io/
 Activate Compass by clicking the **Summarize with AI** button on the runs list, a run detail page, or on the Asset Health section of the Home page.
 
 ![The Summarize with AI option in the run actions menu on the runs list](/images/guides/labs/compass-run-menu.png)
+
 <span style={{color: 'var(--theme-color-text-light)'}}>*From the runs list.*</span>
 
 ![The Summarize with AI option in the run actions menu on a run detail page](/images/guides/labs/compass-open-from-run-detail.png)
+
 <span style={{color: 'var(--theme-color-text-light)'}}>*From a run detail page.*</span>
 
 ![The Summarize with AI button in the Asset Health section of the Home page](/images/guides/labs/degraded-asset-compass-trigger.png)
+
 <span style={{color: 'var(--theme-color-text-light)'}}>*From the Asset Health section of the Home page.*</span>
 
 Compass opens as a side panel and begins streaming results. It searches run logs and other artifacts to gather context, then returns a summary of the steps, root causes, and debugging steps.
