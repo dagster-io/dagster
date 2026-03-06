@@ -14,6 +14,7 @@ metadata:
   annotations: {{ $deployment.annotations | toYaml | nindent 4 }}
 spec:
   replicas: 1
+  revisionHistoryLimit: {{ $deployment.revisionHistoryLimit }}
   {{- if $deployment.deploymentStrategy }}
   strategy:
     {{- toYaml $deployment.deploymentStrategy | nindent 4 }}

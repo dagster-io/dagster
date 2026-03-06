@@ -36,6 +36,8 @@ imagePullSecrets: []
 ####################################################################################################
 dagsterWebserver:
   replicaCount: 1
+  revisionHistoryLimit: 10
+
   image:
     # When a tag is not supplied for a Dagster provided image,
     # it will default as the Helm chart version.
@@ -344,6 +346,8 @@ dagster-user-deployments:
         # image pull policy to anything other than "Always" will use a cached/stale image, which is
         # almost certainly not what you want.
         pullPolicy: Always
+
+      revisionHistoryLimit: 10
 
       # Arguments to `dagster api grpc`.
       # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
@@ -676,6 +680,7 @@ runLauncher:
       workerQueues:
         - name: "dagster"
           replicaCount: 2
+          revisionHistoryLimit: 10
           labels: {}
           nodeSelector: {}
           configSource: {}
@@ -925,6 +930,8 @@ flower:
     tag: "0.9.5"
     pullPolicy: Always
 
+  revisionHistoryLimit: 10
+
   service:
     type: ClusterIP
     annotations: {}
@@ -1112,6 +1119,8 @@ dagsterDaemon:
     repository: "docker.io/dagster/dagster-celery-k8s"
     tag: ~
     pullPolicy: Always
+
+  revisionHistoryLimit: 10
 
   heartbeatTolerance: 1800
 
