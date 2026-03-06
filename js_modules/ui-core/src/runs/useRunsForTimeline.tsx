@@ -20,7 +20,7 @@ import {
 } from './types/useRunsForTimeline.types';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {HIDDEN_ASSET_GROUP_JOB_LABEL, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -422,7 +422,7 @@ export const useRunsForTimeline = ({
 
       jobs[jobKey] = {
         key: jobKey,
-        name: isAdHoc ? 'Ad hoc materializations' : pipelineName,
+        name: isAdHoc ? HIDDEN_ASSET_GROUP_JOB_LABEL : pipelineName,
         type: isAdHoc ? 'asset' : 'job',
         repoAddress,
         path: isAdHoc
@@ -509,7 +509,7 @@ export const useRunsForTimeline = ({
             addedAdHocJobs.add(jobKey);
           }
 
-          const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
+          const jobName = isAdHoc ? HIDDEN_ASSET_GROUP_JOB_LABEL : pipeline.name;
 
           addedJobKeys.add(jobKey);
           const jobRuns = Object.values(runsByJobKey[jobKey] || {});
