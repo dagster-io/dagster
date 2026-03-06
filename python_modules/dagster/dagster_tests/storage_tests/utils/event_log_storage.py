@@ -5887,6 +5887,11 @@ class TestEventLogStorage:
         assert storage.initialize_concurrency_limit_to_default("foo")
         assert storage.get_concurrency_info("foo").slot_count == 2
 
+        # Changing the default must propagate on the next call
+        self.set_default_op_concurrency(instance, storage, 3)
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 3
+
     def test_asset_checks(
         self,
         storage: EventLogStorage,

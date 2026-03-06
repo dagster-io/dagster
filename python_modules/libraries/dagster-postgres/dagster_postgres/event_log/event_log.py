@@ -364,8 +364,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     conn.execute(
                         insert_stmt.on_conflict_do_update(
                             index_elements=[ConcurrencyLimitsTable.c.concurrency_key],
-                            set_={"limit": insert_stmt.excluded.limit},
-                            where=(ConcurrencyLimitsTable.c.limit != insert_stmt.excluded.limit),
+                            set_={
+                                "limit": insert_stmt.excluded.limit,
+                                "using_default_limit": insert_stmt.excluded.using_default_limit,
+                            },
+                            where=db.or_(
+                                ConcurrencyLimitsTable.c.limit != insert_stmt.excluded.limit,
+                                ConcurrencyLimitsTable.c.using_default_limit
+                                != insert_stmt.excluded.using_default_limit,
+                            ),
                         )
                     )
                     self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
@@ -375,12 +382,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             return False
 
         with self.index_transaction() as conn:
-            conn.execute(
+            result = conn.execute(
                 db_dialects.postgresql.insert(ConcurrencyLimitsTable)
                 .values(concurrency_key=concurrency_key, limit=default_limit)
                 .on_conflict_do_nothing()
             )
-            self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            if result.rowcount > 0:
+                self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
         return True
 
     def _connect(self) -> ContextManager[Connection]:
