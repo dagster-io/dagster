@@ -22,6 +22,7 @@ from dagster._core.storage.event_log import (
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
+from dagster._core.storage.event_log.schema import ConcurrencyLimitsTable, ConcurrencySlotsTable
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -322,6 +323,102 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
                 .on_conflict_do_nothing(),
             )
+
+    def _reconcile_concurrency_limits_from_slots(self) -> None:
+        """PostgreSQL override: replaces the base-class bare INSERT with ON CONFLICT DO NOTHING
+        so that two workers racing to populate an empty limits table during the one-time
+        migration from the slots-only schema do not cause a UniqueViolation / transaction abort.
+        """
+        if not self.has_concurrency_limits_table:
+            return
+
+        if not self._has_rows(ConcurrencySlotsTable) or self._has_rows(ConcurrencyLimitsTable):
+            return
+
+        with self.index_transaction() as conn:
+            rows = conn.execute(
+                db_select(
+                    [
+                        ConcurrencySlotsTable.c.concurrency_key,
+                        db.func.count().label("count"),
+                    ]
+                )
+                .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
+                .group_by(ConcurrencySlotsTable.c.concurrency_key)
+            ).fetchall()
+            if rows:
+                conn.execute(
+                    db_dialects.postgresql.insert(ConcurrencyLimitsTable)
+                    .values([{"concurrency_key": row[0], "limit": row[1]} for row in rows])
+                    .on_conflict_do_nothing()
+                )
+
+    def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
+        """Override of SqlEventLogStorage.initialize_concurrency_limit_to_default that uses
+        INSERT ... ON CONFLICT syntax instead of the INSERT-then-catch-IntegrityError pattern.
+
+        PostgreSQL differs from SQLite in that a failed statement inside a transaction (e.g. a
+        UniqueViolation on INSERT) aborts the *entire* transaction, putting it into an
+        InFailedSqlTransaction state. The base-class approach of catching IntegrityError and then
+        issuing an UPDATE on the same connection therefore always fails on PostgreSQL.  Using
+        ON CONFLICT DO UPDATE keeps the upsert as a single atomic statement that never raises.
+        """
+        if not self.has_concurrency_limits_table:
+            return False
+
+        self._reconcile_concurrency_limits_from_slots()
+
+        if not self.has_instance:
+            return False
+
+        default_limit = self._instance.global_op_concurrency_default_limit
+        # initialize outside of connection context
+        has_default_pool_limit_col = self.has_default_pool_limit_col
+
+        if has_default_pool_limit_col:
+            with self.index_transaction() as conn:
+                if default_limit is None:
+                    conn.execute(
+                        ConcurrencyLimitsTable.delete().where(
+                            ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
+                        )
+                    )
+                    self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                else:
+                    insert_stmt = db_dialects.postgresql.insert(ConcurrencyLimitsTable).values(
+                        concurrency_key=concurrency_key,
+                        limit=default_limit,
+                        using_default_limit=True,
+                    )
+                    conn.execute(
+                        insert_stmt.on_conflict_do_update(
+                            index_elements=[ConcurrencyLimitsTable.c.concurrency_key],
+                            set_={
+                                "limit": insert_stmt.excluded.limit,
+                                "using_default_limit": insert_stmt.excluded.using_default_limit,
+                            },
+                            where=db.or_(
+                                ConcurrencyLimitsTable.c.limit != insert_stmt.excluded.limit,
+                                ConcurrencyLimitsTable.c.using_default_limit
+                                != insert_stmt.excluded.using_default_limit,
+                            ),
+                        )
+                    )
+                    self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            return True
+
+        if default_limit is None:
+            return False
+
+        with self.index_transaction() as conn:
+            result = conn.execute(
+                db_dialects.postgresql.insert(ConcurrencyLimitsTable)
+                .values(concurrency_key=concurrency_key, limit=default_limit)
+                .on_conflict_do_nothing()
+            )
+            if result.rowcount > 0:
+                self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+        return True
 
     def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)

@@ -2258,6 +2258,12 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                     self._allocate_concurrency_slots(conn, concurrency_key, 0)
                 else:
+                    # PostgresEventLogStorage overrides this entire method to use
+                    # INSERT ... ON CONFLICT syntax.  On PostgreSQL, a UniqueViolation
+                    # inside a transaction aborts the whole transaction (InFailedSqlTransaction),
+                    # so the UPDATE below would also fail.  This INSERT-then-catch pattern is
+                    # only safe for SQLite, which does not abort the transaction on an
+                    # IntegrityError.
                     try:
                         conn.execute(
                             ConcurrencyLimitsTable.insert().values(
@@ -2269,11 +2275,14 @@ class SqlEventLogStorage(EventLogStorage):
                     except db_exc.IntegrityError:
                         conn.execute(
                             ConcurrencyLimitsTable.update()
-                            .values(limit=default_limit)
+                            .values(limit=default_limit, using_default_limit=True)
                             .where(
                                 db.and_(
                                     ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
-                                    ConcurrencyLimitsTable.c.limit != default_limit,
+                                    db.or_(
+                                        ConcurrencyLimitsTable.c.limit != default_limit,
+                                        ConcurrencyLimitsTable.c.using_default_limit == False,  # noqa: E712
+                                    ),
                                 )
                             )
                         )
@@ -2292,8 +2301,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             except db_exc.IntegrityError:
                 pass
-
-        self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
         return True
 
     def _upsert_and_lock_limit_row(

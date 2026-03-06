@@ -5861,6 +5861,45 @@ class TestEventLogStorage:
 
         assert storage.get_concurrency_info("foo").slot_count == 0
 
+    def test_default_concurrency_idempotent(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_set_concurrency_defaults():
+            pytest.skip("storage does not support setting global op concurrency defaults")
+
+        self.set_default_op_concurrency(instance, storage, 2)
+
+        # First call creates the row
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 2
+
+        # Second call with same key and same default must not raise and must be a no-op
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 2
+
+        # Third call still idempotent
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 2
+
+        # Changing the default must propagate on the next call
+        self.set_default_op_concurrency(instance, storage, 3)
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 3
+
+        # A user-managed row (using_default_limit=False) must be re-marked as
+        # default-managed after initialize_concurrency_limit_to_default is called.
+        storage.set_concurrency_slots("bar", 5)
+        assert storage.get_concurrency_info("bar").using_default_limit is False
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").using_default_limit is True
+        assert storage.get_concurrency_info("bar").slot_count == 3
+
     def test_asset_checks(
         self,
         storage: EventLogStorage,
