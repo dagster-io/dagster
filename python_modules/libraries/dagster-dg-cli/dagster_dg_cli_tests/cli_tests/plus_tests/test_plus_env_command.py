@@ -230,6 +230,57 @@ def test_pull_env_command_project_preserves_existing_env(dg_plus_cli_config):
         assert "FOO=old" not in env_contents
 
 
+@responses.activate
+def test_pull_env_command_workspace_preserves_existing_env(dg_plus_cli_config):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_workspace(runner),
+    ):
+        runner.invoke_create_dagster("project", "--no-uv-sync", "foo")
+        runner.invoke_create_dagster("project", "--no-uv-sync", "bar")
+        runner.invoke_create_dagster("project", "--no-uv-sync", "baz")
+
+        (Path("foo") / ".env").write_text("EXISTING_FOO=keep\nFOO=old")
+        (Path("bar") / ".env").write_text("EXISTING_BAR=keep")
+
+        mock_gql_response(
+            query=gql.SECRETS_QUERY,
+            json_data={
+                "data": {
+                    "secretsOrError": {
+                        "secrets": [
+                            {
+                                "secretName": "FOO",
+                                "secretValue": "bar",
+                                "locationNames": ["foo"],
+                                "localDeploymentScope": True,
+                            },
+                            {
+                                "secretName": "BAZ",
+                                "secretValue": "qux",
+                                "locationNames": ["foo", "bar"],
+                                "localDeploymentScope": True,
+                            },
+                        ]
+                    }
+                }
+            },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
+        )
+        result = runner.invoke("plus", "pull", "env")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        foo_env = (Path("foo") / ".env").read_text()
+        assert "EXISTING_FOO=keep" in foo_env
+        assert "FOO=bar" in foo_env
+        assert "BAZ=qux" in foo_env
+        assert "FOO=old" not in foo_env
+
+        bar_env = (Path("bar") / ".env").read_text()
+        assert "EXISTING_BAR=keep" in bar_env
+        assert "BAZ=qux" in bar_env
+
+
 ########################################################
 # ADD ENV COMMAND, WORKSPACE LEVEL
 ########################################################
