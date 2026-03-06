@@ -188,6 +188,48 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
         assert (Path("bar") / ".env").read_text().strip() == "BAZ=qux"
 
 
+@responses.activate
+def test_pull_env_command_project_preserves_existing_env(dg_plus_cli_config):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        Path(".env").write_text("EXISTING=keep\nFOO=old")
+
+        mock_gql_response(
+            query=gql.SECRETS_QUERY,
+            json_data={
+                "data": {
+                    "secretsOrError": {
+                        "secrets": [
+                            {
+                                "secretName": "FOO",
+                                "secretValue": "bar",
+                                "locationNames": ["foo-bar"],
+                                "localDeploymentScope": True,
+                            },
+                            {
+                                "secretName": "BAZ",
+                                "secretValue": "qux",
+                                "locationNames": [],
+                                "localDeploymentScope": True,
+                            },
+                        ]
+                    }
+                }
+            },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
+        )
+        result = runner.invoke("plus", "pull", "env")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        env_contents = Path(".env").read_text()
+        assert "EXISTING=keep" in env_contents
+        assert "FOO=bar" in env_contents
+        assert "BAZ=qux" in env_contents
+        assert "FOO=old" not in env_contents
+
+
 ########################################################
 # ADD ENV COMMAND, WORKSPACE LEVEL
 ########################################################
