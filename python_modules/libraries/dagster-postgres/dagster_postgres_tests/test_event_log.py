@@ -48,6 +48,18 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     def can_wipe_asset_partitions(self) -> bool:
         return False
 
+    def can_set_concurrency_defaults(self) -> bool:
+        return True
+
+    def set_default_op_concurrency(self, instance, storage, limit) -> None:
+        if instance is None:
+            return
+        if "concurrency" not in instance._settings:  # noqa: SLF001
+            instance._settings["concurrency"] = {}  # noqa: SLF001
+        if "pools" not in instance._settings["concurrency"]:  # noqa: SLF001
+            instance._settings["concurrency"]["pools"] = {}  # noqa: SLF001
+        instance._settings["concurrency"]["pools"]["default_limit"] = limit  # noqa: SLF001
+
     def test_event_log_storage_two_watchers(self, conn_string):
         with _clean_storage(conn_string) as storage:
             run_id = make_new_run_id()
