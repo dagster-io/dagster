@@ -2258,6 +2258,12 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                     self._allocate_concurrency_slots(conn, concurrency_key, 0)
                 else:
+                    # PostgresEventLogStorage overrides this entire method to use
+                    # INSERT ... ON CONFLICT syntax.  On PostgreSQL, a UniqueViolation
+                    # inside a transaction aborts the whole transaction (InFailedSqlTransaction),
+                    # so the UPDATE below would also fail.  This INSERT-then-catch pattern is
+                    # only safe for SQLite, which does not abort the transaction on an
+                    # IntegrityError.
                     try:
                         conn.execute(
                             ConcurrencyLimitsTable.insert().values(
@@ -2292,8 +2298,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             except db_exc.IntegrityError:
                 pass
-
-        self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
         return True
 
     def _upsert_and_lock_limit_row(
