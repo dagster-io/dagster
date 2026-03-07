@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import dagster as dg
 import pytest
@@ -798,3 +798,48 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     assert len(deps) == 1
     assert deps[0].asset_key == AssetKey("foo_upstream_defined")
     assert deps[0].metadata["dagster/table_name"] == table_name
+
+
+def test_op_name_collision_same_project_raises(dbt_path: Path) -> None:
+    """Two DbtProjectComponent instances on the same project with no explicit op.name
+    must raise DagsterInvalidDefinitionError (issue #33441, Bug B).
+    """
+    comp_a = DbtProjectComponent(project=DbtProject(dbt_path))
+    comp_b = DbtProjectComponent(project=DbtProject(dbt_path))
+
+    mock_context = MagicMock()
+    mock_context.component_tree.get_all_components.return_value = [comp_a, comp_b]
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        comp_a.validate_no_op_name_collision(mock_context)
+
+
+def test_op_name_collision_explicit_name_ok(dbt_path: Path) -> None:
+    """If one component sets an explicit op.name, no collision error is raised."""
+    comp_a = DbtProjectComponent(project=DbtProject(dbt_path))
+    comp_b = DbtProjectComponent(project=DbtProject(dbt_path), op=OpSpec(name="my_unique_op"))
+
+    mock_context = MagicMock()
+    mock_context.component_tree.get_all_components.return_value = [comp_a, comp_b]
+
+    # comp_a has no explicit name but sibling comp_b does → no collision
+    comp_a.validate_no_op_name_collision(mock_context)
+
+    # comp_b has explicit name → skips validation entirely
+    comp_b.validate_no_op_name_collision(mock_context)
+
+
+def test_op_name_collision_different_projects_ok(dbt_path: Path) -> None:
+    """Two components on different projects with no explicit op.name is fine."""
+    comp_a = DbtProjectComponent(project=DbtProject(dbt_path))
+
+    # Create a mock component with a different project discriminator
+    comp_b = MagicMock(spec=DbtProjectComponent)
+    comp_b.op = None
+    type(comp_b).defs_state_discriminator = PropertyMock(return_value="different_project")
+
+    mock_context = MagicMock()
+    mock_context.component_tree.get_all_components.return_value = [comp_a, comp_b]
+
+    # Different projects → no collision
+    comp_a.validate_no_op_name_collision(mock_context)
