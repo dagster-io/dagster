@@ -2535,14 +2535,25 @@ def test_exclusions_with_end_offset_excluded_boundary():
     with partition_loading_context(current_time):
         assert partitions_def_zero.get_last_partition_key() == "2021-06-04"
 
-    # end_offset=2: boundary = [06-06, 06-07), 06-06 not excluded → "2021-06-06"
+    # end_offset=2: boundary = [06-06, 06-07), intermediate partition 06-05 excluded → "2021-06-06"
     partitions_def_two = dg.DailyPartitionsDefinition(
         start_date="2021-05-05",
         end_offset=2,
-        exclusions=[current_time],  # excludes [2021-06-05, 2021-06-06)
+        exclusions=[current_time],  # excludes [2021-06-05, 2021-06-06) — intermediate, not boundary
     )
     with partition_loading_context(current_time):
         assert partitions_def_two.get_last_partition_key() == "2021-06-06"
+
+    # end_offset=2: BOUNDARY partition 06-06 excluded → reverse filter skips 06-06 → "2021-06-05"
+    # This validates that the reverse-filter step actually skips the excluded boundary window.
+    boundary_time = datetime.strptime("2021-06-06", DATE_FORMAT)
+    partitions_def_two_boundary = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=2,
+        exclusions=[boundary_time],  # excludes [2021-06-06, 2021-06-07) — the boundary itself
+    )
+    with partition_loading_context(current_time):
+        assert partitions_def_two_boundary.get_last_partition_key() == "2021-06-05"
 
 
 def test_exclusions_with_negative_end_offset():

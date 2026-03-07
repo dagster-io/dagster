@@ -755,7 +755,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         current_timestamp_window = check.not_none(
             current_timestamp_window,
-            "current_timestamp_window should not be None if end_offset != 0",
+            "No valid partition window found — all partitions before the computed boundary"
+            " may be excluded, or end_offset is unexpectedly zero at this code path.",
         )
 
         if (
