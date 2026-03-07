@@ -6,6 +6,7 @@ from dagster_shared.check.builder import (
 )
 from dagster_shared.check.functions import (
     CheckError as CheckError,
+    CheckInvariantError as CheckInvariantError,
     ElementCheckError as ElementCheckError,
     NotImplementedCheckError as NotImplementedCheckError,
     Numeric as Numeric,
