@@ -432,7 +432,11 @@ class TimeWindowPartitionsSubset(
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
-            return super().__and__(other)
+            from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+
+            return DefaultPartitionsSubset(
+                set(self.get_partition_keys()) & set(other.get_partition_keys())
+            )
 
         self_time_windows_iter = iter(
             sorted(self.included_time_windows, key=lambda tw: tw.start_timestamp)
@@ -473,8 +477,11 @@ class TimeWindowPartitionsSubset(
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
-            return super().__or__(other)
+            from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 
+            return DefaultPartitionsSubset(
+                set(self.get_partition_keys()) | set(other.get_partition_keys())
+            )
         input_time_windows = sorted(
             [*self.included_time_windows, *other.included_time_windows],
             key=lambda tw: tw.start_timestamp,
@@ -511,7 +518,11 @@ class TimeWindowPartitionsSubset(
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
-            return super().__sub__(other)
+            from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+
+            return DefaultPartitionsSubset(
+                set(self.get_partition_keys()) - set(other.get_partition_keys())
+            )
 
         time_windows = sorted(self.included_time_windows, key=lambda tw: tw.start_timestamp)
         other_time_windows = sorted(other.included_time_windows, key=lambda tw: tw.start_timestamp)
