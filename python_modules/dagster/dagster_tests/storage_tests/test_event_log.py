@@ -89,15 +89,6 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def can_set_concurrency_defaults(self) -> bool:
         return True
 
-    def set_default_op_concurrency(self, instance, storage, limit) -> None:
-        if instance is None:
-            return
-        if "concurrency" not in instance._settings:  # noqa: SLF001
-            instance._settings["concurrency"] = {}  # noqa: SLF001
-        if "pools" not in instance._settings["concurrency"]:  # noqa: SLF001
-            instance._settings["concurrency"]["pools"] = {}  # noqa: SLF001
-        instance._settings["concurrency"]["pools"]["default_limit"] = limit  # noqa: SLF001
-
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
 

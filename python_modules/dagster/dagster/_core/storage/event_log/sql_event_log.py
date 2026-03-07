@@ -2257,6 +2257,7 @@ class SqlEventLogStorage(EventLogStorage):
                         )
                     )
                     self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                    return False
                 else:
                     try:
                         conn.execute(

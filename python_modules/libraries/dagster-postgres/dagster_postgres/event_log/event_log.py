@@ -332,6 +332,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not self.has_concurrency_limits_table:
             return
 
+        # Pre-check outside the transaction as a hot-path optimization: after the one-time
+        # migration this method short-circuits on every call without opening a transaction.
+        # The ON CONFLICT DO NOTHING inside the transaction is the actual safety guard for
+        # concurrent workers that both pass this check before either has committed.
         if not self._has_rows(ConcurrencySlotsTable) or self._has_rows(ConcurrencyLimitsTable):
             return
 
@@ -381,6 +385,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                         )
                     )
                     self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                    return False
                 else:
                     insert_stmt = db_dialects.postgresql.insert(ConcurrencyLimitsTable).values(
                         concurrency_key=concurrency_key,
@@ -407,13 +412,18 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if default_limit is None:
             return False
 
-        # Legacy schema path (no using_default_limit column): use ON CONFLICT DO NOTHING
-        # and always sync slots to match the default limit.
+        # Legacy schema path (no using_default_limit column): upsert the limit so the
+        # limits table stays consistent with the slot count we're about to enforce.
         with self.index_transaction() as conn:
+            insert_stmt = db_dialects.postgresql.insert(ConcurrencyLimitsTable).values(
+                concurrency_key=concurrency_key, limit=default_limit
+            )
             conn.execute(
-                db_dialects.postgresql.insert(ConcurrencyLimitsTable)
-                .values(concurrency_key=concurrency_key, limit=default_limit)
-                .on_conflict_do_nothing()
+                insert_stmt.on_conflict_do_update(
+                    index_elements=[ConcurrencyLimitsTable.c.concurrency_key],
+                    set_={"limit": insert_stmt.excluded.limit},
+                    where=ConcurrencyLimitsTable.c.limit != insert_stmt.excluded.limit,
+                )
             )
             self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
         return True
