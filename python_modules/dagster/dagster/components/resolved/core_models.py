@@ -7,12 +7,16 @@ import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import FreshnessPolicy
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -412,6 +416,40 @@ def apply_post_processor_to_spec(
         check.failed(f"Unsupported operation: {model.operation}")
 
 
+def _resolve_target_keys(
+    defs: Definitions,
+    target: str | None,
+) -> frozenset[AssetKey] | None:
+    """Resolve a post-processing target string to a set of asset keys.
+
+    Returns None for wildcard targets (meaning "apply to all"), or a frozenset
+    of matching AssetKeys for targeted selections.
+
+    Builds a lightweight AssetGraph directly from the definitions' assets rather
+    than going through get_repository_def(), which would trigger premature
+    resource validation. This is necessary because during post-processing, the
+    Definitions may not yet contain resources from parent folders (they get
+    merged later when components are composed).
+    """
+    if target is None or target == "*":
+        return None
+
+    selection = AssetSelection.from_string(target, include_sources=True)
+
+    # Build a lightweight asset graph for selection resolution only.
+    # Wrap bare AssetSpecs into AssetsDefinitions so they can participate
+    # in the graph, and pass through all other asset types as-is.
+    all_assets: list[AssetsDefinition | SourceAsset] = []
+    for asset in defs.assets or []:
+        if isinstance(asset, (AssetsDefinition, SourceAsset)):
+            all_assets.append(asset)
+        elif isinstance(asset, AssetSpec):
+            all_assets.append(AssetsDefinition(specs=[asset]))
+
+    asset_graph = AssetGraph.from_assets(all_assets)
+    return frozenset(selection.resolve(asset_graph))
+
+
 def apply_post_processor_to_defs(
     model,
     defs: Definitions,
@@ -419,9 +457,17 @@ def apply_post_processor_to_defs(
 ) -> Definitions:
     check.inst(model, AssetPostProcessorModel.model())
 
-    return defs.map_resolved_asset_specs(
-        selection=model.target,
-        func=lambda spec: apply_post_processor_to_spec(model, spec, context),
+    target_keys = _resolve_target_keys(defs, model.target)
+
+    # Use map_asset_specs (not map_resolved_asset_specs) to avoid triggering
+    # resolve_asset_graph() -> get_repository_def(), which validates resource
+    # requirements prematurely before parent component resources are merged.
+    return defs.map_asset_specs(
+        func=lambda spec: (
+            apply_post_processor_to_spec(model, spec, context)
+            if target_keys is None or spec.key in target_keys
+            else spec
+        ),
     )
 
 
