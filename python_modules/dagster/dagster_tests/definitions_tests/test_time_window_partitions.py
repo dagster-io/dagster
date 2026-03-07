@@ -2506,6 +2506,45 @@ def test_exclusions_with_end_offset():
     ]
 
 
+def test_exclusions_with_end_offset_excluded_boundary():
+    """Issue #33551: when a partition within the end_offset boundary is excluded,
+    the time boundary should be computed ignoring exclusions, then exclusions applied
+    via reverse iteration — not by skipping excluded windows during forward step counting.
+    """
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+
+    # At midnight 2021-06-05, the reverse iterator yields [06-04, 06-05) first.
+    # end_offset=1 extends the natural boundary to [06-05, 06-06).
+    # With exclusions=[2021-06-05], [06-05, 06-06) is excluded.
+    # Correct: last non-excluded partition at or before the boundary = "2021-06-04".
+    # Buggy: forward iterator skips 06-05 and lands on "2021-06-06" (overshoot).
+    partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=1,
+        exclusions=[current_time],  # excludes window [2021-06-05, 2021-06-06)
+    )
+    with partition_loading_context(current_time):
+        assert partitions_def.get_last_partition_key() == "2021-06-04"
+
+    # end_offset=0: last = "2021-06-04" (reverse from midnight 06-05 = [06-04, 06-05), not excluded)
+    partitions_def_zero = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=0,
+        exclusions=[current_time],
+    )
+    with partition_loading_context(current_time):
+        assert partitions_def_zero.get_last_partition_key() == "2021-06-04"
+
+    # end_offset=2: boundary = [06-06, 06-07), 06-06 not excluded → "2021-06-06"
+    partitions_def_two = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=2,
+        exclusions=[current_time],  # excludes [2021-06-05, 2021-06-06)
+    )
+    with partition_loading_context(current_time):
+        assert partitions_def_two.get_last_partition_key() == "2021-06-06"
+
+
 def test_exclusions_with_negative_end_offset():
     partitions_def = dg.DailyPartitionsDefinition(
         start_date="2021-05-05",

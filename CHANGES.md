@@ -16,6 +16,7 @@
 
 ### Bugfixes
 
+- Fixed a bug in `TimeWindowPartitionsDefinition` where `get_last_partition_window` with `end_offset > 0` would overshoot into the future when a partition within the offset boundary was excluded. The time boundary is now computed ignoring exclusions, with exclusion filtering applied via a reverse iterator afterward.
 - Fixed a bug where Dagster incorrectly called `__enter__` on nested resource attributes annotated with `dagster.ResourceDependency` during parent resource setup. (Thanks, [@danielgafni](https://github.com/danielgafni)!)
 - [ui] Fixed text wrapping and layout for long URIs in asset storage metadata section.
 
