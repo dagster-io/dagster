@@ -168,7 +168,7 @@ def _find_hourly_schedule_time(
             + (SECONDS_PER_MINUTE - new_timestamp % SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
         )
 
-        current_minute = (new_timestamp // SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
+        current_minute = datetime.datetime.fromtimestamp(new_timestamp, tz=date.tzinfo).minute
 
         final_timestamp = None
 
@@ -202,7 +202,7 @@ def _find_hourly_schedule_time(
         new_timestamp = new_timestamp - new_timestamp % SECONDS_PER_MINUTE
 
         # move minutes back to correct place
-        current_minute = (new_timestamp // SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
+        current_minute = datetime.datetime.fromtimestamp(new_timestamp, tz=date.tzinfo).minute
 
         final_timestamp = None
 
