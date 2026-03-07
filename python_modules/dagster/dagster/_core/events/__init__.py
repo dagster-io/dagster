@@ -1330,16 +1330,38 @@ class DagsterEvent(
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
         resource_keys: AbstractSet[str],
+        resource_origins: Optional[Mapping[str, AbstractSet[str]]] = None,
     ) -> "DagsterEvent":
+        # Build message with resource origins if available
+        if resource_origins:
+            message_parts = ["Starting initialization of resources:"]
+            for resource_key in sorted(resource_keys):
+                origins = sorted(resource_origins.get(resource_key, []))
+                origins_str = ", ".join(origins) if origins else "none"
+                message_parts.append(f"  {resource_key} - required by [{origins_str}]")
+            message = "\n".join(message_parts)
+        else:
+            message = "Starting initialization of resources [{}].".format(
+                ", ".join(sorted(resource_keys))
+            )
+        
+        # Add resource origins to metadata
+        metadata = {}
+        if resource_origins:
+            for resource_key in sorted(resource_keys):
+                origins = resource_origins.get(resource_key, [])
+                if origins:
+                    metadata[f"{resource_key}:required_by"] = MetadataValue.text(
+                        ", ".join(sorted(origins))
+                    )
+        
         return DagsterEvent.from_resource(
             DagsterEventType.RESOURCE_INIT_STARTED,
             job_name=job_name,
             execution_plan=execution_plan,
             log_manager=log_manager,
-            message="Starting initialization of resources [{}].".format(
-                ", ".join(sorted(resource_keys))
-            ),
-            event_specific_data=EngineEventData(metadata={}, marker_start="resources"),
+            message=message,
+            event_specific_data=EngineEventData(metadata=metadata, marker_start="resources"),
         )
 
     @staticmethod
