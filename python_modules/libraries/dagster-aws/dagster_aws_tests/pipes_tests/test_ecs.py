@@ -217,3 +217,28 @@ def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
         )
         mat = instance.get_latest_materialization_event(ecs_asset.key)
         assert mat and mat.asset_materialization
+
+
+def test_ecs_pipes_task_failed_to_start(
+    ecs_client, pipes_ecs_client: PipesECSClient, external_script_default_components
+):
+    """Test that a task with stopCode=TaskFailedToStart raises an error."""
+    ecs_client.register_task_definition(
+        family="test-task",
+        containerDefinitions=[
+            {
+                "name": LocalECSMockClient.CONTAINER_NAME,
+                "image": "DOES_NOT_EXIST",
+                "command": [sys.executable, external_script_default_components],
+                "memory": 512,
+            }
+        ],
+    )
+
+    with instance_for_test() as instance:
+        with pytest.raises(RuntimeError, match="ECS tasks failed to start"):
+            materialize(
+                [ecs_asset],
+                instance=instance,
+                resources={"pipes_ecs_client": pipes_ecs_client},
+            )
