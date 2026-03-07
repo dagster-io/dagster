@@ -88,7 +88,6 @@ self_dependant_asset_downstream_of_regular_asset_multiple_run = [
             "self_dependant": dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
             "regular_asset": dg.TimeWindowPartitionMapping(),
         },
-        backfill_policy=BackfillPolicy.multi_run(max_partitions_per_run=1),
     ),
 ]
 
