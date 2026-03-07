@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, Union
 
 from dagster_shared.dagster_model import DagsterModel
 
@@ -37,8 +37,8 @@ class LocalFileCodeReference(DagsterModel):
     """Represents a local file source location."""
 
     file_path: str
-    line_number: Optional[int] = None
-    label: Optional[str] = None
+    line_number: int | None = None
+    label: str | None = None
 
     @property
     def source(self) -> str:
@@ -53,7 +53,7 @@ class UrlCodeReference(DagsterModel):
     """
 
     url: str
-    label: Optional[str] = None
+    label: str | None = None
 
     @property
     def source(self) -> str:
@@ -84,7 +84,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
         return self
 
 
-def local_source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileCodeReference]:
+def local_source_path_from_fn(fn: Callable[..., Any]) -> LocalFileCodeReference | None:
     cwd = os.getcwd()
 
     origin_file = os.path.abspath(os.path.join(cwd, inspect.getsourcefile(fn)))  # type: ignore
@@ -125,7 +125,7 @@ class CodeReferencesMetadataSet(NamespacedMetadataSet):
     source code for the asset can be found.
     """
 
-    code_references: Optional[CodeReferencesMetadataValue] = None
+    code_references: CodeReferencesMetadataValue | None = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -332,7 +332,7 @@ def _convert_local_path_to_git_path_single_definition(
     )
 
 
-def base_git_url(url: str, branch: str, platform: Optional[Platform]) -> str:
+def base_git_url(url: str, branch: str, platform: Platform | None) -> str:
     if platform is None:
         if "gitlab" in url:
             platform = "gitlab"
@@ -363,7 +363,7 @@ def link_code_references_to_git(
     git_url: str,
     git_branch: str,
     file_path_mapping: FilePathMapping,
-    platform: Optional[Platform] = None,
+    platform: Platform | None = None,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.

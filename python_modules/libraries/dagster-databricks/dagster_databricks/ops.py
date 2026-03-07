@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster import (
     In,
@@ -23,10 +23,10 @@ if TYPE_CHECKING:
 
 def create_databricks_run_now_op(
     databricks_job_id: int,
-    databricks_job_configuration: Optional[dict] = None,
+    databricks_job_configuration: dict | None = None,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
-    name: Optional[str] = None,
+    name: str | None = None,
     databricks_resource_key: str = "databricks",
 ) -> OpDefinition:
     """Creates an op that launches an existing databricks job.
@@ -138,7 +138,7 @@ def create_databricks_submit_run_op(
     databricks_job_configuration: dict,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
-    name: Optional[str] = None,
+    name: str | None = None,
     databricks_resource_key: str = "databricks",
 ) -> OpDefinition:
     """Creates an op that submits a one-time run of a set of tasks on Databricks.

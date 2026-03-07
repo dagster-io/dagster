@@ -6,7 +6,7 @@ for that.
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 from dagster_shared.record import ImportFrom
 from typing_extensions import Self
@@ -61,25 +61,26 @@ class PartitionsSnap(ABC):
 @record
 class TimeWindowPartitionsSnap(PartitionsSnap):
     start: float
-    timezone: Optional[str]
+    timezone: str | None
     fmt: str
     end_offset: int
-    end: Optional[float] = None
-    cron_schedule: Optional[str] = None
-    exclusions: Optional[
+    end: float | None = None
+    cron_schedule: str | None = None
+    exclusions: (
         Sequence[
             str
             | Annotated["TimestampWithTimezone", ImportFrom("dagster._core.definitions.timestamp")]
         ]
-    ] = None
+        | None
+    ) = None
     # superseded by cron_schedule, but kept around for backcompat
-    schedule_type: Optional[ScheduleType] = None
+    schedule_type: ScheduleType | None = None
     # superseded by cron_schedule, but kept around for backcompat
-    minute_offset: Optional[int] = None
+    minute_offset: int | None = None
     # superseded by cron_schedule, but kept around for backcompat
-    hour_offset: Optional[int] = None
+    hour_offset: int | None = None
     # superseded by cron_schedule, but kept around for backcompat
-    day_offset: Optional[int] = None
+    day_offset: int | None = None
 
     @classmethod
     def from_def(cls, partitions_def: "TimeWindowPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]

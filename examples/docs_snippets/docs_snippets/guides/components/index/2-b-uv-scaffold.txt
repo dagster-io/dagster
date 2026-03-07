@@ -1,1 +1,0 @@
-cd jaffle-platform && source .venv/bin/activate

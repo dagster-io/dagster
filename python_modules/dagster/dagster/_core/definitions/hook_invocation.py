@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 def hook_invocation_result(
     hook_def: "HookDefinition",
-    hook_context: Optional[UnboundHookContext],
-    event_list: Optional[Sequence["DagsterEvent"]] = None,
+    hook_context: UnboundHookContext | None,
+    event_list: Sequence["DagsterEvent"] | None = None,
 ):
     if not hook_context:
         hook_context = UnboundHookContext(

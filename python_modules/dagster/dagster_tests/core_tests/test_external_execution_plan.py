@@ -2,7 +2,6 @@ import os
 import pickle
 import re
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -51,7 +50,7 @@ def define_reconstructable_inty_job():
 
 def get_step_output(
     step_events: Sequence[dg.DagsterEvent], step_key: str, output_name: str = "result"
-) -> Optional[dg.DagsterEvent]:
+) -> dg.DagsterEvent | None:
     for step_event in step_events:
         if (
             step_event.event_type == DagsterEventType.STEP_OUTPUT

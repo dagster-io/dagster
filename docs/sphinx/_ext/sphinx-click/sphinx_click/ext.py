@@ -412,7 +412,7 @@ def _format_command(
         yield ""
 
 
-def nested(argument: ty.Optional[str]) -> NestedT:
+def nested(argument: str | None) -> NestedT:
     values = (NESTED_FULL, NESTED_SHORT, NESTED_NONE, None)
 
     if argument not in values:
@@ -469,7 +469,7 @@ class ClickDirective(rst.Directive):
         self,
         name: str,
         command: click.Command,
-        parent: ty.Optional[click.Context],
+        parent: click.Context | None,
         nested: NestedT,
         commands: ty.Optional[ty.List[str]] = None,  # noqa
         semantic_group: bool = False,

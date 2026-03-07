@@ -5,7 +5,7 @@ import time
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Optional, cast
+from typing import cast
 
 import dagster as dg
 import pytest
@@ -94,14 +94,14 @@ FUTURES_TIMEOUT = 75
 
 def evaluate_schedules(
     workspace_context: WorkspaceProcessContext,
-    executor: Optional[ThreadPoolExecutor],
+    executor: ThreadPoolExecutor | None,
     end_datetime_utc: datetime.datetime,
     max_tick_retries: int = 0,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
-    debug_crash_flags: Optional[DebugCrashFlags] = None,
+    debug_crash_flags: DebugCrashFlags | None = None,
     timeout: int = FUTURES_TIMEOUT,
-    submit_executor: Optional[ThreadPoolExecutor] = None,
-    iteration_times: Optional[dict[str, ScheduleIterationTimes]] = None,
+    submit_executor: ThreadPoolExecutor | None = None,
+    iteration_times: dict[str, ScheduleIterationTimes] | None = None,
 ):
     logger = get_default_daemon_logger("SchedulerDaemon")
     futures = {}
@@ -669,9 +669,9 @@ def validate_tick(
     expected_datetime: datetime.datetime,
     expected_status: TickStatus,
     expected_run_ids: Sequence[str],
-    expected_error: Optional[str] = None,
+    expected_error: str | None = None,
     expected_failure_count: int = 0,
-    expected_skip_reason: Optional[str] = None,
+    expected_skip_reason: str | None = None,
     expected_consecutive_failure_count=None,
 ) -> None:
     tick_data = tick.tick_data
@@ -2863,7 +2863,7 @@ class TestSchedulerRun:
         workspace_context: WorkspaceProcessContext,
         remote_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
-        submit_executor: Optional[ThreadPoolExecutor],
+        submit_executor: ThreadPoolExecutor | None,
     ):
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):

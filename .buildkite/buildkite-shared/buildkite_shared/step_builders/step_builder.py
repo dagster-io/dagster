@@ -19,3 +19,19 @@ TopLevelStepConfiguration: TypeAlias = CommandStepConfiguration | GroupStepConfi
 
 def is_command_step(step: StepConfiguration) -> TypeGuard[CommandStepConfiguration]:
     return isinstance(step, dict) and "commands" in step
+
+
+def is_group_step(step: StepConfiguration) -> TypeGuard[GroupStepConfiguration]:
+    return isinstance(step, dict) and "group" in step and "steps" in step
+
+
+def is_wait_step(step: StepConfiguration) -> TypeGuard[WaitStepConfiguration]:
+    return isinstance(step, dict) and "wait" in step
+
+
+def is_block_step(step: StepConfiguration) -> TypeGuard[BlockStepConfiguration]:
+    return isinstance(step, dict) and "block" in step
+
+
+def is_trigger_step(step: StepConfiguration) -> TypeGuard[TriggerStepConfiguration]:
+    return isinstance(step, dict) and "trigger" in step

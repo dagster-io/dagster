@@ -127,7 +127,7 @@ class HookContext:
 
     @public
     @property
-    def op_exception(self) -> Optional[BaseException]:
+    def op_exception(self) -> BaseException | None:
         """The thrown exception in a failed op."""
         exc = self._step_execution_context.step_exception
 
@@ -201,10 +201,10 @@ class UnboundHookContext(HookContext):
     def __init__(
         self,
         resources: Mapping[str, Any],
-        op: Optional[OpDefinition | PendingNodeInvocation],
-        run_id: Optional[str],
-        job_name: Optional[str],
-        op_exception: Optional[Exception],
+        op: OpDefinition | PendingNodeInvocation | None,
+        run_id: str | None,
+        job_name: str | None,
+        op_exception: Exception | None,
         instance: Optional["DagsterInstance"],
     ):
         from dagster._core.execution.build_resources import (
@@ -301,7 +301,7 @@ class UnboundHookContext(HookContext):
         return self._log
 
     @property
-    def op_exception(self) -> Optional[BaseException]:
+    def op_exception(self) -> BaseException | None:
         return self._op_exception
 
     @property
@@ -340,11 +340,11 @@ class BoundHookContext(HookContext):
         self,
         hook_def: HookDefinition,
         resources: Resources,
-        op: Optional[Node],
+        op: Node | None,
         log_manager: DagsterLogManager,
-        run_id: Optional[str],
-        job_name: Optional[str],
-        op_exception: Optional[Exception],
+        run_id: str | None,
+        job_name: str | None,
+        op_exception: Exception | None,
         instance: Optional["DagsterInstance"],
     ):
         self._hook_def = hook_def
@@ -439,11 +439,11 @@ class BoundHookContext(HookContext):
 
 @public
 def build_hook_context(
-    resources: Optional[Mapping[str, Any]] = None,
-    op: Optional[OpDefinition | PendingNodeInvocation] = None,
-    run_id: Optional[str] = None,
-    job_name: Optional[str] = None,
-    op_exception: Optional[Exception] = None,
+    resources: Mapping[str, Any] | None = None,
+    op: OpDefinition | PendingNodeInvocation | None = None,
+    run_id: str | None = None,
+    job_name: str | None = None,
+    op_exception: Exception | None = None,
     instance: Optional["DagsterInstance"] = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.

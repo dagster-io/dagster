@@ -5,7 +5,6 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -99,7 +98,7 @@ def _run_file_watcher(watcher: DocstringFileWatcher, verbose: bool) -> None:
         time.sleep(1)
 
 
-def _find_git_root() -> Optional[Path]:
+def _find_git_root() -> Path | None:
     """Find the git repository root directory.
 
     Returns:
@@ -212,7 +211,7 @@ def watch():
 @click.option("--changed", is_flag=True, help="Watches the files currently changed in git")
 @click.option("--symbol", help="Targets a particular symbol")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
-def docstrings(changed: bool, symbol: Optional[str], verbose: bool):
+def docstrings(changed: bool, symbol: str | None, verbose: bool):
     """Watch docstring files for changes and validate them."""
     # Validate that exactly one option is provided
     if not changed and not symbol:

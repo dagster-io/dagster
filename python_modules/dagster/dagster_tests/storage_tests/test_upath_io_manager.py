@@ -3,7 +3,7 @@ import json
 import pickle
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster as dg
 import fsspec
@@ -272,7 +272,7 @@ def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path:
 def test_upath_io_manager_static_partitions_with_dot():
     partitions_def = dg.StaticPartitionsDefinition(["0.0-to-1.0", "1.0-to-2.0"])
 
-    dumped_path: Optional[UPath] = None
+    dumped_path: UPath | None = None
 
     class TrackingIOManager(dg.UPathIOManager):
         def dump_to_path(self, context: OutputContext, obj: list, path: UPath):
@@ -307,7 +307,7 @@ def test_upath_io_manager_static_partitions_with_dot():
 def test_upath_io_manager_with_extension_static_partitions_with_dot():
     partitions_def = dg.StaticPartitionsDefinition(["0.0-to-1.0", "1.0-to-2.0"])
 
-    dumped_path: Optional[UPath] = None
+    dumped_path: UPath | None = None
 
     class TrackingIOManager(dg.UPathIOManager):
         extension = ".ext"

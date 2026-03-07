@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dotenv import dotenv_values
 from typing_extensions import Self
@@ -31,8 +31,8 @@ class PerProjectEnvFileLoader(SecretsLoader, ConfigurableClass):
 
     def __init__(
         self,
-        inst_data: Optional[ConfigurableClassData] = None,
-        location_paths: Optional[Mapping[str, str]] = None,
+        inst_data: ConfigurableClassData | None = None,
+        location_paths: Mapping[str, str] | None = None,
     ):
         self._inst_data = inst_data
         self._location_paths = location_paths
@@ -45,7 +45,7 @@ class PerProjectEnvFileLoader(SecretsLoader, ConfigurableClass):
             },
         )
 
-    def get_secrets_for_environment(self, location_name: Optional[str]) -> dict[str, str]:
+    def get_secrets_for_environment(self, location_name: str | None) -> dict[str, str]:
         inst_data = self._inst_data
 
         location_paths = self._location_paths or {}
@@ -76,13 +76,13 @@ class PerProjectEnvFileLoader(SecretsLoader, ConfigurableClass):
 class EnvFileLoader(SecretsLoader, ConfigurableClass):
     def __init__(
         self,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
         base_dir=None,
     ):
         self._inst_data = inst_data
         self._base_dir = base_dir or os.getcwd()
 
-    def get_secrets_for_environment(self, location_name: Optional[str]) -> dict[str, str]:
+    def get_secrets_for_environment(self, location_name: str | None) -> dict[str, str]:
         env_file_path = os.path.join(self._base_dir, ".env")
 
         env_var_dict = get_env_var_dict(env_file_path)

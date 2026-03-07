@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 from dagster._core.definitions.asset_health.asset_materialization_health import (
     AssetMaterializationHealthState,
@@ -15,7 +14,7 @@ from dagster._core.workspace.context import BaseWorkspaceRequestContext
 async def _gen_asset_health_for_partition_subsets(
     context: BaseWorkspaceRequestContext,
     asset_key: AssetKey,
-) -> Optional[AssetMaterializationHealthState]:
+) -> AssetMaterializationHealthState | None:
     if not context.read_partition_subsets_from_asset_health():
         return None
 
@@ -27,9 +26,9 @@ async def regenerate_and_check_partition_subsets(
     asset_node_snap: AssetNodeSnap,
     dynamic_partitions_loader: CachingDynamicPartitionsLoader,
 ) -> tuple[
-    Optional[PartitionsSubset[str]],
-    Optional[PartitionsSubset[str]],
-    Optional[PartitionsSubset[str]],
+    PartitionsSubset[str] | None,
+    PartitionsSubset[str] | None,
+    PartitionsSubset[str] | None,
 ]:
     (
         asset_health_state,

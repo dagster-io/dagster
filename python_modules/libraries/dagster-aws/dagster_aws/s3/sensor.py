@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import boto3
 import dagster._check as check
@@ -15,8 +15,8 @@ class ClientException(Exception):
 def get_objects(
     bucket: str,
     prefix: str = "",
-    since_key: Optional[str] = None,
-    since_last_modified: Optional[datetime] = None,
+    since_key: str | None = None,
+    since_last_modified: datetime | None = None,
     client=None,
 ) -> list[ObjectTypeDef]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
@@ -75,8 +75,8 @@ def get_objects(
 def get_s3_keys(
     bucket: str,
     prefix: str = "",
-    since_key: Optional[str] = None,
-    s3_session: Optional[Any] = None,
+    since_key: str | None = None,
+    s3_session: Any | None = None,
 ) -> list[str]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
 

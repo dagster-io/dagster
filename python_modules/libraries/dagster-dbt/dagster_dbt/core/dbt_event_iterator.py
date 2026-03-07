@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 from dagster import (
     AssetCheckResult,
@@ -48,7 +48,7 @@ def _get_dbt_resource_props_from_event(
 
 def _fetch_column_metadata(
     invocation: "DbtCliInvocation", event: DbtDagsterEventType, with_column_lineage: bool
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Threaded task which fetches column schema and lineage metadata for dbt models in a dbt
     run once they are built, returning the metadata to be attached.
 
@@ -147,7 +147,7 @@ def _fetch_column_metadata(
 def _fetch_row_count_metadata(
     invocation: "DbtCliInvocation",
     event: DbtDagsterEventType,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Threaded task which fetches row counts for materialized dbt models in a dbt run
     once they are built, and attaches the row count as metadata to the event.
     """
@@ -259,7 +259,7 @@ class DbtEventIterator(Iterator[T]):
 
     def _attach_metadata(
         self,
-        fn: Callable[["DbtCliInvocation", DbtDagsterEventType], Optional[dict[str, Any]]],
+        fn: Callable[["DbtCliInvocation", DbtDagsterEventType], dict[str, Any] | None],
     ) -> "DbtEventIterator[DbtDagsterEventType]":
         """Runs a threaded task to attach metadata to each event in the iterator.
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import AbstractSet, Optional  # noqa: UP035
+from typing import AbstractSet  # noqa: UP035
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
@@ -29,11 +29,11 @@ class RepresentedJob(ABC):
         return self._job_index.name
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self._job_index.description
 
     @property
-    def owners(self) -> Optional[Sequence[str]]:
+    def owners(self) -> Sequence[str] | None:
         return self._job_index.owners
 
     # Snapshot things
@@ -53,11 +53,11 @@ class RepresentedJob(ABC):
         return self._job_index.job_snapshot
 
     @property
-    def parent_job_snapshot(self) -> Optional[JobSnap]:
+    def parent_job_snapshot(self) -> JobSnap | None:
         return self._job_index.parent_job_snapshot
 
     @property
-    def op_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Sequence[str] | None:
         return (
             self._job_index.job_snapshot.lineage_snapshot.op_selection
             if self._job_index.job_snapshot.lineage_snapshot
@@ -65,7 +65,7 @@ class RepresentedJob(ABC):
         )
 
     @property
-    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> AbstractSet[str] | None:
         return (
             self._job_index.job_snapshot.lineage_snapshot.resolved_op_selection
             if self._job_index.job_snapshot.lineage_snapshot
@@ -121,5 +121,5 @@ class RepresentedJob(ABC):
 
     # Job properties
     @abstractmethod
-    def get_external_job_source(self) -> Optional[str]:
+    def get_external_job_source(self) -> str | None:
         pass

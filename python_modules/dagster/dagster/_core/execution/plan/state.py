@@ -37,7 +37,7 @@ class PastExecutionState(
             ("run_id", str),
             ("produced_outputs", set[StepOutputHandle]),
             # PastExecutionState, but no cycles allowed in NT
-            ("parent_state", Optional[object]),
+            ("parent_state", object | None),
         ],
     )
 ):
@@ -59,7 +59,7 @@ class PastExecutionState(
         )
 
     def get_parent_state(self) -> Optional["PastExecutionState"]:
-        return cast("Optional[PastExecutionState]", self.parent_state)
+        return cast("PastExecutionState | None", self.parent_state)
 
 
 # Previously, step_output_versions was stored as a list of StepOutputVersionData objects. It
@@ -105,11 +105,11 @@ class KnownExecutionState(
             # step_key -> count
             ("previous_retry_attempts", Mapping[str, int]),
             # step_key -> output_name -> mapping_keys
-            ("dynamic_mappings", Mapping[str, Mapping[str, Optional[Sequence[str]]]]),
+            ("dynamic_mappings", Mapping[str, Mapping[str, Sequence[str] | None]]),
             # step_output_handle -> version
             ("step_output_versions", Mapping[StepOutputHandle, str]),
             ("ready_outputs", set[StepOutputHandle]),
-            ("parent_state", Optional[PastExecutionState]),
+            ("parent_state", PastExecutionState | None),
         ],
     )
 ):
@@ -120,11 +120,11 @@ class KnownExecutionState(
 
     def __new__(
         cls,
-        previous_retry_attempts: Optional[Mapping[str, int]] = None,
-        dynamic_mappings: Optional[Mapping[str, Mapping[str, Optional[Sequence[str]]]]] = None,
-        step_output_versions: Optional[Mapping[StepOutputHandle, str]] = None,
-        ready_outputs: Optional[set[StepOutputHandle]] = None,
-        parent_state: Optional[PastExecutionState] = None,
+        previous_retry_attempts: Mapping[str, int] | None = None,
+        dynamic_mappings: Mapping[str, Mapping[str, Sequence[str] | None]] | None = None,
+        step_output_versions: Mapping[StepOutputHandle, str] | None = None,
+        ready_outputs: set[StepOutputHandle] | None = None,
+        parent_state: PastExecutionState | None = None,
     ):
         dynamic_mappings = check.opt_mapping_param(
             dynamic_mappings,
@@ -225,9 +225,7 @@ def _in_tracking_dict(handle: "StepHandleUnion", tracking: TrackingDict) -> bool
 def _derive_state_of_past_run(
     instance: DagsterInstance,
     parent_run: DagsterRun,
-) -> tuple[
-    Sequence[str], Mapping[str, Mapping[str, Optional[Sequence[str]]]], set[StepOutputHandle]
-]:
+) -> tuple[Sequence[str], Mapping[str, Mapping[str, Sequence[str] | None]], set[StepOutputHandle]]:
     from dagster._core.remote_representation.external import RemoteExecutionPlan
 
     check.inst_param(instance, "instance", DagsterInstance)
@@ -306,7 +304,7 @@ def _derive_state_of_past_run(
                 _update_tracking_dict(interrupted_steps_in_parent_run_logs, step_handle)
 
     # expand type to allow filling in None mappings for skips
-    dynamic_outputs = cast("dict[str, dict[str, Optional[list[str]]]]", observed_dynamic_outputs)
+    dynamic_outputs = cast("dict[str, dict[str, list[str] | None]]", observed_dynamic_outputs)
     to_retry: TrackingDict = defaultdict(set)
     execution_deps = execution_plan.execution_deps()
     for step_snap in execution_plan.topological_steps():

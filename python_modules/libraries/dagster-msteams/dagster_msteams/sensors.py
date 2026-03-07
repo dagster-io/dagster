@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 from dagster import DefaultSensorStatus
 from dagster._annotations import deprecated_param
@@ -43,26 +43,25 @@ def _default_failure_message(context: RunFailureSensorContext) -> str:
 def make_teams_on_run_failure_sensor(
     hook_url: str,
     message_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message,
-    http_proxy: Optional[str] = None,
-    https_proxy: Optional[str] = None,
-    timeout: Optional[float] = 60,
-    verify: Optional[bool] = None,
-    name: Optional[str] = None,
-    dagit_base_url: Optional[str] = None,
+    http_proxy: str | None = None,
+    https_proxy: str | None = None,
+    timeout: float | None = 60,
+    verify: bool | None = None,
+    name: str | None = None,
+    dagit_base_url: str | None = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    monitored_jobs: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-            ]
+    monitored_jobs: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
         ]
-    ] = None,
+    ]
+    | None = None,
     monitor_all_code_locations: bool = False,
-    webserver_base_url: Optional[str] = None,
+    webserver_base_url: str | None = None,
     monitor_all_repositories: bool = False,
 ):
     """Create a sensor on run failures that will message the given MS Teams webhook URL.

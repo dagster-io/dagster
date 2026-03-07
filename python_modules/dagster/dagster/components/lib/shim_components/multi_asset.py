@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -10,7 +9,7 @@ from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 class MultiAssetScaffoldParams(BaseModel):
-    asset_key: Optional[list[str]] = None
+    asset_key: list[str] | None = None
 
 
 class MultiAssetScaffolder(ShimScaffolder[MultiAssetScaffoldParams]):

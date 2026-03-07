@@ -1,13 +1,13 @@
 import json
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
 
 
-def _safe_json_loads(json_str: Optional[str]) -> object:
+def _safe_json_loads(json_str: str | None) -> object:
     try:
         return json.loads(json_str) if json_str else None
     except json.JSONDecodeError:

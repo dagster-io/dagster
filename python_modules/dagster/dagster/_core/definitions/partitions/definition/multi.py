@@ -232,7 +232,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     @public
     def get_partition_keys(
         self,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[MultiPartitionKey]:
         """Returns a list of MultiPartitionKeys representing the partition keys of the
@@ -257,7 +257,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         context: PartitionLoadingContext,
         limit: int,
         ascending: bool,
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.

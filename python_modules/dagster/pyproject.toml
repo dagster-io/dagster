@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster"
@@ -142,12 +142,12 @@ ruff = [
     "ruff==0.15.0",
 ]
 
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = ["dagster_tests*"]
-
-[tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "pytest.ini", "dagster_tests/**"]
+[tool.hatch.build]
+force-include = {"dagster/_core/definitions/tags" = "dagster/_core/definitions/tags"}
+exclude = [
+    "dagster/**/*.g4",
+    "dagster/**/*.interp",
+    "dagster/**/*.tokens",
+    "dagster/**/Makefile",
+    "dagster/**/ruff.toml",
+]

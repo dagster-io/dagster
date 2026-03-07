@@ -1,7 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
@@ -14,7 +14,7 @@ class IGraphQLClient(ABC):
     """Abstract base class for GraphQL clients with execute method."""
 
     @abstractmethod
-    def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None) -> dict: ...
+    def execute(self, query: str, variables: Mapping[str, Any] | None = None) -> dict: ...
 
 
 class DagsterPlusUnauthorizedError(click.ClickException):
@@ -27,7 +27,7 @@ class DebugGraphQLClient(IGraphQLClient):
     def __init__(self, wrapped_client: IGraphQLClient):
         self.wrapped_client = wrapped_client
 
-    def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None) -> dict:
+    def execute(self, query: str, variables: Mapping[str, Any] | None = None) -> dict:
         """Execute GraphQL query and log details to stderr."""
         # Print query details to stderr
         click.echo("=== GraphQL Query ===", err=True)
@@ -86,7 +86,7 @@ class DagsterPlusGraphQLClient(IGraphQLClient):
             },
         )
 
-    def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None):
+    def execute(self, query: str, variables: Mapping[str, Any] | None = None):
         # defer for import performance
         from gql import gql
 

@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
@@ -14,7 +13,7 @@ from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 def get_dockerfile_path(
-    project_context: DgContext, workspace_context: Optional[DgContext] = None
+    project_context: DgContext, workspace_context: DgContext | None = None
 ) -> Path:
     merged_build_config: DgRawBuildConfig = merge_build_configs(
         workspace_context.build_config if workspace_context else None,
@@ -57,7 +56,7 @@ def get_agent_type_and_platform_from_graphql(
     return agent_type, agent_platform
 
 
-def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> DgPlusAgentType:
+def get_agent_type(cli_config: DagsterPlusCliConfig | None = None) -> DgPlusAgentType:
     if cli_config:
         gql_client = DagsterPlusGraphQLClient.from_config(cli_config)
         return get_agent_type_and_platform_from_graphql(gql_client)[0]

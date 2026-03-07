@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from dagster import Config
 
@@ -26,40 +26,40 @@ class AzureConfig(Config):
     account_name: str
     """Storage account name"""
 
-    client_id: Optional[str] = None
+    client_id: str | None = None
     """Client ID for ID / secret based authentication."""
 
-    client_secret: Optional[str] = None
+    client_secret: str | None = None
     """Client secret for ID / secret based authentication."""
 
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
     """Tenant ID for ID / secret based authentication."""
 
-    federated_token_file: Optional[str] = None
+    federated_token_file: str | None = None
     """File containing federated credential token"""
 
-    account_key: Optional[str] = None
+    account_key: str | None = None
     """Storage account master key"""
 
-    sas_key: Optional[str] = None
+    sas_key: str | None = None
     """Shared access signature"""
 
-    token: Optional[str] = None
+    token: str | None = None
     """Hard-coded bearer token"""
 
-    use_azure_cli: Optional[bool] = None
+    use_azure_cli: bool | None = None
     """Use azure cli for acquiring access token"""
 
-    use_fabric_endpoint: Optional[bool] = None
+    use_fabric_endpoint: bool | None = None
     """Use object store with url scheme account.dfs.fabric.microsoft.com"""
 
-    msi_resource_id: Optional[str] = None
+    msi_resource_id: str | None = None
     """Msi resource id for use with managed identity authentication."""
 
-    msi_endpoint: Optional[str] = None
+    msi_endpoint: str | None = None
     """Endpoint to request a imds managed identity token."""
 
-    container_name: Optional[str] = None
+    container_name: str | None = None
     """Storage container name"""
 
     def str_dict(self) -> dict[str, str]:
@@ -73,52 +73,52 @@ class S3Config(Config):
 
     provider: Literal["s3"] = "s3"
 
-    access_key_id: Optional[str] = None
+    access_key_id: str | None = None
     """AWS access key ID"""
 
-    secret_access_key: Optional[str] = None
+    secret_access_key: str | None = None
     """AWS access key secret"""
 
-    region: Optional[str] = None
+    region: str | None = None
     """AWS region"""
 
-    bucket: Optional[str] = None
+    bucket: str | None = None
     """Storage bucket name"""
 
-    endpoint: Optional[str] = None
+    endpoint: str | None = None
     """Sets custom endpoint for communicating with S3."""
 
-    token: Optional[str] = None
+    token: str | None = None
     """Token to use for requests (passed to underlying provider)"""
 
     imdsv1_fallback: bool = False
     """Allow fall back to ImdsV1"""
 
-    virtual_hosted_style_request: Optional[str] = None
+    virtual_hosted_style_request: str | None = None
     """Bucket is hosted under virtual-hosted-style URL"""
 
-    unsigned_payload: Optional[bool] = None
+    unsigned_payload: bool | None = None
     """Avoid computing payload checksum when calculating signature."""
 
-    checksum: Optional[str] = None
+    checksum: str | None = None
     """Set the checksum algorithm for this client."""
 
-    metadata_endpoint: Optional[str] = None
+    metadata_endpoint: str | None = None
     """Instance metadata endpoint URL for fetching credentials"""
 
-    container_credentials_relative_uri: Optional[str] = None
+    container_credentials_relative_uri: str | None = None
     """Set the container credentials relative URI
 
     https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
     """
 
-    copy_if_not_exists: Optional[str] = None
+    copy_if_not_exists: str | None = None
     """Specifiy additional headers passed to strage backend, that enable 'if_not_exists' semantics.
 
     https://docs.rs/object_store/0.7.0/object_store/aws/enum.S3CopyIfNotExists.html#variant.Header
     """
 
-    allow_unsafe_rename: Optional[bool] = None
+    allow_unsafe_rename: bool | None = None
     """Allows tables writes that may conflict with concurrent writers."""
 
     def str_dict(self) -> dict[str, str]:
@@ -131,16 +131,16 @@ class GcsConfig(Config):
 
     provider: Literal["gcs"] = "gcs"
 
-    service_account: Optional[str] = None
+    service_account: str | None = None
     """Path to the service account file"""
 
-    service_account_key: Optional[str] = None
+    service_account_key: str | None = None
     """The serialized service account key."""
 
-    bucket: Optional[str] = None
+    bucket: str | None = None
     """Bucket name"""
 
-    application_credentials: Optional[str] = None
+    application_credentials: str | None = None
     """Application credentials path"""
 
     def str_dict(self) -> dict[str, str]:
@@ -151,10 +151,10 @@ class GcsConfig(Config):
 class ClientConfig(Config):
     """Configuration for http client interacting with storage APIs."""
 
-    allow_http: Optional[bool] = None
+    allow_http: bool | None = None
     """Allow non-TLS, i.e. non-HTTPS connections"""
 
-    allow_invalid_certificates: Optional[bool] = None
+    allow_invalid_certificates: bool | None = None
     """Skip certificate validation on https connections.
 
     ## Warning
@@ -165,46 +165,46 @@ class ClientConfig(Config):
     and should only be used as a last resort or for testing
     """
 
-    connect_timeout: Optional[int] = None
+    connect_timeout: int | None = None
     """Timeout for only the connect phase of a Client"""
 
-    default_content_type: Optional[str] = None
+    default_content_type: str | None = None
     """default CONTENT_TYPE for uploads"""
 
-    http1_only: Optional[bool] = None
+    http1_only: bool | None = None
     """Only use http1 connections"""
 
-    http2_keep_alive_interval: Optional[int] = None
+    http2_keep_alive_interval: int | None = None
     """Interval for HTTP2 Ping frames should be sent to keep a connection alive."""
 
-    http2_keep_alive_timeout: Optional[int] = None
+    http2_keep_alive_timeout: int | None = None
     """Timeout for receiving an acknowledgement of the keep-alive ping."""
 
-    http2_keep_alive_while_idle: Optional[int] = None
+    http2_keep_alive_while_idle: int | None = None
     """Enable HTTP2 keep alive pings for idle connections"""
 
-    http2_only: Optional[bool] = None
+    http2_only: bool | None = None
     """Only use http2 connections"""
 
-    pool_idle_timeout: Optional[int] = None
+    pool_idle_timeout: int | None = None
     """The pool max idle timeout
 
     This is the length of time an idle connection will be kept alive
     """
 
-    pool_max_idle_per_host: Optional[int] = None
+    pool_max_idle_per_host: int | None = None
     """maximum number of idle connections per host"""
 
-    proxy_url: Optional[str] = None
+    proxy_url: str | None = None
     """HTTP proxy to use for requests"""
 
-    timeout: Optional[str] = None
+    timeout: str | None = None
     """Request timeout (e.g. "120s")
 
     The timeout is applied from when the request starts connecting until the response body has finished
     """
 
-    user_agent: Optional[str] = None
+    user_agent: str | None = None
     """User-Agent header to be used by this client"""
 
     def str_dict(self) -> dict[str, str]:

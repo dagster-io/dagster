@@ -29,8 +29,8 @@ pytest path/to/tests/       # Run specific tests
 pytest python_modules/dagster/dagster_tests/  # Run core tests
 tox -e py39-pytest          # Test in isolated environment
 
-# UI Verification (run from js_modules/dagster-ui/ when done with edits)
-cd js_modules/dagster-ui
+# UI Verification (run from js_modules/ when done with edits)
+cd js_modules
 make generate-graphql       # Regenerate GraphQL types (if schema changed; must run before tsgo/lint)
 yarn tsgo                   # TypeScript checking
 yarn lint                   # ESLint checking
@@ -46,7 +46,7 @@ make sanity_check          # Check for non-editable installs
 ## Development Workflow
 
 - **Python**: Core framework in `python_modules/dagster/`, libraries in `python_modules/libraries/`
-- **UI**: React/TypeScript in `js_modules/dagster-ui/`
+- **UI**: React/TypeScript in `js_modules/`
 - **Docs**: Docusaurus in `docs/`
 - **Testing**: pytest preferred, use tox for environment isolation
 
@@ -58,7 +58,7 @@ cd examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/
 dagster-webserver -p 3333 -f complex_job.py
 
 # Terminal 2: Start UI development server
-cd js_modules/dagster-ui
+cd js_modules
 make dev_webapp
 ```
 

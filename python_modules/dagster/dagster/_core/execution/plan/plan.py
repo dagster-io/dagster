@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -95,11 +95,11 @@ class _PlanBuilder:
         self,
         job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_keys_to_execute: Optional[Sequence[str]],
+        step_keys_to_execute: Sequence[str] | None,
         known_state: KnownExecutionState,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: InstanceRef | None,
         tags: Mapping[str, str],
-        repository_load_data: Optional[RepositoryLoadData],
+        repository_load_data: RepositoryLoadData | None,
     ):
         self.job_def = check.inst_param(job_def, "job", JobDefinition)
         self.resolved_run_config = check.inst_param(
@@ -214,8 +214,8 @@ class _PlanBuilder:
         self,
         nodes: Sequence[Node],
         dependency_structure: DependencyStructure,
-        parent_handle: Optional[NodeHandle] = None,
-        parent_step_inputs: Optional[Sequence[StepInputUnion]] = None,
+        parent_handle: NodeHandle | None = None,
+        parent_step_inputs: Sequence[StepInputUnion] | None = None,
     ) -> None:
         asset_layer = self.job_def.asset_layer
         step_output_map: dict[NodeOutput, StepOutputHandle | UnresolvedStepOutputHandle] = {}
@@ -373,7 +373,7 @@ class _PlanBuilder:
         input_name: str,
         input_def: InputDefinition,
         job_def: JobDefinition,
-    ) -> Optional[FromConfig | FromDirectInputValue]:
+    ) -> FromConfig | FromDirectInputValue | None:
         input_values = job_def.input_values
         if input_values and input_name in input_values:
             return FromDirectInputValue(input_name=input_name)
@@ -405,8 +405,8 @@ def get_step_input_source(
     handle: NodeHandle,
     node_config: Any,
     step_output_map: dict[NodeOutput, StepOutputHandle | UnresolvedStepOutputHandle],
-    parent_step_inputs: Optional[Sequence[StepInputUnion]],
-) -> Optional[StepInputSourceUnion]:
+    parent_step_inputs: Sequence[StepInputUnion] | None,
+) -> StepInputSourceUnion | None:
     input_handle = node.get_input(input_name)
     input_def = node.definition.input_def_named(input_name)
     asset_layer = job_def.asset_layer
@@ -521,7 +521,7 @@ def _step_input_source_from_multi_dep_def(
     dependency_structure: DependencyStructure,
     input_handle: NodeInput,
     step_output_map: dict[NodeOutput, StepOutputHandle | UnresolvedStepOutputHandle],
-    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    parent_step_inputs: Sequence[StepInputUnion] | None,
     node: Node,
     input_name: str,
 ) -> FromMultipleSources:
@@ -570,13 +570,13 @@ def _step_input_source_from_blocking_asset_checks_dep_def(
     dependency_structure: DependencyStructure,
     input_handle: NodeInput,
     step_output_map: dict[NodeOutput, StepOutputHandle | UnresolvedStepOutputHandle],
-    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    parent_step_inputs: Sequence[StepInputUnion] | None,
     node_handle: NodeHandle,
     input_name: str,
     asset_layer: AssetLayer,
 ) -> FromMultipleSourcesLoadSingleSource:
     sources: list[StepInputSource] = []
-    source_to_load_from: Optional[StepInputSource] = None
+    source_to_load_from: StepInputSource | None = None
     deps = dependency_structure.get_fan_in_deps(input_handle)
 
     for idx, node_output in enumerate(deps):
@@ -631,8 +631,8 @@ class ExecutionPlan(
             ("known_state", KnownExecutionState),
             ("artifacts_persisted", bool),
             ("step_dict_by_key", dict[str, IExecutionStep]),
-            ("executor_name", Optional[str]),
-            ("repository_load_data", Optional[RepositoryLoadData]),
+            ("executor_name", str | None),
+            ("repository_load_data", RepositoryLoadData | None),
         ],
     )
 ):
@@ -644,9 +644,9 @@ class ExecutionPlan(
         step_handles_to_execute: Sequence[StepHandleUnion],
         known_state: KnownExecutionState,
         artifacts_persisted: bool = False,
-        step_dict_by_key: Optional[dict[str, IExecutionStep]] = None,
-        executor_name: Optional[str] = None,
-        repository_load_data: Optional[RepositoryLoadData] = None,
+        step_dict_by_key: dict[str, IExecutionStep] | None = None,
+        executor_name: str | None = None,
+        repository_load_data: RepositoryLoadData | None = None,
     ):
         return super().__new__(
             cls,
@@ -766,7 +766,7 @@ class ExecutionPlan(
 
     def resolve(
         self,
-        mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
+        mappings: Mapping[str, Mapping[str, Sequence[str] | None]],
     ) -> Mapping[str, set[str]]:
         """Resolve any dynamic map or collect steps with the resolved dynamic mappings."""
         previous = self.get_executable_step_deps()
@@ -789,7 +789,7 @@ class ExecutionPlan(
         step_keys_to_execute: Sequence[str],
         job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_output_versions: Optional[Mapping[StepOutputHandle, Optional[str]]] = None,
+        step_output_versions: Mapping[StepOutputHandle, str | None] | None = None,
     ) -> "ExecutionPlan":
         check.sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         step_output_versions = check.opt_mapping_param(
@@ -877,16 +877,16 @@ class ExecutionPlan(
 
     def get_version_for_step_output_handle(
         self, step_output_handle: StepOutputHandle
-    ) -> Optional[str]:
+    ) -> str | None:
         return self.step_output_versions.get(step_output_handle)
 
     def start(
         self,
         retry_mode: RetryMode,
-        sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
-        max_concurrent: Optional[int] = None,
-        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
-        instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+        sort_key_fn: Callable[[ExecutionStep], float] | None = None,
+        max_concurrent: int | None = None,
+        tag_concurrency_limits: list[dict[str, Any]] | None = None,
+        instance_concurrency_context: InstanceConcurrencyContext | None = None,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ) -> "ActiveExecution":
         from dagster._core.execution.plan.active import ActiveExecution
@@ -903,7 +903,7 @@ class ExecutionPlan(
 
     def step_handle_for_single_step_plans(
         self,
-    ) -> Optional[StepHandle | ResolvedFromDynamicStepHandle]:
+    ) -> StepHandle | ResolvedFromDynamicStepHandle | None:
         # Temporary hack to isolate single-step plans, which are often the representation of
         # sub-plans in a multiprocessing execution environment.  We want to attribute pipeline
         # events (like resource initialization) that are associated with the execution of these
@@ -922,11 +922,11 @@ class ExecutionPlan(
     def build(
         job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_keys_to_execute: Optional[Sequence[str]] = None,
-        known_state: Optional[KnownExecutionState] = None,
-        instance_ref: Optional[InstanceRef] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        repository_load_data: Optional[RepositoryLoadData] = None,
+        step_keys_to_execute: Sequence[str] | None = None,
+        known_state: KnownExecutionState | None = None,
+        instance_ref: InstanceRef | None = None,
+        tags: Mapping[str, str] | None = None,
+        repository_load_data: RepositoryLoadData | None = None,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a job definition and the resolved run config.
 
@@ -1080,7 +1080,7 @@ def _update_from_resolved_dynamic_outputs(
     executable_map: dict[str, StepHandle | ResolvedFromDynamicStepHandle],
     resolvable_map: dict[frozenset[str], Sequence[StepHandle | UnresolvedStepHandle]],
     step_handles_to_execute: Sequence[StepHandleUnion],
-    dynamic_mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
+    dynamic_mappings: Mapping[str, Mapping[str, Sequence[str] | None]],
 ) -> None:
     resolved_steps: list[ExecutionStep] = []
     key_sets_to_clear: list[frozenset[str]] = []
@@ -1319,7 +1319,7 @@ def _compute_step_maps(
     step_dict: dict[StepHandleUnion, IExecutionStep],
     step_dict_by_key: dict[str, IExecutionStep],
     step_handles_to_execute: Sequence[StepHandleUnion],
-    known_state: Optional[KnownExecutionState],
+    known_state: KnownExecutionState | None,
 ) -> tuple[
     dict[str, StepHandle | ResolvedFromDynamicStepHandle],
     dict[frozenset[str], Sequence[StepHandle | UnresolvedStepHandle]],

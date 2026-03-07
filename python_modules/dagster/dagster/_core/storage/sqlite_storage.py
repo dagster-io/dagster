@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import yaml
 from typing_extensions import Self, TypedDict
@@ -57,7 +57,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
 
     """
 
-    def __init__(self, base_dir: str, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, base_dir: str, inst_data: ConfigurableClassData | None = None):
         self.base_dir = check.str_param(base_dir, "base_dir")
         self._run_storage = SqliteRunStorage.from_local(_runs_directory(base_dir))
         self._event_log_storage = SqliteEventLogStorage(_event_logs_directory(base_dir))
@@ -66,7 +66,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -80,7 +80,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         return DagsterSqliteStorage.from_local(inst_data=inst_data, **config_value)
 
     @classmethod
-    def from_local(cls, base_dir: str, inst_data: Optional[ConfigurableClassData] = None) -> Self:
+    def from_local(cls, base_dir: str, inst_data: ConfigurableClassData | None = None) -> Self:
         check.str_param(base_dir, "base_dir")
         mkdir_p(base_dir)
         return cls(base_dir, inst_data=inst_data)
@@ -107,7 +107,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         return self._schedule_storage
 
     @property
-    def event_storage_data(self) -> Optional[ConfigurableClassData]:
+    def event_storage_data(self) -> ConfigurableClassData | None:
         return ConfigurableClassData(
             "dagster._core.storage.event_log",
             "SqliteEventLogStorage",
@@ -115,7 +115,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         )
 
     @property
-    def run_storage_data(self) -> Optional[ConfigurableClassData]:
+    def run_storage_data(self) -> ConfigurableClassData | None:
         return ConfigurableClassData(
             "dagster._core.storage.runs",
             "SqliteRunStorage",
@@ -123,7 +123,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         )
 
     @property
-    def schedule_storage_data(self) -> Optional[ConfigurableClassData]:
+    def schedule_storage_data(self) -> ConfigurableClassData | None:
         return ConfigurableClassData(
             "dagster._core.storage.schedules",
             "SqliteScheduleStorage",

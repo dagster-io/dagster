@@ -1,5 +1,3 @@
-from typing import Optional
-
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
     UserDeployment,
     UserDeploymentIncludeConfigInLaunchedRuns,
@@ -8,7 +6,7 @@ from schema.charts.utils import kubernetes
 
 
 def create_simple_user_deployment(
-    name: str, include_config_in_launched_runs: Optional[bool] = None
+    name: str, include_config_in_launched_runs: bool | None = None
 ) -> UserDeployment:
     return UserDeployment(
         name=name,

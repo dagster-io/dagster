@@ -3,7 +3,7 @@ import re
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Optional, TypeAlias, TypeVar, Union, cast
+from typing import TypeAlias, TypeVar, Union, cast
 from urllib.parse import (
     quote_plus as urlquote,
     urlparse,
@@ -180,7 +180,7 @@ def mysql_isolation_level():
 
 @contextmanager
 def create_mysql_connection(
-    engine: db.engine.Engine, dunder_file: str, storage_type_desc: Optional[str] = None
+    engine: db.engine.Engine, dunder_file: str, storage_type_desc: str | None = None
 ) -> Iterator[Connection]:
     check.inst_param(engine, "engine", db.engine.Engine)
     check.str_param(dunder_file, "dunder_file")

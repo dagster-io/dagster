@@ -29,7 +29,7 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
+[tool.hatch.build]
 packages = ["src/ingestion_patterns"]
 
 [tool.dagster]

@@ -2,7 +2,7 @@ import os
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import pandas as pd
 import pandas_gbq
@@ -55,7 +55,7 @@ old_bigquery_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE
 
 
 @contextmanager
-def temporary_bigquery_table(schema_name: Optional[str]) -> Iterator[str]:
+def temporary_bigquery_table(schema_name: str | None) -> Iterator[str]:
     bq_client = bigquery.Client(
         project=SHARED_BUILDKITE_BQ_CONFIG["project"],
     )

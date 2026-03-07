@@ -1,5 +1,4 @@
 from collections.abc import Callable, Mapping
-from typing import Optional
 
 import sqlalchemy.exc as db_exc
 from tqdm import tqdm
@@ -23,7 +22,7 @@ OPTIONAL_SCHEDULE_DATA_MIGRATIONS: Mapping[str, Callable] = {
 
 
 def add_selector_id_to_jobs_table(
-    storage: ScheduleStorage, print_fn: Optional[PrintFn] = None
+    storage: ScheduleStorage, print_fn: PrintFn | None = None
 ) -> None:
     """Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.
@@ -88,7 +87,7 @@ def add_selector_id_to_jobs_table(
 
 
 def add_selector_id_to_ticks_table(
-    storage: ScheduleStorage, print_fn: Optional[PrintFn] = None
+    storage: ScheduleStorage, print_fn: PrintFn | None = None
 ) -> None:
     """Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.

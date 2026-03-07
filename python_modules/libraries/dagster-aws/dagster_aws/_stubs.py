@@ -5,7 +5,7 @@
 # as to not require any additional dependencies
 
 from datetime import datetime
-from typing import Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 
 ChecksumAlgorithmType = Literal[
     "CRC32",
@@ -30,21 +30,21 @@ ObjectStorageClassType = Literal[
 
 
 class OwnerTypeDef(TypedDict):
-    DisplayName: Optional[str]
-    ID: Optional[str]
+    DisplayName: str | None
+    ID: str | None
 
 
 class RestoreStatusTypeDef(TypedDict):
-    IsRestoreInProgress: Optional[bool]
-    RestoreExpiryDate: Optional[datetime]
+    IsRestoreInProgress: bool | None
+    RestoreExpiryDate: datetime | None
 
 
 class ObjectTypeDef(TypedDict):
     Key: str
     LastModified: datetime
-    ETag: Optional[str]
-    ChecksumAlgorithm: Optional[list[ChecksumAlgorithmType]]
-    Size: Optional[int]
-    StorageClass: Optional[ObjectStorageClassType]
-    Owner: Optional[OwnerTypeDef]
-    RestoreStatus: Optional[RestoreStatusTypeDef]
+    ETag: str | None
+    ChecksumAlgorithm: list[ChecksumAlgorithmType] | None
+    Size: int | None
+    StorageClass: ObjectStorageClassType | None
+    Owner: OwnerTypeDef | None
+    RestoreStatus: RestoreStatusTypeDef | None

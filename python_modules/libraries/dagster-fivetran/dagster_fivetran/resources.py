@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -121,12 +121,12 @@ class FivetranResource(ConfigurableResource):
         return urljoin(self.api_base_url, FIVETRAN_CONNECTOR_PATH)
 
     def make_connector_request(
-        self, method: str, endpoint: str, data: Optional[str] = None
+        self, method: str, endpoint: str, data: str | None = None
     ) -> Mapping[str, Any]:
         return self.make_request(method, urljoin(FIVETRAN_CONNECTOR_PATH, endpoint), data)
 
     def make_request(
-        self, method: str, endpoint: str, data: Optional[str] = None
+        self, method: str, endpoint: str, data: str | None = None
     ) -> Mapping[str, Any]:
         """Creates and sends a request to the desired Fivetran Connector API endpoint.
 
@@ -219,7 +219,7 @@ class FivetranResource(ConfigurableResource):
         )
 
     def update_connector(
-        self, connector_id: str, properties: Optional[Mapping[str, Any]] = None
+        self, connector_id: str, properties: Mapping[str, Any] | None = None
     ) -> Mapping[str, Any]:
         """Updates properties of a Fivetran Connector.
 
@@ -237,7 +237,7 @@ class FivetranResource(ConfigurableResource):
         )
 
     def update_schedule_type(
-        self, connector_id: str, schedule_type: Optional[str] = None
+        self, connector_id: str, schedule_type: str | None = None
     ) -> Mapping[str, Any]:
         """Updates the schedule type property of the connector to either "auto" or "manual".
 
@@ -281,7 +281,7 @@ class FivetranResource(ConfigurableResource):
         return connector_details
 
     def start_resync(
-        self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
+        self, connector_id: str, resync_parameters: Mapping[str, Sequence[str]] | None = None
     ) -> Mapping[str, Any]:
         """Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
 
@@ -320,7 +320,7 @@ class FivetranResource(ConfigurableResource):
         connector_id: str,
         initial_last_sync_completion: datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
+        poll_timeout: float | None = None,
     ) -> Mapping[str, Any]:
         """Given a Fivetran connector and the timestamp at which the previous sync completed, poll
         until the next sync completes.
@@ -376,7 +376,7 @@ class FivetranResource(ConfigurableResource):
         self,
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
+        poll_timeout: float | None = None,
     ) -> FivetranOutput:
         """Initializes a sync operation for the given connector, and polls until it completes.
 
@@ -406,8 +406,8 @@ class FivetranResource(ConfigurableResource):
         self,
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
-        resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
+        poll_timeout: float | None = None,
+        resync_parameters: Mapping[str, Sequence[str]] | None = None,
     ) -> FivetranOutput:
         """Initializes a historical resync operation for the given connector, and polls until it completes.
 
@@ -525,7 +525,7 @@ class FivetranClient:
         return f"{self.api_base_url}/{FIVETRAN_CONNECTOR_ENDPOINT}"
 
     def _make_connector_request(
-        self, method: str, endpoint: str, data: Optional[str] = None
+        self, method: str, endpoint: str, data: str | None = None
     ) -> Mapping[str, Any]:
         return self._make_and_handle_request(
             method, f"{FIVETRAN_CONNECTOR_ENDPOINT}/{endpoint}", data
@@ -535,8 +535,8 @@ class FivetranClient:
         self,
         method: str,
         endpoint: str,
-        data: Optional[str] = None,
-        params: Optional[Mapping[str, Any]] = None,
+        data: str | None = None,
+        params: Mapping[str, Any] | None = None,
     ) -> Mapping[str, Any]:
         """Creates, sends and handles a request to the desired Fivetran API endpoint.
 
@@ -563,8 +563,8 @@ class FivetranClient:
         self,
         method: str,
         endpoint: str,
-        data: Optional[str] = None,
-        params: Optional[Mapping[str, Any]] = None,
+        data: str | None = None,
+        params: Mapping[str, Any] | None = None,
     ) -> requests.Response:
         """Creates and sends a request to the desired Fivetran API endpoint.
 
@@ -760,7 +760,7 @@ class FivetranClient:
         self._start_sync(request_fn=request_fn, connector_id=connector_id)
 
     def start_resync(
-        self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
+        self, connector_id: str, resync_parameters: Mapping[str, Sequence[str]] | None = None
     ) -> None:
         """Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
 
@@ -801,7 +801,7 @@ class FivetranClient:
         connector_id: str,
         previous_sync_completed_at: datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
+        poll_timeout: float | None = None,
     ) -> Mapping[str, Any]:
         """Given a Fivetran connector and the timestamp at which the previous sync completed, poll
         until the next sync completes.
@@ -855,8 +855,8 @@ class FivetranClient:
         self,
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
-    ) -> Optional[FivetranOutput]:
+        poll_timeout: float | None = None,
+    ) -> FivetranOutput | None:
         """Initializes a sync operation for the given connector, and polls until it completes.
 
         Args:
@@ -882,9 +882,9 @@ class FivetranClient:
         self,
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
-        resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
-    ) -> Optional[FivetranOutput]:
+        poll_timeout: float | None = None,
+        resync_parameters: Mapping[str, Sequence[str]] | None = None,
+    ) -> FivetranOutput | None:
         """Initializes a historical resync operation for the given connector, and polls until it completes.
 
         Args:
@@ -914,8 +914,8 @@ class FivetranClient:
         sync_fn: Callable,
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: Optional[float] = None,
-    ) -> Optional[FivetranOutput]:
+        poll_timeout: float | None = None,
+    ) -> FivetranOutput | None:
         schema_config_details = self.get_schema_config_for_connector(connector_id)
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
@@ -950,7 +950,7 @@ class FivetranSyncConfig(Config):
         default=False,
         description="Whether to perform a historical resync instead of a normal sync",
     )
-    resync_parameters: Optional[dict[str, Any]] = Field(
+    resync_parameters: dict[str, Any] | None = Field(
         default=None,
         description=(
             "Optional parameters to control which tables to resync. "
@@ -967,7 +967,7 @@ class FivetranWorkspace(ConfigurableResource):
     account_id: str = Field(description="The Fivetran account ID.")
     api_key: str = Field(description="The Fivetran API key to use for this resource.")
     api_secret: str = Field(description="The Fivetran API secret to use for this resource.")
-    snapshot_path: Optional[str] = Field(
+    snapshot_path: str | None = Field(
         default=None,
         description=(
             "Path to a snapshot file to load Fivetran data from,"
@@ -1002,7 +1002,7 @@ class FivetranWorkspace(ConfigurableResource):
         return get_dagster_logger()
 
     @cached_property
-    def snapshot(self) -> Optional[RepositoryLoadData]:
+    def snapshot(self) -> RepositoryLoadData | None:
         snapshot = None
         if self.snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
             snapshot = deserialize_value(Path(self.snapshot_path).read_text(), RepositoryLoadData)
@@ -1114,8 +1114,8 @@ class FivetranWorkspace(ConfigurableResource):
     @cached_method
     def load_asset_specs(
         self,
-        dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-        connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+        dagster_fivetran_translator: DagsterFivetranTranslator | None = None,
+        connector_selector_fn: ConnectorSelectorFn | None = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1230,7 +1230,7 @@ class FivetranWorkspace(ConfigurableResource):
     def sync_and_poll(
         self,
         context: AssetExecutionContext,
-        config: Optional[FivetranSyncConfig] = None,
+        config: FivetranSyncConfig | None = None,
     ) -> FivetranEventIterator[AssetMaterialization | MaterializeResult]:
         """Executes a sync and poll process to materialize Fivetran assets.
             This method can only be used in the context of an asset execution.
@@ -1353,7 +1353,7 @@ class FivetranWorkspace(ConfigurableResource):
     def _resync_and_poll(
         self,
         context: AssetExecutionContext,
-        resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
+        resync_parameters: Mapping[str, Sequence[str]] | None = None,
     ):
         assets_def = context.assets_def
         dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
@@ -1401,8 +1401,8 @@ class FivetranWorkspace(ConfigurableResource):
 
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
-    dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-    connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+    dagster_fivetran_translator: DagsterFivetranTranslator | None = None,
+    connector_selector_fn: ConnectorSelectorFn | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1445,8 +1445,8 @@ def load_fivetran_asset_specs(
 class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[FivetranWorkspaceData]):
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
-    connector_selector_fn: Optional[ConnectorSelectorFn] = None
-    snapshot: Optional[RepositoryLoadData] = None
+    connector_selector_fn: ConnectorSelectorFn | None = None
+    snapshot: RepositoryLoadData | None = None
 
     @property
     def defs_key(self) -> str:

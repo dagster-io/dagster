@@ -2,7 +2,6 @@ import json
 import webbrowser
 from enum import Enum
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
 from urllib import parse
 
 from dagster_shared.plus.config import DagsterPlusCliConfig
@@ -122,8 +121,8 @@ def create_token_callback_handler(nonce: str) -> type[BaseHTTPRequestHandler]:
 
 
 class TokenServer(HTTPServer):
-    organization: Optional[str] = None
-    token: Optional[str] = None
+    organization: str | None = None
+    token: str | None = None
 
     def __init__(self, host: tuple[str, int], nonce: str):
         super().__init__(host, create_token_callback_handler(nonce))
@@ -137,10 +136,10 @@ class TokenServer(HTTPServer):
         self.organization = organization
         self.token = token
 
-    def get_organization(self) -> Optional[str]:
+    def get_organization(self) -> str | None:
         return self.organization
 
-    def get_token(self) -> Optional[str]:
+    def get_token(self) -> str | None:
         return self.token
 
 
@@ -210,7 +209,7 @@ def _setup(organization: str, deployment: str, api_token: str):
                 " set incorrectly."
             )
 
-    new_deployment: Optional[str] = None
+    new_deployment: str | None = None
     if deployment_names:
         options = ["None"] + deployment_names
         new_deployment = ui.list_input(

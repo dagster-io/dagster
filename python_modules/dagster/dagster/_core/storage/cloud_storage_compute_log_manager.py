@@ -9,7 +9,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import IO, Optional
+from typing import IO
 
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.compute_log_manager import (
@@ -43,19 +43,17 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
 
     @property
     @abstractmethod
-    def upload_interval(self) -> Optional[int]:
+    def upload_interval(self) -> int | None:
         """Returns the interval in which partial compute logs are uploaded to cloud storage."""
 
     @abstractmethod
     def delete_logs(
-        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+        self, log_key: Sequence[str] | None = None, prefix: Sequence[str] | None = None
     ) -> None:
         """Deletes logs for a given log_key or prefix."""
 
     @abstractmethod
-    def download_url_for_type(
-        self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Optional[str]:
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str | None:
         """Calculates a download url given a log key and compute io type."""
 
     @abstractmethod
@@ -89,7 +87,7 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
     @contextmanager
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Iterator[Optional[IO]]:
+    ) -> Iterator[IO | None]:
         with self.local_manager.open_log_stream(log_key, io_type) as f:
             yield f
         self._on_capture_complete(log_key)
@@ -115,8 +113,8 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         log_key: Sequence[str],
         io_type: ComputeIOType,
         offset: int,
-        max_bytes: Optional[int],
-    ) -> tuple[Optional[bytes], int]:
+        max_bytes: int | None,
+    ) -> tuple[bytes | None, int]:
         if self.has_local_file(log_key, io_type):
             local_path = self.local_manager.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[io_type]
@@ -154,7 +152,7 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         self.upload_to_cloud_storage(log_key, ComputeIOType.STDERR, partial=True)
 
     def subscribe(
-        self, log_key: Sequence[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: str | None = None
     ) -> CapturedLogSubscription:
         subscription = CapturedLogSubscription(self, log_key, cursor)
         self.on_subscribe(subscription)

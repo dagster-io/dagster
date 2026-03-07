@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster as dg
 import pytest
 from dagster._check import CheckError
@@ -9,12 +7,12 @@ from pydantic import ValidationError
 
 def test_extract_primitive_coercion():
     class MyMetadataSet(NamespacedMetadataSet):
-        primitive_int: Optional[int] = None
-        primitive_float: Optional[float] = None
-        int_metadata_value: Optional[dg.IntMetadataValue] = None
-        url_metadata_value: Optional[dg.UrlMetadataValue] = None
-        url_or_str_metadata_value: Optional[dg.UrlMetadataValue | str] = None
-        url_or_str_order_reversed_metadata_value: Optional[str | dg.UrlMetadataValue] = None
+        primitive_int: int | None = None
+        primitive_float: float | None = None
+        int_metadata_value: dg.IntMetadataValue | None = None
+        url_metadata_value: dg.UrlMetadataValue | None = None
+        url_or_str_metadata_value: dg.UrlMetadataValue | str | None = None
+        url_or_str_order_reversed_metadata_value: str | dg.UrlMetadataValue | None = None
 
         @classmethod
         def namespace(cls) -> str:
@@ -59,7 +57,7 @@ def test_unsupported_type_annotations():
     class MyClass: ...
 
     class MyMetadataSet(NamespacedMetadataSet):
-        unsupported: Optional[MyClass] = None
+        unsupported: MyClass | None = None
 
         @classmethod
         def namespace(cls) -> str:

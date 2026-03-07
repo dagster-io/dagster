@@ -1,10 +1,10 @@
 import itertools
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -22,6 +22,19 @@ from dagster_omni.translation import (
     ResolvedOmniTranslationFn,
 )
 from dagster_omni.workspace import OmniWorkspace
+
+
+def _extract_table_name_from_omni_table_name(table_name: str) -> str:
+    """Extract the table name from an Omni table name.
+
+    Omni returns the table_name as `<db_name>_<schema_name>__<table_name>`, so we are not
+    able to automatically distinguish between the db and schema names. Instead, just get the
+    table name (last part after '__', or the whole string if no '__').
+    """
+    table_parts = table_name.split("__")
+    if len(table_parts) == 1:
+        return table_parts[0]
+    return table_parts[-1]
 
 
 @preview
@@ -44,7 +57,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     workspace: OmniWorkspace = Field(
         description="Defines configuration for interacting with an Omni instance.",
     )
-    translation: Optional[ResolvedOmniTranslationFn] = Field(
+    translation: ResolvedOmniTranslationFn | None = Field(
         default=None,
         description="Defines how to translate an Omni object into an AssetSpec object.",
     )
@@ -65,7 +78,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
     def _get_default_omni_spec(
         self, context: dg.ComponentLoadContext, data: OmniTranslatorData, workspace: OmniWorkspace
-    ) -> Optional[dg.AssetSpec]:
+    ) -> dg.AssetSpec | None:
         """Core function for converting an Omni document into an AssetSpec object."""
         if isinstance(data.obj, OmniDocument):
             doc = data.obj
@@ -93,13 +106,18 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
                 owners=[owner_email] if owner_email else None,
             )
         if isinstance(data.obj, OmniQuery):
-            return dg.AssetSpec(key=dg.AssetKey([data.obj.query_config.table]))
+            table_name = data.obj.query_config.table
+            extracted_name = _extract_table_name_from_omni_table_name(table_name)
+            return dg.AssetSpec(
+                key=dg.AssetKey([table_name]),
+                metadata={**TableMetadataSet(table_name=extracted_name)},
+            )
         return None
 
     @public
     def get_asset_spec(
         self, context: dg.ComponentLoadContext, data: OmniTranslatorData
-    ) -> Optional[dg.AssetSpec]:
+    ) -> dg.AssetSpec | None:
         """Generates an AssetSpec for a given Omni document.
 
         This method can be overridden in a subclass to customize how Omni documents
@@ -177,7 +195,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         return dg.Definitions(assets=self._build_asset_specs(context, workspace_data))
 
     def build_defs_from_state(
-        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+        self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         if state_path is None:
             return dg.Definitions()

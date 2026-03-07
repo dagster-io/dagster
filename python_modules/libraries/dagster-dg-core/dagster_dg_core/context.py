@@ -5,7 +5,7 @@ import shlex
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final, Optional
+from typing import Any, Final
 
 import dagster_shared.check as check
 from dagster_shared.record import record
@@ -68,8 +68,8 @@ def _should_capture_components_cli_stderr() -> bool:
 class DgContext:
     root_path: Path
     config: DgConfig
-    cli_opts: Optional[DgRawCliConfig] = None
-    _workspace_root_path: Optional[Path]
+    cli_opts: DgRawCliConfig | None = None
+    _workspace_root_path: Path | None
 
     # We need to preserve CLI options for the context to be able to derive new contexts, because
     # cli_options override everything else. If we didn't maintain them we wouldn't be able to tell
@@ -78,8 +78,8 @@ class DgContext:
         self,
         config: DgConfig,
         root_path: Path,
-        workspace_root_path: Optional[Path] = None,
-        cli_opts: Optional[DgRawCliConfig] = None,
+        workspace_root_path: Path | None = None,
+        cli_opts: DgRawCliConfig | None = None,
     ):
         self.config = config
         self.root_path = root_path
@@ -322,7 +322,7 @@ class DgContext:
         raise DgError(f"Cannot find [project].name in {self.pyproject_toml_path}")
 
     @cached_property
-    def uv_workspace_root(self) -> Optional[Path]:
+    def uv_workspace_root(self) -> Path | None:
         """Walk up directories to find a uv workspace root.
 
         Returns the workspace root path or None if not found.
@@ -369,7 +369,7 @@ class DgContext:
         return self.root_path / "build.yaml"
 
     @cached_property
-    def build_config(self) -> Optional[DgRawBuildConfig]:
+    def build_config(self) -> DgRawBuildConfig | None:
         import yaml
 
         build_yaml_path = self.build_config_path
@@ -393,7 +393,7 @@ class DgContext:
         return self.root_path / "container_context.yaml"
 
     @cached_property
-    def container_context_config(self) -> Optional[Mapping[str, Any]]:
+    def container_context_config(self) -> Mapping[str, Any] | None:
         import yaml
 
         container_context_yaml_path = self.container_context_config_path

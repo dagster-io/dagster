@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Iterable, Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
@@ -49,7 +49,7 @@ def build_last_update_freshness_checks(
     *,
     assets: Sequence[CoercibleToAssetKey | AssetsDefinition | SourceAsset],
     lower_bound_delta: datetime.timedelta,
-    deadline_cron: Optional[str] = None,
+    deadline_cron: str | None = None,
     timezone: str = DEFAULT_FRESHNESS_TIMEZONE,
     severity: AssetCheckSeverity = DEFAULT_FRESHNESS_SEVERITY,
     blocking: bool = False,
@@ -155,7 +155,7 @@ def build_last_update_freshness_checks(
 
 def _build_freshness_multi_check(
     asset_keys: Sequence[AssetKey],
-    deadline_cron: Optional[str],
+    deadline_cron: str | None,
     timezone: str,
     severity: AssetCheckSeverity,
     lower_bound_delta: datetime.timedelta,
@@ -251,9 +251,9 @@ def _build_freshness_multi_check(
 
 def construct_description(
     passed: bool,
-    last_update_time_lower_bound: Optional[float],
+    last_update_time_lower_bound: float | None,
     current_timestamp: float,
-    update_timestamp: Optional[float],
+    update_timestamp: float | None,
 ) -> str:
     check.invariant(
         (passed and update_timestamp is not None) or not passed,

@@ -1,5 +1,5 @@
 dagster-databricks library
-==========================
+##########################
 
 The ``dagster_databricks`` package provides these main pieces of functionality:
 
@@ -17,22 +17,29 @@ access storage.
 
 .. currentmodule:: dagster_databricks
 
-*********
-Component
-*********
+**********
+Components
+**********
+
+DatabricksAssetBundleComponent
+==============================
 
 .. autoclass:: DatabricksAssetBundleComponent
     :members:
 
+DatabricksWorkspaceComponent
+============================
+
 .. autoclass:: DatabricksWorkspaceComponent
     :members:
 
+****
 APIs
-----
+****
 
 
 Resources
-^^^^^^^^^
+=========
 
 .. autoconfigurable:: DatabricksClientResource
   :annotation: ResourceDefinition
@@ -41,7 +48,7 @@ Resources
   :members:
 
 Ops
-^^^
+===
 
 .. autofunction:: dagster_databricks.create_databricks_run_now_op
 
@@ -49,12 +56,12 @@ Ops
 
 
 Step Launcher
-^^^^^^^^^^^^^
+=============
 .. autoconfigurable:: dagster_databricks.databricks_pyspark_step_launcher
   :annotation: ResourceDefinition
 
 Pipes
-^^^^^
+=====
 
 .. autoclass:: PipesDatabricksClient
 
@@ -64,14 +71,14 @@ Pipes
 
 .. autoclass:: PipesDbfsLogReader
 
-Other
-^^^^^
+Error
+=====
 
 .. autoclass:: dagster_databricks.DatabricksError
 
 
 Legacy
-^^^^^^
+======
 
 .. autoconfigurable:: databricks_client
   :annotation: ResourceDefinition

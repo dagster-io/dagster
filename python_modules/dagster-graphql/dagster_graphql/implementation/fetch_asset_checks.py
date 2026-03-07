@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -86,8 +86,8 @@ def fetch_asset_check_executions(
     loading_context: LoadingContext,
     asset_check_key: AssetCheckKey,
     limit: int,
-    cursor: Optional[str],
-    partition_filter: Optional[PartitionKeyFilter],
+    cursor: str | None,
+    partition_filter: PartitionKeyFilter | None,
 ) -> list["GrapheneAssetCheckExecution"]:
     from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 

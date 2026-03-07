@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_shared.scaffold import scaffold_subtree
@@ -28,7 +27,7 @@ def generate_repository(path: str):
 
 def generate_project(
     path: str,
-    excludes: Optional[list[str]] = None,
+    excludes: list[str] | None = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
 ):

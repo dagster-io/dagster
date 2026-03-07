@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
@@ -14,10 +14,10 @@ class ResourceWithS3Configuration(ConfigurableResource):
     use_unsigned_session: bool = Field(
         default=False, description="Specifies whether to use an unsigned S3 session."
     )
-    region_name: Optional[str] = Field(
+    region_name: str | None = Field(
         default=None, description="Specifies a custom region for the S3 session."
     )
-    endpoint_url: Optional[str] = Field(
+    endpoint_url: str | None = Field(
         default=None, description="Specifies a custom endpoint for the S3 session."
     )
     max_attempts: int = Field(
@@ -27,25 +27,25 @@ class ResourceWithS3Configuration(ConfigurableResource):
             " initial call counts toward the max_attempts value that you provide."
         ),
     )
-    profile_name: Optional[str] = Field(
+    profile_name: str | None = Field(
         default=None, description="Specifies a profile to connect that session."
     )
     use_ssl: bool = Field(
         default=True, description="Whether or not to use SSL. By default, SSL is used."
     )
-    verify: Optional[bool] = Field(
+    verify: bool | None = Field(
         default=None,
         description=(
             "Whether or not to verify SSL certificates. By default SSL certificates are verified."
         ),
     )
-    aws_access_key_id: Optional[str] = Field(
+    aws_access_key_id: str | None = Field(
         default=None, description="AWS access key ID to use when creating the boto3 session."
     )
-    aws_secret_access_key: Optional[str] = Field(
+    aws_secret_access_key: str | None = Field(
         default=None, description="AWS secret access key to use when creating the boto3 session."
     )
-    aws_session_token: Optional[str] = Field(
+    aws_session_token: str | None = Field(
         default=None, description="AWS session token to use when creating the boto3 session."
     )
 

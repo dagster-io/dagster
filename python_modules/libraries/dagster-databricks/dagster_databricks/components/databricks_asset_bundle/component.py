@@ -1,12 +1,12 @@
 import os
-from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 from dagster import (
     AssetExecutionContext,
+    AssetKey,
     AssetSpec,
     MetadataValue,
     Resolvable,
@@ -34,28 +34,16 @@ from dagster_databricks.components.databricks_asset_bundle.resource import Datab
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,
 )
+from dagster_databricks.components.shared import (
+    DatabricksWorkspaceArgs,
+    resolve_databricks_workspace,
+)
 from dagster_databricks.utils import snake_case
-
-
-@dataclass
-class DatabricksWorkspaceArgs(Resolvable):
-    """Aligns with DatabricksWorkspace.__new__."""
-
-    host: str
-    token: str
 
 
 def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
-    )
-
-
-def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
-    args = DatabricksWorkspaceArgs.resolve_from_model(context, model)
-    return DatabricksWorkspace(
-        host=args.host,
-        token=args.token,
     )
 
 
@@ -118,7 +106,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ),
     ] = field(default_factory=ResolvedDatabricksServerlessConfig)
     op: Annotated[
-        Optional[OpSpec],
+        OpSpec | None,
         Resolver.default(
             description="Op related arguments to set on the generated @multi_asset",
             examples=[
@@ -132,47 +120,56 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ] = None
-    assets_by_task_key: Optional[dict[str, list[ResolvedAssetSpec]]] = None
+    assets_by_job_task_key: Annotated[
+        dict[str, dict[str, list[ResolvedAssetSpec]]] | None,
+        Resolver.default(
+            description="Optional mapping of Databricks job names to task keys to lists of Dagster AssetSpecs. "
+            "Structure: {job_name: {task_key: [AssetSpec, ...]}}. "
+            "Both job name and task key are required to uniquely identify a task.",
+        ),
+    ] = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
 
     @cached_property
-    def asset_specs_by_task_key(self) -> dict[str, list[AssetSpec]]:
-        tasks_by_task_key = self.databricks_config.tasks_by_task_key
-        default_asset_specs_by_task_key = {
-            task_key: self.get_asset_spec(task=task) for task_key, task in tasks_by_task_key.items()
-        }
+    def asset_specs_by_job_task_key(self) -> dict[str, dict[str, list[AssetSpec]]]:
+        tasks_by_job_and_task_key = self.databricks_config.tasks_by_job_and_task_key
 
-        provided_asset_specs_by_task_key = self.assets_by_task_key or {}
+        # Build default specs for all tasks
+        default_specs: dict[str, dict[str, AssetSpec]] = {}
+        for job_name, tasks_map in tasks_by_job_and_task_key.items():
+            default_specs[job_name] = {}
+            for task_key, task in tasks_map.items():
+                default_specs[job_name][task_key] = self.get_asset_spec(task=task)
 
-        provided_task_keys = provided_asset_specs_by_task_key.keys()
-        missing_task_keys = tasks_by_task_key.keys() - provided_task_keys
+        # Determine which tasks have user-provided specs
+        provided_specs = self.assets_by_job_task_key or {}
 
-        missing_asset_specs_by_task_key = {
-            task_key: [asset_spec]
-            for task_key, asset_spec in default_asset_specs_by_task_key.items()
-            if task_key in missing_task_keys
-        }
+        result: dict[str, dict[str, list[AssetSpec]]] = {}
+        for job_name, default_tasks in default_specs.items():
+            result[job_name] = {}
+            for task_key, default_spec in default_tasks.items():
+                user_specs = (provided_specs.get(job_name) or {}).get(task_key)
+                if user_specs is None:
+                    result[job_name][task_key] = [default_spec]
+                else:
+                    merged: list[AssetSpec] = []
+                    for spec in user_specs:
+                        curr_spec = spec
+                        if not curr_spec.description:
+                            curr_spec = curr_spec.replace_attributes(
+                                description=default_spec.description
+                            )
+                        curr_spec = curr_spec.merge_attributes(
+                            metadata=default_spec.metadata,
+                            kinds=default_spec.kinds,
+                        )
+                        merged.append(curr_spec)
+                    result[job_name][task_key] = merged
 
-        updated_provided_asset_specs = defaultdict(list)
-        for task_key, asset_specs in provided_asset_specs_by_task_key.items():
-            for asset_spec in asset_specs:
-                curr_spec = asset_spec
-                # replace with default attributes
-                if not curr_spec.description:
-                    curr_spec = curr_spec.replace_attributes(
-                        description=default_asset_specs_by_task_key[task_key].description
-                    )
-                # merge default attributes
-                curr_spec = curr_spec.merge_attributes(
-                    metadata=default_asset_specs_by_task_key[task_key].metadata,
-                    kinds=default_asset_specs_by_task_key[task_key].kinds,
-                )
-                updated_provided_asset_specs[task_key].append(curr_spec)
-
-        return {**missing_asset_specs_by_task_key, **updated_provided_asset_specs}
+        return result
 
     @public
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
@@ -214,9 +211,9 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 "databricks",
                 *([task.task_type] if task.task_type is not DATABRICKS_UNKNOWN_TASK_TYPE else []),
             },
-            skippable=True,
             metadata={
                 "task_key": MetadataValue.text(task.task_key),
+                "job_name": MetadataValue.text(task.job_name),
                 "task_type": MetadataValue.text(task.task_type),
                 **(
                     {"task_config": MetadataValue.json(task.task_config_metadata)}
@@ -241,28 +238,37 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         )
 
         databricks_assets = []
-        for task_key, asset_specs in self.asset_specs_by_task_key.items():
+        for job_name, tasks_map in self.asset_specs_by_job_task_key.items():
+            # Collect all specs for this job and build a task_key_map
+            job_specs: list[AssetSpec] = []
+            task_key_map: dict[AssetKey, str] = {}
+            for task_key, asset_specs in tasks_map.items():
+                for spec in asset_specs:
+                    job_specs.append(spec)
+                    task_key_map[spec.key] = task_key
+
             op_prefix = self.op.name if self.op and self.op.name else "databricks"
+            safe_job_name = snake_case(job_name)
 
             @multi_asset(
-                name=f"{op_prefix}_{task_key}_multi_asset_{component_defs_path_as_python_str}",
-                specs=asset_specs,
-                can_subset=False,
+                name=f"{op_prefix}_{safe_job_name}_multi_asset_{component_defs_path_as_python_str}",
+                specs=job_specs,
+                can_subset=True,
                 op_tags=self.op.tags if self.op else None,
                 description=self.op.description if self.op else None,
                 pool=self.op.pool if self.op else None,
                 backfill_policy=self.op.backfill_policy if self.op else None,
             )
-            def _databricks_task_multi_asset(
+            def _databricks_job_multi_asset(
                 context: AssetExecutionContext,
                 databricks: DatabricksWorkspace,
             ):
-                """Multi-asset that runs multiple assets of a task as a single Databricks job."""
+                """Multi-asset that runs tasks of a Databricks job."""
                 yield from databricks.submit_and_poll(
                     component=self,
                     context=context,
                 )
 
-            databricks_assets.append(_databricks_task_multi_asset)
+            databricks_assets.append(_databricks_job_multi_asset)
 
         return Definitions(assets=databricks_assets, resources={"databricks": self.workspace})

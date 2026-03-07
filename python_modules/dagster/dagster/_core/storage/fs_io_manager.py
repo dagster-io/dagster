@@ -1,6 +1,6 @@
 import os
 import pickle
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
@@ -122,7 +122,7 @@ class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemI
 
     """
 
-    base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
+    base_dir: str | None = Field(default=None, description="Base directory for storing files.")
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -295,7 +295,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             manager will be stored in.
     """
 
-    def __init__(self, base_dir: Optional[str] = None):
+    def __init__(self, base_dir: str | None = None):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
         self.write_mode: Literal["wb"] = "wb"
         self.read_mode: Literal["rb"] = "rb"

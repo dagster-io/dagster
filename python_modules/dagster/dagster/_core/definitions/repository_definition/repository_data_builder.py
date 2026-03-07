@@ -118,9 +118,9 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> set[st
 def _resolve_unresolved_job_def_lambda(
     unresolved_job_def: UnresolvedAssetJobDefinition,
     asset_graph: AssetGraph,
-    default_executor_def: Optional[ExecutorDefinition],
-    top_level_resources: Optional[Mapping[str, ResourceDefinition]],
-    default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
+    default_executor_def: ExecutorDefinition | None,
+    top_level_resources: Mapping[str, ResourceDefinition] | None,
+    default_logger_defs: Mapping[str, LoggerDefinition] | None,
 ) -> Callable[[], JobDefinition]:
     def resolve_unresolved_job_def() -> JobDefinition:
         try:
@@ -140,8 +140,8 @@ def _resolve_unresolved_job_def_lambda(
 
 def _process_resolved_job(
     job_def: JobDefinition,
-    default_executor_def: Optional[ExecutorDefinition],
-    default_logger_defs: Optional[Mapping[str, LoggerDefinition]],
+    default_executor_def: ExecutorDefinition | None,
+    default_logger_defs: Mapping[str, LoggerDefinition] | None,
 ) -> JobDefinition:
     job_def.validate_resource_requirements_satisfied()
 
@@ -156,10 +156,10 @@ def _process_resolved_job(
 
 def build_caching_repository_data_from_list(
     repository_definitions: Sequence[RepositoryElementDefinition],
-    default_executor_def: Optional[ExecutorDefinition] = None,
-    default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-    top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-    resource_key_mapping: Optional[Mapping[int, str]] = None,
+    default_executor_def: ExecutorDefinition | None = None,
+    default_logger_defs: Mapping[str, LoggerDefinition] | None = None,
+    top_level_resources: Mapping[str, ResourceDefinition] | None = None,
+    resource_key_mapping: Mapping[int, str] | None = None,
     component_tree: Optional["ComponentTree"] = None,
 ) -> CachingRepositoryData:
     from dagster._core.definitions import AssetsDefinition

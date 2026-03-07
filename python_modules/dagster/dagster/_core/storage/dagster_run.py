@@ -131,10 +131,10 @@ class DagsterRunStatsSnapshot(IHaveNew):
     steps_failed: int
     materializations: int
     expectations: int
-    enqueued_time: Optional[float]
-    launch_time: Optional[float]
-    start_time: Optional[float]
-    end_time: Optional[float]
+    enqueued_time: float | None
+    launch_time: float | None
+    start_time: float | None
+    end_time: float | None
 
 
 @whitelist_for_serdes
@@ -146,7 +146,7 @@ class RunOpConcurrency(IHaveNew):
 
     root_key_counts: Mapping[str, int]
     has_unconstrained_root_nodes: bool
-    all_pools: Optional[Set[str]] = None
+    all_pools: Set[str] | None = None
 
 
 class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
@@ -265,48 +265,48 @@ class DagsterRun(
     job_name: PublicAttr[str]
     run_id: PublicAttr[str]
     run_config: PublicAttr[Mapping[str, object]]
-    asset_selection: Optional[AbstractSet[AssetKey]]
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]]
-    op_selection: Optional[Sequence[str]]
-    resolved_op_selection: Optional[AbstractSet[str]]
-    step_keys_to_execute: Optional[Sequence[str]]
+    asset_selection: AbstractSet[AssetKey] | None
+    asset_check_selection: AbstractSet[AssetCheckKey] | None
+    op_selection: Sequence[str] | None
+    resolved_op_selection: AbstractSet[str] | None
+    step_keys_to_execute: Sequence[str] | None
     status: PublicAttr[DagsterRunStatus]
     tags: PublicAttr[Mapping[str, str]]
-    root_run_id: Optional[str]
-    parent_run_id: Optional[str]
-    job_snapshot_id: Optional[str]
-    execution_plan_snapshot_id: Optional[str]
-    remote_job_origin: Optional[RemoteJobOrigin]
-    job_code_origin: Optional[JobPythonOrigin]
+    root_run_id: str | None
+    parent_run_id: str | None
+    job_snapshot_id: str | None
+    execution_plan_snapshot_id: str | None
+    remote_job_origin: RemoteJobOrigin | None
+    job_code_origin: JobPythonOrigin | None
     has_repository_load_data: bool
-    run_op_concurrency: Optional[RunOpConcurrency]
+    run_op_concurrency: RunOpConcurrency | None
 
     # Only support storing certain partitions subsets on the run for now, other
     # partitions subsets are too big.
     # NOTE: if you are expanding the valid set, be mindful of older versions not handling it.
-    partitions_subset: Optional[TimeWindowPartitionsSubset | KeyRangesPartitionsSubset]
+    partitions_subset: TimeWindowPartitionsSubset | KeyRangesPartitionsSubset | None
 
     def __new__(
         cls,
         job_name: str,
-        run_id: Optional[str] = None,
-        run_config: Optional[Mapping[str, object]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-        op_selection: Optional[Sequence[str]] = None,
-        resolved_op_selection: Optional[AbstractSet[str]] = None,
-        step_keys_to_execute: Optional[Sequence[str]] = None,
-        status: Optional[DagsterRunStatus] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        root_run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        job_snapshot_id: Optional[str] = None,
-        execution_plan_snapshot_id: Optional[str] = None,
-        remote_job_origin: Optional[RemoteJobOrigin] = None,
-        job_code_origin: Optional[JobPythonOrigin] = None,
-        has_repository_load_data: Optional[bool] = None,
-        run_op_concurrency: Optional[RunOpConcurrency] = None,
-        partitions_subset: Optional[PartitionsSubset] = None,
+        run_id: str | None = None,
+        run_config: Mapping[str, object] | None = None,
+        asset_selection: AbstractSet[AssetKey] | None = None,
+        asset_check_selection: AbstractSet[AssetCheckKey] | None = None,
+        op_selection: Sequence[str] | None = None,
+        resolved_op_selection: AbstractSet[str] | None = None,
+        step_keys_to_execute: Sequence[str] | None = None,
+        status: DagsterRunStatus | None = None,
+        tags: Mapping[str, str] | None = None,
+        root_run_id: str | None = None,
+        parent_run_id: str | None = None,
+        job_snapshot_id: str | None = None,
+        execution_plan_snapshot_id: str | None = None,
+        remote_job_origin: RemoteJobOrigin | None = None,
+        job_code_origin: JobPythonOrigin | None = None,
+        has_repository_load_data: bool | None = None,
+        run_op_concurrency: RunOpConcurrency | None = None,
+        partitions_subset: PartitionsSubset | None = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -369,10 +369,10 @@ class DagsterRun(
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return copy(self, tags=tags)
 
-    def get_root_run_id(self) -> Optional[str]:
+    def get_root_run_id(self) -> str | None:
         return self.tags.get(ROOT_RUN_ID_TAG)
 
-    def get_parent_run_id(self) -> Optional[str]:
+    def get_parent_run_id(self) -> str | None:
         return self.tags.get(PARENT_RUN_ID_TAG)
 
     @property
@@ -395,7 +395,7 @@ class DagsterRun(
 
     def get_resolved_partitions_subset_for_events(
         self, partitions_def: Optional["PartitionsDefinition"]
-    ) -> Optional[PartitionsSubset]:
+    ) -> PartitionsSubset | None:
         """Get the partitions subset targeted by a run based on its partition tags. Does not always use the
         partition_subset that is directly stored on the run as this can contain a KeyRangesPartitionSubset
         which can not be deserialized without additional information.
@@ -571,12 +571,12 @@ class DagsterRun(
         return False
 
     @property
-    def previous_run_id(self) -> Optional[str]:
+    def previous_run_id(self) -> str | None:
         # Compat
         return self.parent_run_id
 
     @property
-    def entity_selection(self) -> Optional[AbstractSet["EntityKey"]]:
+    def entity_selection(self) -> AbstractSet["EntityKey"] | None:
         if self.asset_selection is None and self.asset_check_selection is None:
             return None
 
@@ -631,29 +631,29 @@ class RunsFilter(IHaveNew):
         exclude_subruns (Optional[bool]): If true, runs that were launched to backfill historical data will be excluded from results.
     """
 
-    run_ids: Optional[Sequence[str]]
-    job_name: Optional[str]
+    run_ids: Sequence[str] | None
+    job_name: str | None
     statuses: Sequence[DagsterRunStatus]
     tags: Mapping[str, str | Sequence[str]]
-    snapshot_id: Optional[str]
-    updated_after: Optional[datetime]
-    updated_before: Optional[datetime]
-    created_after: Optional[datetime]
-    created_before: Optional[datetime]
-    exclude_subruns: Optional[bool]
+    snapshot_id: str | None
+    updated_after: datetime | None
+    updated_before: datetime | None
+    created_after: datetime | None
+    created_before: datetime | None
+    exclude_subruns: bool | None
 
     def __new__(
         cls,
-        run_ids: Optional[Sequence[str]] = None,
-        job_name: Optional[str] = None,
-        statuses: Optional[Sequence[DagsterRunStatus]] = None,
-        tags: Optional[Mapping[str, str | Sequence[str]]] = None,
-        snapshot_id: Optional[str] = None,
-        updated_after: Optional[datetime] = None,
-        updated_before: Optional[datetime] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
-        exclude_subruns: Optional[bool] = None,
+        run_ids: Sequence[str] | None = None,
+        job_name: str | None = None,
+        statuses: Sequence[DagsterRunStatus] | None = None,
+        tags: Mapping[str, str | Sequence[str]] | None = None,
+        snapshot_id: str | None = None,
+        updated_after: datetime | None = None,
+        updated_before: datetime | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        exclude_subruns: bool | None = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
@@ -690,13 +690,13 @@ class RunsFilter(IHaveNew):
 
 class JobBucket(NamedTuple):
     job_names: list[str]
-    bucket_limit: Optional[int]
+    bucket_limit: int | None
 
 
 class TagBucket(NamedTuple):
     tag_key: str
     tag_values: list[str]
-    bucket_limit: Optional[int]
+    bucket_limit: int | None
 
 
 @public
@@ -717,14 +717,14 @@ class RunRecord(
     create_timestamp: datetime
     update_timestamp: datetime
     # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
-    start_time: Optional[float] = None
-    end_time: Optional[float] = None
+    start_time: float | None = None
+    end_time: float | None = None
 
     @classmethod
     def _blocking_batch_load(
         cls, keys: Iterable[str], context: LoadingContext
     ) -> Iterable[Optional["RunRecord"]]:
-        result_map: dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
+        result_map: dict[str, RunRecord | None] = {run_id: None for run_id in keys}
 
         run_ids = list(result_map.keys())
 
@@ -747,8 +747,8 @@ class RunPartitionData:
     run_id: str
     partition: str
     status: DagsterRunStatus
-    start_time: Optional[float]
-    end_time: Optional[float]
+    start_time: float | None
+    end_time: float | None
 
 
 ###################################################################################################
@@ -773,7 +773,7 @@ class ExecutionSelector:
     """Kept here to maintain loading of PipelineRuns from when it was still alive."""
 
     name: str
-    solid_subset: Optional[Sequence[str]] = None
+    solid_subset: Sequence[str] | None = None
 
 
 def assets_are_externally_managed(run: DagsterRun) -> bool:

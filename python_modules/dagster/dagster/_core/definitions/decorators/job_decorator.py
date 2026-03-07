@@ -33,22 +33,21 @@ if TYPE_CHECKING:
 class _Job:
     def __init__(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        tags: Optional[Mapping[str, Any]] = None,
-        run_tags: Optional[Mapping[str, Any]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[
-            Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
-        ] = None,
-        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: Mapping[str, Any] | None = None,
+        run_tags: Mapping[str, Any] | None = None,
+        metadata: Mapping[str, RawMetadataValue] | None = None,
+        resource_defs: Mapping[str, ResourceDefinition] | None = None,
+        config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
+        | None = None,
+        logger_defs: Mapping[str, LoggerDefinition] | None = None,
         executor_def: Optional["ExecutorDefinition"] = None,
-        hooks: Optional[AbstractSet[HookDefinition]] = None,
-        op_retry_policy: Optional[RetryPolicy] = None,
+        hooks: AbstractSet[HookDefinition] | None = None,
+        op_retry_policy: RetryPolicy | None = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-        input_values: Optional[Mapping[str, object]] = None,
-        owners: Optional[Sequence[str]] = None,
+        input_values: Mapping[str, object] | None = None,
+        owners: Sequence[str] | None = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -134,44 +133,42 @@ def job(compose_fn: Callable[..., Any]) -> JobDefinition: ...
 @overload
 def job(
     *,
-    name: Optional[str] = ...,
-    description: Optional[str] = ...,
-    resource_defs: Optional[Mapping[str, object]] = ...,
+    name: str | None = ...,
+    description: str | None = ...,
+    resource_defs: Mapping[str, object] | None = ...,
     config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"] = ...,
-    tags: Optional[Mapping[str, Any]] = ...,
-    run_tags: Optional[Mapping[str, Any]] = ...,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
-    logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
+    tags: Mapping[str, Any] | None = ...,
+    run_tags: Mapping[str, Any] | None = ...,
+    metadata: Mapping[str, RawMetadataValue] | None = ...,
+    logger_defs: Mapping[str, LoggerDefinition] | None = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
-    hooks: Optional[AbstractSet[HookDefinition]] = ...,
-    op_retry_policy: Optional[RetryPolicy] = ...,
+    hooks: AbstractSet[HookDefinition] | None = ...,
+    op_retry_policy: RetryPolicy | None = ...,
     partitions_def: Optional["PartitionsDefinition"] = ...,
-    input_values: Optional[Mapping[str, object]] = ...,
-    owners: Optional[Sequence[str]] = ...,
+    input_values: Mapping[str, object] | None = ...,
+    owners: Sequence[str] | None = ...,
 ) -> _Job: ...
 
 
 @beta_param(param="owners")
 @public
 def job(
-    compose_fn: Optional[Callable[..., Any]] = None,
+    compose_fn: Callable[..., Any] | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    resource_defs: Optional[Mapping[str, object]] = None,
-    config: Optional[
-        Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
-    ] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    run_tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    resource_defs: Mapping[str, object] | None = None,
+    config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"] | None = None,
+    tags: Mapping[str, str] | None = None,
+    run_tags: Mapping[str, str] | None = None,
+    metadata: Mapping[str, RawMetadataValue] | None = None,
+    logger_defs: Mapping[str, LoggerDefinition] | None = None,
     executor_def: Optional["ExecutorDefinition"] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    op_retry_policy: Optional[RetryPolicy] = None,
+    hooks: AbstractSet[HookDefinition] | None = None,
+    op_retry_policy: RetryPolicy | None = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
-    input_values: Optional[Mapping[str, object]] = None,
-    owners: Optional[Sequence[str]] = None,
+    input_values: Mapping[str, object] | None = None,
+    owners: Sequence[str] | None = None,
 ) -> JobDefinition | _Job:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 

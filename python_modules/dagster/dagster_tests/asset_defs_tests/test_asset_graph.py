@@ -1,7 +1,7 @@
 import time
 from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import dagster as dg
 import pytest
@@ -228,11 +228,11 @@ def test_custom_unsupported_partition_mapping():
     class TrailingWindowPartitionMapping(dg.PartitionMapping):
         def get_upstream_mapped_partitions_result_for_partitions(
             self,
-            downstream_partitions_subset: Optional[PartitionsSubset],
-            downstream_partitions_def: Optional[dg.PartitionsDefinition],
+            downstream_partitions_subset: PartitionsSubset | None,
+            downstream_partitions_def: dg.PartitionsDefinition | None,
             upstream_partitions_def: PartitionsDefinition,
-            current_time: Optional[datetime] = None,
-            dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+            current_time: datetime | None = None,
+            dynamic_partitions_store: DynamicPartitionsStore | None = None,
         ) -> UpstreamPartitionsResult:
             assert downstream_partitions_subset
             assert upstream_partitions_def
@@ -251,7 +251,7 @@ def test_custom_unsupported_partition_mapping():
         def validate_partition_mapping(
             self,
             upstream_partitions_def: PartitionsDefinition,
-            downstream_partitions_def: Optional[dg.PartitionsDefinition],
+            downstream_partitions_def: dg.PartitionsDefinition | None,
         ):
             pass
 
@@ -260,8 +260,8 @@ def test_custom_unsupported_partition_mapping():
             upstream_partitions_subset: PartitionsSubset,
             upstream_partitions_def: PartitionsDefinition,
             downstream_partitions_def: PartitionsDefinition,
-            current_time: Optional[datetime] = None,
-            dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+            current_time: datetime | None = None,
+            dynamic_partitions_store: DynamicPartitionsStore | None = None,
         ) -> PartitionsSubset:
             raise NotImplementedError()
 

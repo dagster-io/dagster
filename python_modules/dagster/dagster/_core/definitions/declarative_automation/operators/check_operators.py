@@ -1,6 +1,6 @@
 import asyncio
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Sequence  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -30,8 +30,8 @@ class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
 
     blocking_only: bool = False
     # Should be AssetSelection, but this causes circular reference issues
-    allow_selection: Optional[Any] = None
-    ignore_selection: Optional[Any] = None
+    allow_selection: Any | None = None
+    ignore_selection: Any | None = None
 
     @property
     @abstractmethod
@@ -59,27 +59,13 @@ class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
     def get_node_unique_id(
         self,
         *,
-        parent_unique_id: Optional[str],
-        index: Optional[int],
-        target_key: Optional[EntityKey],
+        parent_unique_id: str | None,
+        index: int | None,
+        target_key: EntityKey | None,
     ) -> str:
         """Ignore allow_selection / ignore_selection for the cursor hash."""
         parts = [str(parent_unique_id), str(index), self.base_name]
         return non_secure_md5_hash_str("".join(parts).encode())
-
-    def get_backcompat_node_unique_ids(
-        self,
-        *,
-        parent_unique_id: Optional[str] = None,
-        index: Optional[int] = None,
-        target_key: Optional[EntityKey] = None,
-    ) -> Sequence[str]:
-        # backcompat for previous cursors where the allow/ignore selection influenced the hash
-        return [
-            super().get_node_unique_id(
-                parent_unique_id=parent_unique_id, index=index, target_key=target_key
-            )
-        ]
 
     def allow(self, selection: "AssetSelection") -> "ChecksAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided

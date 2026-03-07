@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import boto3
 from dagster import (
@@ -68,9 +68,9 @@ _GCS_RESOURCES = {
 
 def define_job(
     graph_def: GraphDefinition,
-    platform: Optional[str] = None,
-    extra_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-    name: Optional[str] = None,
+    platform: str | None = None,
+    extra_resources: Mapping[str, ResourceDefinition] | None = None,
+    name: str | None = None,
     **kwargs: Any,  # forwarded to graph_def.to_job
 ) -> JobDefinition | Callable[[], JobDefinition]:
     if not name:
@@ -87,7 +87,7 @@ def define_job(
 
 def apply_platform_settings(
     job_def: JobDefinition,
-    platform: Optional[str],
+    platform: str | None,
     extra_resources: Mapping[str, ResourceDefinition] = {},
 ) -> JobDefinition:
     if platform == "k8s":

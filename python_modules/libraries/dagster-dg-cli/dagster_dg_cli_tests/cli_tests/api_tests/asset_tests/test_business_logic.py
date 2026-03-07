@@ -4,8 +4,28 @@ These tests focus on testing pure functions that process data without requiring
 GraphQL client mocking or external dependencies.
 """
 
-from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
-from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
+import json
+
+from dagster_dg_cli.api_layer.schemas.asset import (
+    DgApiAsset,
+    DgApiAssetDependency,
+    DgApiAssetEvent,
+    DgApiAssetEventList,
+    DgApiAssetList,
+    DgApiAutomationCondition,
+    DgApiBackfillPolicy,
+    DgApiEvaluationNode,
+    DgApiEvaluationRecord,
+    DgApiEvaluationRecordList,
+    DgApiPartitionDefinition,
+    DgApiPartitionMapping,
+)
+from dagster_dg_cli.cli.api.formatters import (
+    format_asset,
+    format_asset_evaluations,
+    format_asset_events,
+    format_assets,
+)
 
 
 class TestFormatAssets:
@@ -71,8 +91,6 @@ class TestFormatAssets:
         result = format_assets(asset_list, as_json=True)
 
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -88,8 +106,6 @@ class TestFormatAssets:
         asset_list = self._create_empty_asset_list()
         result = format_assets(asset_list, as_json=True)
 
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -104,8 +120,6 @@ class TestFormatAssets:
         """Test formatting single asset as JSON."""
         asset = self._create_single_asset()
         result = format_asset(asset, as_json=True)
-
-        import json
 
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
@@ -145,7 +159,11 @@ class TestAssetDataProcessing:
             group_name="analytics",
             kinds=["dbt", "table", "materialized"],
             metadata_entries=[
-                {"label": "text_meta", "description": "Some text", "text": "example_text"},
+                {
+                    "label": "text_meta",
+                    "description": "Some text",
+                    "text": "example_text",
+                },
                 {
                     "label": "url_meta",
                     "description": "Documentation",
@@ -156,7 +174,11 @@ class TestAssetDataProcessing:
                     "description": "File path",
                     "path": "/data/warehouse/table.sql",
                 },
-                {"label": "json_meta", "description": "Config", "jsonString": '{"key": "value"}'},
+                {
+                    "label": "json_meta",
+                    "description": "Config",
+                    "jsonString": '{"key": "value"}',
+                },
                 {
                     "label": "markdown_meta",
                     "description": "Notes",
@@ -176,8 +198,6 @@ class TestAssetDataProcessing:
 
         # Test JSON serialization works correctly
         result = asset.model_dump_json(indent=2)
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
@@ -196,3 +216,394 @@ class TestAssetDataProcessing:
         assert asset.asset_key == "level1/level2/level3/asset"
         assert asset.asset_key_parts == ["level1", "level2", "level3", "asset"]
         assert len(asset.asset_key_parts) == 4
+
+
+class TestFormatAssetExtendedDetails:
+    """Test formatting of extended asset details (get view)."""
+
+    def _create_extended_asset(self) -> DgApiAsset:
+        """Create asset with all extended detail fields populated."""
+        return DgApiAsset(
+            id="extended-asset",
+            asset_key="analytics/daily_metrics",
+            asset_key_parts=["analytics", "daily_metrics"],
+            description="Daily aggregated metrics",
+            group_name="analytics",
+            kinds=["dbt", "table"],
+            metadata_entries=[
+                {"label": "owner", "description": "data-team"},
+            ],
+            owners=[{"email": "alice@example.com"}, {"team": "data-platform"}],
+            tags=[
+                {"key": "dagster/priority", "value": "high"},
+                {"key": "domain", "value": "analytics"},
+            ],
+            automation_condition=DgApiAutomationCondition(
+                label="eager",
+                expanded_label=["Any", "deps", "updated", "AND", "NOT", "in_progress"],
+            ),
+            partition_definition=DgApiPartitionDefinition(
+                description="Daily partitions from 2024-01-01 [%Y-%m-%d]",
+            ),
+            backfill_policy=DgApiBackfillPolicy(
+                max_partitions_per_run=10,
+            ),
+            job_names=["analytics_daily_job", "analytics_backfill_job"],
+            upstream_dependencies=[
+                DgApiAssetDependency(
+                    asset_key="raw/events",
+                    partition_mapping=DgApiPartitionMapping(
+                        class_name="TimeWindowPartitionMapping",
+                        description="Maps each downstream partition to the same upstream partition",
+                    ),
+                ),
+                DgApiAssetDependency(
+                    asset_key="raw/users",
+                    partition_mapping=None,
+                ),
+            ],
+            downstream_keys=["reporting/dashboard_metrics", "reporting/weekly_summary"],
+        )
+
+    def _create_minimal_extended_asset(self) -> DgApiAsset:
+        """Create asset with extended fields but minimal data (unpartitioned, no automation)."""
+        return DgApiAsset(
+            id="simple-extended",
+            asset_key="simple_table",
+            asset_key_parts=["simple_table"],
+            description="A simple table",
+            group_name="default",
+            kinds=["table"],
+            metadata_entries=[],
+            owners=[],
+            tags=[],
+            job_names=["default_job"],
+            upstream_dependencies=[],
+            downstream_keys=[],
+        )
+
+    def test_format_extended_asset_text_output(self, snapshot):
+        """Test formatting extended asset as text."""
+        asset = self._create_extended_asset()
+        result = format_asset(asset, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_extended_asset_json_output(self, snapshot):
+        """Test formatting extended asset as JSON."""
+        import json
+
+        asset = self._create_extended_asset()
+        result = format_asset(asset, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_minimal_extended_asset_text_output(self, snapshot):
+        """Test formatting asset with extended fields but minimal data."""
+        asset = self._create_minimal_extended_asset()
+        result = format_asset(asset, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_multipartitioned_asset_text_output(self, snapshot):
+        """Test formatting asset with multipartitioned definition."""
+        asset = DgApiAsset(
+            id="multi-part-asset",
+            asset_key="analytics/multi_dim",
+            asset_key_parts=["analytics", "multi_dim"],
+            description="Multi-dimensional partitioned asset",
+            group_name="analytics",
+            kinds=["table"],
+            metadata_entries=[],
+            partition_definition=DgApiPartitionDefinition(
+                description="Multi-dimensional: date (time_window), region (static)",
+            ),
+            upstream_dependencies=[],
+            downstream_keys=[],
+        )
+        result = format_asset(asset, as_json=False)
+        snapshot.assert_match(result)
+
+
+class TestFormatAssetEvents:
+    """Test the asset event formatting functions."""
+
+    def _create_sample_events(self) -> DgApiAssetEventList:
+        """Create sample event list with mixed event types."""
+        return DgApiAssetEventList(
+            items=[
+                DgApiAssetEvent(
+                    timestamp="1706745600000",  # 2024-01-31T16:00:00 UTC
+                    run_id="run-abc-123",
+                    event_type="ASSET_MATERIALIZATION",
+                    partition="2024-01-31",
+                    tags=[{"key": "dagster/partition", "value": "2024-01-31"}],
+                    metadata_entries=[
+                        {"label": "row_count", "description": "Rows", "intValue": 5000},
+                    ],
+                ),
+                DgApiAssetEvent(
+                    timestamp="1706659200000",  # 2024-01-30T16:00:00 UTC
+                    run_id="run-def-456",
+                    event_type="ASSET_OBSERVATION",
+                    partition=None,
+                    tags=[],
+                    metadata_entries=[
+                        {"label": "freshness", "description": "Minutes", "floatValue": 12.5},
+                    ],
+                ),
+                DgApiAssetEvent(
+                    timestamp="1706572800000",  # 2024-01-29T16:00:00 UTC
+                    run_id="run-ghi-789",
+                    event_type="ASSET_MATERIALIZATION",
+                    partition="2024-01-29",
+                    tags=[{"key": "dagster/partition", "value": "2024-01-29"}],
+                    metadata_entries=[],
+                ),
+            ]
+        )
+
+    def _create_empty_events(self) -> DgApiAssetEventList:
+        """Create empty event list."""
+        return DgApiAssetEventList(items=[])
+
+    def test_format_asset_events_text_output(self, snapshot):
+        """Test formatting asset events as text table."""
+        event_list = self._create_sample_events()
+        result = format_asset_events(event_list, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_asset_events_json_output(self, snapshot):
+        """Test formatting asset events as JSON."""
+        event_list = self._create_sample_events()
+        result = format_asset_events(event_list, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_empty_asset_events_text_output(self, snapshot):
+        """Test formatting empty asset events list."""
+        event_list = self._create_empty_events()
+        result = format_asset_events(event_list, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_empty_asset_events_json_output(self, snapshot):
+        """Test formatting empty asset events as JSON."""
+        event_list = self._create_empty_events()
+        result = format_asset_events(event_list, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+
+class TestFormatAssetEvaluations:
+    """Test the asset evaluation formatting functions."""
+
+    def _create_sample_evaluations(self) -> DgApiEvaluationRecordList:
+        """Create sample evaluation records without nodes."""
+        return DgApiEvaluationRecordList(
+            items=[
+                DgApiEvaluationRecord(
+                    evaluation_id=100,
+                    timestamp=1706745600.0,  # 2024-01-31T16:00:00 UTC
+                    num_requested=3,
+                    run_ids=["run-abc-123", "run-def-456"],
+                    start_timestamp=1706745600.0,
+                    end_timestamp=1706745610.0,
+                    root_unique_id="root_1",
+                ),
+                DgApiEvaluationRecord(
+                    evaluation_id=99,
+                    timestamp=1706659200.0,  # 2024-01-30T16:00:00 UTC
+                    num_requested=0,
+                    run_ids=[],
+                    start_timestamp=1706659200.0,
+                    end_timestamp=1706659205.0,
+                    root_unique_id="root_1",
+                ),
+            ]
+        )
+
+    def _create_evaluations_with_nodes(self) -> DgApiEvaluationRecordList:
+        """Create evaluation records with node trees."""
+        return DgApiEvaluationRecordList(
+            items=[
+                DgApiEvaluationRecord(
+                    evaluation_id=100,
+                    timestamp=1706745600.0,
+                    num_requested=2,
+                    run_ids=["run-abc-123"],
+                    start_timestamp=1706745600.0,
+                    end_timestamp=1706745610.0,
+                    root_unique_id="node_root",
+                    evaluation_nodes=[
+                        DgApiEvaluationNode(
+                            unique_id="node_root",
+                            user_label="eager",
+                            expanded_label=["Any", "deps", "updated"],
+                            start_timestamp=1706745600.0,
+                            end_timestamp=1706745610.0,
+                            num_true=5,
+                            num_candidates=10,
+                            is_partitioned=True,
+                            child_unique_ids=["node_child_1", "node_child_2"],
+                            operator_type="AND",
+                        ),
+                        DgApiEvaluationNode(
+                            unique_id="node_child_1",
+                            user_label=None,
+                            expanded_label=["Any", "deps", "updated"],
+                            start_timestamp=None,
+                            end_timestamp=None,
+                            num_true=5,
+                            num_candidates=10,
+                            is_partitioned=True,
+                            child_unique_ids=[],
+                            operator_type="LEAF",
+                        ),
+                        DgApiEvaluationNode(
+                            unique_id="node_child_2",
+                            user_label=None,
+                            expanded_label=[],
+                            start_timestamp=None,
+                            end_timestamp=None,
+                            num_true=None,
+                            num_candidates=None,
+                            is_partitioned=False,
+                            child_unique_ids=[],
+                            operator_type="NOT",
+                        ),
+                    ],
+                ),
+            ]
+        )
+
+    def test_format_evaluations_text_output(self, snapshot):
+        """Test formatting evaluations as text table."""
+        evaluations = self._create_sample_evaluations()
+        result = format_asset_evaluations(evaluations, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_evaluations_json_output(self, snapshot):
+        """Test formatting evaluations as JSON."""
+        evaluations = self._create_sample_evaluations()
+        result = format_asset_evaluations(evaluations, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_evaluations_with_nodes_text_output(self, snapshot):
+        """Test formatting evaluations with node trees as text."""
+        evaluations = self._create_evaluations_with_nodes()
+        result = format_asset_evaluations(evaluations, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_evaluations_with_nodes_json_output(self, snapshot):
+        """Test formatting evaluations with node trees as JSON."""
+        evaluations = self._create_evaluations_with_nodes()
+        result = format_asset_evaluations(evaluations, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_empty_evaluations_text_output(self, snapshot):
+        """Test formatting empty evaluation list."""
+        result = format_asset_evaluations(DgApiEvaluationRecordList(items=[]), as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_empty_evaluations_json_output(self, snapshot):
+        """Test formatting empty evaluation list as JSON."""
+        result = format_asset_evaluations(DgApiEvaluationRecordList(items=[]), as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+
+class TestEvaluationDataModels:
+    """Test evaluation data model creation and serialization."""
+
+    def test_evaluation_record_creation(self):
+        """Test creating an evaluation record with all fields."""
+        record = DgApiEvaluationRecord(
+            evaluation_id=42,
+            timestamp=1706745600.0,
+            num_requested=5,
+            run_ids=["run-1", "run-2"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            root_unique_id="root_node",
+        )
+        assert record.evaluation_id == 42
+        assert record.num_requested == 5
+        assert len(record.run_ids) == 2
+        assert record.evaluation_nodes is None
+
+    def test_evaluation_record_with_nodes(self):
+        """Test creating an evaluation record with node tree."""
+        node = DgApiEvaluationNode(
+            unique_id="node_1",
+            user_label="eager",
+            expanded_label=["Any", "deps", "updated"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            num_true=3,
+            num_candidates=5,
+            is_partitioned=False,
+            child_unique_ids=["child_1"],
+            operator_type="AND",
+        )
+        record = DgApiEvaluationRecord(
+            evaluation_id=1,
+            timestamp=1706745600.0,
+            num_requested=1,
+            run_ids=["run-1"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            root_unique_id="node_1",
+            evaluation_nodes=[node],
+        )
+        assert record.evaluation_nodes is not None
+        assert len(record.evaluation_nodes) == 1
+        assert record.evaluation_nodes[0].user_label == "eager"
+        assert record.evaluation_nodes[0].operator_type == "AND"
+
+    def test_evaluation_record_json_round_trip(self, snapshot):
+        """Test JSON serialization of evaluation record."""
+        record = DgApiEvaluationRecord(
+            evaluation_id=42,
+            timestamp=1706745600.0,
+            num_requested=5,
+            run_ids=["run-1", "run-2"],
+            start_timestamp=1706745600.0,
+            end_timestamp=1706745610.0,
+            root_unique_id="root_node",
+            evaluation_nodes=[
+                DgApiEvaluationNode(
+                    unique_id="root_node",
+                    user_label="eager",
+                    expanded_label=["Any", "deps", "updated"],
+                    start_timestamp=1706745600.0,
+                    end_timestamp=1706745610.0,
+                    num_true=3,
+                    num_candidates=5,
+                    is_partitioned=True,
+                    child_unique_ids=[],
+                    operator_type="AND",
+                ),
+            ],
+        )
+        result = record.model_dump_json(indent=2)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_evaluation_node_with_null_optional_fields(self):
+        """Test node creation with null optional fields."""
+        node = DgApiEvaluationNode(
+            unique_id="leaf_node",
+            user_label=None,
+            expanded_label=[],
+            start_timestamp=None,
+            end_timestamp=None,
+            num_true=None,
+            num_candidates=None,
+            is_partitioned=False,
+            child_unique_ids=[],
+            operator_type="LEAF",
+        )
+        assert node.user_label is None
+        assert node.num_true is None
+        assert node.num_candidates is None
+        assert node.start_timestamp is None

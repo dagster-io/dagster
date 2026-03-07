@@ -1,5 +1,4 @@
 from collections.abc import Callable, Mapping, Sequence
-from typing import Optional
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public
@@ -19,8 +18,8 @@ from dagster._utils.warnings import normalize_renamed_param
 )
 def static_partitioned_config(
     partition_keys: Sequence[str],
-    tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
-    tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
+    tags_for_partition_fn: Callable[[str], Mapping[str, str]] | None = None,
+    tags_for_partition_key_fn: Callable[[str], Mapping[str, str]] | None = None,
 ) -> Callable[[PartitionConfigFn], PartitionedConfig[StaticPartitionsDefinition]]:
     """Creates a static partitioned config for a job.
 

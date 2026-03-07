@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
@@ -10,13 +9,13 @@ class SchedulerType(str, Enum):
 
 
 class DaemonSchedulerConfig(BaseModel):
-    maxCatchupRuns: Optional[int] = None
-    maxTickRetries: Optional[int] = None
+    maxCatchupRuns: int | None = None
+    maxTickRetries: int | None = None
 
 
 class SchedulerConfig(BaseModel, extra="forbid"):
-    daemonScheduler: Optional[DaemonSchedulerConfig] = None
-    customScheduler: Optional[ConfigurableClass] = None
+    daemonScheduler: DaemonSchedulerConfig | None = None
+    customScheduler: ConfigurableClass | None = None
 
 
 class Scheduler(

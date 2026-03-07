@@ -1,6 +1,5 @@
 # pyright: reportPrivateImportUsage=false
 from collections.abc import Iterator, Sequence
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -39,8 +38,8 @@ def assert_check_result(
     freshness_checks: Sequence[dg.AssetChecksDefinition],
     severity: AssetCheckSeverity,
     expected_pass: bool,
-    description_match: Optional[str] = None,
-    metadata_match: Optional[dict] = None,
+    description_match: str | None = None,
+    metadata_match: dict | None = None,
 ) -> None:
     result = execute_check_for_asset(
         assets=[the_asset],
@@ -64,9 +63,9 @@ def assert_check_result(
 def add_new_event(
     instance: DagsterInstance,
     asset_key: AssetKey,
-    partition_key: Optional[str] = None,
+    partition_key: str | None = None,
     is_materialization: bool = True,
-    override_timestamp: Optional[float] = None,
+    override_timestamp: float | None = None,
     include_metadata: bool = True,
 ):
     klass = dg.AssetMaterialization if is_materialization else dg.AssetObservation

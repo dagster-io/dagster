@@ -3,7 +3,9 @@ ARG PYTHON_VERSION
 
 FROM "${BASE_IMAGE}"
 
-COPY . /
+COPY modules /modules
+COPY dagster_test /modules/dagster-test/dagster_test
+COPY pyproject.toml /modules/dagster-test/pyproject.toml
 
 ENV GOOGLE_APPLICATION_CREDENTIALS="/modules/gac.json"
 
@@ -15,27 +17,27 @@ ENV PYTHONUNBUFFERED=1
 RUN pip install -U uv
 
 RUN python -m uv pip install \
-    -e modules/dagster \
-    -e modules/dagster-graphql \
-    -e modules/dagster-celery[flower,redis,kubernetes] \
-    -e modules/dagster-webserver \
-    -e modules/dagster-postgres \
-    -e modules/dagster-pandas \
-    -e modules/dagster-aws \
-    -e modules/dagster-gcp \
-    -e modules/dagster-k8s \
-    -e modules/dagster-celery-k8s \
-    -e modules/dagster-celery-docker \
-    -e modules/dagster-docker \
-    -e modules/dagster-airflow \
-    -e modules/dagstermill \
-    -e modules/dagster-pipes \
-    -e modules/dagster-shared \
-    -e .
+    -e /modules/dagster \
+    -e /modules/dagster-graphql \
+    -e /modules/dagster-celery[flower,redis,kubernetes] \
+    -e /modules/dagster-webserver \
+    -e /modules/dagster-postgres \
+    -e /modules/dagster-pandas \
+    -e /modules/dagster-aws \
+    -e /modules/dagster-gcp \
+    -e /modules/dagster-k8s \
+    -e /modules/dagster-celery-k8s \
+    -e /modules/dagster-celery-docker \
+    -e /modules/dagster-docker \
+    -e /modules/dagster-airflow \
+    -e /modules/dagstermill \
+    -e /modules/dagster-pipes \
+    -e /modules/dagster-shared \
+    -e /modules/dagster-test
 
 
 RUN ! (pip list --exclude-editable | grep -e dagster)
 
-WORKDIR /dagster_test/test_project/
+WORKDIR /modules/dagster-test/dagster_test/test_project/
 
 EXPOSE 80

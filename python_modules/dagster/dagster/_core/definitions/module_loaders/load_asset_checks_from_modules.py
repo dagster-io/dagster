@@ -2,7 +2,6 @@ import inspect
 from collections.abc import Iterable, Sequence
 from importlib import import_module
 from types import ModuleType
-from typing import Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
@@ -17,7 +16,7 @@ from dagster._core.definitions.module_loaders.utils import find_modules_in_packa
 
 def load_asset_checks_from_modules(
     modules: Iterable[ModuleType],
-    asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    asset_key_prefix: CoercibleToAssetKeyPrefix | None = None,
 ) -> Sequence[AssetChecksDefinition]:
     """Constructs a list of asset checks from the given modules. This is most often used in
     conjunction with a call to `load_assets_from_modules`.
@@ -51,7 +50,7 @@ def load_asset_checks_from_modules(
 
 
 def load_asset_checks_from_current_module(
-    asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    asset_key_prefix: CoercibleToAssetKeyPrefix | None = None,
 ) -> Sequence[AssetChecksDefinition]:
     """Constructs a list of asset checks from the module where this function is called. This is most
     often used in conjunction with a call to `load_assets_from_current_module`.
@@ -78,7 +77,7 @@ def load_asset_checks_from_current_module(
 
 
 def load_asset_checks_from_package_module(
-    package_module: ModuleType, asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None
+    package_module: ModuleType, asset_key_prefix: CoercibleToAssetKeyPrefix | None = None
 ) -> Sequence[AssetChecksDefinition]:
     """Constructs a list of asset checks from all sub-modules of the given package module. This is
     most often used in conjunction with a call to `load_assets_from_package_module`.
@@ -103,7 +102,7 @@ def load_asset_checks_from_package_module(
 
 
 def load_asset_checks_from_package_name(
-    package_name: str, asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None
+    package_name: str, asset_key_prefix: CoercibleToAssetKeyPrefix | None = None
 ) -> Sequence[AssetChecksDefinition]:
     """Constructs a list of asset checks from all sub-modules of the given package. This is most
     often used in conjunction with a call to `load_assets_from_package_name`.

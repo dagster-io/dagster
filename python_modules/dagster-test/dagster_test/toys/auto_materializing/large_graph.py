@@ -1,6 +1,6 @@
 import itertools
 from collections.abc import Sequence
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from dagster import (
     AssetCheckResult,
@@ -26,14 +26,14 @@ from dagster._utils.warnings import disable_dagster_warnings
 class AssetLayerConfig(NamedTuple):
     n_assets: int
     n_upstreams_per_asset: int = 0
-    partitions_def: Optional[PartitionsDefinition] = None
+    partitions_def: PartitionsDefinition | None = None
     n_checks_per_asset: int = 0
 
 
 def build_assets(
     id: str,
     layer_configs: Sequence[AssetLayerConfig],
-    automation_condition: Optional[AutomationCondition] = AutomationCondition.eager(),
+    automation_condition: AutomationCondition | None = AutomationCondition.eager(),
 ) -> list[AssetsDefinition]:
     layers = []
 

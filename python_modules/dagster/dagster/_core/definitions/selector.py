@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any  # noqa: UP035
 
 from dagster_shared.utils.hash import make_hashable
 
@@ -22,18 +22,18 @@ class JobSubsetSelector(IHaveNew):
     location_name: str
     repository_name: str
     job_name: str
-    op_selection: Optional[Sequence[str]]
-    asset_selection: Optional[AbstractSet[AssetKey]]
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]]
+    op_selection: Sequence[str] | None
+    asset_selection: AbstractSet[AssetKey] | None
+    asset_check_selection: AbstractSet[AssetCheckKey] | None
 
     def __new__(
         cls,
         location_name: str,
         repository_name: str,
         job_name: str,
-        op_selection: Optional[Sequence[str]],
-        asset_selection: Optional[Iterable[AssetKey]] = None,
-        asset_check_selection: Optional[Iterable[AssetCheckKey]] = None,
+        op_selection: Sequence[str] | None,
+        asset_selection: Iterable[AssetKey] | None = None,
+        asset_check_selection: Iterable[AssetCheckKey] | None = None,
     ):
         # coerce iterables to sets
         asset_selection = frozenset(asset_selection) if asset_selection else None
@@ -62,7 +62,7 @@ class JobSubsetSelector(IHaveNew):
     def is_subset_selection(self) -> bool:
         return bool(self.op_selection or self.asset_selection or self.asset_check_selection)
 
-    def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> "JobSubsetSelector":
+    def with_op_selection(self, op_selection: Sequence[str] | None) -> "JobSubsetSelector":
         check.invariant(
             self.op_selection is None,
             f"Can not invoke with_op_selection when op_selection={self.op_selection} is"
@@ -85,7 +85,7 @@ class JobSubsetSelector(IHaveNew):
         return self._hash
 
     @property
-    def entity_selection(self) -> Optional[AbstractSet["EntityKey"]]:
+    def entity_selection(self) -> AbstractSet["EntityKey"] | None:
         if self.asset_selection is None and self.asset_check_selection is None:
             return None
 
@@ -103,8 +103,8 @@ class JobSelector(IHaveNew):
     def __new__(
         cls,
         location_name: str,
-        repository_name: Optional[str] = None,
-        job_name: Optional[str] = None,
+        repository_name: str | None = None,
+        job_name: str | None = None,
     ):
         check.invariant(
             job_name is not None,
@@ -412,7 +412,7 @@ class PartitionsByAssetSelector:
     """The information needed to define partitions selection for a given asset key."""
 
     asset_key: AssetKey
-    partitions: Optional[PartitionsSelector] = None
+    partitions: PartitionsSelector | None = None
 
     def to_graphql_input(self):
         return {

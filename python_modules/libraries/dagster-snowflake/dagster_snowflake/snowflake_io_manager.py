@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -22,7 +22,7 @@ SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_snowflake_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: type | None = None
 ) -> IOManagerDefinition:
     """Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
@@ -235,13 +235,13 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         ),
     )
     user: str = Field(description="User login name.")
-    schema_: Optional[str] = Field(
+    schema_: str | None = Field(
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
-    password: Optional[str] = Field(default=None, description="User password.")
-    warehouse: Optional[str] = Field(default=None, description="Name of the warehouse to use.")
-    role: Optional[str] = Field(default=None, description="Name of the role to use.")
-    private_key: Optional[str] = Field(
+    password: str | None = Field(default=None, description="User password.")
+    warehouse: str | None = Field(default=None, description="Name of the warehouse to use.")
+    role: str | None = Field(default=None, description="Name of the role to use.")
+    private_key: str | None = Field(
         default=None,
         description=(
             "Raw private key to use. See the `Snowflake documentation"
@@ -250,14 +250,14 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " retrieve the base64 encoded key with this shell command: cat rsa_key.p8 | base64"
         ),
     )
-    private_key_path: Optional[str] = Field(
+    private_key_path: str | None = Field(
         default=None,
         description=(
             "Path to the private key. See the `Snowflake documentation"
             " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
         ),
     )
-    private_key_password: Optional[str] = Field(
+    private_key_password: str | None = Field(
         default=None,
         description=(
             "The password of the private key. See the `Snowflake documentation"
@@ -275,11 +275,11 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
     )
-    authenticator: Optional[str] = Field(
+    authenticator: str | None = Field(
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
-    additional_snowflake_connection_args: Optional[dict[str, Any]] = Field(
+    additional_snowflake_connection_args: dict[str, Any] | None = Field(
         default=None,
         description=(
             "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
@@ -309,7 +309,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         ...
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         """If an asset or op is not annotated with an return type, default_load_type will be used to
         determine which TypeHandler to use to store and load the output.
 

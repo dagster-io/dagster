@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence, Set
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     AssetsDefinition,
@@ -22,7 +22,7 @@ from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorDa
 def build_dlt_asset_specs(
     dlt_source: DltSource,
     dlt_pipeline: Pipeline,
-    dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
+    dagster_dlt_translator: DagsterDltTranslator | None = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a dlt source and pipeline.
 
@@ -58,14 +58,14 @@ def dlt_assets(
     *,
     dlt_source: DltSource,
     dlt_pipeline: Pipeline,
-    name: Optional[str] = None,
-    group_name: Optional[str] = None,
-    dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    hooks: Optional[Set[HookDefinition]] = None,
-    op_tags: Optional[Mapping[str, Any]] = None,
-    pool: Optional[str] = None,
+    name: str | None = None,
+    group_name: str | None = None,
+    dagster_dlt_translator: DagsterDltTranslator | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    hooks: Set[HookDefinition] | None = None,
+    op_tags: Mapping[str, Any] | None = None,
+    pool: str | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 

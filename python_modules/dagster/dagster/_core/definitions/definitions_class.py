@@ -57,16 +57,16 @@ if TYPE_CHECKING:
     from dagster.components.core.component_tree import ComponentTree
 
 
-TAssets: TypeAlias = Optional[
-    Iterable[AssetsDefinition | AssetSpec | SourceAsset | CacheableAssetsDefinition]
-]
-TSchedules: TypeAlias = Optional[
-    Iterable[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition]
-]
-TSensors: TypeAlias = Optional[Iterable[SensorDefinition]]
+TAssets: TypeAlias = (
+    Iterable[AssetsDefinition | AssetSpec | SourceAsset | CacheableAssetsDefinition] | None
+)
+TSchedules: TypeAlias = (
+    Iterable[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition] | None
+)
+TSensors: TypeAlias = Iterable[SensorDefinition] | None
 TJob: TypeAlias = JobDefinition | UnresolvedAssetJobDefinition
-TJobs: TypeAlias = Optional[Iterable[TJob]]
-TAssetChecks: TypeAlias = Optional[Iterable[AssetsDefinition]]
+TJobs: TypeAlias = Iterable[TJob] | None
+TAssetChecks: TypeAlias = Iterable[AssetsDefinition] | None
 
 
 @public
@@ -76,9 +76,9 @@ def create_repository_using_definitions_args(
     schedules: TSchedules = None,
     sensors: TSensors = None,
     jobs: TJobs = None,
-    resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition | Executor] = None,
-    loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+    resources: Mapping[str, Any] | None = None,
+    executor: ExecutorDefinition | Executor | None = None,
+    loggers: Mapping[str, LoggerDefinition] | None = None,
     asset_checks: TAssetChecks = None,
 ) -> RepositoryDefinition:
     """Create a named repository using the same arguments as :py:class:`Definitions`. In older
@@ -135,11 +135,9 @@ def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str
 
 
 def _attach_resources_to_jobs_and_instigator_jobs(
-    jobs: Optional[Iterable[JobDefinition | UnresolvedAssetJobDefinition]],
-    schedules: Optional[
-        Iterable[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition]
-    ],
-    sensors: Optional[Iterable[SensorDefinition]],
+    jobs: Iterable[JobDefinition | UnresolvedAssetJobDefinition] | None,
+    schedules: Iterable[ScheduleDefinition | UnresolvedPartitionedAssetScheduleDefinition] | None,
+    sensors: Iterable[SensorDefinition] | None,
     resource_defs: Mapping[str, Any],
 ) -> _AttachedObjects:
     """Given a list of jobs, schedules, and sensors along with top-level resource definitions,
@@ -246,11 +244,11 @@ def _create_repository_using_definitions_args(
     schedules: TSchedules = None,
     sensors: TSensors = None,
     jobs: TJobs = None,
-    resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition | Executor] = None,
-    loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+    resources: Mapping[str, Any] | None = None,
+    executor: ExecutorDefinition | Executor | None = None,
+    loggers: Mapping[str, LoggerDefinition] | None = None,
     asset_checks: TAssetChecks = None,
-    metadata: Optional[RawMetadataMapping] = None,
+    metadata: RawMetadataMapping | None = None,
     component_tree: Optional["ComponentTree"] = None,
 ) -> RepositoryDefinition:
     # First, dedupe all definition types.
@@ -413,17 +411,17 @@ class Definitions(IHaveNew):
     schedules: TSchedules = None
     sensors: TSensors = None
     jobs: TJobs = None
-    resources: Optional[Mapping[str, Any]] = None
-    executor: Optional[ExecutorDefinition | Executor] = None
-    loggers: Optional[Mapping[str, LoggerDefinition]] = None
+    resources: Mapping[str, Any] | None = None
+    executor: ExecutorDefinition | Executor | None = None
+    loggers: Mapping[str, LoggerDefinition] | None = None
     # There's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
     # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: TAssetChecks = None
     metadata: Mapping[str, MetadataValue]
-    component_tree: Optional[
-        Annotated["ComponentTree", ImportFrom("dagster.components.core.component_tree")]
-    ]
+    component_tree: (
+        Annotated["ComponentTree", ImportFrom("dagster.components.core.component_tree")] | None
+    )
 
     def __new__(
         cls,
@@ -431,11 +429,11 @@ class Definitions(IHaveNew):
         schedules: TSchedules = None,
         sensors: TSensors = None,
         jobs: TJobs = None,
-        resources: Optional[Mapping[str, Any]] = None,
-        executor: Optional[ExecutorDefinition | Executor] = None,
-        loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+        resources: Mapping[str, Any] | None = None,
+        executor: ExecutorDefinition | Executor | None = None,
+        loggers: Mapping[str, LoggerDefinition] | None = None,
         asset_checks: TAssetChecks = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: RawMetadataMapping | None = None,
         component_tree: Optional["ComponentTree"] = None,
     ):
         instance = super().__new__(
@@ -496,7 +494,7 @@ class Definitions(IHaveNew):
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
-    def dig_for_warning(self, name: str) -> Optional[str]:
+    def dig_for_warning(self, name: str) -> str | None:
         for job in self.jobs or []:
             if job.name == name:
                 if isinstance(job, JobDefinition):
@@ -581,10 +579,10 @@ class Definitions(IHaveNew):
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[type] = None,
-        instance: Optional[DagsterInstance] = None,
-        partition_key: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        python_type: type | None = None,
+        instance: DagsterInstance | None = None,
+        partition_key: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -614,9 +612,7 @@ class Definitions(IHaveNew):
         )
 
     @public
-    def get_asset_value_loader(
-        self, instance: Optional[DagsterInstance] = None
-    ) -> "AssetValueLoader":
+    def get_asset_value_loader(self, instance: DagsterInstance | None = None) -> "AssetValueLoader":
         """Returns an object that can load the contents of assets as Python objects.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
@@ -660,7 +656,7 @@ class Definitions(IHaveNew):
 
     def resolve_implicit_job_def_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
-    ) -> Optional[JobDefinition]:
+    ) -> JobDefinition | None:
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
@@ -787,7 +783,7 @@ class Definitions(IHaveNew):
         loggers = {}
         logger_key_indexes: dict[str, int] = {}
         executor = None
-        executor_index: Optional[int] = None
+        executor_index: int | None = None
 
         for i, def_set in enumerate(def_sets):
             assets.extend(def_set.assets or [])
@@ -901,7 +897,7 @@ class Definitions(IHaveNew):
         self,
         *,
         func: Callable[[AssetSpec], AssetSpec],
-        selection: Optional[CoercibleToAssetSelection] = None,
+        selection: CoercibleToAssetSelection | None = None,
     ) -> "Definitions":
         """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence
         or specs in an AssetsDefinitions with the result of the function.
@@ -949,7 +945,7 @@ class Definitions(IHaveNew):
         self,
         *,
         func: Callable[[AssetSpec], AssetSpec],
-        selection: Optional[CoercibleToAssetSelection] = None,
+        selection: CoercibleToAssetSelection | None = None,
     ) -> "Definitions":
         """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence.
 
@@ -995,7 +991,7 @@ class Definitions(IHaveNew):
     def permissive_map_resolved_asset_specs(
         self,
         func: Callable[[AssetSpec], AssetSpec],
-        selection: Optional[CoercibleToAssetSelection],
+        selection: CoercibleToAssetSelection | None,
     ) -> "Definitions":
         """This is a permissive version of map_resolved_asset_specs that allows for non-spec asset types, i.e. SourceAssets and CacheableAssetsDefinitions."""
         target_keys = None
@@ -1019,7 +1015,7 @@ class Definitions(IHaveNew):
         ]
         return replace(self, assets=assets)
 
-    def with_resources(self, resources: Optional[Mapping[str, Any]]) -> "Definitions":
+    def with_resources(self, resources: Mapping[str, Any] | None) -> "Definitions":
         return Definitions.merge(self, Definitions(resources=resources)) if resources else self
 
     def has_resolved_repository_def(self) -> bool:

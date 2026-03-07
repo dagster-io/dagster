@@ -1,6 +1,5 @@
 import json
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -530,8 +529,8 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     async def mutate(
         self,
         graphene_info: ResolveInfo,
-        executionParams: Optional[GrapheneExecutionParams] = None,
-        reexecutionParams: Optional[GrapheneReexecutionParams] = None,
+        executionParams: GrapheneExecutionParams | None = None,
+        reexecutionParams: GrapheneReexecutionParams | None = None,
     ):
         if bool(executionParams) == bool(reexecutionParams):
             raise DagsterInvariantViolationError(
@@ -596,7 +595,7 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
         self,
         graphene_info: ResolveInfo,
         runId: str,
-        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
+        terminatePolicy: GrapheneTerminateRunPolicy | None = None,
     ):
         return terminate_pipeline_execution(
             graphene_info,
@@ -623,7 +622,7 @@ class GrapheneTerminateRunsMutation(graphene.Mutation):
         self,
         graphene_info: ResolveInfo,
         runIds: Sequence[str],
-        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
+        terminatePolicy: GrapheneTerminateRunPolicy | None = None,
     ):
         return terminate_pipeline_execution_for_runs(
             graphene_info,
@@ -934,7 +933,9 @@ class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
         severity = AssetCheckSeverity(severity_raw) if severity_raw else AssetCheckSeverity.ERROR
         serialized_metadata = eventParams.get("serializedMetadata")
         metadata = json.loads(serialized_metadata) if serialized_metadata else None
-        partition = eventParams.get("partition")
+        partition_keys_input = eventParams.get("partitionKeys")
+        partition_keys = [None] if partition_keys_input is None else partition_keys_input
+        description = eventParams.get("description")
 
         asset_graph = graphene_info.context.asset_graph
 
@@ -942,15 +943,18 @@ class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
             graphene_info, asset_graph, [asset_key], Permissions.REPORT_RUNLESS_ASSET_EVENTS
         )
 
-        return report_asset_check_evaluation(
-            graphene_info,
-            asset_key=asset_key,
-            check_name=check_name,
-            passed=passed,
-            severity=severity,
-            metadata=metadata,
-            partition=partition,
-        )
+        for pk in partition_keys:
+            report_asset_check_evaluation(
+                graphene_info,
+                asset_key=asset_key,
+                check_name=check_name,
+                passed=passed,
+                severity=severity,
+                metadata=metadata,
+                partition=pk,
+                description=description,
+            )
+        return GrapheneReportAssetCheckEvaluationSuccess(assetKey=asset_key)
 
 
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
@@ -1086,7 +1090,7 @@ class GrapheneFreeConcurrencySlotsMutation(graphene.Mutation):
 
     @capture_error
     @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
-    def mutate(self, graphene_info, runId: str, stepKey: Optional[str] = None):
+    def mutate(self, graphene_info, runId: str, stepKey: str | None = None):
         event_log_storage = graphene_info.context.instance.event_log_storage
         if stepKey:
             event_log_storage.free_concurrency_slot_for_step(runId, stepKey)

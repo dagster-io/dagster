@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -20,7 +19,7 @@ class SecretsManagerResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     credentials: Boto3CredentialsComponent = Field(
         description="AWS credentials - inline configuration."
     )
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the SecretsManager resource will be bound to the definitions.",
     )
@@ -47,11 +46,11 @@ class SecretsManagerSecretsResourceComponent(dg.Component, dg.Resolvable, dg.Mod
     secrets: list[str] = Field(
         default=[], description="An array of AWS Secrets Manager secrets ARNs to fetch."
     )
-    secrets_tag: Optional[str] = Field(
+    secrets_tag: str | None = Field(
         default=None,
         description="AWS Secrets Manager secrets with this tag will be fetched and made available.",
     )
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the SecretsManagerSecrets resource will be bound to the definitions.",
     )

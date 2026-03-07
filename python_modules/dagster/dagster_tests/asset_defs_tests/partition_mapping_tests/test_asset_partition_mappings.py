@@ -1,6 +1,5 @@
 import inspect
 from datetime import datetime, timedelta
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -34,11 +33,11 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
         def get_upstream_mapped_partitions_result_for_partitions(
             self,
-            downstream_partitions_subset: Optional[PartitionsSubset],
-            downstream_partitions_def: Optional[dg.PartitionsDefinition],
+            downstream_partitions_subset: PartitionsSubset | None,
+            downstream_partitions_def: dg.PartitionsDefinition | None,
             upstream_partitions_def: PartitionsDefinition,
-            current_time: Optional[datetime] = None,
-            dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+            current_time: datetime | None = None,
+            dynamic_partitions_store: DynamicPartitionsStore | None = None,
         ) -> UpstreamPartitionsResult:
             assert downstream_partitions_subset
             assert upstream_partitions_def
@@ -57,7 +56,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         def validate_partition_mapping(
             self,
             upstream_partitions_def: PartitionsDefinition,
-            downstream_partitions_def: Optional[dg.PartitionsDefinition],
+            downstream_partitions_def: dg.PartitionsDefinition | None,
         ):
             pass
 
@@ -66,8 +65,8 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
             upstream_partitions_subset: PartitionsSubset,
             upstream_partitions_def: PartitionsDefinition,
             downstream_partitions_def: PartitionsDefinition,
-            current_time: Optional[datetime] = None,
-            dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+            current_time: datetime | None = None,
+            dynamic_partitions_store: DynamicPartitionsStore | None = None,
         ) -> PartitionsSubset:
             raise NotImplementedError()
 

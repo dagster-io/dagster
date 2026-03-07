@@ -1,6 +1,5 @@
 import os
 import time
-from typing import Optional
 from unittest import mock
 
 import dagster as dg
@@ -38,7 +37,7 @@ def test_external_schedule_execution_data_api_grpc():
 
 
 @pytest.mark.parametrize("env_var_default_val", [200, None], ids=["env-var-set", "env-var-not-set"])
-def test_external_schedule_client_timeout(instance, env_var_default_val: Optional[int]):
+def test_external_schedule_client_timeout(instance, env_var_default_val: int | None):
     if env_var_default_val:
         os.environ["DAGSTER_SCHEDULE_GRPC_TIMEOUT_SECONDS"] = str(env_var_default_val)
     with get_bar_repo_handle(instance) as repository_handle:

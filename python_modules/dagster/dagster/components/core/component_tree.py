@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, overload
+from typing import Any, overload
 from unittest import mock
 
 from dagster_shared import check
@@ -67,7 +67,7 @@ class ComponentTree(IHaveNew):
 
     defs_module: ModuleType
     project_root: Path
-    terminate_autoloading_on_keyword_files: Optional[bool] = None
+    terminate_autoloading_on_keyword_files: bool | None = None
 
     @cached_property
     def state_tracker(self) -> ComponentTreeStateTracker:
@@ -219,7 +219,7 @@ class ComponentTree(IHaveNew):
             raise Exception(f"No definitions found for path {path}")
         return defs
 
-    def build_defs(self, path: Optional[ResolvableToComponentPath] = None) -> Definitions:
+    def build_defs(self, path: ResolvableToComponentPath | None = None) -> Definitions:
         """Builds definitions from the given defs subdirectory, or all defs modules if no
         path is provided.
 
@@ -302,7 +302,7 @@ class ComponentTree(IHaveNew):
     ) -> T: ...
 
     def load_component(
-        self, defs_path: Path | ComponentPath | str, expected_type: Optional[type[T]] = None
+        self, defs_path: Path | ComponentPath | str, expected_type: type[T] | None = None
     ) -> Any:
         """Loads a component from the given path.
 
@@ -334,7 +334,7 @@ class ComponentTree(IHaveNew):
 
     def _component_and_context_at_path(
         self, defs_path: ResolvableToComponentPath
-    ) -> Optional[tuple[Component, ComponentDecl]]:
+    ) -> tuple[Component, ComponentDecl] | None:
         if self.state_tracker.get_cache_data(defs_path).component is None:
             with self.augment_component_tree_exception(
                 defs_path,
@@ -353,7 +353,7 @@ class ComponentTree(IHaveNew):
             return None
         return (cache_data.component, cache_data.component_decl)
 
-    def _build_defs_at_path(self, defs_path: ResolvableToComponentPath) -> Optional[Definitions]:
+    def _build_defs_at_path(self, defs_path: ResolvableToComponentPath) -> Definitions | None:
         cached_data = self.state_tracker.get_cache_data(defs_path)
         if cached_data.defs:
             return cached_data.defs
@@ -424,7 +424,7 @@ class ComponentTree(IHaveNew):
         prefix: str,
         include_load_and_build_status: bool = False,
         hide_plain_defs: bool = False,
-        match_path: Optional[ComponentPath] = None,
+        match_path: ComponentPath | None = None,
     ) -> None:
         decls = list(decl.iterate_child_component_decls())
         parent_path = decl.path.file_path
@@ -498,7 +498,7 @@ class ComponentTree(IHaveNew):
         self,
         include_load_and_build_status: bool = False,
         hide_plain_defs: bool = False,
-        match_path: Optional[ComponentPath] = None,
+        match_path: ComponentPath | None = None,
     ) -> str:
         """Returns a string representation of the component tree.
 

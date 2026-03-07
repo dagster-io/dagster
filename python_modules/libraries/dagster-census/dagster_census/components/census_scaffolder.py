@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
@@ -7,7 +5,7 @@ from pydantic import BaseModel
 
 
 class CensusScaffolderParams(BaseModel):
-    api_key: Optional[str] = None
+    api_key: str | None = None
 
 
 class CensusComponentScaffolder(Scaffolder[CensusScaffolderParams]):

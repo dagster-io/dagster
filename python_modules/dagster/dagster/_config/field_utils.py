@@ -1,7 +1,7 @@
 import hashlib
 import os
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeGuard
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -208,7 +208,7 @@ class Map(ConfigType):
 
     @public
     @property
-    def key_label_name(self) -> Optional[str]:
+    def key_label_name(self) -> str | None:
         """Name which describes the role of keys in the map, if provided."""
         return self.given_name
 
@@ -509,7 +509,7 @@ class IntEnvVar(int):
     def __str__(self) -> str:
         return str(int(self))
 
-    def get_value(self, default: Optional[int] = None) -> Optional[int]:
+    def get_value(self, default: int | None = None) -> int | None:
         """Returns the value of the environment variable, or the default value if the
         environment variable is not set. If no default is provided, None will be returned.
         """
@@ -548,7 +548,7 @@ class EnvVar(str):
         """Returns the name of the environment variable."""
         return super().__str__()
 
-    def get_value(self, default: Optional[str] = None) -> Optional[str]:
+    def get_value(self, default: str | None = None) -> str | None:
         """Returns the value of the environment variable, or the default value if the
         environment variable is not set. If no default is provided, None will be returned.
         """

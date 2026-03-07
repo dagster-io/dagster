@@ -1,7 +1,7 @@
 import textwrap
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import click
 import yaml
@@ -33,7 +33,7 @@ class ComponentDumper(yaml.Dumper):
 
 def scaffold_component(
     request: ScaffoldRequest[Any],
-    yaml_attributes: Optional[Mapping[str, Any]] = None,
+    yaml_attributes: Mapping[str, Any] | None = None,
 ) -> None:
     if request.scaffold_format == "yaml":
         mode = "a" if request.append else "w"
@@ -72,9 +72,9 @@ def scaffold_component(
 def scaffold_object(
     path: Path,
     typename: str,
-    json_params: Optional[str],
+    json_params: str | None,
     scaffold_format: str,
-    project_root: Optional[Path],
+    project_root: Path | None,
     append: bool = False,
 ) -> None:
     from dagster.components.component.component import Component
@@ -120,7 +120,7 @@ def scaffold_object(
             )
 
 
-def parse_params_model(obj: object, json_params: Optional[str]) -> BaseModel:
+def parse_params_model(obj: object, json_params: str | None) -> BaseModel:
     scaffolder = get_scaffolder(obj)
 
     if isinstance(scaffolder, ScaffolderUnavailableReason):

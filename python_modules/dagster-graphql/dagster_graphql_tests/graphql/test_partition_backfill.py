@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import time
-from typing import Optional
 
 from dagster import AssetKey, Output, asset, define_asset_job
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -300,7 +299,7 @@ def _mock_asset_backfill_runs(
     asset_key: AssetKey,
     backfill_id: str,
     status: DagsterRunStatus,
-    partition_key: Optional[str],
+    partition_key: str | None,
 ):
     partitions_def = graphql_context.asset_graph.get(asset_key).partitions_def
 

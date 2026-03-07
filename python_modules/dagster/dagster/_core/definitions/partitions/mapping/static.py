@@ -71,7 +71,7 @@ class StaticPartitionMapping(
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_def: PartitionsDefinition | None,
     ):
         if not isinstance(upstream_partitions_def, StaticPartitionsDefinition):
             raise DagsterInvalidDefinitionError(
@@ -126,7 +126,7 @@ class StaticPartitionMapping(
         upstream_partitions_subset: PartitionsSubset,
         upstream_partitions_def: StaticPartitionsDefinition,
         downstream_partitions_def: StaticPartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> PartitionsSubset:
         with partition_loading_context(current_time, dynamic_partitions_store):
@@ -140,10 +140,10 @@ class StaticPartitionMapping(
 
     def get_upstream_mapped_partitions_result_for_partitions(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_subset: PartitionsSubset | None,
+        downstream_partitions_def: PartitionsDefinition | None,
         upstream_partitions_def: StaticPartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> UpstreamPartitionsResult:
         with partition_loading_context(current_time, dynamic_partitions_store):

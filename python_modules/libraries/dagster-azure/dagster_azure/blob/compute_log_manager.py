@@ -2,7 +2,7 @@ import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-from typing import IO, Any, Optional
+from typing import IO, Any
 
 import dagster_shared.seven as seven
 from azure.identity import ClientSecretCredential, DefaultAzureCredential
@@ -118,13 +118,13 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         self,
         storage_account: str,
         container: str,
-        secret_credential: Optional[dict] = None,
-        local_dir: Optional[str] = None,
-        inst_data: Optional[ConfigurableClassData] = None,
+        secret_credential: dict | None = None,
+        local_dir: str | None = None,
+        inst_data: ConfigurableClassData | None = None,
         prefix: str = "dagster",
-        upload_interval: Optional[int] = None,
-        default_azure_credential: Optional[dict] = None,
-        access_key_or_sas_token: Optional[str] = None,
+        upload_interval: int | None = None,
+        default_azure_credential: dict | None = None,
+        access_key_or_sas_token: str | None = None,
         show_url_only: bool = False,
     ):
         self._show_url_only = check.bool_param(show_url_only, "show_url_only")
@@ -163,7 +163,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -206,7 +206,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         return self._local_manager
 
     @property
-    def upload_interval(self) -> Optional[int]:
+    def upload_interval(self) -> int | None:
         return self._upload_interval if self._upload_interval else None
 
     def _clean_prefix(self, prefix: str) -> str:
@@ -227,7 +227,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         return "/".join(paths)  # blob path delimiter
 
     def delete_logs(
-        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+        self, log_key: Sequence[str] | None = None, prefix: Sequence[str] | None = None
     ):
         self.local_manager.delete_logs(log_key=log_key, prefix=prefix)
         if log_key:
@@ -260,9 +260,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         if to_remove:
             self._container_client.delete_blobs(*to_remove)
 
-    def download_url_for_type(
-        self, log_key: Sequence[str], io_type: ComputeIOType
-    ) -> Optional[str]:
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str | None:
         if not self.is_capture_complete(log_key):
             return None
 

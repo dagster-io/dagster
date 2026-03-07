@@ -4,7 +4,6 @@ from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Callable,
-    Optional,
     TypeAlias,
     TypeGuard,
     cast,
@@ -69,11 +68,11 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     def __init__(
         self,
         resource_fn: ResourceFunction,
-        config_schema: Optional[CoercableToConfigSchema] = None,
-        description: Optional[str] = None,
-        input_config_schema: Optional[CoercableToConfigSchema] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
-        version: Optional[str] = None,
+        config_schema: CoercableToConfigSchema | None = None,
+        description: str | None = None,
+        input_config_schema: CoercableToConfigSchema | None = None,
+        required_resource_keys: AbstractSet[str] | None = None,
+        version: str | None = None,
     ):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
@@ -92,7 +91,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
 
     def copy_for_configured(
         self,
-        description: Optional[str],
+        description: str | None,
         config_schema: CoercableToConfigSchema,
     ) -> "InputManagerDefinition":
         return InputManagerDefinition(
@@ -112,21 +111,21 @@ def input_manager(
 
 @overload
 def input_manager(
-    config_schema: Optional[CoercableToConfigSchema] = None,
-    description: Optional[str] = None,
-    input_config_schema: Optional[CoercableToConfigSchema] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    version: Optional[str] = None,
+    config_schema: CoercableToConfigSchema | None = None,
+    description: str | None = None,
+    input_config_schema: CoercableToConfigSchema | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    version: str | None = None,
 ) -> Callable[[InputLoadFn], InputManagerDefinition]: ...
 
 
 @public
 def input_manager(
-    config_schema: InputLoadFn | Optional[CoercableToConfigSchema] = None,
-    description: Optional[str] = None,
-    input_config_schema: Optional[CoercableToConfigSchema] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    version: Optional[str] = None,
+    config_schema: InputLoadFn | CoercableToConfigSchema | None = None,
+    description: str | None = None,
+    input_config_schema: CoercableToConfigSchema | None = None,
+    required_resource_keys: AbstractSet[str] | None = None,
+    version: str | None = None,
 ) -> InputManagerDefinition | Callable[[InputLoadFn], InputManagerDefinition]:
     """Define an input manager.
 
@@ -215,10 +214,10 @@ class _InputManagerDecoratorCallable:
     def __init__(
         self,
         config_schema: CoercableToConfigSchema = None,
-        description: Optional[str] = None,
-        version: Optional[str] = None,
+        description: str | None = None,
+        version: str | None = None,
         input_config_schema: CoercableToConfigSchema = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
+        required_resource_keys: AbstractSet[str] | None = None,
     ):
         self.config_schema = config_schema
         self.description = check.opt_str_param(description, "description")

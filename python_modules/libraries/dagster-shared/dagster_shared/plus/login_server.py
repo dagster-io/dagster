@@ -2,7 +2,6 @@ import json
 import random
 import string
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
 from urllib import parse
 
 
@@ -68,8 +67,8 @@ def create_token_callback_handler(nonce: str) -> type[BaseHTTPRequestHandler]:
 
 
 class TokenServer(HTTPServer):
-    organization: Optional[str] = None
-    token: Optional[str] = None
+    organization: str | None = None
+    token: str | None = None
 
     def __init__(self, host: tuple[str, int], nonce: str):
         super().__init__(host, create_token_callback_handler(nonce))
@@ -83,10 +82,10 @@ class TokenServer(HTTPServer):
         self.organization = organization
         self.token = token
 
-    def get_organization(self) -> Optional[str]:
+    def get_organization(self) -> str | None:
         return self.organization
 
-    def get_token(self) -> Optional[str]:
+    def get_token(self) -> str | None:
         return self.token
 
 
@@ -96,7 +95,7 @@ def _generate_nonce():
     )
 
 
-def start_login_server(base_url: Optional[str] = None) -> tuple[TokenServer, str]:
+def start_login_server(base_url: str | None = None) -> tuple[TokenServer, str]:
     """Starts a login server on a free port and returns
     the server and the URL to open in the browser.
     """

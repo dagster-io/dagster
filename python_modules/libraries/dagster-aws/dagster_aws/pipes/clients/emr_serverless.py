@@ -54,8 +54,8 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         client: Optional["EMRServerlessClient"] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         forward_termination: bool = True,
         poll_interval: float = 5.0,
     ):
@@ -89,7 +89,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         *,
         context: OpExecutionContext | AssetExecutionContext,
         start_job_run_params: "StartJobRunRequestTypeDef",
-        extras: Optional[dict[str, Any]] = None,
+        extras: dict[str, Any] | None = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Serverless, enriched with the pipes protocol.
 

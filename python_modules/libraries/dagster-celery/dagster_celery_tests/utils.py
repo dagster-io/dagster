@@ -5,7 +5,7 @@ import tempfile
 import threading
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.events import DagsterEvent
@@ -22,7 +22,7 @@ REPO_FILE = os.path.join(os.path.dirname(__file__), "repo.py")
 
 
 @contextmanager
-def tempdir_wrapper(tempdir: Optional[str] = None) -> Iterator[str]:
+def tempdir_wrapper(tempdir: str | None = None) -> Iterator[str]:
     if tempdir:
         yield tempdir
     else:
@@ -31,7 +31,7 @@ def tempdir_wrapper(tempdir: Optional[str] = None) -> Iterator[str]:
 
 
 @contextmanager
-def _instance_wrapper(instance: Optional[DagsterInstance]) -> Iterator[DagsterInstance]:
+def _instance_wrapper(instance: DagsterInstance | None) -> Iterator[DagsterInstance]:
     if instance:
         yield instance
     else:
@@ -42,11 +42,11 @@ def _instance_wrapper(instance: Optional[DagsterInstance]) -> Iterator[DagsterIn
 @contextmanager
 def execute_job_on_celery(
     job_name: str,
-    instance: Optional[DagsterInstance] = None,
-    run_config: Optional[Mapping[str, Any]] = None,
-    tempdir: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    subset: Optional[Sequence[str]] = None,
+    instance: DagsterInstance | None = None,
+    run_config: Mapping[str, Any] | None = None,
+    tempdir: str | None = None,
+    tags: Mapping[str, str] | None = None,
+    subset: Sequence[str] | None = None,
 ) -> Iterator[ExecutionResult]:
     with tempdir_wrapper(tempdir) as tempdir:
         job_def = ReconstructableJob.for_file(REPO_FILE, job_name).get_subset(op_selection=subset)
@@ -67,10 +67,10 @@ def execute_job_on_celery(
 @contextmanager
 def execute_eagerly_on_celery(
     job_name: str,
-    instance: Optional[DagsterInstance] = None,
-    tempdir: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    subset: Optional[Sequence[str]] = None,
+    instance: DagsterInstance | None = None,
+    tempdir: str | None = None,
+    tags: Mapping[str, str] | None = None,
+    subset: Sequence[str] | None = None,
 ) -> Iterator[ExecutionResult]:
     with tempfile.TemporaryDirectory() as tempdir:
         run_config = {
@@ -93,8 +93,8 @@ def execute_on_thread(
     job_name: str,
     done: threading.Event,
     instance_ref: InstanceRef,
-    tempdir: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
+    tempdir: str | None = None,
+    tags: Mapping[str, str] | None = None,
 ) -> None:
     with DagsterInstance.from_ref(instance_ref) as instance:
         with execute_job_on_celery(job_name, tempdir=tempdir, tags=tags, instance=instance):
@@ -102,7 +102,7 @@ def execute_on_thread(
 
 
 @contextmanager
-def start_celery_worker(queue: Optional[str] = None) -> Iterator[None]:
+def start_celery_worker(queue: str | None = None) -> Iterator[None]:
     process = subprocess.Popen(
         ["dagster-celery", "worker", "start", "-A", "dagster_celery.app"]
         + (["-q", queue] if queue else [])

@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from dagster._record import record
 
@@ -19,10 +18,10 @@ class ConcurrencySlotStatus(Enum):
 class ConcurrencyClaimStatus:
     concurrency_key: str
     slot_status: ConcurrencySlotStatus
-    priority: Optional[int] = None
-    assigned_timestamp: Optional[datetime] = None
-    enqueued_timestamp: Optional[datetime] = None
-    sleep_interval: Optional[float] = None
+    priority: int | None = None
+    assigned_timestamp: datetime | None = None
+    enqueued_timestamp: datetime | None = None
+    sleep_interval: float | None = None
 
     @property
     def is_claimed(self):
@@ -58,8 +57,8 @@ class PendingStepInfo:
     run_id: str
     step_key: str
     enqueued_timestamp: datetime
-    assigned_timestamp: Optional[datetime]
-    priority: Optional[int]
+    assigned_timestamp: datetime | None
+    priority: int | None
 
 
 @record
@@ -75,7 +74,7 @@ class ConcurrencyKeyInfo:
     claimed_slots: list[ClaimedSlotInfo]
     pending_steps: list[PendingStepInfo]
     # limit: None means no slots and no default limit.  `limit` will return the instance-configured default even if the slots have not yet been initialized.
-    limit: Optional[int] = None
+    limit: int | None = None
     using_default_limit: bool = False
 
     ###################################################

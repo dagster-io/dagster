@@ -2,7 +2,6 @@ import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional
 
 import click
 from dagster_shared.cli import workspace_options
@@ -134,7 +133,7 @@ def execute_list_command(
 @click.option("--start-all", help="start all sensors", is_flag=True, default=False)
 @workspace_options
 @repository_options
-def sensor_start_command(sensor_name: Optional[str], start_all: bool, **other_opts: object):
+def sensor_start_command(sensor_name: str | None, start_all: bool, **other_opts: object):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -149,7 +148,7 @@ def sensor_start_command(sensor_name: Optional[str], start_all: bool, **other_op
 
 def execute_start_command(
     *,
-    sensor_name: Optional[str],
+    sensor_name: str | None,
     start_all: bool,
     workspace_opts: WorkspaceOpts,
     repository_opts: RepositoryOpts,
@@ -240,9 +239,9 @@ def execute_stop_command(
 @repository_options
 def sensor_preview_command(
     sensor_name: str,
-    since: Optional[float],
-    last_run_key: Optional[str],
-    cursor: Optional[str],
+    since: float | None,
+    last_run_key: str | None,
+    cursor: str | None,
     **other_opts: object,
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -263,13 +262,13 @@ def sensor_preview_command(
 def execute_preview_command(
     *,
     sensor_name: str,
-    since: Optional[float],
-    last_run_key: Optional[str],
-    cursor: Optional[str],
+    since: float | None,
+    last_run_key: str | None,
+    cursor: str | None,
     workspace_opts: WorkspaceOpts,
     repository_opts: RepositoryOpts,
     print_fn: PrintFn,
-    instance: Optional[DagsterInstance] = None,
+    instance: DagsterInstance | None = None,
 ):
     from dagster._daemon.sensor import fetch_existing_runs
 
@@ -351,7 +350,7 @@ def execute_preview_command(
 @workspace_options
 @repository_options
 def sensor_cursor_command(
-    sensor_name: str, cursor_value: Optional[str], delete: bool, **other_opts: object
+    sensor_name: str, cursor_value: str | None, delete: bool, **other_opts: object
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
@@ -369,7 +368,7 @@ def sensor_cursor_command(
 def execute_cursor_command(
     *,
     sensor_name: str,
-    cursor_value: Optional[str],
+    cursor_value: str | None,
     delete: bool,
     workspace_opts: WorkspaceOpts,
     repository_opts: RepositoryOpts,

@@ -1,6 +1,5 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional
 
 import sqlalchemy as db
 from packaging.version import parse
@@ -37,7 +36,7 @@ MINIMUM_SQLITE_BATCH_VERSION = "3.25.0"
 class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     """Local SQLite backed schedule storage."""
 
-    def __init__(self, conn_string: str, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, conn_string: str, inst_data: ConfigurableClassData | None = None):
         check.str_param(conn_string, "conn_string")
         self._conn_string = conn_string
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
@@ -45,7 +44,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -54,13 +53,13 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: Optional[ConfigurableClassData], config_value
+        cls, inst_data: ConfigurableClassData | None, config_value
     ) -> "SqliteScheduleStorage":
         return SqliteScheduleStorage.from_local(inst_data=inst_data, **config_value)
 
     @classmethod
     def from_local(
-        cls, base_dir: str, inst_data: Optional[ConfigurableClassData] = None
+        cls, base_dir: str, inst_data: ConfigurableClassData | None = None
     ) -> "SqliteScheduleStorage":
         check.str_param(base_dir, "base_dir")
         mkdir_p(base_dir)

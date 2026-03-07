@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class UPathDefsStateStorage(DefsStateStorage, ConfigurableClass):
     """Implements StateStorage using a UPath as the backing store."""
 
-    def __init__(self, base_path: "UPath", inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, base_path: "UPath", inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         self._base_path = base_path
 
@@ -29,7 +29,7 @@ class UPathDefsStateStorage(DefsStateStorage, ConfigurableClass):
         return self._base_path
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -90,7 +90,7 @@ class UPathDefsStateStorage(DefsStateStorage, ConfigurableClass):
             {DEFS_STATE_INFO_CURSOR_KEY: serialize_value(new_info)}
         )
 
-    def get_latest_defs_state_info(self) -> Optional[DefsStateInfo]:
+    def get_latest_defs_state_info(self) -> DefsStateInfo | None:
         raw_value = self._instance.run_storage.get_cursor_values({DEFS_STATE_INFO_CURSOR_KEY}).get(
             DEFS_STATE_INFO_CURSOR_KEY
         )

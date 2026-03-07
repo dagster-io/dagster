@@ -131,7 +131,7 @@ class StateBackedComponent(Component):
             await asyncio.to_thread(self.write_state_to_path, state_path)
 
     async def _store_code_server_state(
-        self, key: str, state_storage: Optional[DefsStateStorage]
+        self, key: str, state_storage: DefsStateStorage | None
     ) -> str:
         load_context = DefinitionsLoadContext.get()
         check.invariant(
@@ -147,7 +147,7 @@ class StateBackedComponent(Component):
             return CODE_SERVER_STATE_VERSION
 
     async def _store_local_filesystem_state(
-        self, key: str, state_storage: Optional[DefsStateStorage], project_root: Path
+        self, key: str, state_storage: DefsStateStorage | None, project_root: Path
     ) -> str:
         state_path = get_local_state_path(key, project_root)
         shutil.rmtree(state_path, ignore_errors=True)
@@ -227,7 +227,7 @@ class StateBackedComponent(Component):
 
     @abstractmethod
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> Definitions:
         """Given a state_path, builds a Definitions object based on the state
         contained at that path.

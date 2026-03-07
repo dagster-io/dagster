@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, reduce
 from types import ModuleType
-from typing import Any, Optional, TypeAlias, cast, get_args
+from typing import Any, TypeAlias, cast, get_args
 
 from dagster._core.definitions.asset_checks.asset_checks_definition import (
     AssetChecksDefinition,
@@ -58,7 +58,7 @@ class ModuleScopedDagsterDefs:
     def from_modules(
         cls,
         modules: Iterable[ModuleType],
-        types_to_load: Optional[tuple[type]] = None,
+        types_to_load: tuple[type] | None = None,
     ) -> "ModuleScopedDagsterDefs":
         # Ensure that the types_to_load are all valid types.
         if types_to_load:
@@ -351,12 +351,12 @@ class DagsterObjectsList:
 
     def with_attributes(
         self,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix],
-        source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
-        group_name: Optional[str],
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
-        automation_condition: Optional[AutomationCondition],
-        backfill_policy: Optional[BackfillPolicy],
+        key_prefix: CoercibleToAssetKeyPrefix | None,
+        source_key_prefix: CoercibleToAssetKeyPrefix | None,
+        group_name: str | None,
+        legacy_freshness_policy: LegacyFreshnessPolicy | None,
+        automation_condition: AutomationCondition | None,
+        backfill_policy: BackfillPolicy | None,
     ) -> "DagsterObjectsList":
         dagster_def_list = self.assets_with_loadable_prefix(key_prefix) if key_prefix else self
         dagster_def_list = (
@@ -411,7 +411,7 @@ class DagsterObjectsList:
 
 
 def _spec_mapper_disallow_group_override(
-    group_name: Optional[str], automation_condition: Optional[AutomationCondition]
+    group_name: str | None, automation_condition: AutomationCondition | None
 ) -> Callable[[AssetSpec], AssetSpec]:
     def _inner(spec: AssetSpec) -> AssetSpec:
         if (

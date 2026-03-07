@@ -3,7 +3,7 @@ from asyncio import AbstractEventLoop
 from collections import deque
 from collections.abc import Generator, Mapping
 from contextlib import ContextDecorator
-from typing import AbstractSet, Any, Callable, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, cast  # noqa: UP035
 
 from dagster_shared.utils.timing import format_duration
 
@@ -43,12 +43,12 @@ def resource_initialization_manager(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
-    execution_plan: Optional[ExecutionPlan],
-    dagster_run: Optional[DagsterRun],
-    resource_keys_to_init: Optional[AbstractSet[str]],
-    instance: Optional[DagsterInstance],
-    emit_persistent_events: Optional[bool],
-    event_loop: Optional[AbstractEventLoop],
+    execution_plan: ExecutionPlan | None,
+    dagster_run: DagsterRun | None,
+    resource_keys_to_init: AbstractSet[str] | None,
+    instance: DagsterInstance | None,
+    emit_persistent_events: bool | None,
+    event_loop: AbstractEventLoop | None,
 ):
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -121,11 +121,11 @@ def _core_resource_initialization_event_generator(
     resource_configs: Mapping[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
     resource_managers: deque[EventGenerationManager],
-    execution_plan: Optional[ExecutionPlan],
-    dagster_run: Optional[DagsterRun],
-    resource_keys_to_init: Optional[AbstractSet[str]],
-    instance: Optional[DagsterInstance],
-    emit_persistent_events: Optional[bool],
+    execution_plan: ExecutionPlan | None,
+    dagster_run: DagsterRun | None,
+    resource_keys_to_init: AbstractSet[str] | None,
+    instance: DagsterInstance | None,
+    emit_persistent_events: bool | None,
     event_loop,
 ):
     job_name = ""  # Must be initialized to a string to satisfy typechecker
@@ -219,12 +219,12 @@ def resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
-    execution_plan: Optional[ExecutionPlan],
-    dagster_run: Optional[DagsterRun],
-    resource_keys_to_init: Optional[AbstractSet[str]],
-    instance: Optional[DagsterInstance],
-    emit_persistent_events: Optional[bool],
-    event_loop: Optional[AbstractEventLoop],
+    execution_plan: ExecutionPlan | None,
+    dagster_run: DagsterRun | None,
+    resource_keys_to_init: AbstractSet[str] | None,
+    instance: DagsterInstance | None,
+    emit_persistent_events: bool | None,
+    event_loop: AbstractEventLoop | None,
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_keys_to_init = check.opt_set_param(

@@ -7,7 +7,7 @@ from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional
+from typing import Any
 
 import psutil
 import pytest
@@ -76,8 +76,8 @@ def reserialize_fixture(airflow_instance: None) -> Callable[[], None]:
 def stand_up_airflow(
     env: Any = {},
     airflow_cmd: list[str] = ["airflow", "standalone"],
-    cwd: Optional[Path] = None,
-    stdout_channel: Optional[int] = None,
+    cwd: Path | None = None,
+    stdout_channel: int | None = None,
     port: int = 8080,
     expected_num_dags: int = 1,
 ) -> Generator[subprocess.Popen, None, None]:

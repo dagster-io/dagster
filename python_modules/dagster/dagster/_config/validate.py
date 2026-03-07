@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 import dagster._check as check
 from dagster._config.config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
@@ -351,14 +351,14 @@ def validate_shape_config(
     return _validate_shape_config(context, config_value, check_for_extra_incoming_fields=True)
 
 
-def _append_if_error(errors: list[EvaluationError], maybe_error: Optional[EvaluationError]) -> None:
+def _append_if_error(errors: list[EvaluationError], maybe_error: EvaluationError | None) -> None:
     if maybe_error:
         errors.append(maybe_error)
 
 
 def _check_for_extra_incoming_fields(
     context: ValidationContext, defined_field_names: set[str], incoming_field_names: set[str]
-) -> Optional[EvaluationError]:
+) -> EvaluationError | None:
     extra_fields = list(incoming_field_names - defined_field_names)
 
     if extra_fields:
@@ -374,7 +374,7 @@ def _compute_missing_fields_error(
     field_snaps: Sequence[ConfigFieldSnap],
     incoming_fields: set[str],
     field_aliases: Mapping[str, str],
-) -> Optional[EvaluationError]:
+) -> EvaluationError | None:
     missing_fields: list[str] = []
 
     for field_snap in field_snaps:

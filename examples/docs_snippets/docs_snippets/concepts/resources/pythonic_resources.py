@@ -614,10 +614,8 @@ def new_resource_testing_with_context():
     # start_new_resource_testing_with_context
     import dagster as dg
 
-    from typing import Optional
-
     class MyContextResource(dg.ConfigurableResource[GitHub]):
-        base_path: Optional[str] = None
+        base_path: str | None = None
 
         def effective_base_path(self) -> str:
             if self.base_path:

@@ -103,8 +103,8 @@ class AutomationConditionNodeSnapshot(NamedTuple):
     class_name: str
     description: str
     unique_id: str
-    label: Optional[str] = None
-    name: Optional[str] = None
+    label: str | None = None
+    name: str | None = None
     operator_type: OperatorType = "identity"
 
 
@@ -134,15 +134,15 @@ class AutomationConditionEvaluation(Generic[T_EntityKey]):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AutomationConditionNodeSnapshot
-    start_timestamp: Optional[float]
-    end_timestamp: Optional[float]
+    start_timestamp: float | None
+    end_timestamp: float | None
 
     true_subset: SerializableEntitySubset[T_EntityKey]
     candidate_subset: SerializableEntitySubset[T_EntityKey] | HistoricalAllPartitionsSubsetSentinel
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
-    metadata: Optional[MetadataMapping] = None
+    metadata: MetadataMapping | None = None
 
     @property
     def key(self) -> T_EntityKey:
@@ -193,12 +193,10 @@ class AutomationConditionNodeCursor(Generic[T_EntityKey]):
     true_subset: SerializableEntitySubset[T_EntityKey]
     candidate_subset: SerializableEntitySubset[T_EntityKey] | HistoricalAllPartitionsSubsetSentinel
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
-    extra_state: Optional[StructuredCursor]
-    metadata: Optional[MetadataMapping] = None
+    extra_state: StructuredCursor | None
+    metadata: MetadataMapping | None = None
 
-    def get_structured_cursor(
-        self, as_type: type[T_StructuredCursor]
-    ) -> Optional[T_StructuredCursor]:
+    def get_structured_cursor(self, as_type: type[T_StructuredCursor]) -> T_StructuredCursor | None:
         """Returns the extra_state value if it is of the expected type. Otherwise, returns None."""
         if isinstance(self.extra_state, as_type):
             return self.extra_state
@@ -223,7 +221,7 @@ class AutomationConditionCursor(Generic[T_EntityKey]):
 
     previous_requested_subset: SerializableEntitySubset
     effective_timestamp: float
-    last_event_id: Optional[int]
+    last_event_id: int | None
 
     node_cursors_by_unique_id: Mapping[str, AutomationConditionNodeCursor]
     result_value_hash: str
@@ -296,10 +294,10 @@ class AutomationConditionEvaluationState:
     """DEPRECATED: exists only for backcompat purposes."""
 
     previous_evaluation: AutomationConditionEvaluation
-    previous_tick_evaluation_timestamp: Optional[float]
+    previous_tick_evaluation_timestamp: float | None
 
-    max_storage_id: Optional[int]
-    extra_state_by_unique_id: Mapping[str, Optional[StructuredCursor]]
+    max_storage_id: int | None
+    extra_state_by_unique_id: Mapping[str, StructuredCursor | None]
 
     @property
     def asset_key(self) -> AssetKey:

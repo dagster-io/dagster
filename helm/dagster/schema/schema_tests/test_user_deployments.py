@@ -1,6 +1,6 @@
 import json
 import subprocess
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
@@ -1664,8 +1664,8 @@ def test_old_env(template: HelmTemplate, user_deployment_configmap_template):
 )
 def test_deployment_strategy(
     template: HelmTemplate,
-    strategy: Optional[dict[str, Any]],
-    expected: Optional[dict[str, Any]],
+    strategy: dict[str, Any] | None,
+    expected: dict[str, Any] | None,
 ):
     deployment = create_simple_user_deployment("foo")
     if strategy:

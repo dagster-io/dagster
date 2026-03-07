@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -14,8 +13,8 @@ from dagster_tests.components_tests.utils import temp_code_location_bar
 
 
 class TestParamsModelWithDefaults(BaseModel):
-    name: Optional[str] = None
-    age: Optional[int] = None
+    name: str | None = None
+    age: int | None = None
 
 
 class TestParamsModelWithoutDefaults(BaseModel):

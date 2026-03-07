@@ -10,7 +10,6 @@ from typing import (  # noqa: UP035
     Callable,
     Concatenate,
     ContextManager,
-    Optional,
     TypeAlias,
     TypeGuard,
     TypeVar,
@@ -97,7 +96,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
 
 def validate_expected_params(
     params: Sequence[Parameter], expected_params: Sequence[str]
-) -> Optional[str]:
+) -> str | None:
     """Returns first missing positional, if any, otherwise None."""
     expected_idx = 0
     for expected_param in expected_params:
@@ -123,7 +122,7 @@ def param_is_var_keyword(param: Parameter) -> bool:
     return param.kind == Parameter.VAR_KEYWORD
 
 
-def format_docstring_for_description(fn: Callable[..., Any]) -> Optional[str]:
+def format_docstring_for_description(fn: Callable[..., Any]) -> str | None:
     if fn.__doc__ is not None:
         docstring = fn.__doc__
         if len(docstring) > 0 and docstring[0].isspace():
@@ -179,7 +178,7 @@ def get_decorator_target(obj: Decoratable) -> Callable:
 def apply_pre_call_decorator(
     obj: T_Decoratable,
     pre_call_fn: Callable[[], None],
-    condition: Optional[Callable[..., bool]] = None,
+    condition: Callable[..., bool] | None = None,
 ) -> T_Decoratable:
     target = get_decorator_target(obj)
     new_fn = _wrap_with_pre_call_fn(target, pre_call_fn, condition)
@@ -189,7 +188,7 @@ def apply_pre_call_decorator(
 def _wrap_with_pre_call_fn(
     fn: T_Callable,
     pre_call_fn: Callable[[], None],
-    condition: Optional[Callable[..., bool]] = None,
+    condition: Callable[..., bool] | None = None,
 ) -> T_Callable:
     @functools.wraps(fn)
     def wrapped_with_pre_call_fn(*args, **kwargs):

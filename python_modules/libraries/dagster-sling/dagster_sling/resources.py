@@ -8,9 +8,8 @@ import time
 import uuid
 from collections.abc import Generator, Iterator, Sequence
 from enum import Enum
-from typing import IO, Any, AnyStr, Optional
+from typing import IO, Any, AnyStr
 
-import sling
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -107,7 +106,7 @@ class SlingConnectionResource(PermissiveConfig):
     type: str = Field(
         description="Type of the source connection, must match the Sling connection types. Use 'file' for local storage."
     )
-    connection_string: Optional[str] = Field(
+    connection_string: str | None = Field(
         description="The optional connection string for the source database, if not using keyword arguments.",
         default=None,
     )
@@ -360,6 +359,8 @@ class SlingResource(ConfigurableResource):
         Returns:
             str: The output from the Sling CLI.
         """
+        import sling
+
         with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
             return subprocess.check_output(args=[sling.SLING_BIN, *args], text=True)
 
@@ -367,8 +368,8 @@ class SlingResource(ConfigurableResource):
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
-        replication_config: Optional[SlingReplicationParam] = None,
-        dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
+        replication_config: SlingReplicationParam | None = None,
+        dagster_sling_translator: DagsterSlingTranslator | None = None,
         debug: bool = False,
         stream: bool = False,
     ) -> SlingEventIterator[SlingEventType]:
@@ -449,6 +450,8 @@ class SlingResource(ConfigurableResource):
         debug: bool,
     ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in batch mode."""
+        import sling
+
         # convert to dict to enable updating the index
         context_streams = self._get_replication_streams_for_context(context)
 
@@ -522,6 +525,8 @@ class SlingResource(ConfigurableResource):
         debug: bool,
     ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in stream mode."""
+        import sling
+
         # define variable to use to compute metadata during run
         current_stream = None
         metadata_text = []

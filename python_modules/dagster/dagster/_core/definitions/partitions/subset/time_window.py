@@ -100,7 +100,7 @@ class TimeWindowPartitionsSubset(
         "_TimeWindowPartitionsSubset",
         [
             ("partitions_def", TimeWindowPartitionsDefinition),
-            ("num_partitions", Optional[int]),
+            ("num_partitions", int | None),
             ("included_time_windows", Sequence[PersistedTimeWindow]),
         ],
     ),
@@ -116,7 +116,7 @@ class TimeWindowPartitionsSubset(
     def __new__(
         cls,
         partitions_def: TimeWindowPartitionsDefinition,
-        num_partitions: Optional[int],
+        num_partitions: int | None,
         included_time_windows: Sequence[PersistedTimeWindow | TimeWindow],
     ):
         included_time_windows = [
@@ -283,7 +283,7 @@ class TimeWindowPartitionsSubset(
     def get_partition_key_ranges(
         self,
         partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
+        current_time: datetime | None = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
         respect_bounds: bool = True,
     ) -> Sequence[PartitionKeyRange]:
@@ -404,7 +404,7 @@ class TimeWindowPartitionsSubset(
 
     @classmethod
     def create_empty_subset(
-        cls, partitions_def: Optional[PartitionsDefinition] = None
+        cls, partitions_def: PartitionsDefinition | None = None
     ) -> "PartitionsSubset":
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
@@ -559,7 +559,7 @@ class TimeWindowPartitionsSubset(
             included_time_windows=time_windows,
         )
 
-    def __contains__(self, partition_key: Optional[str]) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __contains__(self, partition_key: str | None) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         if partition_key is None:
             return False
 
@@ -667,8 +667,8 @@ class TimeWindowPartitionsSubset(
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
+        serialized_partitions_def_unique_id: str | None,
+        serialized_partitions_def_class_name: str | None,
     ) -> bool:
         if serialized_partitions_def_unique_id:
             return (

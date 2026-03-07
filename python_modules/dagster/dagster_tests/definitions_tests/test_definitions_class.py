@@ -3,7 +3,7 @@ import traceback
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import Mock
 
 import dagster as dg
@@ -1016,7 +1016,7 @@ def test_invalid_partitions_subclass():
     class CustomPartitionsDefinition(dg.PartitionsDefinition):
         def get_partition_keys(
             self,
-            current_time: Optional[datetime] = None,
+            current_time: datetime | None = None,
             dynamic_partitions_store: Any = None,
         ) -> Sequence[str]:
             return ["a", "b", "c"]
@@ -1026,7 +1026,7 @@ def test_invalid_partitions_subclass():
             context: PartitionLoadingContext,
             limit: int,
             ascending: bool,
-            cursor: Optional[str] = None,
+            cursor: str | None = None,
         ) -> dg.PaginatedResults[str]:
             partition_keys = self.get_partition_keys(
                 current_time=context.temporal_context.effective_dt,

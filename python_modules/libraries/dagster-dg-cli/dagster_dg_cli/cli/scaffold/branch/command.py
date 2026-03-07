@@ -5,7 +5,6 @@ import re
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -93,9 +92,9 @@ def scaffold_branch_command(
     target_path: Path,
     disable_progress: bool,
     local_only: bool,
-    record: Optional[Path],
+    record: Path | None,
     diagnostics_level: DiagnosticsLevel,
-    diagnostics_dir: Optional[Path],
+    diagnostics_dir: Path | None,
     planning_model: ModelType,
     execution_model: ModelType,
     **other_options: object,

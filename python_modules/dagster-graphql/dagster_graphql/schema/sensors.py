@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -99,8 +98,8 @@ class GrapheneSensor(graphene.ObjectType):
     def __init__(
         self,
         remote_sensor: RemoteSensor,
-        sensor_state: Optional[InstigatorState],
-        batch_loader: Optional[RepositoryScopedBatchLoader] = None,
+        sensor_state: InstigatorState | None,
+        batch_loader: RepositoryScopedBatchLoader | None = None,
     ):
         self._remote_sensor = check.inst_param(remote_sensor, "remote_sensor", RemoteSensor)
 
@@ -267,9 +266,9 @@ class GrapheneStopSensorMutation(graphene.Mutation):
     def mutate(
         self,
         graphene_info: ResolveInfo,
-        id: Optional[str] = None,
-        job_origin_id: Optional[str] = None,
-        job_selector_id: Optional[str] = None,
+        id: str | None = None,
+        job_origin_id: str | None = None,
+        job_selector_id: str | None = None,
     ):
         if id:
             cid = CompoundID.from_string(id)

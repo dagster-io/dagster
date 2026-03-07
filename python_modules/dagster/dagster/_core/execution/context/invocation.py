@@ -2,7 +2,7 @@ from abc import abstractmethod
 from asyncio import AbstractEventLoop
 from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -78,10 +78,10 @@ class BaseDirectExecutionContext:
     def bind(
         self,
         op_def: OpDefinition,
-        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
-        assets_def: Optional[AssetsDefinition],
-        config_from_args: Optional[Mapping[str, Any]],
-        resources_from_args: Optional[Mapping[str, Any]],
+        pending_invocation: PendingNodeInvocation[OpDefinition] | None,
+        assets_def: AssetsDefinition | None,
+        config_from_args: Mapping[str, Any] | None,
+        resources_from_args: Mapping[str, Any] | None,
     ):
         """Subclasses of BaseDirectExecutionContext must implement bind."""
 
@@ -105,7 +105,7 @@ class BaseDirectExecutionContext:
         pass
 
     @abstractmethod
-    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+    def observe_output(self, output_name: str, mapping_key: str | None = None) -> None:
         """Subclasses of BaseDirectExecutionContext must implement observe_output."""
         pass
 
@@ -116,9 +116,9 @@ class PerInvocationProperties(
         [
             ("op_def", OpDefinition),
             ("tags", Mapping[Any, Any]),
-            ("hook_defs", Optional[AbstractSet[HookDefinition]]),
+            ("hook_defs", AbstractSet[HookDefinition] | None),
             ("alias", str),
-            ("assets_def", Optional[AssetsDefinition]),
+            ("assets_def", AssetsDefinition | None),
             ("resources", Resources),
             ("op_config", Any),
             ("step_description", str),
@@ -134,9 +134,9 @@ class PerInvocationProperties(
         cls,
         op_def: OpDefinition,
         tags: Mapping[Any, Any],
-        hook_defs: Optional[AbstractSet[HookDefinition]],
+        hook_defs: AbstractSet[HookDefinition] | None,
         alias: str,
-        assets_def: Optional[AssetsDefinition],
+        assets_def: AssetsDefinition | None,
         resources: Resources,
         op_config: Any,
         step_description: str,
@@ -168,7 +168,7 @@ class DirectExecutionProperties:
         self.seen_outputs: dict[str, str | set[str]] = {}
         self.output_metadata: dict[str, dict[str, Any | Mapping[str, Any]]] = {}
         self.requires_typed_event_stream: bool = False
-        self.typed_event_stream_error_message: Optional[str] = None
+        self.typed_event_stream_error_message: str | None = None
 
 
 class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
@@ -181,12 +181,12 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         op_config: Any,
         resources_dict: Mapping[str, Any],
         resources_config: Mapping[str, Any],
-        instance: Optional[DagsterInstance],
-        partition_key: Optional[str],
-        partition_key_range: Optional[PartitionKeyRange],
-        mapping_key: Optional[str],
+        instance: DagsterInstance | None,
+        partition_key: str | None,
+        partition_key_range: PartitionKeyRange | None,
+        mapping_key: str | None,
         run_tags: Mapping[str, str],
-        event_loop: Optional[AbstractEventLoop],
+        event_loop: AbstractEventLoop | None,
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_job import initialize_console_manager
@@ -214,7 +214,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
         self._log = initialize_console_manager(None)
-        self._pdb: Optional[ForkedPdb] = None
+        self._pdb: ForkedPdb | None = None
         self._cm_scope_entered = False
         check.invariant(
             not (partition_key and partition_key_range),
@@ -267,10 +267,10 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
     def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         op_def: OpDefinition,
-        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
-        assets_def: Optional[AssetsDefinition],
-        config_from_args: Optional[Mapping[str, Any]],
-        resources_from_args: Optional[Mapping[str, Any]],
+        pending_invocation: PendingNodeInvocation[OpDefinition] | None,
+        assets_def: AssetsDefinition | None,
+        config_from_args: Mapping[str, Any] | None,
+        resources_from_args: Mapping[str, Any] | None,
     ) -> "DirectOpExecutionContext":
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
@@ -428,7 +428,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         return self._pdb
 
     @property
-    def step_launcher(self) -> Optional[StepLauncher]:
+    def step_launcher(self) -> StepLauncher | None:
         raise DagsterInvalidPropertyError(_property_msg("step_launcher", "property"))
 
     @property
@@ -553,7 +553,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
     def has_tag(self, key: str) -> bool:
         return key in self._run_tags
 
-    def get_tag(self, key: str) -> Optional[str]:
+    def get_tag(self, key: str) -> str | None:
         return self._run_tags.get(key)
 
     @property
@@ -594,8 +594,8 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         return self._execution_properties.user_events
 
     def get_output_metadata(
-        self, output_name: str, mapping_key: Optional[str] = None
-    ) -> Optional[Mapping[str, Any]]:
+        self, output_name: str, mapping_key: str | None = None
+    ) -> Mapping[str, Any] | None:
         """Retrieve metadata that was logged for an output and mapping_key, if it exists.
 
         If metadata cannot be found for the particular output_name/mapping_key combination, None will be returned.
@@ -612,7 +612,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
             return metadata.get(mapping_key)
         return metadata
 
-    def get_mapping_key(self) -> Optional[str]:
+    def get_mapping_key(self) -> str | None:
         return self._mapping_key
 
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
@@ -640,7 +640,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         )
         self._execution_properties.user_events.append(event)
 
-    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+    def observe_output(self, output_name: str, mapping_key: str | None = None) -> None:
         self._check_bound_to_invocation(fn_name="observe_output", fn_type="method")
         if mapping_key:
             if output_name not in self._execution_properties.seen_outputs:
@@ -649,7 +649,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         else:
             self._execution_properties.seen_outputs[output_name] = "seen"
 
-    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+    def has_seen_output(self, output_name: str, mapping_key: str | None = None) -> bool:
         if mapping_key:
             return (
                 output_name in self._execution_properties.seen_outputs
@@ -682,8 +682,8 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
-        output_name: Optional[str] = None,
-        mapping_key: Optional[str] = None,
+        output_name: str | None = None,
+        mapping_key: str | None = None,
     ) -> None:
         """Add metadata to one of the outputs of an op.
 
@@ -774,13 +774,13 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         return self._execution_properties.requires_typed_event_stream
 
     @property
-    def typed_event_stream_error_message(self) -> Optional[str]:
+    def typed_event_stream_error_message(self) -> str | None:
         self._check_bound_to_invocation(
             fn_name="typed_event_stream_error_message", fn_type="property"
         )
         return self._execution_properties.typed_event_stream_error_message
 
-    def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def set_requires_typed_event_stream(self, *, error_message: str | None) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         self._check_bound_to_invocation(fn_name="set_requires_typed_event_stream", fn_type="method")
         self._execution_properties.requires_typed_event_stream = True
         self._execution_properties.typed_event_stream_error_message = error_message
@@ -793,10 +793,10 @@ class DirectAssetCheckExecutionContext(AssetCheckExecutionContext, BaseDirectExe
     def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         op_def: OpDefinition,
-        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
-        assets_def: Optional[AssetsDefinition],
-        config_from_args: Optional[Mapping[str, Any]],
-        resources_from_args: Optional[Mapping[str, Any]],
+        pending_invocation: PendingNodeInvocation[OpDefinition] | None,
+        assets_def: AssetsDefinition | None,
+        config_from_args: Mapping[str, Any] | None,
+        resources_from_args: Mapping[str, Any] | None,
     ) -> "DirectAssetCheckExecutionContext":
         if assets_def is None:
             raise DagsterInvariantViolationError(
@@ -841,7 +841,7 @@ class DirectAssetCheckExecutionContext(AssetCheckExecutionContext, BaseDirectExe
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
         return self.op_execution_context.for_type(dagster_type)
 
-    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+    def observe_output(self, output_name: str, mapping_key: str | None = None) -> None:
         self.op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
 
 
@@ -870,10 +870,10 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
     def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         op_def: OpDefinition,
-        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
-        assets_def: Optional[AssetsDefinition],
-        config_from_args: Optional[Mapping[str, Any]],
-        resources_from_args: Optional[Mapping[str, Any]],
+        pending_invocation: PendingNodeInvocation[OpDefinition] | None,
+        assets_def: AssetsDefinition | None,
+        config_from_args: Mapping[str, Any] | None,
+        resources_from_args: Mapping[str, Any] | None,
     ) -> "DirectAssetExecutionContext":
         if assets_def is None:
             raise DagsterInvariantViolationError(
@@ -918,7 +918,7 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
         return self.op_execution_context.for_type(dagster_type)
 
-    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+    def observe_output(self, output_name: str, mapping_key: str | None = None) -> None:
         self.op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
 
 
@@ -937,16 +937,16 @@ def _validate_resource_requirements(
 
 @public
 def build_op_context(
-    resources: Optional[Mapping[str, Any]] = None,
+    resources: Mapping[str, Any] | None = None,
     op_config: Any = None,
-    resources_config: Optional[Mapping[str, Any]] = None,
-    instance: Optional[DagsterInstance] = None,
+    resources_config: Mapping[str, Any] | None = None,
+    instance: DagsterInstance | None = None,
     config: Any = None,
-    partition_key: Optional[str] = None,
-    partition_key_range: Optional[PartitionKeyRange] = None,
-    mapping_key: Optional[str] = None,
-    run_tags: Optional[Mapping[str, str]] = None,
-    event_loop: Optional[AbstractEventLoop] = None,
+    partition_key: str | None = None,
+    partition_key_range: PartitionKeyRange | None = None,
+    mapping_key: str | None = None,
+    run_tags: Mapping[str, str] | None = None,
+    event_loop: AbstractEventLoop | None = None,
 ) -> DirectOpExecutionContext:
     """Builds op execution context from provided parameters.
 
@@ -1005,10 +1005,10 @@ def build_op_context(
 
 @public
 def build_asset_check_context(
-    resources: Optional[Mapping[str, Any]] = None,
-    resources_config: Optional[Mapping[str, Any]] = None,
-    asset_config: Optional[Mapping[str, Any]] = None,
-    instance: Optional[DagsterInstance] = None,
+    resources: Mapping[str, Any] | None = None,
+    resources_config: Mapping[str, Any] | None = None,
+    asset_config: Mapping[str, Any] | None = None,
+    instance: DagsterInstance | None = None,
 ) -> DirectAssetCheckExecutionContext:
     """Builds an asset check execution context from provided parameters.
 
@@ -1038,14 +1038,14 @@ def build_asset_check_context(
 
 @public
 def build_asset_context(
-    resources: Optional[Mapping[str, Any]] = None,
-    resources_config: Optional[Mapping[str, Any]] = None,
-    asset_config: Optional[Mapping[str, Any]] = None,
-    instance: Optional[DagsterInstance] = None,
-    partition_key: Optional[str] = None,
-    partition_key_range: Optional[PartitionKeyRange] = None,
-    run_tags: Optional[Mapping[str, str]] = None,
-    event_loop: Optional[AbstractEventLoop] = None,
+    resources: Mapping[str, Any] | None = None,
+    resources_config: Mapping[str, Any] | None = None,
+    asset_config: Mapping[str, Any] | None = None,
+    instance: DagsterInstance | None = None,
+    partition_key: str | None = None,
+    partition_key_range: PartitionKeyRange | None = None,
+    run_tags: Mapping[str, str] | None = None,
+    event_loop: AbstractEventLoop | None = None,
 ) -> DirectAssetExecutionContext:
     """Builds asset execution context from provided parameters.
 

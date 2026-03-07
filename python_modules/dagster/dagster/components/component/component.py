@@ -48,17 +48,17 @@ class ComponentTypeSpec(IHaveNew):
 
     """
 
-    description: PublicAttr[Optional[str]]
+    description: PublicAttr[str | None]
     tags: PublicAttr[Sequence[str]]
     owners: PublicAttr[Sequence[str]]
     metadata: PublicAttr[Mapping[str, Any]]
 
     def __new__(
         cls,
-        description: Optional[str] = None,
-        tags: Optional[Sequence[str]] = None,
-        owners: Optional[Sequence[str]] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
+        description: str | None = None,
+        tags: Sequence[str] | None = None,
+        owners: Sequence[str] | None = None,
+        metadata: Mapping[str, Any] | None = None,
     ):
         owners = check.opt_sequence_param(owners, "owners", of_type=str)
         for owner in owners:
@@ -250,7 +250,7 @@ class Component(ABC):
     def __dg_package_entry__(cls) -> None: ...
 
     @classmethod
-    def get_schema(cls) -> Optional[type[BaseModel]]:
+    def get_schema(cls) -> type[BaseModel] | None:
         return None
 
     @classmethod
@@ -258,7 +258,7 @@ class Component(ABC):
         return ComponentTypeSpec()
 
     @classmethod
-    def get_model_cls(cls) -> Optional[type[BaseModel]]:
+    def get_model_cls(cls) -> type[BaseModel] | None:
         if issubclass(cls, Resolvable):
             return cls.model()
 
@@ -278,7 +278,7 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
+    def load(cls, attributes: BaseModel | None, context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
             from dagster.components.resolved.scopes import DeprecatedScope, LoadContextScope
 
@@ -334,7 +334,7 @@ class Component(ABC):
         ]
 
     @classmethod
-    def get_description(cls) -> Optional[str]:
+    def get_description(cls) -> str | None:
         return cls.get_spec().description or inspect.getdoc(cls)
 
     @classmethod

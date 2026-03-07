@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Optional
 
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import failure_hook, success_hook
@@ -31,8 +30,8 @@ def _default_success_message(context: HookContext) -> str:
 )
 def teams_on_failure(
     message_fn: Callable[[HookContext], str] = _default_failure_message,
-    dagit_base_url: Optional[str] = None,
-    webserver_base_url: Optional[str] = None,
+    dagit_base_url: str | None = None,
+    webserver_base_url: str | None = None,
 ):
     """Create a hook on step failure events that will message the given MS Teams webhook URL.
 
@@ -99,8 +98,8 @@ def teams_on_failure(
 )
 def teams_on_success(
     message_fn: Callable[[HookContext], str] = _default_success_message,
-    dagit_base_url: Optional[str] = None,
-    webserver_base_url: Optional[str] = None,
+    dagit_base_url: str | None = None,
+    webserver_base_url: str | None = None,
 ):
     """Create a hook on step success events that will message the given MS Teams webhook URL.
 

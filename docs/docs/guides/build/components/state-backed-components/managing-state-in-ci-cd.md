@@ -4,11 +4,8 @@ description: Learn how to refresh and manage component state in production deplo
 sidebar_position: 200
 ---
 
-import Beta from '@site/docs/partials/_Beta.md';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
-<Beta />
 
 This guide explains how to refresh state for both Local Filesystem and Versioned State Storage strategies while deploying your Dagster project.
 

@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 
 from dagster import RunRequest, sensor
 from dagster._annotations import beta
@@ -136,7 +135,7 @@ def _get_run_for_cursor(
     context: SensorEvaluationContext,
     airflow_instance: AirflowInstance,
     cursor: AirflowMonitoringJobSensorCursor,
-) -> Optional[DagsterRun]:
+) -> DagsterRun | None:
     return next(
         iter(
             context.instance.get_runs(

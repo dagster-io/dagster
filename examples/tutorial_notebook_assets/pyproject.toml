@@ -1,3 +1,21 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["tutorial_template", "tutorial_finished"]
+
+[project]
+name = "tutorial_notebook_assets"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagstermill",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]

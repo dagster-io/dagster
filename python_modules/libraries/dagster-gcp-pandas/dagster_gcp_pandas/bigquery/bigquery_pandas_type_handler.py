@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -297,5 +296,5 @@ class BigQueryPandasIOManager(BigQueryIOManager):
         return [BigQueryPandasTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return pd.DataFrame

@@ -100,7 +100,7 @@ There are three places to customize how Dagster interacts with Kubernetes:
 
 - **Per Deployment** by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 - **Per Project** by configuring the `build.yaml` file for your [code location](/guides/build/projects)
-- **Per Asset or Job** by adding tags to the [asset](/guides/build/assets/defining-assets), [job](/guides/build/jobs/asset-jobs), or [customizing the Kubernetes pipes invocation](/guides/build/external-pipelines/kubernetes-pipeline)
+- **Per Asset or Job** by adding tags to the [asset](/guides/build/assets/defining-assets), [job](/guides/build/jobs/asset-jobs), or [customizing the Kubernetes pipes invocation](/integrations/external-pipelines/kubernetes-pipeline)
 
 Changes apply in a hierarchy, for example, a customization for an asset will override a default set globally in the agent configuration. Attributes that are not customized will use the global defaults.
 

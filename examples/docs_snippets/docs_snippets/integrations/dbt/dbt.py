@@ -262,15 +262,13 @@ def scope_custom_group_name_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Optional
+    from typing import Any
     from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_group_name(
-            self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[str]:
+        def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
             return "snowflake"
 
     @dbt_assets(
@@ -309,7 +307,7 @@ def scope_custom_owners_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Optional
+    from typing import Any
     from collections.abc import Mapping, Sequence
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
@@ -317,7 +315,7 @@ def scope_custom_owners_dagster_dbt_translator():
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_owners(
             self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[Sequence[str]]:
+        ) -> Sequence[str] | None:
             return ["owner@company.com", "team:data@company.com"]
 
     @dbt_assets(
@@ -442,7 +440,7 @@ def scope_custom_automation_condition_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext, AutomationCondition
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Optional
+    from typing import Any
     from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
@@ -450,7 +448,7 @@ def scope_custom_automation_condition_dagster_dbt_translator():
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_automation_condition(
             self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[AutomationCondition]:
+        ) -> AutomationCondition | None:
             return AutomationCondition.eager()
 
     @dbt_assets(

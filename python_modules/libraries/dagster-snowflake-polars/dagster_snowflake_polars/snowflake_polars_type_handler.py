@@ -1,5 +1,4 @@
 from collections.abc import Mapping, Sequence
-from typing import Optional
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema, io_manager
@@ -233,7 +232,7 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
         return [SnowflakePolarsTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[type]:
+    def default_load_type() -> type | None:
         return pl.DataFrame
 
 

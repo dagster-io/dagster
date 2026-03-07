@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dlt
 
 MOCK_REPOS = [
@@ -41,7 +39,7 @@ MOCK_ISSUES = {
 
 
 @dlt.source
-def pipeline(month: Optional[str] = None):
+def pipeline(month: str | None = None):
     @dlt.resource(primary_key="id", write_disposition="merge")
     def repos():
         for d in MOCK_REPOS:

@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, TypeAlias
+from typing import Annotated, TypeAlias
 
 import dateutil
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -25,13 +25,13 @@ TRANSLATOR_DATA_METADATA_KEY = ".dagster-omni/translator_data"
 class OmniDocumentMetadataSet(NamespacedMetadataSet):
     """Represents metadata that is captured from an Omni document."""
 
-    url: Optional[UrlMetadataValue] = None
+    url: UrlMetadataValue | None = None
     owner_name: str
     document_name: str
     document_type: str
     updated_at: TimestampMetadataValue
-    favorites: Optional[int] = None
-    views: Optional[int] = None
+    favorites: int | None = None
+    views: int | None = None
 
     @classmethod
     def from_document(cls, workspace: OmniWorkspace, document: OmniDocument) -> Self:
@@ -130,8 +130,8 @@ ResolvedTargetedKeyOnlyOmniTranslationFn = Annotated[
 class OmniTranslationArgs(AssetSpecUpdateKwargs, Resolvable):
     """Model used to allow per-object-type translation of an Omni object."""
 
-    for_document: Optional[ResolvedTargetedOmniTranslationFn] = None
-    for_query: Optional[ResolvedTargetedKeyOnlyOmniTranslationFn] = None
+    for_document: ResolvedTargetedOmniTranslationFn | None = None
+    for_query: ResolvedTargetedKeyOnlyOmniTranslationFn | None = None
 
 
 ResolvedOmniTranslationFn = Annotated[

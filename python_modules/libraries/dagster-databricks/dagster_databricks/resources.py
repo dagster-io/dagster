@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
@@ -33,25 +33,25 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
     op or asset.
     """
 
-    host: Optional[str] = Field(
+    host: str | None = Field(
         description="Databricks host, e.g. https://uksouth.azuredatabricks.com", default=None
     )
-    token: Optional[str] = Field(default=None, description="Databricks access token")
-    oauth_credentials: Optional[OauthCredentials] = Field(
+    token: str | None = Field(default=None, description="Databricks access token")
+    oauth_credentials: OauthCredentials | None = Field(
         default=None,
         description=(
             "Databricks OAuth credentials for using a service principal. See"
             " https://docs.databricks.com/en/dev-tools/auth.html#oauth-2-0"
         ),
     )
-    azure_credentials: Optional[AzureServicePrincipalCredentials] = Field(
+    azure_credentials: AzureServicePrincipalCredentials | None = Field(
         default=None,
         description=(
             "Azure service principal credentials. See"
             " https://learn.microsoft.com/en-us/azure/databricks/dev-tools/auth#requirements-for-oauth-u2m-authentication-setup"
         ),
     )
-    workspace_id: Optional[str] = Field(
+    workspace_id: str | None = Field(
         default=None,
         description=(
             "DEPRECATED: The Databricks workspace ID, as described in"

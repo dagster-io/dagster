@@ -1,7 +1,6 @@
 """Sensor metadata schema definitions."""
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -31,9 +30,9 @@ class DgApiSensor(BaseModel):
     name: str
     status: DgApiSensorStatus
     sensor_type: DgApiSensorType
-    description: Optional[str] = None
-    repository_origin: Optional[str] = None
-    next_tick_timestamp: Optional[float] = None  # Unix timestamp
+    description: str | None = None
+    repository_origin: str | None = None
+    next_tick_timestamp: float | None = None  # Unix timestamp
 
     class Config:
         from_attributes = True

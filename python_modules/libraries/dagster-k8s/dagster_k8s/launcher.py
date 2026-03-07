@@ -1,7 +1,7 @@
 import logging
 import sys
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import kubernetes
 from dagster import _check as check
@@ -53,7 +53,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_secrets=None,
         load_incluster_config=True,
         kubeconfig_file=None,
-        inst_data: Optional[ConfigurableClassData] = None,
+        inst_data: ConfigurableClassData | None = None,
         job_namespace="default",
         env_config_maps=None,
         env_secrets=None,
@@ -164,7 +164,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._resources
 
     @property
-    def scheduler_name(self) -> Optional[str]:
+    def scheduler_name(self) -> str | None:
         return self._scheduler_name
 
     @property
@@ -184,15 +184,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._run_k8s_config
 
     @property
-    def fail_pod_on_run_failure(self) -> Optional[bool]:
+    def fail_pod_on_run_failure(self) -> bool | None:
         return self._fail_pod_on_run_failure
 
     @property
-    def only_allow_user_defined_k8s_config_fields(self) -> Optional[Mapping[str, Any]]:
+    def only_allow_user_defined_k8s_config_fields(self) -> Mapping[str, Any] | None:
         return self._only_allow_user_defined_k8s_config_fields
 
     @property
-    def only_allow_user_defined_env_vars(self) -> Optional[Sequence[str]]:
+    def only_allow_user_defined_env_vars(self) -> Sequence[str] | None:
         return self._only_allow_user_defined_env_vars
 
     @classmethod
@@ -207,14 +207,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return cls(inst_data=inst_data, **config_value)
 
     @property
-    def inst_data(self) -> Optional[ConfigurableClassData]:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     def get_container_context_for_run(self, dagster_run: DagsterRun) -> K8sContainerContext:
         return K8sContainerContext.create_for_run(dagster_run, self, include_run_tags=True)
 
     def _launch_k8s_job_with_args(
-        self, job_name: str, args: Optional[Sequence[str]], run: DagsterRun
+        self, job_name: str, args: Sequence[str] | None, run: DagsterRun
     ) -> None:
         container_context = self.get_container_context_for_run(run)
 
@@ -318,7 +318,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._launch_k8s_job_with_args(job_name, args, run)
 
-    def _get_resume_attempt_number(self, run: DagsterRun) -> Optional[int]:
+    def _get_resume_attempt_number(self, run: DagsterRun) -> int | None:
         if not self.supports_run_worker_crash_recovery:
             return None
         return self._instance.count_resume_run_attempts(run.run_id)
@@ -374,8 +374,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def get_run_worker_debug_info(
-        self, run: DagsterRun, include_container_logs: Optional[bool] = True
-    ) -> Optional[str]:
+        self, run: DagsterRun, include_container_logs: bool | None = True
+    ) -> str | None:
         container_context = self.get_container_context_for_run(run)
 
         job_name = get_job_name_from_run_id(

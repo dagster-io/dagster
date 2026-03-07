@@ -1,3 +1,14 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "external_assets"
+version = "1!0+dev"
+dependencies = [
+    "dagster>=1.5.1",
+    "dagster-k8s>=0.21.1",
+]
+
+[project.optional-dependencies]
+dev = ["dagit", "pytest"]

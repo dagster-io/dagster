@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from dagster import Component, ComponentLoadContext, Resolvable
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -15,8 +14,8 @@ class ComplexAssetComponent(Component, Resolvable):
     value: str
     list_value: list[str]
     obj_value: dict[str, str]
-    op: Optional[OpSpec] = None
-    asset_attributes: Optional[ResolvedAssetAttributes] = None
+    op: OpSpec | None = None
+    asset_attributes: ResolvedAssetAttributes | None = None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @asset(spec=self.asset_attributes)

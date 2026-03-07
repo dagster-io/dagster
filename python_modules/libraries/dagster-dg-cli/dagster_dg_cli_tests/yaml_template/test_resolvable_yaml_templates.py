@@ -6,7 +6,7 @@ building up to complex union types and advanced patterns.
 """
 
 import datetime
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Literal
 
 import dagster as dg
 import yaml
@@ -111,7 +111,7 @@ class TestResolvableYamlTemplates:
 
         class OptionalFieldsModel(dg.Resolvable, dg.Model):
             name: str  # Required
-            description: Optional[str] = None  # Optional
+            description: str | None = None  # Optional
 
         _schema_result, _example_result = self._test_schema_and_examples_for_model(
             OptionalFieldsModel,
@@ -261,11 +261,12 @@ class TestResolvableYamlTemplates:
         """Test real partition definition union type."""
 
         class ComplexUnionModel(dg.Resolvable, dg.Model):
-            partitions_def: Optional[
+            partitions_def: (
                 HourlyPartitionsDefinitionModel
                 | DailyPartitionsDefinitionModel
                 | StaticPartitionsDefinitionModel
-            ] = None
+                | None
+            ) = None
 
         _schema_result, _example_result = self._test_schema_and_examples_for_model(
             ComplexUnionModel,
@@ -324,10 +325,10 @@ class TestResolvableYamlTemplates:
 
         class RealWorldModel(dg.Resolvable, dg.Model):
             name: str
-            deps: Optional[list[str]] = None
-            partitions_def: Optional[
-                HourlyPartitionsDefinitionModel | StaticPartitionsDefinitionModel
-            ] = None
+            deps: list[str] | None = None
+            partitions_def: (
+                HourlyPartitionsDefinitionModel | StaticPartitionsDefinitionModel | None
+            ) = None
             metadata: dict[str, Any] = {}
 
         _schema_result, _example_result = self._test_schema_and_examples_for_model(
@@ -363,7 +364,7 @@ class TestResolvableYamlTemplates:
             name: str
             count: int = 42
             enabled: bool = True
-            description: Optional[str] = None
+            description: str | None = None
             tags: list[str] = []
             metadata: dict[str, str] = {}
 
@@ -425,7 +426,7 @@ class TestResolvableYamlTemplates:
         class ConfigB(dg.Resolvable, dg.Model):
             type: Literal["config_b"] = "config_b"
             path: str
-            timeout: Optional[int] = None
+            timeout: int | None = None
 
         class UnionOptionalModel(dg.Resolvable, dg.Model):
             config: ConfigA | ConfigB
@@ -457,7 +458,7 @@ class TestResolvableYamlTemplates:
             bucket: str
             region: str
             access_keys: list[str]
-            encryption: Optional[dict[str, str]] = None
+            encryption: dict[str, str] | None = None
 
         class FileSystemConfig(dg.Resolvable, dg.Model):
             base_path: str
@@ -468,7 +469,7 @@ class TestResolvableYamlTemplates:
             type: Literal["storage"] = "storage"
             config: DatabaseConfig | S3Config | FileSystemConfig
             retry_policy: dict[str, Any] = {"max_retries": 3}
-            monitoring: Optional[list[str]] = None
+            monitoring: list[str] | None = None
 
         class CacheBackend(dg.Resolvable, dg.Model):
             type: Literal["cache"] = "cache"
@@ -479,7 +480,7 @@ class TestResolvableYamlTemplates:
         class ComplexNestedUnionModel(dg.Resolvable, dg.Model):
             name: str
             primary_backend: StorageBackend | CacheBackend
-            fallback_backends: Optional[list[StorageBackend | CacheBackend]] = None
+            fallback_backends: list[StorageBackend | CacheBackend] | None = None
             global_config: dict[str, Any] = {}
 
         _schema_result, _example_result = self._test_schema_and_examples_for_model(

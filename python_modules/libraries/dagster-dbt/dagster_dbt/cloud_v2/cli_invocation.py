@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     AssetCheckEvaluation,
@@ -25,7 +25,7 @@ class DbtCloudCliInvocation:
     manifest: Mapping[str, Any]
     dagster_dbt_translator: DagsterDbtTranslator
     run_handler: DbtCloudJobRunHandler
-    context: Optional[AssetExecutionContext]
+    context: AssetExecutionContext | None
 
     @classmethod
     def run(
@@ -35,7 +35,7 @@ class DbtCloudCliInvocation:
         client: DbtCloudWorkspaceClient,
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
-        context: Optional[AssetExecutionContext] = None,
+        context: AssetExecutionContext | None = None,
     ) -> "DbtCloudCliInvocation":
         run_handler = DbtCloudJobRunHandler.run(
             job_id=job_id,
@@ -52,7 +52,7 @@ class DbtCloudCliInvocation:
         )
 
     def wait(
-        self, timeout: Optional[float] = None
+        self, timeout: float | None = None
     ) -> Iterator[AssetCheckEvaluation | AssetCheckResult | AssetMaterialization | Output]:
         run = self.run_handler.wait(timeout=timeout)
 

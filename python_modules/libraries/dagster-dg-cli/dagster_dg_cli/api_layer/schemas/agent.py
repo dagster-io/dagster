@@ -1,7 +1,6 @@
 """Agent models for REST-like API."""
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -27,9 +26,9 @@ class DgApiAgent(BaseModel):
     """Agent resource model."""
 
     id: str  # Agent IDs are strings in the GraphQL schema
-    agent_label: Optional[str]  # Can be None in some cases
+    agent_label: str | None  # Can be None in some cases
     status: DgApiAgentStatus
-    last_heartbeat_time: Optional[float]
+    last_heartbeat_time: float | None
     metadata: list[DgApiAgentMetadataEntry]
 
     class Config:

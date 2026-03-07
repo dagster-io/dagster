@@ -386,9 +386,9 @@ def _execute_job_and_store_events(
     instance: DagsterInstance,
     storage: EventLogStorage,
     job: JobDefinition,
-    run_id: Optional[str] = None,
-    asset_selection: Optional[Sequence[dg.AssetKey]] = None,
-    partition_key: Optional[str] = None,
+    run_id: str | None = None,
+    asset_selection: Sequence[dg.AssetKey] | None = None,
+    partition_key: str | None = None,
 ):
     result = job.execute_in_process(
         instance=instance,
@@ -437,7 +437,7 @@ class TestEventLogStorage:
                 s.dispose()
 
     @pytest.fixture(name="instance")
-    def instance(self, request) -> Optional[dg.DagsterInstance]:
+    def instance(self, request) -> dg.DagsterInstance | None:
         return None
 
     @pytest.fixture(scope="function", name="test_run_id")
@@ -3305,7 +3305,7 @@ class TestEventLogStorage:
         b = dg.AssetKey(["b"])
         run_id = make_new_run_id()
 
-        def _assert_storage_matches(expected, partition: Optional[str] = None):
+        def _assert_storage_matches(expected, partition: str | None = None):
             assert (
                 storage.get_latest_storage_id_by_partition(
                     a,
@@ -7443,8 +7443,8 @@ def _create_check_evaluation_event(
     run_id: str,
     check_key: dg.AssetCheckKey,
     passed: bool,
-    partition: Optional[str] = None,
-    target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
+    partition: str | None = None,
+    target_materialization_data: AssetCheckEvaluationTargetMaterializationData | None = None,
 ) -> dg.EventLogEntry:
     """Helper to create an ASSET_CHECK_EVALUATION event."""
     return dg.EventLogEntry(
@@ -7472,7 +7472,7 @@ def _create_check_evaluation_event(
 def _create_materialization_event(
     run_id: str,
     asset_key: dg.AssetKey,
-    partition: Optional[str] = None,
+    partition: str | None = None,
 ) -> dg.EventLogEntry:
     """Helper to create an ASSET_MATERIALIZATION event."""
     return dg.EventLogEntry(

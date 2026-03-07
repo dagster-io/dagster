@@ -4,7 +4,6 @@ from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     NamedTuple,
-    Optional,
     TypeAlias,
     TypeVar,
     cast,
@@ -73,8 +72,8 @@ def remove_none_entries(ddict: Mapping[Any, Any]) -> dict:
 
 def def_config_field(
     configurable_def: ConfigurableDefinition,
-    is_required: Optional[bool] = None,
-    description: Optional[str] = None,
+    is_required: bool | None = None,
+    description: str | None = None,
 ) -> Field:
     return Field(
         Shape(
@@ -213,8 +212,8 @@ def get_inputs_field(
     node_ignored: bool,
     asset_layer: AssetLayer,
     input_assets: Mapping[str, "AssetsDefinition"],
-    direct_inputs: Optional[Mapping[str, Any]] = None,
-) -> Optional[Field]:
+    direct_inputs: Mapping[str, Any] | None = None,
+) -> Field | None:
     direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
     inputs_field_fields = {}
     for name, inp in node.definition.input_dict.items():
@@ -272,7 +271,7 @@ def get_input_manager_input_field(
     node: Node,
     input_def: InputDefinition,
     resource_defs: Mapping[str, ResourceDefinition],
-) -> Optional[Field]:
+) -> Field | None:
     if input_def.input_manager_key:
         if input_def.input_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
@@ -308,7 +307,7 @@ def get_type_loader_input_field(node: Node, input_name: str, input_def: InputDef
 def get_outputs_field(
     node: Node,
     resource_defs: Mapping[str, ResourceDefinition],
-) -> Optional[Field]:
+) -> Field | None:
     output_manager_fields = {}
     for name, output_def in node.definition.output_dict.items():
         output_manager_output_field = get_output_manager_output_field(
@@ -322,7 +321,7 @@ def get_outputs_field(
 
 def get_output_manager_output_field(
     node: Node, output_def: OutputDefinition, resource_defs: Mapping[str, ResourceDefinition]
-) -> Optional[ConfigType]:
+) -> ConfigType | None:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
             f'Output "{output_def.name}" for {node.describe_node()} requires io_manager_key '
@@ -346,7 +345,7 @@ def get_output_manager_output_field(
     return None
 
 
-def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> Optional[Field]:
+def node_config_field(fields: Mapping[str, Field | None], ignored: bool) -> Field | None:
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
@@ -368,12 +367,12 @@ def construct_leaf_node_config(
     node: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
-    config_schema: Optional[IDefinitionConfigSchema],
+    config_schema: IDefinitionConfigSchema | None,
     resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
     asset_layer: AssetLayer,
     input_assets: Mapping[str, "AssetsDefinition"],
-) -> Optional[Field]:
+) -> Field | None:
     return node_config_field(
         {
             "inputs": get_inputs_field(
@@ -400,7 +399,7 @@ def define_node_field(
     ignored: bool,
     asset_layer: AssetLayer,
     input_assets: Mapping[str, "AssetsDefinition"],
-) -> Optional[Field]:
+) -> Field | None:
     # All nodes regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
     # 1) Vanilla op definition: a 'config' key with the config_schema as the value
@@ -473,13 +472,13 @@ def define_node_field(
 
 def define_node_config(
     nodes: Sequence[Node],
-    ignored_nodes: Optional[Sequence[Node]],
+    ignored_nodes: Sequence[Node] | None,
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
     asset_layer: AssetLayer,
     input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]],
     permissive: bool = False,
-    parent_handle: Optional[NodeHandle] = None,
+    parent_handle: NodeHandle | None = None,
 ) -> Permissive | Shape:
     """Examples of what this method is used to generate the schema for:
     1.
@@ -513,13 +512,13 @@ def define_node_config(
 
 def _define_node_fields(
     nodes: Sequence[Node],
-    ignored_nodes: Optional[Sequence[Node]],
+    ignored_nodes: Sequence[Node] | None,
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
     asset_layer: AssetLayer,
     input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]],
-    parent_handle: Optional[NodeHandle] = None,
-) -> Mapping[str, Optional[Field]]:
+    parent_handle: NodeHandle | None = None,
+) -> Mapping[str, Field | None]:
     ignored_nodes = check.opt_sequence_param(ignored_nodes, "ignored_nodes", of_type=Node)
 
     fields = {}
@@ -654,10 +653,10 @@ class RunConfig:
 
     def __init__(
         self,
-        ops: Optional[dict[str, Any]] = None,
-        resources: Optional[dict[str, Any]] = None,
-        loggers: Optional[dict[str, Any]] = None,
-        execution: Optional[dict[str, Any]] = None,
+        ops: dict[str, Any] | None = None,
+        resources: dict[str, Any] | None = None,
+        loggers: dict[str, Any] | None = None,
+        execution: dict[str, Any] | None = None,
     ):
         self.ops = check.opt_dict_param(ops, "ops")
         self.resources = check.opt_dict_param(resources, "resources")

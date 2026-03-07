@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack
-from typing import AbstractSet, Any, Callable, Final, Optional, TypeAlias, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, Final, TypeAlias, cast  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -37,7 +37,7 @@ BACKFILL_JOB_NAME_AND_TAGS = "backfill_job_name_and_tags"
 BACKFILL_END_TIMESTAMP = "backfill_end_timestamp"
 
 PrintFn: TypeAlias = Callable[[Any], None]
-MigrationFn: TypeAlias = Callable[[RunStorage, Optional[PrintFn]], None]
+MigrationFn: TypeAlias = Callable[[RunStorage, PrintFn | None], None]
 
 # for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
@@ -64,7 +64,7 @@ UNSTARTED_RUN_STATUSES: Final[AbstractSet[DagsterRunStatus]] = {
 
 
 def chunked_run_iterator(
-    storage: RunStorage, print_fn: Optional[PrintFn] = None, chunk_size: int = CHUNK_SIZE
+    storage: RunStorage, print_fn: PrintFn | None = None, chunk_size: int = CHUNK_SIZE
 ) -> Iterator[DagsterRun]:
     with ExitStack() as stack:
         if print_fn:
@@ -89,7 +89,7 @@ def chunked_run_iterator(
 
 
 def chunked_run_records_iterator(
-    storage: RunStorage, print_fn: Optional[PrintFn] = None, chunk_size: int = CHUNK_SIZE
+    storage: RunStorage, print_fn: PrintFn | None = None, chunk_size: int = CHUNK_SIZE
 ) -> Iterator[RunRecord]:
     with ExitStack() as stack:
         if print_fn:
@@ -114,7 +114,7 @@ def chunked_run_records_iterator(
 
 
 def chunked_backfill_iterator(
-    storage: RunStorage, print_fn: Optional[PrintFn] = None, chunk_size: int = CHUNK_SIZE
+    storage: RunStorage, print_fn: PrintFn | None = None, chunk_size: int = CHUNK_SIZE
 ) -> Iterator[PartitionBackfill]:
     with ExitStack() as stack:
         if print_fn:
@@ -138,7 +138,7 @@ def chunked_backfill_iterator(
                 progress.update(len(chunk))
 
 
-def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+def migrate_run_partition(storage: RunStorage, print_fn: PrintFn | None = None) -> None:
     """Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
@@ -154,7 +154,7 @@ def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = Non
         storage.add_run_tags(run.run_id, run.tags)
 
 
-def migrate_run_start_end(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+def migrate_run_start_end(storage: RunStorage, print_fn: PrintFn | None = None) -> None:
     """Utility method that updates the start and end times of historical runs using the completed event log."""
     if print_fn:
         print_fn("Querying run and event log storage.")
@@ -195,7 +195,7 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
         )
 
 
-def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+def migrate_run_repo_tags(run_storage: RunStorage, print_fn: PrintFn | None = None) -> None:
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 
     if not isinstance(run_storage, SqlRunStorage):
@@ -258,7 +258,7 @@ def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
         pass
 
 
-def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+def migrate_bulk_actions(run_storage: RunStorage, print_fn: PrintFn | None = None) -> None:
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 
     if not isinstance(run_storage, SqlRunStorage):
@@ -302,7 +302,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
                 cursor = storage_id
 
 
-def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+def migrate_run_backfill_id(storage: RunStorage, print_fn: PrintFn | None = None) -> None:
     """Utility method to add a backfill_id column to the runs table and populate it with the backfill_id of the run."""
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 
@@ -353,7 +353,7 @@ def add_backfill_id(conn, run_id: str, backfill_id: str) -> None:
 
 
 def migrate_backfill_job_name_and_tags(
-    storage: RunStorage, print_fn: Optional[PrintFn] = None
+    storage: RunStorage, print_fn: PrintFn | None = None
 ) -> None:
     """Utility method to add a backfill's job_name to the bulk_actions table and tags to the backfill_tags table."""
     if print_fn:
@@ -415,7 +415,7 @@ def add_backfill_job_name(run_storage: RunStorage, backfill_id: str, job_name: s
         )
 
 
-def migrate_backfill_end_timestamp(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+def migrate_backfill_end_timestamp(storage: RunStorage, print_fn: PrintFn | None = None) -> None:
     """Utility method to add a backfill's end timestamp to the serialized backfill stored in the bulk actions table."""
     if print_fn:
         print_fn("Querying run storage.")

@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import responses
 from dagster_dg_cli.utils.plus import gql
@@ -11,7 +11,7 @@ PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 def mock_gql_response(
     query: str,
     json_data: dict[str, Any],
-    expected_variables: Optional[dict[str, Any]] = None,
+    expected_variables: dict[str, Any] | None = None,
     url: str = "https://dagster.cloud/hooli/graphql",
 ) -> None:
     def match(request) -> tuple[bool, str]:

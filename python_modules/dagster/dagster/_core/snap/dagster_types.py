@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._core.definitions.job_definition import JobDefinition
@@ -70,13 +70,13 @@ class DagsterTypeSnap(
         [
             ("kind", DagsterTypeKind),
             ("key", str),
-            ("name", Optional[str]),
-            ("description", Optional[str]),
+            ("name", str | None),
+            ("description", str | None),
             ("display_name", str),
             ("is_builtin", bool),
             ("type_param_keys", Sequence[str]),
-            ("loader_schema_key", Optional[str]),
-            ("materializer_schema_key", Optional[str]),
+            ("loader_schema_key", str | None),
+            ("materializer_schema_key", str | None),
             ("metadata", Mapping[str, MetadataValue]),
         ],
     )

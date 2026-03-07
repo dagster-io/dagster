@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-webserver"
@@ -22,7 +22,7 @@ dependencies = [
     "click>=7.0,<9.0",
     "dagster==1!0+dev",
     "dagster-graphql==1!0+dev",
-    "starlette!=0.36.0",
+    "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
     "uvicorn[standard]",
 ]
 
@@ -33,16 +33,9 @@ Homepage = "https://github.com/dagster-io/dagster"
 dagster-webserver = "dagster_webserver.cli:main"
 dagster-webserver-debug = "dagster_webserver.debug:main"
 
+[tool.hatch.build]
+artifacts = ["dagster_webserver/webapp/build/"]
+
 [project.optional-dependencies]
-notebook = ["nbconvert"]
-test = ["starlette[full]"]
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-exclude = ["dagster_webserver_tests*"]
-
-[tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "dagster_webserver_tests/**", "build_js.sh"]
+notebook = ["nbconvert"]  # notebooks support
+test = ["starlette[full]"]  # TestClient deps in full

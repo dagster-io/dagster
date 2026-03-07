@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster_pipes import (
     DagsterPipesError,
@@ -37,7 +37,7 @@ class PipesClient(ABC):
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
-        extras: Optional[PipesExtras] = None,
+        extras: PipesExtras | None = None,
         **kwargs,
     ) -> "PipesClientCompletedInvocation":
         """Synchronously execute an external process with the pipes protocol. Derived
@@ -68,7 +68,7 @@ class PipesClientCompletedInvocation:
     def __init__(
         self,
         session: PipesSession,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: RawMetadataMapping | None = None,
     ):
         self._session = session
         self._metadata = normalize_metadata(metadata or {})

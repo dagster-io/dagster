@@ -2,7 +2,7 @@ import os
 import textwrap
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 import click
 
@@ -20,7 +20,7 @@ def make_option_group(
     options_dict: dict[str, click.Option],
 ) -> Callable[..., T_Command | Callable[[T_Command], T_Command]]:
     def option_group(
-        fn: Optional[T_Command] = None, *, names: Optional[Sequence[str]] = None
+        fn: T_Command | None = None, *, names: Sequence[str] | None = None
     ) -> T_Command | Callable[[T_Command], T_Command]:
         if fn:
             options = [options_dict[name] for name in names or list(options_dict.keys())]

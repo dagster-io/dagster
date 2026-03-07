@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, cast  # noqa: UP035
 
 import dagster._check as check
 import graphene
@@ -206,7 +206,7 @@ class GrapheneJobSelectionPartition(graphene.ObjectType):
         self,
         remote_job: RemoteJob,
         partition_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        selected_asset_keys: AbstractSet[AssetKey] | None,
     ):
         self._remote_job = remote_job
         self._partition_name = partition_name
@@ -293,9 +293,9 @@ class GraphenePartition(graphene.ObjectType):
     def resolve_runs(
         self,
         graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        filter: GrapheneRunsFilter | None = None,  # noqa: A002
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         partition_tags = {
             PARTITION_SET_TAG: self._remote_partition_set.name,
@@ -393,9 +393,9 @@ class GraphenePartitionSet(graphene.ObjectType):
     def resolve_partitionsOrError(
         self,
         graphene_info: ResolveInfo,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        reverse: Optional[bool] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
+        reverse: bool | None = None,
     ):
         return get_partitions(
             self._remote_partition_set.repository_handle,
@@ -458,8 +458,8 @@ class GraphenePartitionSet(graphene.ObjectType):
     def resolve_backfills(
         self,
         graphene_info: ResolveInfo,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        cursor: str | None = None,
+        limit: int | None = None,
     ):
         matching = [
             backfill
@@ -602,8 +602,8 @@ class GraphenePartitionDefinition(graphene.ObjectType):
 def get_partition_keys_from_snap(
     partitions_snap: PartitionsSnap,
     dynamic_partitions_loader: DynamicPartitionsStore,
-    start_idx: Optional[int] = None,
-    end_idx: Optional[int] = None,
+    start_idx: int | None = None,
+    end_idx: int | None = None,
 ) -> Sequence[str]:
     check.opt_inst_param(partitions_snap, "partitions_snap", PartitionsSnap)
     check.opt_int_param(start_idx, "start_idx")

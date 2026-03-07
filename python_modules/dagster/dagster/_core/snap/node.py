@@ -1,6 +1,5 @@
 from collections.abc import Mapping, Sequence, Set
 from functools import cached_property, partial
-from typing import Optional
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -36,15 +35,15 @@ from dagster._utils.warnings import suppress_dagster_warnings
 class InputDefSnap(IHaveNew):
     name: str
     dagster_type_key: str
-    description: Optional[str]
+    description: str | None
     metadata: Mapping[str, MetadataValue]
 
     def __new__(
         cls,
         name: str,
         dagster_type_key: str,
-        description: Optional[str],
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        description: str | None,
+        metadata: Mapping[str, MetadataValue] | None = None,
     ):
         return super().__new__(
             cls,
@@ -66,7 +65,7 @@ class InputDefSnap(IHaveNew):
 class OutputDefSnap(IHaveNew):
     name: str
     dagster_type_key: str
-    description: Optional[str]
+    description: str | None
     is_required: bool
     metadata: Mapping[str, MetadataValue]
     is_dynamic: bool
@@ -75,9 +74,9 @@ class OutputDefSnap(IHaveNew):
         cls,
         name: str,
         dagster_type_key: str,
-        description: Optional[str],
+        description: str | None,
         is_required: bool,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Mapping[str, MetadataValue] | None = None,
         is_dynamic: bool = False,
     ):
         return super().__new__(
@@ -160,9 +159,9 @@ class GraphDefSnap:
     name: str
     input_def_snaps: Sequence[InputDefSnap]
     output_def_snaps: Sequence[OutputDefSnap]
-    description: Optional[str]
+    description: str | None
     tags: Mapping[str, str]
-    config_field_snap: Optional[ConfigFieldSnap]
+    config_field_snap: ConfigFieldSnap | None
     dep_structure_snapshot: DependencyStructureSnapshot
     input_mapping_snaps: Sequence[InputMappingSnap]
     output_mapping_snaps: Sequence[OutputMappingSnap]
@@ -189,11 +188,11 @@ class OpDefSnap:
     name: str
     input_def_snaps: Sequence[InputDefSnap]
     output_def_snaps: Sequence[OutputDefSnap]
-    description: Optional[str]
+    description: str | None
     tags: Mapping[str, str]
     required_resource_keys: Sequence[str]
-    config_field_snap: Optional[ConfigFieldSnap]
-    pool: Optional[str] = None
+    config_field_snap: ConfigFieldSnap | None
+    pool: str | None = None
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:

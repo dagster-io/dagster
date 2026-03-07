@@ -36,12 +36,12 @@ def select_unique_ids(
 ) -> AbstractSet[str]:
     """Given dbt selection paramters, return the unique ids of all resources that match that selection."""
     manifest_version = version.parse(manifest_json.get("metadata", {}).get("dbt_version", "0.0.0"))
-    # using dbt Fusion, efficient to invoke the CLI for selection
+    # dbt-core available, fastest to use the library directly
+    if DBT_PYTHON_VERSION is not None:
+        return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json)
+    # dbt Fusion available, efficient(ish) to invoke the CLI for selection
     if manifest_version.major >= 2 and project is not None:
         return _select_unique_ids_from_cli(select, exclude, selector, project)
-    # using dbt-core, too slow to invoke the CLI, so we use library functions instead
-    elif DBT_PYTHON_VERSION is not None:
-        return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json)
     else:
         # in theory, as long as dbt-core is a dependency of dagster-dbt, this can't happen, but adding
         # this for now to be safe

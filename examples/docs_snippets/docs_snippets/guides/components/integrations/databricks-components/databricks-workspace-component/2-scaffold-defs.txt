@@ -1,0 +1,1 @@
+dg scaffold defs dagster_databricks.DatabricksWorkspaceComponent my_databricks_workspace

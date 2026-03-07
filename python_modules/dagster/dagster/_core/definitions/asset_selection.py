@@ -4,7 +4,7 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from functools import reduce
-from typing import AbstractSet, Optional, TypeAlias, TypeGuard, Union, cast  # noqa: UP035
+from typing import AbstractSet, TypeAlias, TypeGuard, Union, cast  # noqa: UP035
 
 from dagster_shared.error import DagsterError
 from dagster_shared.serdes import whitelist_for_serdes
@@ -267,7 +267,7 @@ class AssetSelection(ABC):
         return TagAssetSelection(key=key, value=value, include_sources=include_sources)
 
     @staticmethod
-    def kind(kind: Optional[str], include_sources: bool = False) -> "AssetSelection":
+    def kind(kind: str | None, include_sources: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided kind, and
         all the asset checks that target them.
 
@@ -299,7 +299,7 @@ class AssetSelection(ABC):
             check.failed(f"Invalid tag selection string: {string}. Must have no more than one '='.")
 
     @staticmethod
-    def owner(owner: Optional[str]) -> "AssetSelection":
+    def owner(owner: str | None) -> "AssetSelection":
         """Returns a selection that includes assets that have the provided owner, and all the
         asset checks that target them.
 
@@ -340,7 +340,7 @@ class AssetSelection(ABC):
 
     @public
     def downstream(
-        self, depth: Optional[int] = None, include_self: bool = True
+        self, depth: int | None = None, include_self: bool = True
     ) -> "DownstreamAssetSelection":
         """Returns a selection that includes all assets that are downstream of any of the assets in
         this selection, selecting the assets in this selection by default. Includes the asset checks targeting the returned assets. Iterates through each
@@ -359,7 +359,7 @@ class AssetSelection(ABC):
 
     @public
     def upstream(
-        self, depth: Optional[int] = None, include_self: bool = True
+        self, depth: int | None = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
         """Returns a selection that includes all materializable assets that are upstream of any of
         the assets in this selection, selecting the assets in this selection by default. Includes
@@ -629,7 +629,7 @@ class AssetSelection(ABC):
 @whitelist_for_serdes
 @record
 class AllSelection(AssetSelection):
-    include_sources: Optional[bool] = None
+    include_sources: bool | None = None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -902,7 +902,7 @@ class MaterializableAssetSelection(ChainedAssetSelection):
 @whitelist_for_serdes
 @record
 class DownstreamAssetSelection(ChainedAssetSelection):
-    depth: Optional[int]
+    depth: int | None
     include_self: bool
 
     def resolve_inner(
@@ -966,7 +966,7 @@ class GroupsAssetSelection(AssetSelection):
 @record
 class KindAssetSelection(AssetSelection):
     include_sources: bool
-    kind_str: Optional[str]
+    kind_str: str | None
 
     def resolve_inner(
         self,
@@ -1026,7 +1026,7 @@ class TagAssetSelection(AssetSelection):
 @whitelist_for_serdes
 @record
 class OwnerAssetSelection(AssetSelection):
-    selected_owner: Optional[str]
+    selected_owner: str | None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1046,7 +1046,7 @@ class CodeLocationAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_code_location: Optional[str]
+    selected_code_location: str | None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1097,7 +1097,7 @@ class ColumnAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_column: Optional[str]
+    selected_column: str | None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1118,7 +1118,7 @@ class TableNameAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_table_name: Optional[str]
+    selected_table_name: str | None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1162,7 +1162,7 @@ class ChangedInBranchAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_changed_in_branch: Optional[str]
+    selected_changed_in_branch: str | None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1179,7 +1179,7 @@ class ChangedInBranchAssetSelection(AssetSelection):
 @whitelist_for_serdes
 @record
 class StatusAssetSelection(AssetSelection):
-    selected_status: Optional[str]
+    selected_status: str | None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1310,7 +1310,7 @@ class KeyWildCardAssetSelection(AssetSelection):
 def _fetch_all_upstream(
     selection: AbstractSet[AssetKey],
     asset_graph: BaseAssetGraph,
-    depth: Optional[int] = None,
+    depth: int | None = None,
     include_self: bool = True,
 ) -> AbstractSet[AssetKey]:
     return operator.sub(
@@ -1327,7 +1327,7 @@ def _fetch_all_upstream(
 @whitelist_for_serdes
 @record
 class UpstreamAssetSelection(ChainedAssetSelection):
-    depth: Optional[int]
+    depth: int | None
     include_self: bool
 
     def resolve_inner(

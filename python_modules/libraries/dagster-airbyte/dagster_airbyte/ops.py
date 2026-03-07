@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any
 
 from dagster import Config, In, Nothing, Out, Output, op
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -28,7 +28,7 @@ class AirbyteSyncConfig(Config):
             "default, this will never time out."
         ),
     )
-    poll_timeout: Optional[float] = Field(
+    poll_timeout: float | None = Field(
         None,
         description=(
             "The maximum time that will waited before this operation is timed out. By "

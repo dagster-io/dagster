@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -126,7 +126,7 @@ def calculate_timeliness(
 
 def calculate_quality_score(
     df: pd.DataFrame,
-    weights: Optional[dict[str, float]] = None,
+    weights: dict[str, float] | None = None,
     email_column: str = "email",
     date_column: str = "created_at",
     unique_column: str = "customer_id",

@@ -2,7 +2,6 @@
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -201,7 +200,7 @@ def _validate_all_packages(ignore_exclude_lists: bool = False) -> int:
     return 1 if total_errors > 0 else 0
 
 
-def _find_dagster_root() -> Optional[Path]:
+def _find_dagster_root() -> Path | None:
     """Find the dagster repository root directory.
 
     Returns:
@@ -217,7 +216,7 @@ def _find_dagster_root() -> Optional[Path]:
     return root_path
 
 
-def _find_git_root() -> Optional[Path]:
+def _find_git_root() -> Path | None:
     """Find the git repository root directory.
 
     Returns:
@@ -295,9 +294,9 @@ def check():
 )
 def docstrings(
     changed: bool,
-    symbol: Optional[str],
+    symbol: str | None,
     check_all: bool,
-    package: Optional[str],
+    package: str | None,
     ignore_exclude_lists: bool,
 ):
     """Validate the docstrings per the existing logic."""
@@ -350,7 +349,7 @@ def docstrings(
     "--all", "check_all", is_flag=True, help="Check all RST symbols (with exclude lists applied)"
 )
 @click.option("--package", help="Filter down to a particular package")
-def rst_symbols(check_all: bool, package: Optional[str]):
+def rst_symbols(check_all: bool, package: str | None):
     """Check that all symbols in the .rst files have corresponding top-level exports in libraries marked with @public."""
     # Validate that exactly one option is provided
     if not check_all and not package:
@@ -403,7 +402,7 @@ def rst_symbols(check_all: bool, package: Optional[str]):
     help="Check all @public symbols (with exclude lists applied)",
 )
 @click.option("--package", help="Filter down to a particular package")
-def public_symbols(check_all: bool, package: Optional[str]):
+def public_symbols(check_all: bool, package: str | None):
     """Check that all public classes and functions in the codebase have corresponding entries in .rst files and are exported top-level in their respective package."""
     # Validate that exactly one option is provided
     if not check_all and not package:
@@ -455,7 +454,7 @@ def public_symbols(check_all: bool, package: Optional[str]):
     "--all", "check_all", is_flag=True, help="Check all exports (with exclude lists applied)"
 )
 @click.option("--package", help="Filter down to a particular package")
-def exports(check_all: bool, package: Optional[str]):
+def exports(check_all: bool, package: str | None):
     """Check that top-level exports in packages have public decorators and entries in .rst."""
     # Validate that exactly one option is provided
     if not check_all and not package:

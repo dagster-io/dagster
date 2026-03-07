@@ -9,8 +9,10 @@ dg list defs
 │         │ │ my_dashboard_1       │ looker_data │ my_model::my_explore │ dashboard │ Looker dashboard │ │
 │         │ │                      │             │                      │ looker    │                  │ │
 │         │ ├──────────────────────┼─────────────┼──────────────────────┼───────────┼──────────────────┤ │
-│         │ │ my_model::my_explore │ looker_data │ view/my_view         │ explore   │ Looker explore   │ │
-│         │ │                      │             │                      │ looker    │                  │ │
+│         │ │ my_model::my_explore │ looker_data │ my_table             │ explore   │ Looker explore   │ │
+│         │ │                      │             │ view/my_view         │ looker    │                  │ │
+│         │ ├──────────────────────┼─────────────┼──────────────────────┼───────────┼──────────────────┤ │
+│         │ │ my_table             │ default     │                      │           │                  │ │
 │         │ ├──────────────────────┼─────────────┼──────────────────────┼───────────┼──────────────────┤ │
 │         │ │ view/my_view         │ default     │                      │           │                  │ │
 │         │ └──────────────────────┴─────────────┴──────────────────────┴───────────┴──────────────────┘ │

@@ -6,11 +6,15 @@
       'analytics',
       'complex_table',
     ]),
+    'automation_condition': None,
+    'backfill_policy': None,
     'dependency_keys': list([
     ]),
     'description': 'Complex asset with various metadata types',
+    'downstream_keys': None,
     'group_name': 'analytics',
     'id': 'complex-asset',
+    'job_names': None,
     'kinds': list([
       'dbt',
       'table',
@@ -67,8 +71,351 @@
         'label': 'bool_meta',
       }),
     ]),
+    'owners': None,
+    'partition_definition': None,
     'status': None,
+    'tags': None,
+    'upstream_dependencies': None,
   })
+# ---
+# name: TestEvaluationDataModels.test_evaluation_record_json_round_trip[0]
+  dict({
+    'end_timestamp': 1706745610.0,
+    'evaluation_id': 42,
+    'evaluation_nodes': list([
+      dict({
+        'child_unique_ids': list([
+        ]),
+        'end_timestamp': 1706745610.0,
+        'expanded_label': list([
+          'Any',
+          'deps',
+          'updated',
+        ]),
+        'is_partitioned': True,
+        'num_candidates': 5,
+        'num_true': 3,
+        'operator_type': 'AND',
+        'start_timestamp': 1706745600.0,
+        'unique_id': 'root_node',
+        'user_label': 'eager',
+      }),
+    ]),
+    'num_requested': 5,
+    'root_unique_id': 'root_node',
+    'run_ids': list([
+      'run-1',
+      'run-2',
+    ]),
+    'start_timestamp': 1706745600.0,
+    'timestamp': 1706745600.0,
+  })
+# ---
+# name: TestFormatAssetEvaluations.test_format_empty_evaluations_json_output[0]
+  dict({
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestFormatAssetEvaluations.test_format_empty_evaluations_text_output[0]
+  'No evaluation records found.'
+# ---
+# name: TestFormatAssetEvaluations.test_format_evaluations_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'end_timestamp': 1706745610.0,
+        'evaluation_id': 100,
+        'evaluation_nodes': None,
+        'num_requested': 3,
+        'root_unique_id': 'root_1',
+        'run_ids': list([
+          'run-abc-123',
+          'run-def-456',
+        ]),
+        'start_timestamp': 1706745600.0,
+        'timestamp': 1706745600.0,
+      }),
+      dict({
+        'end_timestamp': 1706659205.0,
+        'evaluation_id': 99,
+        'evaluation_nodes': None,
+        'num_requested': 0,
+        'root_unique_id': 'root_1',
+        'run_ids': list([
+        ]),
+        'start_timestamp': 1706659200.0,
+        'timestamp': 1706659200.0,
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssetEvaluations.test_format_evaluations_text_output[0]
+  '''
+  EVAL ID  TIMESTAMP                NUM REQUESTED  RUN IDS
+  100      2024-02-01 00:00:00 UTC  3              run-abc-123, run-def-456
+  99       2024-01-31 00:00:00 UTC  0              -
+  '''
+# ---
+# name: TestFormatAssetEvaluations.test_format_evaluations_with_nodes_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'end_timestamp': 1706745610.0,
+        'evaluation_id': 100,
+        'evaluation_nodes': list([
+          dict({
+            'child_unique_ids': list([
+              'node_child_1',
+              'node_child_2',
+            ]),
+            'end_timestamp': 1706745610.0,
+            'expanded_label': list([
+              'Any',
+              'deps',
+              'updated',
+            ]),
+            'is_partitioned': True,
+            'num_candidates': 10,
+            'num_true': 5,
+            'operator_type': 'AND',
+            'start_timestamp': 1706745600.0,
+            'unique_id': 'node_root',
+            'user_label': 'eager',
+          }),
+          dict({
+            'child_unique_ids': list([
+            ]),
+            'end_timestamp': None,
+            'expanded_label': list([
+              'Any',
+              'deps',
+              'updated',
+            ]),
+            'is_partitioned': True,
+            'num_candidates': 10,
+            'num_true': 5,
+            'operator_type': 'LEAF',
+            'start_timestamp': None,
+            'unique_id': 'node_child_1',
+            'user_label': None,
+          }),
+          dict({
+            'child_unique_ids': list([
+            ]),
+            'end_timestamp': None,
+            'expanded_label': list([
+            ]),
+            'is_partitioned': False,
+            'num_candidates': None,
+            'num_true': None,
+            'operator_type': 'NOT',
+            'start_timestamp': None,
+            'unique_id': 'node_child_2',
+            'user_label': None,
+          }),
+        ]),
+        'num_requested': 2,
+        'root_unique_id': 'node_root',
+        'run_ids': list([
+          'run-abc-123',
+        ]),
+        'start_timestamp': 1706745600.0,
+        'timestamp': 1706745600.0,
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssetEvaluations.test_format_evaluations_with_nodes_text_output[0]
+  '''
+  EVAL ID  TIMESTAMP                NUM REQUESTED  RUN IDS
+  100      2024-02-01 00:00:00 UTC  2              run-abc-123
+      eager (true=5, candidates=10)
+      Any > deps > updated (true=5, candidates=10)
+      node_child_2 (true=-, candidates=-)
+  '''
+# ---
+# name: TestFormatAssetEvents.test_format_asset_events_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'event_type': 'ASSET_MATERIALIZATION',
+        'metadata_entries': list([
+          dict({
+            'description': 'Rows',
+            'intValue': 5000,
+            'label': 'row_count',
+          }),
+        ]),
+        'partition': '2024-01-31',
+        'run_id': 'run-abc-123',
+        'tags': list([
+          dict({
+            'key': 'dagster/partition',
+            'value': '2024-01-31',
+          }),
+        ]),
+        'timestamp': '1706745600000',
+      }),
+      dict({
+        'event_type': 'ASSET_OBSERVATION',
+        'metadata_entries': list([
+          dict({
+            'description': 'Minutes',
+            'floatValue': 12.5,
+            'label': 'freshness',
+          }),
+        ]),
+        'partition': None,
+        'run_id': 'run-def-456',
+        'tags': list([
+        ]),
+        'timestamp': '1706659200000',
+      }),
+      dict({
+        'event_type': 'ASSET_MATERIALIZATION',
+        'metadata_entries': list([
+        ]),
+        'partition': '2024-01-29',
+        'run_id': 'run-ghi-789',
+        'tags': list([
+          dict({
+            'key': 'dagster/partition',
+            'value': '2024-01-29',
+          }),
+        ]),
+        'timestamp': '1706572800000',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssetEvents.test_format_asset_events_text_output[0]
+  '''
+  TIMESTAMP                TYPE                   RUN ID       PARTITION
+  2024-02-01 00:00:00 UTC  ASSET_MATERIALIZATION  run-abc-123  2024-01-31
+  2024-01-31 00:00:00 UTC  ASSET_OBSERVATION      run-def-456  
+  2024-01-30 00:00:00 UTC  ASSET_MATERIALIZATION  run-ghi-789  2024-01-29
+  '''
+# ---
+# name: TestFormatAssetEvents.test_format_empty_asset_events_json_output[0]
+  dict({
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestFormatAssetEvents.test_format_empty_asset_events_text_output[0]
+  'No events found.'
+# ---
+# name: TestFormatAssetExtendedDetails.test_format_extended_asset_json_output[0]
+  dict({
+    'asset_key': 'analytics/daily_metrics',
+    'asset_key_parts': list([
+      'analytics',
+      'daily_metrics',
+    ]),
+    'automation_condition': dict({
+      'expanded_label': list([
+        'Any',
+        'deps',
+        'updated',
+        'AND',
+        'NOT',
+        'in_progress',
+      ]),
+      'label': 'eager',
+    }),
+    'backfill_policy': dict({
+      'max_partitions_per_run': 10,
+    }),
+    'dependency_keys': list([
+    ]),
+    'description': 'Daily aggregated metrics',
+    'downstream_keys': list([
+      'reporting/dashboard_metrics',
+      'reporting/weekly_summary',
+    ]),
+    'group_name': 'analytics',
+    'id': 'extended-asset',
+    'job_names': list([
+      'analytics_daily_job',
+      'analytics_backfill_job',
+    ]),
+    'kinds': list([
+      'dbt',
+      'table',
+    ]),
+    'metadata_entries': list([
+      dict({
+        'description': 'data-team',
+        'label': 'owner',
+      }),
+    ]),
+    'owners': list([
+      dict({
+        'email': 'alice@example.com',
+      }),
+      dict({
+        'team': 'data-platform',
+      }),
+    ]),
+    'partition_definition': dict({
+      'description': 'Daily partitions from 2024-01-01 [%Y-%m-%d]',
+    }),
+    'status': None,
+    'tags': list([
+      dict({
+        'key': 'dagster/priority',
+        'value': 'high',
+      }),
+      dict({
+        'key': 'domain',
+        'value': 'analytics',
+      }),
+    ]),
+    'upstream_dependencies': list([
+      dict({
+        'asset_key': 'raw/events',
+        'partition_mapping': dict({
+          'class_name': 'TimeWindowPartitionMapping',
+          'description': 'Maps each downstream partition to the same upstream partition',
+        }),
+      }),
+      dict({
+        'asset_key': 'raw/users',
+        'partition_mapping': None,
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssetExtendedDetails.test_format_extended_asset_text_output[0]
+  '''
+  Asset Key: analytics/daily_metrics
+  ID: extended-asset
+  Description: Daily aggregated metrics
+  Group: analytics
+  Kinds: dbt, table
+  Deps: None
+  '''
+# ---
+# name: TestFormatAssetExtendedDetails.test_format_minimal_extended_asset_text_output[0]
+  '''
+  Asset Key: simple_table
+  ID: simple-extended
+  Description: A simple table
+  Group: default
+  Kinds: table
+  Deps: None
+  '''
+# ---
+# name: TestFormatAssetExtendedDetails.test_format_multipartitioned_asset_text_output[0]
+  '''
+  Asset Key: analytics/multi_dim
+  ID: multi-part-asset
+  Description: Multi-dimensional partitioned asset
+  Group: analytics
+  Kinds: table
+  Deps: None
+  '''
 # ---
 # name: TestFormatAssets.test_format_asset_without_metadata[0]
   '''
@@ -90,11 +437,15 @@
         'asset_key_parts': list([
           'users',
         ]),
+        'automation_condition': None,
+        'backfill_policy': None,
         'dependency_keys': list([
         ]),
         'description': 'User data table',
+        'downstream_keys': None,
         'group_name': 'core_tables',
         'id': 'asset-1',
+        'job_names': None,
         'kinds': list([
           'dbt',
           'table',
@@ -110,7 +461,11 @@
             'label': 'rows',
           }),
         ]),
+        'owners': None,
+        'partition_definition': None,
         'status': None,
+        'tags': None,
+        'upstream_dependencies': None,
       }),
       dict({
         'asset_key': 'analytics/user_metrics',
@@ -118,37 +473,35 @@
           'analytics',
           'user_metrics',
         ]),
+        'automation_condition': None,
+        'backfill_policy': None,
         'dependency_keys': list([
         ]),
         'description': 'Aggregated user metrics',
+        'downstream_keys': None,
         'group_name': 'analytics',
         'id': 'asset-2',
+        'job_names': None,
         'kinds': list([
           'dbt',
           'view',
         ]),
         'metadata_entries': list([
         ]),
+        'owners': None,
+        'partition_definition': None,
         'status': None,
+        'tags': None,
+        'upstream_dependencies': None,
       }),
     ]),
   })
 # ---
 # name: TestFormatAssets.test_format_assets_text_output[0]
   '''
-  Asset Key: users
-  ID: asset-1
-  Description: User data table
-  Group: core_tables
-  Kinds: dbt, table
-  Deps: None
-  
-  Asset Key: analytics/user_metrics
-  ID: asset-2
-  Description: Aggregated user metrics
-  Group: analytics
-  Kinds: dbt, view
-  Deps: None
+  ASSET KEY               GROUP        DESCRIPTION              KINDS
+  users                   core_tables  User data table          dbt, table
+  analytics/user_metrics  analytics    Aggregated user metrics  dbt, view
   '''
 # ---
 # name: TestFormatAssets.test_format_empty_assets_json_output[0]
@@ -168,11 +521,15 @@
     'asset_key_parts': list([
       'users',
     ]),
+    'automation_condition': None,
+    'backfill_policy': None,
     'dependency_keys': list([
     ]),
     'description': 'User data table',
+    'downstream_keys': None,
     'group_name': 'core_tables',
     'id': 'asset-1',
+    'job_names': None,
     'kinds': list([
       'dbt',
       'table',
@@ -188,7 +545,11 @@
         'text': 'public',
       }),
     ]),
+    'owners': None,
+    'partition_definition': None,
     'status': None,
+    'tags': None,
+    'upstream_dependencies': None,
   })
 # ---
 # name: TestFormatAssets.test_format_single_asset_text_output[0]
@@ -199,9 +560,5 @@
   Group: core_tables
   Kinds: dbt, table
   Deps: None
-  
-  Metadata:
-    owner: data-team
-    schema: public
   '''
 # ---

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pytest
 import responses
 from dagster import AssetCheckEvaluation, AssetExecutionContext, AssetMaterialization, Failure
@@ -30,8 +28,8 @@ from dagster_dbt_tests.cloud_v2.conftest import (
 
 def assert_rest_api_call(
     call: responses.Call,
-    endpoint: Optional[str],
-    method: Optional[str] = None,
+    endpoint: str | None,
+    method: str | None = None,
 ):
     rest_api_url = call.request.url.split("?")[0]
     test_url = f"{TEST_REST_API_BASE_URL}/{endpoint}" if endpoint else TEST_REST_API_BASE_URL

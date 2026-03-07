@@ -3,7 +3,7 @@ import textwrap
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from dagster_dg_core.utils import activate_venv
 
@@ -290,7 +290,7 @@ def test_components_docs_dbt_project(
                 import json
                 from collections.abc import Iterator, Mapping
                 from datetime import timedelta
-                from typing import Any, Optional
+                from typing import Any
 
                 import dagster as dg
                 from dagster_dbt import DbtCliResource, DbtProject, DbtProjectComponent
@@ -307,7 +307,7 @@ def test_components_docs_dbt_project(
                         return CustomDbtConfig
 
                     def get_asset_spec(
-                        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+                        self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
                     ) -> dg.AssetSpec:
                         base_spec = super().get_asset_spec(manifest, unique_id, project)
                         dbt_props = self.get_resource_props(manifest, unique_id)

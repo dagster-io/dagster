@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
+from typing import AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -32,8 +32,8 @@ class LegacyFreshnessPolicy(
         "_FreshnessPolicy",
         [
             ("maximum_lag_minutes", float),
-            ("cron_schedule", Optional[str]),
-            ("cron_schedule_timezone", Optional[str]),
+            ("cron_schedule", str | None),
+            ("cron_schedule_timezone", str | None),
         ],
     )
 ):
@@ -102,8 +102,8 @@ class LegacyFreshnessPolicy(
         cls,
         *,
         maximum_lag_minutes: float,
-        cron_schedule: Optional[str] = None,
-        cron_schedule_timezone: Optional[str] = None,
+        cron_schedule: str | None = None,
+        cron_schedule_timezone: str | None = None,
     ):
         if cron_schedule is not None:
             if not is_valid_cron_schedule(cron_schedule):
@@ -155,7 +155,7 @@ class LegacyFreshnessPolicy(
     def get_evaluation_tick(
         self,
         evaluation_time: datetime.datetime,
-    ) -> Optional[datetime.datetime]:
+    ) -> datetime.datetime | None:
         if self.cron_schedule:
             # most recent cron schedule tick
             schedule_ticks = reverse_cron_string_iterator(
@@ -169,9 +169,9 @@ class LegacyFreshnessPolicy(
 
     def minutes_overdue(
         self,
-        data_time: Optional[datetime.datetime],
+        data_time: datetime.datetime | None,
         evaluation_time: datetime.datetime,
-    ) -> Optional[FreshnessMinutes]:
+    ) -> FreshnessMinutes | None:
         """Returns a number of minutes past the specified freshness policy that this asset currently
         is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
         how overdue it is, and this will return None.

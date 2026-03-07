@@ -9,7 +9,7 @@ covering:
 """
 
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster_dbt import (
@@ -70,7 +70,7 @@ class DataQualityDbtTranslator(DagsterDbtTranslator):
 
         return super().get_asset_key(dbt_resource_props)
 
-    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         """Assign dbt assets to groups based on their path."""
         resource_type = dbt_resource_props.get("resource_type")
 

@@ -16,7 +16,7 @@ The Modal application is ready, so we can return to Dagster and define the upstr
   title="src/project_dagster_modal_pipes/defs/pipeline_factory.py"
 />
 
-Now that the data is in R2, as Modal expects, we can invoke the Modal application via Dagster. We will do this using [Dagster Pipes](/guides/build/external-pipelines). Pipes provide a wrapper around a subprocess. This is ideal for executing code in other environments, and also allows us to pass Dagster any necessary context or environment variables to Modal. This is particularly helpful for things like the access keys for the R2 Bucket. Using the Dagster `ModalClient` from the [`dagster-modal`](/integrations/libraries/modal) integration, we can invoke the Modal application:
+Now that the data is in R2, as Modal expects, we can invoke the Modal application via Dagster. We will do this using [Dagster Pipes](/integrations/external-pipelines). Pipes provide a wrapper around a subprocess. This is ideal for executing code in other environments, and also allows us to pass Dagster any necessary context or environment variables to Modal. This is particularly helpful for things like the access keys for the R2 Bucket. Using the Dagster `ModalClient` from the [`dagster-modal`](/integrations/libraries/modal) integration, we can invoke the Modal application:
 
 <CodeExample
   path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/pipeline_factory.py"

@@ -3,7 +3,7 @@ import shlex
 from argparse import ArgumentParser, Namespace
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import dagster._check as check
 from dagster import (
@@ -50,15 +50,15 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         dbt_cloud_resource_def: DbtCloudClientResource | ResourceDefinition,
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
-        node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
+        node_info_to_group_fn: Callable[[Mapping[str, Any]], str | None],
         node_info_to_freshness_policy_fn: Callable[
-            [Mapping[str, Any]], Optional[LegacyFreshnessPolicy]
+            [Mapping[str, Any]], LegacyFreshnessPolicy | None
         ],
         node_info_to_auto_materialize_policy_fn: Callable[
-            [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+            [Mapping[str, Any]], AutoMaterializePolicy | None
         ],
-        partitions_def: Optional[PartitionsDefinition] = None,
-        partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+        partitions_def: PartitionsDefinition | None = None,
+        partition_key_to_vars_fn: Callable[[str], Mapping[str, Any]] | None = None,
     ):
         self._dbt_cloud_resource_def: ResourceDefinition = (
             dbt_cloud_resource_def.get_resource_definition()
@@ -75,7 +75,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._account_id: int = self._dbt_cloud._account_id  # noqa: SLF001
         self._project_id: int
         self._has_generate_docs: bool
-        self._environment_id: Optional[int] = None
+        self._environment_id: int | None = None
         self._job_commands: list[str]
         self._job_materialization_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
@@ -543,13 +543,13 @@ def load_assets_from_dbt_cloud_job(
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     node_info_to_group_fn: Callable[
-        [Mapping[str, Any]], Optional[str]
+        [Mapping[str, Any]], str | None
     ] = default_group_from_dbt_resource_props,
     node_info_to_auto_materialize_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+        [Mapping[str, Any]], AutoMaterializePolicy | None
     ] = default_auto_materialize_policy_fn,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+    partitions_def: PartitionsDefinition | None = None,
+    partition_key_to_vars_fn: Callable[[str], Mapping[str, Any]] | None = None,
 ) -> CacheableAssetsDefinition:
     """Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
     determine the set of dbt models, the project is compiled to generate the necessary artifacts

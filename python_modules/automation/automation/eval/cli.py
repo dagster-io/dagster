@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 import yaml
@@ -21,7 +21,7 @@ class Metric:
 
     name: str
     criteria: str
-    evaluation_steps: Optional[list[str]] = None
+    evaluation_steps: list[str] | None = None
 
     def get_hash(self) -> str:
         """Generate a hash for this metric configuration."""

@@ -1,6 +1,5 @@
 import importlib
 import os
-from typing import Optional
 
 import airflow
 from airflow.models.connection import Connection
@@ -26,7 +25,7 @@ from dagster_airflow.utils import (
 class AirflowPersistentDatabase(AirflowDatabase):
     """A persistent Airflow database Dagster resource."""
 
-    def __init__(self, dagster_run: DagsterRun, uri: str, dag_run_config: Optional[dict] = None):
+    def __init__(self, dagster_run: DagsterRun, uri: str, dag_run_config: dict | None = None):
         self.uri = uri
         super().__init__(dagster_run=dagster_run, dag_run_config=dag_run_config)
 
@@ -64,7 +63,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
 def make_persistent_airflow_db_resource(
     uri: str = "",
     connections: list[Connection] = [],
-    dag_run_config: Optional[dict] = {},
+    dag_run_config: dict | None = {},
 ) -> ResourceDefinition:
     """Creates a Dagster resource that provides an persistent Airflow database.
 

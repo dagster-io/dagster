@@ -2,7 +2,6 @@ import os
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import DgWorkspaceScaffoldProjectOptions, modify_dg_toml_config
@@ -52,7 +51,7 @@ def scaffold_workspace(
 
 def get_dependencies_template_params(
     use_editable_dagster: bool,
-    scaffold_project_options: Optional[DgWorkspaceScaffoldProjectOptions],
+    scaffold_project_options: DgWorkspaceScaffoldProjectOptions | None,
     *,
     editable_deps: list[str],
     editable_dev_deps: list[str],

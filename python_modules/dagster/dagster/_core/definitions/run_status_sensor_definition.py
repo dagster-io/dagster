@@ -3,7 +3,7 @@ import logging
 import os
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, Union, cast, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, Union, cast, overload
 
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.errors import DeserializationError
@@ -92,10 +92,10 @@ class RunStatusSensorCursor(
             # deprecated arg, used as a record cursor for the run-sharded sqlite implementation to
             # filter records based on the update timestamp of the run.  When populated, the record
             # id is ignored (since it maybe run-scoped).
-            ("update_timestamp", Optional[str]),
+            ("update_timestamp", str | None),
             # debug arg, used to quickly inspect the last processed timestamp from the run status
             # sensor's serialized state
-            ("record_timestamp", Optional[str]),
+            ("record_timestamp", str | None),
         ],
     )
 ):
@@ -133,14 +133,13 @@ class RunStatusSensorContext:
         dagster_run,
         dagster_event,
         instance,
-        context: Optional[
-            SensorEvaluationContext
-        ] = None,  # deprecated arg, but we need to keep it for backcompat
-        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
-        logger: Optional[logging.Logger] = None,
-        partition_key: Optional[str] = None,
-        repository_def: Optional[RepositoryDefinition] = None,
-        _resources: Optional[Resources] = None,
+        context: SensorEvaluationContext
+        | None = None,  # deprecated arg, but we need to keep it for backcompat
+        resource_defs: Mapping[str, "ResourceDefinition"] | None = None,
+        logger: logging.Logger | None = None,
+        partition_key: str | None = None,
+        repository_def: RepositoryDefinition | None = None,
+        _resources: Resources | None = None,
         _cm_scope_entered: bool = False,
     ) -> None:
         self._exit_stack = ExitStack()
@@ -148,7 +147,7 @@ class RunStatusSensorContext:
         self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
-        self._logger: Optional[logging.Logger] = logger or (context.log if context else None)
+        self._logger: logging.Logger | None = logger or (context.log if context else None)
         self._partition_key = check.opt_str_param(partition_key, "partition_key")
         self._repository_def = check.opt_inst_param(
             repository_def, "repository_def", RepositoryDefinition
@@ -175,11 +174,11 @@ class RunStatusSensorContext:
         )
 
     @property
-    def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
+    def resource_defs(self) -> Mapping[str, "ResourceDefinition"] | None:
         return self._resource_defs
 
     @property
-    def repository_def(self) -> Optional[RepositoryDefinition]:
+    def repository_def(self) -> RepositoryDefinition | None:
         """Optional[RepositoryDefinition]: The RepositoryDefinition that this sensor resides in."""
         return self._repository_def
 
@@ -255,7 +254,7 @@ class RunStatusSensorContext:
 
     @public
     @property
-    def partition_key(self) -> Optional[str]:
+    def partition_key(self) -> str | None:
         """Optional[str]: The partition key of the relevant run."""
         return self._partition_key
 
@@ -341,11 +340,11 @@ def build_run_status_sensor_context(
     dagster_event: DagsterEvent,
     dagster_instance: DagsterInstance,
     dagster_run: DagsterRun,
-    context: Optional[SensorEvaluationContext] = None,
-    resources: Optional[Mapping[str, object]] = None,
-    partition_key: Optional[str] = None,
+    context: SensorEvaluationContext | None = None,
+    resources: Mapping[str, object] | None = None,
+    partition_key: str | None = None,
     *,
-    repository_def: Optional[RepositoryDefinition] = None,
+    repository_def: RepositoryDefinition | None = None,
 ) -> RunStatusSensorContext:
     """Builds run status sensor context from provided parameters.
 
@@ -401,40 +400,38 @@ def run_failure_sensor(
 
 @overload
 def run_failure_sensor(
-    name: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    monitored_jobs: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    name: str | None = None,
+    minimum_interval_seconds: int | None = None,
+    description: str | None = None,
+    monitored_jobs: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
-    job_selection: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    ]
+    | None = None,
+    job_selection: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
+    ]
+    | None = None,
     monitor_all_code_locations: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[ExecutableDefinition] = None,
-    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
+    request_job: ExecutableDefinition | None = None,
+    request_jobs: Sequence[ExecutableDefinition] | None = None,
     monitor_all_repositories: bool = False,
-    tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
+    tags: Mapping[str, str] | None = None,
+    metadata: RawMetadataMapping | None = None,
 ) -> Callable[
     [RunFailureSensorEvaluationFn],
     SensorDefinition,
@@ -453,40 +450,38 @@ def run_failure_sensor(
     additional_warn_text="Use `monitor_all_code_locations` instead.",
 )
 def run_failure_sensor(
-    name: Optional[RunFailureSensorEvaluationFn | str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    monitored_jobs: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    name: RunFailureSensorEvaluationFn | str | None = None,
+    minimum_interval_seconds: int | None = None,
+    description: str | None = None,
+    monitored_jobs: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
-    job_selection: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    ]
+    | None = None,
+    job_selection: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
-    monitor_all_code_locations: Optional[bool] = None,
+    ]
+    | None = None,
+    monitor_all_code_locations: bool | None = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[ExecutableDefinition] = None,
-    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-    monitor_all_repositories: Optional[bool] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
+    request_job: ExecutableDefinition | None = None,
+    request_jobs: Sequence[ExecutableDefinition] | None = None,
+    monitor_all_repositories: bool | None = None,
+    tags: Mapping[str, str] | None = None,
+    metadata: RawMetadataMapping | None = None,
 ) -> SensorDefinition | Callable[[RunFailureSensorEvaluationFn], SensorDefinition]:
     """Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
@@ -613,27 +608,26 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
         name: str,
         run_status: DagsterRunStatus,
         run_status_sensor_fn: RunStatusSensorEvaluationFunction,
-        minimum_interval_seconds: Optional[int] = None,
-        description: Optional[str] = None,
-        monitored_jobs: Optional[
-            Sequence[
-                Union[
-                    JobDefinition,
-                    GraphDefinition,
-                    UnresolvedAssetJobDefinition,
-                    "RepositorySelector",
-                    "JobSelector",
-                    "CodeLocationSelector",
-                ]
+        minimum_interval_seconds: int | None = None,
+        description: str | None = None,
+        monitored_jobs: Sequence[
+            Union[
+                JobDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
             ]
-        ] = None,
-        monitor_all_code_locations: Optional[bool] = None,
+        ]
+        | None = None,
+        monitor_all_code_locations: bool | None = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        request_job: Optional[ExecutableDefinition] = None,
-        request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        required_resource_keys: Optional[set[str]] = None,
+        request_job: ExecutableDefinition | None = None,
+        request_jobs: Sequence[ExecutableDefinition] | None = None,
+        tags: Mapping[str, str] | None = None,
+        metadata: RawMetadataMapping | None = None,
+        required_resource_keys: set[str] | None = None,
     ):
         from dagster._core.definitions.selector import (
             CodeLocationSelector,
@@ -1028,27 +1022,26 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
         name: str,
         run_status: DagsterRunStatus,
         run_status_sensor_fn: RunStatusSensorEvaluationFunction,
-        minimum_interval_seconds: Optional[int],
-        description: Optional[str],
-        monitored_jobs: Optional[
-            Sequence[
-                Union[
-                    JobDefinition,
-                    GraphDefinition,
-                    UnresolvedAssetJobDefinition,
-                    "RepositorySelector",
-                    "JobSelector",
-                    "CodeLocationSelector",
-                ]
+        minimum_interval_seconds: int | None,
+        description: str | None,
+        monitored_jobs: Sequence[
+            Union[
+                JobDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
             ]
-        ],
-        monitor_all_code_locations: Optional[bool],
+        ]
+        | None,
+        monitor_all_code_locations: bool | None,
         default_status: DefaultSensorStatus,
-        request_job: Optional[ExecutableDefinition],
-        request_jobs: Optional[Sequence[ExecutableDefinition]],
-        tags: Optional[Mapping[str, str]],
-        metadata: Optional[RawMetadataMapping],
-        required_resource_keys: Optional[set[str]],
+        request_job: ExecutableDefinition | None,
+        request_jobs: Sequence[ExecutableDefinition] | None,
+        tags: Mapping[str, str] | None,
+        metadata: RawMetadataMapping | None,
+        required_resource_keys: set[str] | None,
     ) -> "RunStatusSensorDefinition":
         return RunStatusSensorDefinition(
             name=name,
@@ -1069,8 +1062,8 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
     def with_attributes(
         self,
         *,
-        jobs: Optional[Sequence[ExecutableDefinition]] = None,
-        metadata: Optional[RawMetadataMapping] = None,
+        jobs: Sequence[ExecutableDefinition] | None = None,
+        metadata: RawMetadataMapping | None = None,
     ) -> "RunStatusSensorDefinition":
         """Returns a copy of this sensor with the attributes replaced."""
         _job_name, new_job, new_jobs = resolve_jobs_from_targets_for_with_attributes(self, jobs)
@@ -1108,40 +1101,38 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
 )
 def run_status_sensor(
     run_status: DagsterRunStatus,
-    name: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    monitored_jobs: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    name: str | None = None,
+    minimum_interval_seconds: int | None = None,
+    description: str | None = None,
+    monitored_jobs: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
-    job_selection: Optional[
-        Sequence[
-            Union[
-                JobDefinition,
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-                "RepositorySelector",
-                "JobSelector",
-                "CodeLocationSelector",
-            ]
+    ]
+    | None = None,
+    job_selection: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "RepositorySelector",
+            "JobSelector",
+            "CodeLocationSelector",
         ]
-    ] = None,
-    monitor_all_code_locations: Optional[bool] = None,
+    ]
+    | None = None,
+    monitor_all_code_locations: bool | None = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[ExecutableDefinition] = None,
-    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-    monitor_all_repositories: Optional[bool] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[RawMetadataMapping] = None,
+    request_job: ExecutableDefinition | None = None,
+    request_jobs: Sequence[ExecutableDefinition] | None = None,
+    monitor_all_repositories: bool | None = None,
+    tags: Mapping[str, str] | None = None,
+    metadata: RawMetadataMapping | None = None,
 ) -> Callable[
     [RunStatusSensorEvaluationFunction],
     RunStatusSensorDefinition,

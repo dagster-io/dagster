@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
@@ -55,7 +55,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     The ``base_dir`` param tells the event log storage where on disk to store the database.
     """
 
-    def __init__(self, base_dir, inst_data: Optional[ConfigurableClassData] = None):
+    def __init__(self, base_dir, inst_data: ConfigurableClassData | None = None):
         self._base_dir = check.str_param(base_dir, "base_dir")
         self._conn_string = create_db_conn_string(base_dir, SQLITE_EVENT_LOG_FILENAME)
         self._secondary_index_cache = {}
@@ -108,7 +108,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             with conn.begin():
                 yield conn
 
-    def run_connection(self, run_id: Optional[str]) -> SqlDbConnection:
+    def run_connection(self, run_id: str | None) -> SqlDbConnection:
         return self._connect()
 
     def index_connection(self):

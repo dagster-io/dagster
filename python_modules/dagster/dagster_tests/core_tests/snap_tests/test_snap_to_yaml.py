@@ -1,7 +1,7 @@
 import os
 import sys
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import dagster as dg
 import pytest
@@ -57,7 +57,7 @@ def _remote_repository_for_function(
 def _remote_repository_for_module(
     instance: DagsterInstance,
     module_name: str,
-    attribute: Optional[str] = None,
+    attribute: str | None = None,
     repository_name="__repository__",
 ) -> RemoteRepository:
     loadable_target_origin = LoadableTargetOrigin(
@@ -103,7 +103,7 @@ def test_print_root(
 def job_def_with_config():
     class MyOpConfig(dg.Config):
         a_str_with_default: str = "foo"
-        optional_int: Optional[int] = None
+        optional_int: int | None = None
         a_str_no_default: str
 
     @dg.op

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._annotations import public
@@ -36,7 +36,7 @@ class ExecuteInProcessResult(ExecutionResult):
         self,
         event_list: Sequence[DagsterEvent],
         dagster_run: DagsterRun,
-        output_capture: Optional[Mapping[StepOutputHandle, Any]],
+        output_capture: Mapping[StepOutputHandle, Any] | None,
         job_def: JobDefinition,
     ):
         self._job_def = job_def

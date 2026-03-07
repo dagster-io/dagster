@@ -103,14 +103,14 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
 @record_custom
 class JobSnap(IHaveNew):
     name: str
-    description: Optional[str]
+    description: str | None
     tags: Mapping[str, Any]
     # It is important that run_tags is nullable to distinguish in host code between
     # snapshots from older code servers where run_tags does not exist as a field (and is
     # therefore None) vs snapshots from newer code servers where run_tags is always set, if
     # sometimes empty. In the None case, we need to set run_tags to tags (at the level of
     # ExternalJob) to maintain backcompat.
-    run_tags: Optional[Mapping[str, Any]]
+    run_tags: Mapping[str, Any] | None
     config_schema_snapshot: ConfigSchemaSnapshot
     dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot
     node_defs_snapshot: NodeDefsSnapshot
@@ -119,14 +119,14 @@ class JobSnap(IHaveNew):
     lineage_snapshot: Optional["JobLineageSnap"]
     graph_def_name: str
     metadata: Mapping[str, MetadataValue]
-    owners: Optional[Sequence[str]]
+    owners: Sequence[str] | None
 
     def __new__(
         cls,
         name: str,
-        description: Optional[str],
-        tags: Optional[Mapping[str, Any]],
-        run_tags: Optional[Mapping[str, Any]],
+        description: str | None,
+        tags: Mapping[str, Any] | None,
+        run_tags: Mapping[str, Any] | None,
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         node_defs_snapshot: NodeDefsSnapshot,
@@ -134,8 +134,8 @@ class JobSnap(IHaveNew):
         mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["JobLineageSnap"],
         graph_def_name: str,
-        metadata: Optional[Mapping[str, RawMetadataValue]],
-        owners: Optional[Sequence[str]] = None,
+        metadata: Mapping[str, RawMetadataValue] | None,
+        owners: Sequence[str] | None = None,
     ):
         return super().__new__(
             cls,
@@ -215,7 +215,7 @@ class JobSnap(IHaveNew):
     def get_config_type_from_node_def_snap(
         self,
         node_def_snap: OpDefSnap | GraphDefSnap,
-    ) -> Optional[ConfigType]:
+    ) -> ConfigType | None:
         check.inst_param(node_def_snap, "node_def_snap", (OpDefSnap, GraphDefSnap))
         if node_def_snap.config_field_snap:
             config_type_key = node_def_snap.config_field_snap.type_key
@@ -406,7 +406,7 @@ def construct_config_type_from_snap(
 @record
 class JobLineageSnap:
     parent_snapshot_id: str
-    op_selection: Optional[Sequence[str]] = None
-    resolved_op_selection: Optional[AbstractSet[str]] = None
-    asset_selection: Optional[AbstractSet[AssetKey]] = None
-    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None
+    op_selection: Sequence[str] | None = None
+    resolved_op_selection: AbstractSet[str] | None = None
+    asset_selection: AbstractSet[AssetKey] | None = None
+    asset_check_selection: AbstractSet[AssetCheckKey] | None = None

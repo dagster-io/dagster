@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public
@@ -38,7 +38,7 @@ class AssetValueLoader:
     def __init__(
         self,
         assets_defs_by_key: Mapping[AssetKey, AssetsDefinition],
-        instance: Optional[DagsterInstance] = None,
+        instance: DagsterInstance | None = None,
     ):
         self._assets_defs_by_key = assets_defs_by_key
         self._resource_instance_cache: dict[str, object] = {}
@@ -51,7 +51,7 @@ class AssetValueLoader:
     def _ensure_resource_instances_in_cache(
         self,
         resource_defs: Mapping[str, ResourceDefinition],
-        resource_config: Optional[Mapping[str, Any]] = None,
+        resource_config: Mapping[str, Any] | None = None,
     ):
         for built_resource_key, built_resource in (
             self._exit_stack.enter_context(
@@ -79,12 +79,12 @@ class AssetValueLoader:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[type[object]] = None,
-        partition_key: Optional[str] = None,
-        input_definition_metadata: Optional[dict[str, Any]] = None,
-        resource_config: Optional[Mapping[str, Any]] = None,
+        python_type: type[object] | None = None,
+        partition_key: str | None = None,
+        input_definition_metadata: dict[str, Any] | None = None,
+        resource_config: Mapping[str, Any] | None = None,
         # deprecated
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> object:
         """Loads the contents of an asset as a Python object.
 

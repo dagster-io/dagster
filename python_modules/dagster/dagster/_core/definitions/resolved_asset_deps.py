@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
@@ -112,13 +112,13 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
     asset_keys = {spec.key for spec in specs}
 
     # build mapping from group and name to asset keys
-    keys_by_group_and_name: dict[tuple[Optional[str], str], list[AssetKey]] = defaultdict(list)
+    keys_by_group_and_name: dict[tuple[str | None, str], list[AssetKey]] = defaultdict(list)
     for spec in specs:
         if spec.group_name is not None:
             keys_by_group_and_name[(spec.group_name, spec.key.path[-1])].append(spec.key)
 
     # build mapping from table name to asset keys
-    keys_by_table_name: dict[Optional[str], list[AssetKey]] = defaultdict(list)
+    keys_by_table_name: dict[str | None, list[AssetKey]] = defaultdict(list)
     for spec in specs:
         table_name = TableMetadataSet.extract(spec.metadata).table_name
         if table_name is not None:

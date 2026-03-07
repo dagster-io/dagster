@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import dagster as dg
 import pytest
@@ -11,7 +10,7 @@ from dagster._core.definitions.declarative_automation.automation_condition_teste
 def test_update_on_partitions_def_change() -> None:
     """We should update whenever the partitions definition changes."""
 
-    def _get_defs(pd: Optional[dg.PartitionsDefinition]) -> dg.Definitions:
+    def _get_defs(pd: dg.PartitionsDefinition | None) -> dg.Definitions:
         @dg.asset(
             partitions_def=pd, automation_condition=dg.AutomationCondition.initial_evaluation()
         )
@@ -73,9 +72,7 @@ def _get_initial_evaluation_count(result: EvaluateAutomationConditionsResult) ->
 def test_update_on_condition_change(pd_change: bool) -> None:
     """We should update whenever the condition is changed in any way."""
 
-    def _get_defs(
-        ac: dg.AutomationCondition, pd: Optional[dg.PartitionsDefinition]
-    ) -> dg.Definitions:
+    def _get_defs(ac: dg.AutomationCondition, pd: dg.PartitionsDefinition | None) -> dg.Definitions:
         @dg.asset(automation_condition=ac, deps=["up"], partitions_def=pd)
         def a() -> None: ...
 

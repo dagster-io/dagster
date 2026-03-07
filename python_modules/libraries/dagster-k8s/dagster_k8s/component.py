@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any
 
 from dagster import (
     AssetExecutionContext,
@@ -23,12 +23,12 @@ class PipesK8sComponent(Component, Resolvable):
 
     name: str
     assets: Sequence[ResolvedAssetSpec]
-    image: Optional[str] = None
-    command: Optional[str | Sequence[str]] = None
-    namespace: Optional[str] = None
-    env: Optional[Mapping[str, str]] = None
-    base_pod_meta: Optional[Mapping[str, Any]] = None
-    base_pod_spec: Optional[Mapping[str, Any]] = None
+    image: str | None = None
+    command: str | Sequence[str] | None = None
+    namespace: str | None = None
+    env: Mapping[str, str] | None = None
+    base_pod_meta: Mapping[str, Any] | None = None
+    base_pod_spec: Mapping[str, Any] | None = None
 
     def __post_init__(self):
         # validate that we can build a pod for the given args

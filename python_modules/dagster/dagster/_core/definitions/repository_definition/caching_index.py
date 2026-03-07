@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
-from typing import Generic, Optional, cast
+from typing import Generic, cast
 
 import dagster._check as check
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -18,7 +18,7 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
             str, T_RepositoryLevelDefinition | Callable[[], T_RepositoryLevelDefinition]
         ],
         validation_fn: Callable[[T_RepositoryLevelDefinition], T_RepositoryLevelDefinition],
-        lazy_definitions_fn: Optional[Callable[[], Sequence[T_RepositoryLevelDefinition]]] = None,
+        lazy_definitions_fn: Callable[[], Sequence[T_RepositoryLevelDefinition]] | None = None,
     ):
         """Args:
         definitions: A dictionary of definition names to definitions or functions that load
@@ -45,14 +45,14 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
             str, T_RepositoryLevelDefinition | Callable[[], T_RepositoryLevelDefinition]
         ] = definitions
         self._definition_cache: dict[str, T_RepositoryLevelDefinition] = {}
-        self._definition_names: Optional[Sequence[str]] = None
+        self._definition_names: Sequence[str] | None = None
 
         self._lazy_definitions_fn: Callable[[], Sequence[T_RepositoryLevelDefinition]] = (
             lazy_definitions_fn or (lambda: [])
         )
-        self._lazy_definitions: Optional[Sequence[T_RepositoryLevelDefinition]] = None
+        self._lazy_definitions: Sequence[T_RepositoryLevelDefinition] | None = None
 
-        self._all_definitions: Optional[Sequence[T_RepositoryLevelDefinition]] = None
+        self._all_definitions: Sequence[T_RepositoryLevelDefinition] | None = None
 
     def _validate_definition_key(
         self, definition: T_RepositoryLevelDefinition, definition_dict_key: str

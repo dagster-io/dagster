@@ -3,7 +3,7 @@ import sys
 from collections.abc import Callable, Mapping
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 import click
 from dagster_shared.telemetry import (
@@ -19,7 +19,7 @@ from dagster_dg_core.config import DgCliConfig, load_dg_user_file_config
 from dagster_dg_core.version import __version__
 
 
-def _get_project_telemetry_metadata(start_path: Optional[Path] = None) -> dict[str, str]:
+def _get_project_telemetry_metadata(start_path: Path | None = None) -> dict[str, str]:
     """Load project telemetry metadata (e.g., project_id) from .dg/telemetry.yaml if it exists.
 
     Walks up from start_path (or cwd if not provided) to find the nearest .dg/telemetry.yaml file.
@@ -65,10 +65,10 @@ def get_telemetry_settings_for_cli() -> TelemetrySettings:
 
 def log_telemetry_action(
     action: str,
-    client_time: Optional[datetime.datetime] = None,
-    elapsed_time: Optional[datetime.timedelta] = None,
-    metadata: Optional[Mapping[str, str]] = None,
-    start_path: Optional[Path] = None,
+    client_time: datetime.datetime | None = None,
+    elapsed_time: datetime.timedelta | None = None,
+    metadata: Mapping[str, str] | None = None,
+    start_path: Path | None = None,
 ) -> None:
     return shared_log_telemetry_action(
         get_telemetry_settings_for_cli,
@@ -95,12 +95,12 @@ def cli_telemetry_wrapper(target_fn: T_Callable) -> T_Callable: ...
 @overload
 def cli_telemetry_wrapper(
     *,
-    metadata: Optional[Mapping[str, str]],
+    metadata: Mapping[str, str] | None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
 def cli_telemetry_wrapper(
-    target_fn: Optional[T_Callable] = None, *, metadata: Optional[Mapping[str, str]] = None
+    target_fn: T_Callable | None = None, *, metadata: Mapping[str, str] | None = None
 ) -> T_Callable | Callable[[Callable[P, T]], Callable[P, T]]:
     """Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
@@ -115,7 +115,7 @@ def cli_telemetry_wrapper(
 
 
 def _cli_telemetry_wrapper(
-    f: Callable[P, T], metadata: Optional[Mapping[str, str]] = None
+    f: Callable[P, T], metadata: Mapping[str, str] | None = None
 ) -> Callable[P, T]:
     if isinstance(f, click.Command):
         raise Exception(

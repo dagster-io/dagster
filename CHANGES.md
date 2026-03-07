@@ -1,5 +1,72 @@
 # Changelog
 
+## 1.12.18 (core) / 0.28.18 (libraries)
+
+### New
+
+- Added event type filtering to the asset Recent Updates timeline, allowing users to toggle between Materializations and Observations when both event types are present. Filter preference is persisted to local storage.
+- `psycopg2-binary` has been removed as a dependency from `dagster-postgres`. If you were previously relying on this transitive dependency, you may need to explicitly add `psycopg2-binary` to your project.
+- [ui] The launchpad UI no longer prefills optional resource defaults in the config editor. To see and edit the defaults, click "Scaffold all default config".
+- [ui] For op jobs in code locations that have reloaded, the launchpad now always shows a message indicating that the config may be stale.
+- [ui] Asset health status indicators now distinguish between loading, unknown, and no data states for improved debugging.
+- [ui] The asset overview timeline now correctly displays the most recent event without cutting it off.
+- [dagster-dbt] `DbtProject` and `DbtProjectComponent` now expose `prepare_project_cli_args` to allow customizing CLI arguments used to generate the manifest.
+- [dagster-looker, dagster-omni, dagster-powerbi, dagster-sigma, dagster-tableau] BI integration assets are now automatically enriched with `dagster/table_name` metadata. Additionally, `dagster-tableau` and `dagster-looker` assets now populate `dagster/storage_kind` based on the upstream connection type.
+- [dagster-sling] The `sling` package import is now deferred to improve import-time performance.
+
+### Bugfixes
+
+- Fixed a bug where Dagster incorrectly called `__enter__` on nested resource attributes annotated with `dagster.ResourceDependency` during parent resource setup. (Thanks, [@danielgafni](https://github.com/danielgafni)!)
+- [ui] Fixed text wrapping and layout for long URIs in asset storage metadata section.
+
+### Documentation
+
+- Added documentation for custom metrics in Dagster+ Insights.
+- Added and enhanced webhook alerting documentation, including a guide for incident.io integration.
+
+### Dagster Plus
+
+- Organization-level timezone settings are now supported, allowing organizations to set a default timezone for users who haven't explicitly set a preference.
+- [ui] Asset job run data is now included in Job insights.
+- [ui] Code locations with loaded but failed agents now display a warning icon with agent status details in a popover.
+- [ui] Added run queue time metric visualization to Job insights.
+- [ui] Updated Alert policy list style for improved scannability and legibility.
+
+## 1.12.17 (core) / 0.28.17 (libraries)
+
+### Bugfixes
+
+- Fix bug with inclusion of built webapp in `dagster-webserver` that caused the Dagster UI to fail to load.
+
+## 1.12.16 (core) / 0.28.16 (libraries) (YANKED)
+
+This version of Dagster inadvertently did not include the webapp code in the published `dagster-webserver` package.
+
+### Bugfixes
+
+- [ui] Fixed redirect to login when the user's session expires.
+- [ui] Fixed console error noise during asset lineage navigation.
+
+### Dagster Plus
+
+- [ui] Improved loading states and autoscroll behavior in the AI chat UI.
+- [ui] Fixed the icon selector in the saved selection creation flow.
+
+## 1.12.15 (core) / 0.28.15 (libraries)
+
+### New
+
+- Pool names can now be any non-whitespace character, instead of requiring alphanumbeic characters, slashes, and underscores.
+- [dagster-aws] The `EcsRunLauncher` will now retry a task launch when a RunTask API call fails due to a throttling error in an underlying EC2 API call.
+- [dagster-tableau] Tableau workbooks and projects can now be filtered using the `workbook_selector` and `project_selector` in `TableauComponent`.
+
+### Bugfixes
+
+- [ui] Fixed issue where saved launchpad config was not used for single-partition asset materializations.
+- [ui] Fix console error noise during asset lineage navigation.
+- [ui] Fixed an issue where the "Start X Automations" and "Stop X Automations" menu options on the Automations tab were sometimes incorrectly disabled.
+- [dagster-dbt] The `DbtProject` constructor now correctly accepts strings for the `target_path` parameter.
+
 ## 1.12.14 (core) / 0.28.14 (libraries)
 
 ### New

@@ -10,7 +10,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import AbstractSet, Any, Optional  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 import aiohttp
 import dagster._check as check
@@ -62,7 +62,7 @@ def build_folder_path_err(folder: Any, idx: int, param_name: str):
     )
 
 
-def validate_folder_path_input(folder_input: Optional[Sequence[Sequence[str]]], param_name: str):
+def validate_folder_path_input(folder_input: Sequence[Sequence[str]] | None, param_name: str):
     check.opt_sequence_param(folder_input, param_name, of_type=Sequence)
     if folder_input:
         for idx, folder in enumerate(folder_input):
@@ -92,14 +92,14 @@ class SigmaFilter(IHaveNew):
             Defaults to True.
     """
 
-    workbook_folders: Optional[Sequence[Sequence[str]]] = None
-    workbooks: Optional[Sequence[Sequence[str]]] = None
+    workbook_folders: Sequence[Sequence[str]] | None = None
+    workbooks: Sequence[Sequence[str]] | None = None
     include_unused_datasets: bool = True
 
     def __new__(
         cls,
-        workbook_folders: Optional[Sequence[Sequence[str]]] = None,
-        workbooks: Optional[Sequence[Sequence[str]]] = None,
+        workbook_folders: Sequence[Sequence[str]] | None = None,
+        workbooks: Sequence[Sequence[str]] | None = None,
         include_unused_datasets: bool = True,
     ):
         validate_folder_path_input(workbook_folders, "workbook_folders")
@@ -146,7 +146,7 @@ class SigmaOrganization(ConfigurableResource):
         description="Whether to warn rather than raise when lineage data cannot be fetched for an element.",
     )
 
-    _api_token: Optional[str] = PrivateAttr(None)
+    _api_token: str | None = PrivateAttr(None)
 
     def _fetch_api_token(self) -> str:
         response = requests.post(
@@ -176,7 +176,7 @@ class SigmaOrganization(ConfigurableResource):
         self,
         endpoint: str,
         method: str = "GET",
-        query_params: Optional[dict[str, Any]] = None,
+        query_params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         url = f"{self.base_url}/v2/{endpoint}"
         if query_params:
@@ -211,8 +211,8 @@ class SigmaOrganization(ConfigurableResource):
         self,
         endpoint: str,
         method: str = "GET",
-        query_params: Optional[dict[str, Any]] = None,
-        json: Optional[dict[str, Any]] = None,
+        query_params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         url = f"{self.base_url}/v2/{endpoint}"
         if query_params:
@@ -232,7 +232,7 @@ class SigmaOrganization(ConfigurableResource):
         return response.json()
 
     async def _fetch_json_async_paginated_entries(
-        self, endpoint: str, query_params: Optional[dict[str, Any]] = None, limit: int = 1000
+        self, endpoint: str, query_params: dict[str, Any] | None = None, limit: int = 1000
     ) -> list[dict[str, Any]]:
         entries = []
 
@@ -633,7 +633,7 @@ class SigmaOrganization(ConfigurableResource):
 
     @cached_method
     async def build_organization_data(
-        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool, fetch_lineage_data: bool
+        self, sigma_filter: SigmaFilter | None, fetch_column_data: bool, fetch_lineage_data: bool
     ) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
@@ -701,7 +701,7 @@ class SigmaOrganization(ConfigurableResource):
     def build_defs(
         self,
         dagster_sigma_translator: type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
-        sigma_filter: Optional[SigmaFilter] = None,
+        sigma_filter: SigmaFilter | None = None,
         fetch_column_data: bool = True,
     ) -> Definitions:
         """Returns a Definitions object representing the Sigma content in the organization.
@@ -723,13 +723,11 @@ class SigmaOrganization(ConfigurableResource):
 @beta
 def load_sigma_asset_specs(
     organization: SigmaOrganization,
-    dagster_sigma_translator: Optional[
-        DagsterSigmaTranslator | type[DagsterSigmaTranslator]
-    ] = None,
-    sigma_filter: Optional[SigmaFilter] = None,
+    dagster_sigma_translator: DagsterSigmaTranslator | type[DagsterSigmaTranslator] | None = None,
+    sigma_filter: SigmaFilter | None = None,
     fetch_column_data: bool = True,
     fetch_lineage_data: bool = True,
-    snapshot_path: Optional[str | Path] = None,
+    snapshot_path: str | Path | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
@@ -795,8 +793,8 @@ def _get_translator_spec_assert_keys_match(
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
     translator: DagsterSigmaTranslator
-    snapshot: Optional[RepositoryLoadData]
-    sigma_filter: Optional[SigmaFilter] = None
+    snapshot: RepositoryLoadData | None
+    sigma_filter: SigmaFilter | None = None
     fetch_column_data: bool = True
     fetch_lineage_data: bool = True
 

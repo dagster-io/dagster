@@ -4,7 +4,6 @@ import os
 import subprocess
 import sys
 from subprocess import CompletedProcess
-from typing import Optional
 from zipfile import ZipFile
 
 import click
@@ -78,7 +77,7 @@ def build_pex(
     requirements_filepaths: list[str],
     pex_flags: list[str],
     output_pex_path: str,
-    pex_root: Optional[str] = None,
+    pex_root: str | None = None,
 ) -> CompletedProcess:
     """Invoke pex with common build flags and pass parameters through to specific pex flags.
 
@@ -153,7 +152,7 @@ def parse_python_version(python_version: str) -> version.Version:
     return version.Version(python_version)
 
 
-def parse_kv(ctx, param: str, value: Optional[str]):
+def parse_kv(ctx, param: str, value: str | None):
     if not value:
         return {}
     try:

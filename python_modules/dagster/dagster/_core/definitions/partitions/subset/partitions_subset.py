@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
-from typing import Generic, Optional
+from typing import Generic
 
 from typing_extensions import TypeVar
 
@@ -100,8 +100,8 @@ class PartitionsSubset(ABC, Generic[T_str]):
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serialized_partitions_def_unique_id: Optional[str],
-        serialized_partitions_def_class_name: Optional[str],
+        serialized_partitions_def_unique_id: str | None,
+        serialized_partitions_def_class_name: str | None,
     ) -> bool: ...
 
     @abstractmethod
@@ -115,7 +115,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @classmethod
     @abstractmethod
     def create_empty_subset(
-        cls, partitions_def: Optional[PartitionsDefinition] = None
+        cls, partitions_def: PartitionsDefinition | None = None
     ) -> "PartitionsSubset[T_str]": ...
 
     def to_serializable_subset(self) -> "PartitionsSubset":

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, create_model
 
 from schema.charts.utils import kubernetes
@@ -17,33 +15,33 @@ ReadinessProbeWithEnabled = create_model(
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
-    dagsterApiGrpcArgs: Optional[list[str]] = None
-    codeServerArgs: Optional[list[str]] = None
-    includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns] = None
-    deploymentNamespace: Optional[str] = None
+    dagsterApiGrpcArgs: list[str] | None = None
+    codeServerArgs: list[str] | None = None
+    includeConfigInLaunchedRuns: UserDeploymentIncludeConfigInLaunchedRuns | None = None
+    deploymentNamespace: str | None = None
     port: int
-    env: Optional[dict[str, str] | list[kubernetes.EnvVar]] = None
-    envConfigMaps: Optional[list[kubernetes.ConfigMapEnvSource]] = None
-    envSecrets: Optional[list[kubernetes.SecretEnvSource]] = None
-    annotations: Optional[kubernetes.Annotations] = None
-    nodeSelector: Optional[kubernetes.NodeSelector] = None
-    affinity: Optional[kubernetes.Affinity] = None
-    tolerations: Optional[kubernetes.Tolerations] = None
-    podSecurityContext: Optional[kubernetes.PodSecurityContext] = None
-    securityContext: Optional[kubernetes.SecurityContext] = None
-    resources: Optional[kubernetes.Resources] = None
-    livenessProbe: Optional[kubernetes.LivenessProbe] = None
-    readinessProbe: Optional[ReadinessProbeWithEnabled] = None
-    startupProbe: Optional[kubernetes.StartupProbe] = None
-    labels: Optional[dict[str, str]] = None
-    volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
-    volumes: Optional[list[kubernetes.Volume]] = None
-    schedulerName: Optional[str] = None
-    initContainers: Optional[
-        list[kubernetes.Container | kubernetes.InitContainerWithStructuredImage]
-    ] = None
-    sidecarContainers: Optional[list[kubernetes.Container]] = None
-    deploymentStrategy: Optional[kubernetes.DeploymentStrategy] = None
+    env: dict[str, str] | list[kubernetes.EnvVar] | None = None
+    envConfigMaps: list[kubernetes.ConfigMapEnvSource] | None = None
+    envSecrets: list[kubernetes.SecretEnvSource] | None = None
+    annotations: kubernetes.Annotations | None = None
+    nodeSelector: kubernetes.NodeSelector | None = None
+    affinity: kubernetes.Affinity | None = None
+    tolerations: kubernetes.Tolerations | None = None
+    podSecurityContext: kubernetes.PodSecurityContext | None = None
+    securityContext: kubernetes.SecurityContext | None = None
+    resources: kubernetes.Resources | None = None
+    livenessProbe: kubernetes.LivenessProbe | None = None
+    readinessProbe: ReadinessProbeWithEnabled | None = None
+    startupProbe: kubernetes.StartupProbe | None = None
+    labels: dict[str, str] | None = None
+    volumeMounts: list[kubernetes.VolumeMount] | None = None
+    volumes: list[kubernetes.Volume] | None = None
+    schedulerName: str | None = None
+    initContainers: (
+        list[kubernetes.Container | kubernetes.InitContainerWithStructuredImage] | None
+    ) = None
+    sidecarContainers: list[kubernetes.Container] | None = None
+    deploymentStrategy: kubernetes.DeploymentStrategy | None = None
 
 
 class UserDeployments(BaseModel):

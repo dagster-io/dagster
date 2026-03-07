@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
@@ -11,17 +11,17 @@ from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 
 class JobIndex:
     job_snapshot: JobSnap
-    parent_job_snapshot: Optional[JobSnap]
+    parent_job_snapshot: JobSnap | None
     _node_defs_snaps_index: Mapping[str, OpDefSnap | GraphDefSnap]
     _dagster_type_snaps_by_name_index: Mapping[str, DagsterTypeSnap]
     dep_structure_index: DependencyStructureIndex
     _comp_dep_structures: Mapping[str, DependencyStructureIndex]
-    _job_snapshot_id: Optional[str]
+    _job_snapshot_id: str | None
 
     def __init__(
         self,
         job_snapshot: JobSnap,
-        parent_job_snapshot: Optional[JobSnap],
+        parent_job_snapshot: JobSnap | None,
     ):
         self.job_snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnap)
         self.parent_job_snapshot = check.opt_inst_param(
@@ -52,7 +52,7 @@ class JobIndex:
         return self.job_snapshot.name
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         return self.job_snapshot.description
 
     @property

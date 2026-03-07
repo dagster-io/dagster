@@ -69,6 +69,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/bigquery/tutorial/resource/downstream.py",
     f"{snippets_folder}/databricks/dagster_code.py",
     f"{snippets_folder}/databricks/databricks_code.py",
+    f"{snippets_folder}/databricks/databricks_connect.py",
     f"{snippets_folder}/dbt/potemkin_dag_for_cover_image.py",
     f"{snippets_folder}/dbt/quickstart/with_project.py",
     f"{snippets_folder}/dbt/quickstart/with_single_file.py",

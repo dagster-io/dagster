@@ -1,6 +1,26 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "use_case_repository"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-aws",
+    "dagster-sling",
+    "dagster-pipes",
+    "dagster-snowflake",
+    "flask",
+    "markdown",
+    "polars",
+    "pymdown-extensions",
+    "python-frontmatter",
+    "sling",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest", "ruff"]
 
 [tool.dagster]
 module_name = "use_case_repository.definitions"

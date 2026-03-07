@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from functools import cached_property
-from typing import Optional
 
 from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.components.power_bi_workspace.component import (

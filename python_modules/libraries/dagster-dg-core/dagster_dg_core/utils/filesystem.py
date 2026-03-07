@@ -2,7 +2,7 @@ import datetime
 import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from dagster_shared.scaffold import DEFAULT_FILE_EXCLUDE_PATTERNS
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -20,7 +20,7 @@ class PathChangeHandler(FileSystemEventHandler):
     def __init__(
         self,
         paths: Sequence[Path],
-        includes: Optional[Sequence[str]],
+        includes: Sequence[str] | None,
         excludes: Sequence[str],
         callback: Callable[[str], Any],
     ):
@@ -54,7 +54,7 @@ SHOULD_WATCHER_EXIT = False
 def watch_paths(
     paths: Sequence[Path],
     callback: Callable[[str], Any],
-    includes: Optional[Sequence[str]] = None,
+    includes: Sequence[str] | None = None,
     excludes: Sequence[str] = DEFAULT_FILE_EXCLUDE_PATTERNS,
 ):
     """Watches the given paths for changes and calls the callback when they change.

@@ -23,8 +23,8 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [tool.dg]
 directory_type = "project"
@@ -32,10 +32,6 @@ directory_type = "project"
 [tool.dg.project]
 root_module = "project_components_pdf_extraction"
 defs_module = "project_components_pdf_extraction.defs"
-
-[tool.setuptools.packages.find]
-exclude=["project_components_pdf_extraction_tests"]
-
 
 [tool.uv.sources]
 dagster-test = { path = '../../../python_modules/dagster-test', editable = true }

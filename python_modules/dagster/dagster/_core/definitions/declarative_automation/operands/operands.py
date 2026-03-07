@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 
 from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.serdes.utils import SerializableTimeDelta
@@ -265,11 +264,11 @@ class CronTickPassedCondition(SubsetAutomationCondition):
 @whitelist_for_serdes
 @record
 class InLatestTimeWindowCondition(SubsetAutomationCondition):
-    serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
+    serializable_lookback_timedelta: SerializableTimeDelta | None = None
 
     @staticmethod
     def from_lookback_delta(
-        lookback_delta: Optional[datetime.timedelta],
+        lookback_delta: datetime.timedelta | None,
     ) -> "InLatestTimeWindowCondition":
         return InLatestTimeWindowCondition(
             serializable_lookback_timedelta=SerializableTimeDelta.from_timedelta(lookback_delta)
@@ -278,7 +277,7 @@ class InLatestTimeWindowCondition(SubsetAutomationCondition):
         )
 
     @property
-    def lookback_timedelta(self) -> Optional[datetime.timedelta]:
+    def lookback_timedelta(self) -> datetime.timedelta | None:
         return (
             self.serializable_lookback_timedelta.to_timedelta()
             if self.serializable_lookback_timedelta

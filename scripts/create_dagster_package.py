@@ -32,33 +32,18 @@ def _make_dagster_package(package_name: str):
     jinja_env = Environment(loader=FileSystemLoader(templates_path))
 
     files_to_create = {
-        ".coveragerc": {
-            "path": os.path.join(package_path, ".coveragerc"),
-            "has_todos": False,
-            "kwargs": {},
-        },
         "LICENSE": {
             "path": os.path.join(package_path, "LICENSE"),
             "has_todos": False,
             "kwargs": {},
-        },
-        "MANIFEST.in": {
-            "path": os.path.join(package_path, "MANIFEST.in"),
-            "has_todos": False,
-            "kwargs": {"underscore_name": package_name_underscore},
         },
         "README.md": {
             "path": os.path.join(package_path, "README.md"),
             "has_todos": False,
             "kwargs": {"hyphen_name": package_name},
         },
-        "setup.cfg": {
-            "path": os.path.join(package_path, "setup.cfg"),
-            "has_todos": False,
-            "kwargs": {"underscore_name": package_name_underscore},
-        },
-        "setup.py": {
-            "path": os.path.join(package_path, "setup.py"),
+        "pyproject.toml": {
+            "path": os.path.join(package_path, "pyproject.toml"),
             "has_todos": True,
             "kwargs": {
                 "underscore_name": package_name_underscore,

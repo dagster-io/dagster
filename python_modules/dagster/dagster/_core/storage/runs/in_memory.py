@@ -1,7 +1,6 @@
 import uuid
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Optional
 
 import sqlalchemy as db
 from sqlalchemy.engine import Connection
@@ -20,7 +19,7 @@ class InMemoryRunStorage(SqlRunStorage):
     WARNING: The Dagster UI and other core functionality will not work if this is used on a real DagsterInstance
     """
 
-    def __init__(self, preload: Optional[Sequence[DebugRunPayload]] = None):
+    def __init__(self, preload: Sequence[DebugRunPayload] | None = None):
         self._engine = create_engine(
             create_in_memory_conn_string(f"runs-{uuid.uuid4()}"),
             poolclass=NullPool,
@@ -61,8 +60,8 @@ class InMemoryRunStorage(SqlRunStorage):
     def connect(self) -> Iterator[Connection]:
         with self._engine.connect() as conn:
             with conn.begin():
-                conn.execute(db.text("PRAGMA journal_mode=WAL;"))
-                conn.execute(db.text("PRAGMA foreign_keys=ON;"))
+                conn.execute(db.text("PRAGMA journal_mode=WAL;")).close()
+                conn.execute(db.text("PRAGMA foreign_keys=ON;")).close()
                 yield conn
 
     def upgrade(self) -> None:

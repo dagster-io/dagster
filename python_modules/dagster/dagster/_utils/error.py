@@ -5,7 +5,7 @@ import sys
 import traceback
 import uuid
 from types import TracebackType
-from typing import Optional, TypeAlias
+from typing import TypeAlias
 
 from dagster_shared.error import SerializableErrorInfo
 
@@ -130,7 +130,7 @@ def _generate_partly_redacted_framework_error_message(
 def serializable_error_info_from_exc_info(
     exc_info: ExceptionInfo,
     # Whether to forward serialized errors thrown from subprocesses
-    hoist_user_code_error: Optional[bool] = True,
+    hoist_user_code_error: bool | None = True,
 ) -> SerializableErrorInfo:
     """This function is used to turn an exception into a serializable object that can be passed
     across process boundaries or sent over GraphQL.
@@ -181,8 +181,8 @@ def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErr
 
 
 def truncate_event_error_info(
-    error_info: Optional[SerializableErrorInfo],
-) -> Optional[SerializableErrorInfo]:
+    error_info: SerializableErrorInfo | None,
+) -> SerializableErrorInfo | None:
     event_error_field_size_limit = int(os.getenv("DAGSTER_EVENT_ERROR_FIELD_SIZE_LIMIT", "500000"))
     event_error_max_stack_trace_depth = int(
         os.getenv("DAGSTER_EVENT_ERROR_MAX_STACK_TRACE_DEPTH", "5")
@@ -202,7 +202,7 @@ def truncate_serialized_error(
     error_info: SerializableErrorInfo,
     field_size_limit: int,
     max_depth: int,
-    truncations: Optional[list[str]] = None,
+    truncations: list[str] | None = None,
 ):
     truncations = [] if truncations is None else truncations
 

@@ -2,7 +2,6 @@ import os
 import signal
 from collections.abc import Mapping, Sequence
 from subprocess import PIPE, Popen
-from typing import Optional
 
 from dagster_pipes import PipesExtras
 
@@ -50,10 +49,10 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        env: Optional[Mapping[str, str]] = None,
-        cwd: Optional[str] = None,
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        env: Mapping[str, str] | None = None,
+        cwd: str | None = None,
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
         forward_termination: bool = True,
         forward_stdio: bool = True,
         termination_timeout_seconds: float = 20,
@@ -91,10 +90,10 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
-        extras: Optional[PipesExtras] = None,
+        extras: PipesExtras | None = None,
         command: str | Sequence[str],
-        env: Optional[Mapping[str, str]] = None,
-        cwd: Optional[str] = None,
+        env: Mapping[str, str] | None = None,
+        cwd: str | None = None,
     ) -> PipesClientCompletedInvocation:
         """Synchronously execute a subprocess with in a pipes session.
 

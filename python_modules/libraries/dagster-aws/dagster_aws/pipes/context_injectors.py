@@ -4,7 +4,7 @@ import random
 import string
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.pipes.client import PipesContextInjector, PipesParams
@@ -28,7 +28,7 @@ class PipesS3ContextInjector(PipesContextInjector):
 
     """
 
-    def __init__(self, *, bucket: str, client: "S3Client", key_prefix: Optional[str] = None):
+    def __init__(self, *, bucket: str, client: "S3Client", key_prefix: str | None = None):
         super().__init__()
         self.bucket = check.str_param(bucket, "bucket")
         self.client = client

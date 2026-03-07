@@ -41,7 +41,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         self,
         logger_fn: "InitLoggerFunction",
         config_schema: Any = None,
-        description: Optional[str] = None,
+        description: str | None = None,
     ):
         self._logger_fn = check.callable_param(logger_fn, "logger_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
@@ -102,13 +102,13 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
 
     @public
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Optional[str]: A human-readable description of the logger."""
         return self._description
 
     def copy_for_configured(
         self,
-        description: Optional[str],
+        description: str | None,
         config_schema: Any,
     ) -> "LoggerDefinition":
         return LoggerDefinition(
@@ -120,20 +120,20 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
 
 @overload
 def logger(
-    config_schema: CoercableToConfigSchema, description: Optional[str] = ...
+    config_schema: CoercableToConfigSchema, description: str | None = ...
 ) -> Callable[["InitLoggerFunction"], "LoggerDefinition"]: ...
 
 
 @overload
 def logger(
-    config_schema: "InitLoggerFunction", description: Optional[str] = ...
+    config_schema: "InitLoggerFunction", description: str | None = ...
 ) -> "LoggerDefinition": ...
 
 
 @public
 def logger(
     config_schema: Union[CoercableToConfigSchema, "InitLoggerFunction"] = None,
-    description: Optional[str] = None,
+    description: str | None = None,
 ) -> Union["LoggerDefinition", Callable[["InitLoggerFunction"], "LoggerDefinition"]]:
     """Define a logger.
 

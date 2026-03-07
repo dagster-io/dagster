@@ -6,7 +6,7 @@ import threading
 from collections.abc import Iterable, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from dagster_shared.error import DagsterError
 
@@ -67,9 +67,9 @@ def execute_backfill_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     shutdown_event: threading.Event,
-    until: Optional[float] = None,
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    until: float | None = None,
+    threadpool_executor: ThreadPoolExecutor | None = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
 ) -> "DaemonIterator":
     from dagster._daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
     from dagster._daemon.daemon import SpanMarker
@@ -112,11 +112,11 @@ def execute_backfill_iteration_loop(
 def execute_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    backfill_futures: Optional[dict[str, Future]] = None,
-    debug_crash_flags: Optional[Mapping[str, int]] = None,
-) -> Iterable[Optional[SerializableErrorInfo]]:
+    threadpool_executor: ThreadPoolExecutor | None = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+    backfill_futures: dict[str, Future] | None = None,
+    debug_crash_flags: Mapping[str, int] | None = None,
+) -> Iterable[SerializableErrorInfo | None]:
     instance = workspace_process_context.instance
 
     in_progress_backfills = instance.get_backfills(
@@ -165,9 +165,9 @@ def execute_backfill_iteration_with_instigation_logger(
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: "DagsterInstance",
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    debug_crash_flags: Optional[Mapping[str, int]] = None,
-) -> Iterable[Optional[SerializableErrorInfo]]:
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+    debug_crash_flags: Mapping[str, int] | None = None,
+) -> Iterable[SerializableErrorInfo | None]:
     with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
         # create a logger that will always include the backfill_id as an `extra`
         backfill_logger = cast(
@@ -246,11 +246,11 @@ def execute_backfill_jobs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     backfill_jobs: Sequence[PartitionBackfill],
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    backfill_futures: Optional[dict[str, Future]] = None,
-    debug_crash_flags: Optional[Mapping[str, int]] = None,
-) -> Iterable[Optional[SerializableErrorInfo]]:
+    threadpool_executor: ThreadPoolExecutor | None = None,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
+    backfill_futures: dict[str, Future] | None = None,
+    debug_crash_flags: Mapping[str, int] | None = None,
+) -> Iterable[SerializableErrorInfo | None]:
     instance = workspace_process_context.instance
 
     for backfill_job in backfill_jobs:

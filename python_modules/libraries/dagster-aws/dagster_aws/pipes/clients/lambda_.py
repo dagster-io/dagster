@@ -1,6 +1,6 @@
 import json
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import boto3
 from dagster import PipesClient
@@ -35,9 +35,9 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        client: Optional[boto3.client] = None,  # pyright: ignore (reportGeneralTypeIssues)
-        context_injector: Optional[PipesContextInjector] = None,
-        message_reader: Optional[PipesMessageReader] = None,
+        client: "boto3.client | None" = None,  # pyright: ignore (reportGeneralTypeIssues)
+        context_injector: PipesContextInjector | None = None,
+        message_reader: PipesMessageReader | None = None,
     ):
         self._client = client or boto3.client("lambda")
         self._message_reader = message_reader or PipesLambdaLogsMessageReader()

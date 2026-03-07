@@ -1,6 +1,5 @@
 import os
 from collections.abc import Mapping
-from typing import Optional
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
@@ -35,8 +34,8 @@ from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 )
 def make_dagster_definitions_from_airflow_dag_bag(
     dag_bag: DagBag,
-    connections: Optional[list[Connection]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    connections: list[Connection] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = {},
 ) -> Definitions:
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
 
@@ -87,8 +86,8 @@ def make_dagster_definitions_from_airflow_dag_bag(
 def make_dagster_definitions_from_airflow_dags_path(
     dag_path: str,
     safe_mode: bool = True,
-    connections: Optional[list[Connection]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    connections: list[Connection] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = {},
 ) -> Definitions:
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
@@ -163,7 +162,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     )
 )
 def make_dagster_definitions_from_airflow_example_dags(
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    resource_defs: Mapping[str, ResourceDefinition] | None = {},
 ) -> Definitions:
     """Construct a Dagster repository for Airflow's example DAGs.
 
@@ -207,8 +206,8 @@ def make_dagster_definitions_from_airflow_example_dags(
 )
 def make_schedules_and_jobs_from_airflow_dag_bag(
     dag_bag: DagBag,
-    connections: Optional[list[Connection]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    connections: list[Connection] | None = None,
+    resource_defs: Mapping[str, ResourceDefinition] | None = {},
 ) -> tuple[list[ScheduleDefinition], list[JobDefinition]]:
     """Construct Dagster Schedules and Jobs corresponding to Airflow DagBag.
 

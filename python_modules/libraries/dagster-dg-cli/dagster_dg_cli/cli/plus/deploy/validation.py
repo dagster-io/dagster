@@ -1,13 +1,12 @@
 """Validation for dg plus deploy commands."""
 
 import pathlib
-from typing import Optional
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
-def _extract_dagster_env_from_url(url: Optional[str]) -> Optional[str]:
+def _extract_dagster_env_from_url(url: str | None) -> str | None:
     """Extract dagster_env from a DagsterPlusCliConfig URL.
 
     Args:

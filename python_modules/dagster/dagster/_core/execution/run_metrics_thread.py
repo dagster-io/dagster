@@ -4,7 +4,6 @@ import os
 import os.path
 import threading
 from sys import platform
-from typing import Optional
 
 import dagster._check as check
 from dagster._core.execution.telemetry import RunTelemetryData
@@ -64,9 +63,9 @@ def _metric_tags(dagster_run: DagsterRun) -> dict[str, str]:
 
 
 def _get_container_metrics(
-    previous_cpu_usage_ms: Optional[float] = None,
-    previous_measurement_timestamp: Optional[float] = None,
-    logger: Optional[logging.Logger] = None,
+    previous_cpu_usage_ms: float | None = None,
+    previous_measurement_timestamp: float | None = None,
+    logger: logging.Logger | None = None,
 ) -> dict[str, float | None]:
     metrics = retrieve_containerized_utilization_metrics(logger=logger)
 
@@ -171,7 +170,7 @@ def _capture_metrics(
     python_metrics_enabled: bool,
     shutdown_event: threading.Event,
     polling_interval: float = DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> bool:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -238,10 +237,10 @@ def _capture_metrics(
 def start_run_metrics_thread(
     instance: DagsterInstance,
     dagster_run: DagsterRun,
-    python_metrics_enabled: Optional[bool] = False,
-    logger: Optional[logging.Logger] = None,
+    python_metrics_enabled: bool | None = False,
+    logger: logging.Logger | None = None,
     polling_interval: float = DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
-) -> tuple[Optional[threading.Thread], Optional[threading.Event]]:
+) -> tuple[threading.Thread | None, threading.Event | None]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.opt_inst_param(logger, "logger", logging.Logger)
@@ -295,7 +294,7 @@ def start_run_metrics_thread(
 def stop_run_metrics_thread(
     thread: threading.Thread,
     stop_event: threading.Event,
-    timeout: Optional[int] = DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS,
+    timeout: int | None = DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS,
 ) -> bool:
     thread = check.not_none(thread)
     stop_event = check.not_none(stop_event)

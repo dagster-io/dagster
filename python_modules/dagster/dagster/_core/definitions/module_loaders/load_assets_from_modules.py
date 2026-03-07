@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Iterable, Iterator, Sequence
 from importlib import import_module
 from types import ModuleType
-from typing import Optional, TypeAlias, cast, get_args
+from typing import TypeAlias, cast, get_args
 
 import dagster._check as check
 from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs
@@ -64,12 +64,12 @@ AssetLoaderTypes: TypeAlias = AssetsDefinition | SourceAsset | CacheableAssetsDe
 )
 def load_assets_from_modules(
     modules: Iterable[ModuleType],
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    automation_condition: Optional[AutomationCondition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    automation_condition: AutomationCondition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
 ) -> Sequence[AssetLoaderTypes]:
@@ -141,12 +141,12 @@ def load_assets_from_modules(
     breaking_version="1.10.0",
 )
 def load_assets_from_current_module(
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    automation_condition: Optional[AutomationCondition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    automation_condition: AutomationCondition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
 ) -> Sequence[AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec]:
@@ -204,12 +204,12 @@ def load_assets_from_current_module(
 )
 def load_assets_from_package_module(
     package_module: ModuleType,
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    automation_condition: Optional[AutomationCondition] = None,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    automation_condition: AutomationCondition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
 ) -> Sequence[AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec]:
@@ -263,11 +263,11 @@ def load_assets_from_package_module(
 )
 def load_assets_from_package_name(
     package_name: str,
-    group_name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    group_name: str | None = None,
+    key_prefix: CoercibleToAssetKeyPrefix | None = None,
     *,
-    backfill_policy: Optional[BackfillPolicy] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    backfill_policy: BackfillPolicy | None = None,
+    source_key_prefix: CoercibleToAssetKeyPrefix | None = None,
     include_specs: bool = False,
     **kwargs,
 ) -> Sequence[AssetsDefinition | SourceAsset | CacheableAssetsDefinition | AssetSpec]:

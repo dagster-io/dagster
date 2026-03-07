@@ -1,12 +1,12 @@
 """Utilities for working with @public-annotated symbols in the Dagster codebase."""
 
 import inspect
-from typing import Any, Optional
+from typing import Any
 
 from dagster._annotations import is_public
 
 
-def is_valid_public_method(method: Any) -> tuple[bool, Optional[Any]]:
+def is_valid_public_method(method: Any) -> tuple[bool, Any | None]:
     """Check if a method is valid and @public-annotated.
 
     This function handles the different types of methods (properties, static methods,

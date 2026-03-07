@@ -24,7 +24,7 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
+[tool.hatch.build]
 packages = ["src/data_quality_patterns"]
 
 [tool.dagster]

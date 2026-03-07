@@ -24,7 +24,7 @@ class PartitioningInformation(NamedTuple):
     partitioning_type: PartitionDefinitionType
     partition_keys: Sequence[str]
     # Eventually we can add more of these for different partitioning types
-    additional_info: Optional[TimeWindowPartitioningInformation]
+    additional_info: TimeWindowPartitioningInformation | None
 
     @staticmethod
     def from_asset_node_graphql(
@@ -73,7 +73,7 @@ class PartitioningInformation(NamedTuple):
 
 def _build_additional_info_for_type(
     asset_node: Mapping[str, Any], partitioning_type: PartitionDefinitionType
-) -> Optional[TimeWindowPartitioningInformation]:
+) -> TimeWindowPartitioningInformation | None:
     if partitioning_type != PartitionDefinitionType.TIME_WINDOW:
         return None
     return TimeWindowPartitioningInformation(fmt=asset_node["partitionDefinition"]["fmt"])

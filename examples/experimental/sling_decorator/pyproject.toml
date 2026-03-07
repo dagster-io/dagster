@@ -8,9 +8,6 @@ version = "0.1.0"
 dependencies = [
     "dagster-webserver","sling>=1.1.7"
 ]
-[tool.setuptools]
-packages = ["sling_decorator"]
-
 [tool.dagster]
 module_name = "sling_decorator.definitions"
 code_location_name = "sling_decorator"

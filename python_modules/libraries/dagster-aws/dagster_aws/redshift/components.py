@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -22,22 +21,22 @@ class CredentialsRenderMixin:
 class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model, CredentialsRenderMixin):
     """Credentials and connection configuration for Redshift."""
 
-    host: Optional[str] = Field(default=None, description="Redshift host")
+    host: str | None = Field(default=None, description="Redshift host")
     port: int = Field(default=5439, description="Redshift port")
-    user: Optional[str] = Field(default=None, description="Username for Redshift connection")
-    password: Optional[str] = Field(default=None, description="Password for Redshift connection")
-    database: Optional[str] = Field(
+    user: str | None = Field(default=None, description="Username for Redshift connection")
+    password: str | None = Field(default=None, description="Password for Redshift connection")
+    database: str | None = Field(
         default=None,
         description=(
             "Name of the default database to use. After login, you can use USE DATABASE to change"
             " the database."
         ),
     )
-    autocommit: Optional[bool] = Field(default=None, description="Whether to autocommit queries")
+    autocommit: bool | None = Field(default=None, description="Whether to autocommit queries")
     connect_timeout: int = Field(
         default=5, description="Timeout for connection to Redshift cluster. Defaults to 5 seconds."
     )
-    sslmode: Optional[str] = Field(
+    sslmode: str | None = Field(
         default="require",
         description=(
             "SSL mode to use. See the Redshift documentation for reference:"
@@ -57,7 +56,7 @@ class RedshiftClientResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     credentials: RedshiftCredentialsComponent = Field(
         description="Redshift credentials - inline configuration."
     )
-    resource_key: Optional[str] = Field(
+    resource_key: str | None = Field(
         default=None,
         description="The key under which the Redshift resource will be bound to the definitions.",
     )

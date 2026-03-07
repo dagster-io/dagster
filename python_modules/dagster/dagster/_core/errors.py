@@ -75,8 +75,8 @@ If this config type represents a resource dependency, its annotation must either
 
 
 def _generate_pythonic_config_error_message(
-    config_class: Optional[type],
-    field_name: Optional[str],
+    config_class: type | None,
+    field_name: str | None,
     invalid_type: Any,
     is_resource: bool = False,
 ) -> str:
@@ -104,8 +104,8 @@ class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
 
     def __init__(
         self,
-        config_class: Optional[type],
-        field_name: Optional[str],
+        config_class: type | None,
+        field_name: str | None,
         invalid_type: Any,
         is_resource: bool = False,
         **kwargs,
@@ -132,7 +132,7 @@ class DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(DagsterError):
     def __init__(
         self,
         config_class_name: str,
-        field_name: Optional[str],
+        field_name: str | None,
         **kwargs,
     ):
         self.field_name = field_name

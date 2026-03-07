@@ -4,7 +4,7 @@ description: Execute Python scripts as assets with Dagster components
 sidebar_position: 700
 ---
 
-Dagster provides a `PythonScriptComponent` that you can use to execute Python scripts as assets in your Dagster project. This component runs your Python scripts in a subprocess using [Dagster Pipes](/guides/build/external-pipelines), allowing you to leverage existing Python scripts while benefiting from Dagster's orchestration and observability features. This guide will walk you through how to use the `PythonScriptComponent` to execute your Python scripts.
+Dagster provides a `PythonScriptComponent` that you can use to execute Python scripts as assets in your Dagster project. This component runs your Python scripts in a subprocess using [Dagster Pipes](/integrations/external-pipelines), allowing you to leverage existing Python scripts while benefiting from Dagster's orchestration and observability features. This guide will walk you through how to use the `PythonScriptComponent` to execute your Python scripts.
 
 ## 1. Prepare a Dagster project
 
@@ -66,7 +66,7 @@ Navigate to the Dagster UI and you'll see your assets. To execute your Python sc
 
 ### Log metadata inside Python script
 
-For more advanced use cases, you can use [Dagster Pipes](/guides/build/external-pipelines) to pass metadata from your Python script back to Dagster. This allows you to provide rich information about your assets directly in the Dagster UI:
+For more advanced use cases, you can use [Dagster Pipes](/integrations/external-pipelines) to pass metadata from your Python script back to Dagster. This allows you to provide rich information about your assets directly in the Dagster UI:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/8-advanced-pipes-script.py"
