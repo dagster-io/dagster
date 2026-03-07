@@ -16,6 +16,10 @@
 
 ### Bugfixes
 
+- Fixed a bug where `initialize_concurrency_limit_to_default` silently no-oped on PostgreSQL due to a transaction abort triggered by a `UniqueViolation` on the second call for the same concurrency key.
+- Fixed a bug where the `using_default_limit` flag was not reset to `True` when a user-managed concurrency row was reclaimed by the default pool.
+- [dagster-postgres] Fixed `_reconcile_concurrency_limits_from_slots` causing a transaction abort on PostgreSQL when two workers race to populate the limits table during the one-time migration from the slots-only schema.
+- Fixed a bug where `_allocate_concurrency_slots` was called on a closed connection in the legacy schema path of `initialize_concurrency_limit_to_default`.
 - Fixed a bug where Dagster incorrectly called `__enter__` on nested resource attributes annotated with `dagster.ResourceDependency` during parent resource setup. (Thanks, [@danielgafni](https://github.com/danielgafni)!)
 - [ui] Fixed text wrapping and layout for long URIs in asset storage metadata section.
 

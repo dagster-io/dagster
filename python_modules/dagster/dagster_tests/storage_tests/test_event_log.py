@@ -86,6 +86,9 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def can_wipe_asset_partitions(self) -> bool:
         return False
 
+    def can_set_concurrency_defaults(self) -> bool:
+        return True
+
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
 
