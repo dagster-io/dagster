@@ -344,7 +344,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     yield conn
 
     def has_table(self, table_name: str) -> bool:
-        return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
+        with self._connect() as conn:
+            return bool(self._engine.dialect.has_table(conn, table_name))
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:
@@ -370,7 +371,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._event_watcher.watch_run(run_id, cursor, callback)
 
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
-        with self._engine.connect() as conn:
+        with self._connect() as conn:
             cursor_res = conn.execute(
                 db_select([SqlEventLogStorageTable.c.event]).where(
                     SqlEventLogStorageTable.c.id == cursor
