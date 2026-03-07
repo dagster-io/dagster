@@ -3368,6 +3368,18 @@
                     "default": null,
                     "title": "Schedulername"
                 },
+                "serviceAccountName": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Serviceaccountname"
+                },
                 "initContainers": {
                     "anyOf": [
                         {
