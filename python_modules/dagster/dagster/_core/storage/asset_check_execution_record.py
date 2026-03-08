@@ -134,7 +134,7 @@ class AssetCheckExecutionRecord(
                 else None
             ),
             create_timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
-            partition=row["partition"],
+            partition=None,
         )
 
     @classmethod

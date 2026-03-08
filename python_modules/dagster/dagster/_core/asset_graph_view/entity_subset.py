@@ -114,8 +114,9 @@ class EntitySubset(Generic[T_EntityKey]):
         if self.partitions_def is None:
             return self._asset_graph_view.get_empty_subset(key=self.key)
 
-        partition_subset = self._asset_graph_view.get_subset_from_partition_keys(
-            self.key, self.partitions_def, partition_keys
+        value = self.partitions_def.subset_with_partition_keys(partition_keys)
+        partition_subset = EntitySubset(
+            self._asset_graph_view, key=self.key, value=_ValidatedEntitySubsetValue(value)
         )
         return self.compute_intersection(partition_subset)
 
