@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public, superseded
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._record import record
 from dagster._utils.warnings import supersession_warning
 from dlt.common.destination import Destination
@@ -306,7 +307,10 @@ class DagsterDltTranslator:
         Returns:
             Mapping[str, Any]: The custom metadata entries for this resource.
         """
-        return {}
+        table_name = resource.table_name
+        if callable(table_name):
+            table_name = resource.name
+        return dict(TableMetadataSet(table_name=table_name))
 
     @superseded(
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).owners` instead.",
