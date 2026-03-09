@@ -162,7 +162,7 @@ const ReportCheckEvaluationDialogBody = ({
 
     setIsReporting(false);
 
-    const data = result.data?.reportAssetCheckEvaluation;
+    const data = result.data?.reportAssetCheckEvaluations;
     if (!data) {
       await showSharedToaster({
         message: <div>An unexpected error occurred. This evaluation was not reported.</div>,
