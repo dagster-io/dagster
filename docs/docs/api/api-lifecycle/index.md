@@ -1,6 +1,6 @@
 ---
 description: "Dagster's public, stable API adheres to semantic versioning and won't break within any major release."
-sidebar_position: 100
+sidebar_position: 10
 title: API lifecycle stages
 ---
 

@@ -1,8 +1,9 @@
 ---
 description: Comprehensive API reference for Dagster core and library.
-title: API reference
+title: API overview
 canonicalUrl: '/api'
 slug: '/api'
+sidebar_position: 1
 ---
 
 These docs cover the entire public surface of all Dagster CLIs, the core dagster SDK, REST APIs, the GraphQL API, and SDKs for public integration libraries.

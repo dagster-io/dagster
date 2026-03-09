@@ -1,7 +1,8 @@
 ---
 title: 'Dagster GraphQL API'
+sidebar_label: 'GraphQL API'
 description: Dagster exposes a GraphQL API that allows clients to interact with Dagster programmatically
-sidebar_position: 60
+sidebar_position: 50
 canonicalUrl: '/api/graphql'
 slug: '/api/graphql'
 ---
