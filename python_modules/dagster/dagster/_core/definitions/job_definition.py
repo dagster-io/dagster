@@ -1,4 +1,5 @@
 import importlib
+import logging
 import os
 import warnings
 from collections.abc import Iterable, Mapping, Sequence
@@ -941,9 +942,18 @@ class JobDefinition(IHasInternalInit):
             get_asset_graph_for_job,
         )
 
+        logger = logging.getLogger("dagster")
+
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
         selection = AssetSelection.assets(*selection_data.asset_selection)
+
+        source_graph = self.asset_layer.asset_graph.source_asset_graph
+        logger.debug(
+            "Resolving asset selection for keys: %s. Source asset graph has %d keys.",
+            selection_data.asset_selection,
+            len(source_graph.get_all_asset_keys()),
+        )
         if selection_data.asset_check_selection is not None:
             selection = selection.without_checks() | AssetSelection.checks(
                 *selection_data.asset_check_selection
