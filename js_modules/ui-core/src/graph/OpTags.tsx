@@ -1452,7 +1452,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: langfuse,
     content: 'Langfuse',
   },
-  expand: {color: '#D7A540', content: 'Expand'},
+  expand: {color: Colors.accentYellow(), content: 'Expand'},
 };
 
 // google-sheets to googlesheets, Duckdb to duckdb

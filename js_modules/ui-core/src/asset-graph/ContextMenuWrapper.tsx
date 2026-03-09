@@ -92,7 +92,7 @@ export const ContextMenuWrapper = ({
                 left: menuPosition.anchor === 'left' ? menuPosition.x : 'unset',
                 right: menuPosition.anchor === 'right' ? menuPosition.x : 'unset',
                 backgroundColor: Colors.popoverBackground(),
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                boxShadow: `0 2px 4px ${Colors.shadowDefault()}`,
                 zIndex: 10,
                 borderRadius: '4px',
               }}

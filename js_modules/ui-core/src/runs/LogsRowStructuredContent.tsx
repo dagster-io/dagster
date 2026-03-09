@@ -84,7 +84,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
         <DefaultContent
           message={node.message}
           eventType={eventType}
-          eventColor="rgba(173, 185, 152, 0.3)"
+          eventColor={Colors.backgroundGreen()}
         />
       );
 
@@ -220,7 +220,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
         <DefaultContent
           message={node.message}
           eventType={eventType}
-          eventColor="rgba(27,164,206,0.2)"
+          eventColor={Colors.backgroundCyan()}
         >
           <MetadataEntries entries={node.metadataEntries} />
         </DefaultContent>

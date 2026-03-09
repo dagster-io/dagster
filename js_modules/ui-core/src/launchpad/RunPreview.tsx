@@ -599,7 +599,7 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid ${Colors.borderDefault()};
   padding: 8px;
   margin: 8px 12px 0 -8px;
   &:last-child {
