@@ -11,8 +11,8 @@ from typing import (
     get_args,
     get_origin,
 )
-from typing_extensions import is_typeddict
 
+from typing_extensions import is_typeddict
 
 T = TypeVar("T", bound=Any)
 
