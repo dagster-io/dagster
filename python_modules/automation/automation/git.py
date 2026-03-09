@@ -137,6 +137,10 @@ def set_git_tag(tag: str, signed: bool = False, dry_run: bool = True) -> str:
 
 
 def git_commit_updates(repo_dir: str, message: str) -> None:
+    if not re.match(r"^[a-zA-Z0-9_\-./\\]+$", repo_dir):
+        raise ValueError("Invalid repo_dir")
+    if not re.match(r"^[a-zA-Z0-9_\-./\\]+$", message):
+        raise ValueError("Invalid message")
     cmds = [
         "git add -A",
         f'git commit -m "{message}"',
