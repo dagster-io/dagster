@@ -789,7 +789,6 @@ def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
             resource_type == "metric",
             resource_type == "semantic_model",
             resource_type == "saved_query",
-            resource_type == "function",
             resource_type == "model"
             and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
         ]
