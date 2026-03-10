@@ -1,0 +1,4 @@
+# serializer version: 1
+# name: TestProcessDeleteCodeLocationResponse.test_successful_response_processing[0]
+  DeleteCodeLocationResult(name='my-location')
+# ---
