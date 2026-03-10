@@ -153,6 +153,8 @@ def test_fetch_row_count_no_jobs():
     result = fetch_row_count_metadata(materialization, context, dlt_pipeline_mock)
     assert isinstance(result, TableMetadataSet)
     assert result.row_count is None
+    context.log.debug.assert_called_once()
+    context.log.debug.reset_mock()
 
     # Test with missing jobs key entirely
     materialization_no_jobs = AssetMaterialization(
