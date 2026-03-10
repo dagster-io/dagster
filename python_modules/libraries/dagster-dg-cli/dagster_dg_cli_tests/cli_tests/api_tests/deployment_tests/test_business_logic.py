@@ -9,6 +9,7 @@ import json
 import pytest
 from dagster_dg_cli.api_layer.graphql_adapter.deployment import (
     process_branch_deployments_response,
+    process_delete_deployment_response,
     process_deployment_settings_response,
     process_deployments_response,
     process_set_deployment_settings_response,
@@ -142,6 +143,120 @@ class TestProcessDeploymentSettingsResponse:
         response = {"__typename": "PythonError", "message": "Something went wrong"}
         with pytest.raises(ValueError, match="Error setting deployment settings"):
             process_set_deployment_settings_response(response)
+
+
+class TestProcessDeleteDeploymentResponse:
+    """Test the pure function that processes delete deployment GraphQL responses."""
+
+    def test_successful_branch_delete(self, snapshot):
+        """Test processing a successful delete branch deployment response."""
+        response = load_recorded_graphql_responses(
+            "deployment", "success_delete_branch_deployment"
+        )[0]
+        deployment_data = response.get("deleteDeployment", {})
+        result = process_delete_deployment_response(deployment_data)
+
+        snapshot.assert_match(result)
+
+    def test_successful_production_delete(self, snapshot):
+        """Test processing a successful delete production deployment response."""
+        response = load_recorded_graphql_responses(
+            "deployment", "success_delete_production_deployment"
+        )[0]
+        deployment_data = response.get("deleteDeployment", {})
+        result = process_delete_deployment_response(deployment_data)
+
+        snapshot.assert_match(result)
+
+
+class TestDeleteDeploymentSafetyCheck:
+    """Test the safety check logic for deleting deployments."""
+
+    def test_branch_deployment_succeeds_without_flag(self):
+        """Deleting a BRANCH deployment should not require the safety flag."""
+        from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+
+        from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
+            ReplayClient,
+        )
+
+        # First response: get_deployment (resolve name to ID)
+        # Second response: delete_deployment mutation
+        get_response = {
+            "deploymentByName": {
+                "__typename": "DagsterCloudDeployment",
+                "deploymentId": 300001,
+                "deploymentName": "feature-add-auth",
+                "deploymentType": "BRANCH",
+            }
+        }
+        delete_response = {
+            "deleteDeployment": {
+                "__typename": "DagsterCloudDeployment",
+                "deploymentId": 300001,
+                "deploymentName": "feature-add-auth",
+                "deploymentType": "BRANCH",
+            }
+        }
+        client = ReplayClient([get_response, delete_response])
+        api = DgApiDeploymentApi(client)
+
+        result = api.delete_deployment("feature-add-auth")
+        assert result.name == "feature-add-auth"
+        assert result.type == DeploymentType.BRANCH
+
+    def test_production_deployment_fails_without_flag(self):
+        """Deleting a PRODUCTION deployment without --allow-delete-full-deployment should fail."""
+        from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+
+        from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
+            ReplayClient,
+        )
+
+        get_response = {
+            "deploymentByName": {
+                "__typename": "DagsterCloudDeployment",
+                "deploymentId": 1,
+                "deploymentName": "prod",
+                "deploymentType": "PRODUCTION",
+            }
+        }
+        client = ReplayClient([get_response])
+        api = DgApiDeploymentApi(client)
+
+        with pytest.raises(ValueError, match="production deployment"):
+            api.delete_deployment("prod")
+
+    def test_production_deployment_succeeds_with_flag(self):
+        """Deleting a PRODUCTION deployment with allow_full_deployment=True should succeed."""
+        from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+
+        from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
+            ReplayClient,
+        )
+
+        get_response = {
+            "deploymentByName": {
+                "__typename": "DagsterCloudDeployment",
+                "deploymentId": 1,
+                "deploymentName": "prod",
+                "deploymentType": "PRODUCTION",
+            }
+        }
+        delete_response = {
+            "deleteDeployment": {
+                "__typename": "DagsterCloudDeployment",
+                "deploymentId": 1,
+                "deploymentName": "prod",
+                "deploymentType": "PRODUCTION",
+            }
+        }
+        client = ReplayClient([get_response, delete_response])
+        api = DgApiDeploymentApi(client)
+
+        result = api.delete_deployment("prod", allow_full_deployment=True)
+        assert result.name == "prod"
+        assert result.type == DeploymentType.PRODUCTION
 
 
 class TestFormatDeploymentSettings:

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from dagster_dg_cli.api_layer.graphql_adapter.deployment import (
+    delete_deployment_via_graphql,
     get_deployment_by_name_via_graphql,
     get_deployment_settings_via_graphql,
     list_branch_deployments_via_graphql,
@@ -37,6 +38,17 @@ class DgApiDeploymentApi:
 
     def get_deployment_settings(self) -> "DeploymentSettings":
         return get_deployment_settings_via_graphql(self.client)
+
+    def delete_deployment(self, name: str, allow_full_deployment: bool = False) -> "Deployment":
+        deployment = self.get_deployment(name)
+        from dagster_dg_cli.api_layer.schemas.deployment import DeploymentType
+
+        if deployment.type == DeploymentType.PRODUCTION and not allow_full_deployment:
+            raise ValueError(
+                f"Deployment '{name}' is a production deployment. "
+                "Use --allow-delete-full-deployment to confirm deletion."
+            )
+        return delete_deployment_via_graphql(self.client, deployment.id)
 
     def update_deployment_settings(self, settings: "DeploymentSettings") -> "DeploymentSettings":
         return set_deployment_settings_via_graphql(self.client, settings.settings)

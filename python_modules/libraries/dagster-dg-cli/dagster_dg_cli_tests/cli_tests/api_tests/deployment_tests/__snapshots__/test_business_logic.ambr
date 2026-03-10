@@ -72,6 +72,12 @@
 # name: TestProcessBranchDeploymentsResponse.test_successful_response_processing[0]
   DeploymentList(items=[Deployment(id=300001, name='feature-add-auth', type=<DeploymentType.BRANCH: 'BRANCH'>), Deployment(id=300002, name='fix-pipeline-timeout', type=<DeploymentType.BRANCH: 'BRANCH'>), Deployment(id=300003, name='refactor-sensors', type=<DeploymentType.BRANCH: 'BRANCH'>)], total=3)
 # ---
+# name: TestProcessDeleteDeploymentResponse.test_successful_branch_delete[0]
+  Deployment(id=300001, name='feature-add-auth', type=<DeploymentType.BRANCH: 'BRANCH'>)
+# ---
+# name: TestProcessDeleteDeploymentResponse.test_successful_production_delete[0]
+  Deployment(id=1, name='prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)
+# ---
 # name: TestProcessDeploymentSettingsResponse.test_successful_get_settings[0]
   DeploymentSettings(settings={'run_queue': {'max_concurrent_runs': 25, 'tag_concurrency_limits': []}, 'run_monitoring': {'start_timeout_seconds': 300}, 'run_retries': {'max_retries': 0}})
 # ---

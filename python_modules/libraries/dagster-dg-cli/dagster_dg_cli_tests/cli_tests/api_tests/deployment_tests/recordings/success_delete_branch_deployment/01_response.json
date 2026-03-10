@@ -1,0 +1,8 @@
+{
+  "deleteDeployment": {
+    "__typename": "DagsterCloudDeployment",
+    "deploymentId": 300001,
+    "deploymentName": "feature-add-auth",
+    "deploymentType": "BRANCH"
+  }
+}

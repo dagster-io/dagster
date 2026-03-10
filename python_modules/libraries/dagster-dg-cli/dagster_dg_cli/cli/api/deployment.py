@@ -205,6 +205,52 @@ def set_settings_command(
         click.echo(output)
 
 
+@click.command(name="delete", cls=DgClickCommand)
+@click.argument("name", required=True)
+@click.option(
+    "--allow-delete-full-deployment",
+    is_flag=True,
+    default=False,
+    help="Allow deleting a production (full) deployment",
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output in JSON format for machine readability",
+)
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="Deployment")
+@dg_api_options(organization_scoped=True)
+@cli_telemetry_wrapper
+@click.pass_context
+def delete_deployment_command(
+    ctx: click.Context,
+    name: str,
+    allow_delete_full_deployment: bool,
+    output_json: bool,
+    organization: str,
+    api_token: str,
+    view_graphql: bool,
+) -> None:
+    """Delete a deployment by name."""
+    config = DagsterPlusCliConfig.create_for_organization(
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
+    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+
+    api = DgApiDeploymentApi(client)
+
+    with handle_api_errors(ctx, output_json):
+        try:
+            deployment = api.delete_deployment(name, allow_delete_full_deployment)
+        except ValueError as e:
+            raise click.ClickException(str(e))
+        output = format_deployment(deployment, as_json=output_json)
+        click.echo(output)
+
+
 @click.group(
     name="settings",
     cls=DgClickGroup,
@@ -223,6 +269,7 @@ def settings_group():
     commands={
         "list": list_deployments_command,
         "get": get_deployment_command,
+        "delete": delete_deployment_command,
         "settings": settings_group,
     },
 )

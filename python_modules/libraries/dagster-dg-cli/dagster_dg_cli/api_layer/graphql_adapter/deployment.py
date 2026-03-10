@@ -272,6 +272,51 @@ def process_deployment_response(graphql_response: dict[str, Any]) -> "Deployment
         raise ValueError(f"Unexpected response type: {typename}")
 
 
+DELETE_DEPLOYMENT_MUTATION = """
+mutation CliDeleteDeployment($deploymentId: Int!) {
+    deleteDeployment(deploymentId: $deploymentId) {
+        __typename
+        ... on DagsterCloudDeployment {
+            deploymentId
+            deploymentName
+            deploymentType
+        }
+        ... on PythonError {
+            message
+        }
+    }
+}
+"""
+
+
+def process_delete_deployment_response(graphql_response: dict[str, Any]) -> "Deployment":
+    """Process GraphQL delete mutation response into Deployment.
+
+    The IGraphQLClient.execute() auto-raises on error __typename,
+    so we only need to handle the success case here.
+
+    Args:
+        graphql_response: The inner deleteDeployment value after unwrapping.
+    """
+    from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentType
+
+    return Deployment(
+        id=graphql_response["deploymentId"],
+        name=graphql_response["deploymentName"],
+        type=DeploymentType[graphql_response["deploymentType"]],
+    )
+
+
+def delete_deployment_via_graphql(
+    client: IGraphQLClient,
+    deployment_id: int,
+) -> "Deployment":
+    """Delete a deployment using GraphQL."""
+    result = client.execute(DELETE_DEPLOYMENT_MUTATION, {"deploymentId": deployment_id})
+    deployment_data = result.get("deleteDeployment", {})
+    return process_delete_deployment_response(deployment_data)
+
+
 def get_deployment_by_name_via_graphql(
     client: IGraphQLClient,
     name: str,
