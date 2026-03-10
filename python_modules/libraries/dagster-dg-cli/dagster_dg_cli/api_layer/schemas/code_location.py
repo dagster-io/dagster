@@ -41,3 +41,34 @@ class DgApiAddCodeLocationResult(BaseModel):
     """Result of adding or updating a code location."""
 
     location_name: str
+
+
+class DgApiCodeLocation(BaseModel):
+    """A code location in a deployment."""
+
+    location_name: str
+    image: str | None = None
+    status: str | None = None
+    code_source: DgApiCodeSource | None = None
+
+
+class DgApiCodeLocationList(BaseModel):
+    """List of code locations."""
+
+    items: list[DgApiCodeLocation]
+    total: int
+
+
+def _strip_nones(d: dict[str, Any]) -> dict[str, Any]:
+    """Recursively strip keys with None values from a dict."""
+    result = {}
+    for k, v in d.items():
+        if v is None:
+            continue
+        if isinstance(v, dict):
+            stripped = _strip_nones(v)
+            if stripped:
+                result[k] = stripped
+        else:
+            result[k] = v
+    return result

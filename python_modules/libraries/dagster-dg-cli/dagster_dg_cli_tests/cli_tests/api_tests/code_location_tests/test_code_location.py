@@ -4,15 +4,24 @@ import json
 import os
 import tempfile
 
-from dagster_dg_cli.api_layer.graphql_adapter.code_location import process_add_location_response
+from dagster_dg_cli.api_layer.graphql_adapter.code_location import (
+    process_add_location_response,
+    process_code_locations_response,
+)
 from dagster_dg_cli.api_layer.schemas.code_location import (
     DgApiAddCodeLocationResult,
+    DgApiCodeLocation,
     DgApiCodeLocationDocument,
+    DgApiCodeLocationList,
     DgApiCodeSource,
     DgApiGitMetadata,
 )
 from dagster_dg_cli.cli.api.code_location import build_code_location_document
-from dagster_dg_cli.cli.api.formatters import format_add_code_location_result
+from dagster_dg_cli.cli.api.formatters import (
+    format_add_code_location_result,
+    format_code_location,
+    format_code_locations,
+)
 
 
 class TestProcessAddLocationResponse:
@@ -188,3 +197,114 @@ class TestFormatResult:
         output = format_add_code_location_result(result, as_json=True)
         parsed = json.loads(output)
         assert parsed["location_name"] == "my-loc"
+
+
+class TestProcessCodeLocationsResponse:
+    """Test the pure function that processes workspace entries."""
+
+    def test_process_code_locations_response_success(self):
+        response = {
+            "workspace": {
+                "workspaceEntries": [
+                    {
+                        "locationName": "loc-a",
+                        "serializedDeploymentMetadata": json.dumps(
+                            {"image": "img-a:latest", "module_name": "mod_a"}
+                        ),
+                    },
+                    {
+                        "locationName": "loc-b",
+                        "serializedDeploymentMetadata": json.dumps(
+                            {"image": "img-b:v2", "python_file": "defs.py"}
+                        ),
+                    },
+                ]
+            }
+        }
+        result = process_code_locations_response(response)
+        assert isinstance(result, DgApiCodeLocationList)
+        assert result.total == 2
+        assert result.items[0].location_name == "loc-a"
+        assert result.items[0].image == "img-a:latest"
+        assert result.items[0].code_source is not None
+        assert result.items[0].code_source.module_name == "mod_a"
+        assert result.items[1].location_name == "loc-b"
+        assert result.items[1].image == "img-b:v2"
+        assert result.items[1].code_source is not None
+        assert result.items[1].code_source.python_file == "defs.py"
+
+    def test_process_code_locations_response_empty(self):
+        response = {"workspace": {"workspaceEntries": []}}
+        result = process_code_locations_response(response)
+        assert isinstance(result, DgApiCodeLocationList)
+        assert result.total == 0
+        assert result.items == []
+
+    def test_process_code_locations_response_no_metadata(self):
+        response = {
+            "workspace": {
+                "workspaceEntries": [
+                    {
+                        "locationName": "loc-bare",
+                        "serializedDeploymentMetadata": None,
+                    },
+                ]
+            }
+        }
+        result = process_code_locations_response(response)
+        assert result.total == 1
+        assert result.items[0].location_name == "loc-bare"
+        assert result.items[0].image is None
+        assert result.items[0].code_source is None
+
+
+class TestFormatCodeLocations:
+    """Test code location formatters."""
+
+    def test_format_code_locations_text(self):
+        locations = DgApiCodeLocationList(
+            items=[
+                DgApiCodeLocation(location_name="loc-a", image="img-a:latest"),
+                DgApiCodeLocation(location_name="loc-b", image="img-b:v2"),
+            ],
+            total=2,
+        )
+        output = format_code_locations(locations, as_json=False)
+        assert "loc-a" in output
+        assert "img-a:latest" in output
+        assert "loc-b" in output
+        assert "NAME" in output
+        assert "IMAGE" in output
+
+    def test_format_code_locations_json(self):
+        locations = DgApiCodeLocationList(
+            items=[
+                DgApiCodeLocation(location_name="loc-a", image="img-a:latest"),
+            ],
+            total=1,
+        )
+        output = format_code_locations(locations, as_json=True)
+        parsed = json.loads(output)
+        assert parsed["total"] == 1
+        assert parsed["items"][0]["location_name"] == "loc-a"
+
+    def test_format_code_location_text(self):
+        location = DgApiCodeLocation(
+            location_name="my-loc",
+            image="my-image:latest",
+            code_source=DgApiCodeSource(module_name="my_mod"),
+        )
+        output = format_code_location(location, as_json=False)
+        assert "my-loc" in output
+        assert "my-image:latest" in output
+        assert "my_mod" in output
+
+    def test_format_code_location_json(self):
+        location = DgApiCodeLocation(
+            location_name="my-loc",
+            image="my-image:latest",
+        )
+        output = format_code_location(location, as_json=True)
+        parsed = json.loads(output)
+        assert parsed["location_name"] == "my-loc"
+        assert parsed["image"] == "my-image:latest"

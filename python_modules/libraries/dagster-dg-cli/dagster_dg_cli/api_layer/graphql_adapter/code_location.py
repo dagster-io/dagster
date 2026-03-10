@@ -1,7 +1,13 @@
 """GraphQL implementation for code location operations."""
 
+import json
 from typing import TYPE_CHECKING, Any
 
+from dagster_dg_cli.api_layer.schemas.code_location import (
+    DgApiCodeLocation,
+    DgApiCodeLocationList,
+    DgApiCodeSource,
+)
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
@@ -9,6 +15,61 @@ if TYPE_CHECKING:
         DgApiAddCodeLocationResult,
         DgApiCodeLocationDocument,
     )
+
+LIST_CODE_LOCATIONS_QUERY = """
+query CliWorkspaceEntries {
+    workspace {
+        workspaceEntries {
+            locationName
+            serializedDeploymentMetadata
+        }
+    }
+}
+"""
+
+
+def process_code_locations_response(graphql_response: dict[str, Any]) -> "DgApiCodeLocationList":
+    """Process GraphQL workspace entries response into DgApiCodeLocationList."""
+    entries = graphql_response.get("workspace", {}).get("workspaceEntries", [])
+    items: list[DgApiCodeLocation] = []
+
+    for entry in entries:
+        location_name = entry["locationName"]
+        image: str | None = None
+        code_source: DgApiCodeSource | None = None
+
+        raw_metadata = entry.get("serializedDeploymentMetadata")
+        if raw_metadata:
+            metadata = json.loads(raw_metadata)
+            image = metadata.get("image")
+            python_file = metadata.get("python_file")
+            module_name = metadata.get("module_name")
+            package_name = metadata.get("package_name")
+            autoload_defs_module_name = metadata.get("autoload_defs_module_name")
+            if any([python_file, module_name, package_name, autoload_defs_module_name]):
+                code_source = DgApiCodeSource(
+                    python_file=python_file,
+                    module_name=module_name,
+                    package_name=package_name,
+                    autoload_defs_module_name=autoload_defs_module_name,
+                )
+
+        items.append(
+            DgApiCodeLocation(
+                location_name=location_name,
+                image=image,
+                code_source=code_source,
+            )
+        )
+
+    return DgApiCodeLocationList(items=items, total=len(items))
+
+
+def list_code_locations_via_graphql(client: IGraphQLClient) -> "DgApiCodeLocationList":
+    """List code locations using GraphQL."""
+    result = client.execute(LIST_CODE_LOCATIONS_QUERY, {})
+    return process_code_locations_response(result)
+
 
 ADD_OR_UPDATE_LOCATION_FROM_DOCUMENT_MUTATION = """
 mutation CliAddOrUpdateLocation($document: GenericScalar!) {

@@ -13,7 +13,11 @@ if TYPE_CHECKING:
         DgApiAssetStatus,
         DgApiEvaluationRecordList,
     )
-    from dagster_dg_cli.api_layer.schemas.code_location import DgApiAddCodeLocationResult
+    from dagster_dg_cli.api_layer.schemas.code_location import (
+        DgApiAddCodeLocationResult,
+        DgApiCodeLocation,
+        DgApiCodeLocationList,
+    )
     from dagster_dg_cli.api_layer.schemas.deployment import (
         Deployment,
         DeploymentList,
@@ -760,6 +764,38 @@ def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
 # ---------------------------------------------------------------------------
 # Code location formatters
 # ---------------------------------------------------------------------------
+
+
+def format_code_locations(locations: "DgApiCodeLocationList", as_json: bool) -> str:
+    """Format code location list for output."""
+    if as_json:
+        return locations.model_dump_json(indent=2)
+
+    headers = ["NAME", "IMAGE", "STATUS"]
+    rows = [[loc.location_name, loc.image or "", loc.status or ""] for loc in locations.items]
+    return format_table(headers, rows)
+
+
+def format_code_location(location: "DgApiCodeLocation", as_json: bool) -> str:
+    """Format single code location for output."""
+    if as_json:
+        return location.model_dump_json(indent=2)
+
+    fields = [
+        ("Name", location.location_name),
+        ("Image", location.image or "None"),
+    ]
+    if location.code_source:
+        cs = location.code_source
+        if cs.module_name:
+            fields.append(("Module", cs.module_name))
+        if cs.package_name:
+            fields.append(("Package", cs.package_name))
+        if cs.python_file:
+            fields.append(("File", cs.python_file))
+
+    return format_detail(fields)
+
 
 
 def format_add_code_location_result(result: "DgApiAddCodeLocationResult", as_json: bool) -> str:
