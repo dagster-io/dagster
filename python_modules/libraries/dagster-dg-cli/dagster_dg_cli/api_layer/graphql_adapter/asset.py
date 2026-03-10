@@ -450,44 +450,45 @@ def _fetch_assets_or_error(
     return assets_or_error.get("nodes", [])
 
 
-def list_dg_plus_api_assets_via_graphql(
+def _fetch_one_page_of_records(
     client: IGraphQLClient,
-    limit: int | None = None,
-    cursor: str | None = None,
-) -> DgApiAssetList:
-    """Fetch assets using two-step GraphQL approach.
+    cursor: str | None,
+    limit: int | None,
+) -> tuple[list[dict], str | None]:
+    """Fetch one page of asset records from assetRecordsOrError.
 
-    1. Use assetRecordsOrError for paginated asset keys
-    2. Use assetsOrError to fetch metadata for those keys
-    3. Combine and transform data
+    Returns (records, next_cursor).
     """
-    # Step 1: Get paginated asset keys
-    variables = {}
+    variables: dict = {}
     if cursor:
         variables["cursor"] = cursor
     if limit is not None:
         variables["limit"] = limit
 
     result = client.execute(ASSET_RECORDS_QUERY, variables=variables)
-
     asset_records_or_error = result.get("assetRecordsOrError", {})
     if asset_records_or_error.get("__typename") == "PythonError":
         raise Exception(f"GraphQL error: {asset_records_or_error.get('message', 'Unknown error')}")
 
     records = asset_records_or_error.get("assets", [])
     next_cursor = asset_records_or_error.get("cursor")
+    return records, next_cursor
 
+
+def _resolve_records_to_assets(
+    client: IGraphQLClient,
+    records: list[dict],
+) -> list[DgApiAsset]:
+    """Fetch asset definitions for a batch of records and return only those with valid definitions."""
     if not records:
-        return DgApiAssetList(items=[], cursor=None, has_more=False)
+        return []
 
-    # Step 2: Get detailed metadata for these asset keys
     asset_keys = [{"path": record["key"]["path"]} for record in records]
     asset_nodes = _fetch_assets_or_error(client, ASSET_DETAIL_QUERY, asset_keys)
 
-    # Step 3: Transform and combine data
-    assets = []
     nodes_by_key = {"/".join(node["key"]["path"]): node for node in asset_nodes}
 
+    assets = []
     for record in records:
         asset_key_parts = record["key"]["path"]
         asset_key = "/".join(asset_key_parts)
@@ -497,13 +498,50 @@ def list_dg_plus_api_assets_via_graphql(
         asset = _build_asset_from_node(node_data)
         if asset is not None:
             assets.append(asset)
+    return assets
 
-    has_more = next_cursor is not None
+
+def list_dg_plus_api_assets_via_graphql(
+    client: IGraphQLClient,
+    limit: int | None = None,
+    cursor: str | None = None,
+) -> DgApiAssetList:
+    """Fetch assets using two-step GraphQL approach with internal pagination.
+
+    Because assetRecordsOrError returns all asset records (including those without
+    code definitions), and we filter out assets without definitions, a single page
+    of records may yield fewer valid assets than the requested limit. To compensate,
+    we keep fetching additional pages until we have enough valid assets or the
+    backend is exhausted.
+    """
+    assets: list[DgApiAsset] = []
+    next_cursor = cursor
+
+    while True:
+        remaining = limit - len(assets) if limit is not None else None
+        records, next_cursor = _fetch_one_page_of_records(client, next_cursor, remaining)
+
+        if not records:
+            # No more records from the backend
+            next_cursor = None
+            break
+
+        page_assets = _resolve_records_to_assets(client, records)
+        assets.extend(page_assets)
+
+        if limit is not None and len(assets) >= limit:
+            # We have enough — trim to the exact limit
+            assets = assets[:limit]
+            break
+
+        if next_cursor is None:
+            # Backend exhausted
+            break
 
     return DgApiAssetList(
         items=assets,
         cursor=next_cursor,
-        has_more=has_more,
+        has_more=next_cursor is not None,
     )
 
 

@@ -764,8 +764,8 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_multiple_assets_json]
   dict({
-    'cursor': '["aws", "cloud-prod", "workspace_staging_partitions_ext"]',
-    'has_more': True,
+    'cursor': None,
+    'has_more': False,
     'items': list([
       dict({
         'asset_key': 'asset_health_report_slack',
@@ -1005,8 +1005,8 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_paginated_assets_json]
   dict({
-    'cursor': '["__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"]',
-    'has_more': True,
+    'cursor': None,
+    'has_more': False,
     'items': list([
     ]),
   })

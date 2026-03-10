@@ -59,6 +59,7 @@ Each noun file (e.g., `deployment.py`) contains:
 - `--cursor <cursor>` for cursor-based pagination (preferred)
 - `--filter <query>` for filtering results
 - `--format <table|json>` (alternative to --json flag)
+
 ## Health Subcommand Pattern
 
 Health/status data for a resource is accessed via a dedicated `get-health` subcommand rather than
