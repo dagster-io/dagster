@@ -13,7 +13,11 @@ if TYPE_CHECKING:
         DgApiAssetStatus,
         DgApiEvaluationRecordList,
     )
-    from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
+    from dagster_dg_cli.api_layer.schemas.deployment import (
+        Deployment,
+        DeploymentList,
+        DeploymentSettings,
+    )
     from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
     from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
     from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
@@ -129,6 +133,16 @@ def format_deployment(deployment: "Deployment", as_json: bool) -> str:
             ("Type", deployment.type.value),
         ]
     )
+
+
+def format_deployment_settings(settings: "DeploymentSettings", as_json: bool) -> str:
+    """Format deployment settings for output."""
+    if as_json:
+        return settings.model_dump_json(indent=2)
+
+    import yaml
+
+    return yaml.dump(settings.settings, default_flow_style=False, sort_keys=False).rstrip()
 
 
 # ---------------------------------------------------------------------------

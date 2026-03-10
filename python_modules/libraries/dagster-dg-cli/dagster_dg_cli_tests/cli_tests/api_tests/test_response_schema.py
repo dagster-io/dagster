@@ -15,6 +15,9 @@ RESPONSE_SCHEMA_COMMANDS = [
     # deployment commands (organization_scoped)
     ("api deployment list --response-schema", "DeploymentList"),
     ("api deployment get --response-schema", "Deployment"),
+    # deployment settings commands (deployment_scoped)
+    ("api deployment settings get --response-schema", "DeploymentSettings"),
+    ("api deployment settings set --response-schema", "DeploymentSettings"),
     # agent commands (organization_scoped)
     ("api agent list --response-schema", "DgApiAgentList"),
     ("api agent get --response-schema", "DgApiAgent"),

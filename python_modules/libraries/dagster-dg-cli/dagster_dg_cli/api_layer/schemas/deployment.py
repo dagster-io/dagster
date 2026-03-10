@@ -1,6 +1,7 @@
 """Deployment models for REST-like API."""
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -28,3 +29,9 @@ class DeploymentList(BaseModel):
 
     items: list[Deployment]
     total: int
+
+
+class DeploymentSettings(BaseModel):
+    """Deployment settings resource model."""
+
+    settings: dict[str, Any]

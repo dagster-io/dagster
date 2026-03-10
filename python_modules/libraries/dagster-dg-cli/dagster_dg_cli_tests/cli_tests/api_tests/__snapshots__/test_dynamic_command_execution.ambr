@@ -1144,6 +1144,12 @@
     'total': 4,
   })
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[deployment_success_get_settings_json]
+  dict({
+    'settings': dict({
+    }),
+  })
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_multiple_deployments_json]
   dict({
     'items': list([
@@ -1178,6 +1184,15 @@
   gtm20             190248  PRODUCTION
   data-eng-staging  213933  PRODUCTION
   data-eng-dev      217021  PRODUCTION
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[deployment_success_set_settings_json]
+  '''
+  Usage: dg api deployment settings set [OPTIONS] FILE_PATH
+  Try 'dg api deployment settings set -h' for help.
+  
+  Error: Invalid value for 'FILE_PATH': Path 'settings.yaml' does not exist.
   
   '''
 # ---

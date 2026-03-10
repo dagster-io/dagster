@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, Any
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
+    from dagster_dg_cli.api_layer.schemas.deployment import (
+        Deployment,
+        DeploymentList,
+        DeploymentSettings,
+    )
 
 # GraphQL queries
 LIST_DEPLOYMENTS_QUERY = """
@@ -39,6 +43,79 @@ query GetDeployment($deploymentName: String!) {
     }
 }
 """
+
+
+GET_DEPLOYMENT_SETTINGS_QUERY = """
+query GetDeploymentSettings {
+    deploymentSettings {
+        settings
+    }
+}
+"""
+
+SET_DEPLOYMENT_SETTINGS_MUTATION = """
+mutation SetDeploymentSettings($deploymentSettings: GenericScalar!) {
+    setDeploymentSettings(deploymentSettings: $deploymentSettings) {
+        __typename
+        ... on DeploymentSettings {
+            settings
+        }
+        ... on UnauthorizedError {
+            message
+        }
+        ... on PythonError {
+            message
+        }
+    }
+}
+"""
+
+
+def process_deployment_settings_response(graphql_response: dict[str, Any]) -> "DeploymentSettings":
+    """Process GraphQL response into DeploymentSettings."""
+    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentSettings
+
+    return DeploymentSettings(settings=graphql_response.get("settings", {}))
+
+
+def process_set_deployment_settings_response(
+    graphql_response: dict[str, Any],
+) -> "DeploymentSettings":
+    """Process GraphQL mutation response into DeploymentSettings."""
+    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentSettings
+
+    typename = graphql_response.get("__typename")
+
+    if typename == "DeploymentSettings":
+        return DeploymentSettings(settings=graphql_response.get("settings", {}))
+    elif typename in ["UnauthorizedError", "PythonError"]:
+        error_message = graphql_response.get("message", "Unknown error")
+        raise ValueError(f"Error setting deployment settings: {error_message}")
+    else:
+        raise ValueError(f"Unexpected response type: {typename}")
+
+
+def get_deployment_settings_via_graphql(
+    client: IGraphQLClient,
+) -> "DeploymentSettings":
+    """Fetch deployment settings using GraphQL."""
+    result = client.execute(GET_DEPLOYMENT_SETTINGS_QUERY)
+    # execute() returns {"deploymentSettings": {"settings": {...}}},
+    # unwrap the top-level query key before processing
+    settings_data = result.get("deploymentSettings", {})
+    return process_deployment_settings_response(settings_data)
+
+
+def set_deployment_settings_via_graphql(
+    client: IGraphQLClient,
+    settings: dict[str, Any],
+) -> "DeploymentSettings":
+    """Set deployment settings using GraphQL."""
+    result = client.execute(
+        SET_DEPLOYMENT_SETTINGS_MUTATION,
+        {"deploymentSettings": settings},
+    )
+    return process_set_deployment_settings_response(result)
 
 
 def process_deployments_response(graphql_response: dict[str, Any]) -> "DeploymentList":
