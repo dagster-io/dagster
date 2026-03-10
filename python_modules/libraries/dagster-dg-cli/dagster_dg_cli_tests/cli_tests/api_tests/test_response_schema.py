@@ -33,6 +33,9 @@ RESPONSE_SCHEMA_COMMANDS = [
     # secret commands (organization_scoped)
     ("api secret list --response-schema", "DgApiSecretList"),
     ("api secret get --response-schema", "DgApiSecret"),
+    # saml commands (organization_scoped)
+    ("api organization saml upload --response-schema", "SamlOperationResult"),
+    ("api organization saml remove --response-schema", "SamlOperationResult"),
     # list commands
     ("list components --response-schema", "DgComponentList"),
     ("list registry-modules --response-schema", "DgRegistryModuleList"),

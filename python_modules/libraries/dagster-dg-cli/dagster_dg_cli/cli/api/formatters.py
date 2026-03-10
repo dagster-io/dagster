@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
     from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
     from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
+    from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
     from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
     from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
     from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
@@ -165,6 +166,19 @@ def format_organization_settings(settings: "OrganizationSettings", as_json: bool
     import yaml
 
     return yaml.dump(settings.settings, default_flow_style=False, sort_keys=False).rstrip()
+
+
+# ---------------------------------------------------------------------------
+# SAML formatters
+# ---------------------------------------------------------------------------
+
+
+def format_saml_result(result: "SamlOperationResult", as_json: bool) -> str:
+    """Format SAML operation result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return result.message
 
 
 # ---------------------------------------------------------------------------
