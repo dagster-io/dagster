@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         DgApiEvaluationRecordList,
     )
     from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
+    from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
     from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
     from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
     from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
@@ -680,3 +681,54 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
         fields.append(("Next Tick", next_tick_str))
 
     return format_detail(fields)
+
+
+# ---------------------------------------------------------------------------
+# Issue formatters
+# ---------------------------------------------------------------------------
+
+
+def format_issue(issue: "DgApiIssue", as_json: bool) -> str:
+    """Format a single issue for output."""
+    if as_json:
+        return issue.model_dump_json(indent=2)
+
+    fields: list[tuple[str, str]] = [
+        ("Title", issue.title),
+        ("Status", issue.status.value),
+        ("Created By", issue.created_by_email),
+    ]
+
+    if issue.run_id is not None:
+        fields.append(("Run ID", issue.run_id))
+    if issue.asset_key is not None:
+        fields.append(("Asset Key", str(issue.asset_key)))
+
+    fields.append(("Description", issue.description))
+
+    if issue.context is not None:
+        fields.append(("Additional Context", issue.context))
+
+    return format_detail(fields)
+
+
+def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
+    """Format a list of issues for output."""
+    if as_json:
+        return issue_list.model_dump_json(indent=2)
+
+    if not issue_list.items:
+        return "No issues found."
+
+    headers = ["STATUS", "TITLE", "ID", "CREATED BY"]
+    rows = [
+        [issue.status.value, issue.title, issue.id, issue.created_by_email]
+        for issue in issue_list.items
+    ]
+
+    lines = [format_table(headers, rows)]
+
+    if issue_list.has_more:
+        lines.append("Note: More issues available (use --cursor to paginate)")
+
+    return "\n".join(lines)
