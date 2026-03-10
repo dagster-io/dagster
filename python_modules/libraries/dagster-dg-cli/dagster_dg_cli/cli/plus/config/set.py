@@ -1,5 +1,5 @@
 import click
-from dagster_dg_core.utils import DgClickCommand, DgClickGroup
+from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import (
@@ -9,15 +9,6 @@ from dagster_shared.plus.config_utils import (
 )
 
 EU_DAGSTER_CLOUD_URL = "https://eu.dagster.cloud"
-
-
-@click.group(
-    name="config",
-    cls=DgClickGroup,
-    commands={"set": "config_set_command"},
-)
-def config_group():
-    """Manage Dagster Plus CLI configuration."""
 
 
 @click.command(name="set", cls=DgClickCommand)
@@ -98,7 +89,3 @@ def config_set_command(
             click.echo(f"  {item}")
     else:
         click.echo("No configuration values were changed.")
-
-
-# Wire up the group's commands dict
-config_group.commands["set"] = config_set_command

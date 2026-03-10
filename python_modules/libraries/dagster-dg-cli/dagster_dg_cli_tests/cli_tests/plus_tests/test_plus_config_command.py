@@ -35,6 +35,67 @@ def setup_dg_cli_config_with_existing(monkeypatch):
         yield config_path
 
 
+def test_config_view_basic(dg_plus_cli_config):
+    runner = CliRunner()
+    result = runner.invoke(plus_group, ["config", "view"])
+
+    assert result.exit_code == 0, result.output
+    assert "hooli" in result.output
+    assert "hooli-dev" in result.output
+    # Token should be censored by default
+    assert "abc123" not in result.output
+    assert "***" in result.output
+    assert "Config file:" in result.output
+
+
+def test_config_view_show_token(dg_plus_cli_config):
+    runner = CliRunner()
+    result = runner.invoke(plus_group, ["config", "view", "--show-token"])
+
+    assert result.exit_code == 0, result.output
+    assert "abc123" in result.output
+
+
+def test_config_view_no_config(monkeypatch):
+    with (
+        tempfile.TemporaryDirectory() as tmp_dg_dir,
+        tempfile.TemporaryDirectory() as tmp_cloud_dir,
+    ):
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(tmp_dg_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
+
+        runner = CliRunner()
+        result = runner.invoke(plus_group, ["config", "view"])
+
+        assert result.exit_code != 0
+        assert "dg plus login" in result.output
+
+
+def test_config_view_partial_config(monkeypatch):
+    with (
+        tempfile.TemporaryDirectory() as tmp_dg_dir,
+        tempfile.TemporaryDirectory() as tmp_cloud_dir,
+    ):
+        config_path = Path(tmp_dg_dir) / "dg.toml"
+        config_path.write_text(
+            """
+            [cli.plus]
+            organization = "hooli"
+            """
+        )
+        monkeypatch.setenv("DG_CLI_CONFIG", str(config_path))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
+
+        runner = CliRunner()
+        result = runner.invoke(plus_group, ["config", "view"])
+
+        assert result.exit_code == 0, result.output
+        assert "hooli" in result.output
+        # No token or deployment should appear
+        assert "user_token" not in result.output
+        assert "default_deployment" not in result.output
+
+
 def test_config_set_all_fields(setup_dg_cli_config):
     """Token + org + deployment + region writes config correctly."""
     runner = CliRunner()
