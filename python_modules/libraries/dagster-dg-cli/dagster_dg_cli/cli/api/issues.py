@@ -9,7 +9,7 @@ from dagster_shared.plus.config_utils import dg_api_options
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_issue, format_issues
 from dagster_dg_cli.cli.api.shared import handle_api_errors
-from dagster_dg_cli.cli.api.utils import dg_api_response_schema
+from dagster_dg_cli.cli.response_schema import dg_response_schema
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -20,7 +20,7 @@ from dagster_dg_cli.cli.api.utils import dg_api_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.issue", cls="DgApiIssue")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.issue", cls="DgApiIssue")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -69,7 +69,7 @@ def get_issue_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.issue", cls="DgApiIssueList")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.issue", cls="DgApiIssueList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
