@@ -5,6 +5,7 @@ import os
 import tempfile
 
 from dagster_dg_cli.api_layer.graphql_adapter.code_location import (
+    get_code_location_via_graphql,
     process_add_location_response,
     process_code_locations_response,
     process_delete_location_response,
@@ -347,6 +348,48 @@ class TestProcessDeleteLocationResponse:
             assert False, "Should have raised"
         except ValueError as e:
             assert "Not authorized" in str(e)
+
+
+class TestGetCodeLocationViaGraphql:
+    """Test the get_code_location_via_graphql function."""
+
+    def _make_client(self, entries: list[dict]):
+        """Create a fake GraphQL client that returns workspace entries."""
+        from unittest.mock import MagicMock
+
+        client = MagicMock()
+        client.execute.return_value = {"workspace": {"workspaceEntries": entries}}
+        return client
+
+    def test_get_code_location_via_graphql_found(self):
+        entries = [
+            {
+                "locationName": "loc-a",
+                "serializedDeploymentMetadata": json.dumps(
+                    {"image": "img-a:latest", "module_name": "mod_a"}
+                ),
+            },
+            {
+                "locationName": "loc-b",
+                "serializedDeploymentMetadata": json.dumps({"image": "img-b:v2"}),
+            },
+        ]
+        client = self._make_client(entries)
+        result = get_code_location_via_graphql(client, "loc-b")
+        assert result is not None
+        assert result.location_name == "loc-b"
+        assert result.image == "img-b:v2"
+
+    def test_get_code_location_via_graphql_not_found(self):
+        entries = [
+            {
+                "locationName": "loc-a",
+                "serializedDeploymentMetadata": json.dumps({"image": "img-a:latest"}),
+            },
+        ]
+        client = self._make_client(entries)
+        result = get_code_location_via_graphql(client, "nonexistent")
+        assert result is None
 
 
 class TestFormatDeleteCodeLocationResult:

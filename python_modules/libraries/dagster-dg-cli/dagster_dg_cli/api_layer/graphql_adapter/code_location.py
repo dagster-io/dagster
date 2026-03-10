@@ -13,6 +13,7 @@ from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.code_location import (
         DgApiAddCodeLocationResult,
+        DgApiCodeLocation,
         DgApiCodeLocationDocument,
         DgApiDeleteCodeLocationResult,
     )
@@ -70,6 +71,21 @@ def list_code_locations_via_graphql(client: IGraphQLClient) -> "DgApiCodeLocatio
     """List code locations using GraphQL."""
     result = client.execute(LIST_CODE_LOCATIONS_QUERY, {})
     return process_code_locations_response(result)
+
+
+def get_code_location_via_graphql(
+    client: IGraphQLClient,
+    location_name: str,
+) -> "DgApiCodeLocation | None":
+    """Fetch a single code location by name using GraphQL.
+
+    Since there's no single-location query, we fetch all and filter client-side.
+    """
+    location_list = list_code_locations_via_graphql(client)
+    for location in location_list.items:
+        if location.location_name == location_name:
+            return location
+    return None
 
 
 ADD_OR_UPDATE_LOCATION_FROM_DOCUMENT_MUTATION = """
