@@ -1144,6 +1144,28 @@
     'total': 4,
   })
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[deployment_success_branch_deployments_json]
+  dict({
+    'items': list([
+      dict({
+        'id': 300001,
+        'name': 'feature-add-auth',
+        'type': 'BRANCH',
+      }),
+      dict({
+        'id': 300002,
+        'name': 'fix-pipeline-timeout',
+        'type': 'BRANCH',
+      }),
+      dict({
+        'id': 300003,
+        'name': 'refactor-sensors',
+        'type': 'BRANCH',
+      }),
+    ]),
+    'total': 3,
+  })
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_get_settings_json]
   dict({
     'settings': dict({

@@ -63,6 +63,15 @@
   data-eng-dev      217021  PRODUCTION
   '''
 # ---
+# name: TestProcessBranchDeploymentsResponse.test_empty_nodes[0]
+  DeploymentList(items=[], total=0)
+# ---
+# name: TestProcessBranchDeploymentsResponse.test_missing_nodes_key[0]
+  DeploymentList(items=[], total=0)
+# ---
+# name: TestProcessBranchDeploymentsResponse.test_successful_response_processing[0]
+  DeploymentList(items=[Deployment(id=300001, name='feature-add-auth', type=<DeploymentType.BRANCH: 'BRANCH'>), Deployment(id=300002, name='fix-pipeline-timeout', type=<DeploymentType.BRANCH: 'BRANCH'>), Deployment(id=300003, name='refactor-sensors', type=<DeploymentType.BRANCH: 'BRANCH'>)], total=3)
+# ---
 # name: TestProcessDeploymentSettingsResponse.test_successful_get_settings[0]
   DeploymentSettings(settings={'run_queue': {'max_concurrent_runs': 25, 'tag_concurrency_limits': []}, 'run_monitoring': {'start_timeout_seconds': 300}, 'run_retries': {'max_retries': 0}})
 # ---

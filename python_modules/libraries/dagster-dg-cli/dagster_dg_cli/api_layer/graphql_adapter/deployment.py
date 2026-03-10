@@ -22,6 +22,18 @@ query ListDeployments {
 }
 """
 
+LIST_BRANCH_DEPLOYMENTS_QUERY = """
+query ListBranchDeployments($limit: Int!, $pullRequestStatus: PullRequestStatus) {
+    branchDeployments(limit: $limit, pullRequestStatus: $pullRequestStatus) {
+        nodes {
+            deploymentName
+            deploymentId
+            deploymentType
+        }
+    }
+}
+"""
+
 GET_DEPLOYMENT_QUERY = """
 query GetDeployment($deploymentName: String!) {
     deploymentByName(name: $deploymentName) {
@@ -170,6 +182,57 @@ def list_deployments_via_graphql(
         deployment_list.total = len(deployment_list.items)
 
     return deployment_list
+
+
+def process_branch_deployments_response(graphql_response: dict[str, Any]) -> "DeploymentList":
+    """Process GraphQL response for branch deployments into DeploymentList.
+
+    Args:
+        graphql_response: Raw GraphQL response from branchDeployments query,
+            after execute() unwraps the top-level key. Contains {"nodes": [...]}.
+
+    Returns:
+        DeploymentList: Processed deployment data
+    """
+    from dagster_dg_cli.api_layer.schemas.deployment import (
+        Deployment,
+        DeploymentList,
+        DeploymentType,
+    )
+
+    nodes = graphql_response.get("nodes", [])
+
+    deployments = [
+        Deployment(
+            id=d["deploymentId"],
+            name=d["deploymentName"],
+            type=DeploymentType[d["deploymentType"]],
+        )
+        for d in nodes
+    ]
+
+    return DeploymentList(
+        items=deployments,
+        total=len(deployments),
+    )
+
+
+def list_branch_deployments_via_graphql(
+    client: IGraphQLClient,
+    limit: int | None = None,
+    pull_request_status: str | None = None,
+) -> "DeploymentList":
+    """Fetch branch deployments using GraphQL."""
+    variables: dict[str, Any] = {"limit": limit if limit is not None else 50}
+    if pull_request_status is not None:
+        variables["pullRequestStatus"] = pull_request_status
+
+    result = client.execute(LIST_BRANCH_DEPLOYMENTS_QUERY, variables)
+
+    # execute() returns {"branchDeployments": {"nodes": [...]}},
+    # so we need to unwrap the top-level key
+    branch_data = result.get("branchDeployments", {})
+    return process_branch_deployments_response(branch_data)
 
 
 def process_deployment_response(graphql_response: dict[str, Any]) -> "Deployment":

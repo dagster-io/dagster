@@ -7,5 +7,8 @@ success_multiple_deployments_text:
 empty_deployments:
   command: "dg api deployment list --json"
 
+success_branch_deployments:
+  command: "dg api deployment list --type branch --json"
+
 success_get_settings:
   command: "dg api deployment settings get --json"

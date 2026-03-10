@@ -8,6 +8,7 @@ import json
 
 import pytest
 from dagster_dg_cli.api_layer.graphql_adapter.deployment import (
+    process_branch_deployments_response,
     process_deployment_settings_response,
     process_deployments_response,
     process_set_deployment_settings_response,
@@ -89,6 +90,30 @@ class TestFormatDeployments:
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
+
+
+class TestProcessBranchDeploymentsResponse:
+    """Test the pure function that processes branch deployments GraphQL responses."""
+
+    def test_successful_response_processing(self, snapshot):
+        """Test processing a successful branch deployments response."""
+        response = load_recorded_graphql_responses("deployment", "success_branch_deployments")[0]
+        branch_data = response.get("branchDeployments", {})
+        result = process_branch_deployments_response(branch_data)
+
+        snapshot.assert_match(result)
+
+    def test_empty_nodes(self, snapshot):
+        """Test processing a response with empty nodes list."""
+        result = process_branch_deployments_response({"nodes": []})
+
+        snapshot.assert_match(result)
+
+    def test_missing_nodes_key(self, snapshot):
+        """Test processing a response missing the nodes key."""
+        result = process_branch_deployments_response({})
+
+        snapshot.assert_match(result)
 
 
 class TestProcessDeploymentSettingsResponse:

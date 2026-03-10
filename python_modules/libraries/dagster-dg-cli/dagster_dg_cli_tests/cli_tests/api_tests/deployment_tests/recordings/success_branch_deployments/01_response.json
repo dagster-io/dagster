@@ -1,0 +1,21 @@
+{
+  "branchDeployments": {
+    "nodes": [
+      {
+        "deploymentId": 300001,
+        "deploymentName": "feature-add-auth",
+        "deploymentType": "BRANCH"
+      },
+      {
+        "deploymentId": 300002,
+        "deploymentName": "fix-pipeline-timeout",
+        "deploymentType": "BRANCH"
+      },
+      {
+        "deploymentId": 300003,
+        "deploymentName": "refactor-sensors",
+        "deploymentType": "BRANCH"
+      }
+    ]
+  }
+}

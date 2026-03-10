@@ -24,25 +24,55 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@click.option(
+    "--type",
+    "deployment_type",
+    type=click.Choice(["production", "branch", "all"], case_sensitive=False),
+    default="production",
+    help="Type of deployments to list (default: production)",
+)
+@click.option(
+    "--pr-status",
+    "pr_status",
+    type=click.Choice(["OPEN", "CLOSED", "MERGED"], case_sensitive=True),
+    default=None,
+    help="Filter branch deployments by pull request status (only applies with --type branch or all)",
+)
 @dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="DeploymentList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
 def list_deployments_command(
-    ctx: click.Context, output_json: bool, organization: str, api_token: str, view_graphql: bool
+    ctx: click.Context,
+    output_json: bool,
+    deployment_type: str,
+    pr_status: str | None,
+    organization: str,
+    api_token: str,
+    view_graphql: bool,
 ) -> None:
-    """List all deployments in the organization."""
+    """List deployments in the organization."""
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
 
     api = DgApiDeploymentApi(client)
 
     with handle_api_errors(ctx, output_json):
-        deployments = api.list_deployments()
+        if deployment_type == "production":
+            deployments = api.list_deployments()
+        elif deployment_type == "branch":
+            deployments = api.list_branch_deployments(pull_request_status=pr_status)
+        else:  # all
+            prod = api.list_deployments()
+            branch = api.list_branch_deployments(pull_request_status=pr_status)
+            all_items = prod.items + branch.items
+            deployments = DeploymentList(items=all_items, total=len(all_items))
+
         output = format_deployments(deployments, as_json=output_json)
         click.echo(output)
 
