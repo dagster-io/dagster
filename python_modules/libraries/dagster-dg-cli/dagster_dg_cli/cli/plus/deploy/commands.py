@@ -796,5 +796,46 @@ def inspect_command(project_dir: str, **global_options: object) -> None:
     click.echo(json.dumps(info, indent=2))
 
 
+@deploy_group.command(name="list-locations", cls=DgClickCommand)
+@dg_global_options
+@cli_telemetry_wrapper
+def list_locations_command(**global_options: object) -> None:
+    """List all locations in the current deploy session with their selection status."""
+    from dagster_cloud_cli.commands.ci import state
+
+    state_store = state.FileStore(statedir=_get_statedir())
+    for location in state_store.list_locations():
+        if location.selected:
+            click.echo(location.location_name)
+        else:
+            click.echo(f"{location.location_name} DESELECTED")
+
+
+@deploy_group.command(name="select", cls=DgClickCommand)
+@click.argument("location_names", nargs=-1, required=True)
+@dg_global_options
+@cli_telemetry_wrapper
+def select_command(location_names: tuple[str, ...], **global_options: object) -> None:
+    """Mark specified locations as included in the current build session."""
+    from dagster_cloud_cli.commands.ci import state
+
+    state_store = state.FileStore(statedir=_get_statedir())
+    state_store.select(list(location_names))
+    click.echo(f"Selected locations: {', '.join(location_names)}")
+
+
+@deploy_group.command(name="deselect", cls=DgClickCommand)
+@click.argument("location_names", nargs=-1, required=True)
+@dg_global_options
+@cli_telemetry_wrapper
+def deselect_command(location_names: tuple[str, ...], **global_options: object) -> None:
+    """Mark specified locations as excluded from the current build session."""
+    from dagster_cloud_cli.commands.ci import state
+
+    state_store = state.FileStore(statedir=_get_statedir())
+    state_store.deselect(list(location_names))
+    click.echo(f"Deselected locations: {', '.join(location_names)}")
+
+
 # Register the configure subcommand group
 deploy_group.add_command(deploy_configure_group)
