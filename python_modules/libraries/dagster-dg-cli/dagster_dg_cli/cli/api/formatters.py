@@ -607,13 +607,13 @@ def format_run(run: "DgApiRun", as_json: bool) -> str:
     fields = [
         ("Run ID", run.id),
         ("Status", run.status.value),
-        ("Created", str(run.created_at)),
+        ("Created", _format_timestamp_epoch(run.created_at)),
     ]
 
     if run.started_at:
-        fields.append(("Started", str(run.started_at)))
+        fields.append(("Started", _format_timestamp_epoch(run.started_at)))
     if run.ended_at:
-        fields.append(("Ended", str(run.ended_at)))
+        fields.append(("Ended", _format_timestamp_epoch(run.ended_at)))
     if run.job_name:
         fields.append(("Pipeline", run.job_name))
 
@@ -636,16 +636,11 @@ def format_runs_list(runs_list: "DgApiRunList", as_json: bool) -> str:
                 run.id,
                 run.status.value,
                 run.job_name or "N/A",
-                str(run.created_at),
+                _format_timestamp_epoch(run.created_at),
             ]
         )
 
-    lines = [format_table(headers, rows)]
-
-    if runs_list.has_more:
-        lines.append("Note: More runs available (use --limit to increase or --cursor to paginate)")
-
-    return "\n".join(lines)
+    return format_table(headers, rows)
 
 
 def format_logs_table(events: "RunEventList", run_id: str) -> str:

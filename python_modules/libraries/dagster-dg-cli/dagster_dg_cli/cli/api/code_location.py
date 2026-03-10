@@ -1,20 +1,16 @@
 """Code location API commands following GitHub CLI patterns."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from dagster_dg_cli.api_layer.schemas.code_location import DgApiCodeLocationDocument
 
 import click
-import yaml
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
-from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
-from dagster_dg_cli.api_layer.schemas.code_location import (
-    DgApiCodeLocationDocument,
-    DgApiCodeSource,
-    DgApiGitMetadata,
-)
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import (
     format_add_code_location_result,
@@ -30,8 +26,16 @@ def build_code_location_document(
     location_name: str,
     location_file: str | None,
     **kwargs: Any,
-) -> DgApiCodeLocationDocument:
+) -> "DgApiCodeLocationDocument":
     """Build a code location document from CLI args, optionally merging with a YAML file."""
+    import yaml
+
+    from dagster_dg_cli.api_layer.schemas.code_location import (
+        DgApiCodeLocationDocument,
+        DgApiCodeSource,
+        DgApiGitMetadata,
+    )
+
     location_doc_from_file: dict[str, Any] = {}
 
     if location_file:
@@ -137,6 +141,8 @@ def add_code_location_command(
     view_graphql: bool,
 ) -> None:
     """Add or update a code location in the deployment."""
+    from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
+
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -186,6 +192,8 @@ def list_code_locations_command(
     view_graphql: bool,
 ) -> None:
     """List code locations in the deployment."""
+    from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
+
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,

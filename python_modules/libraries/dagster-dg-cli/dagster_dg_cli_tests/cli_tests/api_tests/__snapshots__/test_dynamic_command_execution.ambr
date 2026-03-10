@@ -262,6 +262,73 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_json]
+  dict({
+    'alert_policies': list([
+      dict({
+        'description': 'Send email on job failure',
+        'event_types': list([
+          'JOB_FAILURE',
+        ]),
+        'name': 'email-on-failure',
+        'notification_service': dict({
+          'email': dict({
+            'email_addresses': list([
+              'team@example.com',
+            ]),
+          }),
+        }),
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'description': 'Notify Slack on SLA miss',
+        'event_types': list([
+          'ASSET_OVERDUE',
+        ]),
+        'name': 'slack-on-sla-miss',
+        'notification_service': dict({
+          'slack': dict({
+            'slack_channel_name': '#alerts',
+            'slack_workspace_name': 'dagster',
+          }),
+        }),
+        'tags': list([
+          dict({
+            'key': 'team',
+            'value': 'data-eng',
+          }),
+        ]),
+      }),
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_text_text]
+  '''
+  alert_policies:
+  - name: email-on-failure
+    description: Send email on job failure
+    event_types:
+    - JOB_FAILURE
+    notification_service:
+      email:
+        email_addresses:
+        - team@example.com
+    tags: []
+  - name: slack-on-sla-miss
+    description: Notify Slack on SLA miss
+    event_types:
+    - ASSET_OVERDUE
+    notification_service:
+      slack:
+        slack_workspace_name: dagster
+        slack_channel_name: '#alerts'
+    tags:
+    - key: team
+      value: data-eng
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_health_not_found_json]
   '''
   {"error": "Asset not found: nonexistent-asset"}
@@ -270,13 +337,6 @@
   '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_json]
-  '''
-  {"error": "Asset not found: nonexistent-asset"}
-  Error: dg api asset get: Asset not found: nonexistent-asset
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_status_view_json]
   '''
   {"error": "Asset not found: nonexistent-asset"}
   Error: dg api asset get: Asset not found: nonexistent-asset
@@ -329,429 +389,6 @@
       'timestamp': 1759310437770.0,
     }),
     'materialization_status': 'HEALTHY',
-  })
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_human_readable_text]
-  '''
-  ASSET KEY                                                GROUP       DESCRIPTION                                                   KINDS
-  asset_health_report_slack                                monitoring  Sends Dagster asset health report to #bot-purina Slack ch...  slack
-  aws/cloud-prod/user_roles                                aws_stages  Snowflake stages for AWS data, creates new stages for new...  
-  aws/cloud-prod/workspace_staging_asset_checks            aws_stages  Snowflake stages for AWS data, creates new stages for new...  
-  aws/cloud-prod/workspace_staging_assets                  aws_stages  Snowflake stages for AWS data, creates new stages for new...  
-  aws/cloud-prod/workspace_staging_external_repo_metadata  aws_stages  Snowflake stages for AWS data, creates new stages for new...  
-  aws/cloud-prod/workspace_staging_jobs                    aws_stages  Snowflake stages for AWS data, creates new stages for new...  
-  aws/cloud-prod/workspace_staging_metadata                aws_stages  Snowflake stages for AWS data, creates new stages for new...  
-  aws/cloud-prod/workspace_staging_partitions              aws_stages  Snowflake stages for AWS data, creates new stages for new...  
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_json]
-  dict({
-    'cursor': '["aws", "cloud-prod", "workspace_staging_partitions_ext"]',
-    'has_more': True,
-    'items': list([
-      dict({
-        'asset_key': 'asset_health_report_slack',
-        'asset_key_parts': list([
-          'asset_health_report_slack',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-        ]),
-        'description': 'Sends Dagster asset health report to #bot-purina Slack channel',
-        'downstream_keys': None,
-        'group_name': 'monitoring',
-        'id': '["asset_health_report_slack"]',
-        'job_names': None,
-        'kinds': list([
-          'slack',
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '68fb6e21-5928-4da1-b9fe-3f6a565e3a39',
-            'timestamp': 1759237289874.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-      dict({
-        'asset_key': 'aws/cloud-prod/user_roles',
-        'asset_key_parts': list([
-          'aws',
-          'cloud-prod',
-          'user_roles',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-        ]),
-        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-        'downstream_keys': None,
-        'group_name': 'aws_stages',
-        'id': '["aws", "cloud-prod", "user_roles"]',
-        'job_names': None,
-        'kinds': list([
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '74a2f116-1e7a-41d8-9d6d-5b47c05ebbe0',
-            'timestamp': 1759287760784.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-      dict({
-        'asset_key': 'aws/cloud-prod/workspace_staging_asset_checks',
-        'asset_key_parts': list([
-          'aws',
-          'cloud-prod',
-          'workspace_staging_asset_checks',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-          'cloud-prod-workspace-replication/staging/asset_checks',
-        ]),
-        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-        'downstream_keys': None,
-        'group_name': 'aws_stages',
-        'id': '["aws", "cloud-prod", "workspace_staging_asset_checks"]',
-        'job_names': None,
-        'kinds': list([
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
-            'timestamp': 1759310437939.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-      dict({
-        'asset_key': 'aws/cloud-prod/workspace_staging_assets',
-        'asset_key_parts': list([
-          'aws',
-          'cloud-prod',
-          'workspace_staging_assets',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-          'cloud-prod-workspace-replication/staging/assets',
-        ]),
-        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-        'downstream_keys': None,
-        'group_name': 'aws_stages',
-        'id': '["aws", "cloud-prod", "workspace_staging_assets"]',
-        'job_names': None,
-        'kinds': list([
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
-            'timestamp': 1759310437219.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-      dict({
-        'asset_key': 'aws/cloud-prod/workspace_staging_external_repo_metadata',
-        'asset_key_parts': list([
-          'aws',
-          'cloud-prod',
-          'workspace_staging_external_repo_metadata',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-          'cloud-prod-workspace-replication/staging/external_repo_metadata',
-        ]),
-        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-        'downstream_keys': None,
-        'group_name': 'aws_stages',
-        'id': '["aws", "cloud-prod", "workspace_staging_external_repo_metadata"]',
-        'job_names': None,
-        'kinds': list([
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
-            'timestamp': 1759310437858.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-      dict({
-        'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
-        'asset_key_parts': list([
-          'aws',
-          'cloud-prod',
-          'workspace_staging_jobs',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-          'cloud-prod-workspace-replication/staging/jobs',
-        ]),
-        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-        'downstream_keys': None,
-        'group_name': 'aws_stages',
-        'id': '["aws", "cloud-prod", "workspace_staging_jobs"]',
-        'job_names': None,
-        'kinds': list([
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
-            'timestamp': 1759310437770.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-      dict({
-        'asset_key': 'aws/cloud-prod/workspace_staging_metadata',
-        'asset_key_parts': list([
-          'aws',
-          'cloud-prod',
-          'workspace_staging_metadata',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-          'cloud-prod-workspace-replication/staging/metadata',
-        ]),
-        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-        'downstream_keys': None,
-        'group_name': 'aws_stages',
-        'id': '["aws", "cloud-prod", "workspace_staging_metadata"]',
-        'job_names': None,
-        'kinds': list([
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
-            'timestamp': 1759310437135.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-      dict({
-        'asset_key': 'aws/cloud-prod/workspace_staging_partitions',
-        'asset_key_parts': list([
-          'aws',
-          'cloud-prod',
-          'workspace_staging_partitions',
-        ]),
-        'automation_condition': None,
-        'backfill_policy': None,
-        'dependency_keys': list([
-          'cloud-prod-workspace-replication/staging/partitions',
-        ]),
-        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-        'downstream_keys': None,
-        'group_name': 'aws_stages',
-        'id': '["aws", "cloud-prod", "workspace_staging_partitions"]',
-        'job_names': None,
-        'kinds': list([
-        ]),
-        'metadata_entries': list([
-        ]),
-        'owners': None,
-        'partition_definition': None,
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
-            'timestamp': 1759310437442.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-        'tags': None,
-        'upstream_dependencies': None,
-      }),
-    ]),
-  })
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_with_cursor_json]
-  dict({
-    'cursor': None,
-    'has_more': False,
-    'items': list([
-    ]),
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_with_cursor_json]
@@ -1011,14 +648,6 @@
     ]),
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_success_paginated_assets_status_view_json]
-  dict({
-    'cursor': '["__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"]',
-    'has_more': True,
-    'items': list([
-    ]),
-  })
-# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_json]
   dict({
     'asset_key': 'asset_health_report_slack',
@@ -1045,77 +674,76 @@
     'upstream_dependencies': None,
   })
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_status_view_human_readable_text]
+# name: TestDynamicCommandExecution.test_command_execution[code_location_error_code_location_not_found_json_json]
   '''
-  Asset Key: aws/cloud-prod/workspace_staging_metadata
-  ID: ["aws", "cloud-prod", "workspace_staging_metadata"]
-  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
-  Group: aws_stages
-  Kinds: None
-  Deps: cloud-prod-workspace-replication/staging/metadata
-  
-  Status Information:
-    Asset Health: HEALTHY
-    Materialization Status: HEALTHY
-    Freshness Status: HEALTHY
-    Asset Checks Status: NOT_APPLICABLE
-    Latest Materialization: 2025-10-01 09:20:37 UTC
-    Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
+  {"error": "Exhausted 0 responses"}
+  Error: dg api code-location get: Exhausted 0 responses
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_status_view_json]
+# name: TestDynamicCommandExecution.test_command_execution[code_location_error_code_location_not_found_text]
+  '''
+  Error: dg api code-location get: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[code_location_success_get_code_location_json]
   dict({
-    'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
-    'asset_key_parts': list([
-      'aws',
-      'cloud-prod',
-      'workspace_staging_jobs',
-    ]),
-    'automation_condition': None,
-    'backfill_policy': None,
-    'dependency_keys': list([
-      'cloud-prod-workspace-replication/staging/jobs',
-    ]),
-    'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
-    'downstream_keys': None,
-    'group_name': 'aws_stages',
-    'id': '["aws", "cloud-prod", "workspace_staging_jobs"]',
-    'job_names': None,
-    'kinds': list([
-    ]),
-    'metadata_entries': list([
-    ]),
-    'owners': None,
-    'partition_definition': None,
-    'status': dict({
-      'asset_checks_status': 'NOT_APPLICABLE',
-      'asset_health': 'HEALTHY',
-      'checks_status': dict({
-        'num_failed_checks': None,
-        'num_warning_checks': None,
-        'status': 'NOT_APPLICABLE',
-        'total_num_checks': None,
-      }),
-      'freshness_info': dict({
-        'cron_schedule': None,
-        'current_lag_minutes': None,
-        'current_minutes_late': None,
-        'latest_materialization_minutes_late': None,
-        'maximum_lag_minutes': None,
-      }),
-      'freshness_status': 'HEALTHY',
-      'health_metadata': None,
-      'latest_materialization': dict({
-        'partition': None,
-        'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
-        'timestamp': 1759310437770.0,
-      }),
-      'materialization_status': 'HEALTHY',
+    'code_source': dict({
+      'autoload_defs_module_name': None,
+      'module_name': 'mod_a',
+      'package_name': None,
+      'python_file': None,
     }),
-    'tags': None,
-    'upstream_dependencies': None,
+    'image': 'img-a:latest',
+    'location_name': 'loc-a',
+    'status': 'LOADED',
   })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[code_location_success_get_code_location_text_text]
+  '''
+  Name:   loc-a
+  Image:  img-a:latest
+  Module: mod_a
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[code_location_success_list_code_locations_json]
+  dict({
+    'items': list([
+      dict({
+        'code_source': dict({
+          'autoload_defs_module_name': None,
+          'module_name': 'mod_a',
+          'package_name': None,
+          'python_file': None,
+        }),
+        'image': 'img-a:latest',
+        'location_name': 'loc-a',
+        'status': 'LOADED',
+      }),
+      dict({
+        'code_source': dict({
+          'autoload_defs_module_name': None,
+          'module_name': None,
+          'package_name': None,
+          'python_file': 'defs.py',
+        }),
+        'image': 'img-b:v2',
+        'location_name': 'loc-b',
+        'status': 'LOADING',
+      }),
+    ]),
+    'total': 2,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[code_location_success_list_code_locations_text_text]
+  '''
+  NAME   IMAGE         STATUS
+  loc-a  img-a:latest  LOADED
+  loc-b  img-b:v2      LOADING
+  
+  '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_empty_deployments_json]
   dict({
@@ -1209,12 +837,24 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[deployment_success_set_settings_json]
+# name: TestDynamicCommandExecution.test_command_execution[organization_success_get_settings_json]
+  dict({
+    'settings': dict({
+      'run_queue_config': dict({
+        'max_concurrent_runs': 25,
+        'tag_concurrency_limits': list([
+        ]),
+      }),
+      'sso_default_role': 'VIEWER',
+    }),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[organization_success_get_settings_text_text]
   '''
-  Usage: dg api deployment settings set [OPTIONS] FILE_PATH
-  Try 'dg api deployment settings set -h' for help.
-  
-  Error: Invalid value for 'FILE_PATH': Path 'settings.yaml' does not exist.
+  run_queue_config:
+    max_concurrent_runs: 25
+    tag_concurrency_limits: []
+  sso_default_role: VIEWER
   
   '''
 # ---
@@ -2488,9 +2128,9 @@
   '''
   Run ID:   2e562bd3-7e72-4448-9f05-32bad2ea8046
   Status:   SUCCESS
-  Created:  1757703683.741368
-  Started:  1757703690.474944
-  Ended:    1757703732.670455
+  Created:  2025-09-12 19:01:23 UTC
+  Started:  2025-09-12 19:01:30 UTC
+  Ended:    2025-09-12 19:02:12 UTC
   Pipeline: __ASSET_JOB
   
   '''

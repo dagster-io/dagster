@@ -1,8 +1,6 @@
 """Test code location business logic functions without mocks."""
 
-from dagster_dg_cli.api_layer.graphql_adapter.code_location import (
-    process_delete_code_location_response,
-)
+from dagster_dg_cli.api_layer.graphql_adapter.code_location import process_delete_location_response
 
 from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
     ReplayClient,
@@ -19,7 +17,7 @@ class TestProcessDeleteCodeLocationResponse:
             0
         ]
         location_data = response.get("deleteLocation", {})
-        result = process_delete_code_location_response(location_data)
+        result = process_delete_location_response(location_data)
 
         snapshot.assert_match(result)
 
@@ -41,4 +39,4 @@ class TestDeleteCodeLocationViaApi:
         api = DgApiCodeLocationApi(client)
 
         result = api.delete_code_location("my-location")
-        assert result.name == "my-location"
+        assert result.location_name == "my-location"

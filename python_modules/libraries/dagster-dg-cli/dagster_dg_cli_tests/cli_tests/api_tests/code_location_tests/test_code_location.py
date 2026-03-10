@@ -191,16 +191,18 @@ class TestDocumentToDict:
 class TestFormatResult:
     """Test the formatter functions."""
 
-    def test_format_result_text(self):
+    def test_format_result_text(self, snapshot):
         result = DgApiAddCodeLocationResult(location_name="my-loc")
         output = format_add_code_location_result(result, as_json=False)
         assert output == "Added or updated code location 'my-loc'."
+        snapshot.assert_match(output)
 
-    def test_format_result_json(self):
+    def test_format_result_json(self, snapshot):
         result = DgApiAddCodeLocationResult(location_name="my-loc")
         output = format_add_code_location_result(result, as_json=True)
         parsed = json.loads(output)
         assert parsed["location_name"] == "my-loc"
+        snapshot.assert_match(parsed)
 
 
 class TestProcessCodeLocationsResponse:
@@ -265,11 +267,11 @@ class TestProcessCodeLocationsResponse:
 class TestFormatCodeLocations:
     """Test code location formatters."""
 
-    def test_format_code_locations_text(self):
+    def test_format_code_locations_text(self, snapshot):
         locations = DgApiCodeLocationList(
             items=[
-                DgApiCodeLocation(location_name="loc-a", image="img-a:latest"),
-                DgApiCodeLocation(location_name="loc-b", image="img-b:v2"),
+                DgApiCodeLocation(location_name="loc-a", image="img-a:latest", status="LOADED"),
+                DgApiCodeLocation(location_name="loc-b", image="img-b:v2", status="LOADING"),
             ],
             total=2,
         )
@@ -279,11 +281,12 @@ class TestFormatCodeLocations:
         assert "loc-b" in output
         assert "NAME" in output
         assert "IMAGE" in output
+        snapshot.assert_match(output)
 
-    def test_format_code_locations_json(self):
+    def test_format_code_locations_json(self, snapshot):
         locations = DgApiCodeLocationList(
             items=[
-                DgApiCodeLocation(location_name="loc-a", image="img-a:latest"),
+                DgApiCodeLocation(location_name="loc-a", image="img-a:latest", status="LOADED"),
             ],
             total=1,
         )
@@ -291,8 +294,9 @@ class TestFormatCodeLocations:
         parsed = json.loads(output)
         assert parsed["total"] == 1
         assert parsed["items"][0]["location_name"] == "loc-a"
+        snapshot.assert_match(parsed)
 
-    def test_format_code_location_text(self):
+    def test_format_code_location_text(self, snapshot):
         location = DgApiCodeLocation(
             location_name="my-loc",
             image="my-image:latest",
@@ -302,8 +306,9 @@ class TestFormatCodeLocations:
         assert "my-loc" in output
         assert "my-image:latest" in output
         assert "my_mod" in output
+        snapshot.assert_match(output)
 
-    def test_format_code_location_json(self):
+    def test_format_code_location_json(self, snapshot):
         location = DgApiCodeLocation(
             location_name="my-loc",
             image="my-image:latest",
@@ -312,6 +317,7 @@ class TestFormatCodeLocations:
         parsed = json.loads(output)
         assert parsed["location_name"] == "my-loc"
         assert parsed["image"] == "my-image:latest"
+        snapshot.assert_match(parsed)
 
 
 class TestProcessDeleteLocationResponse:
@@ -353,12 +359,20 @@ class TestProcessDeleteLocationResponse:
 class TestGetCodeLocationViaGraphql:
     """Test the get_code_location_via_graphql function."""
 
-    def _make_client(self, entries: list[dict]):
-        """Create a fake GraphQL client that returns workspace entries."""
+    def _make_client(self, entries: list[dict], statuses: list[dict] | None = None):
+        """Create a fake GraphQL client that returns workspace entries and location statuses."""
         from unittest.mock import MagicMock
 
+        workspace_response = {"workspace": {"workspaceEntries": entries}}
+        statuses_response = {
+            "locationStatusesOrError": {
+                "__typename": "WorkspaceLocationStatusEntries",
+                "entries": statuses or [],
+            }
+        }
+
         client = MagicMock()
-        client.execute.return_value = {"workspace": {"workspaceEntries": entries}}
+        client.execute.side_effect = [workspace_response, statuses_response]
         return client
 
     def test_get_code_location_via_graphql_found(self):
@@ -374,11 +388,16 @@ class TestGetCodeLocationViaGraphql:
                 "serializedDeploymentMetadata": json.dumps({"image": "img-b:v2"}),
             },
         ]
-        client = self._make_client(entries)
+        statuses = [
+            {"name": "loc-a", "loadStatus": "LOADED"},
+            {"name": "loc-b", "loadStatus": "LOADED"},
+        ]
+        client = self._make_client(entries, statuses)
         result = get_code_location_via_graphql(client, "loc-b")
         assert result is not None
         assert result.location_name == "loc-b"
         assert result.image == "img-b:v2"
+        assert result.status == "LOADED"
 
     def test_get_code_location_via_graphql_not_found(self):
         entries = [
@@ -395,13 +414,15 @@ class TestGetCodeLocationViaGraphql:
 class TestFormatDeleteCodeLocationResult:
     """Test the delete code location formatter."""
 
-    def test_format_delete_code_location_result_text(self):
+    def test_format_delete_code_location_result_text(self, snapshot):
         result = DgApiDeleteCodeLocationResult(location_name="my-loc")
         output = format_delete_code_location_result(result, as_json=False)
         assert output == "Deleted code location 'my-loc'."
+        snapshot.assert_match(output)
 
-    def test_format_delete_code_location_result_json(self):
+    def test_format_delete_code_location_result_json(self, snapshot):
         result = DgApiDeleteCodeLocationResult(location_name="my-loc")
         output = format_delete_code_location_result(result, as_json=True)
         parsed = json.loads(output)
         assert parsed["location_name"] == "my-loc"
+        snapshot.assert_match(parsed)

@@ -145,40 +145,15 @@ class TestRunListSchema:
                 job_name="other_job",
             ),
         ]
-        run_list = DgApiRunList(items=runs, total=2)
+        run_list = DgApiRunList(items=runs)
 
         assert len(run_list.items) == 2
-        assert run_list.total == 2
-        assert run_list.cursor is None
-        assert run_list.has_more is False
-
-    def test_run_list_with_pagination(self):
-        """Test creating run list with pagination fields."""
-        runs = [
-            DgApiRun(
-                id="run-1",
-                status=DgApiRunStatus.SUCCESS,
-                created_at=1705311000.0,
-            ),
-        ]
-        run_list = DgApiRunList(
-            items=runs,
-            total=100,
-            cursor="run-1",
-            has_more=True,
-        )
-
-        assert run_list.total == 100
-        assert run_list.cursor == "run-1"
-        assert run_list.has_more is True
 
     def test_run_list_empty(self):
         """Test creating empty run list."""
-        run_list = DgApiRunList(items=[], total=0)
+        run_list = DgApiRunList(items=[])
 
         assert len(run_list.items) == 0
-        assert run_list.total == 0
-        assert run_list.has_more is False
 
     def test_run_list_json_serialization(self):
         """Test that DgApiRunList can be serialized to JSON."""
@@ -190,14 +165,11 @@ class TestRunListSchema:
                 job_name="my_job",
             ),
         ]
-        run_list = DgApiRunList(items=runs, total=1, cursor="run-1", has_more=False)
+        run_list = DgApiRunList(items=runs)
 
         json_str = run_list.model_dump_json()
         parsed = json.loads(json_str)
 
         assert len(parsed["items"]) == 1
-        assert parsed["total"] == 1
-        assert parsed["cursor"] == "run-1"
-        assert parsed["has_more"] is False
         assert parsed["items"][0]["id"] == "run-1"
         assert parsed["items"][0]["status"] == "SUCCESS"

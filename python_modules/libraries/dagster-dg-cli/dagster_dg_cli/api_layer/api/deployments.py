@@ -29,7 +29,7 @@ class DgApiDeploymentApi:
         return list_deployments_via_graphql(self.client)
 
     def list_branch_deployments(
-        self, limit: int | None = None, pull_request_status: str | None = None
+        self, limit: int = 50, pull_request_status: str | None = None
     ) -> "DeploymentList":
         return list_branch_deployments_via_graphql(self.client, limit, pull_request_status)
 

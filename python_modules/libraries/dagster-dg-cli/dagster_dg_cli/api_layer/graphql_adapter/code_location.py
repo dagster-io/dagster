@@ -13,7 +13,6 @@ from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.code_location import (
         DgApiAddCodeLocationResult,
-        DgApiCodeLocation,
         DgApiCodeLocationDocument,
         DgApiDeleteCodeLocationResult,
     )
@@ -29,8 +28,37 @@ query CliWorkspaceEntries {
 }
 """
 
+LOCATION_STATUSES_QUERY = """
+query CliLocationStatuses {
+    locationStatusesOrError {
+        __typename
+        ... on WorkspaceLocationStatusEntries {
+            entries {
+                name
+                loadStatus
+            }
+        }
+    }
+}
+"""
 
-def process_code_locations_response(graphql_response: dict[str, Any]) -> "DgApiCodeLocationList":
+
+def process_location_statuses_response(graphql_response: dict[str, Any]) -> dict[str, str]:
+    """Process GraphQL location statuses response into a name->loadStatus mapping."""
+    statuses_or_error = graphql_response.get("locationStatusesOrError", {})
+    typename = statuses_or_error.get("__typename")
+
+    if typename != "WorkspaceLocationStatusEntries":
+        return {}
+
+    entries = statuses_or_error.get("entries", [])
+    return {entry["name"]: entry["loadStatus"] for entry in entries}
+
+
+def process_code_locations_response(
+    graphql_response: dict[str, Any],
+    statuses: dict[str, str] | None = None,
+) -> "DgApiCodeLocationList":
     """Process GraphQL workspace entries response into DgApiCodeLocationList."""
     entries = graphql_response.get("workspace", {}).get("workspaceEntries", [])
     items: list[DgApiCodeLocation] = []
@@ -56,21 +84,31 @@ def process_code_locations_response(graphql_response: dict[str, Any]) -> "DgApiC
                     autoload_defs_module_name=autoload_defs_module_name,
                 )
 
+        status = statuses.get(location_name) if statuses else None
+
         items.append(
             DgApiCodeLocation(
                 location_name=location_name,
                 image=image,
                 code_source=code_source,
+                status=status,
             )
         )
 
     return DgApiCodeLocationList(items=items, total=len(items))
 
 
+def fetch_location_statuses(client: IGraphQLClient) -> dict[str, str]:
+    """Fetch location statuses and return a name->loadStatus mapping."""
+    result = client.execute(LOCATION_STATUSES_QUERY, {})
+    return process_location_statuses_response(result)
+
+
 def list_code_locations_via_graphql(client: IGraphQLClient) -> "DgApiCodeLocationList":
     """List code locations using GraphQL."""
     result = client.execute(LIST_CODE_LOCATIONS_QUERY, {})
-    return process_code_locations_response(result)
+    statuses = fetch_location_statuses(client)
+    return process_code_locations_response(result, statuses=statuses)
 
 
 def get_code_location_via_graphql(

@@ -1,5 +1,4 @@
 import click
-import yaml
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import (
@@ -48,6 +47,8 @@ def config_view_command(show_token: bool) -> None:
 
     click.echo(f"Config file: {config_path}\n")
     if output:
+        import yaml
+
         click.echo(yaml.dump(output, default_flow_style=False), nl=False)
     else:
         click.echo("Configuration is empty.")

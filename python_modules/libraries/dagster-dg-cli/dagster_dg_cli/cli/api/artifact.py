@@ -8,7 +8,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
-from dagster_dg_cli.api_layer.api.artifact import DgApiArtifactApi
 from dagster_dg_cli.cli.api.formatters import format_artifact_download, format_artifact_upload
 from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.response_schema import dg_response_schema
@@ -46,6 +45,8 @@ def upload_artifact_command(
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to upload.
     """
+    from dagster_dg_cli.api_layer.api.artifact import DgApiArtifactApi
+
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -98,6 +99,8 @@ def download_artifact_command(
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to save to.
     """
+    from dagster_dg_cli.api_layer.api.artifact import DgApiArtifactApi
+
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
