@@ -717,5 +717,84 @@ def finish_deploy_session_command(
     finish_deploy_session(dg_context, statedir, location_names)
 
 
+@deploy_group.command(name="status", cls=DgClickCommand)
+@click.option(
+    "--output-format",
+    type=click.Choice(["json", "markdown"]),
+    default="json",
+    help="Output format for the deploy status.",
+)
+@dg_global_options
+@cli_telemetry_wrapper
+def status_command(output_format: str, **global_options: object) -> None:
+    """Show status of the current deploy session."""
+    from dagster_cloud_cli.commands.ci import report, state
+
+    state_store = state.FileStore(statedir=_get_statedir())
+    location_states = state_store.list_locations()
+    if output_format == "json":
+        for location in location_states:
+            click.echo(location.model_dump_json())
+    elif output_format == "markdown":
+        click.echo(report.markdown_report(location_states))
+
+
+@deploy_group.command(name="notify", cls=DgClickCommand)
+@click.option(
+    "--project-dir",
+    default=".",
+    help="Project directory for CI context detection.",
+)
+@dg_global_options
+@cli_telemetry_wrapper
+def notify_command(project_dir: str, **global_options: object) -> None:
+    """Update a GitHub PR comment with deploy status."""
+    from dagster_cloud_cli.commands import metrics
+    from dagster_cloud_cli.commands.ci import report, state
+    from dagster_cloud_cli.core.pex_builder import github_context
+    from dagster_cloud_cli.types import CliEventTags
+
+    state_store = state.FileStore(statedir=_get_statedir())
+    location_states = state_store.list_locations()
+
+    source = metrics.get_source()
+    if source == CliEventTags.source.github:
+        event = github_context.get_github_event(project_dir)
+        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud."
+        event.update_pr_comment(
+            msg + "\n\n" + report.markdown_report(location_states),
+            orig_author="github-actions[bot]",
+            orig_text="Dagster Cloud",
+        )
+    else:
+        raise click.UsageError("'dg plus deploy notify' is only available within Github actions.")
+
+
+@deploy_group.command(name="inspect", cls=DgClickCommand)
+@click.option(
+    "--project-dir",
+    default=".",
+    help="Project directory for CI context detection.",
+)
+@dg_global_options
+@cli_telemetry_wrapper
+def inspect_command(project_dir: str, **global_options: object) -> None:
+    """Print JSON info about the current CI/CD environment."""
+    import json
+
+    from dagster_cloud_cli.commands import metrics
+    from dagster_cloud_cli.core.pex_builder import github_context
+    from dagster_cloud_cli.types import CliEventTags
+
+    project_dir = str(Path(project_dir).resolve())
+    source = metrics.get_source()
+    info: dict[str, str] = {"source": str(source), "project-dir": project_dir}
+    if source == CliEventTags.source.github:
+        event = github_context.get_github_event(project_dir)
+        info["git-url"] = event.commit_url
+        info["commit-hash"] = event.github_sha
+    click.echo(json.dumps(info, indent=2))
+
+
 # Register the configure subcommand group
 deploy_group.add_command(deploy_configure_group)
