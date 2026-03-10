@@ -17,6 +17,7 @@ if TYPE_CHECKING:
         DgApiAddCodeLocationResult,
         DgApiCodeLocation,
         DgApiCodeLocationList,
+        DgApiDeleteCodeLocationResult,
     )
     from dagster_dg_cli.api_layer.schemas.deployment import (
         Deployment,
@@ -804,3 +805,13 @@ def format_add_code_location_result(result: "DgApiAddCodeLocationResult", as_jso
         return result.model_dump_json(indent=2)
 
     return f"Added or updated code location '{result.location_name}'."
+
+
+def format_delete_code_location_result(
+    result: "DgApiDeleteCodeLocationResult", as_json: bool
+) -> str:
+    """Format delete code location result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return f"Deleted code location '{result.location_name}'."

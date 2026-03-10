@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.code_location import (
         DgApiAddCodeLocationResult,
         DgApiCodeLocationDocument,
+        DgApiDeleteCodeLocationResult,
     )
 
 LIST_CODE_LOCATIONS_QUERY = """
@@ -124,3 +125,54 @@ def add_code_location_via_graphql(
     )
     response_data = result.get("addOrUpdateLocationFromDocument", {})
     return process_add_location_response(response_data)
+
+
+DELETE_LOCATION_MUTATION = """
+mutation CliDeleteLocation($locationName: String!) {
+    deleteLocation(locationName: $locationName) {
+        __typename
+        ... on DeleteLocationSuccess {
+            locationName
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on UnauthorizedError {
+            message
+        }
+    }
+}
+"""
+
+
+def process_delete_location_response(
+    graphql_response: dict[str, Any],
+) -> "DgApiDeleteCodeLocationResult":
+    """Process GraphQL response into DgApiDeleteCodeLocationResult."""
+    from dagster_dg_cli.api_layer.schemas.code_location import DgApiDeleteCodeLocationResult
+
+    typename = graphql_response.get("__typename")
+
+    if typename == "DeleteLocationSuccess":
+        return DgApiDeleteCodeLocationResult(
+            location_name=graphql_response["locationName"],
+        )
+    elif typename in ["PythonError", "UnauthorizedError"]:
+        error_message = graphql_response.get("message", "Unknown error")
+        raise ValueError(f"Error deleting code location: {error_message}")
+    else:
+        raise ValueError(f"Unexpected response type: {typename}")
+
+
+def delete_code_location_via_graphql(
+    client: IGraphQLClient,
+    location_name: str,
+) -> "DgApiDeleteCodeLocationResult":
+    """Delete a code location using GraphQL."""
+    result = client.execute(
+        DELETE_LOCATION_MUTATION,
+        {"locationName": location_name},
+    )
+    response_data = result.get("deleteLocation", {})
+    return process_delete_location_response(response_data)

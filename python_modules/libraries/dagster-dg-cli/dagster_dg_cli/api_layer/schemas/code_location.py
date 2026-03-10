@@ -43,6 +43,12 @@ class DgApiAddCodeLocationResult(BaseModel):
     location_name: str
 
 
+class DgApiDeleteCodeLocationResult(BaseModel):
+    """Result of deleting a code location."""
+
+    location_name: str
+
+
 class DgApiCodeLocation(BaseModel):
     """A code location in a deployment."""
 

@@ -16,7 +16,11 @@ from dagster_dg_cli.api_layer.schemas.code_location import (
     DgApiGitMetadata,
 )
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.formatters import format_add_code_location_result, format_code_locations
+from dagster_dg_cli.cli.api.formatters import (
+    format_add_code_location_result,
+    format_code_locations,
+    format_delete_code_location_result,
+)
 from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.response_schema import dg_response_schema
 
@@ -195,11 +199,52 @@ def list_code_locations_command(
         click.echo(output)
 
 
+@click.command(name="delete", cls=DgClickCommand)
+@click.argument("location_name", type=str)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output in JSON format for machine readability",
+)
+@dg_response_schema(
+    module="dagster_dg_cli.api_layer.schemas.code_location", cls="DgApiDeleteCodeLocationResult"
+)
+@dg_api_options(deployment_scoped=True)
+@cli_telemetry_wrapper
+@click.pass_context
+def delete_code_location_command(
+    ctx: click.Context,
+    location_name: str,
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
+    view_graphql: bool,
+) -> None:
+    """Delete a code location from the deployment."""
+    config = DagsterPlusCliConfig.create_for_deployment(
+        deployment=deployment,
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
+    from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
+
+    api = DgApiCodeLocationApi(client)
+
+    with handle_api_errors(ctx, output_json):
+        result = api.delete_code_location(location_name)
+        output = format_delete_code_location_result(result, as_json=output_json)
+        click.echo(output)
+
+
 @click.group(
     name="code-location",
     cls=DgClickGroup,
     commands={
         "add": add_code_location_command,
+        "delete": delete_code_location_command,
         "list": list_code_locations_command,
     },
 )

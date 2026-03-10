@@ -7,6 +7,7 @@ import tempfile
 from dagster_dg_cli.api_layer.graphql_adapter.code_location import (
     process_add_location_response,
     process_code_locations_response,
+    process_delete_location_response,
 )
 from dagster_dg_cli.api_layer.schemas.code_location import (
     DgApiAddCodeLocationResult,
@@ -14,6 +15,7 @@ from dagster_dg_cli.api_layer.schemas.code_location import (
     DgApiCodeLocationDocument,
     DgApiCodeLocationList,
     DgApiCodeSource,
+    DgApiDeleteCodeLocationResult,
     DgApiGitMetadata,
 )
 from dagster_dg_cli.cli.api.code_location import build_code_location_document
@@ -21,6 +23,7 @@ from dagster_dg_cli.cli.api.formatters import (
     format_add_code_location_result,
     format_code_location,
     format_code_locations,
+    format_delete_code_location_result,
 )
 
 
@@ -308,3 +311,54 @@ class TestFormatCodeLocations:
         parsed = json.loads(output)
         assert parsed["location_name"] == "my-loc"
         assert parsed["image"] == "my-image:latest"
+
+
+class TestProcessDeleteLocationResponse:
+    """Test the pure function that processes delete location GraphQL responses."""
+
+    def test_process_delete_location_response_success(self):
+        response = {
+            "__typename": "DeleteLocationSuccess",
+            "locationName": "my-location",
+        }
+        result = process_delete_location_response(response)
+        assert isinstance(result, DgApiDeleteCodeLocationResult)
+        assert result.location_name == "my-location"
+
+    def test_process_delete_location_response_python_error(self):
+        response = {
+            "__typename": "PythonError",
+            "message": "Internal server error",
+            "stack": ["traceback line 1"],
+        }
+        try:
+            process_delete_location_response(response)
+            assert False, "Should have raised"
+        except ValueError as e:
+            assert "Internal server error" in str(e)
+
+    def test_process_delete_location_response_unauthorized(self):
+        response = {
+            "__typename": "UnauthorizedError",
+            "message": "Not authorized",
+        }
+        try:
+            process_delete_location_response(response)
+            assert False, "Should have raised"
+        except ValueError as e:
+            assert "Not authorized" in str(e)
+
+
+class TestFormatDeleteCodeLocationResult:
+    """Test the delete code location formatter."""
+
+    def test_format_delete_code_location_result_text(self):
+        result = DgApiDeleteCodeLocationResult(location_name="my-loc")
+        output = format_delete_code_location_result(result, as_json=False)
+        assert output == "Deleted code location 'my-loc'."
+
+    def test_format_delete_code_location_result_json(self):
+        result = DgApiDeleteCodeLocationResult(location_name="my-loc")
+        output = format_delete_code_location_result(result, as_json=True)
+        parsed = json.loads(output)
+        assert parsed["location_name"] == "my-loc"
