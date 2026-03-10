@@ -165,6 +165,7 @@ def test_fetch_row_count_no_jobs():
     result_no_jobs = fetch_row_count_metadata(materialization_no_jobs, context, dlt_pipeline_mock)
     assert isinstance(result_no_jobs, TableMetadataSet)
     assert result_no_jobs.row_count is None
+    context.log.debug.assert_called_once()
 
 
 def test_extract_resource_metadata_no_normalize_info():
