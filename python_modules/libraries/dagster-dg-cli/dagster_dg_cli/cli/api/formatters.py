@@ -25,6 +25,7 @@ if TYPE_CHECKING:
         DeploymentSettings,
     )
     from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
+    from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
     from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
     from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
     from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
@@ -143,6 +144,21 @@ def format_deployment(deployment: "Deployment", as_json: bool) -> str:
 
 def format_deployment_settings(settings: "DeploymentSettings", as_json: bool) -> str:
     """Format deployment settings for output."""
+    if as_json:
+        return settings.model_dump_json(indent=2)
+
+    import yaml
+
+    return yaml.dump(settings.settings, default_flow_style=False, sort_keys=False).rstrip()
+
+
+# ---------------------------------------------------------------------------
+# Organization formatters
+# ---------------------------------------------------------------------------
+
+
+def format_organization_settings(settings: "OrganizationSettings", as_json: bool) -> str:
+    """Format organization settings for output."""
     if as_json:
         return settings.model_dump_json(indent=2)
 
