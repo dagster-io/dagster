@@ -4,9 +4,16 @@ from dagster_gcp.bigquery.resources import fetch_last_updated_timestamps
 from google.cloud import bigquery
 
 
-def test_fetch_last_updated_timestamps_dashed_project():
+@pytest.mark.parametrize(
+    "dataset_id",
+    [
+        "my-dashed-project.my_dataset",
+        "simple_project.my_dataset",
+        "a-b-c.d_e_f",
+    ],
+)
+def test_fetch_last_updated_timestamps_query_construction(dataset_id):
     client = mock.Mock(spec=bigquery.Client)
-    dataset_id = "my-dashed-project.my_dataset"
     table_ids = ["my_table"]
 
     # Mock the return value of client.query().result()
@@ -17,7 +24,7 @@ def test_fetch_last_updated_timestamps_dashed_project():
 
     fetch_last_updated_timestamps(client=client, dataset_id=dataset_id, table_ids=table_ids)
 
-    # Verify the query string has backticks
-    args, kwargs = client.query.call_args
+    # Verify the query string has backticks for all variations
+    args, _ = client.query.call_args
     query_str = args[0]
     assert f"`{dataset_id}`.__TABLES__" in query_str
