@@ -262,6 +262,13 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_health_not_found_json]
+  '''
+  {"error": "Asset not found: nonexistent-asset"}
+  Error: dg api asset get-health: Asset not found: nonexistent-asset
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_json]
   '''
   {"error": "Asset not found: nonexistent-asset"}
@@ -282,6 +289,47 @@
   Error: dg api asset get: Asset not found: ''
   
   '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_asset_health_human_readable_text]
+  '''
+  Asset Key: aws/cloud-prod/workspace_staging_metadata
+  
+  Asset Health: HEALTHY
+  Materialization Status: HEALTHY
+  Freshness Status: HEALTHY
+  Asset Checks Status: NOT_APPLICABLE
+  Latest Materialization: 2025-10-01 09:20:37 UTC
+  Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_asset_health_json]
+  dict({
+    'asset_checks_status': 'NOT_APPLICABLE',
+    'asset_health': 'HEALTHY',
+    'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
+    'checks_status': dict({
+      'num_failed_checks': None,
+      'num_warning_checks': None,
+      'status': 'NOT_APPLICABLE',
+      'total_num_checks': None,
+    }),
+    'freshness_info': dict({
+      'cron_schedule': None,
+      'current_lag_minutes': None,
+      'current_minutes_late': None,
+      'latest_materialization_minutes_late': None,
+      'maximum_lag_minutes': None,
+    }),
+    'freshness_status': 'HEALTHY',
+    'health_metadata': None,
+    'latest_materialization': dict({
+      'partition': None,
+      'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+      'timestamp': 1759310437770.0,
+    }),
+    'materialization_status': 'HEALTHY',
+  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_human_readable_text]
   '''
@@ -740,7 +788,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -766,7 +813,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -793,7 +839,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -820,7 +865,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -847,7 +891,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -874,7 +917,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -901,7 +943,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -928,7 +969,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -959,7 +999,6 @@
     ]),
     'owners': None,
     'partition_definition': None,
-    'status': None,
     'tags': None,
     'upstream_dependencies': None,
   })
@@ -1002,7 +1041,6 @@
     ]),
     'owners': None,
     'partition_definition': None,
-    'status': None,
     'tags': None,
     'upstream_dependencies': None,
   })

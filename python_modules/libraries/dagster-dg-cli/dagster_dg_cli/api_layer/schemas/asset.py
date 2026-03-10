@@ -50,6 +50,7 @@ class DgApiAssetChecksStatus(BaseModel):
 class DgApiAssetStatus(BaseModel):
     """Asset status information for status view."""
 
+    asset_key: str  # Slash-separated asset key (e.g., "my/asset/key")
     asset_health: str | None  # Overall health status
     materialization_status: str | None
     freshness_status: str | None
@@ -104,8 +105,6 @@ class DgApiAsset(BaseModel):
     kinds: list[str]
     metadata_entries: list[dict]
     dependency_keys: list[str] = []  # ["dep/one", "dep/two"]
-    # Status fields - populated only for status view
-    status: DgApiAssetStatus | None = None
     # Extended detail fields - populated only for get (single asset)
     owners: list[dict] | None = None
     tags: list[dict] | None = None  # [{key: str, value: str}]

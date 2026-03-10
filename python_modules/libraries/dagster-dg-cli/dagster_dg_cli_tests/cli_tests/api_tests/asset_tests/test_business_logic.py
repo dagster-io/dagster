@@ -8,10 +8,14 @@ import json
 
 from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAsset,
+    DgApiAssetChecksStatus,
     DgApiAssetDependency,
     DgApiAssetEvent,
     DgApiAssetEventList,
+    DgApiAssetFreshnessInfo,
     DgApiAssetList,
+    DgApiAssetMaterialization,
+    DgApiAssetStatus,
     DgApiAutomationCondition,
     DgApiBackfillPolicy,
     DgApiEvaluationNode,
@@ -24,6 +28,7 @@ from dagster_dg_cli.cli.api.formatters import (
     format_asset,
     format_asset_evaluations,
     format_asset_events,
+    format_asset_health,
     format_assets,
 )
 
@@ -607,3 +612,76 @@ class TestEvaluationDataModels:
         assert node.num_true is None
         assert node.num_candidates is None
         assert node.start_timestamp is None
+
+
+class TestFormatAssetHealth:
+    """Test the asset health formatting functions."""
+
+    def _create_sample_status(self) -> DgApiAssetStatus:
+        """Create a sample DgApiAssetStatus with health data."""
+        return DgApiAssetStatus(
+            asset_key="analytics/daily_metrics",
+            asset_health="HEALTHY",
+            materialization_status="MATERIALIZED",
+            freshness_status="FRESH",
+            asset_checks_status="HEALTHY",
+            health_metadata=None,
+            latest_materialization=DgApiAssetMaterialization(
+                timestamp=1706745600000,
+                run_id="run-abc-123",
+                partition="2024-01-31",
+            ),
+            freshness_info=DgApiAssetFreshnessInfo(
+                current_lag_minutes=5.2,
+                current_minutes_late=None,
+                latest_materialization_minutes_late=None,
+                maximum_lag_minutes=30.0,
+                cron_schedule="0 * * * *",
+            ),
+            checks_status=DgApiAssetChecksStatus(
+                status="HEALTHY",
+                num_failed_checks=0,
+                num_warning_checks=0,
+                total_num_checks=3,
+            ),
+        )
+
+    def _create_empty_status(self) -> DgApiAssetStatus:
+        """Create a DgApiAssetStatus with no health data."""
+        return DgApiAssetStatus(
+            asset_key="simple_asset",
+            asset_health=None,
+            materialization_status=None,
+            freshness_status=None,
+            asset_checks_status=None,
+            health_metadata=None,
+            latest_materialization=None,
+            freshness_info=None,
+            checks_status=None,
+        )
+
+    def test_format_asset_health_text_output(self, snapshot):
+        """Test formatting asset health as text."""
+        status = self._create_sample_status()
+        result = format_asset_health(status, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_asset_health_json_output(self, snapshot):
+        """Test formatting asset health as JSON."""
+        status = self._create_sample_status()
+        result = format_asset_health(status, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_empty_asset_health_text_output(self, snapshot):
+        """Test formatting empty asset health as text."""
+        status = self._create_empty_status()
+        result = format_asset_health(status, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_empty_asset_health_json_output(self, snapshot):
+        """Test formatting empty asset health as JSON."""
+        status = self._create_empty_status()
+        result = format_asset_health(status, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)

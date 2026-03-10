@@ -10,6 +10,7 @@ if TYPE_CHECKING:
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
+        DgApiAssetStatus,
         DgApiEvaluationRecordList,
     )
     from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
@@ -169,14 +170,6 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
         f"Deps: {', '.join(asset.dependency_keys) if asset.dependency_keys else 'None'}",
     ]
 
-    # Add status information if present
-    if asset.status:
-        lines.append("")
-        lines.append("Status Information:")
-        status_lines = _format_asset_status_lines(asset.status)
-        for line in status_lines:
-            lines.append(f"  {line}")
-
     return "\n".join(lines)
 
 
@@ -248,6 +241,21 @@ def _format_asset_status_lines(status) -> list[str]:
             lines.append(f"Warning Checks: {checks.num_warning_checks}")
 
     return lines
+
+
+def format_asset_health(status: "DgApiAssetStatus", as_json: bool) -> str:
+    """Format asset health status for output."""
+    if as_json:
+        return status.model_dump_json(indent=2)
+
+    lines = [f"Asset Key: {status.asset_key}", ""]
+    status_lines = _format_asset_status_lines(status)
+    if status_lines:
+        lines.extend(status_lines)
+    else:
+        lines.append("No health data available.")
+
+    return "\n".join(lines)
 
 
 def format_asset_events(event_list: "DgApiAssetEventList", as_json: bool) -> str:

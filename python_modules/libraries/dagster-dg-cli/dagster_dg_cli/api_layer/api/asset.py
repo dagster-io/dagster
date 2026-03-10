@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from dagster_dg_cli.api_layer.graphql_adapter.asset import (
     get_asset_evaluations_via_graphql,
     get_asset_events_via_graphql,
+    get_asset_health_via_graphql,
     get_dg_plus_api_asset_via_graphql,
     list_dg_plus_api_assets_via_graphql,
 )
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
+        DgApiAssetStatus,
         DgApiEvaluationRecordList,
     )
 
@@ -29,25 +31,27 @@ class DgApiAssetApi:
         self,
         limit: int | None = 50,
         cursor: str | None = None,
-        status: bool | None = None,
     ) -> "DgApiAssetList":
-        """List assets with cursor-based pagination and optional status."""
+        """List assets with cursor-based pagination."""
         from dagster_dg_cli.cli.api.asset import DG_API_MAX_ASSET_LIMIT
 
         # Enforce max limit constraint
         if limit and limit > DG_API_MAX_ASSET_LIMIT:
             raise ValueError(f"Limit cannot exceed {DG_API_MAX_ASSET_LIMIT}")
 
-        return list_dg_plus_api_assets_via_graphql(
-            self.client, limit=limit, cursor=cursor, status=bool(status)
-        )
+        return list_dg_plus_api_assets_via_graphql(self.client, limit=limit, cursor=cursor)
 
-    def get_asset(self, asset_key: str, status: bool | None = None) -> "DgApiAsset":
-        """Get single asset by slash-separated key (e.g., 'foo/bar') with optional status."""
+    def get_asset(self, asset_key: str) -> "DgApiAsset":
+        """Get single asset by slash-separated key (e.g., 'foo/bar')."""
         # Parse "foo/bar" to ["foo", "bar"]
         asset_key_parts = asset_key.split("/")
 
-        return get_dg_plus_api_asset_via_graphql(self.client, asset_key_parts, status=bool(status))
+        return get_dg_plus_api_asset_via_graphql(self.client, asset_key_parts)
+
+    def get_health(self, asset_key: str) -> "DgApiAssetStatus":
+        """Get health/status data for a single asset by slash-separated key."""
+        asset_key_parts = asset_key.split("/")
+        return get_asset_health_via_graphql(self.client, asset_key_parts)
 
     def get_events(
         self,

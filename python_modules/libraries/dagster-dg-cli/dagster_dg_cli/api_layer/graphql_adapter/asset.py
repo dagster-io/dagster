@@ -93,7 +93,7 @@ def _parse_metadata_entries(raw_entries: list[dict]) -> list[dict]:
     return metadata_entries
 
 
-def _build_asset_from_node(node_data: dict, include_status: bool) -> DgApiAsset | None:
+def _build_asset_from_node(node_data: dict) -> DgApiAsset | None:
     """Build a DgApiAsset from an assetsOrError node.
 
     Returns None if the node's definition is null (asset doesn't exist in code).
@@ -108,8 +108,6 @@ def _build_asset_from_node(node_data: dict, include_status: bool) -> DgApiAsset 
     metadata_entries = _parse_metadata_entries(definition.get("metadataEntries", []))
     dependency_keys = _extract_dependency_keys(definition.get("dependencyKeys", []))
 
-    status = _transform_asset_status_data(node_data) if include_status else None
-
     extended_kwargs = _extract_extended_asset_details(definition)
 
     return DgApiAsset(
@@ -121,7 +119,6 @@ def _build_asset_from_node(node_data: dict, include_status: bool) -> DgApiAsset 
         kinds=definition.get("kinds", []),
         metadata_entries=metadata_entries,
         dependency_keys=dependency_keys,
-        status=status,
         **extended_kwargs,
     )
 
@@ -205,28 +202,14 @@ query AssetDetail($assetKeys: [AssetKeyInput!]!) {
 """
 )
 
-ASSETS_WITH_STATUS_QUERY = (
-    """
-query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
+ASSET_HEALTH_QUERY = """
+query AssetHealth($assetKeys: [AssetKeyInput!]!) {
     assetsOrError(assetKeys: $assetKeys) {
         __typename
         ... on AssetConnection {
             nodes {
-                id
                 key { path }
-                # Asset definition contains the metadata, description, etc.
                 definition {
-                    description
-                    groupName
-                    kinds
-                    dependencyKeys {
-                        path
-                    }
-"""
-    + METADATA_ENTRIES_FRAGMENT
-    + EXTENDED_DEFINITION_FIELDS
-    + """
-                    # Freshness information from definition
                     freshnessInfo {
                         currentLagMinutes
                         currentMinutesLate
@@ -237,7 +220,6 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
                         cronSchedule
                     }
                 }
-                # Asset health status information - this is the key missing data
                 assetHealth {
                     assetHealth
                     materializationStatus
@@ -276,7 +258,6 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
                         lastMaterializedTimestamp
                     }
                 }
-                # Latest materialization information
                 assetMaterializations(limit: 1) {
                     timestamp
                     runId
@@ -290,7 +271,6 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
     }
 }
 """
-)
 
 
 def _extract_extended_asset_details(definition: dict) -> dict:
@@ -366,10 +346,11 @@ def _extract_extended_asset_details(definition: dict) -> dict:
     return result
 
 
-def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:
+def _transform_asset_status_data(asset_data, *, asset_key: str) -> DgApiAssetStatus:
     """Transform GraphQL asset data (from assetsOrError) into status format."""
     if not asset_data:
         return DgApiAssetStatus(
+            asset_key=asset_key,
             asset_health=None,
             materialization_status=None,
             freshness_status=None,
@@ -444,6 +425,7 @@ def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:
 
     # Return status with actual health data
     return DgApiAssetStatus(
+        asset_key=asset_key,
         asset_health=asset_health,
         materialization_status=materialization_status,
         freshness_status=freshness_status,
@@ -472,12 +454,11 @@ def list_dg_plus_api_assets_via_graphql(
     client: IGraphQLClient,
     limit: int | None = None,
     cursor: str | None = None,
-    status: bool = False,
 ) -> DgApiAssetList:
     """Fetch assets using two-step GraphQL approach.
 
     1. Use assetRecordsOrError for paginated asset keys
-    2. Use assetsOrError to fetch metadata (and optionally status) for those keys
+    2. Use assetsOrError to fetch metadata for those keys
     3. Combine and transform data
     """
     # Step 1: Get paginated asset keys
@@ -499,10 +480,9 @@ def list_dg_plus_api_assets_via_graphql(
     if not records:
         return DgApiAssetList(items=[], cursor=None, has_more=False)
 
-    # Step 2: Get detailed metadata (and optionally status) for these asset keys
+    # Step 2: Get detailed metadata for these asset keys
     asset_keys = [{"path": record["key"]["path"]} for record in records]
-    query = ASSETS_WITH_STATUS_QUERY if status else ASSET_DETAIL_QUERY
-    asset_nodes = _fetch_assets_or_error(client, query, asset_keys)
+    asset_nodes = _fetch_assets_or_error(client, ASSET_DETAIL_QUERY, asset_keys)
 
     # Step 3: Transform and combine data
     assets = []
@@ -514,7 +494,7 @@ def list_dg_plus_api_assets_via_graphql(
         node_data = nodes_by_key.get(asset_key)
         if not node_data:
             continue
-        asset = _build_asset_from_node(node_data, include_status=status)
+        asset = _build_asset_from_node(node_data)
         if asset is not None:
             assets.append(asset)
 
@@ -530,21 +510,37 @@ def list_dg_plus_api_assets_via_graphql(
 def get_dg_plus_api_asset_via_graphql(
     client: IGraphQLClient,
     asset_key_parts: list[str],
-    status: bool = False,
 ) -> DgApiAsset:
     """Single asset fetch using assetsOrError with specific assetKey."""
-    query = ASSETS_WITH_STATUS_QUERY if status else ASSET_DETAIL_QUERY
-    asset_nodes = _fetch_assets_or_error(client, query, [{"path": asset_key_parts}])
+    asset_nodes = _fetch_assets_or_error(client, ASSET_DETAIL_QUERY, [{"path": asset_key_parts}])
 
     if not asset_nodes:
         raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
 
     node = asset_nodes[0]
-    asset = _build_asset_from_node(node, include_status=status)
+    asset = _build_asset_from_node(node)
     if asset is None:
         raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
 
     return asset
+
+
+def get_asset_health_via_graphql(
+    client: IGraphQLClient,
+    asset_key_parts: list[str],
+) -> DgApiAssetStatus:
+    """Fetch health/status data for a single asset."""
+    asset_nodes = _fetch_assets_or_error(client, ASSET_HEALTH_QUERY, [{"path": asset_key_parts}])
+
+    if not asset_nodes:
+        raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
+
+    node = asset_nodes[0]
+    if node.get("definition") is None:
+        raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
+
+    asset_key = "/".join(node["key"]["path"])
+    return _transform_asset_status_data(node, asset_key=asset_key)
 
 
 def _build_asset_events_query(event_type: str | None) -> str:
