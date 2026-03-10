@@ -881,7 +881,6 @@ def format_code_location(location: "DgApiCodeLocation", as_json: bool) -> str:
     return format_detail(fields)
 
 
-
 def format_add_code_location_result(result: "DgApiAddCodeLocationResult", as_json: bool) -> str:
     """Format add code location result for output."""
     if as_json:
