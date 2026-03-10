@@ -17,7 +17,7 @@ from dagster_dg_cli.cli.api.formatters import (
     format_runs_list,
 )
 from dagster_dg_cli.cli.api.shared import handle_api_errors
-from dagster_dg_cli.cli.api.utils import dg_api_response_schema
+from dagster_dg_cli.cli.response_schema import dg_response_schema
 
 DG_API_MAX_RUN_LIMIT: Final = 1000
 
@@ -56,7 +56,7 @@ DG_API_MAX_RUN_LIMIT: Final = 1000
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRunList")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRunList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -104,7 +104,7 @@ def list_runs_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRun")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRun")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -171,7 +171,7 @@ def get_run_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.run_event", cls="RunEventList")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.run_event", cls="RunEventList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context

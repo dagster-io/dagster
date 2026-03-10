@@ -10,7 +10,7 @@ from dagster_shared.plus.config_utils import dg_api_options
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_secret, format_secrets
 from dagster_dg_cli.cli.api.shared import handle_api_errors
-from dagster_dg_cli.cli.api.utils import dg_api_response_schema
+from dagster_dg_cli.cli.response_schema import dg_response_schema
 
 
 @click.command(name="list", cls=DgClickCommand)
@@ -29,7 +29,7 @@ from dagster_dg_cli.cli.api.utils import dg_api_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecretList")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecretList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -82,7 +82,7 @@ def list_secrets_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecret")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecret")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context

@@ -17,7 +17,7 @@ from dagster_dg_cli.cli.api.formatters import (
     format_assets,
 )
 from dagster_dg_cli.cli.api.shared import handle_api_errors
-from dagster_dg_cli.cli.api.utils import dg_api_response_schema
+from dagster_dg_cli.cli.response_schema import dg_response_schema
 
 DG_API_MAX_ASSET_LIMIT: Final = 1000
 DG_API_MAX_EVENT_LIMIT: Final = 1000
@@ -41,7 +41,7 @@ DG_API_MAX_EVENT_LIMIT: Final = 1000
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetList")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -80,7 +80,7 @@ def list_assets_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAsset")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAsset")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -118,7 +118,7 @@ def get_asset_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetStatus")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetStatus")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -181,7 +181,7 @@ def get_health_asset_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetEventList")
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetEventList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -246,7 +246,7 @@ def get_events_asset_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_api_response_schema(
+@dg_response_schema(
     module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiEvaluationRecordList"
 )
 @dg_api_options(deployment_scoped=True)

@@ -4,7 +4,7 @@ import json
 import click
 
 
-def dg_api_response_schema(*, module: str, cls: str):
+def dg_response_schema(*, module: str, cls: str):
     """Add a --response-schema flag to a Click command.
 
     When --response-schema is passed, lazily imports the Pydantic model from
@@ -12,8 +12,8 @@ def dg_api_response_schema(*, module: str, cls: str):
     so it only happens when the flag is actually used.
 
     Args:
-        module: Fully-qualified module path (e.g. "dagster_dg_cli.api_layer.schemas.asset").
-        cls: Class name within that module (e.g. "DgApiAssetList").
+        module: Fully-qualified module path (e.g. "dagster_dg_cli.cli.schemas.list_schemas").
+        cls: Class name within that module (e.g. "DgComponentList").
     """
 
     def callback(ctx, param, value):

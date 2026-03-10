@@ -171,18 +171,27 @@ def list_definitions(
             node = asset_graph.get(key)
             assets.append(
                 DgAssetMetadata(
-                    key=key.to_user_string(),
-                    deps=sorted([k.to_user_string() for k in node.parent_keys]),
-                    owners=node.owners,
-                    group=node.group_name,
+                    asset_key=key.to_user_string(),
+                    dependency_keys=sorted([k.to_user_string() for k in node.parent_keys]),
+                    owners=[
+                        {"team": o[len("team:") :]} if o.startswith("team:") else {"email": o}
+                        for o in node.owners
+                    ],
+                    group_name=node.group_name,
                     kinds=sorted(list(node.kinds)),
                     description=node.description,
-                    automation_condition=" ".join(
-                        get_expanded_label(node.automation_condition.get_snapshot())
-                    )
+                    automation_condition={
+                        "label": node.automation_condition.get_snapshot().node_snapshot.label,
+                        "expanded_label": list(
+                            get_expanded_label(node.automation_condition.get_snapshot())
+                        ),
+                    }
                     if node.automation_condition
                     else None,
-                    tags=sorted(f'"{k}"="{v}"' for k, v in node.tags.items() if _tag_filter(k)),
+                    tags=sorted(
+                        ({"key": k, "value": v} for k, v in node.tags.items() if _tag_filter(k)),
+                        key=lambda t: t["key"],
+                    ),
                     is_executable=node.is_executable,
                     source=_get_source(node.metadata, dg_context),
                 )

@@ -204,7 +204,7 @@ def test_scaffold_defs_component_unregistered_success() -> None:
         # Make sure the new component is not registered
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        component_keys = [c["key"] for c in json.loads(result.stdout)]
+        component_keys = [c["key"] for c in json.loads(result.stdout)["items"]]
         assert "foo_bar.components.baz.Baz" not in component_keys
 
         # dg scaffold defs foo_bar.components.baz.Baz should still work
@@ -936,7 +936,9 @@ def test_scaffold_component_type_success() -> None:
         )
         result_json = json.loads(result.stdout.decode("utf-8"))
 
-        assert any(json_entry["key"] == "foo_bar.components.Baz" for json_entry in result_json)
+        assert any(
+            json_entry["key"] == "foo_bar.components.Baz" for json_entry in result_json["items"]
+        )
 
         assert (
             Path("src/foo_bar/components/__init__.py").read_text().strip()
@@ -976,7 +978,9 @@ def test_scaffold_component_type_succeeds_non_default_component_components_packa
         )
         result_json = json.loads(result.stdout.decode("utf-8"))
 
-        assert any(json_entry["key"] == "foo_bar._components.Baz" for json_entry in result_json)
+        assert any(
+            json_entry["key"] == "foo_bar._components.Baz" for json_entry in result_json["items"]
+        )
 
 
 def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
@@ -1048,7 +1052,7 @@ def test_scaffold_component_no_entry_point_success(
         assert_runner_result(result)
         result_json = json.loads(result.output)
 
-        assert any(json_entry["key"] == component_key for json_entry in result_json)
+        assert any(json_entry["key"] == component_key for json_entry in result_json["items"])
 
         # Only the module that adds to the _component will add a line to registry modules. That's
         # because the other cases are already covered by the default scaffolded wildcard
