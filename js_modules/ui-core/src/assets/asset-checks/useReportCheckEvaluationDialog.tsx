@@ -12,12 +12,12 @@ import {
   RadioContainer,
   TextInput,
   Tooltip,
+  showToast,
 } from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
 import {useMutation} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {showSharedToaster} from '../../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../../app/Permissions';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {AssetCheckSeverity, AssetKeyInput} from '../../graphql/types';
@@ -164,7 +164,7 @@ const ReportCheckEvaluationDialogBody = ({
 
     const data = result.data?.reportAssetCheckEvaluations;
     if (!data) {
-      await showSharedToaster({
+      showToast({
         message: <div>An unexpected error occurred. This evaluation was not reported.</div>,
         icon: 'error',
         intent: 'danger',
@@ -172,13 +172,13 @@ const ReportCheckEvaluationDialogBody = ({
     } else if (data.__typename === 'PythonError') {
       showCustomAlert({body: <PythonErrorInfo error={data} />});
     } else if (data.__typename === 'UnauthorizedError') {
-      await showSharedToaster({
+      showToast({
         message: <div>{data.message}</div>,
         icon: 'error',
         intent: 'danger',
       });
     } else {
-      await showSharedToaster({
+      showToast({
         message:
           keysFiltered.length > 1 ? (
             <div>Your evaluations have been reported.</div>

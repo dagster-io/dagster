@@ -1,4 +1,4 @@
-import {Alert, Box, ButtonLink, Colors, Mono} from '@dagster-io/ui-components';
+import {Alert, Box, ButtonLink, Colors, Mono, showToast} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {gql, useQuery} from '../apollo-client';
@@ -9,7 +9,6 @@ import {
   UsingDefaultLauncherAlertInstanceFragment,
 } from './types/BackfillMessaging.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
 import {getBackfillPath} from '../runs/RunsFeedUtils';
@@ -60,7 +59,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
 export async function showBackfillErrorToast(
   data: LaunchPartitionBackfillMutation | null | undefined,
 ) {
-  await showSharedToaster({
+  showToast({
     message: messageForLaunchBackfillError(data),
     icon: 'error',
     intent: 'danger',
@@ -69,7 +68,7 @@ export async function showBackfillErrorToast(
 
 export async function showBackfillSuccessToast(backfillId: string) {
   const url = getBackfillPath(backfillId);
-  await showSharedToaster({
+  showToast({
     intent: 'success',
     message: (
       <div>

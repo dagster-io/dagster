@@ -12,7 +12,7 @@ export const Sizes = () => {
     <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
       <Button
         onClick={async () =>
-          await showToast({
+          showToast({
             intent: 'none',
             message: 'Code location reloaded',
             timeout: 300000,
@@ -24,7 +24,7 @@ export const Sizes = () => {
       </Button>
       <Button
         onClick={async () =>
-          await showToast({
+          showToast({
             intent: 'success',
             timeout: 300000,
             message: (
@@ -42,7 +42,7 @@ export const Sizes = () => {
       </Button>
       <Button
         onClick={async () =>
-          await showToast({
+          showToast({
             intent: 'danger',
             timeout: 300000,
             message: 'This is an error message',
@@ -54,7 +54,7 @@ export const Sizes = () => {
       </Button>
       <Button
         onClick={async () =>
-          await showToast({
+          showToast({
             intent: 'primary',
             timeout: 5000,
             message: 'This is a primary toaster',
@@ -66,7 +66,7 @@ export const Sizes = () => {
       </Button>
       <Button
         onClick={async () =>
-          await showToast({
+          showToast({
             intent: 'danger',
             message: 'Oh no an error! Look at the console!',
             timeout: 300000,

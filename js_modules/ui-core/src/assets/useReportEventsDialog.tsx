@@ -9,6 +9,7 @@ import {
   Icon,
   TextInput,
   Tooltip,
+  showToast,
 } from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
@@ -17,7 +18,6 @@ import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {explodePartitionKeysInSelectionMatching} from './MultipartitioningSupport';
 import {ReportEventsPartitionSection} from './ReportEventsPartitionSection';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -161,7 +161,7 @@ const ReportEventDialogBody = ({
     const data = result.data?.reportRunlessAssetEvents;
 
     if (!data || data.__typename === 'PythonError') {
-      await showSharedToaster({
+      showToast({
         message: <div>An unexpected error occurred. This event was not reported.</div>,
         icon: 'error',
         intent: 'danger',
@@ -174,13 +174,13 @@ const ReportEventDialogBody = ({
           : undefined,
       });
     } else if (data.__typename === 'UnauthorizedError') {
-      await showSharedToaster({
+      showToast({
         message: <div>{data.message}</div>,
         icon: 'error',
         intent: 'danger',
       });
     } else {
-      await showSharedToaster({
+      showToast({
         message:
           keysFiltered.length > 1 ? (
             <div>Your events have been reported.</div>
