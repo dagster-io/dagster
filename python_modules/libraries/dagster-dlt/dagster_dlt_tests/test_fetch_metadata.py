@@ -127,3 +127,125 @@ def test_fetch_row_count_failure(dlt_pipeline: Pipeline):
             for asset_materialization in asset_materializations
         ]
         assert not any(["dagster/row_count" in metadata for metadata in metadatas]), str(metadatas)
+
+
+def test_fetch_row_count_no_jobs():
+    """Test that fetch_row_count_metadata handles empty jobs list gracefully.
+
+    When a dlt source yields no data, the jobs metadata may be an empty list.
+    Instead of raising an exception, we should return TableMetadataSet with row_count=None.
+    Regression test for https://github.com/dagster-io/dagster/issues/33572
+    """
+    from dagster import AssetMaterialization
+    from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+    from dagster_dlt.dlt_event_iterator import fetch_row_count_metadata
+
+    # Test with empty jobs list
+    materialization = AssetMaterialization(
+        asset_key="test_asset",
+        metadata={"jobs": []},
+    )
+
+    context = mock.MagicMock()
+    context.has_partition_key = False
+    dlt_pipeline_mock = mock.MagicMock()
+
+    result = fetch_row_count_metadata(materialization, context, dlt_pipeline_mock)
+    assert isinstance(result, TableMetadataSet)
+    assert result.row_count is None
+
+    # Test with missing jobs key entirely
+    materialization_no_jobs = AssetMaterialization(
+        asset_key="test_asset",
+        metadata={"some_other_key": "value"},
+    )
+
+    result_no_jobs = fetch_row_count_metadata(materialization_no_jobs, context, dlt_pipeline_mock)
+    assert isinstance(result_no_jobs, TableMetadataSet)
+    assert result_no_jobs.row_count is None
+
+
+def test_extract_resource_metadata_no_normalize_info():
+    """Test that extract_resource_metadata handles None last_normalize_info gracefully.
+
+    When a dlt source yields no data, dlt skips the normalize step and
+    last_normalize_info returns None. The metadata extraction should still
+    succeed without rows_loaded in the output.
+    Regression test for https://github.com/dagster-io/dagster/issues/33572
+    """
+    from dagster_dlt.resource import DagsterDltResource
+
+    dagster_dlt_resource = DagsterDltResource()
+
+    # Mock context
+    context = mock.MagicMock()
+
+    # Mock dlt resource
+    dlt_resource = mock.MagicMock()
+    dlt_resource.table_name = "test_table"
+
+    # Mock load_info with minimal valid data
+    load_info = mock.MagicMock()
+    load_info.asdict.return_value = {
+        "first_run": True,
+        "started_at": "2024-01-01",
+        "finished_at": "2024-01-01",
+        "dataset_name": "test",
+        "destination_name": "duckdb",
+        "destination_type": "duckdb",
+        "load_packages": [],
+    }
+
+    # Mock dlt_pipeline with last_trace.last_normalize_info = None
+    dlt_pipeline_mock = mock.MagicMock()
+    dlt_pipeline_mock.last_trace.last_normalize_info = None
+    dlt_pipeline_mock.default_schema.naming.normalize_table_identifier.return_value = "test_table"
+    dlt_pipeline_mock.default_schema.data_table_names.return_value = []
+    dlt_pipeline_mock.default_schema.get_table_columns.return_value = {}
+
+    metadata = dagster_dlt_resource.extract_resource_metadata(
+        context, dlt_resource, load_info, dlt_pipeline_mock
+    )
+
+    # Should succeed without crashing
+    assert "rows_loaded" not in metadata
+
+
+def test_extract_resource_metadata_no_last_trace():
+    """Test that extract_resource_metadata handles None last_trace gracefully.
+
+    Defensive guard: if last_trace itself is None, metadata extraction should
+    still succeed without rows_loaded.
+    Regression test for https://github.com/dagster-io/dagster/issues/33572
+    """
+    from dagster_dlt.resource import DagsterDltResource
+
+    dagster_dlt_resource = DagsterDltResource()
+
+    context = mock.MagicMock()
+    dlt_resource = mock.MagicMock()
+    dlt_resource.table_name = "test_table"
+
+    load_info = mock.MagicMock()
+    load_info.asdict.return_value = {
+        "first_run": True,
+        "started_at": "2024-01-01",
+        "finished_at": "2024-01-01",
+        "dataset_name": "test",
+        "destination_name": "duckdb",
+        "destination_type": "duckdb",
+        "load_packages": [],
+    }
+
+    # Mock dlt_pipeline with last_trace = None
+    dlt_pipeline_mock = mock.MagicMock()
+    dlt_pipeline_mock.last_trace = None
+    dlt_pipeline_mock.default_schema.naming.normalize_table_identifier.return_value = "test_table"
+    dlt_pipeline_mock.default_schema.data_table_names.return_value = []
+    dlt_pipeline_mock.default_schema.get_table_columns.return_value = {}
+
+    metadata = dagster_dlt_resource.extract_resource_metadata(
+        context, dlt_resource, load_info, dlt_pipeline_mock
+    )
+
+    assert "rows_loaded" not in metadata
