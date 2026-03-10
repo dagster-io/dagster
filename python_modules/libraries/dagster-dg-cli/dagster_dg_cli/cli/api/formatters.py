@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         DgApiAssetStatus,
         DgApiEvaluationRecordList,
     )
+    from dagster_dg_cli.api_layer.schemas.code_location import DgApiAddCodeLocationResult
     from dagster_dg_cli.api_layer.schemas.deployment import (
         Deployment,
         DeploymentList,
@@ -754,3 +755,16 @@ def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
         lines.append("Note: More issues available (use --cursor to paginate)")
 
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Code location formatters
+# ---------------------------------------------------------------------------
+
+
+def format_add_code_location_result(result: "DgApiAddCodeLocationResult", as_json: bool) -> str:
+    """Format add code location result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return f"Added or updated code location '{result.location_name}'."
