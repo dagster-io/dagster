@@ -6,6 +6,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
+    from dagster_dg_cli.api_layer.schemas.alert_policy import (
+        AlertPolicyDocument,
+        AlertPolicySyncResult,
+    )
     from dagster_dg_cli.api_layer.schemas.asset import (
         DgApiAsset,
         DgApiAssetEventList,
@@ -179,6 +183,33 @@ def format_saml_result(result: "SamlOperationResult", as_json: bool) -> str:
         return result.model_dump_json(indent=2)
 
     return result.message
+
+
+# ---------------------------------------------------------------------------
+# Alert policy formatters
+# ---------------------------------------------------------------------------
+
+
+def format_alert_policies(policies: "AlertPolicyDocument", as_json: bool) -> str:
+    """Format alert policies for output."""
+    if as_json:
+        return policies.model_dump_json(indent=2)
+
+    import yaml
+
+    return yaml.dump(
+        {"alert_policies": policies.alert_policies},
+        default_flow_style=False,
+        sort_keys=False,
+    ).rstrip()
+
+
+def format_alert_policy_sync_result(result: "AlertPolicySyncResult", as_json: bool) -> str:
+    """Format alert policy sync result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return f"Synced alert policies: {', '.join(result.synced_policies)}"
 
 
 # ---------------------------------------------------------------------------
