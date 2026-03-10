@@ -10,6 +10,10 @@ if TYPE_CHECKING:
         AlertPolicyDocument,
         AlertPolicySyncResult,
     )
+    from dagster_dg_cli.api_layer.schemas.artifact import (
+        ArtifactDownloadResult,
+        ArtifactUploadResult,
+    )
     from dagster_dg_cli.api_layer.schemas.asset import (
         DgApiAsset,
         DgApiAssetEventList,
@@ -183,6 +187,29 @@ def format_saml_result(result: "SamlOperationResult", as_json: bool) -> str:
         return result.model_dump_json(indent=2)
 
     return result.message
+
+
+# ---------------------------------------------------------------------------
+# Artifact formatters
+# ---------------------------------------------------------------------------
+
+
+def format_artifact_upload(result: "ArtifactUploadResult", as_json: bool) -> str:
+    """Format artifact upload result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    scope_desc = f"deployment '{result.deployment}'" if result.deployment else "organization"
+    return f"Uploaded artifact '{result.key}' to {scope_desc}."
+
+
+def format_artifact_download(result: "ArtifactDownloadResult", as_json: bool) -> str:
+    """Format artifact download result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    scope_desc = f"deployment '{result.deployment}'" if result.deployment else "organization"
+    return f"Downloaded artifact '{result.key}' from {scope_desc} to {result.path}."
 
 
 # ---------------------------------------------------------------------------

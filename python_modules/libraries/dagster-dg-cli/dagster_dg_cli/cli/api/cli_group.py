@@ -5,6 +5,7 @@ from dagster_dg_core.utils import DgClickGroup
 
 from dagster_dg_cli.cli.api.agent import agent_group
 from dagster_dg_cli.cli.api.alert_policy import alert_policy_group
+from dagster_dg_cli.cli.api.artifact import artifact_group
 from dagster_dg_cli.cli.api.asset import asset_group
 from dagster_dg_cli.cli.api.code_location import code_location_group
 from dagster_dg_cli.cli.api.deployment import deployment_group
@@ -22,6 +23,7 @@ from dagster_dg_cli.cli.api.sensor import sensor_group
     commands={
         "agent": agent_group,
         "alert-policy": alert_policy_group,
+        "artifact": artifact_group,
         "asset": asset_group,
         "code-location": code_location_group,
         "deployment": deployment_group,
