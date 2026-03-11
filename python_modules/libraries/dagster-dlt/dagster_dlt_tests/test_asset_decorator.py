@@ -877,3 +877,56 @@ def test_translator_invariant_group_name_with_asset_decorator(dlt_pipeline: Pipe
             dagster_dlt_translator=CustomDagsterDltTranslator(),
         )
         def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+
+def test_resource_name_with_double_underscores(dlt_pipeline: Pipeline) -> None:
+    """Regression test for https://github.com/dagster-io/dagster/issues/33573.
+
+    extract_resource_metadata was calling normalize_table_identifier() on the resource's
+    table name. For names that contain double-underscores (e.g. "my__test__resource"), the
+    normalizer collapses them to a different string, so all per-table lookups silently
+    returned empty results (empty jobs list, no rows_loaded, empty column_schema).
+
+    The fix is to use str(resource.table_name) directly, which matches how dlt stores
+    tables internally.
+    """
+    from dagster_dlt_tests.dlt_test_sources.double_underscore_resource import (
+        pipeline_double_underscore,
+    )
+
+    @dlt_assets(dlt_source=pipeline_double_underscore(), dlt_pipeline=dlt_pipeline)
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(context=context)
+
+    res = materialize(
+        [example_pipeline_assets],
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    )
+    assert res.success
+
+    materializations = [event.materialization for event in res.get_asset_materialization_events()]
+    assert len(materializations) == 1
+    metadata = materializations[0].metadata
+
+    # jobs list must be non-empty — this was the primary symptom of the bug
+    assert "jobs" in metadata
+    assert len(metadata["jobs"].value) > 0, (
+        "jobs metadata is empty: normalize_table_identifier likely still being called"
+    )
+
+    # rows_loaded must be present and non-zero
+    assert "rows_loaded" in metadata, (
+        "rows_loaded missing: row_counts lookup failed (double-underscore name mismatch)"
+    )
+    assert metadata["rows_loaded"].value == 3
+
+    # column_schema must be populated
+    assert "dagster/column_schema" in metadata, (
+        "column_schema missing: get_table_columns lookup failed (double-underscore name mismatch)"
+    )
+    columns = metadata["dagster/column_schema"].schema.columns
+    column_names = [col.name for col in columns]
+    assert "id" in column_names
+    assert "value" in column_names
