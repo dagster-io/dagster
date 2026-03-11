@@ -97,7 +97,7 @@ def build_code_location_document(
 @click.option("-m", "--module-name", type=str, help="Python module name")
 @click.option("-p", "--package-name", type=str, help="Python package name")
 @click.option("-f", "--python-file", type=str, help="Python file path")
-@click.option("-d", "--working-directory", type=str, help="Working directory")
+@click.option("-w", "--working-directory", type=str, help="Working directory")
 @click.option("--executable-path", type=str, help="Python executable path")
 @click.option("-a", "--attribute", type=str, help="Attribute to load definitions from")
 @click.option("--commit-hash", type=str, help="Git commit hash")
