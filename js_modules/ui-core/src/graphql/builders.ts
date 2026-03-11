@@ -2925,7 +2925,7 @@ type Mutation = {
   reexecutePartitionBackfill: LaunchBackfillResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
-  reportAssetCheckEvaluation: ReportAssetCheckEvaluationResult;
+  reportAssetCheckEvaluations: ReportAssetCheckEvaluationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   resetSchedule: ScheduleMutationResult;
   resetSensor: SensorOrError;
@@ -3025,8 +3025,8 @@ type MutationReloadRepositoryLocationArgs = {
   repositoryLocationName: Scalars['String']['input'];
 };
 
-type MutationReportAssetCheckEvaluationArgs = {
-  eventParams: ReportAssetCheckEvaluationParams;
+type MutationReportAssetCheckEvaluationsArgs = {
+  eventParams: ReportAssetCheckEvaluationsParams;
 };
 
 type MutationReportRunlessAssetEventsArgs = {
@@ -4482,7 +4482,12 @@ type ReloadWorkspaceMutation = {
 
 type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Workspace;
 
-type ReportAssetCheckEvaluationParams = {
+type ReportAssetCheckEvaluationResult =
+  | PythonError
+  | ReportAssetCheckEvaluationsSuccess
+  | UnauthorizedError;
+
+type ReportAssetCheckEvaluationsParams = {
   assetKey: AssetKeyInput;
   checkName: Scalars['String']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -4492,14 +4497,10 @@ type ReportAssetCheckEvaluationParams = {
   severity?: InputMaybe<AssetCheckSeverity>;
 };
 
-type ReportAssetCheckEvaluationResult =
-  | PythonError
-  | ReportAssetCheckEvaluationSuccess
-  | UnauthorizedError;
-
-type ReportAssetCheckEvaluationSuccess = {
-  __typename: 'ReportAssetCheckEvaluationSuccess';
+type ReportAssetCheckEvaluationsSuccess = {
+  __typename: 'ReportAssetCheckEvaluationsSuccess';
   assetKey: AssetKey;
+  checkName: Scalars['String']['output'];
 };
 
 type ReportRunlessAssetEventsParams = {
@@ -11420,9 +11421,9 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
-    reportAssetCheckEvaluation:
-      overrides && overrides.hasOwnProperty('reportAssetCheckEvaluation')
-        ? overrides.reportAssetCheckEvaluation!
+    reportAssetCheckEvaluations:
+      overrides && overrides.hasOwnProperty('reportAssetCheckEvaluations')
+        ? overrides.reportAssetCheckEvaluations!
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
@@ -13764,12 +13765,12 @@ export const buildReloadWorkspaceMutation = (
   };
 };
 
-export const buildReportAssetCheckEvaluationParams = (
-  overrides?: Partial<ReportAssetCheckEvaluationParams>,
+export const buildReportAssetCheckEvaluationsParams = (
+  overrides?: Partial<ReportAssetCheckEvaluationsParams>,
   _relationshipsToOmit: Set<string> = new Set(),
-): ReportAssetCheckEvaluationParams => {
+): ReportAssetCheckEvaluationsParams => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('ReportAssetCheckEvaluationParams');
+  relationshipsToOmit.add('ReportAssetCheckEvaluationsParams');
   return {
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
@@ -13779,14 +13780,14 @@ export const buildReportAssetCheckEvaluationParams = (
           : buildAssetKeyInput({}, relationshipsToOmit),
     checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'aut',
     description:
-      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolorem',
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
-    passed: overrides && overrides.hasOwnProperty('passed') ? overrides.passed! : false,
+    passed: overrides && overrides.hasOwnProperty('passed') ? overrides.passed! : true,
     serializedMetadata:
       overrides && overrides.hasOwnProperty('serializedMetadata')
         ? overrides.serializedMetadata!
-        : 'nisi',
+        : 'sit',
     severity:
       overrides && overrides.hasOwnProperty('severity')
         ? overrides.severity!
@@ -13794,20 +13795,22 @@ export const buildReportAssetCheckEvaluationParams = (
   };
 };
 
-export const buildReportAssetCheckEvaluationSuccess = (
-  overrides?: Partial<ReportAssetCheckEvaluationSuccess>,
+export const buildReportAssetCheckEvaluationsSuccess = (
+  overrides?: Partial<ReportAssetCheckEvaluationsSuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'ReportAssetCheckEvaluationSuccess'} & ReportAssetCheckEvaluationSuccess => {
+): {__typename: 'ReportAssetCheckEvaluationsSuccess'} & ReportAssetCheckEvaluationsSuccess => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('ReportAssetCheckEvaluationSuccess');
+  relationshipsToOmit.add('ReportAssetCheckEvaluationsSuccess');
   return {
-    __typename: 'ReportAssetCheckEvaluationSuccess',
+    __typename: 'ReportAssetCheckEvaluationsSuccess',
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    checkName:
+      overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'dolorem',
   };
 };
 

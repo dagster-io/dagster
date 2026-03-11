@@ -21,9 +21,6 @@ EU_DAGSTER_CLOUD_URL = "https://eu.dagster.cloud"
 @cli_telemetry_wrapper
 def login_command(region: str | None) -> None:
     """Login to Dagster Plus."""
-    # Import login server only when the command is actually used
-    from dagster_shared.plus.login_server import start_login_server
-
     # Determine the base URL based on region
     if region == "eu":
         org_url = EU_DAGSTER_CLOUD_URL
@@ -31,6 +28,8 @@ def login_command(region: str | None) -> None:
         org_url = DagsterPlusCliConfig.get().url
     else:
         org_url = None
+
+    from dagster_shared.plus.login_server import start_login_server
 
     server, url = start_login_server(org_url)
 

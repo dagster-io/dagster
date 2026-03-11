@@ -12,10 +12,9 @@ import {
   LaunchPipelineExecutionMutation,
   RunTimeFragment,
 } from './types/RunUtils.types';
-import {Mono} from '../../../ui-components/src';
+import {Mono, showToast} from '../../../ui-components/src';
 import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
@@ -86,7 +85,7 @@ export async function handleLaunchResult(
     if (options.behavior === 'open') {
       openInSameTab();
     } else {
-      await showSharedToaster({
+      showToast({
         intent: 'success',
         message: (
           <div>
@@ -190,7 +189,7 @@ export async function handleLaunchMultipleResult(
   const pathAndQueryString = `/runs?${params.toString()}`;
   history.push(pathAndQueryString);
 
-  await showSharedToaster({
+  showToast({
     intent: 'success',
     message: <div>Launched {successfulRunIds.length} runs</div>,
     action: {

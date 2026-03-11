@@ -27,6 +27,7 @@ from dagster_shared.utils.warnings import disable_dagster_warnings
 from rich.console import Console
 from rich.text import Text
 
+from dagster_dg_cli.cli.response_schema import dg_response_schema
 from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
@@ -105,6 +106,7 @@ def list_project_command(target_path: Path, **global_options: object) -> None:
     default=False,
     help="Output as JSON instead of a table.",
 )
+@dg_response_schema(module="dagster_dg_cli.cli.schemas.list_schemas", cls="DgComponentList")
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -129,10 +131,10 @@ def list_components_command(
         ]
 
     if output_json:
-        output = [
+        items = [
             {"key": obj.key.to_typename(), "summary": obj.summary} for obj in component_objects
         ]
-        click.echo(json.dumps(output))
+        click.echo(json.dumps({"items": items}))
     else:
         # Create a table with component types
         table = DagsterInnerTable(["Key", "Summary"])
@@ -157,6 +159,7 @@ FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
     default=False,
     help="Output as JSON instead of a table.",
 )
+@dg_response_schema(module="dagster_dg_cli.cli.schemas.list_schemas", cls="DgRegistryModuleList")
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -173,8 +176,8 @@ def list_registry_modules_command(
     registry = EnvRegistry.from_dg_context(dg_context)
 
     if output_json:
-        json_output = [{"module": module} for module in sorted(registry.modules)]
-        click.echo(json.dumps(json_output))
+        items = [{"module": module} for module in sorted(registry.modules)]
+        click.echo(json.dumps({"items": items}))
     else:
         table = DagsterOuterTable(["Module"])
         for module in sorted(registry.modules):
@@ -259,17 +262,17 @@ def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
 
 def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> str | None:
     if column == DefsColumn.KEY:
-        return asset.key
+        return asset.asset_key
     elif column == DefsColumn.GROUP:
-        return asset.group
+        return asset.group_name
     elif column == DefsColumn.DEPS:
-        return "\n".join(asset.deps)
+        return "\n".join(asset.dependency_keys)
     elif column == DefsColumn.KINDS:
         return "\n".join(asset.kinds)
     elif column == DefsColumn.DESCRIPTION:
         return asset.description
     elif column == DefsColumn.TAGS:
-        return "\n".join(asset.tags)
+        return "\n".join(f'"{t["key"]}"="{t["value"]}"' for t in asset.tags)
     elif column == DefsColumn.IS_EXECUTABLE:
         return str(asset.is_executable)
     else:
@@ -363,6 +366,9 @@ def _get_table(columns: Sequence[DefsColumn], defs_type: DefsType, defs: Sequenc
     default=False,
     help="Output as JSON instead of a table.",
 )
+@dg_response_schema(
+    module="dagster_dg_cli.cli.schemas.list_schemas", cls="DgDefinitionMetadataSchema"
+)
 @click.option(
     "--path",
     "-p",
@@ -427,7 +433,10 @@ def list_defs_command(
         if columns:
             raise click.UsageError("Cannot use --columns with --json")
 
-        click.echo(json.dumps(definitions.to_dict(), indent=4))
+        from dagster_dg_cli.cli.schemas.list_schemas import DgDefinitionMetadataSchema
+
+        schema = DgDefinitionMetadataSchema.from_local_definitions(definitions)
+        click.echo(schema.model_dump_json(indent=4, exclude_none=True))
 
     # TABLE
     else:

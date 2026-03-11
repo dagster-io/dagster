@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from dagster_dg_cli.api_layer.graphql_adapter.asset import (
     get_asset_evaluations_via_graphql,
     get_asset_events_via_graphql,
+    get_asset_health_via_graphql,
     get_dg_plus_api_asset_via_graphql,
     list_dg_plus_api_assets_via_graphql,
 )
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
+        DgApiAssetStatus,
         DgApiEvaluationRecordList,
     )
 
@@ -27,33 +29,34 @@ class DgApiAssetApi:
 
     def list_assets(
         self,
-        limit: int | None = 50,
+        limit: int = 50,
         cursor: str | None = None,
-        status: bool | None = None,
     ) -> "DgApiAssetList":
-        """List assets with cursor-based pagination and optional status."""
+        """List assets with cursor-based pagination."""
         from dagster_dg_cli.cli.api.asset import DG_API_MAX_ASSET_LIMIT
 
-        # Enforce max limit constraint
-        if limit and limit > DG_API_MAX_ASSET_LIMIT:
+        if limit > DG_API_MAX_ASSET_LIMIT:
             raise ValueError(f"Limit cannot exceed {DG_API_MAX_ASSET_LIMIT}")
 
-        return list_dg_plus_api_assets_via_graphql(
-            self.client, limit=limit, cursor=cursor, status=bool(status)
-        )
+        return list_dg_plus_api_assets_via_graphql(self.client, limit=limit, cursor=cursor)
 
-    def get_asset(self, asset_key: str, status: bool | None = None) -> "DgApiAsset":
-        """Get single asset by slash-separated key (e.g., 'foo/bar') with optional status."""
+    def get_asset(self, asset_key: str) -> "DgApiAsset":
+        """Get single asset by slash-separated key (e.g., 'foo/bar')."""
         # Parse "foo/bar" to ["foo", "bar"]
         asset_key_parts = asset_key.split("/")
 
-        return get_dg_plus_api_asset_via_graphql(self.client, asset_key_parts, status=bool(status))
+        return get_dg_plus_api_asset_via_graphql(self.client, asset_key_parts)
+
+    def get_health(self, asset_key: str) -> "DgApiAssetStatus":
+        """Get health/status data for a single asset by slash-separated key."""
+        asset_key_parts = asset_key.split("/")
+        return get_asset_health_via_graphql(self.client, asset_key_parts)
 
     def get_events(
         self,
         asset_key: str,
         event_type: str | None = None,
-        limit: int | None = 50,
+        limit: int = 50,
         before: str | None = None,
         partitions: list[str] | None = None,
     ) -> "DgApiAssetEventList":
@@ -68,7 +71,7 @@ class DgApiAssetApi:
         """
         from dagster_dg_cli.cli.api.asset import DG_API_MAX_EVENT_LIMIT
 
-        if limit and limit > DG_API_MAX_EVENT_LIMIT:
+        if limit > DG_API_MAX_EVENT_LIMIT:
             raise ValueError(f"Limit cannot exceed {DG_API_MAX_EVENT_LIMIT}")
 
         # Convert ISO timestamp to millisecond epoch string for GraphQL
@@ -81,7 +84,7 @@ class DgApiAssetApi:
             self.client,
             asset_key,
             event_type=event_type,
-            limit=limit or 50,
+            limit=limit,
             before_timestamp_millis=before_timestamp_millis,
             partitions=partitions,
         )
@@ -89,9 +92,9 @@ class DgApiAssetApi:
     def get_evaluations(
         self,
         asset_key: str,
-        limit: int | None = None,
+        limit: int = 50,
         cursor: str | None = None,
-        include_nodes: bool | None = None,
+        include_nodes: bool = False,
     ) -> "DgApiEvaluationRecordList":
         """Get automation condition evaluation records for an asset.
 
@@ -103,14 +106,13 @@ class DgApiAssetApi:
         """
         from dagster_dg_cli.cli.api.asset import DG_API_MAX_EVENT_LIMIT
 
-        effective_limit = limit if limit is not None else 50
-        if effective_limit > DG_API_MAX_EVENT_LIMIT:
+        if limit > DG_API_MAX_EVENT_LIMIT:
             raise ValueError(f"Limit cannot exceed {DG_API_MAX_EVENT_LIMIT}")
 
         return get_asset_evaluations_via_graphql(
             self.client,
             asset_key,
-            limit=effective_limit,
+            limit=limit,
             cursor=cursor,
-            include_nodes=bool(include_nodes),
+            include_nodes=include_nodes,
         )

@@ -6,16 +6,16 @@ from dagster_shared.record import as_dict, record
 
 @record
 class DgAssetMetadata:
-    key: str
-    deps: list[str]
+    asset_key: str
+    dependency_keys: list[str]
     kinds: list[str]
-    group: str | None
+    group_name: str | None
     description: str | None
-    automation_condition: str | None
-    tags: Sequence[str]
+    automation_condition: Mapping[str, Any] | None
+    tags: Sequence[Mapping[str, str]]
     is_executable: bool
     source: str | None
-    owners: Sequence[str] | None
+    owners: Sequence[Mapping[str, str]] | None
 
 
 @record

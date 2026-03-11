@@ -13,6 +13,7 @@ import {
   Tag,
   TextInput,
   Tooltip,
+  showToast,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
@@ -26,7 +27,6 @@ import {
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
@@ -165,10 +165,10 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       variables: {sensorSelector, cursor},
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
-      await showSharedToaster({message: 'Cursor value updated', intent: 'success'});
+      showToast({message: 'Cursor value updated', intent: 'success'});
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
-      await showSharedToaster({
+      showToast({
         intent: 'danger',
         message: (
           <Box flex={{direction: 'row', gap: 8}}>

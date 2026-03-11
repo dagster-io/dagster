@@ -1,3 +1,4 @@
+import {showToast} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useReducer} from 'react';
 
 import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '../apollo-client';
@@ -9,7 +10,6 @@ import {
   RepositoryLocationStatusQuery,
   RepositoryLocationStatusQueryVariables,
 } from './types/useRepositoryLocationReload.types';
-import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/UnauthorizedErrorFragment';
@@ -172,7 +172,7 @@ export const useRepositoryLocationReload = ({
         stopPolling();
 
         // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
-        await showSharedToaster({
+        showToast({
           message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
           timeout: 3000,
           icon: 'check_circle',

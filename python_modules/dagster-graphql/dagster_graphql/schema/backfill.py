@@ -16,7 +16,7 @@ from dagster._core.execution.asset_backfill import (
     PartitionedAssetBackfillStatus,
     UnpartitionedAssetBackfillStatus,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemotePartitionSet
 from dagster._core.storage.compute_log_manager import ComputeIOType
@@ -521,22 +521,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
 
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> float | None:
-        if self._backfill_job.backfill_end_timestamp is not None:
-            return self._backfill_job.backfill_end_timestamp
-        if self._backfill_job.status == BulkActionStatus.REQUESTED:
-            # if it's still in progress then there is no end time
-            return None
-        records = self._get_records(graphene_info)
-        if len(records) == 0:
-            # backfill was moved to a terminal state before any runs were launched. We cannot
-            # reconstruct the time the backfill actually moved to a terminal state, so use the start
-            # time as an estimation
-            return self.creationTime
-        max_end_time = 0
-        for record in records:
-            max_end_time = max(record.end_time or 0, max_end_time)
-
-        return max_end_time
+        return self._backfill_job.backfill_end_timestamp
 
     def resolve_endTime(self, graphene_info: ResolveInfo) -> float | None:
         return self.resolve_endTimestamp(graphene_info)

@@ -1082,5 +1082,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             ".buildkite/dagster-buildkite",
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_10,  # requires tomllib (3.11+)
+            ],
         ),
     ]

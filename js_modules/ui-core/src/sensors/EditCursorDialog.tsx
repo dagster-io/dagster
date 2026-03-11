@@ -7,6 +7,7 @@ import {
   DialogBody,
   DialogFooter,
   TextArea,
+  showToast,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
@@ -18,7 +19,6 @@ import {
   SetSensorCursorMutationVariables,
 } from './types/EditCursorDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {SensorSelector} from '../graphql/types';
@@ -45,10 +45,10 @@ export const EditCursorDialog = ({
       variables: {sensorSelector, cursor: cursorValue},
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
-      await showSharedToaster({message: 'Cursor value updated', intent: 'success'});
+      showToast({message: 'Cursor value updated', intent: 'success'});
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
-      await showSharedToaster({
+      showToast({
         intent: 'danger',
         message: (
           <Box flex={{direction: 'row', gap: 8}}>

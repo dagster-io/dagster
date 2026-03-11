@@ -1,0 +1,32 @@
+{
+  "alertPoliciesAsDocumentOrError": {
+    "__typename": "AlertPoliciesAsDocument",
+    "document": {
+      "alert_policies": [
+        {
+          "name": "email-on-failure",
+          "description": "Send email on job failure",
+          "event_types": ["JOB_FAILURE"],
+          "notification_service": {
+            "email": {
+              "email_addresses": ["team@example.com"]
+            }
+          },
+          "tags": []
+        },
+        {
+          "name": "slack-on-sla-miss",
+          "description": "Notify Slack on SLA miss",
+          "event_types": ["ASSET_OVERDUE"],
+          "notification_service": {
+            "slack": {
+              "slack_workspace_name": "dagster",
+              "slack_channel_name": "#alerts"
+            }
+          },
+          "tags": [{"key": "team", "value": "data-eng"}]
+        }
+      ]
+    }
+  }
+}

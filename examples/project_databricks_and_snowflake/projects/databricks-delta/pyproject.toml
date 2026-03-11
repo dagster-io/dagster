@@ -14,7 +14,7 @@ dependencies = [
 dev = ["dagster-webserver", "dagster-dg-cli", "pytest"]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.19.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]

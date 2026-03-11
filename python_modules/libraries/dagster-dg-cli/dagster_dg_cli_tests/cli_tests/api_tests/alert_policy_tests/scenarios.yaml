@@ -1,0 +1,5 @@
+success_list_policies:
+  command: "dg api alert-policy list --json"
+
+success_list_policies_text:
+  command: "dg api alert-policy list"

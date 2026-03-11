@@ -2,13 +2,13 @@ import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 
 export const REPORT_CHECK_EVALUATION_MUTATION = gql`
-  mutation ReportCheckEvaluationMutation($eventParams: ReportAssetCheckEvaluationParams!) {
-    reportAssetCheckEvaluation(eventParams: $eventParams) {
+  mutation ReportCheckEvaluationMutation($eventParams: ReportAssetCheckEvaluationsParams!) {
+    reportAssetCheckEvaluations(eventParams: $eventParams) {
       ...PythonErrorFragment
       ... on UnauthorizedError {
         message
       }
-      ... on ReportAssetCheckEvaluationSuccess {
+      ... on ReportAssetCheckEvaluationsSuccess {
         assetKey {
           path
         }

@@ -1466,7 +1466,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     content: 'RunPod',
     blackAndWhite: true,
   },
-  expand: {color: '#D7A540', content: 'Expand'},
+  expand: {color: Colors.accentYellow(), content: 'Expand'},
 };
 
 // google-sheets to googlesheets, Duckdb to duckdb

@@ -65,6 +65,7 @@ PARTITION_PROGRESS_QUERY = """
         }
         hasCancelPermission
         hasResumePermission
+        endTimestamp
         user
         title
         description
@@ -450,6 +451,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
         assert result.data["partitionBackfillOrError"]["hasCancelPermission"] is True
         assert result.data["partitionBackfillOrError"]["hasResumePermission"] is True
+        assert result.data["partitionBackfillOrError"]["endTimestamp"] is None
 
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
 
@@ -640,6 +642,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "CANCELED"
+        assert result.data["partitionBackfillOrError"]["endTimestamp"] is not None
 
     def test_cancel_then_retry_backfill(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)

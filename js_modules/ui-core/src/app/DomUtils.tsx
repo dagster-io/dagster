@@ -1,9 +1,4 @@
-import {ToastConfig, showToast} from '@dagster-io/ui-components';
-
-// todo dish: Remove this, just use `showToast` at callsites directly.
-export const showSharedToaster = async (config: ToastConfig) => {
-  return showToast(config);
-};
+import {showToast} from '@dagster-io/ui-components';
 
 export async function copyValue(event: React.MouseEvent<any>, value: string) {
   event.preventDefault();
@@ -15,7 +10,7 @@ export async function copyValue(event: React.MouseEvent<any>, value: string) {
   document.execCommand('copy');
   el.remove();
 
-  await showSharedToaster({
+  showToast({
     message: 'Copied to clipboard!',
     icon: 'copy_to_clipboard_done',
     intent: 'none',

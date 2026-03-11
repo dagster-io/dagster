@@ -3,12 +3,12 @@
 import * as Types from '../../graphql/types';
 
 export type ReportCheckEvaluationMutationVariables = Types.Exact<{
-  eventParams: Types.ReportAssetCheckEvaluationParams;
+  eventParams: Types.ReportAssetCheckEvaluationsParams;
 }>;
 
 export type ReportCheckEvaluationMutation = {
   __typename: 'Mutation';
-  reportAssetCheckEvaluation:
+  reportAssetCheckEvaluations:
     | {
         __typename: 'PythonError';
         message: string;
@@ -20,7 +20,7 @@ export type ReportCheckEvaluationMutation = {
         }>;
       }
     | {
-        __typename: 'ReportAssetCheckEvaluationSuccess';
+        __typename: 'ReportAssetCheckEvaluationsSuccess';
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
     | {__typename: 'UnauthorizedError'; message: string};
@@ -51,6 +51,6 @@ export type ReportEventPartitionDefinitionQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const ReportCheckEvaluationMutationVersion = '5450d1bb52007aa1779de02fbadb23c8b657383da672aec583940b8da2083706';
+export const ReportCheckEvaluationMutationVersion = '4ec348911aefb1eb970aeee3a4528c63729cae42f33a9afae2b8cb767076464f';
 
 export const ReportEventPartitionDefinitionQueryVersion = 'e306421344493a9986106de14bca90ec554505d6f1965991ba502725edc41c95';

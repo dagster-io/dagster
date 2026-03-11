@@ -1859,11 +1859,6 @@
       "destination": "/"
     },
     {
-      "source": "/integrations",
-      "destination": "/integrations/libraries",
-      "permanent": false
-    },
-    {
       "source": "/integrations/airbyte",
       "destination": "/integrations/libraries/airbyte",
       "permanent": false

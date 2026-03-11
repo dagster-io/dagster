@@ -232,7 +232,7 @@ const SVGLabeledRect = ({
       height={undefined}
       size={minified ? 30 : 16}
       text={label}
-      fill="#979797"
+      fill={Colors.accentGray()}
     />
   </g>
 );

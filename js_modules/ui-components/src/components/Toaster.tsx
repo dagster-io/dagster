@@ -25,7 +25,7 @@ export type ToastConfig = {
     | {type: 'custom'; element: ReactNode};
 };
 
-export const showToast = async (config: ToastConfig, sonnerConfig: ExternalToast = {}) => {
+export const showToast = (config: ToastConfig, sonnerConfig: ExternalToast = {}) => {
   const {intent, message, icon, timeout, action} = config;
   return toast.custom(
     (id) => {

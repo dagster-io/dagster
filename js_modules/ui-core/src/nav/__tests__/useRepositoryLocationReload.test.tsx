@@ -8,6 +8,11 @@ import {
   useRepositoryLocationReload,
 } from '../useRepositoryLocationReload';
 
+jest.mock('@dagster-io/ui-components', () => ({
+  ...jest.requireActual('@dagster-io/ui-components'),
+  showToast: jest.fn(),
+}));
+
 describe('useRepositoryReloadLocation', () => {
   // jest.useFakeTimers();
 
