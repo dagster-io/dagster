@@ -98,24 +98,26 @@ _EXPECTED_COMPONENT_TYPES_TABLE = textwrap.dedent("""
 """).strip()
 
 _EXPECTED_COMPONENTS_JSON = textwrap.dedent("""
-    [
-        {
-            "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": "Summary."
-        },
-        {
-            "key": "dagster_test.components.ComplexAssetComponent",
-            "summary": "An asset that has a complex schema."
-        },
-        {
-            "key": "dagster_test.components.SimpleAssetComponent",
-            "summary": "A simple asset that returns a constant string value."
-        },
-        {
-            "key": "dagster_test.components.SimplePipesScriptComponent",
-            "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
-        }
-    ]
+    {
+        "items": [
+            {
+                "key": "dagster_test.components.AllMetadataEmptyComponent",
+                "summary": "Summary."
+            },
+            {
+                "key": "dagster_test.components.ComplexAssetComponent",
+                "summary": "An asset that has a complex schema."
+            },
+            {
+                "key": "dagster_test.components.SimpleAssetComponent",
+                "summary": "A simple asset that returns a constant string value."
+            },
+            {
+                "key": "dagster_test.components.SimplePipesScriptComponent",
+                "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
+            }
+        ]
+    }
 """).strip()
 
 
@@ -143,7 +145,7 @@ def test_list_components_json_success():
     ):
         result = runner.invoke("list", "components", "--json")
         lines = result.output.splitlines()
-        json_start_index = next(i for i, line in enumerate(lines) if line.startswith("["))
+        json_start_index = next(i for i, line in enumerate(lines) if line.startswith("{"))
         json_output = "\n".join(lines[json_start_index:])
         assert match_json_output(json_output, _EXPECTED_COMPONENTS_JSON)
 
@@ -155,7 +157,7 @@ def test_list_components_filtered():
     ):
         result = runner.invoke("list", "components", "--json", "--package", "fake")
         assert_runner_result(result)
-        assert result.output.strip() == "[]"
+        assert result.output.strip() == '{"items": []}'
 
         for module in ["dagster_test", "dagster_test.components"]:
             result = runner.invoke("list", "components", "--json", "--package", module)
@@ -180,7 +182,7 @@ def test_list_components_project_wildcard_pattern():
             set_toml_node(config, ("project", "registry_modules"), [])
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        components = [entry["key"] for entry in json.loads(result.output.strip())["items"]]
         assert "foo_bar.components.my_component.MyComponent" not in components
 
         # Add a wildcard matching our scaffolded component, confirm that it is listed
@@ -188,7 +190,7 @@ def test_list_components_project_wildcard_pattern():
             set_toml_node(config, ("project", "registry_modules"), ["foo_bar.components.*"])
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        components = [entry["key"] for entry in json.loads(result.output.strip())["items"]]
 
         assert "foo_bar.components.my_component.MyComponent" in components
 
@@ -212,7 +214,7 @@ def test_list_components_project_wildcard_pattern_no_duplicates():
             )
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        components = [entry["key"] for entry in json.loads(result.output.strip())["items"]]
         assert (
             len([c for c in components if c == "foo_bar.components.my_component.MyComponent"]) == 1
         )
@@ -241,11 +243,13 @@ _EXPECTED_PLUGINS_TABLE = textwrap.dedent("""
 """).strip()
 
 _EXPECTED_PLUGIN_JSON = textwrap.dedent("""
-    [
-        {
-            "module": "dagster_test.components"
-        }
-    ]
+    {
+        "items": [
+            {
+                "module": "dagster_test.components"
+            }
+        ]
+    }
 """).strip()
 
 

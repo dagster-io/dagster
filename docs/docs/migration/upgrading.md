@@ -1,7 +1,7 @@
 ---
 description: Upgrading Dagster.
 hide_title: true
-sidebar_position: 10
+sidebar_position: 20
 title: Upgrading Dagster
 ---
 

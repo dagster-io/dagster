@@ -89,35 +89,34 @@
   {
       "assets": [
           {
-              "key": "my_asset_1",
-              "deps": [],
+              "asset_key": "my_asset_1",
+              "asset_key_parts": [
+                  "my_asset_1"
+              ],
+              "group_name": "default",
               "kinds": [],
-              "group": "default",
-              "description": null,
-              "automation_condition": null,
-              "tags": [],
+              "dependency_keys": [],
+              "owners": [],
               "is_executable": true,
-              "source": "src/foo_bar/defs/mydefs/defs.yaml:1",
-              "owners": []
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           },
           {
-              "key": "my_asset_2",
-              "deps": [],
+              "asset_key": "my_asset_2",
+              "asset_key_parts": [
+                  "my_asset_2"
+              ],
+              "group_name": "default",
               "kinds": [],
-              "group": "default",
-              "description": null,
-              "automation_condition": null,
-              "tags": [],
+              "dependency_keys": [],
+              "owners": [],
               "is_executable": true,
-              "source": "src/foo_bar/defs/mydefs/defs.yaml:1",
-              "owners": []
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ],
       "asset_checks": [],
       "jobs": [
           {
               "name": "my_job",
-              "description": null,
               "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ],

@@ -59,16 +59,17 @@ Each noun file (e.g., `deployment.py`) contains:
 - `--cursor <cursor>` for cursor-based pagination (preferred)
 - `--filter <query>` for filtering results
 - `--format <table|json>` (alternative to --json flag)
-- `--status` for including runtime health/status data
 
-## Status Flag Pattern
+## Health Subcommand Pattern
 
-Some commands support a `--status` boolean flag to include runtime/stateful data:
+Health/status data for a resource is accessed via a dedicated `get-health` subcommand rather than
+a flag on `list` or `get`. This keeps the core commands focused on definition-time data and
+provides a clean, dedicated interface for operational monitoring.
 
-### Asset Status:
+### Asset Health:
 
-- **Default** (no `--status` flag): Definition-time data (description, group, kinds, metadata)
-- **With `--status`**: Includes additional runtime/stateful data:
+- **`list` / `get`**: Definition-time data (description, group, kinds, metadata)
+- **`get-health <asset_key>`**: Runtime/stateful data:
   - Asset health status (overall, materialization, freshness, checks)
   - Health metadata (failure details, run IDs, timestamps)
   - Latest materialization information (with natural partition data)
@@ -78,23 +79,14 @@ Some commands support a `--status` boolean flag to include runtime/stateful data
 ### Usage Examples:
 
 ```bash
-# Default definition view
+# Definition views
 dg api asset list
 dg api asset get my/asset/key
 
-# Include status for operational monitoring
-dg api asset list --status
-dg api asset get my/asset/key --status
-
-# JSON output works with --status
-dg api asset list --status --json
+# Health/status for operational monitoring
+dg api asset get-health my/asset/key
+dg api asset get-health my/asset/key --json
 ```
-
-### Implementation Guidelines:
-
-1. **Backward Compatibility**: Default behavior (no flag) must remain unchanged
-2. **GraphQL Efficiency**: Use appropriate queries based on whether status is requested
-3. **Documentation**: Document what additional data `--status` includes
 
 ## Output Formatting
 
@@ -316,8 +308,7 @@ result = client.execute(query, variables)
 - Test error handling in both output modes
 - Verify REST-like data transformation
 - Ensure --json flag works on all commands
-- Test with and without `--status` flag
-- Test backward compatibility (no `--status` flag)
+- Test `get-health` subcommand for health data
 
 ## Future Extensions
 
@@ -340,11 +331,11 @@ dg api deployment list
 # List deployments in JSON format
 dg api deployment list --json
 
-# Asset management with status flag
-dg api asset list                    # Default definition view
-dg api asset list --status           # Include health/status information
-dg api asset get my/asset --json     # Single asset in JSON
-dg api asset get my/asset --status   # Single asset with status
+# Asset management
+dg api asset list                         # Default definition view
+dg api asset get my/asset --json          # Single asset in JSON
+dg api asset get-health my/asset          # Health/status for an asset
+dg api asset get-health my/asset --json   # Health/status in JSON
 ```
 
 ### Planned Extensions:

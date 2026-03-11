@@ -1,11 +1,11 @@
-"""Tests for --response-schema flag on all dg api commands."""
+"""Tests for --response-schema flag on all dg commands that support --json."""
 
 import json
 
 import pytest
 from click.testing import CliRunner
 
-# All 16 commands with their CLI args (using --response-schema, no auth needed)
+# All commands with their CLI args (using --response-schema, no auth needed)
 RESPONSE_SCHEMA_COMMANDS = [
     # asset commands (deployment_scoped)
     ("api asset list --response-schema", "DgApiAssetList"),
@@ -15,6 +15,9 @@ RESPONSE_SCHEMA_COMMANDS = [
     # deployment commands (organization_scoped)
     ("api deployment list --response-schema", "DeploymentList"),
     ("api deployment get --response-schema", "Deployment"),
+    # deployment settings commands (deployment_scoped)
+    ("api deployment settings get --response-schema", "DeploymentSettings"),
+    ("api deployment settings set --response-schema", "DeploymentSettings"),
     # agent commands (organization_scoped)
     ("api agent list --response-schema", "DgApiAgentList"),
     ("api agent get --response-schema", "DgApiAgent"),
@@ -30,6 +33,13 @@ RESPONSE_SCHEMA_COMMANDS = [
     # secret commands (organization_scoped)
     ("api secret list --response-schema", "DgApiSecretList"),
     ("api secret get --response-schema", "DgApiSecret"),
+    # saml commands (organization_scoped)
+    ("api organization saml upload --response-schema", "SamlOperationResult"),
+    ("api organization saml remove --response-schema", "SamlOperationResult"),
+    # list commands
+    ("list components --response-schema", "DgComponentList"),
+    ("list registry-modules --response-schema", "DgRegistryModuleList"),
+    ("list defs --response-schema", "DgDefinitionMetadataSchema"),
 ]
 
 

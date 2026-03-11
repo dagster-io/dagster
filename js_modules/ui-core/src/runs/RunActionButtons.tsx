@@ -1,4 +1,4 @@
-import {Box, Button, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Icon, showToast} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
@@ -10,7 +10,6 @@ import {TerminationDialog, TerminationDialogResult} from './TerminationDialog';
 import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
-import {showSharedToaster} from '../app/DomUtils';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -35,7 +34,7 @@ export const CancelRunButton = ({run}: {run: RunFragment}) => {
       const {errors} = result;
       const error = runId && errors[runId];
       if (error && 'message' in error) {
-        await showSharedToaster({
+        showToast({
           message: error.message,
           icon: 'error',
           intent: 'danger',

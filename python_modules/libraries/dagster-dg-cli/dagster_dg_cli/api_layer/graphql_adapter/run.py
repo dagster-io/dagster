@@ -75,7 +75,6 @@ query DgApiListRunsQuery($filter: RunsFilter, $cursor: String, $limit: Int) {
                 endTime
                 jobName
             }
-            count
         }
         ... on PythonError {
             message
@@ -102,7 +101,6 @@ def process_runs_response(graphql_response: dict[str, Any]) -> DgApiRunList:
         raise Exception(f"Unexpected response type: {typename}")
 
     results = runs_or_error.get("results", [])
-    count = runs_or_error.get("count", 0)
 
     runs = [
         DgApiRun(
@@ -116,16 +114,7 @@ def process_runs_response(graphql_response: dict[str, Any]) -> DgApiRunList:
         for r in results
     ]
 
-    # Determine cursor for next page (last run ID if there are more results)
-    cursor = runs[-1].id if runs else None
-    has_more = len(runs) > 0 and count > len(runs)
-
-    return DgApiRunList(
-        items=runs,
-        total=count,
-        cursor=cursor,
-        has_more=has_more,
-    )
+    return DgApiRunList(items=runs)
 
 
 def list_runs_via_graphql(

@@ -1,0 +1,156 @@
+# serializer version: 1
+# name: TestFormatIssues.test_format_empty_issues_json_output[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestFormatIssues.test_format_empty_issues_text_output[0]
+  'No issues found.'
+# ---
+# name: TestFormatIssues.test_format_issue_minimal_fields[0]
+  '''
+  Title:       Minimal issue
+  Status:      CLOSED
+  Created By:  user@example.com
+  Description: Only required fields.
+  '''
+# ---
+# name: TestFormatIssues.test_format_issue_with_run_id_only[0]
+  '''
+  Title:       Run failure issue
+  Status:      OPEN
+  Created By:  ops@example.com
+  Run ID:      run-failing-456
+  Description: This issue is linked to a specific run.
+  '''
+# ---
+# name: TestFormatIssues.test_format_issues_json_output[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+      dict({
+        'asset_key': list([
+          'my_asset',
+        ]),
+        'context': None,
+        'created_by_email': 'alice@example.com',
+        'description': 'The asset failed to materialize due to a connection error.',
+        'id': 'issue-1-uuid-12345',
+        'run_id': 'run-abc-123',
+        'status': 'OPEN',
+        'title': 'Asset materialization failed',
+      }),
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'bob@example.com',
+        'description': 'The daily schedule did not execute as expected.',
+        'id': 'issue-2-uuid-67890',
+        'run_id': None,
+        'status': 'CLOSED',
+        'title': 'Schedule missed execution',
+      }),
+      dict({
+        'asset_key': None,
+        'context': 'Stack trace: ...',
+        'created_by_email': 'carol@example.com',
+        'description': 'Sensor encountered an unhandled exception.',
+        'id': 'issue-3-uuid-abcdef',
+        'run_id': None,
+        'status': 'OPEN',
+        'title': 'Sensor error',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatIssues.test_format_issues_text_output[0]
+  '''
+  STATUS  TITLE                         ID                   CREATED BY
+  OPEN    Asset materialization failed  issue-1-uuid-12345   alice@example.com
+  CLOSED  Schedule missed execution     issue-2-uuid-67890   bob@example.com
+  OPEN    Sensor error                  issue-3-uuid-abcdef  carol@example.com
+  '''
+# ---
+# name: TestFormatIssues.test_format_paginated_issues_json_output[0]
+  dict({
+    'cursor': 'next-page-cursor-xyz',
+    'has_more': True,
+    'items': list([
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'dave@example.com',
+        'description': 'Description for first paginated issue.',
+        'id': 'issue-page-1-uuid',
+        'run_id': None,
+        'status': 'OPEN',
+        'title': 'First paginated issue',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatIssues.test_format_paginated_issues_text_output[0]
+  '''
+  STATUS  TITLE                  ID                 CREATED BY
+  OPEN    First paginated issue  issue-page-1-uuid  dave@example.com
+  Note: More issues available (use --cursor to paginate)
+  '''
+# ---
+# name: TestFormatIssues.test_format_single_issue_json_output[0]
+  dict({
+    'asset_key': list([
+      'namespace',
+      'my_critical_asset',
+    ]),
+    'context': 'Additional diagnostic information here.',
+    'created_by_email': 'engineer@example.com',
+    'description': 'The pipeline failed with a critical error during execution.',
+    'id': 'single-issue-uuid-xyz',
+    'run_id': 'run-xyz-789',
+    'status': 'OPEN',
+    'title': 'Critical pipeline failure',
+  })
+# ---
+# name: TestFormatIssues.test_format_single_issue_text_output[0]
+  '''
+  Title:              Critical pipeline failure
+  Status:             OPEN
+  Created By:         engineer@example.com
+  Run ID:             run-xyz-789
+  Asset Key:          ['namespace', 'my_critical_asset']
+  Description:        The pipeline failed with a critical error during execution.
+  Additional Context: Additional diagnostic information here.
+  '''
+# ---
+# name: TestIssueDataProcessing.test_issue_creation_with_all_statuses[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'test@example.com',
+        'description': 'Test issue for status OPEN.',
+        'id': 'issue-open-uuid',
+        'run_id': None,
+        'status': 'OPEN',
+        'title': 'Issue with status OPEN',
+      }),
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'test@example.com',
+        'description': 'Test issue for status CLOSED.',
+        'id': 'issue-closed-uuid',
+        'run_id': None,
+        'status': 'CLOSED',
+        'title': 'Issue with status CLOSED',
+      }),
+    ]),
+  })
+# ---

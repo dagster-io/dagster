@@ -6,7 +6,7 @@ import {
   buildDimensionDefinitionType,
   buildMutation,
   buildPartitionDefinition,
-  buildReportAssetCheckEvaluationSuccess,
+  buildReportAssetCheckEvaluationsSuccess,
 } from '../../../graphql/builders';
 import {PartitionDefinitionType} from '../../../graphql/types';
 import {buildMutationMock, buildQueryMock} from '../../../testing/mocking';
@@ -67,7 +67,7 @@ export const buildReportCheckPassedMutationMock = () =>
       },
     },
     data: {
-      reportAssetCheckEvaluation: buildReportAssetCheckEvaluationSuccess({
+      reportAssetCheckEvaluations: buildReportAssetCheckEvaluationsSuccess({
         assetKey: buildAssetKey({path: testCheck.assetKey.path}),
       }),
     },
@@ -113,7 +113,7 @@ export const buildReportCheckAnyMutationMock = (): MockedResponse => ({
   variableMatcher: () => true,
   newData: () => ({
     data: buildMutation({
-      reportAssetCheckEvaluation: buildReportAssetCheckEvaluationSuccess(),
+      reportAssetCheckEvaluations: buildReportAssetCheckEvaluationsSuccess(),
     }),
   }),
 });

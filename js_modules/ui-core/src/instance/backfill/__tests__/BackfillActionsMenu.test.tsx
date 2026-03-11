@@ -50,6 +50,9 @@ describe('BackfillActionsMenu', () => {
     await user.click(reexecute);
     await waitFor(() => expect(reexecuteMock.result).toHaveBeenCalled());
 
+    // Re-open the dropdown since clicking a MenuItem dismisses the Popover
+    await user.click(dropdown);
+
     const reexecuteFromFailure = await screen.findByRole('menuitem', {
       name: /re-execute from failure$/i,
     });

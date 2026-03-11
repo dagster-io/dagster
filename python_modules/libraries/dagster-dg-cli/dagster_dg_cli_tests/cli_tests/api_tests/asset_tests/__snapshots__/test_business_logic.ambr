@@ -73,7 +73,6 @@
     ]),
     'owners': None,
     'partition_definition': None,
-    'status': None,
     'tags': None,
     'upstream_dependencies': None,
   })
@@ -361,7 +360,6 @@
     'partition_definition': dict({
       'description': 'Daily partitions from 2024-01-01 [%Y-%m-%d]',
     }),
-    'status': None,
     'tags': list([
       dict({
         'key': 'dagster/priority',
@@ -417,6 +415,73 @@
   Deps: None
   '''
 # ---
+# name: TestFormatAssetHealth.test_format_asset_health_json_output[0]
+  dict({
+    'asset_checks_status': 'HEALTHY',
+    'asset_health': 'HEALTHY',
+    'asset_key': 'analytics/daily_metrics',
+    'checks_status': dict({
+      'num_failed_checks': 0,
+      'num_warning_checks': 0,
+      'status': 'HEALTHY',
+      'total_num_checks': 3,
+    }),
+    'freshness_info': dict({
+      'cron_schedule': '0 * * * *',
+      'current_lag_minutes': 5.2,
+      'current_minutes_late': None,
+      'latest_materialization_minutes_late': None,
+      'maximum_lag_minutes': 30.0,
+    }),
+    'freshness_status': 'FRESH',
+    'health_metadata': None,
+    'latest_materialization': dict({
+      'partition': '2024-01-31',
+      'run_id': 'run-abc-123',
+      'timestamp': 1706745600000.0,
+    }),
+    'materialization_status': 'MATERIALIZED',
+  })
+# ---
+# name: TestFormatAssetHealth.test_format_asset_health_text_output[0]
+  '''
+  Asset Key: analytics/daily_metrics
+  
+  Asset Health: HEALTHY
+  Materialization Status: MATERIALIZED
+  Freshness Status: FRESH
+  Asset Checks Status: HEALTHY
+  Latest Materialization: 2024-02-01 00:00:00 UTC
+  Latest Run ID: run-abc-123
+  Latest Partition: 2024-01-31
+  Current Lag: 5.2 minutes
+  Max Allowed Lag: 30.0 minutes
+  Freshness Schedule: 0 * * * *
+  Total Checks: 3
+  Failed Checks: 0
+  Warning Checks: 0
+  '''
+# ---
+# name: TestFormatAssetHealth.test_format_empty_asset_health_json_output[0]
+  dict({
+    'asset_checks_status': None,
+    'asset_health': None,
+    'asset_key': 'simple_asset',
+    'checks_status': None,
+    'freshness_info': None,
+    'freshness_status': None,
+    'health_metadata': None,
+    'latest_materialization': None,
+    'materialization_status': None,
+  })
+# ---
+# name: TestFormatAssetHealth.test_format_empty_asset_health_text_output[0]
+  '''
+  Asset Key: simple_asset
+  
+  No health data available.
+  '''
+# ---
 # name: TestFormatAssets.test_format_asset_without_metadata[0]
   '''
   Asset Key: simple
@@ -463,7 +528,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -490,7 +554,6 @@
         ]),
         'owners': None,
         'partition_definition': None,
-        'status': None,
         'tags': None,
         'upstream_dependencies': None,
       }),
@@ -547,7 +610,6 @@
     ]),
     'owners': None,
     'partition_definition': None,
-    'status': None,
     'tags': None,
     'upstream_dependencies': None,
   })

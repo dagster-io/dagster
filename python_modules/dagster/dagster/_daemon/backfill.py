@@ -216,7 +216,6 @@ def execute_backfill_iteration_with_instigation_logger(
                             logger=backfill_logger,
                             log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
                         )
-                        instance.update_backfill(backfill.with_error(error_info))
                 else:
                     error_info = DaemonErrorCapture.process_exception(
                         sys.exc_info(),
@@ -224,9 +223,7 @@ def execute_backfill_iteration_with_instigation_logger(
                         log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
                     )
                     instance.update_backfill(
-                        backfill.with_error(error_info).with_failure_count(
-                            backfill.failure_count + 1
-                        )
+                        backfill.with_failure_count(backfill.failure_count + 1)
                     )
             else:
                 error_info = DaemonErrorCapture.process_exception(

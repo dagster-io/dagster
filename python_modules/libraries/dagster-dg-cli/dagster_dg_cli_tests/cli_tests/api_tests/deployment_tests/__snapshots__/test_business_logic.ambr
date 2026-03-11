@@ -1,4 +1,32 @@
 # serializer version: 1
+# name: TestFormatDeploymentSettings.test_format_settings_json_output[0]
+  dict({
+    'settings': dict({
+      'run_monitoring': dict({
+        'start_timeout_seconds': 300,
+      }),
+      'run_queue': dict({
+        'max_concurrent_runs': 25,
+        'tag_concurrency_limits': list([
+        ]),
+      }),
+      'run_retries': dict({
+        'max_retries': 0,
+      }),
+    }),
+  })
+# ---
+# name: TestFormatDeploymentSettings.test_format_settings_text_output[0]
+  '''
+  run_queue:
+    max_concurrent_runs: 25
+    tag_concurrency_limits: []
+  run_monitoring:
+    start_timeout_seconds: 300
+  run_retries:
+    max_retries: 0
+  '''
+# ---
 # name: TestFormatDeployments.test_format_deployments_json_output[0]
   dict({
     'items': list([
@@ -34,6 +62,27 @@
   data-eng-staging  213933  PRODUCTION
   data-eng-dev      217021  PRODUCTION
   '''
+# ---
+# name: TestProcessBranchDeploymentsResponse.test_empty_nodes[0]
+  DeploymentList(items=[], total=0)
+# ---
+# name: TestProcessBranchDeploymentsResponse.test_missing_nodes_key[0]
+  DeploymentList(items=[], total=0)
+# ---
+# name: TestProcessBranchDeploymentsResponse.test_successful_response_processing[0]
+  DeploymentList(items=[Deployment(id=300001, name='feature-add-auth', type=<DeploymentType.BRANCH: 'BRANCH'>), Deployment(id=300002, name='fix-pipeline-timeout', type=<DeploymentType.BRANCH: 'BRANCH'>), Deployment(id=300003, name='refactor-sensors', type=<DeploymentType.BRANCH: 'BRANCH'>)], total=3)
+# ---
+# name: TestProcessDeleteDeploymentResponse.test_successful_branch_delete[0]
+  Deployment(id=300001, name='feature-add-auth', type=<DeploymentType.BRANCH: 'BRANCH'>)
+# ---
+# name: TestProcessDeleteDeploymentResponse.test_successful_production_delete[0]
+  Deployment(id=1, name='prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)
+# ---
+# name: TestProcessDeploymentSettingsResponse.test_successful_get_settings[0]
+  DeploymentSettings(settings={'run_queue': {'max_concurrent_runs': 25, 'tag_concurrency_limits': []}, 'run_monitoring': {'start_timeout_seconds': 300}, 'run_retries': {'max_retries': 0}})
+# ---
+# name: TestProcessDeploymentSettingsResponse.test_successful_set_settings[0]
+  DeploymentSettings(settings={'run_queue': {'max_concurrent_runs': 50, 'tag_concurrency_limits': []}, 'run_monitoring': {'start_timeout_seconds': 600}, 'run_retries': {'max_retries': 2}})
 # ---
 # name: TestProcessDeploymentsResponse.test_empty_response_processing[0]
   DeploymentList(items=[Deployment(id=87, name='data-eng-prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=190248, name='gtm20', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=213933, name='data-eng-staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=217021, name='data-eng-dev', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=4)

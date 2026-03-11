@@ -63,6 +63,30 @@ T = TypeVar("T")
     required=False,
 )
 @click.option(
+    "--db-statement-timeout",
+    help=(
+        "The timeout in milliseconds to set on database statements sent "
+        "to the DagsterInstance. Not respected in all configurations."
+    ),
+    default=None,
+    type=click.INT,
+)
+@click.option(
+    "--db-pool-recycle",
+    help=(
+        "The maximum age of a connection to use from the sqlalchemy pool without connection"
+        " recycling."
+    ),
+    default=None,
+    type=click.INT,
+)
+@click.option(
+    "--db-pool-max-overflow",
+    help=("The maximum overflow size of the sqlalchemy pool. Set to -1 to disable."),
+    default=None,
+    type=click.INT,
+)
+@click.option(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
     help="Whether to schema-check defs.yaml files for the project before starting the dev server.",
@@ -80,6 +104,9 @@ def dev_command(
     port: int | None,
     host: str | None,
     live_data_poll_rate: int,
+    db_statement_timeout: int | None,
+    db_pool_recycle: int | None,
+    db_pool_max_overflow: int | None,
     check_yaml: bool | None,
     target_path: Path,
     verbose: bool,  # from dg_global_options
@@ -110,6 +137,9 @@ def dev_command(
             shutdown_pipe=None,
             verbose=verbose,
             workspace_opts=workspace_opts,
+            db_statement_timeout=db_statement_timeout,
+            db_pool_recycle=db_pool_recycle,
+            db_pool_max_overflow=db_pool_max_overflow,
         )
 
     # If not, use dg config to construct a workspace file and do a yaml check before
@@ -171,4 +201,7 @@ def dev_command(
             shutdown_pipe=None,
             verbose=verbose,
             workspace_opts=WorkspaceOpts(workspace=[workspace_file]),
+            db_statement_timeout=db_statement_timeout,
+            db_pool_recycle=db_pool_recycle,
+            db_pool_max_overflow=db_pool_max_overflow,
         )

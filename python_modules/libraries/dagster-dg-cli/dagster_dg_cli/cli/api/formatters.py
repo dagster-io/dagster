@@ -6,15 +6,37 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
+    from dagster_dg_cli.api_layer.schemas.alert_policy import (
+        AlertPolicyDocument,
+        AlertPolicySyncResult,
+    )
+    from dagster_dg_cli.api_layer.schemas.artifact import (
+        ArtifactDownloadResult,
+        ArtifactUploadResult,
+    )
     from dagster_dg_cli.api_layer.schemas.asset import (
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
+        DgApiAssetStatus,
         DgApiEvaluationRecordList,
     )
-    from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
+    from dagster_dg_cli.api_layer.schemas.code_location import (
+        DgApiAddCodeLocationResult,
+        DgApiCodeLocation,
+        DgApiCodeLocationList,
+        DgApiDeleteCodeLocationResult,
+    )
+    from dagster_dg_cli.api_layer.schemas.deployment import (
+        Deployment,
+        DeploymentList,
+        DeploymentSettings,
+    )
+    from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
+    from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
     from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
     from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
+    from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
     from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
     from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
     from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
@@ -129,6 +151,94 @@ def format_deployment(deployment: "Deployment", as_json: bool) -> str:
     )
 
 
+def format_deployment_settings(settings: "DeploymentSettings", as_json: bool) -> str:
+    """Format deployment settings for output."""
+    if as_json:
+        return settings.model_dump_json(indent=2)
+
+    import yaml
+
+    return yaml.dump(settings.settings, default_flow_style=False, sort_keys=False).rstrip()
+
+
+# ---------------------------------------------------------------------------
+# Organization formatters
+# ---------------------------------------------------------------------------
+
+
+def format_organization_settings(settings: "OrganizationSettings", as_json: bool) -> str:
+    """Format organization settings for output."""
+    if as_json:
+        return settings.model_dump_json(indent=2)
+
+    import yaml
+
+    return yaml.dump(settings.settings, default_flow_style=False, sort_keys=False).rstrip()
+
+
+# ---------------------------------------------------------------------------
+# SAML formatters
+# ---------------------------------------------------------------------------
+
+
+def format_saml_result(result: "SamlOperationResult", as_json: bool) -> str:
+    """Format SAML operation result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return result.message
+
+
+# ---------------------------------------------------------------------------
+# Artifact formatters
+# ---------------------------------------------------------------------------
+
+
+def format_artifact_upload(result: "ArtifactUploadResult", as_json: bool) -> str:
+    """Format artifact upload result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    scope_desc = f"deployment '{result.deployment}'" if result.deployment else "organization"
+    return f"Uploaded artifact '{result.key}' to {scope_desc}."
+
+
+def format_artifact_download(result: "ArtifactDownloadResult", as_json: bool) -> str:
+    """Format artifact download result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    scope_desc = f"deployment '{result.deployment}'" if result.deployment else "organization"
+    return f"Downloaded artifact '{result.key}' from {scope_desc} to {result.path}."
+
+
+# ---------------------------------------------------------------------------
+# Alert policy formatters
+# ---------------------------------------------------------------------------
+
+
+def format_alert_policies(policies: "AlertPolicyDocument", as_json: bool) -> str:
+    """Format alert policies for output."""
+    if as_json:
+        return policies.model_dump_json(indent=2)
+
+    import yaml
+
+    return yaml.dump(
+        {"alert_policies": policies.alert_policies},
+        default_flow_style=False,
+        sort_keys=False,
+    ).rstrip()
+
+
+def format_alert_policy_sync_result(result: "AlertPolicySyncResult", as_json: bool) -> str:
+    """Format alert policy sync result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return f"Synced alert policies: {', '.join(result.synced_policies)}"
+
+
 # ---------------------------------------------------------------------------
 # Asset formatters
 # ---------------------------------------------------------------------------
@@ -167,14 +277,6 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
         f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
         f"Deps: {', '.join(asset.dependency_keys) if asset.dependency_keys else 'None'}",
     ]
-
-    # Add status information if present
-    if asset.status:
-        lines.append("")
-        lines.append("Status Information:")
-        status_lines = _format_asset_status_lines(asset.status)
-        for line in status_lines:
-            lines.append(f"  {line}")
 
     return "\n".join(lines)
 
@@ -247,6 +349,21 @@ def _format_asset_status_lines(status) -> list[str]:
             lines.append(f"Warning Checks: {checks.num_warning_checks}")
 
     return lines
+
+
+def format_asset_health(status: "DgApiAssetStatus", as_json: bool) -> str:
+    """Format asset health status for output."""
+    if as_json:
+        return status.model_dump_json(indent=2)
+
+    lines = [f"Asset Key: {status.asset_key}", ""]
+    status_lines = _format_asset_status_lines(status)
+    if status_lines:
+        lines.extend(status_lines)
+    else:
+        lines.append("No health data available.")
+
+    return "\n".join(lines)
 
 
 def format_asset_events(event_list: "DgApiAssetEventList", as_json: bool) -> str:
@@ -490,13 +607,13 @@ def format_run(run: "DgApiRun", as_json: bool) -> str:
     fields = [
         ("Run ID", run.id),
         ("Status", run.status.value),
-        ("Created", str(run.created_at)),
+        ("Created", _format_timestamp_epoch(run.created_at)),
     ]
 
     if run.started_at:
-        fields.append(("Started", str(run.started_at)))
+        fields.append(("Started", _format_timestamp_epoch(run.started_at)))
     if run.ended_at:
-        fields.append(("Ended", str(run.ended_at)))
+        fields.append(("Ended", _format_timestamp_epoch(run.ended_at)))
     if run.job_name:
         fields.append(("Pipeline", run.job_name))
 
@@ -519,16 +636,11 @@ def format_runs_list(runs_list: "DgApiRunList", as_json: bool) -> str:
                 run.id,
                 run.status.value,
                 run.job_name or "N/A",
-                str(run.created_at),
+                _format_timestamp_epoch(run.created_at),
             ]
         )
 
-    lines = [format_table(headers, rows)]
-
-    if runs_list.has_more:
-        lines.append("Note: More runs available (use --limit to increase or --cursor to paginate)")
-
-    return "\n".join(lines)
+    return format_table(headers, rows)
 
 
 def format_logs_table(events: "RunEventList", run_id: str) -> str:
@@ -680,3 +792,108 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
         fields.append(("Next Tick", next_tick_str))
 
     return format_detail(fields)
+
+
+# ---------------------------------------------------------------------------
+# Issue formatters
+# ---------------------------------------------------------------------------
+
+
+def format_issue(issue: "DgApiIssue", as_json: bool) -> str:
+    """Format a single issue for output."""
+    if as_json:
+        return issue.model_dump_json(indent=2)
+
+    fields: list[tuple[str, str]] = [
+        ("Title", issue.title),
+        ("Status", issue.status.value),
+        ("Created By", issue.created_by_email),
+    ]
+
+    if issue.run_id is not None:
+        fields.append(("Run ID", issue.run_id))
+    if issue.asset_key is not None:
+        fields.append(("Asset Key", str(issue.asset_key)))
+
+    fields.append(("Description", issue.description))
+
+    if issue.context is not None:
+        fields.append(("Additional Context", issue.context))
+
+    return format_detail(fields)
+
+
+def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
+    """Format a list of issues for output."""
+    if as_json:
+        return issue_list.model_dump_json(indent=2)
+
+    if not issue_list.items:
+        return "No issues found."
+
+    headers = ["STATUS", "TITLE", "ID", "CREATED BY"]
+    rows = [
+        [issue.status.value, issue.title, issue.id, issue.created_by_email]
+        for issue in issue_list.items
+    ]
+
+    lines = [format_table(headers, rows)]
+
+    if issue_list.has_more:
+        lines.append("Note: More issues available (use --cursor to paginate)")
+
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Code location formatters
+# ---------------------------------------------------------------------------
+
+
+def format_code_locations(locations: "DgApiCodeLocationList", as_json: bool) -> str:
+    """Format code location list for output."""
+    if as_json:
+        return locations.model_dump_json(indent=2)
+
+    headers = ["NAME", "IMAGE", "STATUS"]
+    rows = [[loc.location_name, loc.image or "", loc.status or ""] for loc in locations.items]
+    return format_table(headers, rows)
+
+
+def format_code_location(location: "DgApiCodeLocation", as_json: bool) -> str:
+    """Format single code location for output."""
+    if as_json:
+        return location.model_dump_json(indent=2)
+
+    fields = [
+        ("Name", location.location_name),
+        ("Image", location.image or "None"),
+    ]
+    if location.code_source:
+        cs = location.code_source
+        if cs.module_name:
+            fields.append(("Module", cs.module_name))
+        if cs.package_name:
+            fields.append(("Package", cs.package_name))
+        if cs.python_file:
+            fields.append(("File", cs.python_file))
+
+    return format_detail(fields)
+
+
+def format_add_code_location_result(result: "DgApiAddCodeLocationResult", as_json: bool) -> str:
+    """Format add code location result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return f"Added or updated code location '{result.location_name}'."
+
+
+def format_delete_code_location_result(
+    result: "DgApiDeleteCodeLocationResult", as_json: bool
+) -> str:
+    """Format delete code location result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return f"Deleted code location '{result.location_name}'."

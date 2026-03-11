@@ -9,6 +9,7 @@ import json
 from dagster_dg_cli.api_layer.graphql_adapter.run import process_runs_response
 from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList, DgApiRunStatus
 from dagster_dg_cli.cli.api.formatters import format_run, format_runs_list
+from dagster_shared.utils.timing import fixed_timezone
 
 
 class TestFormatRun:
@@ -58,9 +59,9 @@ class TestFormatRun:
     def test_format_run_text_output(self, snapshot):
         """Test formatting run as text."""
         run = self._create_sample_run()
-        result = format_run(run, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_run(run, as_json=False)
 
-        # Snapshot the entire text output
         snapshot.assert_match(result)
 
     def test_format_run_json_output(self, snapshot):
@@ -68,14 +69,14 @@ class TestFormatRun:
         run = self._create_sample_run()
         result = run.model_dump_json(indent=2)
 
-        # For JSON, we want to snapshot the parsed structure to avoid formatting differences
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
 
     def test_format_minimal_run_text_output(self, snapshot):
         """Test formatting minimal run as text."""
         run = self._create_minimal_run()
-        result = format_run(run, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_run(run, as_json=False)
 
         snapshot.assert_match(result)
 
@@ -90,7 +91,8 @@ class TestFormatRun:
     def test_format_failed_run_text_output(self, snapshot):
         """Test formatting failed run as text."""
         run = self._create_failed_run()
-        result = format_run(run, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_run(run, as_json=False)
 
         snapshot.assert_match(result)
 
@@ -105,7 +107,8 @@ class TestFormatRun:
     def test_format_canceled_run_text_output(self, snapshot):
         """Test formatting canceled run as text."""
         run = self._create_canceled_run()
-        result = format_run(run, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_run(run, as_json=False)
 
         snapshot.assert_match(result)
 
@@ -205,15 +208,13 @@ class TestFormatRunsList:
                     job_name=None,
                 ),
             ],
-            total=3,
-            cursor="run-003",
-            has_more=False,
         )
 
     def test_format_runs_list_text(self, snapshot):
         """Test formatting runs list as text."""
         runs_list = self._create_sample_runs_list()
-        result = format_runs_list(runs_list, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_runs_list(runs_list, as_json=False)
         snapshot.assert_match(result)
 
     def test_format_runs_list_json(self, snapshot):
@@ -225,34 +226,16 @@ class TestFormatRunsList:
 
     def test_format_runs_list_empty_text(self, snapshot):
         """Test formatting empty runs list as text."""
-        runs_list = DgApiRunList(items=[], total=0)
+        runs_list = DgApiRunList(items=[])
         result = format_runs_list(runs_list, as_json=False)
         snapshot.assert_match(result)
 
     def test_format_runs_list_empty_json(self, snapshot):
         """Test formatting empty runs list as JSON."""
-        runs_list = DgApiRunList(items=[], total=0)
+        runs_list = DgApiRunList(items=[])
         result = format_runs_list(runs_list, as_json=True)
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
-
-    def test_format_runs_list_with_pagination(self, snapshot):
-        """Test formatting runs list with has_more pagination indicator."""
-        runs_list = DgApiRunList(
-            items=[
-                DgApiRun(
-                    id="run-001",
-                    status=DgApiRunStatus.SUCCESS,
-                    created_at=1705311000.0,
-                    job_name="my_pipeline",
-                ),
-            ],
-            total=100,
-            cursor="run-001",
-            has_more=True,
-        )
-        result = format_runs_list(runs_list, as_json=False)
-        snapshot.assert_match(result)
 
 
 class TestProcessRunsResponse:
@@ -281,14 +264,12 @@ class TestProcessRunsResponse:
                         "jobName": None,
                     },
                 ],
-                "count": 2,
             }
         }
 
         result = process_runs_response(graphql_response)
 
         assert len(result.items) == 2
-        assert result.total == 2
         assert result.items[0].id == "abc-123"
         assert result.items[0].status == DgApiRunStatus.SUCCESS
         assert result.items[0].job_name == "my_job"
@@ -301,41 +282,12 @@ class TestProcessRunsResponse:
             "runsOrError": {
                 "__typename": "Runs",
                 "results": [],
-                "count": 0,
             }
         }
 
         result = process_runs_response(graphql_response)
 
         assert len(result.items) == 0
-        assert result.total == 0
-        assert result.has_more is False
-
-    def test_process_runs_response_with_pagination(self):
-        """Test processing response where count > results length."""
-        graphql_response = {
-            "runsOrError": {
-                "__typename": "Runs",
-                "results": [
-                    {
-                        "runId": "abc-123",
-                        "status": "SUCCESS",
-                        "creationTime": 1705311000.0,
-                        "startTime": None,
-                        "endTime": None,
-                        "jobName": "my_job",
-                    },
-                ],
-                "count": 100,
-            }
-        }
-
-        result = process_runs_response(graphql_response)
-
-        assert len(result.items) == 1
-        assert result.total == 100
-        assert result.has_more is True
-        assert result.cursor == "abc-123"
 
     def test_process_runs_response_python_error(self):
         """Test processing a PythonError response."""
