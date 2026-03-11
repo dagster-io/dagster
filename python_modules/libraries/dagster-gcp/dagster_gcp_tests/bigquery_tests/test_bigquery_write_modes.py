@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from dagster import OutputContext, build_init_resource_context
 from dagster._core.storage.db_io_manager import TableSlice
+from dagster._utils.env import environ
 from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager, BigQueryWriteMode
 
 
@@ -118,15 +119,18 @@ def test_gcp_credentials_propagation(MockDbIOManager):
     """Test that gcp_credentials are correctly passed to the client.
     This ensures PySpark/Pandas won't fail with 'keyfile must not be null'.
     """
-    dummy_json = json.dumps({"type": "service_account", "project_id": "test"})
-    creds_value = base64.b64encode(dummy_json.encode("utf-8")).decode("utf-8")
+    # Remove GOOGLE_APPLICATION_CREDENTIALS if set (e.g. in CI) since
+    # setup_gcp_creds raises if it's present alongside gcp_credentials config.
+    with environ({"GOOGLE_APPLICATION_CREDENTIALS": None}):  # type: ignore[dict-item]
+        dummy_json = json.dumps({"type": "service_account", "project_id": "test"})
+        creds_value = base64.b64encode(dummy_json.encode("utf-8")).decode("utf-8")
 
-    context = build_init_resource_context(config={"project": "test-project"})
+        context = build_init_resource_context(config={"project": "test-project"})
 
-    manager_factory = TestBigQueryIOManager(project="test-project", gcp_credentials=creds_value)
-    with manager_factory.yield_for_execution(context) as _:
-        _, kwargs = MockDbIOManager.call_args
-        client = kwargs.get("db_client")
+        manager_factory = TestBigQueryIOManager(project="test-project", gcp_credentials=creds_value)
+        with manager_factory.yield_for_execution(context) as _:
+            _, kwargs = MockDbIOManager.call_args
+            client = kwargs.get("db_client")
 
-        assert client is not None
-        assert client.gcp_credentials == creds_value
+            assert client is not None
+            assert client.gcp_credentials == creds_value
