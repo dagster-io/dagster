@@ -166,7 +166,7 @@ class CommandStepBuilder:
 
     def on_integration_slim_image(self, env=None):
         return self.on_python_image(
-            image="buildkite-test-image-py-slim:prod-1749737887",
+            image="buildkite-test-image-py-slim:pre-6652dfe7da",
             env=env,
         )
 
