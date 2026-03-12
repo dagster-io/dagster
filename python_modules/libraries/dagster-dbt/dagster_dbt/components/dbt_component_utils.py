@@ -5,7 +5,7 @@ import json
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster.components.resolved.context import ResolutionContext
@@ -40,7 +40,7 @@ class DagsterDbtComponentTranslatorSettings(DagsterDbtTranslatorSettings):
 
 
 def build_op_spec(
-    op: Optional[OpSpec],
+    op: OpSpec | None,
     select: str,
     exclude: str,
     selector: str,

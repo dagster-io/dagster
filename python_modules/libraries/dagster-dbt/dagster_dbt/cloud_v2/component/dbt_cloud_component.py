@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from dataclasses import replace
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import dagster as dg
 from dagster import AssetExecutionContext, Definitions, multi_asset
@@ -79,7 +79,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
     ] = Field(default_factory=lambda: ["build"])
 
     op: Annotated[
-        Optional[OpSpec],
+        OpSpec | None,
         Resolver.default(
             description="Op related arguments to set on the generated @dbt_assets",
             examples=[
@@ -144,11 +144,11 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         return DagsterDbtTranslator(settings)
 
     @property
-    def op_config_schema(self) -> Optional[type[dg.Config]]:
+    def op_config_schema(self) -> type[dg.Config] | None:
         return None
 
     @property
-    def config_cls(self) -> Optional[type[dg.Config]]:
+    def config_cls(self) -> type[dg.Config] | None:
         return self.op_config_schema
 
     def _get_op_spec(self, op_name: str = "dbt_cloud_assets") -> OpSpec:
@@ -168,7 +168,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         state_path.write_text(serialize_value(workspace_data))
 
     def build_defs_from_state(
-        self, context: ComponentLoadContext, state_path: Optional[Path]
+        self, context: ComponentLoadContext, state_path: Path | None
     ) -> Definitions:
         if state_path is None:
             return Definitions()
