@@ -51,6 +51,46 @@ To make use of the orchestration capability, you will need to add code to your D
   title="defs/dbt_cloud_orchestration.py"
 />
 
+## Partitioned assets example
+
+You can define partitions alongside your dbt Cloud assets to build incremental models. Pass a `partitions_def` to the `dbt_cloud_assets` decorator, then use `context.partition_time_window` or `context.partition_key` to pass variables to dbt via `--vars`.
+
+When using a `TimeWindowPartitionsDefinition`, a `BackfillPolicy.single_run()` is applied by default.
+
+### Daily partitioned (time window)
+
+Use time window partitions to pass date ranges to your dbt models as variables. This is useful for incremental models that filter by date.
+
+<CodeExample
+  startAfter="start_daily_partitioned"
+  endBefore="end_daily_partitioned"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_partitioned.py"
+  language="python"
+  title="defs/dbt_cloud_partitioned.py"
+/>
+
+In your dbt model, use the passed variables to filter rows:
+
+```sql
+select * from {{ ref('my_model') }}
+
+{% if is_incremental() %}
+where order_date >= '{{ var('min_date') }}' and order_date < '{{ var('max_date') }}'
+{% endif %}
+```
+
+### Static partitioned (e.g. by region)
+
+Use static partitions to run dbt models for different segments like regions or tenants.
+
+<CodeExample
+  startAfter="start_static_partitioned"
+  endBefore="end_static_partitioned"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_partitioned.py"
+  language="python"
+  title="defs/dbt_cloud_partitioned.py"
+/>
+
 ## About dbt Cloud
 
 **dbt Cloud** is a hosted service for running dbt jobs. It helps data analysts and engineers productionize dbt deployments. Beyond dbt open source, dbt Cloud provides scheduling , CI/CD, serving documentation, and monitoring & alerting.
