@@ -92,3 +92,49 @@ Properties of the assets emitted by each connector can be customized in the `def
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/10-list-defs.txt" />
 </WideContent>
+
+## 6. Observe externally-triggered syncs
+
+If your Fivetran connectors run on Fivetran's scheduler, you can add a polling sensor to detect completed syncs and emit `AssetMaterialization` events. Set `polling_sensor: true` in your component configuration:
+
+```yaml
+type: dagster_fivetran.FivetranAccountComponent
+attributes:
+  workspace:
+    api_key: "{{ env.FIVETRAN_API_KEY }}"
+    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
+    account_id: "{{ env.FIVETRAN_ACCOUNT_ID }}"
+  polling_sensor: true
+```
+
+The sensor polls Fivetran on each tick and emits materialization events when syncs complete, allowing you to view sync history and track freshness in the Dagster UI without Dagster triggering the syncs.
+
+## 7. Handle quota-based rescheduling
+
+When Fivetran reschedules a sync due to quota limits, Dagster raises a `RetryRequested` by default. To instead continue polling until the rescheduled sync completes, set `retry_on_reschedule: false`:
+
+```yaml
+type: dagster_fivetran.FivetranAccountComponent
+attributes:
+  workspace:
+    api_key: "{{ env.FIVETRAN_API_KEY }}"
+    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
+    account_id: "{{ env.FIVETRAN_ACCOUNT_ID }}"
+    retry_on_reschedule: false
+```
+
+## 8. Keep Fivetran's schedule active alongside Dagster
+
+By default, the first time Dagster triggers a Fivetran sync, it sets the connector's schedule to "manual", disabling Fivetran's auto-scheduling. To keep Fivetran's own schedule active while also triggering syncs from Dagster, set `disable_schedule_on_trigger: false`:
+
+```yaml
+type: dagster_fivetran.FivetranAccountComponent
+attributes:
+  workspace:
+    api_key: "{{ env.FIVETRAN_API_KEY }}"
+    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
+    account_id: "{{ env.FIVETRAN_ACCOUNT_ID }}"
+    disable_schedule_on_trigger: false
+```
+
+When using this mode with the polling sensor enabled, the sensor automatically deduplicates materialization events to avoid double-counting syncs that were triggered by Dagster.

@@ -17,7 +17,12 @@ If you are just getting started with the Fivetran integration, we recommend usin
 
 :::
 
-This guide provides instructions for using Dagster with Fivetran using the `dagster-fivetran` library. Your Fivetran connector tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Fivetran assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Fivetran connectors, allowing you to trigger syncs for these on a cadence or based on upstream data changes.
+This guide provides instructions for using Dagster with Fivetran using the `dagster-fivetran` library. Your Fivetran connector tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Fivetran assets and data assets you are already modeling in Dagster.
+
+The Fivetran integration offers two capabilities:
+
+- **Observability** - You can view your Fivetran assets in the Dagster Asset Graph and track sync completions. A polling sensor detects externally-triggered Fivetran syncs and emits materialization events.
+- **Orchestration** - You can use Dagster to trigger Fivetran syncs, either on a cron schedule or based on upstream dependencies. When Fivetran reschedules a sync due to quota limits, Dagster automatically handles the retry.
 
 :::note
 
@@ -28,9 +33,10 @@ Your Fivetran connectors must have been synced at least once to be represented i
 ## What you'll learn
 
 - How to represent Fivetran assets in the Dagster asset graph, including lineage to other Dagster assets.
-- How to customize asset definition metadata for these Fivetran assets.
+- How to observe externally-triggered Fivetran syncs using a polling sensor.
 - How to materialize Fivetran connector tables from Dagster.
-- How to customize how Fivetran connector tables are materialized.
+- How to handle Fivetran quota-based rescheduling.
+- How to customize asset definition metadata for these Fivetran assets.
 
 <details>
   <summary>Prerequisites</summary>
@@ -58,6 +64,51 @@ Dagster can automatically load all connector tables from your Fivetran workspace
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/representing_fivetran_assets.py"
+  language="python"
+/>
+
+## Observability
+
+If your Fivetran connectors run on Fivetran's own scheduler, you can use a polling sensor to detect completed syncs and emit `AssetMaterialization` events into Dagster's event log. This allows you to view sync history and track freshness in the Dagster UI without Dagster triggering the syncs.
+
+To set this up:
+
+1. Load your Fivetran assets as asset specs.
+2. Build a polling sensor using <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="build_fivetran_polling_sensor" />.
+3. Include both in your `Definitions`.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_observability.py"
+  language="python"
+/>
+
+The sensor polls Fivetran for connector status updates on each tick. When it detects a completed sync, it emits `AssetMaterialization` events for the synced tables. If a connector is rescheduled due to quota limits, the sensor logs a warning and retries on the next tick.
+
+If you use the polling sensor alongside Dagster-triggered syncs, the sensor will not emit duplicate events for syncs that Dagster already materialized. You can safely enable both the polling sensor and Dagster orchestration together.
+
+By default, Dagster disables Fivetran's auto-schedule when it triggers a sync. To keep Fivetran's schedule active, set `disable_schedule_on_trigger=False`:
+
+```python
+fivetran_workspace = FivetranWorkspace(
+    account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
+    disable_schedule_on_trigger=False,
+)
+```
+
+## Orchestration
+
+If you want Dagster to trigger Fivetran syncs — either on a schedule or based on upstream dependencies — you can build materializable asset definitions and use Declarative Automation to manage them.
+
+To set this up:
+
+1. Build materializable asset definitions using <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="build_fivetran_assets_definitions" />.
+2. Apply automation conditions to trigger syncs based on upstream changes.
+3. Build a polling sensor to track sync completions.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_orchestration.py"
   language="python"
 />
 
@@ -107,6 +158,36 @@ To resync all tables in a connector, simply call `resync_and_poll()` without the
 Historical resyncs can be time-consuming and resource-intensive operations. Be mindful of the cost implications when resyncing large datasets.
 
 :::
+
+### Handling Fivetran quota-based rescheduling
+
+Fivetran may reschedule a connector sync when your account hits API quota limits. By default, when Dagster detects a rescheduled sync during polling, it raises a `RetryRequested` exception that retries the Dagster step after the rescheduled time passes. This ensures the run eventually completes.
+
+If you prefer Dagster to continue polling in the same step rather than raising a retry, set `retry_on_reschedule=False` on the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranWorkspace" /> resource:
+
+<CodeExample
+  startAfter="start_retry_on_reschedule"
+  endBefore="end_retry_on_reschedule"
+  path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_retry_on_reschedule.py"
+  language="python"
+/>
+
+### Keeping Fivetran's schedule active alongside Dagster
+
+By default, the first time Dagster triggers a Fivetran sync, it sets the connector's schedule to "manual", which disables Fivetran's auto-scheduling. This ensures Dagster is the sole orchestrator.
+
+If you want to keep Fivetran's own schedule active while also triggering syncs from Dagster, set `disable_schedule_on_trigger=False` on the <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranWorkspace" /> resource:
+
+```python
+fivetran_workspace = FivetranWorkspace(
+    account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
+    disable_schedule_on_trigger=False,
+)
+```
+
+When using this mode with the polling sensor enabled, the sensor automatically deduplicates materialization events to avoid double-counting syncs that were triggered by Dagster.
 
 ### Customize asset definition metadata for Fivetran assets
 
