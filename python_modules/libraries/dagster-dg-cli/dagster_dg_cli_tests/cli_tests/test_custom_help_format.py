@@ -182,8 +182,8 @@ def test_dynamic_subcommand_help_message():
                 textwrap.dedent("""
                 Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] DEFS_PATH
 
-                A simple asset that runs a Python script with the Pipes subprocess client.                                             
-                                                                                                                                        
+                A simple asset that runs a Python script with the Pipes subprocess client.
+
                 Because it is a pipes asset, no value is returned.
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
