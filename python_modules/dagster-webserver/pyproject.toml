@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-webserver"
-version = "1!0+dev"
+version = "1.12.19"
 description = "Web UI for dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 readme = "README.rst"
 requires-python = ">=3.10,<3.15"
@@ -20,9 +24,9 @@ classifiers = [
 ]
 dependencies = [
     "click>=7.0,<9.0",
-    "dagster==1!0+dev",
-    "dagster-graphql==1!0+dev",
-    "starlette!=0.36.0",  # avoid bad version https://github.com/encode/starlette/discussions/2436
+    "dagster==1.12.19",
+    "dagster-graphql==1.12.19",
+    "starlette!=0.36.0",
     "uvicorn[standard]",
 ]
 
@@ -33,9 +37,15 @@ Homepage = "https://github.com/dagster-io/dagster"
 dagster-webserver = "dagster_webserver.cli:main"
 dagster-webserver-debug = "dagster_webserver.debug:main"
 
-[tool.hatch.build]
-artifacts = ["dagster_webserver/webapp/build/"]
-
 [project.optional-dependencies]
-notebook = ["nbconvert"]  # notebooks support
-test = ["starlette[full]"]  # TestClient deps in full
+notebook = [
+    "nbconvert",
+]
+test = [
+    "starlette[full]",
+]
+
+[tool.hatch.build]
+artifacts = [
+    "dagster_webserver/webapp/build/",
+]
