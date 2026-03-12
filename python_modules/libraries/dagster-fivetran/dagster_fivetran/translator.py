@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
@@ -29,6 +30,12 @@ class FivetranConnectorTableProps(NamedTuple):
     schema_config: "FivetranSchemaConfig"
     database: str | None
     service: str | None
+    # Scheduling metadata
+    sync_frequency: int | None = None  # Sync frequency in minutes
+    schedule_type: str | None = None  # "auto" or "manual"
+    daily_sync_time: str | None = None  # Time of day for daily syncs
+    # Connector config for detecting custom reports and other settings
+    connector_config: Mapping[str, Any] | None = None
 
     @property
     def name(self) -> str:
@@ -64,6 +71,15 @@ class FivetranConnector:
     paused: bool
     succeeded_at: str | None
     failed_at: str | None
+    # Scheduling fields
+    sync_frequency: int | None = None  # Sync frequency in minutes
+    schedule_type: str | None = None  # "auto" or "manual"
+    daily_sync_time: str | None = None  # Time of day for daily syncs (HH:MM format)
+    # Connector config - contains custom report definitions and other settings
+    config: Mapping[str, Any] | None = None
+    # Quota / reschedule fields from the connector status
+    rescheduled_for: str | None = None
+    update_state: str | None = None
 
     @property
     def url(self) -> str:
@@ -107,6 +123,16 @@ class FivetranConnector:
 
         return succeeded_at > failed_at  # pyright: ignore[reportOperatorIssue]
 
+    @property
+    def is_rescheduled(self) -> bool:
+        """Returns True if the connector has been rescheduled by Fivetran (e.g. due to quota
+        limits) and the rescheduled time is after the last sync completion.
+        """
+        if not self.rescheduled_for:
+            return False
+        rescheduled_at = parser.parse(self.rescheduled_for)
+        return rescheduled_at > self.last_sync_completed_at  # pyright: ignore[reportOperatorIssue]
+
     def validate_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that
         the connector is either paused or not fully set up.
@@ -132,6 +158,12 @@ class FivetranConnector:
             paused=connector_details["paused"],
             succeeded_at=connector_details.get("succeeded_at"),
             failed_at=connector_details.get("failed_at"),
+            sync_frequency=connector_details.get("sync_frequency"),
+            schedule_type=connector_details.get("schedule_type"),
+            daily_sync_time=connector_details.get("daily_sync_time"),
+            config=connector_details.get("config"),
+            rescheduled_for=connector_details.get("status", {}).get("rescheduled_for"),
+            update_state=connector_details.get("status", {}).get("update_state"),
         )
 
 
@@ -257,6 +289,10 @@ class FivetranWorkspaceData:
                                     schema_config=schema_config,
                                     database=destination.database,
                                     service=destination.service,
+                                    sync_frequency=connector.sync_frequency,
+                                    schedule_type=connector.schedule_type,
+                                    daily_sync_time=connector.daily_sync_time,
+                                    connector_config=connector.config,
                                 )
                             )
         return data
@@ -299,6 +335,14 @@ class FivetranMetadataSet(NamespacedMetadataSet):
     destination_id: str | None = None
     destination_schema_name: str | None = None
     destination_table_name: str | None = None
+    # Sync schedule metadata
+    sync_frequency_minutes: int | None = None
+    schedule_type: str | None = None  # "auto" or "manual"
+    daily_sync_time: str | None = None
+    # Custom report indicator - True if this table is from a custom report
+    is_custom_report: bool | None = None
+    # Custom report config (if applicable) - JSON-serialized report definition
+    custom_report_config: str | None = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -332,6 +376,11 @@ class DagsterFivetranTranslator:
             table=table_name,
         )
 
+        # Detect if this table is from a custom report
+        is_custom_report, custom_report_config = self._detect_custom_report(
+            table_name, props.connector_config
+        )
+
         augmented_metadata = {
             **metadata,
             **FivetranMetadataSet(
@@ -340,6 +389,13 @@ class DagsterFivetranTranslator:
                 destination_id=props.destination_id,
                 destination_schema_name=schema_name,
                 destination_table_name=table_name,
+                sync_frequency_minutes=props.sync_frequency,
+                schedule_type=props.schedule_type,
+                daily_sync_time=props.daily_sync_time,
+                is_custom_report=is_custom_report if is_custom_report else None,
+                custom_report_config=json.dumps(custom_report_config)
+                if custom_report_config
+                else None,
             ),
         }
 
@@ -349,3 +405,39 @@ class DagsterFivetranTranslator:
             kinds={"fivetran", *({props.service} if props.service else set())},
             group_name=clean_name_lower(props.name),
         )
+
+    def _detect_custom_report(
+        self, table_name: str, connector_config: Mapping[str, Any] | None
+    ) -> tuple[bool, Mapping[str, Any] | None]:
+        """Detect if a table is from a custom report definition in the connector config.
+
+        Custom reports in Fivetran (e.g., for Google Ads, Facebook Ads) are defined in
+        the connector's config under keys like 'custom_reports', 'reports', or
+        service-specific keys. Each report typically has a 'table_name' or 'table'
+        field that matches the destination table name.
+
+        Returns:
+            A tuple of (is_custom_report, custom_report_config) where custom_report_config
+            contains the report definition if found.
+        """
+        if not connector_config:
+            return False, None
+
+        # Common keys where custom reports are defined in Fivetran connector configs
+        report_keys = ["custom_reports", "reports", "custom_tables", "report_configurations"]
+
+        for key in report_keys:
+            reports = connector_config.get(key)
+            if not reports:
+                continue
+
+            # Reports can be a list of report definitions
+            if isinstance(reports, list):
+                for report in reports:
+                    if isinstance(report, dict):
+                        # Check common table name fields
+                        report_table = report.get("table_name") or report.get("table")
+                        if report_table and report_table.lower() == table_name.lower():
+                            return True, report
+
+        return False, None
