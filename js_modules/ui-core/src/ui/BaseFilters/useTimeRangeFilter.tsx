@@ -5,7 +5,6 @@ import {useContext, useMemo} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
-import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import '../../util/dayjsExtensions';
 import {DateRangeDialog} from '../DateRangeDialog';
@@ -13,9 +12,8 @@ import {DateRangeDialog} from '../DateRangeDialog';
 export type TimeRangeState = [number | null, number | null];
 
 export function calculateTimeRanges(timezone: string) {
-  const targetTimezone = timezone === 'Automatic' ? browserTimezone() : timezone;
   const nowTimestamp = Date.now();
-  const startOfDay = dayjs(nowTimestamp).tz(targetTimezone).startOf('day');
+  const startOfDay = dayjs(nowTimestamp).tz(timezone).startOf('day');
   const obj = {
     TODAY: {
       label: 'Today',
@@ -24,21 +22,21 @@ export function calculateTimeRanges(timezone: string) {
     YESTERDAY: {
       label: 'Yesterday',
       range: [
-        dayjs(nowTimestamp).tz(targetTimezone).subtract(1, 'day').startOf('day').valueOf(),
+        dayjs(nowTimestamp).tz(timezone).subtract(1, 'day').startOf('day').valueOf(),
         startOfDay.valueOf(),
       ] as TimeRangeState,
     },
     LAST_7_DAYS: {
       label: 'Within last 7 days',
       range: [
-        dayjs(nowTimestamp).tz(targetTimezone).startOf('day').subtract(1, 'week').valueOf(),
+        dayjs(nowTimestamp).tz(timezone).startOf('day').subtract(1, 'week').valueOf(),
         null,
       ] as TimeRangeState,
     },
     LAST_30_DAYS: {
       label: 'Within last 30 days',
       range: [
-        dayjs(nowTimestamp).tz(targetTimezone).startOf('day').subtract(30, 'days').valueOf(),
+        dayjs(nowTimestamp).tz(timezone).startOf('day').subtract(30, 'days').valueOf(),
         null,
       ] as TimeRangeState,
     },
@@ -78,10 +76,7 @@ export function useTimeRangeFilter({
   state,
   onStateChanged,
 }: Args): TimeRangeFilter {
-  const {
-    timezone: [_timezone],
-  } = useContext(TimeContext);
-  const timezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
+  const {resolvedTimezone: timezone} = useContext(TimeContext);
 
   const {timeRanges, timeRangesArray} = useMemo(
     () => calculateTimeRanges(timezone),

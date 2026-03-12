@@ -1,6 +1,6 @@
 import {MetadataTableWIP} from '@dagster-io/ui-components';
 
-import {buildPipelineTag} from '../../graphql/types';
+import {buildPipelineTag} from '../../graphql/builders';
 import {CreatedByTag} from '../CreatedByTag';
 import {DagsterTag} from '../RunTag';
 import {RunTagsFragment} from '../types/RunTagsFragment.types';

@@ -259,5 +259,5 @@ class TestAgentDataProcessing:
         result_with_label = format_agent(agent_with_label, as_json=False)
         result_without_label = format_agent(agent_without_label, as_json=False)
 
-        assert "Label: Custom Label" in result_with_label
-        assert "Label: Agent very-lon" in result_without_label  # Should show first 8 chars
+        assert "Custom Label" in result_with_label
+        assert "Agent very-lon" in result_without_label  # Should show first 8 chars

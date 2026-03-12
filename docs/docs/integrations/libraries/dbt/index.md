@@ -206,7 +206,7 @@ The `node` object available in the `translation` key includes properties from th
 First, create a template variable that extracts the group name from the `fqn`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/group-template-vars.py"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/group-template-vars.py"
   title="my_project/defs/dbt_ingest/template_vars.py"
   language="python"
 />
@@ -214,7 +214,7 @@ First, create a template variable that extracts the group name from the `fqn`:
 #### 2. Reference the template variable in defs.yaml
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/group-defs.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/group-defs.yaml"
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
@@ -230,7 +230,7 @@ If your dbt models depend on data produced by other Dagster assets (e.g., data i
 In your dbt project, create a `sources.yml` file that maps dbt sources to Dagster asset keys using the `meta.dagster.asset_key` configuration:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/upstream-source.yml"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/upstream-source.yml"
   title="dbt/models/sources.yml"
   language="yaml"
 />
@@ -240,7 +240,7 @@ In your dbt project, create a `sources.yml` file that maps dbt sources to Dagste
 Next, create Dagster assets that produce the source data. The asset key must match the `asset_key` defined in your dbt sources (see step 7.1):
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/upstream-asset.py"
+  path="docs_snippets/docs_snippets/integrations/dbt/component/upstream-asset.py"
   title="my_project/defs/ingest/assets.py"
   language="python"
 />
@@ -316,7 +316,23 @@ Dagster will automatically convert this configuration dictionary into the JSON-e
 
 If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.
 
-## 10. Advanced configuration (subclassing)
+## 10. Customize manifest generation
+
+By default, `DbtProjectComponent` runs `dbt parse --quiet` to generate the manifest during development. If you need `dbt compile` instead — for example, to access `compiled_code` on your dbt nodes — you can set the `prepare_project_cli_args` option on the `project` attribute:
+
+```yaml
+# defs.yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project:
+    project_dir: '{{ project_root }}/path/to/dbt_project'
+    prepare_project_cli_args: ['compile', '--quiet']
+```
+
+This passes the specified arguments to the dbt CLI when generating the manifest, instead of the default `["parse", "--quiet"]`. Using `compile` is useful when you want to leverage `node.compiled_code` in translations or custom subclasses, for example to include the compiled SQL in asset descriptions.
+
+## 11. Advanced configuration (subclassing)
 
 For more complex use cases that cannot easily be handled with templated yaml, you can create a custom subclass of `DbtProjectComponent` to add custom behavior. This allows you to:
 

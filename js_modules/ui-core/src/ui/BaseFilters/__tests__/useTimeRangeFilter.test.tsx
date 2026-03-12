@@ -136,6 +136,7 @@ describe('DateRangeDialog', () => {
       <TimeContext.Provider
         value={{
           timezone: ['America/New_York', () => {}, () => {}],
+          resolvedTimezone: 'America/New_York',
           hourCycle: ['h23', () => {}, () => {}],
         }}
       >
@@ -167,6 +168,7 @@ describe('DateRangeDialog', () => {
       <TimeContext.Provider
         value={{
           timezone: ['Australia/Darwin', () => {}, () => {}],
+          resolvedTimezone: 'Australia/Darwin',
           hourCycle: ['h23', () => {}, () => {}],
         }}
       >

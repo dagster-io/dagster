@@ -45,7 +45,7 @@ export const AssetValueGraph = (props: {
   onHoverX: (value: string | number | null) => void;
 }) => {
   const {
-    timezone: [userTimezone],
+    resolvedTimezone: userTimezone,
     hourCycle: [hourCycle],
   } = useContext(TimeContext);
 

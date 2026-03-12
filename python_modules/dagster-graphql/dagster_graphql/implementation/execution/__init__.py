@@ -34,10 +34,7 @@ if TYPE_CHECKING:
         GrapheneUnauthorizedError,
         GrapheneUnsupportedOperationError,
     )
-    from dagster_graphql.schema.roots.mutation import (
-        GrapheneReportAssetCheckEvaluationSuccess,
-        GrapheneTerminateRunPolicy,
-    )
+    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
 
 
 from dagster_graphql.implementation.execution.backfill import (
@@ -434,9 +431,8 @@ def report_asset_check_evaluation(
     severity: "AssetCheckSeverity",
     metadata: Mapping[str, "RawMetadataValue"] | None = None,
     partition: str | None = None,
-) -> "GrapheneReportAssetCheckEvaluationSuccess":
-    from dagster_graphql.schema.roots.mutation import GrapheneReportAssetCheckEvaluationSuccess
-
+    description: str | None = None,
+) -> None:
     instance = graphene_info.context.instance
     evaluation = AssetCheckEvaluation(
         asset_key=asset_key,
@@ -445,6 +441,6 @@ def report_asset_check_evaluation(
         severity=severity,
         metadata=metadata or {},
         partition=partition,
+        description=description,
     )
     instance.report_runless_asset_event(evaluation)
-    return GrapheneReportAssetCheckEvaluationSuccess(assetKey=asset_key)

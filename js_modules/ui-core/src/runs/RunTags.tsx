@@ -1,10 +1,9 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, showToast} from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
 import * as yaml from 'yaml';
 
 import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
-import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {TagAction} from '../ui/TagActions';
@@ -36,7 +35,7 @@ export const useCopyAction = () => {
       label: 'Copy tag',
       onClick: async (tag: TagType) => {
         copy(`${tag.key}:${tag.value}`);
-        await showSharedToaster({intent: 'success', message: 'Copied tag!'});
+        showToast({intent: 'success', message: 'Copied tag!'});
       },
     }),
     [copy],

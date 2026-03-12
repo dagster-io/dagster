@@ -59,6 +59,7 @@ export const ConfigEditorDialog = ({
             <Icon name="warning" />
           </Tooltip>
         ) : null}
+        <Button onClick={onClose}>Cancel</Button>
         <Button intent="primary" onClick={onSave} disabled={isLoading || !!error || isSubmitting}>
           {saveText}
         </Button>

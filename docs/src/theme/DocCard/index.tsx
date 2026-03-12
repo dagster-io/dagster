@@ -91,11 +91,9 @@ function CardLayout({
     ? 'Mini example'
     : hrefString.includes('/full-pipelines/')
       ? 'Full pipeline'
-      : hrefString.includes('/reference-architectures/')
-        ? 'Reference architecture'
-        : hrefString === '/examples'
-          ? 'Overview'
-          : 'Example';
+      : hrefString === '/examples'
+        ? 'Overview'
+        : 'Example';
   const hasInternalHref = hrefString.length > 0 && isInternalUrl(hrefString);
 
   if (isExamplesCard) {

@@ -13,7 +13,7 @@ except ImportError:
     pass  # Not all test suites have dagster installed
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser):
     parser.addoption(
         "--split", action="store", default=None, help="Split test selection (e.g., 0/3)"
     )

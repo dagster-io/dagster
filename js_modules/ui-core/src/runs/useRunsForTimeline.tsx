@@ -20,7 +20,7 @@ import {
 } from './types/useRunsForTimeline.types';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {HIDDEN_ASSET_GROUP_JOB_LABEL, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -97,13 +97,10 @@ export const useRunsForTimeline = ({
   }, [completedRunsCache, end, endSec, startSec]);
 
   const [completedRunsQueryData, setCompletedRunsData] = useState<{
-    // TODO: Remove data property here since we grab the data from the cache instead of here.
-    data: RunTimelineFragment[] | undefined;
     loading: boolean;
     error: any;
     called: boolean;
   }>({
-    data: undefined,
     loading: true,
     error: undefined,
     called: false,
@@ -166,8 +163,6 @@ export const useRunsForTimeline = ({
           // it is not complete even though there is some data for the time range
 
           return {
-            // TODO: Remove data property here
-            data: [],
             cursor: undefined,
             hasMore: false,
             error: undefined,
@@ -224,7 +219,6 @@ export const useRunsForTimeline = ({
         }
 
         return {
-          data: [],
           cursor: nextCursor,
           hasMore: hasMoreData,
           error: undefined,
@@ -428,7 +422,7 @@ export const useRunsForTimeline = ({
 
       jobs[jobKey] = {
         key: jobKey,
-        name: isAdHoc ? 'Ad hoc materializations' : pipelineName,
+        name: isAdHoc ? HIDDEN_ASSET_GROUP_JOB_LABEL : pipelineName,
         type: isAdHoc ? 'asset' : 'job',
         repoAddress,
         path: isAdHoc
@@ -515,7 +509,7 @@ export const useRunsForTimeline = ({
             addedAdHocJobs.add(jobKey);
           }
 
-          const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
+          const jobName = isAdHoc ? HIDDEN_ASSET_GROUP_JOB_LABEL : pipeline.name;
 
           addedJobKeys.add(jobKey);
           const jobRuns = Object.values(runsByJobKey[jobKey] || {});

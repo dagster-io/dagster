@@ -2,8 +2,9 @@ import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpTags} from './OpTags';
-import {DefinitionTag} from '../graphql/types';
 import {linkToAssetTableWithKindFilter} from '../search/links';
+
+type TagLike = {key: string; value: string};
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
@@ -12,16 +13,13 @@ export const STORAGE_KIND_TAG = 'dagster/storage_kind';
 export const KIND_TAG_PREFIX = `dagster/kind/`;
 
 // Older code servers may be using the legacy compute kind tag, so we need to check for both
-export const isCanonicalComputeKindTag = (tag: Omit<DefinitionTag, '__typename'>) =>
+export const isCanonicalComputeKindTag = (tag: TagLike) =>
   tag.key === COMPUTE_KIND_TAG || tag.key === LEGACY_COMPUTE_KIND_TAG;
-export const isCanonicalStorageKindTag = (tag: Omit<DefinitionTag, '__typename'>) =>
-  tag.key === STORAGE_KIND_TAG;
+export const isCanonicalStorageKindTag = (tag: TagLike) => tag.key === STORAGE_KIND_TAG;
 
-export const isKindTag = (tag: Omit<DefinitionTag, '__typename'>) =>
-  tag.key.startsWith(KIND_TAG_PREFIX);
+export const isKindTag = (tag: TagLike) => tag.key.startsWith(KIND_TAG_PREFIX);
 export const isSystemTag = isKindTag;
-export const getKindFromTag = (tag: Omit<DefinitionTag, '__typename'>) =>
-  tag.key.slice(KIND_TAG_PREFIX.length);
+export const getKindFromTag = (tag: TagLike) => tag.key.slice(KIND_TAG_PREFIX.length);
 
 export const AssetKind = ({
   kind,

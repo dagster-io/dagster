@@ -236,5 +236,5 @@ export const GridFloatingContainer = styled.div<{floating: boolean}>`
   padding-bottom: 16px;
   width: ${GRID_FLOATING_CONTAINER_WIDTH}px;
   z-index: 1;
-  ${({floating}) => (floating ? 'box-shadow: 1px 0 4px rgba(0, 0, 0, 0.15)' : '')};
+  ${({floating}) => (floating ? `box-shadow: 1px 0 4px ${Colors.shadowDefault()}` : '')};
 `;

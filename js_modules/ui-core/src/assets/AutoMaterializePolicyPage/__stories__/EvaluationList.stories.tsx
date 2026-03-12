@@ -1,6 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 
-import {buildAssetNode} from '../../../graphql/types';
+import {buildAssetNode} from '../../../graphql/builders';
 import {EvaluationList} from '../EvaluationList';
 import {buildEvaluationRecordsForList} from '../__fixtures__/EvaluationList.fixtures';
 

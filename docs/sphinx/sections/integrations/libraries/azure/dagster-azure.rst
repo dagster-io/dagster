@@ -7,6 +7,15 @@ Storage Gen 2 (ADLS2) but also contains some utilities for Azure Blob Storage.
 
 .. currentmodule:: dagster_azure
 
+Components
+^^^^^^^^^^
+
+.. autoclass:: AzureBlobStorageResourceComponent
+   :members:
+
+.. autoclass:: ADLS2ResourceComponent
+   :members:
+
 Resources
 ^^^^^^^^^^
 

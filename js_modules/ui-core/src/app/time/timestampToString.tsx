@@ -2,7 +2,6 @@ import memoize from 'lodash/memoize';
 
 import {HourCycle} from './HourCycle';
 import {DEFAULT_TIME_FORMAT, TimeFormat} from './TimestampFormat';
-import {browserTimezone} from './browserTimezone';
 
 type Config = {
   timestamp: {ms: number} | {unix: number};
@@ -32,7 +31,7 @@ export const timestampToString = memoize((config: Config) => {
   const {timestamp, locale, timezone, timeFormat, hourCycle} = configWithDefaults(config);
   const msec = 'ms' in timestamp ? timestamp.ms : timestamp.unix * 1000;
   const date = new Date(msec);
-  const targetTimezone = timezone === 'Automatic' ? browserTimezone() : timezone;
+  const targetTimezone = timezone;
 
   const timestampYear = date.toLocaleDateString('en-US', {
     year: 'numeric',

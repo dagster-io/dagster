@@ -1,14 +1,14 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  RunStatus,
   buildPipeline,
   buildRepository,
   buildRepositoryLocation,
   buildRepositoryOrigin,
   buildRun,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {PIPELINE_ENVIRONMENT_QUERY} from '../RunActionsMenu';
 import {

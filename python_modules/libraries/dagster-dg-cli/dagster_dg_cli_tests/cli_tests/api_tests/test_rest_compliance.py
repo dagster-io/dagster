@@ -142,15 +142,16 @@ class TestRestCompliance:
 
                     # Check Optional parameters have proper typing
                     if param.default != inspect.Parameter.empty:
-                        # Parameters with defaults should be Optional
+                        # Parameters with defaults should be Optional or have a
+                        # non-None default (e.g. bool = False, int = 0 are fine)
                         if param.annotation != inspect.Parameter.empty:
                             origin = get_origin(param.annotation)
                             is_optional = origin in (Union, UnionType) and type(None) in get_args(
                                 param.annotation
                             )
-                            assert is_optional or param.default is None, (
+                            assert is_optional or param.default is not None, (
                                 f"{api_class.__name__}.{method_name} parameter '{param_name}' "
-                                f"has a default value but is not typed as Optional"
+                                f"has a default of None but is not typed as Optional"
                             )
 
 

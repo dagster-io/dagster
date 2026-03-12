@@ -33,7 +33,6 @@ export * from './components/ProductTour';
 export * from './components/ProgressBar';
 export * from './components/Radio';
 export * from './components/RefreshableCountdown';
-export * from './components/RoundedButton';
 export * from './components/Select';
 export * from './components/Skeleton';
 export * from './components/Slider';
@@ -58,7 +57,6 @@ export * from './components/useDelayedState';
 export * from './components/useSuggestionsForString';
 export * from './components/useViewport';
 export * from './components/VirtualizedTable';
-export * from './components/Warning';
 export * from './components/styles';
 
 export * from './theme/GlobalThemeStyle';

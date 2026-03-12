@@ -1,0 +1,5 @@
+success_get_settings:
+  command: "dg api organization settings get --json"
+
+success_get_settings_text:
+  command: "dg api organization settings get"

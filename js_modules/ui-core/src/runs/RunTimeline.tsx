@@ -27,6 +27,7 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
 import {COMMON_COLLATOR} from '../app/Util';
+import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJobTooltip';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -642,9 +643,12 @@ const RunTimelineRow = ({
               <MiddleTruncate text={row.name} />
             </Link>
           ) : (
-            <span style={{color: Colors.textDefault()}}>
-              <MiddleTruncate text={row.name} />
-            </span>
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              <span style={{color: Colors.textDefault(), overflow: 'hidden'}}>
+                <MiddleTruncate text={row.name} />
+              </span>
+              {row.type === 'asset' ? <HiddenAssetGroupJobTooltipIcon /> : null}
+            </Box>
           )}
         </div>
       </RowName>
@@ -839,6 +843,7 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
       <Box padding={12} border="bottom" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
         <HoverContentRowName>{row.name}</HoverContentRowName>
+        {row.type === 'asset' ? <HiddenAssetGroupJobTooltipIcon /> : null}
       </Box>
       <div style={{height, overflowY: 'hidden'}}>
         <Container ref={parentRef}>

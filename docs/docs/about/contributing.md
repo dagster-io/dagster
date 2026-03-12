@@ -1,10 +1,17 @@
 ---
 description: Set up a local Dagster development environment and contribute code and documentation to the Dagster open source project.
 sidebar_position: 20
-title: Contributing
+title: Contributing code to Dagster
+sidebar_label: Contributing code
 ---
 
-We love to see our community members get involved! We're particularly looking for bugfix and [integration library](https://docs.dagster.io/integrations/libraries) contributions. There are more constraints on core feature additions, so we encourage you to open an [issue](https://github.com/dagster-io/dagster/issues) to discuss any core feature idea with maintainers before investing time.
+:::info
+
+To contribute docs, see [Contributing documentation](/about/contributing-docs).
+
+:::
+
+We love to see our community members get involved! We're particularly looking for bugfix and [integration library](/integrations/libraries) contributions. There are more constraints on core feature additions, so we encourage you to open an [issue](https://github.com/dagster-io/dagster/issues) to discuss any core feature idea with maintainers before investing time.
 
 ## Environment setup
 
@@ -124,29 +131,6 @@ During development, you might find these commands useful. Run them from `js_modu
 - `make ts`: Typescript typechecking
 - `make lint`: Linting with autofix
 - `make jest`: Test runner that runs the full suite of tests
-
-## Developing documentation
-
-To run the Dagster documentation website locally, run the following commands:
-
-```bash
-cd docs
-yarn install
-```
-
-API documentation is built separately using Sphinx. Before starting the dev server for the first time, you need to build the API docs. If you change any `.rst` files, be sure to re-run the following command in the docs directory:
-
-```bash
-yarn build-api-docs
-```
-
-Then start the local development server:
-
-```bash
-yarn start
-```
-
-For the full guidelines for writing and debugging documentation, please refer to the [docs/README.md](https://github.com/dagster-io/dagster/blob/master/docs/README.md) and [docs/CONTRIBUTING.md](https://github.com/dagster-io/dagster/blob/master/docs/CONTRIBUTING.md) documents.
 
 ## Picking a GitHub Issue
 

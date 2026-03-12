@@ -32,6 +32,7 @@ Use these guides to get started using webhooks with these common services:
 
 - [Jira](/guides/labs/webhook-alerts/webhooks-jira)
 - [Discord](/guides/labs/webhook-alerts/webhooks-discord)
+- [incident.io](/guides/labs/webhook-alerts/webhooks-incidentio)
 
 ---
 
@@ -91,17 +92,29 @@ Available for **Asset Materialization** events (Success/Failure/Check Failure).
 | `{{user_name}}`       | Name of the user who launched the run.  |
 | `{{user_email}}`      | Email of the user who launched the run. |
 
-### Asset Health, Freshness & Table Schema Tokens
+### Asset Health & Freshness Tokens
 
-Available for **Asset Health**, **Freshness**, and **Table Schema** events.
+Available for **Asset Health** and **Freshness** events.
 
-| Token                        | Description                              | Context            |
-| :--------------------------- | :--------------------------------------- | :----------------- |
-| `{{asset_key}}`              | Full asset key.                          | All Asset Events   |
-| `{{health_status}}`          | Overall status (`OK`, `DEGRADED`).       | Asset Health       |
-| `{{materialization_status}}` | Status of materialization.               | Asset Health       |
-| `{{checks_status}}`          | Status of asset checks.                  | Asset Health       |
-| `{{freshness_status}}`       | State (`PASS`, `FAIL`, `UNKNOWN`, `OK`). | Freshness / Health |
+| Token                        | Description                                        | Context            |
+| :--------------------------- | :------------------------------------------------- | :----------------- |
+| `{{asset_key}}`              | Full asset key.                                    | All Asset Events   |
+| `{{health_status}}`          | Overall health status (`OK`, `DEGRADED`).          | Asset Health       |
+| `{{materialization_status}}` | Materialization status.                            | Asset Health       |
+| `{{checks_status}}`          | Asset checks status.                               | Asset Health       |
+| `{{freshness_status}}`       | Freshness state (`PASS`, `FAIL`, `UNKNOWN`, `OK`). | Freshness / Health |
+
+### Table Schema Tokens
+
+| Token                             | Description                                                             |
+| :-------------------------------- | :---------------------------------------------------------------------- |
+| `{{asset_key}}`                   | Full asset key of the asset whose schema changed.                       |
+| `{{columns_added}}`               | List of newly added column names.                                       |
+| `{{columns_removed}}`             | List of removed column names.                                           |
+| `{{columns_type_changed}}`        | List of `[column, old_type, new_type]` for type changes.                |
+| `{{columns_nullability_changed}}` | List of `[column, old_nullable, new_nullable]` for nullability changes. |
+| `{{columns_uniqueness_changed}}`  | List of `[column, old_unique, new_unique]` for uniqueness changes.      |
+| `{{columns_tags_changed}}`        | List of `[column, old_tags, new_tags]` for tag changes.                 |
 
 ### Code Location Tokens
 

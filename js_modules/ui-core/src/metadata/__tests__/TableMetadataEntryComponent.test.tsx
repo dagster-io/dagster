@@ -5,7 +5,7 @@ import {
   buildTableColumn,
   buildTableMetadataEntry,
   buildTableSchema,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {TableMetadataEntryComponent} from '../MetadataEntry';
 
 describe('TableMetadataEntryComponent', () => {

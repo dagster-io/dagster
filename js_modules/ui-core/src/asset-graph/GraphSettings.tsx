@@ -1,19 +1,7 @@
-import {
-  Body,
-  Box,
-  Button,
-  Icon,
-  Menu,
-  MenuItem,
-  Popover,
-  ProductTour,
-  ProductTourPosition,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Body, Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {KeyboardTag} from './KeyboardTag';
-import ShowAndHideNeighborAssetsMP4 from './ShowAndHideNeighborAssets.mp4';
 import {AssetLayoutDirection} from './layout';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
@@ -222,26 +210,24 @@ export const AssetGraphSettingsButton = ({
 
   return (
     <>
-      <ProductTourWrapper>
-        <Popover
-          content={
-            <AssetGraphSettingsMenu
-              expandedGroups={expandedGroups}
-              setExpandedGroups={setExpandedGroups}
-              allGroups={allGroups}
-              hideEdgesToNodesOutsideQuery={hideEdgesToNodesOutsideQuery}
-              setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
-              direction={direction}
-              setDirection={setDirection}
-              showStubAssets={showStubAssets}
-              setShowStubAssets={setShowStubAssets}
-            />
-          }
-          placement="top"
-        >
-          <Button icon={<Icon name="settings" />} />
-        </Popover>
-      </ProductTourWrapper>
+      <Popover
+        content={
+          <AssetGraphSettingsMenu
+            expandedGroups={expandedGroups}
+            setExpandedGroups={setExpandedGroups}
+            allGroups={allGroups}
+            hideEdgesToNodesOutsideQuery={hideEdgesToNodesOutsideQuery}
+            setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
+            direction={direction}
+            setDirection={setDirection}
+            showStubAssets={showStubAssets}
+            setShowStubAssets={setShowStubAssets}
+          />
+        }
+        placement="top"
+      >
+        <Button icon={<Icon name="settings" />} />
+      </Popover>
       <div style={{position: 'relative', marginTop: -8}}>
         <ShortcutHandler
           shortcutLabel={<Box flex={{direction: 'column', gap: 4}}>{shortcutLabelJsx}</Box>}
@@ -386,36 +372,5 @@ export const ToggleShowStubAssetsMenuItem = () => {
         </Box>
       }
     />
-  );
-};
-
-const ProductTourWrapper = ({children}: {children: React.ReactNode}) => {
-  const [hideNeighborAssetsNux, setHideNeighborAssetsNux] = useStateWithStorage<any>(
-    'AssetGraphHideNeighborAssetsNux',
-    (value) => value,
-  );
-  if (hideNeighborAssetsNux) {
-    return children;
-  }
-  return (
-    <ProductTour
-      title="Show and hide neighboring assets outside of selection"
-      description={
-        <>
-          You can show and hide neighboring assets outside of your selection by right clicking on
-          the graph and selecting the show/hide neighboring assets option.
-        </>
-      }
-      position={ProductTourPosition.BOTTOM_RIGHT}
-      video={ShowAndHideNeighborAssetsMP4}
-      width="616px"
-      actions={{
-        dismiss: () => {
-          setHideNeighborAssetsNux('1');
-        },
-      }}
-    >
-      {children}
-    </ProductTour>
   );
 };

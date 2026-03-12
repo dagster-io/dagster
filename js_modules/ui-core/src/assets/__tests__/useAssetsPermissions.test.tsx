@@ -2,7 +2,7 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {renderHook, waitFor} from '@testing-library/react';
 import {ReactNode} from 'react';
 
-import {buildAssetNode} from '../../graphql/types';
+import {buildAssetNode} from '../../graphql/builders';
 import {buildQueryMock} from '../../testing/mocking';
 import {
   AssetsPermissionsQuery,

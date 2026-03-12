@@ -6,9 +6,6 @@ from typing import Any, TypeVar
 from urllib.parse import quote, urlencode
 
 import alembic.config
-import psycopg2
-import psycopg2.errorcodes
-import psycopg2.extensions
 import sqlalchemy
 import sqlalchemy.exc
 from dagster import _check as check
@@ -16,7 +13,6 @@ from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
 
 # re-export
 from dagster._core.storage.config import pg_config as pg_config
-from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._core.storage.sql import get_alembic_config
 from sqlalchemy.engine import Connection
 
@@ -25,13 +21,6 @@ T = TypeVar("T")
 
 class DagsterPostgresException(Exception):
     pass
-
-
-def get_conn(conn_string: str) -> SqlDbConnection:
-    """Get a connection directly without SQLAlchemy for tests."""
-    conn = psycopg2.connect(conn_string)
-    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-    return conn
 
 
 def pg_url_from_config(config_value: Mapping[str, Any]) -> str:
@@ -80,8 +69,6 @@ def retry_pg_creation_fn(fn: Callable[[], T], retry_limit: int = 5, retry_wait: 
         try:
             return fn()
         except (
-            psycopg2.ProgrammingError,
-            psycopg2.IntegrityError,
             sqlalchemy.exc.ProgrammingError,
             sqlalchemy.exc.IntegrityError,
         ) as exc:
@@ -89,10 +76,7 @@ def retry_pg_creation_fn(fn: Callable[[], T], retry_limit: int = 5, retry_wait: 
             if (
                 isinstance(exc, sqlalchemy.exc.ProgrammingError)
                 and exc.orig
-                and exc.orig.pgcode != psycopg2.errorcodes.DUPLICATE_TABLE
-            ) or (
-                isinstance(exc, psycopg2.ProgrammingError)
-                and exc.pgcode != psycopg2.errorcodes.DUPLICATE_TABLE
+                and exc.orig.pgcode != "42P07"
             ):
                 raise
 
@@ -117,10 +101,6 @@ def retry_pg_connection_fn(fn: Callable[[], T], retry_limit: int = 5, retry_wait
         try:
             return fn()
         except (
-            # See: https://www.psycopg.org/docs/errors.html
-            # These are broad, we may want to list out specific exceptions to capture
-            psycopg2.DatabaseError,
-            psycopg2.OperationalError,
             sqlalchemy.exc.DatabaseError,
             sqlalchemy.exc.OperationalError,
             sqlalchemy.exc.TimeoutError,
@@ -140,9 +120,11 @@ def retry_pg_connection_fn(fn: Callable[[], T], retry_limit: int = 5, retry_wait
 
 
 def wait_for_connection(conn_string: str, retry_limit: int = 5, retry_wait: float = 0.2) -> bool:
-    """Get a connection with retries directly without SQLAlchemy for tests."""
+    """Check that we can connect to the PostgreSQL server with retries."""
     retry_pg_connection_fn(
-        lambda: psycopg2.connect(conn_string), retry_limit=retry_limit, retry_wait=retry_wait
+        lambda: sqlalchemy.create_engine(conn_string).connect().close(),
+        retry_limit=retry_limit,
+        retry_wait=retry_wait,
     )
     return True
 
@@ -170,7 +152,7 @@ def create_pg_connection(
             conn.close()
 
 
-def set_pg_statement_timeout(conn: psycopg2.extensions.connection, millis: int):
+def set_pg_statement_timeout(conn: Any, millis: int):
     check.int_param(millis, "millis")
     with conn:
         with conn.cursor() as curs:

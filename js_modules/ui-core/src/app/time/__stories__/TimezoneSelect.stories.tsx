@@ -25,7 +25,6 @@ export const Default = {
               {timezone}
             </Button>
           )}
-          includeAutomatic={false}
         />
       </div>
     );

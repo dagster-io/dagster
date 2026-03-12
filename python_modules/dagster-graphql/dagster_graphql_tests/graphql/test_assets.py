@@ -253,14 +253,14 @@ mutation reportRunlessAssetEvents($eventParams: ReportRunlessAssetEventsParams!)
 """
 
 REPORT_ASSET_CHECK_EVALUATION = """
-mutation reportAssetCheckEvaluation($eventParams: ReportAssetCheckEvaluationParams!) {
-    reportAssetCheckEvaluation(eventParams: $eventParams) {
+mutation reportAssetCheckEvaluations($eventParams: ReportAssetCheckEvaluationsParams!) {
+    reportAssetCheckEvaluations(eventParams: $eventParams) {
         __typename
         ... on PythonError {
             message
             stack
         }
-        ... on ReportAssetCheckEvaluationSuccess {
+        ... on ReportAssetCheckEvaluationsSuccess {
             assetKey {
                 path
             }
@@ -1407,12 +1407,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
         assert result.data
-        assert result.data["reportAssetCheckEvaluation"]
+        assert result.data["reportAssetCheckEvaluations"]
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
-        assert result.data["reportAssetCheckEvaluation"]["assetKey"]["path"] == list(asset_key.path)
+        assert result.data["reportAssetCheckEvaluations"]["assetKey"]["path"] == list(
+            asset_key.path
+        )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
         record = graphql_context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
@@ -1445,8 +1447,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
@@ -1482,8 +1484,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
@@ -1512,15 +1514,15 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                     "checkName": check_name,
                     "passed": True,
                     "severity": "WARN",
-                    "partition": "2024-01-01",
+                    "partitionKeys": ["2024-01-01"],
                 }
             },
         )
 
         assert result.data
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)

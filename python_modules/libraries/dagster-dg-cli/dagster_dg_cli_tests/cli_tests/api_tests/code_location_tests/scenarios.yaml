@@ -1,0 +1,19 @@
+success_list_code_locations:
+  command: "dg api code-location list --json"
+
+success_list_code_locations_text:
+  command: "dg api code-location list"
+
+success_get_code_location:
+  command: "dg api code-location get loc-a --json"
+
+success_get_code_location_text:
+  command: "dg api code-location get loc-a"
+
+error_code_location_not_found:
+  command: "dg api code-location get nonexistent-location"
+  has_recording: false
+
+error_code_location_not_found_json:
+  command: "dg api code-location get nonexistent-location --json"
+  has_recording: false

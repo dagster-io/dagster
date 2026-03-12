@@ -1,11 +1,11 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  PartitionDefinitionType,
   buildAssetNode,
   buildDefaultPartitionStatuses,
   buildDimensionPartitionKeys,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {PartitionDefinitionType} from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 

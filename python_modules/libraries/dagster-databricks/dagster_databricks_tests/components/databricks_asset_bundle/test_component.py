@@ -68,8 +68,8 @@ def test_component_asset_spec(
         assert asset_spec.key == AssetKey(task.task_key)
         assert asset_spec.description == f"{task.task_key} task from {task.job_name} job"
         assert "databricks" in asset_spec.kinds
-        assert asset_spec.skippable
         assert asset_spec.metadata["task_key"].value == task.task_key
+        assert asset_spec.metadata["job_name"].value == task.job_name
         assert asset_spec.metadata["task_type"].value == task.task_type
         assert asset_spec.metadata["task_config"].value == task.task_config_metadata
         assert asset_spec.deps == [
@@ -87,19 +87,21 @@ def test_component_asset_spec(
         (None, {AssetKey(["data_processing_notebook"])}),
         (
             {
-                "data_processing_notebook": [
-                    {"key": "data_processing_notebook_asset1"},
-                    {"key": "data_processing_notebook_asset2"},
-                ],
-                "stage_documents": [
-                    {
-                        "key": "stage_documents",
-                        "deps": [
-                            "data_processing_notebook_asset1",
-                            "data_processing_notebook_asset2",
-                        ],
-                    },
-                ],
+                "databricks_pipeline_job": {
+                    "data_processing_notebook": [
+                        {"key": "data_processing_notebook_asset1"},
+                        {"key": "data_processing_notebook_asset2"},
+                    ],
+                    "stage_documents": [
+                        {
+                            "key": "stage_documents",
+                            "deps": [
+                                "data_processing_notebook_asset1",
+                                "data_processing_notebook_asset2",
+                            ],
+                        },
+                    ],
+                },
             },
             {
                 AssetKey(["data_processing_notebook_asset1"]),
@@ -170,7 +172,7 @@ def test_load_component(
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
                     },
-                    "assets_by_task_key": custom_asset_specs,
+                    "assets_by_job_task_key": custom_asset_specs,
                 },
             },
         )
@@ -182,7 +184,7 @@ def test_load_component(
             assert component.compute_config == expected_resolved_compute_config
 
             assets = list(defs.assets or [])
-            assert len(assets) == 6
+            assert len(assets) == 1
             databricks_assets = assets[0]
             assert isinstance(databricks_assets, AssetsDefinition)
 

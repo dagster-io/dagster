@@ -1,0 +1,12 @@
+# my_project/defs/my_databricks_workspace/defs.yaml
+
+type: dagster_databricks.DatabricksWorkspaceComponent
+
+attributes:
+  assets_by_task_key:
+    etl_extract:
+      - key: raw/customers
+        description: "Customers extracted from source database"
+    etl_transform:
+      - key: staging/customers_clean
+        description: "Cleaned and validated customer data"

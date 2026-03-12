@@ -1262,6 +1262,8 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             # Requested with failure_count 1 because it will retry
             assert updated_backfill.status == BulkActionStatus.REQUESTED
             assert updated_backfill.failure_count == 1
+            # Error should not be stored on the backfill for transient failures
+            assert updated_backfill.error is None
 
             errors = [
                 error
@@ -1277,6 +1279,8 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             updated_backfill = instance.get_backfill(backfill_id)
             assert updated_backfill.status == BulkActionStatus.REQUESTED
             assert updated_backfill.failure_count == 2
+            # Error should still not be stored on the backfill for transient failures
+            assert updated_backfill.error is None
 
             # Fails once it exceeds DAGSTER_MAX_ASSET_BACKFILL_RETRIES retries
             errors = [
@@ -1294,6 +1298,8 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             assert updated_backfill.status == BulkActionStatus.FAILING
             assert updated_backfill.failure_count == 3
             assert updated_backfill.backfill_end_timestamp is None
+            # Error should be stored on the backfill only for the final failure
+            assert isinstance(updated_backfill.error, SerializableErrorInfo)
 
             # one more iteration for the backfill to ensure all runs are canceled, then it's marked failed
             list(
@@ -2009,6 +2015,8 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     assert (
         updated_backfill.failure_count == 0
     )  # because of the nature of the error, failure count not incremented
+    # Error should not be stored on the backfill for transient unreachable code server errors
+    assert updated_backfill.error is None
 
     # Runs were still removed off the list of submitting run requests because the error was
     # caught and the backfill data updated

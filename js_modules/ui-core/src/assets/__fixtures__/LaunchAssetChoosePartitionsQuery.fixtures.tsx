@@ -5,7 +5,7 @@ import {
   buildDaemonStatus,
   buildInstance,
   buildRunLauncher,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {LAUNCH_ASSET_WARNINGS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
 import {LaunchAssetWarningsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
 

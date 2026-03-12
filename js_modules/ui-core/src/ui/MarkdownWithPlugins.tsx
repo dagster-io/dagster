@@ -2,7 +2,8 @@ import {Colors} from '@dagster-io/ui-components';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, {defaultSchema} from 'rehype-sanitize';
-import gfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import remarkGfm from 'remark-gfm';
 import {createGlobalStyle} from 'styled-components';
 import 'highlight.js/styles/github.css';
 
@@ -132,7 +133,7 @@ export const MarkdownWithPlugins = (props: Props) => {
       <ReactMarkdown
         {...props}
         className="dagster-markdown"
-        remarkPlugins={[gfm]}
+        remarkPlugins={[remarkBreaks, remarkGfm]}
         rehypePlugins={[
           [rehypeHighlight, {ignoreMissing: true}],
           [rehypeSanitize, sanitizeConfig],

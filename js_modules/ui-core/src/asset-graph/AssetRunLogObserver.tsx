@@ -5,7 +5,7 @@ import {
   AssetLiveRunLogsSubscription,
   AssetLiveRunLogsSubscriptionVariables,
 } from './types/AssetRunLogObserver.types';
-import {AssetKey} from '../graphql/types';
+import {AssetKey} from '../assets/types';
 
 const OBSERVED_RUNS_CHANGED = 'observed-runs-changed';
 

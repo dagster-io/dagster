@@ -10,7 +10,7 @@ import {BackfillTableFragment} from './types/BackfillTable.types';
 import {QueryResult, gql, useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {PartitionBackfill, RunStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference, PipelineTag} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
@@ -266,7 +266,7 @@ const BackfillRequestedRange = ({
   backfill,
   onExpand,
 }: {
-  backfill: Pick<PartitionBackfill, 'numPartitions' | 'partitionNames'>;
+  backfill: {numPartitions: number | null; partitionNames: string[] | null};
   allPartitions?: string[];
   onExpand: () => void;
 }) => {

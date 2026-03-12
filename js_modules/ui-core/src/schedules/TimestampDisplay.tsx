@@ -27,7 +27,7 @@ export const TimestampDisplay = (props: Props) => {
     tooltipTimeFormat = DEFAULT_TOOLTIP_TIME_FORMAT,
   } = props;
   const {
-    timezone: [userTimezone],
+    resolvedTimezone: userTimezone,
     hourCycle: [userHourCycle],
   } = useContext(TimeContext);
 

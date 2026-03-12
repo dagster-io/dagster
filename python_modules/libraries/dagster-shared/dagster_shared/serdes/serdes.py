@@ -904,6 +904,20 @@ def pack_value(
     )
 
 
+# This is a hot enough path that the repeated `from pydantic import BaseModel`
+# import has measurable overhead. Cache it after the first call.
+_CACHED_PYDANTIC_BASE_MODEL: type | None = None
+
+
+def _get_pydantic_base_model() -> type:
+    global _CACHED_PYDANTIC_BASE_MODEL  # noqa: PLW0603
+    if _CACHED_PYDANTIC_BASE_MODEL is None:
+        from pydantic import BaseModel
+
+        _CACHED_PYDANTIC_BASE_MODEL = BaseModel
+    return _CACHED_PYDANTIC_BASE_MODEL
+
+
 def _transform_for_serialization(
     val: PackableValue,
     whitelist_map: WhitelistMap,
@@ -966,7 +980,7 @@ def _transform_for_serialization(
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
 
     # defer to the last possible moment for import performance
-    from pydantic import BaseModel
+    BaseModel = _get_pydantic_base_model()
 
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))

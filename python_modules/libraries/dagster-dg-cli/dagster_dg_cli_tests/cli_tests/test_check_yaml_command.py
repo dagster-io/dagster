@@ -153,7 +153,7 @@ def test_check_yaml_succeeds_unregistered_component() -> None:
         # Make sure the new component is not registered
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        component_keys = [c["key"] for c in json.loads(result.stdout)]
+        component_keys = [c["key"] for c in json.loads(result.stdout)["items"]]
         assert "foo_bar.components.baz.Baz" not in component_keys
 
         # Check YAML should pass anyway, since we support unregistered components

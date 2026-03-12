@@ -1,16 +1,10 @@
-import styled from 'styled-components';
+import clsx from 'clsx';
+import {forwardRef} from 'react';
 
-import {Colors} from './Color';
-import {FontFamily} from './styles';
+import styles from './css/Trace.module.css';
 
-export const Trace = styled.div`
-  background-color: ${Colors.backgroundLight()};
-  color: ${Colors.textLight()};
-  font-family: ${FontFamily.monospace};
-  font-size: 13px;
-  font-variant-ligatures: none;
-  max-height: 90vh;
-  overflow: auto;
-  white-space: pre;
-  padding: 16px;
-`;
+export const Trace = forwardRef<HTMLDivElement, React.ComponentPropsWithRef<'div'>>(
+  ({className, ...props}, ref) => {
+    return <div {...props} className={clsx(styles.trace, className)} ref={ref} />;
+  },
+);

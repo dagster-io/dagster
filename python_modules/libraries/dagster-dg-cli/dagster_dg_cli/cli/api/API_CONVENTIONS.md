@@ -59,43 +59,34 @@ Each noun file (e.g., `deployment.py`) contains:
 - `--cursor <cursor>` for cursor-based pagination (preferred)
 - `--filter <query>` for filtering results
 - `--format <table|json>` (alternative to --json flag)
-- `--view <view>` for view-specific data (see View Patterns section)
 
-## View Patterns
+## Health Subcommand Pattern
 
-Some commands support different "views" that fetch distinct subsets of entity data:
+Health/status data for a resource is accessed via a dedicated `get-health` subcommand rather than
+a flag on `list` or `get`. This keeps the core commands focused on definition-time data and
+provides a clean, dedicated interface for operational monitoring.
 
-### Asset Views:
+### Asset Health:
 
-- **Default view** (no `--view` flag): Definition-time data (description, group, kinds, metadata)
-- **Status view** (`--view status`): Runtime/stateful data including:
+- **`list` / `get`**: Definition-time data (description, group, kinds, metadata)
+- **`get-health <asset_key>`**: Runtime/stateful data:
   - Asset health status (overall, materialization, freshness, checks)
   - Health metadata (failure details, run IDs, timestamps)
   - Latest materialization information (with natural partition data)
   - Freshness information (lag minutes, policy details)
   - Asset checks execution status
 
-### View Usage Examples:
+### Usage Examples:
 
 ```bash
-# Default definition view
+# Definition views
 dg api asset list
 dg api asset get my/asset/key
 
-# Status view for operational monitoring
-dg api asset list --view status
-dg api asset get my/asset/key --view status
-
-# JSON output works with all views
-dg api asset list --view status --json
+# Health/status for operational monitoring
+dg api asset get-health my/asset/key
+dg api asset get-health my/asset/key --json
 ```
-
-### Implementation Guidelines:
-
-1. **View Parameter Validation**: Always validate view parameter values
-2. **Backward Compatibility**: Default behavior (no view) must remain unchanged
-3. **GraphQL Efficiency**: Use appropriate queries for each view to avoid over-fetching
-4. **Documentation**: Each view should be documented with specific data included/excluded
 
 ## Output Formatting
 
@@ -267,6 +258,17 @@ def <noun>_group():
     """Manage <noun> in Dagster Plus."""
 ```
 
+## Resource Event Subcommands
+
+Some resources support a `get-events` subcommand to retrieve event history. This follows
+the pattern `dg api <noun> get-events <identifier>`:
+
+- `dg api asset get-events <asset_key>` — materialization/observation events
+- `dg api run get-events <run_id>` — execution log events (step starts, failures, etc.)
+
+The `get-events` command lives alongside `get` and `list` in the resource's command group,
+keeping all operations for a resource under one noun.
+
 ## Standard Verbs
 
 ### Read Operations:
@@ -306,9 +308,7 @@ result = client.execute(query, variables)
 - Test error handling in both output modes
 - Verify REST-like data transformation
 - Ensure --json flag works on all commands
-- Test all supported views (default and view-specific)
-- Verify view parameter validation and error messages
-- Test backward compatibility (no view parameter)
+- Test `get-health` subcommand for health data
 
 ## Future Extensions
 
@@ -331,11 +331,11 @@ dg api deployment list
 # List deployments in JSON format
 dg api deployment list --json
 
-# Asset management with view support
-dg api asset list                    # Default definition view
-dg api asset list --view status      # Status view with health information
-dg api asset get my/asset --json     # Single asset in JSON
-dg api asset get my/asset --view status  # Single asset with status
+# Asset management
+dg api asset list                         # Default definition view
+dg api asset get my/asset --json          # Single asset in JSON
+dg api asset get-health my/asset          # Health/status for an asset
+dg api asset get-health my/asset --json   # Health/status in JSON
 ```
 
 ### Planned Extensions:

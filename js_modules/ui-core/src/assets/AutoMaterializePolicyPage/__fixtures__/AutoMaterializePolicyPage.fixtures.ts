@@ -3,7 +3,6 @@ import {DocumentNode} from 'graphql';
 
 import {Unmasked} from '../../../apollo-client';
 import {
-  AutoMaterializeDecisionType,
   buildAssetConditionEvaluation,
   buildAssetConditionEvaluationRecord,
   buildAssetConditionEvaluationRecords,
@@ -17,7 +16,8 @@ import {
   buildParentMaterializedRuleEvaluationData,
   buildPartitionKeys,
   buildUnpartitionedAssetConditionEvaluationNode,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
+import {AutoMaterializeDecisionType} from '../../../graphql/types';
 import {GET_EVALUATIONS_QUERY} from '../GetEvaluationsQuery';
 import {
   GetEvaluationsQuery,

@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable
 
-from buildkite_shared.git import ChangedFiles
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.step_builder import StepConfiguration, TopLevelStepConfiguration
@@ -29,21 +29,21 @@ DAGSTER_CURRENT_BRANCH = "current_branch"
 EARLIEST_TESTED_RELEASE = "0.12.8"
 
 
-def build_integration_steps() -> list[StepConfiguration]:
+def build_integration_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     steps: list[StepConfiguration] = []
 
     # Shared dependency of some test suites
     steps += PackageSpec(
         os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra"),
-    ).build_steps()
+    ).build_steps(ctx)
 
     # test suites
-    steps += build_backcompat_suite_steps()
-    steps += build_celery_k8s_suite_steps()
-    steps += build_k8s_suite_steps()
-    steps += build_daemon_suite_steps()
-    steps += build_auto_materialize_perf_suite_steps()
-    steps += build_azure_live_test_suite_steps()
+    steps += build_backcompat_suite_steps(ctx)
+    steps += build_celery_k8s_suite_steps(ctx)
+    steps += build_k8s_suite_steps(ctx)
+    steps += build_daemon_suite_steps(ctx)
+    steps += build_auto_materialize_perf_suite_steps(ctx)
+    steps += build_azure_live_test_suite_steps(ctx)
 
     return steps
 
@@ -53,7 +53,7 @@ def build_integration_steps() -> list[StepConfiguration]:
 # ########################
 
 
-def build_backcompat_suite_steps() -> list[TopLevelStepConfiguration]:
+def build_backcompat_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     tox_factors = [
         ToxFactor("user-code-latest-release"),
         ToxFactor("user-code-earliest-release"),
@@ -61,6 +61,7 @@ def build_backcompat_suite_steps() -> list[TopLevelStepConfiguration]:
 
     return build_integration_suite_steps(
         os.path.join("integration_tests", "test_suites", "backcompat-test-suite"),
+        ctx,
         pytest_extra_cmds=backcompat_extra_cmds,
         pytest_tox_factors=tox_factors,
     )
@@ -124,7 +125,7 @@ def _get_library_version(version: str) -> str:
 # ########################
 
 
-def build_celery_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
+def build_celery_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = [
         ToxFactor("-default"),
         ToxFactor("-markredis"),
@@ -132,9 +133,10 @@ def build_celery_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
     directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
     return build_integration_suite_steps(
         directory,
+        ctx,
         pytest_tox_factors,
         queue=BuildkiteQueue.DOCKER,  # crashes on python 3.11/3.12 without additional resources
-        always_run_if=has_helm_changes,
+        always_run_if=lambda: has_helm_changes(ctx),
         pytest_extra_cmds=celery_k8s_integration_suite_pytest_extra_cmds,
     )
 
@@ -144,21 +146,23 @@ def build_celery_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
 # ########################
 
 
-def build_daemon_suite_steps():
+def build_daemon_suite_steps(ctx: BuildkiteContext):
     pytest_tox_factors = None
     directory = os.path.join("integration_tests", "test_suites", "daemon-test-suite")
     return build_integration_suite_steps(
         directory,
+        ctx,
         pytest_tox_factors,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
     )
 
 
-def build_auto_materialize_perf_suite_steps():
+def build_auto_materialize_perf_suite_steps(ctx: BuildkiteContext):
     pytest_tox_factors = None
     directory = os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
     return build_integration_suite_steps(
         directory,
+        ctx,
         pytest_tox_factors,
         unsupported_python_versions=[
             version
@@ -168,28 +172,28 @@ def build_auto_materialize_perf_suite_steps():
     )
 
 
-def skip_if_not_azure_commit():
+def skip_if_not_azure_commit(ctx: BuildkiteContext):
     """If no dagster-azure files are changed, skip the azure live tests."""
     return (
         None
-        if (any("dagster-azure" in str(path) for path in ChangedFiles.all_oss))
+        if (any("dagster-azure" in str(path) for path in ctx.all_changed_oss_files))
         else "Not a dagster-azure commit"
     )
 
 
-def skip_if_not_gcp_commit():
+def skip_if_not_gcp_commit(ctx: BuildkiteContext):
     """If no dagster-gcp files are changed, skip the gcp live tests."""
     return (
         None
-        if (any("dagster-gcp" in str(path) for path in ChangedFiles.all_oss))
+        if (any("dagster-gcp" in str(path) for path in ctx.all_changed_oss_files))
         else "Not a dagster-gcp commit"
     )
 
 
-def build_azure_live_test_suite_steps() -> list[TopLevelStepConfiguration]:
+def build_azure_live_test_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests"),
-        skip_if=skip_if_not_azure_commit,
+        skip=lambda: skip_if_not_azure_commit(ctx),
         env_vars=[
             "TEST_AZURE_TENANT_ID",
             "TEST_AZURE_CLIENT_ID",
@@ -198,7 +202,7 @@ def build_azure_live_test_suite_steps() -> list[TopLevelStepConfiguration]:
             "TEST_AZURE_CONTAINER_ID",
             "TEST_AZURE_ACCESS_KEY",
         ],
-    ).build_steps()
+    ).build_steps(ctx)
 
 
 def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
@@ -213,7 +217,7 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 # ########################
 
 
-def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
+def build_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = [
         ToxFactor("-default", splits=2),
         ToxFactor("-subchart", splits=2),
@@ -223,8 +227,9 @@ def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
     return build_integration_suite_steps(
         directory,
+        ctx,
         pytest_tox_factors,
-        always_run_if=has_helm_changes,
+        always_run_if=lambda: has_helm_changes(ctx),
         pytest_extra_cmds=k8s_integration_suite_pytest_extra_cmds,
         queue=BuildkiteQueue.DOCKER,
     )
@@ -237,7 +242,8 @@ def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
 
 def build_integration_suite_steps(
     directory: str,
-    pytest_tox_factors: list[ToxFactor] | None,
+    ctx: BuildkiteContext,
+    pytest_tox_factors: list[ToxFactor] | None = None,
     pytest_extra_cmds: PytestExtraCommandsFunction | None = None,
     queue=None,
     always_run_if: Callable[[], bool] | None = None,
@@ -263,7 +269,7 @@ def build_integration_suite_steps(
         queue=queue,
         always_run_if=always_run_if,
         unsupported_python_versions=unsupported_python_versions,
-    ).build_steps()
+    ).build_steps(ctx)
 
 
 def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:

@@ -292,7 +292,10 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         else:
             output_streams = ["stdout", "stderr"]
 
-        log_group = monitoring_configuration.get("logGroupName") or "/aws/emr-serverless"
+        log_group = (
+            monitoring_configuration.get("cloudWatchLoggingConfiguration", {}).get("logGroupName")
+            or "/aws/emr-serverless"
+        )
 
         attempt = response["jobRun"].get("attempt")
 

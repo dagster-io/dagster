@@ -1,13 +1,15 @@
 import tempfile
 from urllib.parse import unquote, urlparse
 
+import psycopg2
+import psycopg2.extensions
 import pytest
 import sqlalchemy as db
 import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
-from dagster_postgres.utils import get_conn, get_conn_string
+from dagster_postgres.utils import get_conn_string
 
 
 def full_pg_config(hostname):
@@ -179,7 +181,9 @@ def test_connection_leak(hostname, conn_string):
             )
         )
 
-    with get_conn(conn_string).cursor() as curs:
+    conn = psycopg2.connect(conn_string)
+    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    with conn.cursor() as curs:
         # count open connections
         curs.execute("SELECT count(*) from pg_stat_activity")
         res = curs.fetchall()

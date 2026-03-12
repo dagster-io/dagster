@@ -207,7 +207,10 @@ SAMPLE_DESTINATION_DETAILS = {
 # https://fivetran.com/docs/rest-api/api-reference/connectors/connector-details
 # The sample is parameterized to test the poll method
 def get_sample_connection_details(
-    succeeded_at: str, failed_at: str, paused: bool = False
+    succeeded_at: str,
+    failed_at: str,
+    paused: bool = False,
+    rescheduled_for: str | None = None,
 ) -> Mapping[str, Any]:
     return {
         "code": "Success",
@@ -237,7 +240,7 @@ def get_sample_connection_details(
                 "setup_state": "connected",
                 "sync_state": "scheduled",
                 "is_historical_sync": False,
-                "rescheduled_for": "2024-12-01T15:43:29.013729Z",
+                **({"rescheduled_for": rescheduled_for} if rescheduled_for else {}),
             },
             "daily_sync_time": "14:00",
             "succeeded_at": succeeded_at,

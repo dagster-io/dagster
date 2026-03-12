@@ -2,7 +2,7 @@ import {MockedProvider} from '@apollo/client/testing';
 import {renderHook, waitFor} from '@testing-library/react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {buildAssetKey} from '../../graphql/types';
+import {buildAssetKey} from '../../graphql/builders';
 
 // Mock useAllAssetsNodes
 const mockUseAllAssetsNodes = jest.fn();

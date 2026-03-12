@@ -3,7 +3,7 @@ import {useMemo} from 'react';
 import {FULL_PARTITIONS_QUERY} from './FullPartitionsQuery';
 import {FullPartitionsQuery, FullPartitionsQueryVariables} from './types/FullPartitionsQuery.types';
 import {useQuery} from '../../apollo-client';
-import {DimensionPartitionKeys} from '../../graphql/types';
+type DimensionPartitionKeys = {partitionKeys: string[]};
 
 const emptyArray: DimensionPartitionKeys[] = [];
 

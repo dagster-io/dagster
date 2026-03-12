@@ -1,8 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  RunStatus,
-  StaleStatus,
   buildAsset,
   buildAssetNode,
   buildAssetResultEventHistoryConnection,
@@ -14,7 +12,8 @@ import {
   buildQuery,
   buildRepositoryOrigin,
   buildRun,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {RunStatus, StaleStatus} from '../../graphql/types';
 import {ASSET_MATERIALIZATION_UPSTREAM_QUERY} from '../AssetMaterializationUpstreamData';
 import {ASSET_PARTITION_DETAIL_QUERY, ASSET_PARTITION_STALE_QUERY} from '../AssetPartitionDetail';
 import {AssetMaterializationUpstreamQuery} from '../types/AssetMaterializationUpstreamData.types';

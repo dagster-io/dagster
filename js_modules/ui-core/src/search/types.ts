@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 
+import {AssetKey} from '../assets/types';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
-import {AssetKey, DefinitionTag} from '../graphql/types';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesQuery.types';
 import {
   WorkspaceAssetGroupFragment,
@@ -59,7 +59,7 @@ export type SearchResult = {
   description: string;
   href: string;
   type: SearchResultType | AssetFilterSearchResultType;
-  tags?: DefinitionTag[];
+  tags?: {key: string; value: string}[];
   kinds?: string[];
   numResults?: number;
   repoPath?: string;

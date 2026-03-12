@@ -2,7 +2,8 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Box, Button, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
-import {RunStatus, buildRun, buildRunGroup, buildRunStatsSnapshot} from '../../graphql/types';
+import {buildRun, buildRunGroup, buildRunStatsSnapshot} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
 import {extractMetadataFromLogs} from '../../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../../runs/types/RunMetadataProvider.types';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';

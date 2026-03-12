@@ -1,7 +1,6 @@
 import {useEffect, useState} from 'react';
-import styled from 'styled-components';
 
-import {Colors} from './Color';
+import styles from './css/CustomTooltipProvider.module.css';
 
 export const CustomTooltipProvider = () => {
   const [state, setState] = useState<null | {
@@ -67,23 +66,8 @@ export const CustomTooltipProvider = () => {
   }
 
   return (
-    <TooltipContainer id="tooltip-container" style={state.style}>
+    <div id="tooltip-container" className={styles.tooltipContainer} style={state.style}>
       {state.title}
-    </TooltipContainer>
+    </div>
   );
 };
-
-const TooltipContainer = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  font-size: 12px;
-  padding: 4px 6px;
-  color: ${Colors.tooltipText()};
-  background: ${Colors.tooltipBackground()};
-  transform: translate(5px, 5px);
-  box-shadow: 1px 1px 3px ${Colors.shadowDefault()}};
-  z-index: 100;
-  pointer-events: none;
-  user-select: none;
-`;

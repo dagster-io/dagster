@@ -50,7 +50,7 @@ In the [parameter comparison](#parameter-comparison) section of this doc, you'll
   endBefore="end_asset"
 />
 
-This is just a snippet of what the PipesK8sClient can do. Take a look at our full guide on the [dagster-k8s PipesK8sClient](/guides/build/external-pipelines/kubernetes-pipeline) for more information.
+This is just a snippet of what the PipesK8sClient can do. Take a look at our full guide on the [dagster-k8s PipesK8sClient](/integrations/external-pipelines/kubernetes-pipeline) for more information.
 
 ### Step 3: Using dagster-airlift to proxy execution
 

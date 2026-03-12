@@ -1,8 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  AssetNode,
-  PartitionDefinitionType,
   buildAssetKey,
   buildAssetNode,
   buildConfigTypeField,
@@ -12,11 +10,12 @@ import {
   buildRegularConfigType,
   buildRepository,
   buildRepositoryLocation,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {PartitionDefinitionType} from '../../graphql/types';
 import {LAUNCH_ASSET_LOADER_QUERY} from '../LaunchAssetExecutionButton';
 import {LaunchAssetLoaderQuery} from '../types/LaunchAssetExecutionButton.types';
 
-export const assetNodes: AssetNode[] = [
+export const assetNodes: ReturnType<typeof buildAssetNode>[] = [
   buildAssetNode({
     id: 'assets_dynamic_partitions.__repository__.["release_files"]',
     opNames: ['release_files'],

@@ -1,0 +1,35 @@
+# serializer version: 1
+# name: TestFormatOrganizationSettings.test_format_settings_json[0]
+  dict({
+    'settings': dict({
+      'run_queue_config': dict({
+        'max_concurrent_runs': 25,
+      }),
+      'sso_default_role': 'VIEWER',
+    }),
+  })
+# ---
+# name: TestFormatOrganizationSettings.test_format_settings_text[0]
+  '''
+  run_queue_config:
+    max_concurrent_runs: 25
+  sso_default_role: VIEWER
+  '''
+# ---
+# name: TestFormatSamlResult.test_format_saml_result_json[0]
+  dict({
+    'message': 'SAML metadata uploaded successfully.',
+  })
+# ---
+# name: TestFormatSamlResult.test_format_saml_result_text[0]
+  'SAML metadata uploaded successfully.'
+# ---
+# name: TestProcessOrganizationSettingsResponse.test_empty_settings[0]
+  OrganizationSettings(settings={})
+# ---
+# name: TestProcessOrganizationSettingsResponse.test_successful_response[0]
+  OrganizationSettings(settings={'run_queue_config': {'max_concurrent_runs': 25, 'tag_concurrency_limits': []}, 'sso_default_role': 'VIEWER'})
+# ---
+# name: TestProcessSetOrganizationSettingsResponse.test_successful_set[0]
+  OrganizationSettings(settings={'sso_default_role': 'EDITOR'})
+# ---

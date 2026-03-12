@@ -1,12 +1,14 @@
 import {ConditionType} from './PolicyEvaluationCondition';
 import {
+  EntityKeyFragment_AssetCheckhandle as AssetCheckhandle,
+  EntityKeyFragment as EntityKey,
   NewEvaluationNodeFragment,
   PartitionedAssetConditionEvaluationNodeFragment,
   SpecificPartitionAssetConditionEvaluationNodeFragment,
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
-import {AssetCheckhandle, AssetConditionEvaluationStatus, EntityKey} from '../../graphql/types';
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
 
 export type FlattenedConditionEvaluation<T> = {
   evaluation: T;

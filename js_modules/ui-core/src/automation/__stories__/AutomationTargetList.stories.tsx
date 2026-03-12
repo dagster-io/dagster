@@ -3,13 +3,13 @@ import {RecoilRoot} from 'recoil';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {
-  SensorType,
   buildAsset,
   buildAssetConnection,
   buildAssetKey,
   buildAssetSelection,
   buildPythonError,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {SensorType} from '../../graphql/types';
 import {
   buildStartKansasSuccess,
   buildStartLouisianaError,

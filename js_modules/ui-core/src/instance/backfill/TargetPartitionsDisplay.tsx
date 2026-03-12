@@ -1,7 +1,10 @@
 import {Box, Button, ButtonLink, Dialog, DialogFooter, Tag} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
-import {AssetBackfillTargetPartitions} from '../../graphql/types';
+type AssetBackfillTargetPartitions = {
+  partitionKeys: string[] | null;
+  ranges: {start: string; end: string}[] | null;
+};
 import {escapePartitionKey} from '../../partitions/SpanRepresentation';
 import {TruncatedTextWithFullTextOnHover} from '../../ui/TruncatedTextWithFullTextOnHover';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';

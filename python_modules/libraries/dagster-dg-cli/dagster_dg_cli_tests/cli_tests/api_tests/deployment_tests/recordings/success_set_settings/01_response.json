@@ -1,0 +1,15 @@
+{
+  "__typename": "DeploymentSettings",
+  "settings": {
+    "run_queue": {
+      "max_concurrent_runs": 50,
+      "tag_concurrency_limits": []
+    },
+    "run_monitoring": {
+      "start_timeout_seconds": 600
+    },
+    "run_retries": {
+      "max_retries": 2
+    }
+  }
+}

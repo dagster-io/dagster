@@ -1,7 +1,7 @@
 ---
 title: Discord webhook alerts
 description: Send notifications to a Discord channel using Discord Webhooks.
-sidebar_position: 10
+sidebar_position: 20
 ---
 
 import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
@@ -31,7 +31,7 @@ This example utilizes Discord "Embeds" for rich formatting.
       "description": "\n{{alert_content}}",
       "color": 15158332,
       "fields": [{"name": "Deployment", "value": "{{deployment_name}}", "inline": true}],
-      "footer": {"text": "Alert policy: {{alert_policy_name}}"}
+      "footer": {"text": "View alert policy: {{deployment_url}}/deployment/alerts/{{alert_policy_id}}"}
     }
   ]
 }

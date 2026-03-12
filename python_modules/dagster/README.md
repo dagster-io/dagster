@@ -74,13 +74,8 @@ If you're new to Dagster, we recommend checking out the [docs](https://docs.dags
 Dagster is available on PyPI and officially supports Python 3.9 through Python 3.14.
 
 ```bash
-pip install dagster dagster-webserver
+uv add dagster dagster-webserver dagster-dg-cli
 ```
-
-This installs two packages:
-
-- `dagster`: The core programming model.
-- `dagster-webserver`: The server that hosts Dagster's web UI for developing and operating Dagster jobs and assets.
 
 ## Documentation
 

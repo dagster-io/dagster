@@ -104,6 +104,13 @@ const reducer = (state: State, action: Action) => {
 
       const counts = {...state.counts};
       queuedNodes.forEach((node) => {
+        // These events are filtered out in filterLogs.tsx and should not be counted.
+        if (
+          node.__typename === 'AssetMaterializationPlannedEvent' ||
+          node.__typename === 'AssetCheckEvaluationPlannedEvent'
+        ) {
+          return;
+        }
         const level = logNodeLevel(node);
         counts[level]++;
       });

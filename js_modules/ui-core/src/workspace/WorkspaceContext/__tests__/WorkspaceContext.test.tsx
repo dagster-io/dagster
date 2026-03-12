@@ -11,7 +11,7 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 import {KEY_PREFIX, __resetForJest} from '../../../search/useIndexedDBCachedQuery';
 import {getMockResultFn} from '../../../testing/mocking';
 import {cache} from '../../../util/idb-lru-cache';

@@ -94,7 +94,7 @@ def build_tox_step(
         .with_timeout(timeout_in_minutes)
         .with_retry(retries)
         .depends_on(dependencies)
-        .skip_if(skip_reason)
+        .skip(skip_reason)
     )
 
     if queue:

@@ -1,0 +1,10 @@
+# my_project/defs/my_databricks_workspace/defs.yaml
+
+type: dagster_databricks.DatabricksWorkspaceComponent
+
+attributes:
+  databricks_filter:
+    include_jobs:
+      job_ids:
+        - 12345
+        - 67890

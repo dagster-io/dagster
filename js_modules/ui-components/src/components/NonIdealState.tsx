@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {CSSProperties} from 'react';
-import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
@@ -31,7 +30,8 @@ export const NonIdealState = ({
   const singleContentElement = [title, description, action].filter(Boolean).length === 1;
 
   return (
-    <NonIdealStateWrapper
+    <Box
+      className="dagster-non-ideal-state"
       flex={{gap: 20, alignItems: singleContentElement ? 'center' : 'flex-start'}}
       background={Colors.backgroundLight()}
       padding={24}
@@ -62,8 +62,6 @@ export const NonIdealState = ({
         {description && <div style={{color: Colors.textDefault()}}>{description}</div>}
         {action}
       </Box>
-    </NonIdealStateWrapper>
+    </Box>
   );
 };
-
-export const NonIdealStateWrapper = styled(Box)``;

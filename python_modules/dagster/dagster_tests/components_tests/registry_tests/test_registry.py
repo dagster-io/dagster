@@ -63,7 +63,7 @@ def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]
     result = _get_component_print_script_result(venv_root)
 
     component_type_list = json.loads(result.stdout)
-    return [component_type["key"] for component_type in component_type_list]
+    return [component_type["key"] for component_type in component_type_list["items"]]
 
 
 # Works from both standalone OSS and monorepo

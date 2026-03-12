@@ -24,7 +24,16 @@ export const timezoneAbbreviation = memoize((timeZone: string) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return abbreviation!;
 });
+
 export const automaticLabel = memoize(() => `Automatic (${browserTimezoneAbbreviation()})`);
+
+export const localTimezoneLabel = memoize(
+  () => `Local timezone (${browserTimezoneAbbreviation()})`,
+);
+
+export const orgTimezoneLabel = memoize(
+  (tz: string) => `Org timezone (${timezoneAbbreviation(tz)})`,
+);
 
 // Detect the hour cycle based on the presence of a dayPeriod in a formatted time string,
 // since the `hourCycle` property on the Intl.Locale object may be undefined.

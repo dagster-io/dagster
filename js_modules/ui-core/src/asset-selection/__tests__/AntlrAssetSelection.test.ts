@@ -6,7 +6,7 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildUserAssetOwner,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {parseAssetSelectionQuery} from '../parseAssetSelectionQuery';
 
 const TEST_GRAPH: AssetGraphQueryItem[] = [

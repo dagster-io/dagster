@@ -1,8 +1,10 @@
-import styled from 'styled-components';
+import clsx from 'clsx';
+import {forwardRef} from 'react';
 
-export const Page = styled.div`
-  height: 100%;
-  overflow-y: auto;
-  padding-bottom: 64px;
-  width: 100%;
-`;
+import styles from './css/Page.module.css';
+
+export const Page = forwardRef<HTMLDivElement, React.ComponentPropsWithRef<'div'>>(
+  ({className, ...props}, ref) => {
+    return <div {...props} className={clsx(styles.page, className)} ref={ref} />;
+  },
+);

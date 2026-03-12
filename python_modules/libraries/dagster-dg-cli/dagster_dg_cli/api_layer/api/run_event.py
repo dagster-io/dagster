@@ -19,8 +19,9 @@ class DgApiRunEventApi:
     def get_events(
         self,
         run_id: str,
-        event_type: str | None = None,
-        step_key: str | None = None,
+        event_types: tuple[str, ...] = (),
+        step_keys: tuple[str, ...] = (),
+        levels: tuple[str, ...] = (),
         limit: int = 100,
         after_cursor: str | None = None,
     ) -> "RunEventList":
@@ -37,8 +38,9 @@ class DgApiRunEventApi:
             run_id=run_id,
             limit=limit,
             after_cursor=after_cursor,
-            event_type=event_type,
-            step_key=step_key,
+            event_types=event_types,
+            step_keys=step_keys,
+            levels=levels,
         )
 
         # Helper function to convert error data to DgApiErrorInfo recursively

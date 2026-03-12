@@ -3,7 +3,7 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {buildAssetKey} from '../../graphql/types';
+import {buildAssetKey} from '../../graphql/builders';
 
 // Mock useAllAssetsNodes
 const mockUseAllAssetsNodes = jest.fn();

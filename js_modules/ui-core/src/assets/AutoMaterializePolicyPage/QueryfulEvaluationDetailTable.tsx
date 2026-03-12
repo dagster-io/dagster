@@ -7,18 +7,18 @@ import {
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
 import {tokenForEntityKey} from './flattenEvaluations';
 import {useQuery} from '../../apollo-client';
+import {AssetKey} from '../types';
+import {EvaluationHistoryStackItem} from './types';
 import {
   AssetConditionEvaluationRecordFragment,
   AssetLastEvaluationFragment,
+  EntityKeyFragment as EntityKey,
   GetAssetEvaluationDetailsQuery,
   GetAssetEvaluationDetailsQueryVariables,
   GetEvaluationsSpecificPartitionQuery,
   GetEvaluationsSpecificPartitionQueryVariables,
 } from './types/GetEvaluationsQuery.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {EntityKey} from '../../graphql/types';
-import {AssetKey} from '../types';
-import {EvaluationHistoryStackItem} from './types';
 
 interface EvaluationDetailDialogContentsProps {
   evaluation: AssetConditionEvaluationRecordFragment;

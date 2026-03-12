@@ -1,10 +1,9 @@
 import {memo} from 'react';
-import styled from 'styled-components';
 
-import {Colors} from '../Color';
 import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
 import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
+import styles from './css/ConfigEditorHelp.module.css';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
@@ -15,11 +14,11 @@ interface ConfigEditorHelpProps {
 export const ConfigEditorHelp = memo(
   ({context, allInnerTypes, onInsertDefaultValue}: ConfigEditorHelpProps) => {
     if (!context) {
-      return <Container />;
+      return <div className={styles.container} />;
     }
     return (
-      <Container>
-        <ConfigScrollWrap>
+      <div className={styles.container}>
+        <div className={styles.configScrollWrap}>
           <ConfigTypeSchema
             type={context.type}
             typesInScope={allInnerTypes}
@@ -27,36 +26,12 @@ export const ConfigEditorHelp = memo(
             contextPath={context.path}
             onInsertDefaultValue={onInsertDefaultValue}
           />
-        </ConfigScrollWrap>
-        <AutocompletionsNote>Use Ctrl+Space to show auto-completions inline.</AutocompletionsNote>
-      </Container>
+        </div>
+        <div className={styles.autocompletionsNote}>
+          Use Ctrl+Space to show auto-completions inline.
+        </div>
+      </div>
     );
   },
   (prev, next) => isHelpContextEqual(prev.context, next.context),
 );
-
-const AutocompletionsNote = styled.div`
-  font-size: 0.75rem;
-  text-align: center;
-  padding: 4px;
-  border-top: 1px solid ${Colors.keylineDefault()};
-  background: ${Colors.backgroundLight()};
-  color: ${Colors.textLight()};
-`;
-
-const ConfigScrollWrap = styled.div`
-  padding: 8px;
-  color: ${Colors.textDefault()};
-  flex: 1;
-  pointer-events: initial;
-  max-height: 100%;
-  overflow-y: auto;
-`;
-
-const Container = styled.div`
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background-color: ${Colors.backgroundLight()};
-  height: 100%;
-`;

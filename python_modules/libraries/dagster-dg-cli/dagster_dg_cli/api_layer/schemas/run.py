@@ -29,3 +29,9 @@ class DgApiRun(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DgApiRunList(BaseModel):
+    """List of runs."""
+
+    items: list[DgApiRun]

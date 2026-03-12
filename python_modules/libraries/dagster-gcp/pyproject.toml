@@ -41,3 +41,6 @@ test = [
 dataproc = [
     "google-cloud-dataproc",
 ]
+
+[project.entry-points."dagster_dg_cli.registry_modules"]
+dagster_gcp = "dagster_gcp.components"

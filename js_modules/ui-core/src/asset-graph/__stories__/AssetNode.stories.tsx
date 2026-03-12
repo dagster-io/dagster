@@ -8,13 +8,7 @@ import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {KNOWN_TAGS} from '../../graph/OpTags';
-import {
-  AssetKey,
-  StaleCause,
-  buildAssetKey,
-  buildAssetNode,
-  buildStaleCause,
-} from '../../graphql/types';
+import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/builders';
 import {
   AssetNode,
   AssetNodeMinimalWithHealth,
@@ -48,7 +42,7 @@ function SetCacheEntry({
   liveData,
   healthData,
 }: {
-  assetKey: AssetKey;
+  assetKey: ReturnType<typeof buildAssetKey>;
   liveData: any;
   healthData?: AssetHealthFragment;
 }) {
@@ -62,7 +56,7 @@ function SetCacheEntry({
     const staleEntry = {
       [key]: buildAssetNode({
         assetKey,
-        staleCauses: liveData.staleCauses.map((cause: StaleCause) => buildStaleCause(cause)),
+        staleCauses: liveData.staleCauses.map((cause: any) => buildStaleCause(cause)),
         staleStatus: liveData.staleStatus,
       }),
     };

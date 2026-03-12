@@ -88,6 +88,11 @@ EXCLUDE_MISSING_RST = {
     # Component testing utils
     "dagster.components.testing.utils.DefsFolderSandbox",
     "dagster.components.testing.utils.create_defs_folder_sandbox",
+    # GCP components - new resource components pending RST documentation
+    "dagster_gcp.components.bigquery.BigQueryResourceComponent",
+    "dagster_gcp.components.dataproc.DataprocResourceComponent",
+    "dagster_gcp.components.gcs.GCSResourceComponent",
+    "dagster_gcp.components.gcs.GCSFileManagerResourceComponent",
 }
 
 # Symbols marked @public but not exported at top-level
