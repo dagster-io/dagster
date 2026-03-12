@@ -336,12 +336,14 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
     if start_selector:
         start_method, start_cfg = next(iter(start_selector.items()))
 
+    preload_modules = check.opt_list_elem(start_cfg, "preload_modules", of_type=str)
     return MultiprocessExecutor(
         max_concurrent=check.opt_int_elem(config, "max_concurrent"),
         tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
-        explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
+        explicit_forkserver_preload=preload_modules if start_method == "forkserver" else None,
+        explicit_spawn_preload=preload_modules if start_method == "spawn" else None,
         step_dependency_config=StepDependencyConfig.from_config(
             check.opt_nullable_dict_elem(config, "step_dependency_config")
         ),
@@ -363,7 +365,22 @@ MULTI_PROC_CONFIG = Field(
             Selector(
                 fields={
                     "spawn": Field(
-                        {},
+                        {
+                            "preload_modules": Field(
+                                [str],
+                                is_required=False,
+                                description=(
+                                    "Explicitly specify modules to import at the start of each"
+                                    " child process before executing the step. This can be used"
+                                    " to work around allocator initialization races on Windows"
+                                    " when running under a debugger (e.g. VS Code / debugpy) with"
+                                    " libraries such as Polars >=1.32.2 that register a custom"
+                                    " allocator via a C extension. Add `polars` here to force"
+                                    " its allocator to initialize before debugpy can inject"
+                                    " threads into the child process."
+                                ),
+                            ),
+                        },
                         description=(
                             "Configure the multiprocess executor to start subprocesses "
                             "using `spawn`."
