@@ -10,6 +10,7 @@ attributes:  # Optional: Attributes details
     request_retry_delay: <number>  # Optional: Time (in seconds) to wait between each request retry.
     request_backoff_factor: <number>  # Optional: Multiplier applied to the delay between retries. Set to >1 for exponential backoff.
     disable_schedule_on_trigger: <boolean>  # Optional: Whether to disable the schedule of a connector when it is synchronized using this resource.Defaults to True.
+    retry_on_reschedule: <boolean>  # Optional: Whether to raise RetryRequested when Fivetran reschedules a sync due to quota limits. When False, polling continues until the rescheduled time passes. Defaults to True.
   connector_selector:  # Optional: 
     # Choose one of the following types:
     # Option 1 - FivetranConnectorSelectorByName:

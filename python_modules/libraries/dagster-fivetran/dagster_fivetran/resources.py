@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections.abc import Callable, Mapping, Sequence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import cached_property, partial
 from pathlib import Path
 from typing import Any
@@ -19,6 +19,7 @@ from dagster import (
     InitResourceContext,
     MaterializeResult,
     MetadataValue,
+    RetryRequested,
     __version__,
     _check as check,
     get_dagster_logger,
@@ -72,6 +73,11 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
+
+# Maximum number of retries when Fivetran reschedules a sync due to quota limits.
+FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES = int(
+    os.getenv("DAGSTER_FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES", "3")
+)
 
 
 @deprecated(breaking_version="0.30", additional_warn_text="Use `FivetranWorkspace` instead.")
@@ -499,6 +505,7 @@ class FivetranClient:
         request_retry_delay: float,
         request_backoff_factor: float,
         disable_schedule_on_trigger: bool,
+        retry_on_reschedule: bool = True,
     ):
         self.api_key = api_key
         self.api_secret = api_secret
@@ -506,6 +513,7 @@ class FivetranClient:
         self.request_retry_delay = request_retry_delay
         self.request_backoff_factor = request_backoff_factor
         self.disable_schedule_on_trigger = disable_schedule_on_trigger
+        self.retry_on_reschedule = retry_on_reschedule
 
     @property
     def _auth(self) -> HTTPBasicAuth:
@@ -832,6 +840,31 @@ class FivetranClient:
             if connector.last_sync_completed_at > previous_sync_completed_at:
                 break
 
+            if connector.is_rescheduled:
+                rescheduled_at = parser.parse(connector.rescheduled_for)
+                seconds_to_wait = max(
+                    0,
+                    (rescheduled_at - datetime.now(timezone.utc)).total_seconds(),  # pyright: ignore[reportOperatorIssue]
+                )
+                if self.retry_on_reschedule:
+                    self._log.warning(
+                        f"Connector '{connector_id}' was rescheduled by Fivetran to "
+                        f"{connector.rescheduled_for} (likely due to quota limits). "
+                        f"update_state={connector.update_state or ''}. "
+                        f"Requesting retry in {seconds_to_wait:.0f}s. "
+                        f"Logs: {connector.url}"
+                    )
+                    raise RetryRequested(
+                        max_retries=FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES,
+                        seconds_to_wait=seconds_to_wait,
+                    )
+                else:
+                    self._log.info(
+                        f"Connector '{connector_id}' was rescheduled by Fivetran to "
+                        f"{connector.rescheduled_for} (likely due to quota limits). "
+                        f"retry_on_reschedule=False, continuing to poll."
+                    )
+
             if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
                 raise Failure(
                     f"Sync for connector '{connector_id}' timed out after "
@@ -996,6 +1029,14 @@ class FivetranWorkspace(ConfigurableResource):
             "Defaults to True."
         ),
     )
+    retry_on_reschedule: bool = Field(
+        default=True,
+        description=(
+            "Whether to raise RetryRequested when Fivetran reschedules a sync "
+            "due to quota limits. When False, polling continues until the "
+            "rescheduled time passes. Defaults to True."
+        ),
+    )
 
     @cached_property
     def _log(self) -> logging.Logger:
@@ -1017,6 +1058,7 @@ class FivetranWorkspace(ConfigurableResource):
             request_retry_delay=self.request_retry_delay,
             request_backoff_factor=self.request_backoff_factor,
             disable_schedule_on_trigger=self.disable_schedule_on_trigger,
+            retry_on_reschedule=self.retry_on_reschedule,
         )
 
     @cached_method
