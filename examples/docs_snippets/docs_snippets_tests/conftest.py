@@ -36,7 +36,7 @@ def pytest_configure():
     os.environ[DG_UPDATE_CHECK_ENABLED_ENV_VAR] = "0"
 
 
-def pytest_addoption(parser: pytest.Parser) -> None:
+def pytest_addoption(parser: pytest.Parser):
     parser.addoption(
         "--update-snippets",
         action="store_true",
