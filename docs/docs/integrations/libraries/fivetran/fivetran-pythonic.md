@@ -77,10 +77,7 @@ To set this up:
 2. Build a polling sensor using <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="build_fivetran_polling_sensor" />.
 3. Include both in your `Definitions`.
 
-<CodeExample
-  path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_observability.py"
-  language="python"
-/>
+<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_observability.py" language="python" />
 
 The sensor polls Fivetran for connector status updates on each tick. When it detects a completed sync, it emits `AssetMaterialization` events for the synced tables. If a connector is rescheduled due to quota limits, the sensor logs a warning and retries on the next tick.
 
@@ -107,10 +104,7 @@ To set this up:
 2. Apply automation conditions to trigger syncs based on upstream changes.
 3. Build a polling sensor to track sync completions.
 
-<CodeExample
-  path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_orchestration.py"
-  language="python"
-/>
+<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_orchestration.py" language="python" />
 
 ### Sync and materialize Fivetran assets
 

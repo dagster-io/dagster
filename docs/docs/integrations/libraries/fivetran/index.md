@@ -101,9 +101,9 @@ If your Fivetran connectors run on Fivetran's scheduler, you can add a polling s
 type: dagster_fivetran.FivetranAccountComponent
 attributes:
   workspace:
-    api_key: "{{ env.FIVETRAN_API_KEY }}"
-    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
-    account_id: "{{ env.FIVETRAN_ACCOUNT_ID }}"
+    api_key: '{{ env.FIVETRAN_API_KEY }}'
+    api_secret: '{{ env.FIVETRAN_API_SECRET }}'
+    account_id: '{{ env.FIVETRAN_ACCOUNT_ID }}'
   polling_sensor: true
 ```
 
@@ -117,9 +117,9 @@ When Fivetran reschedules a sync due to quota limits, Dagster raises a `RetryReq
 type: dagster_fivetran.FivetranAccountComponent
 attributes:
   workspace:
-    api_key: "{{ env.FIVETRAN_API_KEY }}"
-    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
-    account_id: "{{ env.FIVETRAN_ACCOUNT_ID }}"
+    api_key: '{{ env.FIVETRAN_API_KEY }}'
+    api_secret: '{{ env.FIVETRAN_API_SECRET }}'
+    account_id: '{{ env.FIVETRAN_ACCOUNT_ID }}'
     retry_on_reschedule: false
 ```
 
@@ -131,9 +131,9 @@ By default, the first time Dagster triggers a Fivetran sync, it sets the connect
 type: dagster_fivetran.FivetranAccountComponent
 attributes:
   workspace:
-    api_key: "{{ env.FIVETRAN_API_KEY }}"
-    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
-    account_id: "{{ env.FIVETRAN_ACCOUNT_ID }}"
+    api_key: '{{ env.FIVETRAN_API_KEY }}'
+    api_secret: '{{ env.FIVETRAN_API_SECRET }}'
+    account_id: '{{ env.FIVETRAN_ACCOUNT_ID }}'
     disable_schedule_on_trigger: false
 ```
 
