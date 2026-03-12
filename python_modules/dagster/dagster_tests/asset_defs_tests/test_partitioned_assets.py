@@ -1116,3 +1116,60 @@ def test_time_partitioned_asset_get_partition_key():
             resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
             partition_key=daily_partition_definition.get_partition_key(None),  # pyright: ignore[reportArgumentType]
         )
+
+
+def test_multi_asset_can_subset_mixed_partitioned_non_partitioned_no_partition_key():
+    """Regression test for issue #33584.
+
+    When a @multi_asset(can_subset=True) has mixed partitioned and non-partitioned specs,
+    materializing only the non-partitioned spec (without a partition_key) should succeed.
+    Previously, entity_partitions_def would iterate ALL specs and return the PartitionsDefinition
+    of the partitioned sibling, causing a DagsterInvariantViolationError when the step context
+    tried to access partition_key on a non-partitioned run.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("partitioned_asset", partitions_def=partitions_def),
+            dg.AssetSpec("non_partitioned_asset"),
+        ],
+        can_subset=True,
+    )
+    def my_mixed_assets(context: AssetExecutionContext):
+        for asset_key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=asset_key)
+
+    # Materializing only the non-partitioned spec without a partition_key should succeed
+    result = dg.materialize(
+        assets=[my_mixed_assets],
+        selection=["non_partitioned_asset"],
+    )
+    assert result.success
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("my_mixed_assets"),
+        [dg.AssetMaterialization(asset_key=dg.AssetKey(["non_partitioned_asset"]))],
+        exclude_fields=["tags"],
+    )
+
+    # Materializing the partitioned spec with a partition_key should also still work
+    result = dg.materialize(
+        assets=[my_mixed_assets],
+        partition_key="a",
+        selection=["partitioned_asset"],
+    )
+    assert result.success
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("my_mixed_assets"),
+        [dg.AssetMaterialization(asset_key=dg.AssetKey(["partitioned_asset"]), partition="a")],
+        exclude_fields=["tags"],
+    )
+
+    # Materializing BOTH specs together with a partition_key should also work — verifies no
+    # regression in the all-selected path where entity_partitions_def must return the
+    # partitioned spec's PartitionsDefinition.
+    result = dg.materialize(
+        assets=[my_mixed_assets],
+        partition_key="a",
+    )
+    assert result.success

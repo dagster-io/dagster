@@ -969,11 +969,22 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         """If the current step is executing a partitioned asset, returns the PartitionsDefinition
         for that asset. If there are one or more partitioned assets executing in the step, they're
         expected to all have the same PartitionsDefinition.
+
+        For can_subset=True multi-assets that mix partitioned and non-partitioned specs, only
+        specs that are selected for this execution are considered. This prevents a non-partitioned
+        spec from inheriting the PartitionsDefinition of a sibling partitioned spec that is not
+        being materialized in the current run.
         """
         if self.assets_def is not None:
+            computation = self.assets_def.computation
+            selected_keys = computation.selected_asset_keys if computation is not None else None
             for spec in self.assets_def.specs:
+                if selected_keys is not None and spec.key not in selected_keys:
+                    continue
                 if spec.partitions_def is not None:
                     return spec.partitions_def
+            # AssetsDefinition.check_specs already filters to only selected check specs via
+            # check_specs_by_output_name, so no additional filtering is needed here.
             for check_spec in self.assets_def.check_specs:
                 if check_spec.partitions_def is not None:
                     return check_spec.partitions_def
