@@ -58,7 +58,7 @@
     "clsx": "^2.1.1",
     "codemirror": "^5.65.2",
     "cronstrue": "^2.51.0",
-    "dagre": "dagster-io/dagre#0.8.5",
+    "dagre": "patch:dagre@npm%3A0.8.5#~/.yarn/patches/dagre-npm-0.8.5-f3eb4059c5.patch",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.7",
     "deepmerge": "^4.2.2",
