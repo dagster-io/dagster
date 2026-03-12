@@ -16,7 +16,6 @@ import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
-import {RunTableTargetHeader} from './RunTableTargetHeader';
 import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {RunTargetLink} from './RunTargetLink';
@@ -210,9 +209,7 @@ export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => 
         <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
       </HeaderCell>
       <HeaderCell>ID</HeaderCell>
-      <HeaderCell>
-        <RunTableTargetHeader />
-      </HeaderCell>
+      <HeaderCell>Target</HeaderCell>
       <HeaderCell>Launched by</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Created at</HeaderCell>
