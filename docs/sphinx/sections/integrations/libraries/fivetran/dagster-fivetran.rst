@@ -40,6 +40,8 @@ Assets (Fivetran API)
 
 .. autoclass:: ConnectorSelectorFn
 
+.. autofunction:: build_fivetran_polling_sensor
+
 ******
 Legacy
 ******

@@ -74,6 +74,7 @@ attributes:  # Optional: Attributes details
     freshness_policy: <string>  # Optional: The freshness policy for the asset.
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
+  polling_sensor: <one of: boolean, string>  # Optional: 
   defs_state:  # Optional: Configuration for determining how state is stored and persisted for this component.
     key: <string>  # Optional: The key for the state. This must be unique per deployment.
     management_type: <string>  # Required: 

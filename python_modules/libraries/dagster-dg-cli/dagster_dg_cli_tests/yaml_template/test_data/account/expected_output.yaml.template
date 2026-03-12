@@ -33,6 +33,7 @@ attributes:  # Optional: Component attributes
       minute_offset: <integer>  # Optional: 
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
+  polling_sensor: <one of: boolean, string>  # Optional:
 
 ---
 # EXAMPLE VALUES - Valid YAML with sample data
@@ -76,3 +77,4 @@ attributes:
     key: "example_string"
     key_prefix:
       - "example_string"
+  polling_sensor: true

@@ -320,3 +320,118 @@ def test_scaffold_component_with_params(scaffold_params: dict):
             ].items()
             if v is not None
         } == scaffold_params
+
+
+POLLING_SENSOR_COMPONENT_BODY = deep_merge_dicts(
+    BASIC_FIVETRAN_COMPONENT_BODY,
+    {"attributes": {"polling_sensor": True}},
+)
+
+
+def test_component_with_polling_sensor(
+    fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
+) -> None:
+    """Component with polling_sensor=True includes both assets and a sensor."""
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        setup_fivetran_component(
+            defs_yaml_contents=POLLING_SENSOR_COMPONENT_BODY,
+        ) as (
+            _component,
+            defs,
+        ),
+    ):
+        # Assets still load
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 8
+        # Sensor is present
+        all_sensors = defs.get_repository_def().sensor_defs
+        assert len(all_sensors) == 1
+        assert all_sensors[0].name == f"fivetran_{TEST_ACCOUNT_ID}__sync_status_sensor"
+
+
+def test_component_without_polling_sensor(
+    fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
+) -> None:
+    """Component without polling_sensor (default) has no sensor."""
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        setup_fivetran_component(
+            defs_yaml_contents=BASIC_FIVETRAN_COMPONENT_BODY,
+        ) as (
+            _component,
+            defs,
+        ),
+    ):
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 8
+        assert len(defs.get_repository_def().sensor_defs) == 0
+
+
+def test_component_polling_sensor_with_connector_selector(
+    fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
+) -> None:
+    """polling_sensor + connector_selector work together."""
+    body = deep_merge_dicts(
+        POLLING_SENSOR_COMPONENT_BODY,
+        {"attributes": {"connector_selector": {"by_name": [TEST_CONNECTOR_NAME]}}},
+    )
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        setup_fivetran_component(
+            defs_yaml_contents=body,
+        ) as (
+            _component,
+            defs,
+        ),
+    ):
+        # Only the selected connector's assets (4 instead of 8)
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 4
+        # Sensor is still present
+        all_sensors = defs.get_repository_def().sensor_defs
+        assert len(all_sensors) == 1
+
+
+RETRY_ON_RESCHEDULE_FALSE_COMPONENT_BODY = deep_merge_dicts(
+    BASIC_FIVETRAN_COMPONENT_BODY,
+    {"attributes": {"workspace": {"retry_on_reschedule": False}}},
+)
+
+
+def test_component_with_retry_on_reschedule_false(
+    fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
+) -> None:
+    """Component with retry_on_reschedule=False forwards the setting to the workspace resource."""
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        setup_fivetran_component(
+            defs_yaml_contents=RETRY_ON_RESCHEDULE_FALSE_COMPONENT_BODY,
+        ) as (
+            component,
+            defs,
+        ),
+    ):
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 8
+        assert component.workspace.retry_on_reschedule is False

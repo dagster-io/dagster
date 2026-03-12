@@ -1216,6 +1216,7 @@ class FivetranWorkspace(ConfigurableResource):
         connector = FivetranConnector.from_connector_details(
             connector_details=fivetran_output.connector_details
         )
+        sync_completed_at = connector.last_sync_completed_at.timestamp()
         schema_config = FivetranSchemaConfig.from_schema_config_details(
             schema_config_details=fivetran_output.schema_config
         )
@@ -1264,6 +1265,7 @@ class FivetranWorkspace(ConfigurableResource):
                             destination_id=connector.destination_id,
                             destination_schema_name=schema.name_in_destination,
                             destination_table_name=table.name_in_destination,
+                            sync_completed_at=sync_completed_at,
                         ),
                     },
                 )

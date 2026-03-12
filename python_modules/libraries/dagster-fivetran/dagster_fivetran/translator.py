@@ -339,6 +339,9 @@ class FivetranMetadataSet(NamespacedMetadataSet):
     sync_frequency_minutes: int | None = None
     schedule_type: str | None = None  # "auto" or "manual"
     daily_sync_time: str | None = None
+    # Sync completion timestamp (epoch seconds) - used for deduplication between
+    # the polling sensor and Dagster-triggered (orchestration) syncs.
+    sync_completed_at: float | None = None
     # Custom report indicator - True if this table is from a custom report
     is_custom_report: bool | None = None
     # Custom report config (if applicable) - JSON-serialized report definition

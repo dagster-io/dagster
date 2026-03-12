@@ -39,6 +39,7 @@ attributes:
     key: "example_string"
     key_prefix:
       - "example_string"
+  polling_sensor: true
   defs_state:
     key: "example_string"
     management_type: "example_string"

@@ -20,10 +20,14 @@ from dagster_fivetran.resources import (
     fivetran_resource as fivetran_resource,
     load_fivetran_asset_specs as load_fivetran_asset_specs,
 )
+from dagster_fivetran.sensor_builder import (
+    build_fivetran_polling_sensor as build_fivetran_polling_sensor,
+)
 from dagster_fivetran.translator import (
     ConnectorSelectorFn as ConnectorSelectorFn,
     DagsterFivetranTranslator as DagsterFivetranTranslator,
     FivetranConnectorTableProps as FivetranConnectorTableProps,
+    FivetranMetadataSet as FivetranMetadataSet,
 )
 from dagster_fivetran.types import FivetranOutput as FivetranOutput
 from dagster_fivetran.version import __version__ as __version__
