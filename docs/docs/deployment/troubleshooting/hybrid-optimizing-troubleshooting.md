@@ -34,6 +34,52 @@ If you run into issues as you scale your deployment (especially as asset counts 
 | `gRPC DeadlineExceeded` or `UNAVAILABLE` between Dagster+ and the agent, especially under load. This usually indicates too little network egress to keep up. | Update network settings.                                                                                       |
 | Backpressure symptoms, such as log streaming interruptions, sporadic "unable to report event"-style messages                                                 |                                                                                                                |
 
+### Agent connectivity issues
+
+Kubernetes-based Dagster+ agents may experience intermittent request timeouts when communicating with Dagster Cloud servers. Common error messages include:
+
+- `Read timed out. (read timeout=60)` on HTTPS connections
+- Connection reset errors during agent-to-API communication
+- `CrashLoopBackOff` errors caused by repeated connection failures
+
+#### Root causes
+
+These timeouts typically occur in hybrid Kubernetes deployments where:
+
+- Network traffic passes through NAT gateways or proxies with strict idle connection timeouts
+- Connections are dropped between the agent and Dagster+ API endpoints due to infrastructure-level timeouts
+- Port or IP exhaustion issues exist, particularly on cloud provider NAT services (for example, GCP CloudNAT)
+
+#### Solutions
+
+**Upgrade Dagster version**: Update to Dagster 1.5.9 or later, which adds automatic retry logic to agent API calls for improved resilience against transient network failures.
+
+**Enable TCP keepalive (Kubernetes)**: For Kubernetes agents using Helm chart version 1.7.3 or later, configure TCP keepalive settings to proactively detect and recover from broken connections. Add the following to your Helm values:
+
+```yaml
+dagsterCloud:
+  socketOptions:
+    - ['SOL_SOCKET', 'SO_KEEPALIVE', 1]
+    - ['IPPROTO_TCP', 'TCP_KEEPIDLE', 11]
+    - ['IPPROTO_TCP', 'TCP_KEEPINTVL', 7]
+    - ['IPPROTO_TCP', 'TCP_KEEPCNT', 5]
+```
+
+These socket options configure the following behavior:
+
+| Option          | Value | Description                                         |
+| --------------- | ----- | --------------------------------------------------- |
+| `SO_KEEPALIVE`  | 1     | Enables TCP keepalive probing                       |
+| `TCP_KEEPIDLE`  | 11    | Seconds of idle time before sending the first probe |
+| `TCP_KEEPINTVL` | 7     | Seconds between subsequent probes                   |
+| `TCP_KEEPCNT`   | 5     | Number of failed probes before closing connection   |
+
+:::note
+
+These settings are relatively aggressive and will increase network traffic. Adjust the values based on your infrastructure's NAT gateway or proxy timeout settings. A common approach is to set `TCP_KEEPIDLE` to a value lower than your NAT gateway's idle timeout.
+
+:::
+
 ### Code server troubleshooting
 
 | Symptom                                                                                                                                                                                                                                             | Solution                                  |
