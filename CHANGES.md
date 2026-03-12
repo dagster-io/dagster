@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.12.19 (core) / 0.28.19 (libraries)
+
+### New
+
+- Added a "Report Execution" dialog to the asset checks detail view, allowing users to manually record check evaluation results.
+- Added `dg api artifact upload` and `dg api artifact download` commands.
+- Added `dg api asset get-health` command.
+- Added `dg api deployment get-settings` and `dg api deployment set-settings` commands.
+- `dg api deployment list` now supports a `--branch-deployments` flag to include branch deployments in the output.
+- Added `dg api issues` commands for listing and managing Dagster+ issues from the CLI.
+- Added `dg api run list` command.
+- Added database pool configuration options (`--db-pool-recycle`, `--db-pool-pre-ping`, and others) to `dg dev` and `dagster dev`.
+- Added `dg plus config view` command for inspecting the current CLI configuration.
+- Added `dg plus deploy status`, `dg plus deploy notify`, and `dg plus deploy inspect` commands for CI/CD pipeline integration.
+- Added `dg plus integrations dbt manage-manifest` command, replacing `dagster-cloud ci project manage-state` for managing dbt manifests across deployments.
+- [ui] Updated the Usage dialog and Run timeline to display "Jobless asset materializations" (previously "Ad hoc materializations") with a tooltip describing what is grouped within this category.
+- [ui] Planned run events are now excluded from the event count shown in the run log filter.
+- [dagster-azure] Added component infrastructure for `dagster-azure`, including `AzureBlobStorageResourceComponent` and `ADLS2ResourceComponent` for declarative YAML configuration of Azure resources.
+- [dagster-databricks] `DatabricksAssetBundleComponent` is now subsettable at the job level, enabling selective execution of individual Databricks tasks.
+- [dagster-databricks] `DatabricksAssetBundleComponent` now uses the Databricks CLI to resolve variable references to task and job names in bundle templates.
+- [dagster-databricks] Databricks jobs are now cancelled when the corresponding Dagster run is terminated in `DatabricksWorkspaceComponent`.
+- [dagster-dbt] `dagster-dbt` now prefers `dbt-core` for manifest parsing when it is installed.
+- [dagster-dlt] The default `DagsterDltTranslator` now populates `table_name` metadata on asset specs at definition time, making table identity visible in the Dagster UI before any materialization occurs.
+- [dagster-gcp] Added `BigQueryResourceComponent`, `GCSResourceComponent`, `GCSFileManagerResourceComponent`, and `DataprocResourceComponent` (beta) for declarative YAML configuration of GCP resources.
+- [dagster-gcp] `BigQueryIOManager` now supports a configurable `write_mode` parameter (`truncate`, `replace`, or `append`).
+
+### Bugfixes
+
+- Fixed a duplicate `-d` flag conflict in the `dg` code-location sub-command.
+- Fixed output formatting for several `dg api` commands.
+- Fixed pagination in `dg api asset list` to correctly retrieve all assets.
+- Fixed an issue where auto-run reexecution would attempt to rerun jobs belonging to already-completed or cancelled backfills.
+- Fixed an issue where backfill errors that were subsequently retried would remain incorrectly associated with the backfill.
+- Fixed rendering of newlines in markdown blockquotes in the UI.
+- `dg plus pull env` now merges pulled secrets into the existing `.env` file instead of replacing it, preserving any locally-set variables not present in Dagster Plus.
+- [dagster-databricks] Fixed a `KeyError` for `run_page_url` in `DatabricksWorkspaceComponent`.
+- [dagster-databricks] Fixed asset mapping in `DatabricksAssetBundleComponent` and `DatabricksWorkspaceComponent` to use job and task key combinations, preventing conflicts when task keys are not unique across jobs.
+
+### Dagster Plus
+
+- The Dagster+ agent now automatically redeploys local code servers that enter a failure state when the control plane expects them to be loaded.
+- Added an Issues feature with a list view and detail view for tracking asset health issues, along with the ability to create issues with optional AI-generated summaries via Compass.
+- Added support for per-code-location permissions in `ALL_BRANCH_DEPLOYMENTS` grants, enabling more granular branch deployment access control.
+- Added "Send sample alert" support for schema change and metrics monitors.
+- Custom asset metrics are now enabled for all Dagster+ deployments.
+- Fixed potential deadlocks in concurrent transaction scenarios by deferring asset key table updates.
+- Fixed the OAuth consent page form submission.
+- Metrics alert policies are now shown in the catalog's Alerts tab for monitored assets.
+- [ui] Added an "Advanced" section to the Org Settings page for organization admins.
+- [ui] Fixed duration label formatting and compact number display in Insights.
+- [ui] "Jobless asset materializations" is now used as the label in Insights tables and charts.
+- [ui] The "Add code location" button is now disabled in Serverless deployments for users without the required permission.
+
 ## 1.12.18 (core) / 0.28.18 (libraries)
 
 ### New
