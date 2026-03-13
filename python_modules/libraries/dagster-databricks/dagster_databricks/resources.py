@@ -1,10 +1,19 @@
+import threading
 from typing import Any
 
 from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from pydantic import Field, model_validator
+from databricks.sdk.core import CredentialsStrategy
+from pydantic import Field, PrivateAttr, model_validator
 
 from dagster_databricks.databricks import DatabricksClient
+
+# Thread-local used to smuggle credentials_strategy into model_post_init.
+# CredentialsStrategy is not a Dagster-serializable config type and cannot be a Pydantic
+# field on ConfigurableResource. __init__ stores it here before calling super().__init__()
+# so that model_post_init (which fires during Pydantic construction) can inspect it for
+# the no-credentials check. The thread-local is cleaned up before __init__ returns.
+_init_local = threading.local()
 
 
 class OauthCredentials(Config):
@@ -31,6 +40,18 @@ class AzureServicePrincipalCredentials(Config):
 class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """Resource which provides a Python client for interacting with Databricks within an
     op or asset.
+
+    Supports four mutually exclusive authentication methods:
+
+    - **PAT**: Provide ``token``.
+    - **OAuth M2M**: Provide ``oauth_credentials`` (client ID + secret).
+    - **Azure service principal**: Provide ``azure_credentials``.
+    - **Custom CredentialsStrategy**: Pass a ``credentials_strategy`` instance to the
+      constructor. This supports any authentication flow backed by the Databricks SDK's
+      ``CredentialsStrategy`` protocol, including OIDC federation, external IdP token
+      exchange, and other custom auth flows. Because ``CredentialsStrategy`` is not
+      a serializable config type, it is accepted as a constructor argument rather than
+      a Dagster config field.
     """
 
     host: str | None = Field(
@@ -60,19 +81,57 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         ),
     )
 
+    # CredentialsStrategy is not a Dagster-serializable config type, so it cannot be
+    # declared as a Pydantic Field on a ConfigurableResource. It is accepted via __init__
+    # and stored as a private attribute, invisible to Dagster's config schema machinery.
+    _credentials_strategy: CredentialsStrategy | None = PrivateAttr(default=None)
+
+    def __init__(
+        self,
+        credentials_strategy: CredentialsStrategy | None = None,
+        **kwargs,
+    ):
+        # Stash credentials_strategy in a thread-local before calling super().__init__(),
+        # so that model_post_init can inspect it during Pydantic construction.
+        _init_local.credentials_strategy = credentials_strategy
+        try:
+            super().__init__(**kwargs)
+        finally:
+            del _init_local.credentials_strategy
+        # Now set the private attr — Pydantic's construction is complete.
+        object.__setattr__(self, "_credentials_strategy", credentials_strategy)
+
     @model_validator(mode="before")
-    def has_token_or_oauth_credentials(cls, values: dict[str, Any]) -> dict[str, Any]:
+    def validate_no_multiple_serializable_credentials(
+        cls, values: dict[str, Any]
+    ) -> dict[str, Any]:
         token = values.get("token")
         oauth_credentials = values.get("oauth_credentials")
         azure_credentials = values.get("azure_credentials")
         present = [True for v in [token, oauth_credentials, azure_credentials] if v is not None]
         if len(present) > 1:
             raise ValueError(
-                "Must provide one of token or oauth_credentials or azure_credentials, not multiple"
+                "Must provide one of token, oauth_credentials, or azure_credentials, not multiple"
             )
-        elif not len(present):
-            raise ValueError("Must provide one of token or oauth_credentials or azure_credentials")
+        # Zero serializable credentials is intentionally allowed here — credentials_strategy
+        # may be supplied via the constructor. The model_post_init below enforces that at
+        # least one auth method is present once all paths are visible.
         return values
+
+    def model_post_init(self, __context: Any) -> None:
+        """Validate that at least one credential is present after full initialization."""
+        credentials_strategy = getattr(_init_local, "credentials_strategy", None)
+        has_any = (
+            self.token is not None
+            or self.oauth_credentials is not None
+            or self.azure_credentials is not None
+            or credentials_strategy is not None
+        )
+        if not has_any:
+            raise ValueError(
+                "Must provide one of token, oauth_credentials, azure_credentials, or"
+                " credentials_strategy"
+            )
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -104,6 +163,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             azure_client_id=azure_client_id,
             azure_client_secret=azure_client_secret,
             azure_tenant_id=azure_tenant_id,
+            credentials_strategy=self._credentials_strategy,
         )
 
     def get_object_to_set_on_execution_context(self) -> Any:
