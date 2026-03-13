@@ -3,7 +3,7 @@ from typing import Any
 import dagster as dg
 
 
-class TestIOManager(dg.IOManager):
+class MockIOManager(dg.IOManager):
     def __init__(self, return_value: Any = None):
         self.handled_output = False
         self.loaded_input = False
@@ -23,7 +23,7 @@ def test_return_none_no_type_annotation():
     def returns_none():
         return None
 
-    io_mgr = TestIOManager()
+    io_mgr = MockIOManager()
 
     dg.materialize([returns_none], resources={"io_manager": io_mgr})
 
@@ -36,7 +36,7 @@ def test_return_none_with_type_annotation():
     def returns_none() -> None:
         return None
 
-    io_mgr = TestIOManager()
+    io_mgr = MockIOManager()
 
     dg.materialize([returns_none], resources={"io_manager": io_mgr})
 
@@ -53,7 +53,7 @@ def test_downstream_deps_with_type_annotation():
     def downstream() -> None:
         return None
 
-    io_mgr = TestIOManager()
+    io_mgr = MockIOManager()
 
     dg.materialize([returns_none, downstream], resources={"io_manager": io_mgr})
 
@@ -73,7 +73,7 @@ def test_downstream_managed_deps_with_type_annotation():
     def downstream(returns_none) -> None:
         assert returns_none == 1
 
-    io_mgr = TestIOManager(return_value=1)
+    io_mgr = MockIOManager(return_value=1)
 
     dg.materialize([returns_none, downstream], resources={"io_manager": io_mgr})
 
@@ -97,7 +97,7 @@ def test_ops_with_type_annotation():
     def return_none_job():
         asserts_none(returns_none())
 
-    io_mgr = TestIOManager(return_value=1)
+    io_mgr = MockIOManager(return_value=1)
 
     result = return_none_job.execute_in_process(resources={"io_manager": io_mgr})
     assert result.success

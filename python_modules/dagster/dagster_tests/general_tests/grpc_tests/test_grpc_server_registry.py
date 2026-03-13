@@ -254,7 +254,7 @@ def test_registry_multithreading(instance, server_command: GrpcServerCommand):
     assert not _can_connect(origin, endpoint, instance)
 
 
-class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
+class MockProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(self, instance):
         self.mocked_loadable_target_origin = None
         super().__init__(
@@ -289,7 +289,7 @@ def test_custom_loadable_target_origin(instance):
 
     origin = RegisteredCodeLocationOrigin("test_location")
 
-    with TestMockProcessGrpcServerRegistry(instance) as registry:
+    with MockProcessGrpcServerRegistry(instance) as registry:
         registry.mocked_loadable_target_origin = first_loadable_target_origin
 
         endpoint_one = registry.get_grpc_endpoint(origin)

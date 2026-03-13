@@ -42,7 +42,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
 )
 from dagster._core.test_utils import (
-    TestSecretsLoader,
+    MockSecretsLoader,
     create_run_for_test,
     environ,
     mock_workspace_from_repos,
@@ -180,13 +180,13 @@ def test_custom_secrets_manager():
             "secrets": {
                 "custom": {
                     "module": "dagster._core.test_utils",
-                    "class": "TestSecretsLoader",
+                    "class": "MockSecretsLoader",
                     "config": {"env_vars": {"FOO": "BAR"}},
                 }
             }
         }
     ) as instance:
-        assert isinstance(instance._secrets_loader, TestSecretsLoader)  # noqa: SLF001
+        assert isinstance(instance._secrets_loader, MockSecretsLoader)  # noqa: SLF001
         assert instance._secrets_loader.env_vars == {"FOO": "BAR"}  # noqa: SLF001
 
 
@@ -671,7 +671,7 @@ def test_get_required_daemon_types():
         overrides={
             "run_launcher": {
                 "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
-                "class": "TestRunLauncher",
+                "class": "MockRunLauncher",
             },
             "run_monitoring": {"enabled": True},
         }
@@ -701,7 +701,7 @@ def test_get_required_daemon_types():
         ]
 
 
-class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
+class MockNonResumeRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         super().__init__()
@@ -762,7 +762,7 @@ def test_run_monitoring(capsys):
         overrides={
             "run_launcher": {
                 "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
-                "class": "TestRunLauncher",
+                "class": "MockRunLauncher",
             },
             "run_monitoring": settings,
         }
@@ -776,7 +776,7 @@ def test_run_monitoring(capsys):
         overrides={
             "run_launcher": {
                 "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
-                "class": "TestRunLauncher",
+                "class": "MockRunLauncher",
             },
             "run_monitoring": settings,
         }
@@ -913,7 +913,7 @@ def test_dagster_env_vars_from_dotenv_file():
                     )
 
 
-class TestInstanceSubclass(dg.DagsterInstance):
+class MockInstanceSubclass(dg.DagsterInstance):
     def __init__(self, *args, foo=None, baz=None, **kwargs):
         self._foo = foo
         self._baz = baz
@@ -949,17 +949,17 @@ def test_instance_subclass():
         overrides={
             "instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
-                "class": "TestInstanceSubclass",
+                "class": "MockInstanceSubclass",
             },
             "foo": "bar",
         }
     ) as subclass_instance:
         assert isinstance(subclass_instance, dg.DagsterInstance)
 
-        # isinstance(subclass_instance, TestInstanceSubclass) does not pass
+        # isinstance(subclass_instance, MockInstanceSubclass) does not pass
         # Likely because the imported/dynamically loaded class is different from the local one
 
-        assert subclass_instance.__class__.__name__ == "TestInstanceSubclass"
+        assert subclass_instance.__class__.__name__ == "MockInstanceSubclass"
         assert subclass_instance.foo() == "bar"  # pyright: ignore[reportAttributeAccessIssue]
         assert subclass_instance.baz is None  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -969,7 +969,7 @@ def test_instance_subclass():
         overrides={
             "instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
-                "class": "TestInstanceSubclass",
+                "class": "MockInstanceSubclass",
             },
             "foo": "bar",
             "baz": "quux",
@@ -977,7 +977,7 @@ def test_instance_subclass():
     ) as subclass_instance:
         assert isinstance(subclass_instance, dg.DagsterInstance)
 
-        assert subclass_instance.__class__.__name__ == "TestInstanceSubclass"
+        assert subclass_instance.__class__.__name__ == "MockInstanceSubclass"
         assert subclass_instance.foo() == "bar"  # pyright: ignore[reportAttributeAccessIssue]
         assert subclass_instance.baz == "quux"  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -988,7 +988,7 @@ def test_instance_subclass():
             overrides={
                 "instance_class": {
                     "module": "dagster_tests.core_tests.instance_tests.test_instance",
-                    "class": "TestInstanceSubclass",
+                    "class": "MockInstanceSubclass",
                 },
                 "baz": "quux",
             }

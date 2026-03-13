@@ -453,7 +453,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
         check.not_implemented("Cancellation not supported")
 
 
-class TestSecretsLoader(SecretsLoader, ConfigurableClass):
+class MockSecretsLoader(SecretsLoader, ConfigurableClass):
     def __init__(self, inst_data: ConfigurableClassData | None, env_vars: dict[str, str]):
         self._inst_data = inst_data
         self.env_vars = env_vars
