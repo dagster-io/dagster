@@ -409,7 +409,7 @@ mlflow-tracing==3.9.0
 mmh3==5.2.0
 more-itertools==10.8.0
 morefs==0.2.2
-moto==4.2.14
+moto==5.1.22
 mpmath==1.3.0
 msal==1.34.0
 msal-extensions==1.3.1
