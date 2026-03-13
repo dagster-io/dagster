@@ -3,7 +3,7 @@ import os
 import boto3
 import pytest
 from dagster_dg_core.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR
-from moto import mock_s3
+from moto import mock_aws
 
 from dagster import file_relative_path
 
@@ -15,7 +15,7 @@ def docs_snippets_folder():
 
 @pytest.fixture
 def mock_s3_resource():
-    with mock_s3():
+    with mock_aws():
         yield boto3.resource("s3", region_name="us-east-1")
 
 
