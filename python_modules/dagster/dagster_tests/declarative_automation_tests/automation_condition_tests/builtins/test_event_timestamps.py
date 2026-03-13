@@ -207,3 +207,74 @@ def test_since_condition_fallback_without_timestamps() -> None:
         defs=[a], instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
     )
     assert result.total_requested == 0
+
+
+def test_any_deps_match_propagates_timing_metadata() -> None:
+    """any_deps_match(newly_updated) should propagate child timing metadata."""
+    condition = AutomationCondition.any_deps_match(AutomationCondition.newly_updated())
+
+    @dg.asset
+    def A() -> None: ...
+
+    @dg.asset(deps=[A], automation_condition=condition)
+    def B() -> None: ...
+
+    instance = dg.DagsterInstance.ephemeral()
+    current_time = datetime.datetime(2020, 2, 2, 0, 55)
+
+    # baseline
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # materialize A — B should detect it via any_deps_match
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    current_time += datetime.timedelta(minutes=5)
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1
+
+
+def test_since_any_deps_updated_uses_timestamps() -> None:
+    """SINCE(any_deps_updated, cron_tick_passed) should use timestamps to resolve
+    simultaneous trigger and reset on the same tick.
+    """
+    condition = AutomationCondition.any_deps_match(
+        AutomationCondition.newly_updated()
+    ).since(
+        AutomationCondition.cron_tick_passed(cron_schedule="0 * * * *", cron_timezone="UTC")
+    )
+
+    @dg.asset
+    def A() -> None: ...
+
+    @dg.asset(deps=[A], automation_condition=condition)
+    def B() -> None: ...
+
+    instance = dg.DagsterInstance.ephemeral()
+    current_time = datetime.datetime(2020, 2, 2, 0, 55)
+
+    # baseline
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # Materialize dep A, then cron tick passes — both fire in same eval.
+    # The materialization timestamp (real clock) is after the cron tick (2020-02-02T01:00),
+    # so trigger should win via timestamp resolution.
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    current_time += datetime.timedelta(minutes=10)
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1
+
+    # Next cron tick without new materialization — reset wins
+    current_time += datetime.timedelta(hours=1)
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
