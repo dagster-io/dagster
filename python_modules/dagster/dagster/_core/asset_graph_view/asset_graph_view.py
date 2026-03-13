@@ -923,6 +923,56 @@ class AssetGraphView(LoadingContext):
         ).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    def compute_subsets_by_latest_materialization_timestamp(
+        self, subset: EntitySubset[AssetKey]
+    ) -> dict[float, EntitySubset[AssetKey]]:
+        """Returns a mapping from materialization event timestamps to entity subsets.
+
+        For unpartitioned assets, uses the cached asset record. For partitioned assets,
+        fetches storage IDs per partition and groups by timestamp.
+        """
+        from dagster._core.event_api import AssetRecordsFilter
+
+        key = check.inst(subset.key, AssetKey)
+
+        # Fast path for unpartitioned assets — use cached asset record
+        if not subset.is_partitioned:
+            asset_record = self._queryer.get_asset_record(key)
+            record = asset_record.asset_entry.last_materialization_record if asset_record else None
+            if record is not None:
+                return {record.timestamp: subset}
+            return {}
+
+        # Partitioned: use caching queryer to get storage IDs per partition
+        asset_partitions = subset.expensively_compute_asset_partitions()
+        valid_storage_ids = {}
+        for ap in asset_partitions:
+            sid = self._queryer.get_latest_materialization_or_observation_storage_id(ap)
+            if sid is not None:
+                valid_storage_ids[ap] = sid
+        if not valid_storage_ids:
+            return {}
+
+        result = self._queryer.instance.fetch_materializations(
+            AssetRecordsFilter(
+                asset_key=key,
+                storage_ids=list(valid_storage_ids.values()),
+            ),
+            limit=len(valid_storage_ids),
+        )
+        storage_id_to_ts = {r.storage_id: r.timestamp for r in result.records}
+
+        # Group partitions by timestamp
+        by_timestamp: dict[float, set[AssetKeyPartitionKey]] = {}
+        for ap, sid in valid_storage_ids.items():
+            if sid in storage_id_to_ts:
+                by_timestamp.setdefault(storage_id_to_ts[sid], set()).add(ap)
+
+        return {
+            ts: self.get_asset_subset_from_asset_partitions(key, akpks)
+            for ts, akpks in by_timestamp.items()
+        }
+
     async def _compute_updated_since_time_subset(
         self, key: AssetCheckKey, time: datetime
     ) -> EntitySubset[AssetCheckKey]:
