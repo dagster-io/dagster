@@ -11,6 +11,7 @@ const sidebars: SidebarsConfig = {
         'getting-started/quickstart-serverless',
         'getting-started/installation',
         'getting-started/concepts',
+        'getting-started/ai-tools',
         {
           type: 'link',
           label: 'Dagster University',
