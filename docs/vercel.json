@@ -4428,6 +4428,14 @@
     {
       "source": "/examples/reference-architectures",
       "destination": "/examples"
+    },
+    {
+      "source": "/examples/mini-examples",
+      "destination": "/examples/best-practices"
+    },
+    {
+      "source": "/examples/mini-examples/:path*",
+      "destination": "/examples/best-practices/:path*"
     }
   ],
   "trailingSlash": false
