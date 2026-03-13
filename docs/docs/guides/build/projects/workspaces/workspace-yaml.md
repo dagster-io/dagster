@@ -32,16 +32,6 @@ To accommodate incrementally migrating from `@repository` to `Definitions`, code
 
 :::
 
-## Location of workspace.yaml
-
-Dagster command-line tools (like `dg`) look for workspace files in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments
-
-To load the workspace.yaml file from a different folder, use the -w argument:
-
-```bash
-dg dev -w path/to/workspace.yaml
-```
-
 ## File structure
 
 The `workspace.yaml` file uses the following structure:
