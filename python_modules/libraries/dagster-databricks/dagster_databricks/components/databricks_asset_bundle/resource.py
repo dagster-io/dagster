@@ -128,7 +128,7 @@ class DatabricksWorkspace(ConfigurableResource):
                 if wait is not None:
                     await asyncio.sleep(wait)
                     return await _fetch_single_job(job_id, retries + 1)
-                return None
+                raise AssertionError(f"Unreachable: unexpected state for job_id={job_id}")
 
             results = await asyncio.gather(
                 *[_fetch_single_job(jid) for jid in job_ids_to_fetch],
