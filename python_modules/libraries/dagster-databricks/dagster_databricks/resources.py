@@ -98,8 +98,12 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             super().__init__(**kwargs)
         finally:
             del _init_local.credentials_strategy
-        # Now set the private attr — Pydantic's construction is complete.
-        object.__setattr__(self, "_credentials_strategy", credentials_strategy)
+        # Write into __pydantic_private__ directly rather than using object.__setattr__.
+        # object.__setattr__ would place the value in __dict__, shadowing the PrivateAttr
+        # entry in __pydantic_private__ and causing model_copy() to silently produce a
+        # copy with _credentials_strategy=None.
+        if self.__pydantic_private__ is not None:
+            self.__pydantic_private__["_credentials_strategy"] = credentials_strategy
 
     @model_validator(mode="before")
     def validate_no_multiple_serializable_credentials(
@@ -119,15 +123,17 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         return values
 
     def model_post_init(self, __context: Any) -> None:
-        """Validate that at least one credential is present after full initialization."""
         credentials_strategy = getattr(_init_local, "credentials_strategy", None)
-        has_any = (
+        has_serializable = (
             self.token is not None
             or self.oauth_credentials is not None
             or self.azure_credentials is not None
-            or credentials_strategy is not None
         )
-        if not has_any:
+        if credentials_strategy is not None and has_serializable:
+            raise ValueError(
+                "Cannot combine credentials_strategy with token, oauth_credentials, or azure_credentials"
+            )
+        if not (has_serializable or credentials_strategy is not None):
             raise ValueError(
                 "Must provide one of token, oauth_credentials, azure_credentials, or"
                 " credentials_strategy"
