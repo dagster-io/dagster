@@ -241,9 +241,7 @@ def test_since_any_deps_updated_uses_timestamps() -> None:
     """SINCE(any_deps_updated, cron_tick_passed) should use timestamps to resolve
     simultaneous trigger and reset on the same tick.
     """
-    condition = AutomationCondition.any_deps_match(
-        AutomationCondition.newly_updated()
-    ).since(
+    condition = AutomationCondition.any_deps_match(AutomationCondition.newly_updated()).since(
         AutomationCondition.cron_tick_passed(cron_schedule="0 * * * *", cron_timezone="UTC")
     )
 
