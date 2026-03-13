@@ -636,6 +636,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             resource_config=resource_config,
             resources=resources,
             asset_key=asset_key,
+            partition_key=self.partition_key if self.has_partition_key else None,
             asset_partitions_subset=asset_partitions_subset,
             asset_partitions_def=asset_partitions_def,
             instance=self.instance,

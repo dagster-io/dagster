@@ -106,7 +106,7 @@ class FromLoadableAsset(StepInputSource):
         input_def: InputDefinition,
     ) -> Iterator[object]:
         from dagster._core.events import DagsterEvent
-        from dagster._core.execution.context.output import OutputContext
+        from dagster._core.execution.context.output import build_output_context
 
         asset_layer = step_context.job_def.asset_layer
 
@@ -127,6 +127,18 @@ class FromLoadableAsset(StepInputSource):
         loader = getattr(step_context.resources, input_manager_key)
         resources = build_resources_for_manager(input_manager_key, step_context)
         resource_config = step_context.resolved_run_config.resources[input_manager_key].config
+
+        # Build an artificial upstream output context for the input asset
+        output_name = input_asset_key.path[-1]
+        asset_node = asset_layer.get(input_asset_key)
+        asset_partitions_def = asset_node.partitions_def if asset_node else None
+        if step_context.has_asset_partitions_for_output(output_name) and (
+            step_context.has_partition_key or step_context.has_partition_key_range
+        ):
+            key_range = step_context.asset_partition_key_range_for_output(output_name)
+        else:
+            key_range = None
+
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
@@ -134,15 +146,17 @@ class FromLoadableAsset(StepInputSource):
             dagster_type=input_def.dagster_type,
             resource_config=resource_config,
             resources=resources,
-            artificial_output_context=OutputContext(
+            artificial_output_context=build_output_context(
                 resources=resources,
                 asset_key=input_asset_key,
-                name=input_asset_key.path[-1],
+                name=output_name,
                 step_key="none",
-                definition_metadata=asset_layer.get(input_asset_key).metadata,
+                definition_metadata=asset_node.metadata if asset_node else {},
                 resource_config=resource_config,
-                log_manager=step_context.log,
-                step_context=step_context,
+                asset_partitions_def=asset_partitions_def,
+                asset_partition_key_range=key_range,
+                instance=step_context.instance,
+                asset_spec=asset_node.to_asset_spec() if asset_node else None,
             ),
         )
 
