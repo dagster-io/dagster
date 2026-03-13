@@ -138,6 +138,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
                 "Must provide one of token, oauth_credentials, azure_credentials, or"
                 " credentials_strategy"
             )
+        super().model_post_init(__context)
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
