@@ -467,6 +467,16 @@ class DagsterK8sJobConfig(
                         " default kubeconfig."
                     ),
                 ),
+                "k8s_api_ssl_ca_cert_file": Field(
+                    Noneable(str),
+                    is_required=False,
+                    default_value=None,
+                    description=(
+                        "Path to a custom CA bundle file for TLS verification when connecting to "
+                        "the Kubernetes API. Use this in enterprise environments with custom CA "
+                        "chains where the default service account CA cert is not sufficient."
+                    ),
+                ),
                 "fail_pod_on_run_failure": Field(
                     bool,
                     is_required=False,
