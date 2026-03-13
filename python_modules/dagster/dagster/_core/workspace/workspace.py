@@ -51,6 +51,7 @@ class CodeLocationStatusEntry:
     load_status: CodeLocationLoadStatus
     update_timestamp: float
     version_key: str
+    has_load_error: bool
 
 
 @record
@@ -77,4 +78,5 @@ def location_status_from_location_entry(
         load_status=entry.load_status,
         update_timestamp=entry.update_timestamp,
         version_key=entry.version_key,
+        has_load_error=entry.load_error is not None,
     )
