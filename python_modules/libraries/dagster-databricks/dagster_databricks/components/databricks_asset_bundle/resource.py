@@ -113,7 +113,12 @@ class DatabricksWorkspace(ConfigurableResource):
                             if retries >= MAX_RETRIES:
                                 resp.raise_for_status()
                             retry_after = resp.headers.get("Retry-After")
-                            wait = int(retry_after) if retry_after else min(2**retries, 30)
+                            try:
+                                wait = int(retry_after) if retry_after else None
+                            except (ValueError, TypeError):
+                                wait = None
+                            if wait is None:
+                                wait = min(2**retries, 30)
                         elif resp.status != 200:
                             resp.raise_for_status()
                         else:
