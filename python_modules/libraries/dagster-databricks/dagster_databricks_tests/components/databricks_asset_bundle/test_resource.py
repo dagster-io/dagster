@@ -49,13 +49,14 @@ def make_job_detail(job_id: int, name: str = "Job") -> dict:
     return {"job_id": job_id, "settings": {"name": name, "tasks": []}}
 
 
-def mock_resp(status: int, json_data: dict) -> MagicMock:
+def mock_resp(status: int, json_data: dict, retry_after: str | None = None) -> MagicMock:
     resp = MagicMock()
     resp.status = status
     resp.raise_for_status = MagicMock(
         side_effect=Exception(f"HTTP {status}") if status >= 400 else None
     )
     resp.json = AsyncMock(return_value=json_data)
+    resp.headers = {"Retry-After": retry_after} if retry_after else {}
     resp.__aenter__ = AsyncMock(return_value=resp)
     resp.__aexit__ = AsyncMock(return_value=False)
     return resp
