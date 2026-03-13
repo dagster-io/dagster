@@ -6,7 +6,10 @@ import aiohttp
 
 DATABRICKS_JOBS_API_PATH = "/api/2.1/jobs"
 MAX_CONCURRENT_REQUESTS = 10
+MAX_RETRIES = 5
 RATE_LIMIT_STATUS_CODE = 429
+JOBS_LIST_PAGE_SIZE = 100
+DEFAULT_SESSION_TIMEOUT_SECONDS = 300
 
 from dagster import (
     AssetExecutionContext,
@@ -56,45 +59,85 @@ class DatabricksWorkspace(ConfigurableResource):
         )
 
     async def fetch_jobs(self, databricks_filter: Any) -> list[DatabricksJob]:
-        """Fetches jobs efficiently using async I/O directly from the resource."""
+        """Fetches all jobs from the Databricks workspace using async I/O.
+
+        Handles pagination via has_more/next_page_token, rate-limit retries with
+        bounded exponential backoff, and concurrent job detail fetches with a
+        shared aiohttp session.
+        """
         headers = {"Authorization": f"Bearer {self.token}"}
         base_url = self.host.rstrip("/")
 
-        async with aiohttp.ClientSession(headers=headers) as session:
+        timeout = aiohttp.ClientTimeout(total=DEFAULT_SESSION_TIMEOUT_SECONDS)
+        async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
+            # Phase 1: paginate through the jobs list
             list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/list"
-            async with session.get(list_url) as resp:
-                resp.raise_for_status()
-                data = await resp.json()
-                all_jobs_lite = data.get("jobs", [])
+            all_jobs_lite: list[dict[str, Any]] = []
+            params: dict[str, Any] = {"limit": JOBS_LIST_PAGE_SIZE}
 
-        job_ids_to_fetch = []
-        for j in all_jobs_lite:
-            if databricks_filter and not databricks_filter.include_job(j):
-                continue
-            job_ids_to_fetch.append(j["job_id"])
+            while True:
+                async with session.get(list_url, params=params) as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
+                    all_jobs_lite.extend(data.get("jobs", []))
 
-        if not job_ids_to_fetch:
-            return []
+                    if not data.get("has_more", False):
+                        break
 
-        semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+                    next_token = data.get("next_page_token")
+                    if not next_token:
+                        raise ValueError(
+                            "Databricks Jobs List API returned has_more=True but did not"
+                            " provide a next_page_token. Cannot continue pagination."
+                        )
+                    params["page_token"] = next_token
 
-        async def _fetch_single_job(job_id: int) -> dict | None:
-            async with semaphore:
-                async with aiohttp.ClientSession(headers=headers) as session:
+            # Phase 2: filter, then fetch full job details concurrently
+            job_ids_to_fetch = [
+                j["job_id"]
+                for j in all_jobs_lite
+                if not databricks_filter or databricks_filter.include_job(j)
+            ]
+
+            if not job_ids_to_fetch:
+                return []
+
+            semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+
+            async def _fetch_single_job(job_id: int, retries: int = 0) -> dict | None:
+                wait: int | None = None
+                async with semaphore:
                     url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/get?job_id={job_id}"
                     async with session.get(url) as resp:
-                        if resp.status == MAX_CONCURRENT_REQUESTS:
-                            await asyncio.sleep(1)
-                            return await _fetch_single_job(job_id)
-
-                        if resp.status != 200:
+                        if resp.status == RATE_LIMIT_STATUS_CODE:
+                            if retries >= MAX_RETRIES:
+                                resp.raise_for_status()
+                            retry_after = resp.headers.get("Retry-After")
+                            wait = int(retry_after) if retry_after else min(2**retries, 30)
+                        elif resp.status != 200:
                             resp.raise_for_status()
+                        else:
+                            return await resp.json()
 
-                        return await resp.json()
+                # Semaphore released — sleep and retry outside the lock
+                if wait is not None:
+                    await asyncio.sleep(wait)
+                    return await _fetch_single_job(job_id, retries + 1)
+                return None
 
-        tasks_coroutines = [_fetch_single_job(jid) for jid in job_ids_to_fetch]
-        raw_jobs = await asyncio.gather(*tasks_coroutines)
+            results = await asyncio.gather(
+                *[_fetch_single_job(jid) for jid in job_ids_to_fetch],
+                return_exceptions=True,
+            )
+            for result in results:
+                if isinstance(result, BaseException):
+                    raise result
+            raw_jobs = list(results)
 
+        return self._parse_raw_jobs(raw_jobs)
+
+    @staticmethod
+    def _parse_raw_jobs(raw_jobs: list[dict | None]) -> list[DatabricksJob]:
         final_jobs = []
         for rj in raw_jobs:
             if not rj:
@@ -104,7 +147,6 @@ class DatabricksWorkspace(ConfigurableResource):
             job_name = settings.get("name", "Unnamed Job")
             raw_tasks = settings.get("tasks", [])
 
-            # Convert raw task dicts to DatabricksBaseTask objects
             parsed_tasks = []
             for task_dict in raw_tasks:
                 augmented_task = {**task_dict, "job_name": job_name}
@@ -112,15 +154,9 @@ class DatabricksWorkspace(ConfigurableResource):
                 if task is not None:
                     parsed_tasks.append(task)
                 elif task_dict.get("task_key"):
-                    # Use unknown task for unsupported task types
                     parsed_tasks.append(DatabricksUnknownTask.from_job_task_config(augmented_task))
 
-            job = DatabricksJob(
-                job_id=rj["job_id"],
-                name=job_name,
-                tasks=parsed_tasks,
-            )
-            final_jobs.append(job)
+            final_jobs.append(DatabricksJob(job_id=rj["job_id"], name=job_name, tasks=parsed_tasks))
 
         return final_jobs
 
