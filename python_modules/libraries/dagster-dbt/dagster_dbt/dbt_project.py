@@ -131,19 +131,25 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             .wait()
         )
 
-        # Remove seed entries from partial_parse to force re-parsing at runtime.
-        # This ensures seeds get correct root_path based on current project location.
-        self._invalidate_seeds_in_partial_parse(project)
+        # Update seed root_path in partial_parse to ensure portability across environments.
+        self._update_seed_paths_in_partial_parse(project)
 
-    def _invalidate_seeds_in_partial_parse(self, project: "DbtProject") -> None:
-        """Remove seed entries from partial_parse.msgpack to force re-parsing.
+    def _update_seed_paths_in_partial_parse(self, project: "DbtProject") -> None:
+        """Update seed root_path entries in partial_parse.msgpack to the current project directory.
 
-        Seeds contain root_path which is an absolute path from build time. When state
-        is generated in one environment (e.g., CI/CD) and used in another (e.g., deployed
-        container), the root_path points to the wrong location and seed loading fails.
+        Seeds store an absolute root_path in partial_parse.msgpack. If the path recorded at
+        parse time differs from the current project directory (e.g., the project was moved or
+        the partial_parse was produced in CI and shipped to a container), dbt will fail to
+        locate seed files when executing ``dbt seed``.
 
-        By removing seed entries from the cache, dbt will re-parse them at runtime with
-        the correct current project path. Models keep their cached data for fast loading.
+        Updating root_path in-place — rather than deleting seed entries — also ensures that
+        seeds remain visible in the dbt manifest on subsequent ``dbt parse`` invocations.
+        Deleting seed entries from partial_parse causes dbt to omit them from the manifest,
+        making seeds invisible as Dagster assets in ``dagster dev`` (see issue #33471).
+
+        This method is a no-op when the partial_parse was produced on the same machine and
+        project directory has not changed (the common case). It corrects stale paths when
+        the project directory differs from what was recorded at parse time.
         """
         import msgpack
 
@@ -154,18 +160,26 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         with open(partial_parse_path, "rb") as f:
             data = msgpack.unpack(f, raw=False, strict_map_key=False)
 
-        # Remove seed nodes
-        seed_node_ids = [k for k in data.get("nodes", {}).keys() if k.startswith("seed.")]
-        for seed_id in seed_node_ids:
-            del data["nodes"][seed_id]
+        current_project_dir = str(project.project_dir.resolve())
+        modified = False
 
-        # Remove seed file entries (CSVs)
-        seed_file_ids = [k for k in data.get("files", {}).keys() if k.lower().endswith(".csv")]
-        for file_id in seed_file_ids:
-            del data["files"][file_id]
+        # Update root_path for seed nodes to the current project directory
+        for key, node in data.get("nodes", {}).items():
+            if key.startswith("seed.") and isinstance(node, dict):
+                if node.get("root_path") != current_project_dir:
+                    node["root_path"] = current_project_dir
+                    modified = True
 
-        with open(partial_parse_path, "wb") as f:
-            msgpack.pack(data, f)
+        # Update root_path for seed file entries (CSVs)
+        for key, file_entry in data.get("files", {}).items():
+            if key.lower().endswith(".csv") and isinstance(file_entry, dict):
+                if file_entry.get("root_path") != current_project_dir:
+                    file_entry["root_path"] = current_project_dir
+                    modified = True
+
+        if modified:
+            with open(partial_parse_path, "wb") as f:
+                msgpack.pack(data, f)
 
 
 @record_custom
