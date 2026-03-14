@@ -84,7 +84,8 @@ class SparkPipelinesResource(ConfigurableResource):
 
         Uses Popen to stream stdout/stderr line-by-line and logs each line via context.log.info.
         Passes --full-refresh or --refresh based on execution_mode, then optional comma-separated
-        dataset list from asset_keys.         returncode == 0; otherwise raises SparkPipelinesExecutionError with the captured log.
+        dataset list from asset_keys. Yields MaterializeResult per asset on success when
+        returncode == 0; otherwise raises SparkPipelinesExecutionError with the captured log.
 
         Args:
             context: Asset execution context (used for context.log.info).
@@ -133,14 +134,16 @@ class SparkPipelinesResource(ConfigurableResource):
             bufsize=1,
         )
         log_lines: deque[str] = deque(maxlen=1000)
-        if process.stdout:
-            for raw_line in process.stdout:
-                line = raw_line.rstrip("\n\r")
-                if line:
-                    log_lines.append(line)
-                    if context is not None and hasattr(context, "log"):
-                        context.log.info(line)
-        process.wait()
+        try:
+            if process.stdout:
+                for raw_line in process.stdout:
+                    line = raw_line.rstrip("\n\r")
+                    if line:
+                        log_lines.append(line)
+                        if context is not None and hasattr(context, "log"):
+                            context.log.info(line)
+        finally:
+            process.wait()
         returncode = process.returncode
 
         if returncode != 0:
