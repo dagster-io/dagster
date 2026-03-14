@@ -61,6 +61,7 @@ import {
   LaunchPartitionBackfillMutationVariables,
 } from '../instance/backfill/types/BackfillUtils.types';
 import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
+import {mergeYaml} from '../launchpad/yamlUtils';
 import {BackfillLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchpadConfig} from '../launchpad/LaunchpadSession';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
@@ -295,7 +296,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       return;
     }
 
-    const runConfigData = savedConfig?.runConfigYaml || config.yaml || '';
+    const runConfigData = savedConfig?.runConfigYaml
+      ? mergeYaml(config.yaml || '{}', savedConfig.runConfigYaml)
+      : config.yaml || '';
     let allTags = [...config.tags, ...tags];
 
     if (launchWithRangesAsTags) {
