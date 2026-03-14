@@ -350,8 +350,8 @@ def _extract_report_text(stdout: str) -> DryRunReport | None:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        # Match "dataset: <id>" or "- <id>" or "  - <id>" or "1. <id>"; require valid dataset id (alphanumeric, underscores, dots)
-        _dataset_id_pattern = r"[a-zA-Z0-9_.]+"
+        # Match "dataset: <id>" or "- <id>" or "  - <id>" or "1. <id>"; require valid dataset id (alphanumeric, underscores, dots, hyphens)
+        _dataset_id_pattern = r"[a-zA-Z0-9_.-]+"
         for pattern in (
             rf"dataset:\s*({_dataset_id_pattern})\s*$",
             rf"^[-*]\s*({_dataset_id_pattern})\s*$",

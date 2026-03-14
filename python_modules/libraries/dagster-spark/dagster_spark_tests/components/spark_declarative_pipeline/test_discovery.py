@@ -240,6 +240,17 @@ def test_parse_dry_run_output_to_datasets_isolates_dataset_prefix_from_noisy_std
     assert len(datasets) == 2
 
 
+def test_extract_report_text_accepts_hyphenated_dataset_ids() -> None:
+    """Text fallback accepts dataset identifiers with hyphens (e.g. my-catalog.db.table)."""
+    stdout = "- my-catalog.schema.events\n* other-dataset"
+    report = extract_report(stdout)
+    assert report is not None
+    names = [d.name for d in report.datasets]
+    assert "my-catalog.schema.events" in names
+    assert "other-dataset" in names
+    assert len(report.datasets) == 2
+
+
 def test_extract_report_text_rejects_log_like_bullet_lines() -> None:
     """Text fallback does not treat '- Starting JVM...' or similar as dataset names."""
     stdout = "- Starting JVM...\n* Some log message with spaces\n1. Not a valid id with spaces"

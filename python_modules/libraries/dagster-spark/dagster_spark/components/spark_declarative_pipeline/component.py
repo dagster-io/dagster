@@ -100,7 +100,7 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             pipeline_spec_path=self.pipeline_spec_path,
         )
         state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(serialize_value(state))
+        state_path.write_text(serialize_value(state), encoding="utf-8")
 
     def get_asset_spec(self, dataset: DiscoveredDataset) -> AssetSpec:
         """Build an AssetSpec for a discovered dataset. Override to customize key/metadata/group.
@@ -189,25 +189,25 @@ class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
             _context: dg.AssetExecutionContext,
             spark_pipelines: SparkPipelinesResource,
         ) -> Any:
-            # When the entire graph is executed (not a subset), pass keys=None to allow
-            # --full-refresh-all and avoid OS argument length limits.
-            # Inner param _context avoids shadowing outer context (ComponentLoadContext);
-            is_subset = getattr(_context, "is_subset", True)
-            if is_subset:
-                keys = (
-                    list(_context.selected_asset_keys)
-                    if _context.selected_asset_keys
-                    else [s.key for s in asset_specs]
-                )
-            else:
-                keys = None
-            yield from spark_pipelines.run_and_observe(
+            selected_keys = (
+                list(_context.selected_asset_keys)
+                if _context.selected_asset_keys
+                else [s.key for s in asset_specs]
+            )
+            is_subset = (
+                len(_context.selected_asset_keys) < len(asset_specs)
+                if _context.selected_asset_keys
+                else False
+            )
+            spark_pipelines.run_and_observe(
                 context=_context,
                 pipeline_spec_path=resolved_spec_path,
                 working_dir=working_dir,
                 execution_mode=execution_mode,
-                asset_keys=keys,
+                asset_keys=selected_keys if is_subset else None,
             )
+            for key in selected_keys:
+                yield dg.MaterializeResult(asset_key=key)
 
         return Definitions(
             assets=[_spark_pipeline_asset],

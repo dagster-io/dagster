@@ -1,17 +1,16 @@
 """Resource for running Spark Declarative Pipelines and discovering datasets.
 
 SparkPipelinesResource provides discover_datasets (via dry-run or source_only) and
-run_and_observe (run spark-pipelines with log streaming and MaterializeResult yields).
+run_and_observe (run spark-pipelines with log streaming). The asset yields MaterializeResults.
 """
 
 import os
 import subprocess
 from collections import deque
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal
 
-from dagster import AssetKey, ConfigurableResource, MaterializeResult
+from dagster import AssetKey, ConfigurableResource
 from pydantic import Field
 
 from dagster_spark.components.spark_declarative_pipeline.discovery import (
@@ -79,13 +78,13 @@ class SparkPipelinesResource(ConfigurableResource):
         execution_mode: ExecutionMode = "incremental",
         extra_args: list[str] | None = None,
         asset_keys: list[AssetKey] | None = None,
-    ) -> Iterator[MaterializeResult]:
-        """Run spark-pipelines run with log streaming; yield MaterializeResult per asset on success.
+    ) -> None:
+        """Run spark-pipelines run with log streaming; does not yield (asset yields MaterializeResults).
 
         Uses Popen to stream stdout/stderr line-by-line and logs each line via context.log.info.
         Passes --full-refresh or --refresh based on execution_mode, then optional comma-separated
-        dataset list from asset_keys. Yields MaterializeResult per asset on success when
-        returncode == 0; otherwise raises SparkPipelinesExecutionError with the captured log.
+        dataset list from asset_keys. The calling multi_asset must yield one MaterializeResult per
+        selected asset key after this returns.
 
         Args:
             context: Asset execution context (used for context.log.info).
@@ -94,9 +93,6 @@ class SparkPipelinesResource(ConfigurableResource):
             execution_mode: "incremental" (--refresh) or "full_refresh" (--full-refresh).
             extra_args: Optional extra CLI arguments appended to the command.
             asset_keys: Optional list of asset keys to materialize (passed as dataset list).
-
-        Yields:
-            MaterializeResult for each materialized asset on success.
 
         Raises:
             SparkPipelinesExecutionError: If spark-pipelines run exits with non-zero return code.
@@ -154,13 +150,7 @@ class SparkPipelinesResource(ConfigurableResource):
                 returncode=returncode,
             )
 
-        if asset_keys:
-            for k in asset_keys:
-                yield MaterializeResult(asset_key=k)
-            return
-
-        # No specific asset keys requested; complete gracefully without yielding (avoids UnexpectedAssetMaterializationError)
-        if context is not None and hasattr(context, "log"):
+        if asset_keys is None and context is not None and hasattr(context, "log"):
             context.log.info(
-                "No specific asset keys requested; spark-pipelines run completed successfully."
+                "spark-pipelines run completed successfully (full graph; asset will yield results)."
             )

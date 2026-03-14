@@ -1,18 +1,17 @@
-"""Tests for SparkPipelinesResource run_and_observe (log streaming and MaterializeResult yields)."""
+"""Tests for SparkPipelinesResource run_and_observe (log streaming; asset yields MaterializeResults)."""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 from dagster import AssetKey
-from dagster._core.definitions.result import MaterializeResult
 from dagster_spark.components.spark_declarative_pipeline.discovery import (
     SparkPipelinesExecutionError,
 )
 from dagster_spark.components.spark_declarative_pipeline.resource import SparkPipelinesResource
 
 
-def test_run_and_observe_yields_materialize_results_for_selected_datasets() -> None:
-    """run_and_observe yields correct MaterializeResults for the selected asset keys on success."""
+def test_run_and_observe_completes_successfully_with_asset_keys() -> None:
+    """run_and_observe runs the subprocess and returns None; the asset yields MaterializeResults."""
     mock_context = MagicMock()
     asset_keys = [
         AssetKey(["dataset_a"]),
@@ -28,19 +27,14 @@ def test_run_and_observe_yields_materialize_results_for_selected_datasets() -> N
         mock_popen.return_value = proc
 
         resource = SparkPipelinesResource()
-        results = list(
-            resource.run_and_observe(
-                context=mock_context,
-                pipeline_spec_path="/path/to/spec.yaml",
-                execution_mode="incremental",
-                asset_keys=asset_keys,
-            )
+        resource.run_and_observe(
+            context=mock_context,
+            pipeline_spec_path="/path/to/spec.yaml",
+            execution_mode="incremental",
+            asset_keys=asset_keys,
         )
 
-    assert len(results) == 2
-    assert all(isinstance(r, MaterializeResult) for r in results)
-    assert results[0].asset_key == AssetKey(["dataset_a"])
-    assert results[1].asset_key == AssetKey(["dataset_b"])
+    mock_popen.assert_called_once()
 
 
 def test_run_and_observe_streams_logs_via_context() -> None:
@@ -56,12 +50,10 @@ def test_run_and_observe_streams_logs_via_context() -> None:
         mock_popen.return_value = proc
 
         resource = SparkPipelinesResource()
-        list(
-            resource.run_and_observe(
-                context=mock_context,
-                pipeline_spec_path="/path/spec.yaml",
-                asset_keys=[AssetKey(["a"])],
-            )
+        resource.run_and_observe(
+            context=mock_context,
+            pipeline_spec_path="/path/spec.yaml",
+            asset_keys=[AssetKey(["a"])],
         )
 
     assert mock_context.log.info.call_count >= 2
@@ -84,19 +76,17 @@ def test_run_and_observe_raises_with_captured_log_on_nonzero_exit() -> None:
 
         resource = SparkPipelinesResource()
         with pytest.raises(SparkPipelinesExecutionError) as exc_info:
-            list(
-                resource.run_and_observe(
-                    context=mock_context,
-                    pipeline_spec_path="/path/spec.yaml",
-                    asset_keys=[AssetKey(["a"])],
-                )
+            resource.run_and_observe(
+                context=mock_context,
+                pipeline_spec_path="/path/spec.yaml",
+                asset_keys=[AssetKey(["a"])],
             )
         assert exc_info.value.returncode == 1
         assert "error line" in (exc_info.value.stderr or "")
 
 
-def test_run_and_observe_yields_nothing_when_no_asset_keys() -> None:
-    """When asset_keys is empty, run_and_observe yields nothing and completes gracefully (logs only)."""
+def test_run_and_observe_completes_when_asset_keys_none() -> None:
+    """When asset_keys is None (full graph), run_and_observe runs and logs; asset yields results."""
     mock_context = MagicMock()
     with patch(
         "dagster_spark.components.spark_declarative_pipeline.resource.subprocess.Popen"
@@ -108,19 +98,15 @@ def test_run_and_observe_yields_nothing_when_no_asset_keys() -> None:
         mock_popen.return_value = proc
 
         resource = SparkPipelinesResource()
-        results = list(
-            resource.run_and_observe(
-                context=mock_context,
-                pipeline_spec_path="/path/spec.yaml",
-                asset_keys=None,
-            )
+        resource.run_and_observe(
+            context=mock_context,
+            pipeline_spec_path="/path/spec.yaml",
+            asset_keys=None,
         )
 
-    assert len(results) == 0
     mock_context.log.info.assert_any_call(
-        "No specific asset keys requested; spark-pipelines run completed successfully."
+        "spark-pipelines run completed successfully (full graph; asset will yield results)."
     )
-    # Incremental run with no asset_keys must not append --refresh (bare run = full pipeline)
     call_cmd = mock_popen.call_args[0][0]
     assert "--refresh" not in call_cmd
 
@@ -141,12 +127,10 @@ def test_run_and_observe_passes_dot_notation_datasets_to_cli() -> None:
         mock_popen.return_value = proc
 
         resource = SparkPipelinesResource()
-        list(
-            resource.run_and_observe(
-                context=mock_context,
-                pipeline_spec_path="/path/spec.yaml",
-                asset_keys=asset_keys,
-            )
+        resource.run_and_observe(
+            context=mock_context,
+            pipeline_spec_path="/path/spec.yaml",
+            asset_keys=asset_keys,
         )
 
     call_cmd = mock_popen.call_args[0][0]
@@ -173,12 +157,10 @@ def test_run_and_observe_uses_configurable_cmd_and_run_extra_args() -> None:
             spark_pipelines_cmd="/usr/local/bin/spark-pipelines",
             run_extra_args=["--option", "value"],
         )
-        list(
-            resource.run_and_observe(
-                context=mock_context,
-                pipeline_spec_path="/path/spec.yaml",
-                asset_keys=[AssetKey(["a"])],
-            )
+        resource.run_and_observe(
+            context=mock_context,
+            pipeline_spec_path="/path/spec.yaml",
+            asset_keys=[AssetKey(["a"])],
         )
 
     call_cmd = mock_popen.call_args[0][0]
@@ -202,13 +184,11 @@ def test_run_and_observe_full_refresh_no_asset_keys_uses_full_refresh_all() -> N
         mock_popen.return_value = proc
 
         resource = SparkPipelinesResource()
-        list(
-            resource.run_and_observe(
-                context=mock_context,
-                pipeline_spec_path="/path/spec.yaml",
-                execution_mode="full_refresh",
-                asset_keys=None,
-            )
+        resource.run_and_observe(
+            context=mock_context,
+            pipeline_spec_path="/path/spec.yaml",
+            execution_mode="full_refresh",
+            asset_keys=None,
         )
 
     call_cmd = mock_popen.call_args[0][0]
@@ -217,8 +197,8 @@ def test_run_and_observe_full_refresh_no_asset_keys_uses_full_refresh_all() -> N
     assert "--full-refresh" not in call_cmd
 
 
-def test_run_and_observe_only_yields_on_success() -> None:
-    """MaterializeResults are only yielded when process returncode is 0."""
+def test_run_and_observe_raises_on_nonzero_exit() -> None:
+    """run_and_observe raises SparkPipelinesExecutionError when process returncode is not 0."""
     mock_context = MagicMock()
     with patch(
         "dagster_spark.components.spark_declarative_pipeline.resource.subprocess.Popen"
@@ -231,10 +211,8 @@ def test_run_and_observe_only_yields_on_success() -> None:
 
         resource = SparkPipelinesResource()
         with pytest.raises(SparkPipelinesExecutionError):
-            list(
-                resource.run_and_observe(
-                    context=mock_context,
-                    pipeline_spec_path="/path/spec.yaml",
-                    asset_keys=[AssetKey(["a"])],
-                )
+            resource.run_and_observe(
+                context=mock_context,
+                pipeline_spec_path="/path/spec.yaml",
+                asset_keys=[AssetKey(["a"])],
             )
