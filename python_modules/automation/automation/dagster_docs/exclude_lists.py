@@ -88,6 +88,9 @@ EXCLUDE_MISSING_RST = {
     # Component testing utils
     "dagster.components.testing.utils.DefsFolderSandbox",
     "dagster.components.testing.utils.create_defs_folder_sandbox",
+    # IO storage migration - new functionality pending RST documentation
+    "dagster.MigrateIOStorageResult",
+    "dagster.migrate_io_storage",
     # GCP components - new resource components pending RST documentation
     "dagster_gcp.components.bigquery.BigQueryResourceComponent",
     "dagster_gcp.components.dataproc.DataprocResourceComponent",

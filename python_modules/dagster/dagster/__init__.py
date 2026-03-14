@@ -613,6 +613,10 @@ from dagster._core.storage.mem_io_manager import (
     InMemoryIOManager as InMemoryIOManager,
     mem_io_manager as mem_io_manager,
 )
+from dagster._core.storage.migrate import (
+    MigrateIOStorageResult as MigrateIOStorageResult,
+    migrate_io_storage as migrate_io_storage,
+)
 from dagster._core.storage.partition_status_cache import (
     AssetPartitionStatus as AssetPartitionStatus,
 )
