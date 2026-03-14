@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from dagster_dbt.core.resource import DbtProject
 
 # dbt resource types that may be considered assets
-ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot", "function"]
 
 clean_name = clean_name_lower
 
