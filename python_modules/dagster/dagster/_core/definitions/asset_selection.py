@@ -1224,11 +1224,18 @@ class KeysAssetSelection(AssetSelection):
                     )
 
             if missing_keys:
+                all_keys = asset_graph.get_all_asset_keys()
+                materializable_keys = asset_graph.materializable_asset_keys
+                diagnostic_info = (
+                    f"\n\nDiagnostic info: The asset graph contains "
+                    f"{len(all_keys)} total keys and "
+                    f"{len(materializable_keys)} materializable keys."
+                )
                 raise DagsterInvalidSubsetError(
                     f"AssetKey(s) {[k.to_user_string() for k in missing_keys]} were selected, but "
                     "no AssetsDefinition objects supply these keys. Make sure all keys are spelled "
                     "correctly, and all AssetsDefinitions are correctly added to the "
-                    f"`Definitions`.{suggestions}"
+                    f"`Definitions`.{suggestions}{diagnostic_info}"
                 )
 
         return specified_keys - missing_keys
