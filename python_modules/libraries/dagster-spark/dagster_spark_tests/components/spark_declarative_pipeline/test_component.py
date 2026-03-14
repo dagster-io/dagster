@@ -1,15 +1,50 @@
-"""Tests for SparkDeclarativePipelineComponent (build_defs_from_state, temporary_view filtering)."""
+"""Tests for SparkDeclarativePipelineComponent (YAML load, lifecycle, build_defs_from_state, temporary_view filtering)."""
 
+import asyncio
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import dagster as dg
+from dagster import AssetKey
+from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_spark.components.spark_declarative_pipeline import (
     DiscoveredDataset,
     SparkDeclarativePipelineComponent,
     SparkPipelineState,
 )
+
+
+@contextmanager
+def setup_spark_component(
+    pipeline_spec_path: str,
+    discovery_mode: str = "source_only",
+    defs_state_type: str = "LOCAL_FILESYSTEM",
+) -> Iterator[tuple[SparkDeclarativePipelineComponent, dg.Definitions]]:
+    """Set up a components project with a Spark component; yield (component, defs) from load_component_and_build_defs."""
+    typename = "dagster_spark.components.spark_declarative_pipeline.component.SparkDeclarativePipelineComponent"
+    defs_yaml_contents: dict = {
+        "type": typename,
+        "attributes": {
+            "pipeline_spec_path": pipeline_spec_path,
+            "discovery_mode": discovery_mode,
+            "defs_state": {"management_type": defs_state_type},
+        },
+    }
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=SparkDeclarativePipelineComponent,
+            defs_yaml_contents=defs_yaml_contents,
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
+            assert isinstance(component, SparkDeclarativePipelineComponent)
+            yield component, defs
 
 
 def _ds(
@@ -26,6 +61,71 @@ def _ds(
         inferred_deps=inferred_deps or [],
         discovery_method="dry_run",
     )
+
+
+def test_basic_component_load_via_sandbox() -> None:
+    """YAML -> Resolver -> component instantiation via create_defs_folder_sandbox and load_component_and_build_defs."""
+    with create_defs_folder_sandbox() as sandbox:
+        project_root = sandbox.project_root
+        spec_path = project_root / "spark-pipeline.yml"
+        spec_path.write_text("")
+        (project_root / "models.py").write_text("@dp.table\ndef my_table(): pass\n")
+        typename = "dagster_spark.components.spark_declarative_pipeline.component.SparkDeclarativePipelineComponent"
+        defs_path = sandbox.scaffold_component(
+            component_cls=SparkDeclarativePipelineComponent,
+            defs_yaml_contents={
+                "type": typename,
+                "attributes": {
+                    "pipeline_spec_path": str(spec_path),
+                    "discovery_mode": "source_only",
+                    "defs_state": {"management_type": "LOCAL_FILESYSTEM"},
+                },
+            },
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
+            assert isinstance(component, SparkDeclarativePipelineComponent)
+            # No state yet, so no assets
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
+
+
+def test_component_load_with_defs_state_lifecycle() -> None:
+    """Full lifecycle: no state -> refresh -> build defs (using create_defs_folder_sandbox and scoped_definitions_load_context)."""
+    with create_defs_folder_sandbox() as sandbox:
+        project_root = sandbox.project_root
+        spec_path = project_root / "spark-pipeline.yml"
+        spec_path.write_text("")
+        (project_root / "models.py").write_text("@dp.table\ndef my_table(): pass\n")
+        typename = "dagster_spark.components.spark_declarative_pipeline.component.SparkDeclarativePipelineComponent"
+        defs_path = sandbox.scaffold_component(
+            component_cls=SparkDeclarativePipelineComponent,
+            defs_yaml_contents={
+                "type": typename,
+                "attributes": {
+                    "pipeline_spec_path": str(spec_path),
+                    "discovery_mode": "source_only",
+                    "defs_state": {"management_type": "LOCAL_FILESYSTEM"},
+                },
+            },
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
+            assert isinstance(component, SparkDeclarativePipelineComponent)
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
+            asyncio.run(component.refresh_state(sandbox.project_root))
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+                _component,
+                defs,
+            ),
+        ):
+            keys = defs.resolve_asset_graph().get_all_asset_keys()
+            assert keys == {AssetKey(["my_table"])}
 
 
 def test_build_defs_from_state_returns_valid_definitions_with_multi_asset() -> None:

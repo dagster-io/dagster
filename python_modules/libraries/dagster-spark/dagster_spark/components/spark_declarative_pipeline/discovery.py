@@ -2,19 +2,19 @@
 
 This module runs ``spark-pipelines dry-run`` to discover datasets, parses JSON or
 structured text output, and supports discovery_mode fallbacks (e.g. source_only).
-State types (DiscoveredDataset, SparkPipelineState) are frozen dataclasses with
+State types (DiscoveredDataset, SparkPipelineState) use @record with
 whitelist_for_serdes for Dagster serialize_value/deserialize_value compatibility.
 """
 
 import json
 import re
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from dagster import get_dagster_logger
 from dagster_shared import check  # type: ignore[reportMissingImports]
+from dagster_shared.record import record  # type: ignore[reportMissingImports]
 from dagster_shared.serdes import whitelist_for_serdes  # type: ignore[reportMissingImports]
 
 # Guardrail to prevent daemon hangs.
@@ -69,7 +69,7 @@ class DuplicateDatasetNamesError(ValueError):
         self.duplicate_names = duplicate_names
 
 
-@dataclass(frozen=True)
+@record
 class DryRunDatasetNode:
     """A single dataset node as reported by spark-pipelines dry-run.
 
@@ -83,8 +83,18 @@ class DryRunDatasetNode:
     raw: dict[str, Any]
     inferred_deps: tuple[str, ...] = ()
 
+    if TYPE_CHECKING:
 
-@dataclass(frozen=True)
+        def __init__(
+            self,
+            *,
+            name: str,
+            raw: dict[str, Any],
+            inferred_deps: tuple[str, ...] = (),
+        ) -> None: ...
+
+
+@record
 class DryRunReport:
     """Structured report produced by spark-pipelines dry-run (JSON or parsed text).
 
@@ -96,9 +106,18 @@ class DryRunReport:
     datasets: list[DryRunDatasetNode]
     raw: dict[str, Any] | None = None
 
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            datasets: list[DryRunDatasetNode],
+            raw: dict[str, Any] | None = None,
+        ) -> None: ...
+
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
+@record
 class DiscoveredDataset:
     """A dataset discovered for a Spark Declarative Pipeline (from dry-run or source).
 
@@ -121,9 +140,22 @@ class DiscoveredDataset:
     inferred_deps: list[str]
     discovery_method: str
 
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            name: str,
+            dataset_type: str,
+            source_file: str | None,
+            source_line: int | None,
+            inferred_deps: list[str],
+            discovery_method: str,
+        ) -> None: ...
+
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
+@record
 class SparkPipelineState:
     """Cached state for a Spark Declarative Pipeline (discovered datasets).
 
@@ -137,6 +169,15 @@ class SparkPipelineState:
 
     datasets: list[DiscoveredDataset]
     pipeline_spec_path: str
+
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            datasets: list[DiscoveredDataset],
+            pipeline_spec_path: str,
+        ) -> None: ...
 
 
 def discover_datasets_via_dry_run(
@@ -261,13 +302,16 @@ def _extract_report_json(stdout: str) -> DryRunReport | None:
 
 
 def _extract_deps_from_node(item: dict[str, Any]) -> tuple[str, ...]:
-    """Extract upstream dataset names from a JSON node (deps, dependencies, upstream_dataset_names)."""
+    """Extract upstream dataset names from a JSON node (deps, dependencies, upstream_dataset_names).
+
+    Empty or whitespace-only names are excluded to avoid AssetKey path components that are empty.
+    """
     deps = item.get("upstream_dataset_names") or item.get("dependencies") or item.get("deps") or []
     if isinstance(deps, str):
         deps = [deps]
     if not isinstance(deps, list):
         return ()
-    return tuple(str(d) for d in deps if isinstance(d, str))
+    return tuple(s for d in deps if isinstance(d, str) and (s := str(d).strip()) != "")
 
 
 def _json_to_report(data: Any) -> DryRunReport | None:
@@ -306,8 +350,13 @@ def _extract_report_text(stdout: str) -> DryRunReport | None:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        # Match "dataset: foo" or "- foo" or "  - foo"
-        for pattern in (r"dataset:\s*(.+)", r"^[-*]\s*(.+)", r"^\d+\.\s*(.+)"):
+        # Match "dataset: <id>" or "- <id>" or "  - <id>" or "1. <id>"; require valid dataset id (alphanumeric, underscores, dots)
+        _dataset_id_pattern = r"[a-zA-Z0-9_.]+"
+        for pattern in (
+            rf"dataset:\s*({_dataset_id_pattern})\s*$",
+            rf"^[-*]\s*({_dataset_id_pattern})\s*$",
+            rf"^\d+\.\s*({_dataset_id_pattern})\s*$",
+        ):
             match = re.match(pattern, line, re.IGNORECASE)
             if match:
                 name = match.group(1).strip()
@@ -464,16 +513,10 @@ def parse_dry_run_output_to_datasets(stdout: str) -> list[DiscoveredDataset]:
     result: list[DiscoveredDataset] = []
     for node in report.datasets:
         raw = node.raw
-        source_file = raw.get("source_file") or raw.get("source")
-        if isinstance(source_file, str):
-            pass
-        else:
-            source_file = None
-        source_line = raw.get("source_line")
-        if isinstance(source_line, int):
-            pass
-        else:
-            source_line = None
+        raw_sf = raw.get("source_file") or raw.get("source")
+        source_file = raw_sf if isinstance(raw_sf, str) else None
+        raw_sl = raw.get("source_line")
+        source_line = raw_sl if isinstance(raw_sl, int) else None
         result.append(
             DiscoveredDataset(
                 name=node.name,

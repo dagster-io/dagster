@@ -1,6 +1,8 @@
 """Tests for Spark Declarative Pipeline discovery (dry-run parsing and discover_datasets_fn)."""
 
 import json
+import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +11,7 @@ from dagster_spark.components.spark_declarative_pipeline.discovery import (
     DuplicateDatasetNamesError,
     SparkPipelinesDryRunError,
     discover_datasets_fn,
+    discover_datasets_from_sources,
     discover_datasets_via_dry_run,
     extract_report,
     parse_dry_run_output_to_datasets,
@@ -29,6 +32,23 @@ def test_parse_dry_run_output_to_datasets_parses_json_report() -> None:
     assert datasets[0].name == "dataset_a"
     assert datasets[0].dataset_type == "table"
     assert datasets[1].name == "dataset_b"
+
+
+def test_parse_dry_run_output_to_datasets_filters_empty_inferred_deps() -> None:
+    """Empty or whitespace-only dependency names are excluded from inferred_deps to avoid empty AssetKey path components."""
+    mock_report = {
+        "datasets": [
+            {
+                "name": "dataset_a",
+                "type": "table",
+                "deps": ["valid_dep", "", "  ", "\t", "another_valid"],
+            },
+        ],
+    }
+    stdout = json.dumps(mock_report)
+    datasets = parse_dry_run_output_to_datasets(stdout)
+    assert len(datasets) == 1
+    assert datasets[0].inferred_deps == ["valid_dep", "another_valid"]
 
 
 def test_extract_report_returns_dry_run_report() -> None:
@@ -156,3 +176,148 @@ def test_discover_datasets_via_dry_run_uses_custom_cmd_and_extra_args() -> None:
         assert "--spec" in call_cmd
         assert "--output" in call_cmd
         assert "json" in call_cmd
+
+
+# ---- Real-world fixture tests: noisy Spark stdout with JSON or text ----
+
+NOISY_SPARK_STDOUT_WITH_JSON = """
+INFO: Building Spark session...
+INFO: JVM started.
+WARN: Some config key was deprecated.
+{"datasets": [{"name": "catalog.schema.table_a", "type": "table"}, {"name": "catalog.schema.table_b", "type": "materialized_view"}]}
+INFO: Session closed.
+"""
+
+NOISY_SPARK_STDOUT_BULLETED_TEXT = """
+INFO: Building Spark session...
+INFO: JVM started.
+- catalog.schema.table_a
+* catalog.schema.table_b
+1. catalog.schema.table_c
+INFO: Session closed.
+- Starting JVM...
+* Some other log line that is not a dataset
+"""
+
+NOISY_SPARK_STDOUT_DATASET_PREFIX = """
+INFO: Log line
+dataset: my_dataset
+dataset: another.dataset.name
+INFO: More logs
+"""
+
+
+def test_parse_dry_run_output_to_datasets_isolates_json_from_noisy_spark_stdout() -> None:
+    """parse_dry_run_output_to_datasets correctly extracts datasets from stdout that contains Spark INFO/WARN logs and a JSON block."""
+    datasets = parse_dry_run_output_to_datasets(NOISY_SPARK_STDOUT_WITH_JSON)
+    names = [d.name for d in datasets]
+    assert "catalog.schema.table_a" in names
+    assert "catalog.schema.table_b" in names
+    assert len(datasets) == 2
+    assert datasets[0].dataset_type == "table"
+    assert datasets[1].dataset_type == "materialized_view"
+
+
+def test_parse_dry_run_output_to_datasets_isolates_bulleted_text_from_noisy_spark_stdout() -> None:
+    """parse_dry_run_output_to_datasets (text fallback) extracts only valid dataset ids from bulleted lines, ignoring log-like lines."""
+    datasets = parse_dry_run_output_to_datasets(NOISY_SPARK_STDOUT_BULLETED_TEXT)
+    names = [d.name for d in datasets]
+    assert "catalog.schema.table_a" in names
+    assert "catalog.schema.table_b" in names
+    assert "catalog.schema.table_c" in names
+    # These should NOT be included (regex requires alphanumeric/underscore/dot only, no spaces)
+    assert "Starting JVM..." not in names
+    assert "Some other log line that is not a dataset" not in names
+    assert len(datasets) == 3
+
+
+def test_parse_dry_run_output_to_datasets_isolates_dataset_prefix_from_noisy_stdout() -> None:
+    """parse_dry_run_output_to_datasets (text fallback) extracts dataset: <id> lines with valid identifiers."""
+    datasets = parse_dry_run_output_to_datasets(NOISY_SPARK_STDOUT_DATASET_PREFIX)
+    names = [d.name for d in datasets]
+    assert "my_dataset" in names
+    assert "another.dataset.name" in names
+    assert len(datasets) == 2
+
+
+def test_extract_report_text_rejects_log_like_bullet_lines() -> None:
+    """Text fallback does not treat '- Starting JVM...' or similar as dataset names."""
+    stdout = "- Starting JVM...\n* Some log message with spaces\n1. Not a valid id with spaces"
+    report = extract_report(stdout)
+    # No line is a valid dataset id (alphanumeric, underscores, dots only); report may be None or empty.
+    if report is not None:
+        for d in report.datasets:
+            assert all(c.isalnum() or c in "_." for c in d.name), (
+                "Dataset names must be valid identifiers (no spaces)"
+            )
+    report2 = extract_report("- Starting JVM...\n* Foo bar")
+    if report2 is not None:
+        names = [d.name for d in report2.datasets]
+        assert "Starting JVM..." not in names
+        assert "Foo bar" not in names
+
+
+# ---- Unit tests for discover_datasets_from_sources ----
+
+
+def test_discover_datasets_from_sources_python_decorators() -> None:
+    """discover_datasets_from_sources finds @dp.table and @dp.materialized_view def names from .py files."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "pipeline.py").write_text(
+            """
+import dp
+
+@dp.table
+def my_table():
+    pass
+
+@dp.materialized_view
+def my_mv():
+    pass
+"""
+        )
+        result = discover_datasets_from_sources(root / "pipeline.py")
+    names = [d.name for d in result]
+    assert "my_table" in names
+    assert "my_mv" in names
+    assert len(result) == 2
+
+
+def test_discover_datasets_from_sources_sql_create_table() -> None:
+    """discover_datasets_from_sources finds CREATE STREAMING TABLE / CREATE TABLE names from .sql files."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "schema.sql").write_text(
+            """
+CREATE STREAMING TABLE IF NOT EXISTS catalog.schema.events;
+CREATE TABLE catalog.schema.dim_customer;
+"""
+        )
+        result = discover_datasets_from_sources(root / "schema.sql")
+    names = [d.name for d in result]
+    assert "catalog.schema.events" in names
+    assert "catalog.schema.dim_customer" in names
+    assert len(result) == 2
+
+
+def test_discover_datasets_from_sources_mixed_py_and_sql() -> None:
+    """discover_datasets_from_sources finds datasets from both .py and .sql under the pipeline spec directory."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "spec.yaml").write_text(
+            ""
+        )  # pipeline spec path must exist so parent is used as root
+        (root / "a.py").write_text(
+            """
+@dp.table
+def py_table():
+    pass
+"""
+        )
+        (root / "b.sql").write_text("CREATE TABLE sql_dataset;")
+        result = discover_datasets_from_sources(root / "spec.yaml")
+    names = [d.name for d in result]
+    assert "py_table" in names
+    assert "sql_dataset" in names
+    assert len(result) == 2
