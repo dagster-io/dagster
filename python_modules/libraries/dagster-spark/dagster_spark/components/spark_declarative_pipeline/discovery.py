@@ -13,9 +13,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from dagster import get_dagster_logger
-from dagster_shared import check  # type: ignore[reportMissingImports]
-from dagster_shared.record import record  # type: ignore[reportMissingImports]
-from dagster_shared.serdes import whitelist_for_serdes  # type: ignore[reportMissingImports]
+from dagster_shared import check
+from dagster_shared.record import record
+from dagster_shared.serdes import whitelist_for_serdes
 
 # Guardrail to prevent daemon hangs.
 DRY_RUN_TIMEOUT_SECONDS = 60
