@@ -237,7 +237,20 @@ def get_asset_graph_for_job(
         create_unexecutable_external_asset_from_assets_def,
     )
 
-    selected_keys = selection.resolve(parent_asset_graph)
+    try:
+        selected_keys = selection.resolve(parent_asset_graph)
+    except KeyError as e:
+
+        raise DagsterInvalidDefinitionError(
+            "Selected keys must be a subset of existing executable asset keys."
+            f" Invalid selected keys: {e.args}",
+        ) from e
+    except Exception as e:
+        raise DagsterInvalidDefinitionError(
+            f"Invalid asset selection: {selection}",
+        ) from e
+
+
     invalid_keys = selected_keys - parent_asset_graph.executable_asset_keys
     if invalid_keys:
         raise DagsterInvalidDefinitionError(
