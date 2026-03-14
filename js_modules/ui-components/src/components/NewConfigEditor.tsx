@@ -59,8 +59,8 @@ const performInitialPass = (
   performLint(editor);
 
   // update the contextual help based on the configSchema and content
-  const {context} = expandAutocompletionContextAtCursor(editor);
-  onHelpContextChange(context ? {type: context.closestMappingType} : null);
+  const {context, path} = expandAutocompletionContextAtCursor(editor);
+  onHelpContextChange(context ? {type: context.closestMappingType, path: path || []} : null);
 };
 
 const ConfigEditorStyle = createGlobalStyle`
@@ -99,6 +99,7 @@ const ConfigEditorStyle = createGlobalStyle`
 export type ConfigEditorHandle = {
   moveCursor: (line: number, ch: number) => void;
   moveCursorToPath: (path: string[]) => void;
+  insertValueAtPath: (path: string[], value: string) => void;
 };
 
 export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>((props, ref) => {
@@ -140,8 +141,93 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
       moveCursor(from.line, from.ch);
     };
 
-    return {moveCursor, moveCursorToPath};
-  }, [configCode]);
+    const insertValueAtPath = (path: string[], value: string) => {
+      if (!editor.current || path.length === 0) {
+        return;
+      }
+
+      try {
+        // Parse the current YAML config
+        const yamlDoc = yaml.parseDocument(configCode);
+
+        // Parse the default value to insert
+        const valueToInsert = yaml.parse(value);
+
+        // Ensure the document has a Map as root
+        if (!yamlDoc.contents) {
+          yamlDoc.contents = new yaml.YAMLMap() as any;
+        } else if (!(yamlDoc.contents instanceof yaml.YAMLMap)) {
+          // If root is not a map, we can't insert nested values
+          return;
+        }
+
+        // Navigate to the parent of the target path, creating intermediate nodes as needed
+        let current: any = yamlDoc.contents as any;
+        for (let i = 0; i < path.length - 1; i++) {
+          const key = path[i];
+          if (!key) {
+            continue;
+          }
+
+          // Ensure current is a YAMLMap
+          if (!(current instanceof yaml.YAMLMap)) {
+            return;
+          }
+
+          // Find or create the key at this level
+          let pair: any = current.items.find(
+            (item: any) => item.key?.value === key || item.key?.strValue === key,
+          );
+
+          if (!pair) {
+            // Create a new nested map for this key
+            const newMap = new yaml.YAMLMap();
+            pair = new yaml.Pair(new yaml.Scalar(key), newMap);
+            current.add(pair);
+          }
+
+          // If the value is not a map, we can't navigate further
+          if (!pair.value) {
+            pair.value = new yaml.YAMLMap();
+          } else if (!(pair.value instanceof yaml.YAMLMap)) {
+            // Value exists but is not a map, replace it
+            pair.value = new yaml.YAMLMap();
+          }
+          current = pair.value;
+        }
+
+        // Set the value at the target path
+        const lastKey = path[path.length - 1];
+        if (current instanceof yaml.YAMLMap && lastKey) {
+          // Check if key already exists
+          const existingPair = current.items.find(
+            (item: any) => item.key?.value === lastKey || item.key?.strValue === lastKey,
+          );
+
+          if (existingPair) {
+            // Update existing value
+            existingPair.value = valueToInsert;
+          } else {
+            // Add new key-value pair
+            const newPair = new yaml.Pair(new yaml.Scalar(lastKey), valueToInsert);
+            current.add(newPair);
+          }
+        }
+
+        // Update the editor with the new YAML
+        const newYaml = yamlDoc.toString();
+        editor.current.setValue(newYaml);
+        onConfigChange(newYaml);
+
+        // Move cursor to the inserted value
+        moveCursorToPath(path);
+      } catch (e) {
+        console.error('Failed to insert default value:', e);
+      }
+    };
+
+    return {moveCursor, moveCursorToPath, insertValueAtPath};
+  }, [configCode, onConfigChange]);
 
   const options = useMemo(() => {
     return {
@@ -191,8 +277,10 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
         if (editorInstance.getSelection().length) {
           onHelpContextChange(null);
         } else {
-          const {context} = expandAutocompletionContextAtCursor(editorInstance);
-          onHelpContextChange(context ? {type: context.closestMappingType} : null);
+          const {context, path} = expandAutocompletionContextAtCursor(editorInstance);
+          onHelpContextChange(
+            context ? {type: context.closestMappingType, path: path || []} : null,
+          );
         }
       },
       onBlur: (editorInstance: CodeMirror.Editor) => {

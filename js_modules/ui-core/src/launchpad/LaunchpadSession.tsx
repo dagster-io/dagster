@@ -865,6 +865,9 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                 <ConfigEditorHelp
                   context={editorHelpContext}
                   allInnerTypes={runConfigSchema?.allConfigTypes || []}
+                  onInsertDefaultValue={(path, defaultValue) => {
+                    editor.current?.insertValueAtPath(path, defaultValue);
+                  }}
                 />
               }
             />

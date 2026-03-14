@@ -8,17 +8,24 @@ import styles from './css/ConfigEditorHelp.module.css';
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
   allInnerTypes: TypeData[];
+  onInsertDefaultValue?: (path: string[], defaultValue: string) => void;
 }
 
 export const ConfigEditorHelp = memo(
-  ({context, allInnerTypes}: ConfigEditorHelpProps) => {
+  ({context, allInnerTypes, onInsertDefaultValue}: ConfigEditorHelpProps) => {
     if (!context) {
       return <div className={styles.container} />;
     }
     return (
       <div className={styles.container}>
         <div className={styles.configScrollWrap}>
-          <ConfigTypeSchema type={context.type} typesInScope={allInnerTypes} maxDepth={2} />
+          <ConfigTypeSchema
+            type={context.type}
+            typesInScope={allInnerTypes}
+            maxDepth={2}
+            contextPath={context.path}
+            onInsertDefaultValue={onInsertDefaultValue}
+          />
         </div>
         <div className={styles.autocompletionsNote}>
           Use Ctrl+Space to show auto-completions inline.
