@@ -22,6 +22,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
     OpExecutionContext,
+    PartitionsDefinition,
     RunConfig,
     ScheduleDefinition,
     TableColumn,
@@ -844,6 +845,41 @@ def _build_child_map(manifest: Mapping[str, Any]) -> Mapping[str, AbstractSet[st
         for upstream_unique_id in get_upstream_unique_ids(manifest, node):
             child_map[upstream_unique_id].add(unique_id)
     return child_map
+
+
+def _validate_no_mixed_partitions_defs(specs: Sequence[AssetSpec]) -> None:
+    """Raise DagsterInvalidDefinitionError if specs contain two or more distinct non-None partitions_defs.
+
+    dbt's execution model uses a single op with a single execution context and a single
+    partition_key. It cannot simultaneously satisfy two incompatible partition key formats within
+    the same op run, so mixed partitions definitions are not supported within a single
+    @dbt_assets decorator or DbtProjectComponent.
+    """
+    partitions_defs_by_key: dict[AssetKey, PartitionsDefinition] = {
+        spec.key: spec.partitions_def for spec in specs if spec.partitions_def is not None
+    }
+    unique_partitions_defs = set(partitions_defs_by_key.values())
+    if len(unique_partitions_defs) <= 1:
+        return
+
+    assets_by_partitions_def: dict[PartitionsDefinition, list[str]] = defaultdict(list)
+    for key, partitions_def in partitions_defs_by_key.items():
+        assets_by_partitions_def[partitions_def].append(key.to_user_string())
+
+    details = "\n".join(
+        f"  {partitions_def!r}: {asset_keys}"
+        for partitions_def, asset_keys in assets_by_partitions_def.items()
+    )
+    raise DagsterInvalidDefinitionError(
+        "dbt assets cannot include assets with more than one distinct partitions definition."
+        " dbt's execution model uses a single op context with a single partition key, which"
+        " cannot simultaneously satisfy incompatible partition key formats.\n\n"
+        f"Detected {len(unique_partitions_defs)} distinct partitions definitions:\n{details}\n\n"
+        "To resolve this, split the assets into separate @dbt_assets decorators or"
+        " DbtProjectComponent instances — one per partitions definition. When using"
+        " DbtProjectComponent, set a unique `op.name` on each component to avoid op-name"
+        " collisions."
+    )
 
 
 def build_dbt_specs(

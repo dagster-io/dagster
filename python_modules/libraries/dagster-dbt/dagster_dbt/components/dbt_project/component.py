@@ -25,6 +25,7 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
+    _validate_no_mixed_partitions_defs,
     build_dbt_specs,
     get_node,
 )
@@ -211,9 +212,13 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     ] = True
 
     @property
+    def defs_state_discriminator(self) -> str:
+        return self._project_manager.defs_state_discriminator
+
+    @property
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig(
-            key=f"DbtProjectComponent[{self._project_manager.defs_state_discriminator}]",
+            key=f"DbtProjectComponent[{self.defs_state_discriminator}]",
             management_type=DefsStateManagementType.LOCAL_FILESYSTEM,
             refresh_if_dev=self.prepare_if_dev,
         )
@@ -239,6 +244,40 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             selector=self.selector,
             op_name=project.name,
         )
+
+    def validate_no_op_name_collision(self, context: dg.ComponentLoadContext) -> None:
+        """Raise DagsterInvalidDefinitionError if a sibling DbtProjectComponent targets the
+        same dbt project and also uses the default op name.
+
+        When two components share the same dbt project but select different model subsets,
+        the default op name (project.name) is identical for both. This causes build_node_deps
+        to silently rename one op with a ``_2`` suffix, breaking cross-component dependency
+        wiring.
+        """
+        has_explicit_name = self.op is not None and self.op.name is not None
+        if has_explicit_name:
+            return
+
+        my_discriminator = self.defs_state_discriminator
+
+        siblings = context.component_tree.get_all_components(type(self))
+        for sibling in siblings:
+            if sibling is self:
+                continue
+            sibling_has_explicit_name = sibling.op is not None and sibling.op.name is not None
+            if sibling_has_explicit_name:
+                continue
+            if sibling.defs_state_discriminator != my_discriminator:
+                continue
+
+            raise dg.DagsterInvalidDefinitionError(
+                f"Two DbtProjectComponent instances target the same dbt project"
+                f" ({my_discriminator!r}) and neither sets an explicit op name. This causes"
+                f" op-name collisions that break cross-component dependency wiring.\n\n"
+                f"Set a unique `op.name` on each component in your defs.yaml:\n\n"
+                f"    op:\n"
+                f"      name: {my_discriminator}_<unique_suffix>"
+            )
 
     @cached_property
     def translator(self) -> "DagsterDbtTranslator":
@@ -359,7 +398,12 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             project=project,
             io_manager_key=None,
         )
+
+        _validate_no_mixed_partitions_defs(asset_specs)
+
         op_spec = self._get_op_spec(project)
+
+        self.validate_no_op_name_collision(context)
 
         @dg.multi_asset(
             specs=asset_specs,
