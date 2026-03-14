@@ -5,6 +5,7 @@ import tempfile
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+from unittest import mock
 
 import dagster as dg
 import pytest
@@ -311,6 +312,156 @@ def test_concurrency_reconcile():
             assert _get_slot_count(conn, "bar") == 3
             assert _get_limit_row_num(conn, "foo") == 5
             assert _get_limit_row_num(conn, "bar") == 3
+
+
+def test_initialize_concurrency_limit_to_default_legacy_path():
+    """Regression test for issue #33054: pool limits causing postgres too many connections.
+
+    When has_default_pool_limit_col=False (legacy schema before the using_default_limit column),
+    the buggy code called _allocate_concurrency_slots(conn, ...) OUTSIDE the
+    'with self.index_transaction() as conn:' block — meaning conn was already closed.
+
+    With NullPool (postgres default), each call opens a fresh DBAPI connection and closes it when
+    the context exits. Using the stale conn after exit raises ResourceClosedError and leaks
+    connections, causing postgres to exhaust max_connections under concurrent load.
+
+    Before the fix: initialize_concurrency_limit_to_default raises
+        sqlalchemy.exc.ResourceClosedError: This Connection is closed
+    After the fix: returns True and slot_count == default_limit.
+    """
+    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
+        with dg.instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": tmpdir_path},
+                },
+                "concurrency": {
+                    "pools": {"granularity": "op", "default_limit": 5},
+                },
+            }
+        ) as instance:
+            storage = instance.event_log_storage
+            assert instance.global_op_concurrency_default_limit == 5
+
+            # Force the legacy code path where has_default_pool_limit_col=False.
+            # This simulates an older DB schema (before the using_default_limit column was added).
+            # PropertyMock installs a data descriptor (defines __set__) on the class, which takes
+            # precedence over instance __dict__ even if the cached_property was already warmed,
+            # since data descriptors have higher priority than instance __dict__ in Python's MRO.
+            with mock.patch.object(
+                type(storage),
+                "has_default_pool_limit_col",
+                new_callable=mock.PropertyMock,
+                return_value=False,
+            ):
+                # First call: fresh insert path (INSERT succeeds, slots allocated).
+                # Before the fix, this raises ResourceClosedError because _allocate_concurrency_slots
+                # was called on a conn that had already exited its context manager.
+                result = storage.initialize_concurrency_limit_to_default("my_key")
+                assert result is True
+
+                # Second call: idempotent re-initialization path (INSERT raises IntegrityError,
+                # caught with pass, then _allocate_concurrency_slots on the same conn).
+                result2 = storage.initialize_concurrency_limit_to_default("my_key")
+                assert result2 is True
+
+            info = storage.get_concurrency_info("my_key")
+            assert info.slot_count == 5, (
+                f"Expected 5 slots to be allocated, got {info.slot_count}. "
+                "_allocate_concurrency_slots was likely called on a closed connection "
+                "outside the transaction context, causing the slot allocation to fail."
+            )
+
+
+def test_initialize_concurrency_limit_to_default_legacy_path_no_default():
+    """Verify the legacy path returns False and allocates nothing when default_limit is None.
+
+    When no default pool limit is configured, the legacy path must return False early
+    and must NOT call _allocate_concurrency_slots (which would error on a missing conn).
+    """
+    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
+        with dg.instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": tmpdir_path},
+                },
+                # No default_limit configured — global_op_concurrency_default_limit is None
+            }
+        ) as instance:
+            storage = instance.event_log_storage
+            assert instance.global_op_concurrency_default_limit is None
+
+            with mock.patch.object(
+                type(storage),
+                "has_default_pool_limit_col",
+                new_callable=mock.PropertyMock,
+                return_value=False,
+            ):
+                result = storage.initialize_concurrency_limit_to_default("my_key")
+
+            assert result is False
+            # No slots should have been allocated
+            assert storage.get_concurrency_info("my_key").slot_count == 0
+
+
+def test_initialize_concurrency_limit_to_default_modern_path_reinit():
+    """Regression test: modern path (has_default_pool_limit_col=True) re-initialization.
+
+    When the key already exists in ConcurrencyLimitsTable, the INSERT raises IntegrityError.
+    Without a SAVEPOINT wrapping the INSERT, Postgres marks the outer READ COMMITTED transaction
+    as aborted, causing the subsequent UPDATE and _allocate_concurrency_slots to fail with
+    InFailedSqlTransaction. The begin_nested() fix rolls back only the savepoint, leaving the
+    outer transaction valid.
+    """
+    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
+        with dg.instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": tmpdir_path},
+                },
+                "concurrency": {
+                    "pools": {"granularity": "op", "default_limit": 3},
+                },
+            }
+        ) as instance:
+            storage = instance.event_log_storage
+            assert instance.global_op_concurrency_default_limit == 3
+            # has_default_pool_limit_col=True is the real schema — no mock needed
+
+            # First call: INSERT succeeds, 3 slots allocated
+            result1 = storage.initialize_concurrency_limit_to_default("my_key")
+            assert result1 is True
+            assert storage.get_concurrency_info("my_key").slot_count == 3
+
+            # Bump default to 5 — second call triggers IntegrityError (key exists) → UPDATE
+            # Without begin_nested(), Postgres aborts the outer transaction and UPDATE + slot
+            # allocation both fail silently or raise InFailedSqlTransaction.
+            with dg.instance_for_test(
+                overrides={
+                    "event_log_storage": {
+                        "module": "dagster.utils.test",
+                        "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                        "config": {"base_dir": tmpdir_path},
+                    },
+                    "concurrency": {
+                        "pools": {"granularity": "op", "default_limit": 5},
+                    },
+                }
+            ) as instance2:
+                storage2 = instance2.event_log_storage
+                result2 = storage2.initialize_concurrency_limit_to_default("my_key")
+                assert result2 is True
+                assert storage2.get_concurrency_info("my_key").slot_count == 5, (
+                    "Slot count should have grown from 3 to 5 after re-initialization. "
+                    "If still 3, the UPDATE or _allocate_concurrency_slots failed silently "
+                    "due to InFailedSqlTransaction on an aborted outer transaction."
+                )
 
 
 def test_run_stats():
