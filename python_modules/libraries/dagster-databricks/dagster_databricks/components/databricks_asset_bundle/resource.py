@@ -80,23 +80,28 @@ class DatabricksWorkspace(ConfigurableResource):
             data: dict[str, Any] = {}
 
             while True:
+                list_wait: int = 0
                 for list_attempt in range(MAX_RETRIES + 1):
+                    list_wait = 0
                     async with session.get(list_url, params=params) as resp:
                         if resp.status == RATE_LIMIT_STATUS_CODE:
                             if list_attempt >= MAX_RETRIES:
                                 resp.raise_for_status()
                             retry_after = resp.headers.get("Retry-After")
                             try:
-                                list_wait: int | None = int(retry_after) if retry_after else None
+                                list_wait = (
+                                    int(retry_after) if retry_after else min(2**list_attempt, 30)
+                                )
                             except (ValueError, TypeError):
-                                list_wait = None
-                            await asyncio.sleep(
-                                list_wait if list_wait is not None else min(2**list_attempt, 30)
-                            )
-                            continue
-                        resp.raise_for_status()
-                        data = await resp.json()
-                        break
+                                list_wait = min(2**list_attempt, 30)
+                        else:
+                            resp.raise_for_status()
+                            data = await resp.json()
+                    # Release response context before sleeping so connections return to pool
+                    if list_wait:
+                        await asyncio.sleep(list_wait)
+                        continue
+                    break
 
                 all_jobs_lite.extend(data.get("jobs", []))
 
@@ -137,7 +142,7 @@ class DatabricksWorkspace(ConfigurableResource):
                                     wait = int(retry_after) if retry_after else min(2**retries, 30)
                                 except (ValueError, TypeError):
                                     wait = min(2**retries, 30)
-                            elif resp.status != 200:
+                            elif not resp.ok:
                                 resp.raise_for_status()
                             else:
                                 return await resp.json()
