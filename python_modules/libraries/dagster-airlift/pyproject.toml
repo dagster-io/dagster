@@ -73,7 +73,6 @@ test = [
     "pendulum>=3.0.0; python_version >= '3.12'",
     "flask-session<0.6.0",
     "connexion<3.0.0",
-    "fastapi<0.118",
     "click",
     "structlog",
 ]
