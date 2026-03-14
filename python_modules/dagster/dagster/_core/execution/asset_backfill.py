@@ -68,6 +68,7 @@ from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.backfill_policy import BackfillPolicy
     from dagster._core.execution.backfill import PartitionBackfill
 
 
@@ -651,6 +652,11 @@ def create_asset_backfill_data_from_asset_partitions(
         all_partitions=False,
         backfill_start_timestamp=backfill_timestamp,
     )
+
+
+def _get_max_partitions_per_run(backfill_policy: Optional["BackfillPolicy"]) -> Optional[int]:
+    # asdume no backfill policy means BackfillPoolciy.multi_run(1)
+    return backfill_policy.max_partitions_per_run if backfill_policy else 1
 
 
 def _get_unloadable_location_names(
@@ -1835,14 +1841,11 @@ def _should_backfill_atomic_asset_subset_unit(
                 self_dependent_node = asset_graph.get(asset_key)
                 # ensure that we don't produce more than max_partitions_per_run partitions
                 # if a backfill policy is set
-                if (
-                    self_dependent_node.backfill_policy is not None
-                    and self_dependent_node.backfill_policy.max_partitions_per_run is not None
-                ):
+                num_allowed_partitions = _get_max_partitions_per_run(
+                    self_dependent_node.backfill_policy
+                )
+                if num_allowed_partitions is not None:
                     # only the first N partitions can be requested
-                    num_allowed_partitions = (
-                        self_dependent_node.backfill_policy.max_partitions_per_run
-                    )
                     # TODO add a method for paginating through the keys in order
                     # and returning the first N instead of listing all of them
                     # (can't use expensively_compute_asset_partitions because it returns
@@ -1962,7 +1965,9 @@ def _get_cant_run_because_of_parent_reason(
             and partition_mapping.end_offset == 0
         )
     )
-    if parent_node.backfill_policy != candidate_node.backfill_policy:
+    if _get_max_partitions_per_run(parent_node.backfill_policy) != _get_max_partitions_per_run(
+        candidate_node.backfill_policy
+    ):
         return f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different backfill policies so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key} is materialized."
 
     if (
@@ -2001,14 +2006,11 @@ def _get_cant_run_because_of_parent_reason(
         return "Self-dependant assets cannot be materialized in the same run as other assets."
 
     if is_self_dependency:
-        if parent_node.backfill_policy is None:
-            required_parent_subset = parent_subset
-        else:
-            # with a self dependancy, all of its parent partitions need to either have already
-            # been materialized or be in the candidate subset
-            required_parent_subset = parent_subset.compute_difference(
-                entity_subset_to_filter
-            ).compute_difference(parent_materialized_subset)
+        # with a self dependancy, all of its parent partitions need to either have already
+        # been materialized or be in the candidate subset
+        required_parent_subset = parent_subset.compute_difference(
+            entity_subset_to_filter
+        ).compute_difference(parent_materialized_subset)
 
         if not required_parent_subset.is_empty:
             return f"Waiting for the following parent partitions of a self-dependant asset to materialize: {_partition_subset_str(required_parent_subset.get_internal_subset_value(), check.not_none(parent_node.partitions_def))}"
@@ -2022,26 +2024,25 @@ def _get_cant_run_because_of_parent_reason(
         # if there is not a simple mapping, we can only materialize this asset with its
         # parent if...
         or (
-            # there is a backfill policy for the parent
-            parent_node.backfill_policy is not None
             # the same subset of parents is targeted as the child
-            and parent_target_subset.value == candidate_target_subset.value
+            parent_target_subset.value == candidate_target_subset.value
             and (
                 # there is no limit on the size of a single run or...
-                parent_node.backfill_policy.max_partitions_per_run is None
+                _get_max_partitions_per_run(parent_node.backfill_policy) is None
                 # a single run can materialize all requested parent partitions
-                or parent_node.backfill_policy.max_partitions_per_run
+                or _get_max_partitions_per_run(parent_node.backfill_policy())
                 > num_parent_partitions_being_requested_this_tick
             )
             # all targeted parents are being requested this tick
             and num_parent_partitions_being_requested_this_tick == parent_target_subset.size
         )
     ):
+        backfill_policy_size_limit = _get_max_partitions_per_run(parent_node.backfill_policy)
         failed_reason = (
             f"partition mapping between {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} is not simple and "
             f"{parent_node.key.to_user_string()} does not meet requirements of: targeting the same partitions as "
-            f"{candidate_node.key.to_user_string()}, have all of its partitions requested in this iteration, having "
-            "a backfill policy, and that backfill policy size limit is not exceeded by adding "
+            f"{candidate_node.key.to_user_string()}, having all of its partitions requested in this iteration,  "
+            f"and its backfill policy size limit ({backfill_policy_size_limit if backfill_policy_size_limit is not None else 'no limit'}) is not exceeded by adding "
             f"{candidate_node.key.to_user_string()} to the run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
         )
         return failed_reason
