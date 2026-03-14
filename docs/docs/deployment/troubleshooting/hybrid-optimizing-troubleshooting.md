@@ -71,10 +71,10 @@ You can configure TCP keepalive settings to prevent NAT gateways and proxies fro
 # values.yaml
 dagsterCloud:
   socketOptions:
-    - ["SOL_SOCKET", "SO_KEEPALIVE", 1]
-    - ["IPPROTO_TCP", "TCP_KEEPIDLE", 11]
-    - ["IPPROTO_TCP", "TCP_KEEPINTVL", 7]
-    - ["IPPROTO_TCP", "TCP_KEEPCNT", 5]
+    - ['SOL_SOCKET', 'SO_KEEPALIVE', 1]
+    - ['IPPROTO_TCP', 'TCP_KEEPIDLE', 11]
+    - ['IPPROTO_TCP', 'TCP_KEEPINTVL', 7]
+    - ['IPPROTO_TCP', 'TCP_KEEPCNT', 5]
 ```
 
 ```shell
@@ -84,6 +84,7 @@ helm --namespace dagster-cloud upgrade agent \
 ```
 
 These settings configure the TCP stack to:
+
 - Enable keepalive probes on connections (`SO_KEEPALIVE`)
 - Send the first keepalive probe after 11 seconds of idle time (`TCP_KEEPIDLE`)
 - Send subsequent probes every 7 seconds (`TCP_KEEPINTVL`)
