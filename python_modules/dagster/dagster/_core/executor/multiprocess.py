@@ -119,6 +119,7 @@ class MultiprocessExecutor(Executor):
         tag_concurrency_limits: list[dict[str, Any]] | None = None,
         start_method: str | None = None,
         explicit_forkserver_preload: Sequence[str] | None = None,
+        explicit_spawn_preload: Sequence[str] | None = None,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
@@ -149,6 +150,7 @@ class MultiprocessExecutor(Executor):
             )
         self._start_method = start_method
         self._explicit_forkserver_preload = explicit_forkserver_preload
+        self._explicit_spawn_preload = explicit_spawn_preload
 
     @property
     def retries(self) -> RetryMode:
@@ -263,6 +265,7 @@ class MultiprocessExecutor(Executor):
                                 self.retries,
                                 active_execution.get_known_state(),
                                 execution_plan.repository_load_data,
+                                self._explicit_spawn_preload,
                             )
 
                     # process active iterators
@@ -404,6 +407,7 @@ def execute_step_out_of_process(
     retries: RetryMode,
     known_state: KnownExecutionState,
     repository_load_data: RepositoryLoadData | None,
+    preload_modules: Sequence[str] | None = None,
 ) -> Iterator[DagsterEvent | None]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
@@ -423,7 +427,7 @@ def execute_step_out_of_process(
         metadata={},
     )
 
-    for ret in execute_child_process_command(multiproc_ctx, command):
+    for ret in execute_child_process_command(multiproc_ctx, command, preload_modules):
         if ret is None or isinstance(ret, DagsterEvent):
             yield ret
         elif isinstance(ret, ChildProcessEvent):

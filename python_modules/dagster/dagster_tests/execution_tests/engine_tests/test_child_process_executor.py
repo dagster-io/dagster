@@ -1,4 +1,6 @@
+import logging
 import os
+import sys
 import time
 from multiprocessing import get_context
 from multiprocessing.process import BaseProcess
@@ -118,3 +120,56 @@ def test_child_process_segfault():
 @pytest.mark.skip("too long")
 def test_long_running_command():
     list(execute_child_process_command(multiprocessing_ctx, LongRunningCommand()))
+
+
+# --- preload_modules regression tests (issue #33535) ---
+
+
+class ModuleImportedCheckCommand(ChildProcessCommand):
+    """Yields True if the given module is already in sys.modules when execute() is called."""
+
+    def __init__(self, module_name: str):
+        self.module_name = module_name
+
+    def execute(self):
+        yield self.module_name in sys.modules
+
+
+def _get_results(command, preload_modules=None):
+    return list(
+        filter(
+            lambda x: x is not None and not isinstance(x, (ChildProcessEvent, BaseProcess)),
+            execute_child_process_command(multiprocessing_ctx, command, preload_modules),
+        )
+    )
+
+
+def test_preload_modules_imports_before_execute():
+    # "colorsys" is not imported by the multiprocessing spawn bootstrap, so it will only
+    # be in sys.modules if preload_modules explicitly causes it to be imported first.
+    results = _get_results(
+        ModuleImportedCheckCommand("colorsys"),
+        preload_modules=["colorsys"],
+    )
+    assert results == [True]
+
+
+def test_preload_modules_none_is_noop():
+    # Without preload, "colorsys" won't be in sys.modules at execute() time in a fresh
+    # spawn'd child process.
+    results = _get_results(
+        ModuleImportedCheckCommand("colorsys"),
+        preload_modules=None,
+    )
+    assert results == [False]
+
+
+def test_preload_modules_bad_module_does_not_crash():
+    # caplog cannot capture logs from spawned child processes, so we only verify
+    # that the command still completes successfully despite the bad preload entry.
+    results = _get_results(
+        DoubleAStringChildProcessCommand("ok"),
+        preload_modules=["__nonexistent_module_xyz__"],
+    )
+    # The command still ran successfully despite the bad preload
+    assert results == ["okok"]
