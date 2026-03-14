@@ -187,6 +187,7 @@ dagster-qdrant==0.0.3
 -e python_modules/libraries/dagster-snowflake-pandas
 -e python_modules/libraries/dagster-snowflake-polars
 -e python_modules/libraries/dagster-snowflake-pyspark
+-e python_modules/libraries/dagster-soda
 -e python_modules/libraries/dagster-spark
 -e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/libraries/dagster-ssh
