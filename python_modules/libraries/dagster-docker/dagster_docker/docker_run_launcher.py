@@ -1,4 +1,5 @@
 import json
+import time
 from collections.abc import Mapping
 from typing import Any
 
@@ -23,6 +24,22 @@ from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
+
+
+def _pull_image_with_retry(
+    client: "docker.DockerClient",
+    docker_image: str,
+    auth_config: "dict | None",
+    max_attempts: int = 3,
+) -> None:
+    for attempt in range(max_attempts):
+        try:
+            client.images.pull(docker_image, auth_config=auth_config)
+            return
+        except docker.errors.APIError:  # pyright: ignore[reportAttributeAccessIssue]
+            if attempt == max_attempts - 1:
+                raise
+            time.sleep(2**attempt)  # 1s, 2s, 4s backoff
 
 
 class DockerRunLauncher(RunLauncher, ConfigurableClass):
@@ -115,6 +132,15 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         labels["dagster/run_id"] = run.run_id
         labels["dagster/job_name"] = run.job_name
 
+        auth_config = (
+            {
+                "username": container_context.registry["username"],
+                "password": container_context.registry["password"],
+            }
+            if container_context.registry
+            else None
+        )
+
         try:
             container = client.containers.create(
                 image=docker_image,
@@ -127,7 +153,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
-            client.images.pull(docker_image)
+            _pull_image_with_retry(client, docker_image, auth_config)
             container = client.containers.create(
                 image=docker_image,
                 command=command,
