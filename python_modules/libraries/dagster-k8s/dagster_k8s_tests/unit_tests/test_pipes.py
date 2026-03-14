@@ -538,3 +538,58 @@ base_pod_spec:
     defs = c.build_defs(ComponentTree.for_test().load_context)
     assert defs
     assert len(defs.resolve_all_asset_specs()) == 2
+
+
+
+def test_run_ignores_404_on_pod_cleanup():
+    """When K8s kills a pod (node eviction, spot preemption, OOMKill) before
+    Dagster's finally block runs, delete_namespaced_pod raises 404. This should
+    be silently ignored so the original DagsterK8sError from wait_for_pod
+    propagates cleanly to the caller (e.g. to trigger a Dagster RetryPolicy).
+
+    Without the fix, the 404 ApiException replaces the DagsterK8sError in the
+    exception chain, making it harder for callers to handle the failure correctly.
+    """
+    import kubernetes
+    from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
+
+    not_found = kubernetes.client.exceptions.ApiException(status=404)
+    not_found.status = 404
+
+    mock_k8s_client = mock.MagicMock(spec=DagsterKubernetesClient)
+    mock_k8s_client.core_api.delete_namespaced_pod.side_effect = not_found
+    mock_k8s_client.wait_for_pod.side_effect = DagsterK8sError(
+        'Pod "dagster-abc123-run-batch" was unexpectedly killed'
+    )
+
+    pipes_client = PipesK8sClient()
+
+    with (
+        mock.patch.object(pipes_client, "_load_k8s_config"),
+        mock.patch(
+            "dagster_k8s.pipes.DagsterKubernetesClient.production_client",
+            return_value=mock_k8s_client,
+        ),
+        mock.patch("dagster_k8s.pipes.open_pipes_session") as mock_session,
+        mock.patch("dagster_k8s.pipes.detect_current_namespace", return_value="default"),
+        mock.patch("dagster_k8s.pipes.get_pod_name", return_value="dagster-abc123-run-batch"),
+        mock.patch.object(
+            pipes_client,
+            "consume_pod_logs",
+            return_value=mock.MagicMock(
+                __enter__=lambda s: s,
+                __exit__=mock.MagicMock(return_value=False),
+            ),
+        ),
+        pytest.raises(DagsterK8sError, match="unexpectedly killed"),
+    ):
+        mock_session.return_value.__enter__ = mock.MagicMock(return_value=mock.MagicMock())
+        mock_session.return_value.__exit__ = mock.MagicMock(return_value=False)
+        mock_context = mock.MagicMock()
+        mock_context.run_id = "abc123"
+        pipes_client.run(context=mock_context, image="test-image:latest")
+
+    # Confirm cleanup was attempted (delete was called once)
+    mock_k8s_client.core_api.delete_namespaced_pod.assert_called_once_with(
+        "dagster-abc123-run-batch", "default"
+    )
