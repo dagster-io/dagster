@@ -1,5 +1,16 @@
+import collections.abc
 import sys
-from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeVar, Union, cast, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Generic,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
 
 from pydantic import Field
 from typing_extensions import Self, dataclass_transform
@@ -101,6 +112,36 @@ class BaseConfigMeta(ModelMetaclass):  # type: ignore
         return super().__new__(cls, name, bases, namespaces, **kwargs)
 
 
+def _get_sequence_inner_type_for_metaclass(annotation: Any) -> type | None:
+    """Returns the inner type if annotation is list[R], tuple[R, ...], or Sequence[R]
+    where R is a resource type, using late-bound types for metaclass-time checking.
+    """
+    origin = get_origin(annotation)
+    if origin not in (list, tuple, collections.abc.Sequence):
+        return None
+
+    args = get_args(annotation)
+    if not args:
+        return None
+
+    if origin is tuple:
+        if len(args) != 2 or args[1] is not Ellipsis:
+            return None
+        inner = args[0]
+    else:
+        inner = args[0]
+
+    if safe_is_subclass(inner, LateBoundTypesForResourceTypeChecking.get_resource_type()):
+        return inner
+
+    return None
+
+
+def _is_sequence_of_resource_annotation(annotation: Any) -> bool:
+    """Returns True if annotation is a sequence of resource types at metaclass time."""
+    return _get_sequence_inner_type_for_metaclass(annotation) is not None
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class BaseResourceMeta(BaseConfigMeta):
     """Custom metaclass for Resource and PartialResource. This metaclass is responsible for
@@ -163,6 +204,19 @@ class BaseResourceMeta(BaseConfigMeta):
                     namespaces[field] = FieldInfo(
                         union_mode="left_to_right", annotation=annotations[field]
                     )
+                elif _is_sequence_of_resource_annotation(annotations[field]):
+                    # If the annotation is a sequence of resources (list[R], tuple[R, ...],
+                    # Sequence[R]), transform the inner type to accept PartialResource as well.
+                    inner_type = _get_sequence_inner_type_for_metaclass(annotations[field])
+                    assert inner_type is not None
+                    new_inner = Annotated[
+                        inner_type
+                        | LateBoundTypesForResourceTypeChecking.get_partial_resource_type(
+                            inner_type
+                        ),
+                        "resource_dependency",
+                    ]
+                    annotations[field] = list[new_inner]
 
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces, **kwargs)
