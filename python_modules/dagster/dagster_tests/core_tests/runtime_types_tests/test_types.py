@@ -140,6 +140,7 @@ def test_input_types_succeed_in_job():
     assert result.success
 
     type_check_data = _type_check_data_for_input(result, op_name="take_num", input_name="num")
+    assert type_check_data is not None
     assert type_check_data.success
 
 
@@ -187,6 +188,7 @@ def test_input_types_fail_in_job():
     assert not result.success
 
     type_check_data = _type_check_data_for_input(result, op_name="take_string", input_name="string")
+    assert type_check_data is not None
     assert not type_check_data.success
     assert type_check_data.description == 'Value "1" of python type "int" must be a string.'
 
