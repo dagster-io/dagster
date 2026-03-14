@@ -21,6 +21,7 @@ from dagster._core.definitions.partitions.definition import (
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
+from dagster._core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injected, Model, Resolver
@@ -145,6 +146,30 @@ def resolve_backfill_policy(
     raise ValueError(f"Invalid backfill policy: {backfill_policy}")
 
 
+class RetryPolicyModel(Resolvable, Model):
+    """Model for configuring retry policy."""
+
+    max_retries: int = 1
+    delay: Optional[Union[float, int]] = None
+    backoff: Optional[Backoff] = None
+    jitter: Optional[Jitter] = None
+
+
+def resolve_retry_policy(
+    context: ResolutionContext, retry_policy: Optional[RetryPolicyModel]
+) -> Optional[RetryPolicy]:
+    """Resolve a RetryPolicyModel to a RetryPolicy instance."""
+    if retry_policy is None:
+        return None
+
+    return RetryPolicy(
+        max_retries=retry_policy.max_retries,
+        delay=retry_policy.delay,
+        backoff=retry_policy.backoff,
+        jitter=retry_policy.jitter,
+    )
+
+
 class OpSpec(Model, Resolvable):
     name: str | None = None
     tags: dict[str, Any] | None = None
@@ -156,6 +181,10 @@ class OpSpec(Model, Resolvable):
             resolve_backfill_policy,
             model_field_type=SingleRunBackfillPolicyModel | MultiRunBackfillPolicyModel,
         ),
+    ] = None
+    retry_policy: Annotated[
+        Optional[RetryPolicy],
+        Resolver(resolve_retry_policy, model_field_type=RetryPolicyModel),
     ] = None
 
 
