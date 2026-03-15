@@ -197,7 +197,7 @@ export const AssetEventMetadataEntriesTable = ({
       )}
       {view === 'table' ? (
         <AssetEventMetadataScrollContainer>
-          <StyledTableWithHeader>
+          <StyledMetadataEntriesTable>
             {showHeader && (
               <thead>
                 <tr>
@@ -235,7 +235,7 @@ export const AssetEventMetadataEntriesTable = ({
                         </Tooltip>
                       </td>
                     )}
-                    <td>
+                    <td data-value-cell>
                       <Mono>
                         <MetadataEntry entry={entry} expandSmallValues={true} />
                       </Mono>
@@ -255,7 +255,7 @@ export const AssetEventMetadataEntriesTable = ({
                   </tr>
                 ))}
             </tbody>
-          </StyledTableWithHeader>
+          </StyledMetadataEntriesTable>
           {displayedCount < filteredRows.length ? (
             <Box padding={{vertical: 8}}>
               <Button onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
@@ -333,6 +333,20 @@ export const StyledTableWithHeader = styled.table`
       word-wrap: break-word;
       width: 25%;
     }
+  }
+`;
+
+// table-layout: fixed prevents the value column from growing based on content.
+// overflow: clip on the value cell caps its height so the outer table row doesn't
+// expand alongside the inner MetadataEntryScrollWrapper, which would produce a duplicate scrollbar.
+const StyledMetadataEntriesTable = styled(StyledTableWithHeader)`
+  table-layout: fixed;
+
+  & > tbody > tr > td[data-value-cell] {
+    width: 40%;
+    max-width: 500px;
+    max-height: 280px;
+    overflow: clip;
   }
 `;
 
