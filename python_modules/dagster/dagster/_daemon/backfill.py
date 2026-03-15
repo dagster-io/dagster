@@ -15,6 +15,7 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
+    DagsterCodeLocationNotFoundError,
     DagsterRunAlreadyExists,
     DagsterUserCodeUnreachableError,
 )
@@ -225,6 +226,31 @@ def execute_backfill_iteration_with_instigation_logger(
                     instance.update_backfill(
                         backfill.with_failure_count(backfill.failure_count + 1)
                     )
+            elif (
+                not backfill.is_asset_backfill
+                and backfill.status == BulkActionStatus.REQUESTED
+                and isinstance(
+                    e,
+                    (
+                        DagsterUserCodeUnreachableError,
+                        DagsterCodeLocationLoadError,
+                        DagsterCodeLocationNotFoundError,
+                    ),
+                )
+            ):
+                # Job backfills should also retry transiently when the code server is unreachable,
+                # rather than permanently failing. The daemon will retry on the next tick.
+                try:
+                    raise DagsterUserCodeUnreachableError(
+                        "Unable to reach the code server. Backfill will resume once the code server is available."
+                    ) from e
+                except:
+                    error_info = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=backfill_logger,
+                        log_message=f"Job backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
+                    )
+                instance.update_backfill(backfill.with_error(error_info))
             else:
                 error_info = DaemonErrorCapture.process_exception(
                     sys.exc_info(),
