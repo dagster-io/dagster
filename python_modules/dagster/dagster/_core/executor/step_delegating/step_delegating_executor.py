@@ -383,7 +383,7 @@ class StepDelegatingExecutor(Executor):
                                                 of_type={DagsterEventType.STEP_SUCCESS, DagsterEventType.STEP_UP_FOR_RETRY},
                                             ).records
                                         )
-                                        if step_already_succeeded:
+                                        if step_already_handled:
                                             continue
 
                                         health_check_error = SerializableErrorInfo(
