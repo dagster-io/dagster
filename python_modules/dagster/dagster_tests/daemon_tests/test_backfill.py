@@ -4245,3 +4245,57 @@ def test_threaded_submit_backfill(
     runs = instance.get_runs()
     partitions = {run.tags[PARTITION_NAME_TAG] for run in runs}
     assert partitions == {"one", "two", "three"}
+
+
+def test_job_backfill_retries_on_unreachable_code_location(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    unloadable_location_workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    """Job backfills should stay in REQUESTED state (not move to FAILING) when the code location
+    is temporarily unreachable. This mirrors the retry behavior that already exists for asset
+    backfills (see test_unloadable_backfill_retry for the asset backfill equivalent).
+    """
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="job_retry_backfill",
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    # First iteration with unreachable code location — backfill should stay REQUESTED, not FAILING
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+    backfill = instance.get_backfill("job_retry_backfill")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED, (
+        "Job backfill should remain REQUESTED when code location is transiently unreachable"
+    )
+    assert instance.get_runs_count() == 0
+
+    # Second iteration still unreachable — still stays REQUESTED
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+    backfill = instance.get_backfill("job_retry_backfill")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert instance.get_runs_count() == 0
+
+    # Once the code location is reachable again, backfill proceeds normally
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
