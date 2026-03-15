@@ -374,13 +374,13 @@ class StepDelegatingExecutor(Executor):
                                         # _pop_events call will pick up STEP_SUCCESS and remove
                                         # the step from running_steps, so we can safely skip
                                         # the failure here.
-                                        step_already_succeeded = any(
+                                        step_already_handled = any(
                                             record.event_log_entry.dagster_event is not None
                                             and record.event_log_entry.dagster_event.step_key
                                             == step.key
                                             for record in plan_context.instance.get_records_for_run(
                                                 plan_context.run_id,
-                                                of_type=DagsterEventType.STEP_SUCCESS,
+                                                of_type={DagsterEventType.STEP_SUCCESS, DagsterEventType.STEP_UP_FOR_RETRY},
                                             ).records
                                         )
                                         if step_already_succeeded:
