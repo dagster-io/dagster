@@ -524,6 +524,121 @@ def test_multi_asset_with_different_partitions_defs():
     )
 
 
+def test_non_partitioned_spec_in_mixed_multi_asset_does_not_raise_partition_key_error():
+    """Regression test for https://github.com/dagster-io/dagster/issues/33584.
+
+    A non-partitioned AssetSpec inside a can_subset=True @multi_asset that also contains
+    a partitioned spec must be materializable without raising
+    "Cannot access partition_key for a non-partitioned run".
+
+    This was a regression introduced in 1.12.14 where entity_partitions_def iterated all specs
+    (including unselected partitioned ones), making has_partitions return True for a run that was
+    not partitioned.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("partitioned_asset", partitions_def=partitions_def),
+            dg.AssetSpec("non_partitioned_asset"),
+        ],
+        can_subset=True,
+    )
+    def mixed_multi_asset(context: AssetExecutionContext):
+        for asset_key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=asset_key)
+
+    # Materializing only the non-partitioned spec must NOT raise DagsterInvariantViolationError
+    result = dg.materialize(
+        assets=[mixed_multi_asset],
+        selection=["non_partitioned_asset"],
+    )
+    assert result.success
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("mixed_multi_asset"),
+        [dg.AssetMaterialization(asset_key=dg.AssetKey(["non_partitioned_asset"]))],
+        exclude_fields=["tags"],
+    )
+
+    # Materializing only the partitioned spec with a partition key still works correctly
+    result = dg.materialize(
+        assets=[mixed_multi_asset],
+        selection=["partitioned_asset"],
+        partition_key="a",
+    )
+    assert result.success
+
+
+def test_mixed_multi_asset_partition_key_accessible_for_partitioned_selection():
+    """Verify that context.partition_key is accessible when selecting only the partitioned spec
+    in a mixed (partitioned + non-partitioned) can_subset multi-asset.
+
+    This tests the other direction of #33584: the partitioned path must still expose partition_key.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["x", "y", "z"])
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("partitioned_out", partitions_def=partitions_def),
+            dg.AssetSpec("unpartitioned_out"),
+        ],
+        can_subset=True,
+    )
+    def my_mixed(context: AssetExecutionContext):
+        if dg.AssetKey("partitioned_out") in context.selected_asset_keys:
+            # This must NOT raise "Cannot access partition_key for a non-partitioned run"
+            assert context.partition_key == "y"
+        for key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=key)
+
+    result = dg.materialize(
+        assets=[my_mixed],
+        selection=["partitioned_out"],
+        partition_key="y",
+    )
+    assert result.success
+
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("my_mixed"),
+        [dg.AssetMaterialization(asset_key=dg.AssetKey(["partitioned_out"]), partition="y")],
+        exclude_fields=["tags"],
+    )
+
+
+def test_mixed_multi_asset_multiple_non_partitioned_specs():
+    """When a can_subset multi-asset has multiple non-partitioned specs alongside a partitioned
+    one, materializing any combination of the non-partitioned specs must succeed without partition
+    errors.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["1", "2"])
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("p_asset", partitions_def=partitions_def),
+            dg.AssetSpec("np_asset_a"),
+            dg.AssetSpec("np_asset_b"),
+        ],
+        can_subset=True,
+    )
+    def triple_mixed(context: AssetExecutionContext):
+        for key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=key)
+
+    # Materialize both non-partitioned at once
+    result = dg.materialize(
+        assets=[triple_mixed],
+        selection=["np_asset_a", "np_asset_b"],
+    )
+    assert result.success
+
+    # Materialize just one non-partitioned
+    result = dg.materialize(
+        assets=[triple_mixed],
+        selection=["np_asset_a"],
+    )
+    assert result.success
+
+
 def test_multi_asset_with_differrent_partitions_def_and_top_level_group_name():
     partitions_def1 = dg.DailyPartitionsDefinition(start_date="2020-01-01")
     partitions_def2 = dg.StaticPartitionsDefinition(["1", "2", "3"])
