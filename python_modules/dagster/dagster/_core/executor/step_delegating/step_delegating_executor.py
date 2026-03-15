@@ -258,7 +258,7 @@ class StepDelegatingExecutor(Executor):
                 last_check_step_health_time = get_current_datetime()
 
                 try:
-                    # Order of events is important here. During an interation, we call handle_event, then get_steps_to_execute,
+                    # Order of events is important here. During an iteration, we call handle_event, then get_steps_to_execute,
                     # then is_complete. get_steps_to_execute updates the state of ActiveExecution, and without it
                     # is_complete can return true when we're just between steps.
                     while not active_execution.is_complete:
@@ -356,6 +356,36 @@ class StepDelegatingExecutor(Executor):
                                         )
                                     )
                                     if not health_check_result.is_healthy:
+                                        # Before declaring failure, verify that STEP_SUCCESS
+                                        # hasn't already been written to the event log but not
+                                        # yet consumed by _pop_events. This covers two races:
+                                        #
+                                        # 1. TTL race: the K8s job is deleted by
+                                        #    ttlSecondsAfterFinished before the executor polls
+                                        #    the STEP_SUCCESS event, making get_job_status
+                                        #    return None and check_step_health return unhealthy.
+                                        #
+                                        # 2. OOMKill race: the pod is killed during
+                                        #    post-success cleanup (after writing STEP_SUCCESS
+                                        #    but before the process exits), causing the K8s job
+                                        #    to show status.failed > 0.
+                                        #
+                                        # In both cases the step genuinely succeeded; the next
+                                        # _pop_events call will pick up STEP_SUCCESS and remove
+                                        # the step from running_steps, so we can safely skip
+                                        # the failure here.
+                                        step_already_succeeded = any(
+                                            record.event_log_entry.dagster_event is not None
+                                            and record.event_log_entry.dagster_event.step_key
+                                            == step.key
+                                            for record in plan_context.instance.get_records_for_run(
+                                                plan_context.run_id,
+                                                of_type=DagsterEventType.STEP_SUCCESS,
+                                            ).records
+                                        )
+                                        if step_already_succeeded:
+                                            continue
+
                                         health_check_error = SerializableErrorInfo(
                                             message=f"Step {step.key} failed health check: {health_check_result.unhealthy_reason}",
                                             stack=[],
