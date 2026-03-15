@@ -8,7 +8,6 @@ import {
   DialogFooter,
   FontFamily,
   Icon,
-  Table,
   Tooltip,
   tryPrettyPrintJSON,
 } from '@dagster-io/ui-components';
@@ -59,6 +58,47 @@ export const isCanonicalRowCountMetadataEntry = (
 
 export type LogRowStructuredRow = {label: string; item: JSX.Element};
 
+export const MetadataEntryScrollWrapper = styled.div`
+  overflow: auto;
+  max-width: 100%;
+  max-height: 240px;
+  min-height: 0;
+`;
+
+const MetadataEntryValueCell = styled.div`
+  max-width: 100%;
+  overflow-x: auto;
+`;
+
+const StyledTableWithHeader = styled.table`
+  /** -2 accounts for the left and right border, which are not taken into account
+  * and cause a tiny amount of horizontal scrolling at all times. */
+  width: calc(100% - 2px);
+  border-spacing: 0;
+  border-collapse: collapse;
+
+  & > thead > tr > td {
+    color: ${Colors.textLighter()};
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  & > tbody > tr > td,
+  & > thead > tr > td {
+    border: 1px solid ${Colors.keylineDefault()};
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 20px;
+    vertical-align: top;
+
+    &:first-child {
+      max-width: 300px;
+      word-wrap: break-word;
+      width: 25%;
+    }
+  }
+`;
+
 export const LogRowStructuredContentTable = ({
   rows,
   styles,
@@ -66,7 +106,7 @@ export const LogRowStructuredContentTable = ({
   rows: LogRowStructuredRow[];
   styles?: React.CSSProperties;
 }) => (
-  <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
+  <div style={{paddingBottom: 10, ...(styles || {})}}>
     <StructuredContentTable cellPadding="0" cellSpacing="0">
       <tbody>
         {rows.map(({label, item}, idx) => (
@@ -79,7 +119,11 @@ export const LogRowStructuredContentTable = ({
             >
               {label}
             </td>
-            <td style={{flex: 1}}>{item}</td>
+            <td style={{flex: 1, minWidth: 0}}>
+              <MetadataEntryValueCell data-testid="metadata-entry-value-cell">
+                {item}
+              </MetadataEntryValueCell>
+            </td>
           </tr>
         ))}
       </tbody>
@@ -240,7 +284,9 @@ export const MetadataEntry = ({
 
     case 'TableSchemaMetadataEntry':
       return expandSmallValues && entry.schema.columns.length < 5 ? (
-        <TableSchema schema={entry.schema} />
+        <MetadataEntryScrollWrapper>
+          <TableSchema schema={entry.schema} />
+        </MetadataEntryScrollWrapper>
       ) : (
         <MetadataEntryDialogAction
           label={entry.label}
@@ -384,46 +430,48 @@ export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntryF
     .filter((record): record is Record<string, any> => record !== null);
 
   return (
-    <Box flex={{direction: 'column', gap: 8}}>
+    <Box flex={{direction: 'column', gap: 8}} style={{overflow: 'hidden', minHeight: 0}}>
       <MetadataEntryAction onClick={() => setShowSchema(true)}>Show schema</MetadataEntryAction>
-      <Table style={{borderRight: `1px solid ${Colors.keylineDefault()}`}} $compact>
-        <thead>
-          <tr>
-            {schema.columns.map((column) => (
-              <th key={column.name}>{column.name}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((record, idx) => (
-            <tr key={idx}>
+      <MetadataEntryScrollWrapper data-testid="table-metadata-entry-scroll-container">
+        <StyledTableWithHeader style={{minWidth: 'max-content'}}>
+          <thead>
+            <tr>
               {schema.columns.map((column) => (
-                <td key={column.name}>{record[column.name]?.toString()}</td>
+                <td key={column.name}>{column.name}</td>
               ))}
             </tr>
-          ))}
-          {invalidRecords.map((record, ii) => (
-            <tr key={`invalid-${ii}`}>
-              <td colSpan={schema.columns.length}>
-                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  <Icon name="warning" />
-                  <div>Could not parse record:</div>
-                </Box>
-                <div>
-                  <Tooltip
-                    content={<div style={{maxWidth: '400px'}}>{record}</div>}
-                    placement="top"
-                  >
-                    <CaptionMono>
-                      {record.length > 20 ? `${record.slice(0, 20)}…` : record}
-                    </CaptionMono>
-                  </Tooltip>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {records.map((record, idx) => (
+              <tr key={idx}>
+                {schema.columns.map((column) => (
+                  <td key={column.name}>{record[column.name]?.toString()}</td>
+                ))}
+              </tr>
+            ))}
+            {invalidRecords.map((record, ii) => (
+              <tr key={`invalid-${ii}`}>
+                <td colSpan={schema.columns.length}>
+                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                    <Icon name="warning" />
+                    <div>Could not parse record:</div>
+                  </Box>
+                  <div>
+                    <Tooltip
+                      content={<div style={{maxWidth: '400px'}}>{record}</div>}
+                      placement="top"
+                    >
+                      <CaptionMono>
+                        {record.length > 20 ? `${record.slice(0, 20)}…` : record}
+                      </CaptionMono>
+                    </Tooltip>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </StyledTableWithHeader>
+      </MetadataEntryScrollWrapper>
       <Dialog isOpen={showSchema} title={`Schema for ${entry.label}`}>
         <DialogBody>
           <TableSchema schema={schema} />
@@ -462,6 +510,7 @@ export const MetadataEntryLink = styled(Link)`
 
 export const StructuredContentTable = styled.table`
   width: 100%;
+  table-layout: fixed;
   padding: 0;
   margin-top: 4px;
   border-top: 1px solid ${Colors.keylineDefault()};
