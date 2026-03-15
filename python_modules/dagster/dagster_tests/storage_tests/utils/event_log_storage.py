@@ -5861,6 +5861,41 @@ class TestEventLogStorage:
 
         assert storage.get_concurrency_info("foo").slot_count == 0
 
+    def test_initialize_concurrency_limit_to_default_idempotent(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
+        """Calling initialize_concurrency_limit_to_default twice for the same key must succeed.
+
+        This verifies the fix for https://github.com/dagster-io/dagster/issues/33552: on
+        PostgreSQL (and other databases that abort a transaction on IntegrityError) the
+        INSERT-then-catch-IntegrityError-then-UPDATE pattern was broken because the failed INSERT
+        aborted the entire transaction, leaving the subsequent UPDATE unable to execute.
+
+        The fix wraps the INSERT in conn.begin_nested() (a SAVEPOINT) so that only the savepoint
+        is rolled back on conflict, not the whole transaction.
+        """
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_set_concurrency_defaults():
+            pytest.skip("storage does not support setting global op concurrency defaults")
+
+        self.set_default_op_concurrency(instance, storage, 5)
+
+        # First call inserts the row
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").slot_count == 5
+
+        # Second call for the same key (simulating a race condition or retry) must not crash.
+        # This is the scenario that triggered InFailedSqlTransaction on PostgreSQL.
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").slot_count == 5
+
+        # Changing the default and calling again must update the existing row
+        self.set_default_op_concurrency(instance, storage, 3)
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").slot_count == 3
+
     def test_asset_checks(
         self,
         storage: EventLogStorage,
