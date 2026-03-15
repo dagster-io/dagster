@@ -32,6 +32,8 @@ class PickledObjectS3IOManager(UPathIOManager):
         self.bucket = check.str_param(s3_bucket, "s3_bucket")
         check.opt_str_param(s3_prefix, "s3_prefix")
         self.s3 = s3_session
+        # boto3 rejects Prefix=None; normalize to empty string
+        s3_prefix = s3_prefix or ""
         self.s3.list_objects(Bucket=s3_bucket, Prefix=s3_prefix, MaxKeys=1)
         base_path = UPath(s3_prefix) if s3_prefix else None
         super().__init__(base_path=base_path)
