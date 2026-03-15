@@ -972,12 +972,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         expected to all have the same PartitionsDefinition.
         """
         if self.assets_def is not None:
-            for spec in self.assets_def.specs:
-                if spec.partitions_def is not None:
-                    return spec.partitions_def
-            for check_spec in self.assets_def.check_specs:
-                if check_spec.partitions_def is not None:
-                    return check_spec.partitions_def
+            return self.assets_def.partitions_def
         return None
 
     @property
