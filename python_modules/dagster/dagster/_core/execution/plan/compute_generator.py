@@ -14,6 +14,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.resource_annotation import ResourceArgSpec
 from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import ExecutionContextTypes
@@ -35,7 +36,7 @@ def create_op_compute_wrapper(
     output_defs = op_def.output_defs
     context_arg_provided = compute_fn.has_context_arg()
     config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
-    resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
+    resource_arg_specs = compute_fn.get_resource_arg_specs()
 
     input_names = [
         input_def.name
@@ -59,7 +60,7 @@ def create_op_compute_wrapper(
         ):
             # safe to execute the function, as doing so will not immediately execute user code
             result = invoke_compute_fn(
-                fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
+                fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_specs
             )
             if inspect.iscoroutine(result):
                 return _coerce_async_op_to_async_gen(result, context, output_defs)
@@ -75,7 +76,7 @@ def create_op_compute_wrapper(
                 context_arg_provided,
                 kwargs,
                 config_arg_cls,
-                resource_arg_mapping,
+                resource_arg_specs,
             )
 
     return compute
@@ -97,7 +98,7 @@ def invoke_compute_fn(
     kwargs: Mapping[str, Any],
     context_arg_provided: bool,
     config_arg_cls: type[Config] | None,
-    resource_args: dict[str, str] | None = None,
+    resource_args: Sequence[ResourceArgSpec] | None = None,
 ) -> Any:
     args_to_pass = {**kwargs}
     if config_arg_cls:
@@ -109,8 +110,17 @@ def invoke_compute_fn(
         else:
             args_to_pass["config"] = context.op_execution_context.op_config
     if resource_args:
-        for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = context.resources.original_resource_dict[resource_name]
+        for spec in resource_args:
+            resource_obj = context.resources.original_resource_dict[spec.name]
+            if spec.annotation is not None and not isinstance(resource_obj, spec.annotation):
+                raise DagsterInvariantViolationError(
+                    f"Resource '{spec.name}' was expected to be of type"
+                    f" '{spec.annotation.__name__}',"
+                    f" but received '{type(resource_obj).__name__}'."
+                    f" Ensure the correct resource type is bound in your Definitions or"
+                    f" job configuration."
+                )
+            args_to_pass[spec.name] = resource_obj
 
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
@@ -130,10 +140,10 @@ def _coerce_op_compute_fn_to_iterator(
     context_arg_provided,
     kwargs,
     config_arg_class,
-    resource_arg_mapping,
+    resource_arg_specs,
 ):
     result = invoke_compute_fn(
-        fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_mapping
+        fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_specs
     )
     yield from validate_and_coerce_op_result_to_iterator(result, context, output_defs)
 
