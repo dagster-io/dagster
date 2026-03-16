@@ -110,6 +110,28 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
     return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
 
 
+def _is_run_past_max_runtime(run_record: RunRecord, instance: DagsterInstance) -> bool:
+    """Check whether a run has exceeded its max_runtime without performing any state transitions."""
+    max_time_str = run_record.dagster_run.tags.get(
+        MAX_RUNTIME_SECONDS_TAG, run_record.dagster_run.tags.get("dagster/max_runtime_seconds")
+    )
+    if max_time_str:
+        try:
+            max_time = float(max_time_str)
+        except ValueError:
+            max_time = None
+    else:
+        max_time = float(instance.run_monitoring_max_runtime_seconds)
+
+    if not max_time:
+        return False
+
+    return (
+        run_record.start_time is not None
+        and get_current_timestamp() - run_record.start_time > max_time
+    )
+
+
 def monitor_started_run(
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
@@ -118,6 +140,15 @@ def monitor_started_run(
 ) -> None:
     run = run_record.dagster_run
     check.invariant(run.status == DagsterRunStatus.STARTED)
+
+    # Always check max_runtime first — this is a hard constraint that must never be
+    # bypassed by crash detection or resume logic.
+    if _is_run_past_max_runtime(run_record, instance):
+        check_run_timeout(
+            instance, run_record, logger, float(instance.run_monitoring_max_runtime_seconds)
+        )
+        return
+
     if instance.run_launcher.supports_check_run_worker_health:
         check_health_result = instance.run_launcher.check_run_worker_health(run)
         if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
@@ -144,7 +175,6 @@ def monitor_started_run(
                     workspace,
                     attempt_number,
                 )
-                # Return rather than immediately checking for a timeout, since we only just resumed
                 return
             else:
                 if (
@@ -164,7 +194,6 @@ def monitor_started_run(
                     )
                 logger.info(msg)
                 instance.report_run_failed(run, msg)
-                # Return rather than immediately checking for a timeout, since we just failed
                 return
     check_run_timeout(
         instance, run_record, logger, float(instance.run_monitoring_max_runtime_seconds)
@@ -249,9 +278,11 @@ def check_run_timeout(
         run_record.start_time is not None
         and get_current_timestamp() - run_record.start_time > max_time
     ):
+        run_id = run_record.dagster_run.run_id
+        elapsed = get_current_timestamp() - run_record.start_time
         logger.info(
-            f"Run {run_record.dagster_run.run_id} has exceeded maximum runtime of"
-            f" {max_time} seconds: terminating run."
+            f"Run {run_id} has exceeded maximum runtime of"
+            f" {max_time} seconds (elapsed: {elapsed:.0f}s): terminating run."
         )
 
         instance.report_run_canceling(
@@ -259,20 +290,19 @@ def check_run_timeout(
             message=f"Canceling due to exceeding maximum runtime of {int(max_time)} seconds.",
         )
         try:
-            if instance.run_launcher.terminate(run_id=run_record.dagster_run.run_id):
-                instance.report_run_failed(
-                    run_record.dagster_run, f"Exceeded maximum runtime of {int(max_time)} seconds."
-                )
+            instance.run_launcher.terminate(run_id=run_id)
         except:
             instance.report_engine_event(
                 "Exception while attempting to terminate run. Run will still be marked as failed.",
                 job_name=run_record.dagster_run.job_name,
-                run_id=run_record.dagster_run.run_id,
+                run_id=run_id,
                 engine_event_data=EngineEventData(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
             )
-        _force_mark_as_failed(instance, run_record.dagster_run.run_id)
+        # Always force-mark as failed — reload from DB to get the current status
+        # (CANCELING after report_run_canceling) rather than using the stale run object.
+        _force_mark_as_failed(instance, run_id)
 
 
 def _force_mark_as_failed(instance: DagsterInstance, run_id: str) -> None:

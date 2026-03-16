@@ -126,18 +126,19 @@ class TestCheckRunWorkerHealth:
         assert health.status == WorkerStatus.FAILED
         assert "not responding" in health.msg.lower()
 
-    def test_task_started_no_worker_info_returns_running(self, launcher, mock_celery_app):
-        """When worker hostname is unavailable, fall back to trusting Celery state."""
+    def test_task_started_no_worker_info_returns_unknown(self, launcher, mock_celery_app):
+        """When worker hostname is unavailable, report UNKNOWN so monitoring can act."""
         run = _make_run()
         result = mock_celery_app.AsyncResult.return_value
         result.state = "STARTED"
         result.info = None
 
         health = launcher.check_run_worker_health(run)
-        assert health.status == WorkerStatus.RUNNING
+        assert health.status == WorkerStatus.UNKNOWN
+        assert "hostname" in health.msg.lower()
 
-    def test_task_started_inspect_raises_returns_running(self, launcher, mock_celery_app):
-        """When inspect API fails (broker issue), fall back to trusting Celery state."""
+    def test_task_started_inspect_raises_returns_unknown(self, launcher, mock_celery_app):
+        """When inspect API fails (broker issue), report UNKNOWN so monitoring can act."""
         run = _make_run()
         result = mock_celery_app.AsyncResult.return_value
         result.state = "STARTED"
@@ -147,4 +148,5 @@ class TestCheckRunWorkerHealth:
         mock_celery_app.control.inspect.side_effect = Exception("Broker connection failed")
 
         health = launcher.check_run_worker_health(run)
-        assert health.status == WorkerStatus.RUNNING
+        assert health.status == WorkerStatus.UNKNOWN
+        assert "broker connection failed" in health.msg.lower()

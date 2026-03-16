@@ -227,8 +227,16 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         """
         worker_hostname = self._get_worker_hostname(result)
         if not worker_hostname:
-            # Cannot determine worker — fall back to trusting Celery state
-            return CheckRunHealthResult(WorkerStatus.RUNNING)
+            # Cannot determine worker — report as UNKNOWN so the monitoring daemon
+            # does not silently treat a potentially-dead worker as healthy.
+            logging.getLogger(__name__).warning(
+                "Cannot determine Celery worker hostname from task result. "
+                "Reporting worker status as UNKNOWN."
+            )
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN,
+                "Cannot determine Celery worker hostname from task result.",
+            )
 
         try:
             inspector = self.celery.control.inspect(
@@ -239,10 +247,14 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         except Exception as e:
             logging.getLogger(__name__).warning(
                 f"Failed to ping Celery worker {worker_hostname}: {e}. "
-                "Falling back to trusting task state."
+                "Reporting worker status as UNKNOWN."
             )
-            # If we can't reach the broker to inspect, fall back to trusting state
-            return CheckRunHealthResult(WorkerStatus.RUNNING)
+            # If we can't reach the broker to inspect, report as UNKNOWN rather
+            # than silently assuming the worker is alive.
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN,
+                f"Failed to ping Celery worker {worker_hostname}: {e}",
+            )
         if ping_response and isinstance(ping_response, dict) and worker_hostname in ping_response:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
 
