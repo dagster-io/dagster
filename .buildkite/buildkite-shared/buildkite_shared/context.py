@@ -67,7 +67,7 @@ class BuildkiteContext(Generic[T_Config]):
     @overload
     def get_env(self, var: "BuildkiteEnvVar", default: str) -> str: ...
 
-    def get_env(self, var: "BuildkiteEnvVar", default: str | None = None):
+    def get_env(self, var: "BuildkiteEnvVar", default: str | None = None) -> str | None:
         return self.env.get(var, default)
 
     def getx_env(self, var: "BuildkiteEnvVar") -> str:
@@ -464,5 +464,5 @@ def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
     return frozenset(all_files)
 
 
-def _get_commit(rev):
+def _get_commit(rev: str) -> str:
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()

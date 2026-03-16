@@ -19,7 +19,7 @@ from buildkite_shared.step_builders.step_builder import (
 
 def filter_steps(
     steps: Sequence[StepConfiguration], predicate: Callable[[StepConfiguration], bool]
-):
+) -> list[StepConfiguration]:
 
     # First resolve the full set of step keys that need to be included. This
     # includes any step that satisfies the predicate, as well as any steps that
