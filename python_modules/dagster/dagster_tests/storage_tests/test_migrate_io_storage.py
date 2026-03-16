@@ -69,7 +69,9 @@ def test_migrate_unpartitioned_assets(caplog):
         )
 
         with caplog.at_level(logging.INFO, logger="dagster.builtin.migrate_io_storage"):
-            result = migrate_io_storage(definitions, destination, instance)
+            result = migrate_io_storage(
+                definitions=definitions, destination_io_manager=destination, instance=instance
+            )
 
         assert _subset_size(result.migrated) == 2
         assert _subset_size(result.skipped) == 0
@@ -114,7 +116,9 @@ def test_migrate_partitioned_assets(caplog):
         )
 
         with caplog.at_level(logging.INFO, logger="dagster.builtin.migrate_io_storage"):
-            result = migrate_io_storage(definitions, destination, instance)
+            result = migrate_io_storage(
+                definitions=definitions, destination_io_manager=destination, instance=instance
+            )
 
         assert _subset_size(result.migrated) == 2
         assert _subset_size(result.skipped) == 0
@@ -169,7 +173,9 @@ def test_migrate_mixed_assets():
             resources={"io_manager": source_factory},
         )
 
-        result = migrate_io_storage(definitions, destination, instance)
+        result = migrate_io_storage(
+            definitions=definitions, destination_io_manager=destination, instance=instance
+        )
 
         assert _subset_size(result.migrated) == 3
         assert _subset_size(result.skipped) == 0
@@ -208,7 +214,9 @@ def test_unmaterialized_assets_are_skipped():
             resources={"io_manager": source_factory},
         )
 
-        result = migrate_io_storage(definitions, destination, instance)
+        result = migrate_io_storage(
+            definitions=definitions, destination_io_manager=destination, instance=instance
+        )
 
         assert _subset_size(result.migrated) == 1
         assert _subset_size(result.skipped) == 0
@@ -251,7 +259,10 @@ def test_should_skip_callback(caplog):
 
         with caplog.at_level(logging.INFO, logger="dagster.builtin.migrate_io_storage"):
             result = migrate_io_storage(
-                definitions, destination, instance, should_skip=skip_asset_a
+                definitions=definitions,
+                destination_io_manager=destination,
+                instance=instance,
+                should_skip=skip_asset_a,
             )
 
         assert _subset_size(result.migrated) == 1
@@ -299,9 +310,9 @@ def test_asset_selection():
         )
 
         result = migrate_io_storage(
-            definitions,
-            destination,
-            instance,
+            definitions=definitions,
+            destination_io_manager=destination,
+            instance=instance,
             selection=dg.AssetSelection.assets(asset_a, asset_c),
         )
 
@@ -352,7 +363,9 @@ def test_failed_load():
             resources={"io_manager": mock_source},
         )
 
-        result = migrate_io_storage(definitions, destination, instance)
+        result = migrate_io_storage(
+            definitions=definitions, destination_io_manager=destination, instance=instance
+        )
 
         assert _subset_size(result.migrated) == 1
         assert _subset_size(result.failed) == 1
@@ -380,7 +393,9 @@ def test_empty_instance():
             resources={"io_manager": source},
         )
 
-        result = migrate_io_storage(definitions, destination, instance)
+        result = migrate_io_storage(
+            definitions=definitions, destination_io_manager=destination, instance=instance
+        )
 
         assert _subset_size(result.migrated) == 0
         assert _subset_size(result.skipped) == 0
@@ -416,7 +431,12 @@ def test_batch_partitions():
             resources={"io_manager": source_factory},
         )
 
-        result = migrate_io_storage(definitions, mock_dest, instance, batch_partitions=True)
+        result = migrate_io_storage(
+            definitions=definitions,
+            destination_io_manager=mock_dest,
+            instance=instance,
+            batch_partitions=True,
+        )
 
         assert _subset_size(result.migrated) == 3
         assert _subset_size(result.skipped) == 0
@@ -457,7 +477,12 @@ def test_batch_partitions_with_backfill_policy():
             resources={"io_manager": source_factory},
         )
 
-        result = migrate_io_storage(definitions, mock_dest, instance, batch_partitions=True)
+        result = migrate_io_storage(
+            definitions=definitions,
+            destination_io_manager=mock_dest,
+            instance=instance,
+            batch_partitions=True,
+        )
 
         assert _subset_size(result.migrated) == 5
         assert _subset_size(result.skipped) == 0
@@ -495,7 +520,12 @@ def test_transform():
         def add_extra_field(value):
             return {**value, "extra": "added"}
 
-        result = migrate_io_storage(definitions, destination, instance, transform=add_extra_field)
+        result = migrate_io_storage(
+            definitions=definitions,
+            destination_io_manager=destination,
+            instance=instance,
+            transform=add_extra_field,
+        )
 
         assert _subset_size(result.migrated) == 1
         loaded = _load_from(destination, AssetKey("my_asset"))
@@ -544,7 +574,10 @@ def test_result_entity_subsets():
         )
 
         result = migrate_io_storage(
-            definitions, destination, instance, should_skip=skip_one_partition
+            definitions=definitions,
+            destination_io_manager=destination,
+            instance=instance,
+            should_skip=skip_one_partition,
         )
 
         # Verify EntitySubset structure
@@ -564,3 +597,50 @@ def test_result_entity_subsets():
         migrated_pks = part_migrated[0].expensively_compute_partition_keys()
         assert "2024-01-01" in migrated_pks
         assert "2024-01-03" in migrated_pks
+
+
+def test_migrate_with_context():
+    """Migrate assets using OpExecutionContext instead of Definitions."""
+
+    @dg.asset
+    def asset_one() -> dict:
+        return {"key": "value1"}
+
+    @dg.asset
+    def asset_two() -> dict:
+        return {"key": "value2"}
+
+    with (
+        tempfile.TemporaryDirectory() as src_dir,
+        tempfile.TemporaryDirectory() as dst_dir,
+        DagsterInstance.ephemeral() as instance,
+    ):
+        source_factory = FilesystemIOManager(base_dir=src_dir)
+        destination = PickledObjectFilesystemIOManager(base_dir=dst_dir)
+
+        dg.materialize(
+            [asset_one, asset_two],
+            instance=instance,
+            resources={"io_manager": source_factory},
+        )
+
+        definitions = dg.Definitions(
+            assets=[asset_one, asset_two],
+            resources={"io_manager": source_factory},
+        )
+        repo_def = definitions.get_repository_def()
+
+        mock_context = MagicMock(spec=dg.OpExecutionContext)
+        mock_context.repository_def = repo_def
+        mock_context.instance = instance
+
+        result = migrate_io_storage(
+            context=mock_context,
+            destination_io_manager=destination,
+        )
+
+        assert _subset_size(result.migrated) == 2
+        assert _subset_size(result.skipped) == 0
+        assert _subset_size(result.failed) == 0
+        assert _load_from(destination, AssetKey("asset_one")) == {"key": "value1"}
+        assert _load_from(destination, AssetKey("asset_two")) == {"key": "value2"}
