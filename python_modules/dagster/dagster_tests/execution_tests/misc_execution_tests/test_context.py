@@ -632,6 +632,42 @@ def test_load_asset_value_multiple_upstream_partition_keys():
         assert result.output_for_node("downstream_asset") == 6
 
 
+def test_multi_partition_key_accessor():
+    multipartitions_def = dg.MultiPartitionsDefinition(
+        {
+            "date": dg.StaticPartitionsDefinition(["2024-01-01"]),
+            "region": dg.StaticPartitionsDefinition(["us"]),
+        }
+    )
+
+    @dg.asset(partitions_def=multipartitions_def)
+    def multipartitioned_asset(context: AssetExecutionContext):
+        assert context.multi_partition_key == dg.MultiPartitionKey(
+            {"date": "2024-01-01", "region": "us"}
+        )
+        assert context.multi_partition_key.keys_by_dimension == {
+            "date": "2024-01-01",
+            "region": "us",
+        }
+
+    assert dg.materialize(
+        [multipartitioned_asset],
+        partition_key=dg.MultiPartitionKey({"date": "2024-01-01", "region": "us"}),
+    ).success
+
+
+def test_multi_partition_key_accessor_raises_on_non_multipartitioned_run():
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a"]))
+    def static_partitioned_asset(context: AssetExecutionContext):
+        with pytest.raises(
+            dg.DagsterInvariantViolationError,
+            match="Cannot access multi_partition_key for a non-multipartitioned run",
+        ):
+            _ = context.multi_partition_key
+
+    assert dg.materialize([static_partitioned_asset], partition_key="a").success
+
+
 def test_location_name_property():
     @dg.op
     def location_check(context: OpExecutionContext):

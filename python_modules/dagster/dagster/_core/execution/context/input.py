@@ -14,6 +14,7 @@ from dagster._core.definitions.partitions.utils import (
     has_one_dimension_time_window_partitioning,
     time_window_for_partition_key_range,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._utils.warnings import normalize_renamed_param
@@ -318,7 +319,7 @@ class InputContext:
 
     @public
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.

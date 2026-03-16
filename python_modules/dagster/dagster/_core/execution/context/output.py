@@ -24,6 +24,7 @@ from dagster._core.definitions.partitions.utils import (
     has_one_dimension_time_window_partitioning,
     time_window_for_partition_key_range,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.context.input import KeyRangeNoPartitionsDefPartitionsSubset
 from dagster._core.execution.plan.utils import build_resources_for_manager
@@ -430,7 +431,7 @@ class OutputContext:
 
     @public
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.

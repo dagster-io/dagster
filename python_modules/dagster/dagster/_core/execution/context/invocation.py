@@ -25,6 +25,7 @@ from dagster._core.definitions.partitions.utils import (
     TimeWindow,
     has_one_dimension_time_window_partitioning,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
@@ -512,7 +513,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         return self._partition_key is not None
 
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         if self._partition_key:
             return self._partition_key
         check.failed("Tried to access partition_key for a non-partitioned run")

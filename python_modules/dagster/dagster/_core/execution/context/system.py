@@ -33,6 +33,7 @@ from dagster._core.definitions.partitions.utils import (
     has_one_dimension_time_window_partitioning,
     infer_partition_mapping,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -981,7 +982,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return None
 
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         from dagster._core.definitions.partitions.utils import get_multipartition_key_from_tags
 
         if not self.has_partitions:

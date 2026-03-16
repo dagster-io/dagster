@@ -7,6 +7,7 @@ from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKe
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -147,8 +148,14 @@ class AssetCheckExecutionContext:
     @public
     @property
     @_copy_docs_from_op_execution_context
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         return self.op_execution_context.partition_key
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def multi_partition_key(self) -> MultiPartitionKey:
+        return self.op_execution_context.multi_partition_key
 
     @public
     @property

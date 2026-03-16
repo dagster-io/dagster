@@ -26,6 +26,7 @@ from dagster._core.definitions.partitions.context import partition_loading_conte
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.utils import TimeWindow
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -271,7 +272,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run. Or if the current run is operating
@@ -285,13 +286,34 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def
                 )
-                def my_asset(context: AssetExecutionContext):
+                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
                     context.log.info(context.partition_key)
 
                 # materializing the 2023-08-21 partition of this asset will log:
                 #   "2023-08-21"
         """
         return self._step_execution_context.partition_key
+
+    @public
+    @property
+    def multi_partition_key(self) -> MultiPartitionKey:
+        """The multipartition key for the current run.
+
+        Raises an error if the current run is not a multipartitioned run.
+
+        Examples:
+            .. code-block:: python
+
+                @asset(partitions_def=MultiPartitionsDefinition(...))
+                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
+                    context.log.info(context.multi_partition_key.keys_by_dimension)
+        """
+        partition_key = self.partition_key
+        if not isinstance(partition_key, MultiPartitionKey):
+            raise DagsterInvariantViolationError(
+                "Cannot access multi_partition_key for a non-multipartitioned run."
+            )
+        return partition_key
 
     @public
     @property
@@ -308,7 +330,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 partitions_def = DailyPartitionsDefinition("2023-08-20")
 
                 @asset(partitions_def=partitions_def)
-                def an_asset(context: AssetExecutionContext):
+                def an_asset(context: AssetExecutionContext[MultiPartitionKey]):
                     context.log.info(context.partition_keys)
 
 
@@ -358,7 +380,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def
                 )
-                def my_asset(context: AssetExecutionContext):
+                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
                     context.log.info(context.partition_key_range)
 
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
@@ -382,7 +404,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def
                 )
-                def my_asset(context: AssetExecutionContext):
+                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
                     context.log.info(context.partition_time_window)
 
                 # materializing the 2023-08-21 partition of this asset will log:
