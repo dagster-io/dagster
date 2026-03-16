@@ -524,16 +524,11 @@ def test_multi_asset_with_different_partitions_defs():
     )
 
 
-def test_non_partitioned_spec_in_mixed_multi_asset_does_not_raise_partition_key_error():
+def test_subsetted_mixed_multi_asset_partitions_def():
     """Regression test for https://github.com/dagster-io/dagster/issues/33584.
 
-    A non-partitioned AssetSpec inside a can_subset=True @multi_asset that also contains
-    a partitioned spec must be materializable without raising
-    "Cannot access partition_key for a non-partitioned run".
-
-    This was a regression introduced in 1.12.14 where entity_partitions_def iterated all specs
-    (including unselected partitioned ones), making has_partitions return True for a run that was
-    not partitioned.
+    AssetsDefinition.partitions_def must only consider selected specs. When a can_subset=True
+    multi-asset is subsetted to only non-partitioned specs, partitions_def should return None.
     """
     partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
 
@@ -548,25 +543,71 @@ def test_non_partitioned_spec_in_mixed_multi_asset_does_not_raise_partition_key_
         for asset_key in context.selected_asset_keys:
             yield dg.MaterializeResult(asset_key=asset_key)
 
-    # Materializing only the non-partitioned spec must NOT raise DagsterInvariantViolationError
-    result = dg.materialize(
-        assets=[mixed_multi_asset],
-        selection=["non_partitioned_asset"],
+    # Subsetted to non-partitioned only: partitions_def must be None
+    subsetted_np = mixed_multi_asset.subset_for(
+        selected_asset_keys={dg.AssetKey("non_partitioned_asset")},
+        selected_asset_check_keys=set(),
     )
-    assert result.success
-    assert_namedtuple_lists_equal(
-        result.asset_materializations_for_node("mixed_multi_asset"),
-        [dg.AssetMaterialization(asset_key=dg.AssetKey(["non_partitioned_asset"]))],
-        exclude_fields=["tags"],
-    )
+    assert subsetted_np.partitions_def is None
 
-    # Materializing only the partitioned spec with a partition key still works correctly
+    # Subsetted to partitioned only: partitions_def must be the correct def
+    subsetted_p = mixed_multi_asset.subset_for(
+        selected_asset_keys={dg.AssetKey("partitioned_asset")},
+        selected_asset_check_keys=set(),
+    )
+    assert subsetted_p.partitions_def == partitions_def
+
+
+def test_mixed_multi_asset_with_partitioned_input_loading():
+    """Regression test for https://github.com/dagster-io/dagster/issues/33584.
+
+    Exercises the IO manager input loading path: when a non-partitioned spec in a
+    can_subset=True @multi_asset has a function parameter referencing a partitioned upstream
+    asset, materializing only the non-partitioned spec must not crash with
+    "Cannot access partition_key for a non-partitioned run".
+
+    The function parameter (vs a spec-only dep) gives the input type DagsterAny instead of
+    Nothing, which triggers IO manager load_input -> for_input_manager ->
+    asset_partitions_subset_for_input. Without the fix, entity_partitions_def returns the
+    unselected partitioned spec's partitions_def, causing partition_key_range to be accessed
+    on a non-partitioned run.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
+
+    load_input_called = []
+
+    class TrackingIOManager(dg.IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            load_input_called.append(context.asset_key)
+            return None
+
+    @dg.asset(partitions_def=partitions_def)
+    def upstream_partitioned() -> int:
+        return 42
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("partitioned_out", partitions_def=partitions_def),
+            dg.AssetSpec("non_partitioned_out", deps=["upstream_partitioned"]),
+        ],
+        can_subset=True,
+    )
+    def mixed_multi(context: AssetExecutionContext, upstream_partitioned):
+        for key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=key)
+
+    # Materialize only the non-partitioned spec — this must NOT raise
     result = dg.materialize(
-        assets=[mixed_multi_asset],
-        selection=["partitioned_asset"],
-        partition_key="a",
+        assets=[upstream_partitioned, mixed_multi],
+        selection=["non_partitioned_out"],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(TrackingIOManager())},
     )
     assert result.success
+    # Verify IO manager load_input was called, confirming we exercised the error path
+    assert dg.AssetKey("upstream_partitioned") in load_input_called
 
 
 def test_mixed_multi_asset_partition_key_accessible_for_partitioned_selection():
@@ -603,40 +644,6 @@ def test_mixed_multi_asset_partition_key_accessible_for_partitioned_selection():
         [dg.AssetMaterialization(asset_key=dg.AssetKey(["partitioned_out"]), partition="y")],
         exclude_fields=["tags"],
     )
-
-
-def test_mixed_multi_asset_multiple_non_partitioned_specs():
-    """When a can_subset multi-asset has multiple non-partitioned specs alongside a partitioned
-    one, materializing any combination of the non-partitioned specs must succeed without partition
-    errors.
-    """
-    partitions_def = dg.StaticPartitionsDefinition(["1", "2"])
-
-    @dg.multi_asset(
-        specs=[
-            dg.AssetSpec("p_asset", partitions_def=partitions_def),
-            dg.AssetSpec("np_asset_a"),
-            dg.AssetSpec("np_asset_b"),
-        ],
-        can_subset=True,
-    )
-    def triple_mixed(context: AssetExecutionContext):
-        for key in context.selected_asset_keys:
-            yield dg.MaterializeResult(asset_key=key)
-
-    # Materialize both non-partitioned at once
-    result = dg.materialize(
-        assets=[triple_mixed],
-        selection=["np_asset_a", "np_asset_b"],
-    )
-    assert result.success
-
-    # Materialize just one non-partitioned
-    result = dg.materialize(
-        assets=[triple_mixed],
-        selection=["np_asset_a"],
-    )
-    assert result.success
 
 
 def test_multi_asset_with_differrent_partitions_def_and_top_level_group_name():

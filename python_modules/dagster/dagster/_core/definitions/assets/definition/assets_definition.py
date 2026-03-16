@@ -1085,9 +1085,18 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @cached_property
     def partitions_def(self) -> PartitionsDefinition | None:
-        """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any)."""
+        """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any).
+
+        Only considers specs whose keys are in self.keys (i.e. selected keys). For non-subsetted
+        definitions this is all keys. For subsetted definitions (can_subset=True), this filters to
+        only the selected specs, so a mixed multi-asset with only non-partitioned specs selected
+        correctly returns None.
+        """
+        selected_keys = self.keys
         partitions_defs = {
-            spec.partitions_def for spec in self.specs if spec.partitions_def is not None
+            spec.partitions_def
+            for spec in self.specs
+            if spec.key in selected_keys and spec.partitions_def is not None
         }
         if len(partitions_defs) == 1:
             return next(iter(partitions_defs))
