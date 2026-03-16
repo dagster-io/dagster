@@ -10,6 +10,9 @@ canonicalUrl: '/examples/full-pipelines/multi-workspace-databricks'
 slug: '/examples/full-pipelines/multi-workspace-databricks'
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 In this example, you'll explore a Dagster project that demonstrates an enterprise data mesh architecture. The project shows how a single Dagster deployment can orchestrate data pipelines across multiple Databricks workspaces while integrating Kafka for real-time event ingestion and Fivetran for SaaS data syncs.
 
 The pipeline:
@@ -47,10 +50,18 @@ To follow the steps in this guide, you'll need:
 
    <Tabs>
      <TabItem value="macos" label="MacOS/Unix">
-       ```bash source .venv/bin/activate ```
+
+     ```bash
+     source .venv/bin/activate
+     ```
+
      </TabItem>
      <TabItem value="windows" label="Windows">
-       ```bash .venv\Scripts\activate ```
+
+     ```bash
+     .venv\Scripts\activate
+     ```
+
      </TabItem>
    </Tabs>
 
