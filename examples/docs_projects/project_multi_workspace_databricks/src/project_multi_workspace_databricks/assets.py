@@ -6,8 +6,6 @@ This module defines assets for:
 - Data processing and enrichment
 """
 
-from typing import Any
-
 import dagster as dg
 
 # ============================================================================
@@ -197,26 +195,3 @@ def marketing_attribution(context: dg.AssetExecutionContext) -> None:
     to measure campaign effectiveness and ROI.
     """
     pass
-
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-
-def build_fivetran_assets_if_configured(
-    fivetran_workspace_id: str | None = None,
-) -> list[Any]:
-    """Build Fivetran assets if a workspace is configured.
-
-    Connects to the Fivetran API when a workspace ID is provided.
-    """
-    if not fivetran_workspace_id:
-        return []
-
-    # Connect to Fivetran and load assets:
-    # from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance
-    # fivetran_resource = FivetranResource(api_key="...", api_secret="...")
-    # return load_assets_from_fivetran_instance(fivetran_resource)
-
-    return []

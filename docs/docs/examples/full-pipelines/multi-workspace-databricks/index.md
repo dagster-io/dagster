@@ -49,21 +49,21 @@ To follow the steps in this guide, you'll need:
 3. Activate the virtual environment:
 
    <Tabs>
-     <TabItem value="macos" label="MacOS/Unix">
+  <TabItem value="macos" label="MacOS/Unix">
 
-     ```bash
-     source .venv/bin/activate
-     ```
-
-     </TabItem>
-     <TabItem value="windows" label="Windows">
-
-     ```bash
-     .venv\Scripts\activate
-     ```
+   ```bash
+   source .venv/bin/activate
+   ```
 
      </TabItem>
-   </Tabs>
+  <TabItem value="windows" label="Windows">
+
+   ```bash
+   .venv\Scripts\activate
+   ```
+
+     </TabItem>
+</Tabs>
 
 4. Configure credentials for your Databricks workspaces and Kafka broker (see [Configuration](#configuration) below).
 
@@ -95,7 +95,7 @@ Two Kafka sensors (`watch_kafka_replica_0`, `watch_kafka_replica_1`) poll for ER
 
 ### Workspace assets (`defs/*/defs.yaml`)
 
-Each of the four business domains is configured via a `defs.yaml` file using the reusable `DatabricksJobOrchestrator` component:
+Each of the four business domains is configured via a `defs.yaml` file using the reusable [`DatabricksJobOrchestrator`](#the-databricksjoborchestrator-component) component:
 
 | Workspace               | Databricks job | Assets produced                                                                                       |
 | ----------------------- | -------------- | ----------------------------------------------------------------------------------------------------- |
@@ -104,49 +104,17 @@ Each of the four business domains is configured via a `defs.yaml` file using the
 | `finance_reporting`     | Job 12347      | `invoice_reconciliation`, `payment_tracking`, `financial_statements`, `customer_segments_aggregation` |
 | `marketing_attribution` | Job 12348      | `campaign_performance`, `attribution_model`, `customer_lifetime_value`                                |
 
-### Asset lineage
-
-```
-Raw Sources
-├── Kafka (raw_erp_events, raw_crm_events)
-├── Fivetran SaaS (salesforce_data, hubspot_data)
-└── Legacy DBs (legacy_customer_data, legacy_transaction_data)
-          │
-          ▼
-Workspace-Specific Transformations
-├── customer_analytics/enriched_profiles
-├── customer_analytics/customer_segments
-├── sales_analytics/order_fulfillment
-├── sales_analytics/revenue_forecasting
-├── finance/invoice_reconciliation → finance/financial_statements
-└── marketing/campaign_performance → marketing/attribution_model
-          │
-          ▼
-Cross-Domain Analytics
-├── customer_360_view
-└── marketing/customer_lifetime_value
-```
+Data flows from the core ingestion assets (Kafka, Fivetran, legacy databases) into workspace-specific Databricks jobs, which produce domain-specific assets. Those workspace assets are then consumed by the `transformation` and `analytics` core assets to produce the final cross-domain outputs (`customer_360_view`, `marketing_attribution`).
 
 ## The `DatabricksJobOrchestrator` component
 
 The core reusable abstraction in this project is `DatabricksJobOrchestrator` — a custom `dg.Component` that maps a Databricks job to one or more Dagster assets. Each workspace `defs.yaml` is an instance of this component:
 
-```yaml
-type: project_multi_workspace_databricks.components.databricks_job_orchestrator.DatabricksJobOrchestrator
-
-attributes:
-  job_id: 12345
-  workspace_config:
-    host: 'https://your-workspace.cloud.databricks.com'
-    token: '${DATABRICKS_TOKEN}'
-  assets:
-    - key: 'customer_analytics/enriched_profiles'
-      description: 'Customer profiles enriched with transaction history'
-      group_name: 'customer_analytics'
-      deps:
-        - 'raw_erp_events'
-        - 'legacy_customer_data'
-```
+<CodeExample
+  path="docs_projects/project_multi_workspace_databricks/src/project_multi_workspace_databricks/defs/customer_analytics_workspace/defs.yaml"
+  language="yaml"
+  title="defs/customer_analytics_workspace/defs.yaml"
+/>
 
 To add a new workspace, scaffold a new component instance:
 
