@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -1004,6 +1005,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                         cast("str", range_start)
                     )
                 return cast("str", range_start)
+
+    @property
+    def multi_partition_key(self) -> "MultiPartitionKey":
+        from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+
+        partition_key = self.partition_key
+        if not isinstance(partition_key, MultiPartitionKey):
+            raise DagsterInvariantViolationError(
+                "Cannot access multi_partition_key for a run that is not partitioned with a"
+                " MultiPartitionsDefinition."
+            )
+        return partition_key
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
