@@ -26,8 +26,8 @@ To follow the steps in this guide, you'll need:
 
 - Python 3.10+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
 - Familiarity with Python and asset-based pipelines.
-
-No external credentials are required — all components run in **demo mode** by default.
+- Active Databricks workspaces with job IDs and access tokens.
+- A Kafka broker reachable from your Dagster deployment.
 
 ## Step 1: Set up your Dagster environment
 
@@ -53,6 +53,8 @@ No external credentials are required — all components run in **demo mode** by 
        ```bash .venv\Scripts\activate ```
      </TabItem>
    </Tabs>
+
+4. Configure credentials for your Databricks workspaces and Kafka broker (see [Configuration](#configuration) below).
 
 ## Step 2: Launch the Dagster webserver
 
@@ -123,7 +125,6 @@ type: project_multi_workspace_databricks.components.databricks_job_orchestrator.
 
 attributes:
   job_id: 12345
-  demo_mode: true
   workspace_config:
     host: 'https://your-workspace.cloud.databricks.com'
     token: '${DATABRICKS_TOKEN}'
@@ -136,7 +137,7 @@ attributes:
         - 'legacy_customer_data'
 ```
 
-When `demo_mode: true`, the component returns synthetic metadata without connecting to Databricks. To add a new workspace, scaffold a new component instance:
+To add a new workspace, scaffold a new component instance:
 
 ```bash
 dg scaffold defs \
@@ -144,37 +145,32 @@ dg scaffold defs \
   new_workspace_name
 ```
 
-## Demo mode
+## Configuration
 
-All components run with `demo_mode: true` by default:
+### Databricks workspaces
 
-- **Kafka sensors** generate simulated invoice and CRM events on each tick — no broker required
-- **Databricks components** return mock run metadata immediately — no workspace credentials required
-
-## Connecting to real systems
-
-To run against real infrastructure, update the following:
-
-**Databricks** — set `demo_mode: false` and provide credentials in each workspace's `defs.yaml`:
+Update `workspace_config` in each workspace's `defs.yaml` with real credentials:
 
 ```yaml
 workspace_config:
   host: 'https://your-workspace.cloud.databricks.com'
   token: '${DATABRICKS_TOKEN}'
-demo_mode: false
 ```
 
-**Kafka** — update `KafkaResource` in `defs/core_assets/__init__.py`:
+### Kafka
+
+Update `KafkaResource` in `defs/core_assets/__init__.py`:
 
 ```python
 KafkaResource(
     bootstrap_servers="your-kafka-broker:9092",
     topics=["erp-events", "crm-events"],
-    demo_mode=False,
 )
 ```
 
-**Fivetran** — configure the helper in `assets.py` with your API credentials:
+### Fivetran
+
+Configure the helper in `assets.py` with your API credentials:
 
 ```python
 from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance
