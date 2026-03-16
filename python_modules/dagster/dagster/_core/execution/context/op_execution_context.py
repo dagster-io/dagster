@@ -289,7 +289,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def
                 )
-                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
+                def my_asset(context: AssetExecutionContext):
                     context.log.info(context.partition_key)
 
                 # materializing the 2023-08-21 partition of this asset will log:
