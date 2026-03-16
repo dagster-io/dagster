@@ -49,21 +49,13 @@ To follow the steps in this guide, you'll need:
 3. Activate the virtual environment:
 
    <Tabs>
-  <TabItem value="macos" label="MacOS/Unix">
-
-   ```bash
-   source .venv/bin/activate
-   ```
-
+     <TabItem value="macos" label="MacOS/Unix">
+       ```source .venv/bin/activate```
      </TabItem>
-  <TabItem value="windows" label="Windows">
-
-   ```bash
-   .venv\Scripts\activate
-   ```
-
+     <TabItem value="windows" label="Windows">
+       ```.venv\Scripts\activate```
      </TabItem>
-</Tabs>
+   </Tabs>
 
 4. Configure credentials for your Databricks workspaces and Kafka broker (see [Configuration](#configuration) below).
 
