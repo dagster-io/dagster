@@ -146,7 +146,7 @@ def build_celery_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
 # ########################
 
 
-def build_daemon_suite_steps(ctx: BuildkiteContext):
+def build_daemon_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = None
     directory = os.path.join("integration_tests", "test_suites", "daemon-test-suite")
     return build_integration_suite_steps(
@@ -157,7 +157,9 @@ def build_daemon_suite_steps(ctx: BuildkiteContext):
     )
 
 
-def build_auto_materialize_perf_suite_steps(ctx: BuildkiteContext):
+def build_auto_materialize_perf_suite_steps(
+    ctx: BuildkiteContext,
+) -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = None
     directory = os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
     return build_integration_suite_steps(
@@ -172,7 +174,7 @@ def build_auto_materialize_perf_suite_steps(ctx: BuildkiteContext):
     )
 
 
-def skip_if_not_azure_commit(ctx: BuildkiteContext):
+def skip_if_not_azure_commit(ctx: BuildkiteContext) -> str | None:
     """If no dagster-azure files are changed, skip the azure live tests."""
     return (
         None
@@ -181,7 +183,7 @@ def skip_if_not_azure_commit(ctx: BuildkiteContext):
     )
 
 
-def skip_if_not_gcp_commit(ctx: BuildkiteContext):
+def skip_if_not_gcp_commit(ctx: BuildkiteContext) -> str | None:
     """If no dagster-gcp files are changed, skip the gcp live tests."""
     return (
         None
@@ -205,7 +207,7 @@ def build_azure_live_test_suite_steps(ctx: BuildkiteContext) -> list[TopLevelSte
     ).build_steps(ctx)
 
 
-def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
+def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _: ToxFactor | None) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',

@@ -21,7 +21,7 @@ def build_prerelease_package_steps(ctx: BuildkiteContext) -> list[StepConfigurat
             block=":question: Choose package",
         )
         .with_prompt(
-            prompt=None,
+            prompt="Choose package and version to publish",
             fields=[
                 {
                     "select": "Select a package to publish",

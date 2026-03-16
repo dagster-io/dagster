@@ -15,7 +15,11 @@ from dagster_buildkite.steps.dagster_ui import (
 from dagster_buildkite.steps.docs import build_docs_steps
 
 
-def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_steps):
+def filter_steps_by_quarantined(
+    steps: list[StepConfiguration],
+    skip_quarantined_steps: str,
+    mute_quarantined_steps: str,
+) -> tuple[list[StepConfiguration], list[StepConfiguration], list[StepConfiguration]]:
     if not skip_quarantined_steps and not mute_quarantined_steps:
         return steps, [], []
 

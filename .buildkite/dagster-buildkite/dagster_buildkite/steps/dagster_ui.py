@@ -10,7 +10,7 @@ from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.packages import PackageSpec
 
 
-def skip_if_no_dagster_ui_components_changes(ctx: BuildkiteContext):
+def skip_if_no_dagster_ui_components_changes(ctx: BuildkiteContext) -> str | None:
     if not ctx.is_feature_branch:
         return None
 
@@ -37,7 +37,7 @@ def build_dagster_ui_components_steps(ctx: BuildkiteContext) -> list[CommandStep
     ]
 
 
-def skip_if_no_dagster_ui_core_changes(ctx: BuildkiteContext):
+def skip_if_no_dagster_ui_core_changes(ctx: BuildkiteContext) -> str | None:
     if not ctx.is_feature_branch:
         return None
 
@@ -69,5 +69,5 @@ def build_dagster_ui_core_steps(ctx: BuildkiteContext) -> list[CommandStepConfig
     ]
 
 
-def skip_if_no_dagster_ui_changes(ctx: BuildkiteContext):
+def skip_if_no_dagster_ui_changes(ctx: BuildkiteContext) -> str | None:
     return skip_if_no_dagster_ui_components_changes(ctx) or skip_if_no_dagster_ui_core_changes(ctx)

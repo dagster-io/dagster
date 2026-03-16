@@ -88,11 +88,13 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
     return parsed_version
 
 
-def get_commit(rev):
+def get_commit(rev: str) -> str:
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
-def skip_if_no_python_changes(ctx: BuildkiteContext, overrides: Sequence[str] | None = None):
+def skip_if_no_python_changes(
+    ctx: BuildkiteContext, overrides: Sequence[str] | None = None
+) -> str | None:
     if ctx.config.no_skip:
         return None
 
@@ -112,7 +114,7 @@ def skip_if_no_python_changes(ctx: BuildkiteContext, overrides: Sequence[str] | 
     return "No python changes"
 
 
-def skip_if_no_pyright_requirements_txt_changes(ctx: BuildkiteContext):
+def skip_if_no_pyright_requirements_txt_changes(ctx: BuildkiteContext) -> str | None:
     if ctx.config.no_skip:
         return None
 
@@ -125,7 +127,7 @@ def skip_if_no_pyright_requirements_txt_changes(ctx: BuildkiteContext):
     return "No pyright requirements.txt changes"
 
 
-def skip_if_no_yaml_changes(ctx: BuildkiteContext):
+def skip_if_no_yaml_changes(ctx: BuildkiteContext) -> str | None:
     if ctx.config.no_skip:
         return None
 
@@ -138,7 +140,7 @@ def skip_if_no_yaml_changes(ctx: BuildkiteContext):
     return "No yaml changes"
 
 
-def skip_if_no_non_docs_markdown_changes(ctx: BuildkiteContext):
+def skip_if_no_non_docs_markdown_changes(ctx: BuildkiteContext) -> str | None:
     if ctx.config.no_skip:
         return None
 
@@ -219,7 +221,7 @@ def skip_if_not_dagster_dbt_commit(ctx: BuildkiteContext) -> str | None:
     )
 
 
-def skip_if_no_helm_changes(ctx: BuildkiteContext):
+def skip_if_no_helm_changes(ctx: BuildkiteContext) -> str | None:
     if ctx.config.no_skip:
         return None
 
@@ -233,7 +235,7 @@ def skip_if_no_helm_changes(ctx: BuildkiteContext):
     return "No helm changes"
 
 
-def skip_if_no_docs_changes(ctx: BuildkiteContext):
+def skip_if_no_docs_changes(ctx: BuildkiteContext) -> str | None:
     if ctx.config.no_skip:
         return None
 
