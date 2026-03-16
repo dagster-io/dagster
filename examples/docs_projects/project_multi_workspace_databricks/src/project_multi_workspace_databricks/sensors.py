@@ -17,6 +17,7 @@ TIME_BETWEEN_SENSOR_TICKS = 40  # seconds
 MAX_SENSOR_TICK_RUNTIME = 30  # seconds
 
 
+# start_kafka_resource
 class KafkaResource(dg.ConfigurableResource):
     """Resource for connecting to Kafka."""
 
@@ -44,6 +45,9 @@ class KafkaResource(dg.ConfigurableResource):
         )
 
 
+# end_kafka_resource
+
+
 def kafka_sensor_factory(
     replica_id: int = 0,
     target_asset_key: Optional[dg.AssetKey] = None,
@@ -58,6 +62,7 @@ def kafka_sensor_factory(
         A configured sensor definition
     """
 
+    # start_sensor_body
     @dg.sensor(
         name=f"watch_kafka_replica_{replica_id}",
         minimum_interval_seconds=TIME_BETWEEN_SENSOR_TICKS,
@@ -126,5 +131,7 @@ def kafka_sensor_factory(
 
         finally:
             consumer.close()
+
+    # end_sensor_body
 
     return watch_kafka

@@ -64,6 +64,7 @@ class DatabricksJobOrchestrator(dg.Component, dg.Model, dg.Resolvable):
             "run_id": finished.run_id,
         }
 
+    # start_build_defs
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         """Build Dagster definitions for this component."""
         enriched_specs = []
@@ -111,3 +112,5 @@ class DatabricksJobOrchestrator(dg.Component, dg.Model, dg.Resolvable):
                 )
 
         return dg.Definitions(assets=[databricks_job_asset])
+
+    # end_build_defs

@@ -13,6 +13,7 @@ import dagster as dg
 # ============================================================================
 
 
+# start_kafka_assets
 @dg.asset(
     kinds={"kafka", "raw_data"},
     group_name="ingestion",
@@ -39,6 +40,9 @@ def raw_crm_events(context: dg.AssetExecutionContext) -> None:
     Events include customer balance updates, support interactions, and account changes.
     """
     pass
+
+
+# end_kafka_assets
 
 
 @dg.op(
