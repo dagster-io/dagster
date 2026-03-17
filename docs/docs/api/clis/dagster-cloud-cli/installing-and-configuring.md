@@ -8,6 +8,19 @@ The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster+
 
 In this guide, we'll cover how to install and configure the `dagster-cloud` CLI, get help, and use some helpful environment variables and CLI options.
 
+:::tip Recommended: Use the `dg` CLI
+
+For new projects, we recommend using the [`dg` CLI](/api/clis/dg-cli) for configuration tasks:
+
+- **Log in interactively:** `dg plus login` (replaces `dagster-cloud config setup`)
+- **Set config non-interactively:** `dg plus config set --api-token <TOKEN> --organization <ORG>` (replaces `dagster-cloud config setup` with token)
+- **View config:** `dg plus config view` (replaces `dagster-cloud config view`)
+- **Switch deployment:** `dg plus config set --deployment <NAME>` (replaces `dagster-cloud config set-deployment`)
+
+For full details, see the [`dg plus` CLI reference](/api/clis/dg-cli/dg-plus).
+
+:::
+
 :::note
 
 The `dagster-cloud` CLI requires Python 3.10 through 3.13 and a recent version of Docker.
@@ -45,6 +58,12 @@ dagster-cloud --show-completion
 The recommended way to set up your CLI's config for long-term use is through the configuration file, located by default at `~/.dagster_cloud_cli/config`.
 
 ### Setting up the configuration file
+
+:::tip `dg` equivalent
+
+Use `dg plus login` for interactive setup, or `dg plus config set --api-token <TOKEN> --organization <ORG>` for non-interactive setup.
+
+:::
 
 Set up the config file:
 
@@ -99,6 +118,12 @@ When prompted, specify the following:
 
 ### Viewing and modifying the configuration file
 
+:::tip `dg` equivalent
+
+Use `dg plus config view` to view config.
+
+:::
+
 To view the contents of the CLI configuration file, run:
 
 ```shell
@@ -118,6 +143,12 @@ dagster-cloud config setup
 ```
 
 ## Toggling between deployments
+
+:::tip `dg` equivalent
+
+Use `dg plus config set --deployment <deployment_name>`.
+
+:::
 
 To quickly toggle between deployments, run:
 

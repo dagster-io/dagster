@@ -32,31 +32,52 @@ Often these two steps are handled by CI/CD connected to your Git repository.
 
 ## Adding a new Dagster project manually
 
-### Step 1: Install the `dagster-cloud` Python client
+### Step 1: Install the CLI
 
-Start by installing the `dagster-cloud` Python client:
+<Tabs groupId="cli">
+  <TabItem value="dg" label="dg CLI (recommended)">
 
-<Tabs groupId="package-manager">
-   <TabItem value="uv" label="uv">
+Install the `dg` CLI, which includes built-in support for Dagster+ configuration and deployment:
 
-         ```shell
-         uv add dagster-cloud
-         ```
+```shell
+pip install dagster-dg-cli
+```
 
-   </TabItem>
+For full details, see the [`dg plus` reference](/api/clis/dg-cli/dg-plus).
 
-   <TabItem value="pip" label="pip">
+  </TabItem>
+  <TabItem value="dagster-cloud" label="dagster-cloud (legacy)">
 
-         ```shell
-         pip install dagster-cloud
-         ```
+:::warning Deprecated
 
-   </TabItem>
+The `dagster-cloud` CLI is deprecated. We recommend using the [`dg` CLI](/api/clis/dg-cli) for new projects.
+
+:::
+
+Install the `dagster-cloud` Python client:
+
+```shell
+pip install dagster-cloud
+```
+
+  </TabItem>
 </Tabs>
 
 ### Step 2: Authenticate the `dagster-cloud` Python client
 
-Next, authenticate the `dagster-cloud` Python client:
+The recommended way to authenticate is with the `dg` CLI:
+
+```shell
+dg plus login
+```
+
+For CI environments or non-interactive setup, use:
+
+```shell
+dg plus config set --api-token <TOKEN> --organization <ORG>
+```
+
+Alternatively, you can authenticate using environment variables, which work with both `dg` and `dagster-cloud`:
 
 1. In the Dagster+ UI, click the user icon in the upper right corner.
 2. Click **Organization settings**, then the **Tokens** tab.
@@ -118,9 +139,22 @@ The commands below take two main arguments:
 
 If you are using Dagster+ Serverless, run the following command to add your Dagster project:
 
+<Tabs groupId="cli">
+  <TabItem value="dg" label="dg CLI (recommended)">
+
+```bash
+dg plus deploy --deployment prod --location-name dagster_tutorial --module-name dagster_tutorial
+```
+
+  </TabItem>
+  <TabItem value="dagster-cloud" label="dagster-cloud (legacy)">
+
 ```bash
 dagster-cloud serverless deploy-python-executable --deployment prod --location-name dagster_tutorial --module-name dagster_tutorial
 ```
+
+  </TabItem>
+</Tabs>
 
 Running the command multiple times with the same location name will _update_ the project. Running the command with a new location name will _add_ a project.
 
@@ -134,9 +168,22 @@ If you are using Dagster+ Hybrid, make sure you have deployed the code appropria
 
 Then run the following command, using the image URI which is available from your registry:
 
+<Tabs groupId="cli">
+  <TabItem value="dg" label="dg CLI (recommended)">
+
+```bash
+dg api code-location add dagster_tutorial --deployment prod --module-name dagster_tutorial --image 764506304434.dkr.ecr.us-west-2.amazonaws.com/hooli-data-science-prod:latest
+```
+
+  </TabItem>
+  <TabItem value="dagster-cloud" label="dagster-cloud (legacy)">
+
 ```bash
 dagster-cloud deployment add-location --deployment prod --location-name dagster_tutorial --module-name dagster_tutorial --image 764506304434.dkr.ecr.us-west-2.amazonaws.com/hooli-data-science-prod:latest
 ```
+
+  </TabItem>
+</Tabs>
 
 </TabItem>
 </Tabs>
