@@ -4,6 +4,10 @@ sidebar_position: 4100
 title: Installing and configuring the dagster-cloud CLI
 ---
 
+import SupersededDagsterCloudCLI from '@site/docs/partials/_SupersededDagsterCloudCLI.md';
+
+<SupersededDagsterCloudCLI />
+
 The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster+.
 
 In this guide, we'll cover how to install and configure the `dagster-cloud` CLI, get help, and use some helpful environment variables and CLI options.
