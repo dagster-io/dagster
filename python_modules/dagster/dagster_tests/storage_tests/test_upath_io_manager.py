@@ -651,3 +651,30 @@ def test_upath_can_transition_from_non_partitioned_to_partitioned(
     assert dg.materialize(
         [my_asset], resources={"io_manager": my_io_manager}, partition_key=start.strftime(daily.fmt)
     ).success
+
+
+def test_upath_can_transition_from_partitioned_to_non_partitioned(
+    tmp_path: Path, daily: DailyPartitionsDefinition, start: datetime
+):
+    my_io_manager = PickleIOManager(UPath(tmp_path))
+    asset_path = UPath(tmp_path) / "my_asset"
+
+    @dg.asset(partitions_def=daily)
+    def my_asset():
+        return 1
+
+    assert dg.materialize(
+        [my_asset], resources={"io_manager": my_io_manager}, partition_key=start.strftime(daily.fmt)
+    ).success
+    assert asset_path.is_dir(), (
+        "Pre-condition: asset should be stored as a directory when partitioned"
+    )
+
+    @dg.asset
+    def my_asset():  # type: ignore
+        return 1
+
+    # Previously failed with PermissionError because asset_name existed as a directory
+    result = dg.materialize([my_asset], resources={"io_manager": my_io_manager})
+    assert result.success
+    assert asset_path.is_file(), "Asset should be a file after transitioning to non-partitioned"
