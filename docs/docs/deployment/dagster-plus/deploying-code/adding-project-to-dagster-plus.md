@@ -63,32 +63,16 @@ pip install dagster-cloud
   </TabItem>
 </Tabs>
 
-### Step 2: Authenticate the `dagster-cloud` Python client
+### Step 2: Authenticate
 
-The recommended way to authenticate is with the `dg` CLI:
+[Authenticate to your Dagster+ organization](/api/clis/dg-cli/configuring-dagster-plus) by running `dg plus login` for interactive use, or see the [non-interactive setup](/api/clis/dg-cli/configuring-dagster-plus#setting-config-non-interactively) instructions for CI environments.
 
-```shell
-dg plus login
+You can also authenticate using environment variables, which work with both `dg` and `dagster-cloud`:
+
+```bash
+export DAGSTER_CLOUD_ORGANIZATION="organization-name"
+export DAGSTER_CLOUD_API_TOKEN="your-token"
 ```
-
-For CI environments or non-interactive setup, use:
-
-```shell
-dg plus config set --api-token <TOKEN> --organization <ORG>
-```
-
-Alternatively, you can authenticate using environment variables, which work with both `dg` and `dagster-cloud`:
-
-1. In the Dagster+ UI, click the user icon in the upper right corner.
-2. Click **Organization settings**, then the **Tokens** tab.
-3. Click the **Create user token** button.
-4. Copy the token.
-5. Set the following environment variables:
-
-   ```bash
-   export DAGSTER_CLOUD_ORGANIZATION="organization-name" # if your URL is https://acme.dagster.plus your organization name is "acme"
-   export DAGSTER_CLOUD_API_TOKEN="your-token"
-   ```
 
 ### Step 3: Add your Dagster project
 

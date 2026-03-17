@@ -166,26 +166,7 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
 
 1. First, [create a new project with the `create-dagster project` command](/guides/build/projects/creating-projects) and activate the project virtual environment.
 
-2. Next, authenticate to your Dagster+ organization:
-
-   <Tabs>
-     <TabItem value="interactive" label="Interactive">
-       ```shell
-       dg plus login
-       ```
-     </TabItem>
-     <TabItem value="ci" label="Non-interactive (CI)">
-       ```shell
-       dg plus config set --api-token <TOKEN> --organization <ORG>
-       ```
-     </TabItem>
-   </Tabs>
-
-   :::note Legacy alternative
-
-   You can also use the legacy `dagster-cloud` CLI: install it with `pip install dagster-cloud` and run `dagster-cloud configure`. For more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring).
-
-   :::
+2. Next, [authenticate to your Dagster+ organization](/api/clis/dg-cli/configuring-dagster-plus). For interactive use, run `dg plus login`. For CI environments, see the [non-interactive setup](/api/clis/dg-cli/configuring-dagster-plus#setting-config-non-interactively) instructions.
 
 3. Finally, deploy your project to Dagster+ using the `serverless` command, replacing `YOUR_PACKAGE_NAME` with the name of your Dagster package:
 
@@ -220,7 +201,7 @@ Before following the steps in this section, you must:
 
 - [Create a Dagster project](/guides/build/projects/creating-projects)
 - Scaffold deployment configuration files (Dockerfile, `build.yaml`, `containter_context.yaml`) in the project root directory with `dg plus deploy configure`
-- Log in to your Dagster organization with `dg plus login`
+- [Log in to your Dagster+ organization](/api/clis/dg-cli/configuring-dagster-plus) with `dg plus login`
 
 :::
 

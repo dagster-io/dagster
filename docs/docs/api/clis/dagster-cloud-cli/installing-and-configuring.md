@@ -10,14 +10,7 @@ In this guide, we'll cover how to install and configure the `dagster-cloud` CLI,
 
 :::tip Recommended: Use the `dg` CLI
 
-For new projects, we recommend using the [`dg` CLI](/api/clis/dg-cli) for configuration tasks:
-
-- **Log in interactively:** `dg plus login` (replaces `dagster-cloud config setup`)
-- **Set config non-interactively:** `dg plus config set --api-token <TOKEN> --organization <ORG>` (replaces `dagster-cloud config setup` with token)
-- **View config:** `dg plus config view` (replaces `dagster-cloud config view`)
-- **Switch deployment:** `dg plus config set --deployment <NAME>` (replaces `dagster-cloud config set-deployment`)
-
-For full details, see the [`dg plus` CLI reference](/api/clis/dg-cli/dg-plus).
+For new projects, we recommend using the [`dg` CLI](/api/clis/dg-cli) instead. See the [Configuring Dagster+ with the dg CLI](/api/clis/dg-cli/configuring-dagster-plus) guide for the equivalent commands and a full migration table.
 
 :::
 
@@ -61,7 +54,7 @@ The recommended way to set up your CLI's config for long-term use is through the
 
 :::tip `dg` equivalent
 
-Use `dg plus login` for interactive setup, or `dg plus config set --api-token <TOKEN> --organization <ORG>` for non-interactive setup.
+See [Configuring Dagster+: Logging in](/api/clis/dg-cli/configuring-dagster-plus#logging-in).
 
 :::
 
@@ -120,7 +113,7 @@ When prompted, specify the following:
 
 :::tip `dg` equivalent
 
-Use `dg plus config view` to view config.
+See [Configuring Dagster+: Viewing config](/api/clis/dg-cli/configuring-dagster-plus#viewing-config).
 
 :::
 
@@ -146,7 +139,7 @@ dagster-cloud config setup
 
 :::tip `dg` equivalent
 
-Use `dg plus config set --deployment <deployment_name>`.
+See [Configuring Dagster+: Switching deployments](/api/clis/dg-cli/configuring-dagster-plus#switching-deployments).
 
 :::
 
