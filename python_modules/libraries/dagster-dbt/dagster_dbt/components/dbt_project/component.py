@@ -35,7 +35,7 @@ from dagster_dbt.components.dbt_component_utils import (
     resolve_cli_args,
 )
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_dbt.core.dbt_event_iterator import DbtEventIterator
+from dagster_dbt.core.dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import validate_manifest
@@ -384,7 +384,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     def _get_dbt_event_iterator(
         self, context: dg.AssetExecutionContext, dbt: DbtCliResource
-    ) -> DbtEventIterator:
+    ) -> DbtEventIterator[DbtDagsterEventType]:
         iterator = dbt.cli(self.get_cli_args(context), context=context).stream()
         if "column_metadata" in self.include_metadata:
             iterator = iterator.fetch_column_metadata()
