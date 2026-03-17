@@ -44,3 +44,48 @@ If you run into issues as you scale your deployment (especially as asset counts 
 | Load or health check timeouts when you click into the location or expand assets in the UI.                                                                                                                                                          |                                           |
 | During runs:<br /><ul><li>`Worker exited with SIGKILL (OOM)` error</li><li>Python `MemoryError` from libraries (pandas, numpy, PyTorch, etc.)</li><li>gRPC DeadlineExceeded mid-run when the user code process stalls under GC or thrash.</li></ul> | Increase memory in code server container. |
 | Sensors/schedules that query a large graph timing out when the code server has limited CPU.                                                                                                                                                         | Increase CPU in code server container.    |
+
+### Network connectivity troubleshooting
+
+If you see errors like the following in your agent logs, your agent may be experiencing network connectivity issues when communicating with the Dagster+ API:
+
+```
+dagster_cloud_cli.core.errors.GraphQLStorageError: HTTPSConnectionPool(host='{organisation}.agent.dagster.cloud', port=443): Read timed out. (read timeout=60)
+```
+
+```
+requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+```
+
+These errors typically occur in Hybrid deployments where network egress traverses NAT gateways or proxies that impose connection timeouts or drop idle connections. Common causes include:
+
+- **NAT gateway timeouts:** Cloud NAT services (such as GCP CloudNAT or AWS NAT Gateway) may drop idle connections
+- **Port/IP exhaustion:** High traffic through NAT gateways can exhaust available ports
+- **Proxy connection limits:** Corporate proxies may impose connection duration limits
+
+#### Enable TCP keepalive \{#tcp-keepalive}
+
+You can configure TCP keepalive settings to prevent NAT gateways and proxies from dropping idle connections. For Kubernetes agents, add the following to your Helm `values.yaml`:
+
+```yaml
+# values.yaml
+dagsterCloud:
+  socketOptions:
+    - ['SOL_SOCKET', 'SO_KEEPALIVE', 1]
+    - ['IPPROTO_TCP', 'TCP_KEEPIDLE', 11]
+    - ['IPPROTO_TCP', 'TCP_KEEPINTVL', 7]
+    - ['IPPROTO_TCP', 'TCP_KEEPCNT', 5]
+```
+
+```shell
+helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
+```
+
+These settings configure the TCP stack to:
+
+- Enable keepalive probes on connections (`SO_KEEPALIVE`)
+- Send the first keepalive probe after 11 seconds of idle time (`TCP_KEEPIDLE`)
+- Send subsequent probes every 7 seconds (`TCP_KEEPINTVL`)
+- Close the connection after 5 failed probes (`TCP_KEEPCNT`)

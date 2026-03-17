@@ -16,6 +16,7 @@ from dagster._core.definitions.partitions.utils.multi import (
     get_time_partition_key as get_time_partition_key,
     get_time_partitions_def as get_time_partitions_def,
     has_one_dimension_time_window_partitioning as has_one_dimension_time_window_partitioning,
+    time_window_for_partition_key_range as time_window_for_partition_key_range,
 )
 from dagster._core.definitions.partitions.utils.time_window import (
     PartitionRangeStatus as PartitionRangeStatus,

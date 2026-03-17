@@ -4,12 +4,8 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
-import {
-  ReexecutionParams,
-  ReexecutionStrategy,
-  buildLaunchBackfillSuccess,
-  buildMutation,
-} from '../../../graphql/types';
+import {buildLaunchBackfillSuccess, buildMutation} from '../../../graphql/builders';
+import {ReexecutionParams, ReexecutionStrategy} from '../../../graphql/types';
 import {BackfillActionsMenu} from '../BackfillActionsMenu';
 import {
   BackfillTableFragmentCompletedAssetJob,
@@ -53,6 +49,9 @@ describe('BackfillActionsMenu', () => {
 
     await user.click(reexecute);
     await waitFor(() => expect(reexecuteMock.result).toHaveBeenCalled());
+
+    // Re-open the dropdown since clicking a MenuItem dismisses the Popover
+    await user.click(dropdown);
 
     const reexecuteFromFailure = await screen.findByRole('menuitem', {
       name: /re-execute from failure$/i,

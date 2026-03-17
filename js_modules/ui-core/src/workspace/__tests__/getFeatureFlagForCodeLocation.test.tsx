@@ -1,4 +1,4 @@
-import {buildFeatureFlag, buildWorkspaceLocationEntry} from '../../graphql/types';
+import {buildFeatureFlag, buildWorkspaceLocationEntry} from '../../graphql/builders';
 import {WorkspaceLocationNodeFragment} from '../WorkspaceContext/types/WorkspaceQueries.types';
 import {getFeatureFlagForCodeLocation} from '../WorkspaceContext/util';
 

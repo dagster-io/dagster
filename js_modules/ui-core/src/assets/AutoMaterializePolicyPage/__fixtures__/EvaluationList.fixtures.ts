@@ -4,7 +4,7 @@ import {
   buildAssetConditionEvaluation,
   buildAssetConditionEvaluationRecord,
   buildAutomationConditionEvaluationNode,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 
 const ONE_MINUTE = 60 * 1000;
 

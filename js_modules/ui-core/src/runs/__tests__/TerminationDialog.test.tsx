@@ -5,14 +5,13 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 
 import {
-  TerminateRunPolicy,
-  TerminateRunsResultOrError,
   buildPythonError,
   buildRun,
   buildTerminateRunFailure,
   buildTerminateRunSuccess,
   buildTerminateRunsResult,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {TerminateRunPolicy} from '../../graphql/types';
 import {TERMINATE_MUTATION} from '../RunUtils';
 import {TerminationDialog, Props as TerminationDialogProps} from '../TerminationDialog';
 import {TerminateMutation, TerminateMutationVariables} from '../types/RunUtils.types';
@@ -36,7 +35,7 @@ jest.mock('@dagster-io/ui-components', () => ({
 function buildMockTerminateMutation(
   runIds: string[],
   terminatePolicy: TerminateRunPolicy,
-  result?: TerminateRunsResultOrError,
+  result?: TerminateMutation['terminateRuns'],
 ): Omit<MockedResponse<TerminateMutation, TerminateMutationVariables>, 'result'> & {
   result: jest.Mock;
 } {

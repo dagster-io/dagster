@@ -1,6 +1,6 @@
+import threading
 from collections.abc import Mapping
 from enum import Enum
-from functools import cached_property
 from typing import TYPE_CHECKING, Annotated
 
 from dagster._record import ImportFrom, record
@@ -51,19 +51,31 @@ class CodeLocationStatusEntry:
     load_status: CodeLocationLoadStatus
     update_timestamp: float
     version_key: str
+    has_load_error: bool
 
 
-@record
 class CurrentWorkspace:
-    code_location_entries: Mapping[str, CodeLocationEntry]
+    def __init__(self, code_location_entries: Mapping[str, CodeLocationEntry]):
+        self.code_location_entries = code_location_entries
+        self._asset_graph_lock = threading.Lock()
+        self._asset_graph: RemoteWorkspaceAssetGraph | None = None
 
-    @cached_property
+    @property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
+        if self._asset_graph is not None:
+            return self._asset_graph
+
         from dagster._core.definitions.assets.graph.remote_asset_graph import (
             RemoteWorkspaceAssetGraph,
         )
 
-        return RemoteWorkspaceAssetGraph.build(self)
+        # building the full asset graph is expensive - so ensure at most one
+        # thread is doing that work at once, and subsequent threads reuse the result
+        with self._asset_graph_lock:
+            if self._asset_graph is not None:
+                return self._asset_graph
+            self._asset_graph = RemoteWorkspaceAssetGraph.build(self)
+            return self._asset_graph
 
     def with_code_location(self, name: str, entry: CodeLocationEntry) -> "CurrentWorkspace":
         return CurrentWorkspace(code_location_entries={**self.code_location_entries, name: entry})
@@ -77,4 +89,5 @@ def location_status_from_location_entry(
         load_status=entry.load_status,
         update_timestamp=entry.update_timestamp,
         version_key=entry.version_key,
+        has_load_error=entry.load_error is not None,
     )

@@ -3,7 +3,7 @@ import {Box, Subtitle2} from '@dagster-io/ui-components';
 import {FreshnessTag} from './FreshnessPolicySection';
 import {FRESHNESS_EVALUATION_ENABLED_QUERY} from './FreshnessQueries';
 import {useQuery} from '../../apollo-client';
-import {AssetKey} from '../../graphql/types';
+import {AssetKey} from '../types';
 import {FreshnessPolicyFragment} from '../types/FreshnessPolicyFragment.types';
 import {
   FreshnessEvaluationEnabledQuery,

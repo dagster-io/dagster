@@ -1,7 +1,8 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import {InstigationTickStatus, buildInstigationTick} from '../../graphql/types';
+import {buildInstigationTick} from '../../graphql/builders';
+import {InstigationTickStatus} from '../../graphql/types';
 import {TickStatusTag} from '../../ticks/TickStatusTag';
 
 describe('TickTag', () => {

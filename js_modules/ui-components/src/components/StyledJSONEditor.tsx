@@ -2,12 +2,29 @@ import clsx from 'clsx';
 import CodeMirror from 'codemirror';
 import 'codemirror/addon/edit/matchbrackets';
 import 'codemirror/mode/javascript/javascript';
+import 'codemirror/mode/jinja2/jinja2';
 import * as React from 'react';
 
 import {DagsterCodeMirrorStyle} from './DagsterCodeMirrorStyle';
 import {RawCodeMirror} from './RawCodeMirror';
 import {createSmartBracketKeyMap} from './configeditor/codemirror-json/codeMirrorJson';
 import styles from './css/StyledJSONEditor.module.css';
+
+const JINJA_RE = /\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\}/s;
+const JSON_MODE = {name: 'javascript', json: true};
+
+const detectMode = (value: string): CodeMirror.EditorConfiguration['mode'] => {
+  const trimmed = value.trimStart();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    if (!JINJA_RE.test(value)) {
+      return JSON_MODE;
+    }
+  }
+  if (JINJA_RE.test(value)) {
+    return 'jinja2';
+  }
+  return 'text/plain';
+};
 
 export interface StyledJSONEditorProps {
   value: string;
@@ -22,9 +39,11 @@ export interface StyledJSONEditorProps {
 export const StyledJSONEditor = (props: StyledJSONEditorProps) => {
   const {options, theme, value, onChange, onReady, className, style, ...rest} = props;
 
+  const resolvedMode = React.useRef(detectMode(value)).current;
+
   const finalOptions = React.useMemo(() => {
     return {
-      mode: {name: 'javascript', json: true},
+      mode: resolvedMode,
       matchBrackets: true,
       lineNumbers: true,
       lineWrapping: true,
@@ -35,11 +54,12 @@ export const StyledJSONEditor = (props: StyledJSONEditorProps) => {
       ...options,
       theme: clsx(theme, 'dagster'),
       extraKeys: {
-        ...createSmartBracketKeyMap(),
+        ...(typeof resolvedMode !== 'string' ? createSmartBracketKeyMap() : {}),
         ...(typeof options?.extraKeys === 'object' ? options.extraKeys : {}),
       },
     } as CodeMirror.EditorConfiguration;
-  }, [options, theme]);
+  }, [options, theme, resolvedMode]);
+
   return (
     <div className={clsx(styles.editorContainer, className)} style={style}>
       <DagsterCodeMirrorStyle />

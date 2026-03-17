@@ -105,6 +105,30 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     default=False,
     help="Show verbose stack traces for errors in the code server.",
 )
+@click.option(
+    "--db-statement-timeout",
+    help=(
+        "The timeout in milliseconds to set on database statements sent "
+        "to the DagsterInstance. Not respected in all configurations."
+    ),
+    default=None,
+    type=click.INT,
+)
+@click.option(
+    "--db-pool-recycle",
+    help=(
+        "The maximum age of a connection to use from the sqlalchemy pool without connection"
+        " recycling."
+    ),
+    default=None,
+    type=click.INT,
+)
+@click.option(
+    "--db-pool-max-overflow",
+    help=("The maximum overflow size of the sqlalchemy pool. Set to -1 to disable."),
+    default=None,
+    type=click.INT,
+)
 @workspace_options
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
@@ -123,6 +147,9 @@ def dev_command(
     use_legacy_code_server_behavior: bool,
     shutdown_pipe: int | None,
     verbose: bool,
+    db_statement_timeout: int | None,
+    db_pool_recycle: int | None,
+    db_pool_max_overflow: int | None,
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -139,6 +166,9 @@ def dev_command(
         verbose,
         workspace_opts,
         live_data_poll_rate,
+        db_statement_timeout=db_statement_timeout,
+        db_pool_recycle=db_pool_recycle,
+        db_pool_max_overflow=db_pool_max_overflow,
     )
 
 
@@ -153,6 +183,9 @@ def dev_command_impl(
     verbose: bool,
     workspace_opts: WorkspaceOpts,
     live_data_poll_rate: str | None = "2000",
+    db_statement_timeout: int | None = None,
+    db_pool_recycle: int | None = None,
+    db_pool_max_overflow: int | None = None,
 ) -> None:
     # check if dagster-webserver installed, crash if not
     try:
@@ -219,6 +252,21 @@ def dev_command_impl(
                 + (["--dagster-log-level", log_level])
                 + (["--log-format", log_format])
                 + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
+                + (
+                    ["--db-statement-timeout", str(db_statement_timeout)]
+                    if db_statement_timeout is not None
+                    else []
+                )
+                + (
+                    ["--db-pool-recycle", str(db_pool_recycle)]
+                    if db_pool_recycle is not None
+                    else []
+                )
+                + (
+                    ["--db-pool-max-overflow", str(db_pool_max_overflow)]
+                    if db_pool_max_overflow is not None
+                    else []
+                )
                 + ["--shutdown-pipe", str(webserver_read_fd)]
                 + args,
                 pass_fds=[webserver_read_fd],

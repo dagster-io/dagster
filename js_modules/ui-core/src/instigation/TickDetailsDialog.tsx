@@ -28,11 +28,16 @@ import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {
-  DynamicPartitionsRequestResult,
   DynamicPartitionsRequestType,
   InstigationSelector,
   InstigationTickStatus,
 } from '../graphql/types';
+type DynamicPartitionsRequestResult = {
+  partitionKeys: string[] | null;
+  partitionsDefName: string;
+  skippedPartitionKeys: string[];
+  type: DynamicPartitionsRequestType;
+};
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickResultType} from '../ticks/TickStatusTag';
 

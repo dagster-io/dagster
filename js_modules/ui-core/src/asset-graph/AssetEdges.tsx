@@ -224,9 +224,9 @@ const AssetEdgeSet = memo(({edges, color, strokeWidth, direction}: AssetEdgeSetP
       <path
         key={idx}
         d={
-          direction === 'horizontal'
+          (direction === 'horizontal'
             ? buildSVGPathHorizontal({source: edge.from, target: edge.to})
-            : buildSVGPathVertical({source: edge.from, target: edge.to})
+            : buildSVGPathVertical({source: edge.from, target: edge.to})) ?? undefined
         }
         stroke={color}
         strokeWidth={strokeWidth}

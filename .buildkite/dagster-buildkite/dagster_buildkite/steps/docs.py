@@ -27,7 +27,7 @@ def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConf
     )
 
 
-def build_build_docs_step(ctx: BuildkiteContext):
+def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     return (
         add_test_image(CommandStepBuilder("build docs"), AvailablePythonVersion.get_default())
         .run(

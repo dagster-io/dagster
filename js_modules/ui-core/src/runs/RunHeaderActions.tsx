@@ -1,4 +1,13 @@
-import {Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  Tooltip,
+  showToast,
+} from '@dagster-io/ui-components';
 import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
 import {RunAlertNotifications} from '@shared/runs/RunAlertNotifications';
 import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
@@ -16,7 +25,6 @@ import {useMutation} from '../apollo-client';
 import {isExternalRun} from './externalRuns';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
-import {showSharedToaster} from '../app/DomUtils';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
 import {
@@ -54,7 +62,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   const freeConcurrencySlots = async () => {
     const resp = await freeSlots({variables: {runId: run.id}});
     if (resp.data?.freeConcurrencySlots) {
-      await showSharedToaster({
+      showToast({
         intent: 'success',
         icon: 'check_circle',
         message: 'Freed concurrency slots',

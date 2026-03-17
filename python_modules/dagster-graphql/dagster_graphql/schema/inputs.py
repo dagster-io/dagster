@@ -242,16 +242,17 @@ class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
         name = "ReportRunlessAssetEventsParams"
 
 
-class GrapheneReportAssetCheckEvaluationParams(graphene.InputObjectType):
+class GrapheneReportAssetCheckEvaluationsParams(graphene.InputObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKeyInput)
     checkName = graphene.NonNull(graphene.String)
     passed = graphene.NonNull(graphene.Boolean)
     severity = graphene.InputField(GrapheneAssetCheckSeverity)
     serializedMetadata = graphene.InputField(graphene.String)
-    partition = graphene.InputField(graphene.String)
+    partitionKeys = graphene.InputField(graphene.List(graphene.String))
+    description = graphene.InputField(graphene.String)
 
     class Meta:
-        name = "ReportAssetCheckEvaluationParams"
+        name = "ReportAssetCheckEvaluationsParams"
 
 
 class GrapheneSensorSelector(graphene.InputObjectType):

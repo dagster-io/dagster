@@ -17,7 +17,7 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {RepoAddress} from '../workspace/types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
-import {AssetKey} from '../graphql/types';
+import {AssetKey} from '../assets/types';
 
 // ########################
 // ##### LAUNCHPAD ROOTS

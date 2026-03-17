@@ -1,10 +1,5 @@
-import {
-  RunStatus,
-  RunsFeedView,
-  buildPartitionBackfill,
-  buildPipelineTag,
-  buildRun,
-} from '../../graphql/types';
+import {buildPartitionBackfill, buildPipelineTag, buildRun} from '../../graphql/builders';
+import {RunStatus, RunsFeedView} from '../../graphql/types';
 import {BackfillTableFragmentCompletedAssetJob} from '../../instance/backfill/__fixtures__/BackfillTable.fixtures';
 import {buildQueryMock} from '../../testing/mocking';
 import {DagsterTag} from '../RunTag';

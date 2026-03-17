@@ -83,6 +83,51 @@ export const Outlined = () => {
   );
 };
 
+export const PreserveIconColor = () => {
+  return (
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
+      <Button preserveIconColor icon={<Icon name="star" color={Colors.accentLavender()} />}>
+        Intent not defined
+      </Button>
+      <Button
+        preserveIconColor
+        icon={<Icon name="star" color={Colors.accentLavender()} />}
+        intent="primary"
+      >
+        Primary
+      </Button>
+      <Button
+        preserveIconColor
+        icon={<Icon name="done" color={Colors.accentLavender()} />}
+        intent="success"
+      >
+        Success
+      </Button>
+      <Button
+        preserveIconColor
+        icon={<Icon name="error" color={Colors.accentLavender()} />}
+        intent="danger"
+      >
+        Danger
+      </Button>
+      <Button
+        preserveIconColor
+        icon={<Icon name="warning" color={Colors.accentLavender()} />}
+        intent="warning"
+      >
+        Warning
+      </Button>
+      <Button
+        preserveIconColor
+        icon={<Icon name="star" color={Colors.accentLavender()} />}
+        intent="none"
+      >
+        None
+      </Button>
+    </Box>
+  );
+};
+
 export const Disabled = () => {
   return (
     <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>

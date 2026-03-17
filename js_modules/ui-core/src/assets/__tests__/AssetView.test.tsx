@@ -10,12 +10,12 @@ import {
   AssetGraphLiveQueryVariables,
 } from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
-  AssetKeyInput,
   buildAssetKey,
   buildAssetLatestInfo,
   buildAssetNode,
   buildAssetRecordConnection,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {AssetKeyInput} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {AssetView} from '../AssetView';

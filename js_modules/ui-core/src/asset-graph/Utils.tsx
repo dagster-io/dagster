@@ -1,5 +1,5 @@
 import {FeatureFlag} from '@shared/FeatureFlags';
-import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@visx/shape';
 import memoize from 'lodash/memoize';
 
 import {featureEnabled} from '../app/Flags';
@@ -47,6 +47,10 @@ export const __ANONYMOUS_ASSET_JOB_PREFIX = '__anonymous_asset_job';
 export function isHiddenAssetGroupJob(jobName: string) {
   return jobName.startsWith(__ASSET_JOB_PREFIX) || jobName.startsWith(__ANONYMOUS_ASSET_JOB_PREFIX);
 }
+
+export const HIDDEN_ASSET_GROUP_JOB_LABEL = 'Jobless asset materializations';
+export const HIDDEN_ASSET_GROUP_JOB_TOOLTIP =
+  'This includes declarative automation, sensors, backfills, and manually triggered materializations.';
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because
 // the GraphQL interface exposes dependencyKeys, not dependencyIds. We also need

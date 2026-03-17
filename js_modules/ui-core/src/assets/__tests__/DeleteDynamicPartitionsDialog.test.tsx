@@ -3,7 +3,7 @@ import {screen, waitFor} from '@testing-library/dom';
 import {render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import {buildDeleteDynamicPartitionsSuccess, buildMutation} from '../../graphql/types';
+import {buildDeleteDynamicPartitionsSuccess, buildMutation} from '../../graphql/builders';
 import {
   buildQueryMock,
   mockViewportClientRect,

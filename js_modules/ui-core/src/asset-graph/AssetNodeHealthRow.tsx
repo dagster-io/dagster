@@ -1,4 +1,4 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {AssetNodeRowBox} from './AssetNode';
@@ -49,6 +49,24 @@ export const AssetNodeHealthRow = ({
             <span>Run {titleForRun({id: materializingRunId})}</span>
           </AssetRunLink>
         ) : undefined}
+      </AssetNodeRowBox>
+    );
+  }
+
+  // `healthData === undefined` means the first fetch has not yet completed. Once the fetch
+  // resolves, `healthData` is always an AssetHealthFragment object — either with real health
+  // data, or with `assetHealth: null` for assets without definitions or assets not found in
+  // the query result. Those are terminal states, not transient, so they will never be stuck
+  // showing "Loading...".
+  if (healthData === undefined) {
+    return (
+      <AssetNodeRowBox
+        padding={{horizontal: 8}}
+        background={Colors.backgroundLight()}
+        flex={{justifyContent: 'flex-start', alignItems: 'center', gap: 6}}
+      >
+        <Spinner purpose="caption-text" />
+        <span style={{color: Colors.textLight()}}>Loading...</span>
       </AssetNodeRowBox>
     );
   }

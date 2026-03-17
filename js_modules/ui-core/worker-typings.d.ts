@@ -1,5 +1,3 @@
-declare module '@vx/shape';
-
 /**
  * A list of dependencies that are disallowed in WebWorkers.
  */

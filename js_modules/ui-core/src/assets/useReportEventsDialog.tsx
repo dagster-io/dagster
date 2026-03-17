@@ -3,43 +3,31 @@ import {
   Box,
   Button,
   Caption,
-  Checkbox,
   Dialog,
   DialogFooter,
   DialogHeader,
   Icon,
-  Subheading,
   TextInput,
   Tooltip,
+  showToast,
 } from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
-import {partitionCountString} from './AssetNodePartitionCounts';
+import {gql, useMutation} from '../apollo-client';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
-import {
-  explodePartitionKeysInSelectionMatching,
-  mergedAssetHealth,
-} from './MultipartitioningSupport';
-import {asAssetKeyInput} from './asInput';
-import {
-  ReportEventMutation,
-  ReportEventMutationVariables,
-  ReportEventPartitionDefinitionQuery,
-  ReportEventPartitionDefinitionQueryVariables,
-} from './types/useReportEventsDialog.types';
-import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {keyCountInSelections, usePartitionHealthData} from './usePartitionHealthData';
-import {gql, useMutation, useQuery} from '../apollo-client';
+import {explodePartitionKeysInSelectionMatching} from './MultipartitioningSupport';
+import {ReportEventsPartitionSection} from './ReportEventsPartitionSection';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {AssetEventType, AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
-import {DimensionRangeWizards} from '../partitions/DimensionRangeWizards';
-import {testId} from '../testing/testId';
-import {ToggleableSection} from '../ui/ToggleableSection';
+import {AssetEventType, AssetKeyInput} from '../graphql/types';
 import {RepoAddress} from '../workspace/types';
+import {
+  ReportEventMutation,
+  ReportEventMutationVariables,
+} from './types/useReportEventsDialog.types';
+import {useReportEventsPartitioning} from './useReportEventsPartitioning';
 
 type Asset = {
   isPartitioned: boolean;
@@ -129,40 +117,12 @@ const ReportEventDialogBody = ({
 }) => {
   const [description, setDescription] = useState('');
 
-  const assetPartitionDefResult = useQuery<
-    ReportEventPartitionDefinitionQuery,
-    ReportEventPartitionDefinitionQueryVariables
-  >(REPORT_EVENT_PARTITION_DEFINITION_QUERY, {
-    variables: {
-      assetKey: asAssetKeyInput(asset.assetKey),
-    },
-  });
-
-  const assetPartitionDef =
-    assetPartitionDefResult.data?.assetNodeOrError.__typename === 'AssetNode'
-      ? assetPartitionDefResult.data?.assetNodeOrError.partitionDefinition
-      : null;
-
   const [mutation] = useMutation<ReportEventMutation, ReportEventMutationVariables>(
     REPORT_EVENT_MUTATION,
   );
 
-  const [lastRefresh, setLastRefresh] = useState(Date.now());
-  const assetHealth = mergedAssetHealth(
-    usePartitionHealthData(
-      asset.isPartitioned ? [asset.assetKey] : [],
-      lastRefresh.toString(),
-      'background',
-    ),
-  );
-  const isDynamic = assetHealth.dimensions.some((d) => d.type === PartitionDefinitionType.DYNAMIC);
-  const [selections, setSelections] = usePartitionDimensionSelections({
-    assetHealth,
-    modifyQueryString: false,
-    skipPartitionKeyValidation: isDynamic,
-    shouldReadPartitionQueryStringParam: true,
-    defaultSelection: 'empty',
-  });
+  const {assetPartitionDef, assetHealth, selections, setSelections, setLastRefresh} =
+    useReportEventsPartitioning(asset.assetKey, asset.isPartitioned);
 
   const [filterFailed, setFilterFailed] = useState(true);
   const [filterMissing, setFilterMissing] = useState(true);
@@ -201,7 +161,7 @@ const ReportEventDialogBody = ({
     const data = result.data?.reportRunlessAssetEvents;
 
     if (!data || data.__typename === 'PythonError') {
-      await showSharedToaster({
+      showToast({
         message: <div>An unexpected error occurred. This event was not reported.</div>,
         icon: 'error',
         intent: 'danger',
@@ -214,13 +174,13 @@ const ReportEventDialogBody = ({
           : undefined,
       });
     } else if (data.__typename === 'UnauthorizedError') {
-      await showSharedToaster({
+      showToast({
         message: <div>{data.message}</div>,
         icon: 'error',
         intent: 'danger',
       });
     } else {
-      await showSharedToaster({
+      showToast({
         message:
           keysFiltered.length > 1 ? (
             <div>Your events have been reported.</div>
@@ -271,43 +231,15 @@ const ReportEventDialogBody = ({
       </Box>
 
       {asset.isPartitioned ? (
-        <ToggleableSection
-          isInitiallyOpen={true}
-          title={
-            <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Partition selection</Subheading>
-              <span>{partitionCountString(keyCountInSelections(selections))}</span>
-            </Box>
-          }
-        >
-          <DimensionRangeWizards
-            repoAddress={repoAddress}
-            refetch={async () => setLastRefresh(Date.now())}
-            selections={selections}
-            setSelections={setSelections}
-            displayedHealth={assetHealth}
-            displayedPartitionDefinition={assetPartitionDef}
-          />
-          {/* Only show the failed and missing filters for multi-dimensional partitions */}
-          {/* because DimensionRangeWizards will set quickSelectButtons to false for multi-dimensional partitions */}
-          {/* so this is the only way for the user to filter to failed and missing partitions */}
-          {selections.length > 1 && (
-            <Box padding={{vertical: 8, horizontal: 20}} flex={{direction: 'column', gap: 8}}>
-              <Checkbox
-                data-testid={testId('failed-only-checkbox')}
-                label="Report only failed partitions within selection"
-                checked={filterFailed}
-                onChange={() => setFilterFailed(!filterFailed)}
-              />
-              <Checkbox
-                data-testid={testId('missing-only-checkbox')}
-                label="Report only missing partitions within selection"
-                checked={filterMissing}
-                onChange={() => setFilterMissing(!filterMissing)}
-              />
-            </Box>
-          )}
-        </ToggleableSection>
+        <ReportEventsPartitionSection
+          selections={selections}
+          setSelections={setSelections}
+          assetHealth={assetHealth}
+          assetPartitionDef={assetPartitionDef}
+          repoAddress={repoAddress}
+          setLastRefresh={setLastRefresh}
+          healthFilters={{filterFailed, setFilterFailed, filterMissing, setFilterMissing}}
+        />
       ) : undefined}
 
       <Box
@@ -345,26 +277,6 @@ const ReportEventDialogBody = ({
     </>
   );
 };
-
-const REPORT_EVENT_PARTITION_DEFINITION_QUERY = gql`
-  query ReportEventPartitionDefinitionQuery($assetKey: AssetKeyInput!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      __typename
-      ... on AssetNode {
-        id
-        partitionDefinition {
-          type
-          name
-          dimensionTypes {
-            type
-            name
-            dynamicPartitionsDefinitionName
-          }
-        }
-      }
-    }
-  }
-`;
 
 const REPORT_EVENT_MUTATION = gql`
   mutation ReportEventMutation($eventParams: ReportRunlessAssetEventsParams!) {

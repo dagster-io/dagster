@@ -20,6 +20,7 @@ import {
   Table,
   TextInput,
   Tooltip,
+  showToast,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
@@ -51,7 +52,6 @@ import {
   PoolDetailsQuery,
   PoolDetailsQueryVariables,
 } from './types/PoolDetailsQuery.types';
-import {showSharedToaster} from '../app/DomUtils';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -82,7 +82,7 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
   const history = useHistory();
   const onDelete = () => {
     history.push('/deployment/concurrency');
-    showSharedToaster({
+    showToast({
       icon: 'trash',
       intent: 'success',
       message: 'Deleted pool limit',
@@ -426,7 +426,7 @@ const ConcurrencyActionMenu = ({
               });
               if (resp.data?.freeConcurrencySlots) {
                 onUpdate();
-                await showSharedToaster({
+                showToast({
                   intent: 'success',
                   icon: 'copy_to_clipboard_done',
                   message: 'Freed concurrency slot',
@@ -439,14 +439,14 @@ const ConcurrencyActionMenu = ({
             icon="status"
             text="Free all concurrency slots for run"
             onClick={async () => {
-              await showSharedToaster({
+              showToast({
                 intent: 'primary',
                 message: 'Freeing concurrency slots...',
               });
               const resp = await freeSlots({variables: {runId: pendingStep.runId}});
               if (resp.data?.freeConcurrencySlots) {
                 onUpdate();
-                await showSharedToaster({
+                showToast({
                   intent: 'success',
                   icon: 'copy_to_clipboard_done',
                   message: 'Freed concurrency slots',

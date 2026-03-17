@@ -74,7 +74,7 @@
   display: block;
 }
 
-.button :global(.iconGlobal) {
+.button.iconColor :global(.iconGlobal) {
   color: var(--button-icon-color);
   background-color: var(--button-icon-color);
 }

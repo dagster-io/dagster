@@ -1,3 +1,8 @@
+# 1.4.2 (February 27, 2026)
+
+- Upgrade Rollup v2 to v4 and update all @rollup/ plugins to latest versions
+- Replace unmaintained `rollup-plugin-styles` with `rollup-plugin-postcss`
+
 # 1.4.1 (February 15, 2026)
 
 - Fix CSS modules not being processed in Rollup build, causing class name mappings to be lost

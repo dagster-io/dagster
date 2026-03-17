@@ -1,6 +1,7 @@
 import {
   Body2,
   Box,
+  Button,
   Caption,
   Colors,
   Icon,
@@ -8,6 +9,7 @@ import {
   NonIdealState,
   Subtitle1,
   TextInput,
+  Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
 import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
@@ -26,13 +28,17 @@ import {AssetCheckExecutionList} from './AssetCheckExecutionList';
 import {AssetCheckOverview} from './AssetCheckOverview';
 import {AssetCheckPartitions} from './AssetCheckPartitions';
 import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
+import {AssetChecksTabType, AssetChecksTabs} from './AssetChecksTabs';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
 } from './types/AssetCheckDetailDialog.types';
+import {useReportCheckEvaluationDialog} from './useReportCheckEvaluationDialog';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {useQuery} from '../../apollo-client';
+import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecksQuery.types';
+import {DEFAULT_DISABLED_REASON} from '../../app/Permissions';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {AssetKeyInput} from '../../graphql/types';
@@ -40,10 +46,9 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
 import {AssetKey} from '../types';
-import {AssetChecksTabType, AssetChecksTabs} from './AssetChecksTabs';
-import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecksQuery.types';
 
 export const AssetChecks = ({
   assetKey,
@@ -104,11 +109,31 @@ export const AssetChecks = ({
     return checks.find((check) => check.name === selectedCheckName) ?? checks[0];
   }, [selectedCheckName, checks]);
 
-  const hasPartitions = React.useMemo(() => {
+  const isPartitioned = React.useMemo(() => {
     return !!(selectedCheck && selectedCheck.partitionDefinition);
   }, [selectedCheck]);
 
   const isSelectedCheckAutomated = !!selectedCheck?.automationCondition;
+
+  const selectedCheckInfo = React.useMemo(() => {
+    if (!assetNode || !selectedCheck) {
+      return null;
+    }
+
+    return {
+      assetKey,
+      isPartitioned,
+      name: selectedCheck.name,
+      repoAddress: buildRepoAddress(assetNode.repository.name, assetNode.repository.location.name),
+      hasReportRunlessAssetEventPermission: assetNode.hasReportRunlessAssetEventPermission,
+    };
+  }, [assetNode, selectedCheck, assetKey, isPartitioned]);
+
+  const {
+    setIsOpen: setReportDialogOpen,
+    element: reportDialogElement,
+    hasPermission: canReportEvaluation,
+  } = useReportCheckEvaluationDialog(selectedCheckInfo, () => queryResult.refetch());
 
   const {paginationProps, executions, executionsLoading} = useHistoricalCheckExecutions(
     selectedCheck ? {assetKey, checkName: selectedCheck.name} : null,
@@ -242,13 +267,25 @@ export const AssetChecks = ({
               <Icon name="asset_check" />
               <Subtitle1>{selectedCheck.name}</Subtitle1>
             </Box>
-            <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              {reportDialogElement}
+              <Tooltip content={DEFAULT_DISABLED_REASON} canShow={!canReportEvaluation}>
+                <Button
+                  icon={<Icon name="asset_check" />}
+                  disabled={!canReportEvaluation}
+                  onClick={() => setReportDialogOpen(true)}
+                >
+                  Report evaluation
+                </Button>
+              </Tooltip>
+              <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
+            </Box>
           </Box>
           <Box padding={{horizontal: 24}} border="bottom">
             <AssetChecksTabs
               activeTab={activeTab}
               enableAutomationHistory={isSelectedCheckAutomated}
-              hasPartitions={hasPartitions}
+              hasPartitions={isPartitioned}
               onChange={(tab) => {
                 setActiveTab(tab);
               }}
@@ -267,7 +304,7 @@ export const AssetChecks = ({
             <AssetCheckExecutionList
               executions={executions}
               paginationProps={paginationProps}
-              hasPartitions={hasPartitions}
+              hasPartitions={isPartitioned}
             />
           ) : null}
           {activeTab === 'automation-history' ? (

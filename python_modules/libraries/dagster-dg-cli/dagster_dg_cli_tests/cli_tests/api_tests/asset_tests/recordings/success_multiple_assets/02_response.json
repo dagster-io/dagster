@@ -1,172 +1,191 @@
 {
-  "assetNodes": [
-    {
-      "assetKey": {
-        "path": [
-          "asset_health_report_slack"
-        ]
-      },
-      "dependencyKeys": [],
-      "description": "Sends Dagster asset health report to #bot-purina Slack channel",
-      "groupName": "monitoring",
-      "id": "dagster_open_platform.__repository__.[\"asset_health_report_slack\"]",
-      "kinds": [
-        "slack"
-      ],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "user_roles"
-        ]
-      },
-      "dependencyKeys": [],
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"user_roles\"]",
-      "kinds": [],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_asset_checks"
-        ]
-      },
-      "dependencyKeys": [
-        {
+  "assetsOrError": {
+    "__typename": "AssetConnection",
+    "nodes": [
+      {
+        "id": "dagster_open_platform.__repository__.[\"asset_health_report_slack\"]",
+        "key": {
           "path": [
-            "cloud-prod-workspace-replication",
-            "staging",
-            "asset_checks"
+            "asset_health_report_slack"
           ]
+        },
+        "definition": {
+          "description": "Sends Dagster asset health report to #bot-purina Slack channel",
+          "groupName": "monitoring",
+          "kinds": [
+            "slack"
+          ],
+          "dependencyKeys": [],
+          "metadataEntries": []
         }
-      ],
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks\"]",
-      "kinds": [],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_assets"
-        ]
       },
-      "dependencyKeys": [
-        {
+      {
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"user_roles\"]",
+        "key": {
           "path": [
-            "cloud-prod-workspace-replication",
-            "staging",
-            "assets"
+            "aws",
+            "cloud-prod",
+            "user_roles"
           ]
+        },
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "groupName": "aws_stages",
+          "kinds": [],
+          "dependencyKeys": [],
+          "metadataEntries": []
         }
-      ],
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
-      "kinds": [],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_external_repo_metadata"
-        ]
       },
-      "dependencyKeys": [
-        {
+      {
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks\"]",
+        "key": {
           "path": [
-            "cloud-prod-workspace-replication",
-            "staging",
-            "external_repo_metadata"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_asset_checks"
           ]
+        },
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "groupName": "aws_stages",
+          "kinds": [],
+          "dependencyKeys": [
+            {
+              "path": [
+                "cloud-prod-workspace-replication",
+                "staging",
+                "asset_checks"
+              ]
+            }
+          ],
+          "metadataEntries": []
         }
-      ],
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata\"]",
-      "kinds": [],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_jobs"
-        ]
       },
-      "dependencyKeys": [
-        {
+      {
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
+        "key": {
           "path": [
-            "cloud-prod-workspace-replication",
-            "staging",
-            "jobs"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_assets"
           ]
+        },
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "groupName": "aws_stages",
+          "kinds": [],
+          "dependencyKeys": [
+            {
+              "path": [
+                "cloud-prod-workspace-replication",
+                "staging",
+                "assets"
+              ]
+            }
+          ],
+          "metadataEntries": []
         }
-      ],
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
-      "kinds": [],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_metadata"
-        ]
       },
-      "dependencyKeys": [
-        {
+      {
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata\"]",
+        "key": {
           "path": [
-            "cloud-prod-workspace-replication",
-            "staging",
-            "metadata"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_external_repo_metadata"
           ]
+        },
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "groupName": "aws_stages",
+          "kinds": [],
+          "dependencyKeys": [
+            {
+              "path": [
+                "cloud-prod-workspace-replication",
+                "staging",
+                "external_repo_metadata"
+              ]
+            }
+          ],
+          "metadataEntries": []
         }
-      ],
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_metadata\"]",
-      "kinds": [],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_partitions"
-        ]
       },
-      "dependencyKeys": [
-        {
+      {
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
+        "key": {
           "path": [
-            "cloud-prod-workspace-replication",
-            "staging",
-            "partitions"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_jobs"
           ]
+        },
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "groupName": "aws_stages",
+          "kinds": [],
+          "dependencyKeys": [
+            {
+              "path": [
+                "cloud-prod-workspace-replication",
+                "staging",
+                "jobs"
+              ]
+            }
+          ],
+          "metadataEntries": []
         }
-      ],
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_partitions\"]",
-      "kinds": [],
-      "metadataEntries": []
-    }
-  ]
+      },
+      {
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_metadata\"]",
+        "key": {
+          "path": [
+            "aws",
+            "cloud-prod",
+            "workspace_staging_metadata"
+          ]
+        },
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "groupName": "aws_stages",
+          "kinds": [],
+          "dependencyKeys": [
+            {
+              "path": [
+                "cloud-prod-workspace-replication",
+                "staging",
+                "metadata"
+              ]
+            }
+          ],
+          "metadataEntries": []
+        }
+      },
+      {
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_partitions\"]",
+        "key": {
+          "path": [
+            "aws",
+            "cloud-prod",
+            "workspace_staging_partitions"
+          ]
+        },
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "groupName": "aws_stages",
+          "kinds": [],
+          "dependencyKeys": [
+            {
+              "path": [
+                "cloud-prod-workspace-replication",
+                "staging",
+                "partitions"
+              ]
+            }
+          ],
+          "metadataEntries": []
+        }
+      }
+    ]
+  }
 }

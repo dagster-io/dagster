@@ -17,7 +17,6 @@ import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {PipelineTag} from '../graphql/types';
 import {CopyButton} from '../ui/CopyButton';
 
 export const RunRowTags = ({
@@ -35,7 +34,7 @@ export const RunRowTags = ({
   const [showRunTags, setShowRunTags] = React.useState(false);
 
   const allTagsWithPinned = React.useMemo(() => {
-    const allTags: Omit<PipelineTag, '__typename'>[] = [...run.tags];
+    const allTags: {key: string; value: string}[] = [...run.tags];
     if (run.mode !== 'default') {
       allTags.push({key: 'mode', value: run.mode});
     }

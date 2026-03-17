@@ -9,7 +9,11 @@ from dagster._core.definitions.metadata import ArbitraryMetadataMapping, Metadat
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import PartitionsSubset
-from dagster._core.definitions.partitions.utils import TimeWindow
+from dagster._core.definitions.partitions.utils import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
+    time_window_for_partition_key_range,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._utils.warnings import normalize_renamed_param
@@ -90,10 +94,7 @@ class InputContext:
         self._resource_config = resource_config
         self._step_context = step_context
         self._asset_key = asset_key
-        if self._step_context and self._step_context.has_partition_key:
-            self._partition_key: str | None = self._step_context.partition_key
-        else:
-            self._partition_key = partition_key
+        self._partition_key = partition_key
 
         self._asset_partitions_subset = asset_partitions_subset
         self._asset_partitions_def = asset_partitions_def
@@ -348,14 +349,14 @@ class InputContext:
         if subset is None:
             check.failed("The input does not correspond to a partitioned asset.")
 
-        partition_keys = list(subset.get_partition_keys())
-        if len(partition_keys) == 1:
-            return partition_keys[0]
-        else:
-            check.failed(
-                f"Tried to access partition key for asset '{self.asset_key}', "
-                f"but the number of input partitions != 1: '{subset}'."
-            )
+        keys_iter = iter(subset.get_partition_keys())
+        first = next(keys_iter, None)
+        if first is not None and next(keys_iter, None) is None:
+            return first
+        check.failed(
+            f"Tried to access partition key for asset '{self.asset_key}', "
+            f"but the number of input partitions != 1: '{subset}'."
+        )
 
     @public
     @property
@@ -371,7 +372,9 @@ class InputContext:
                 "Tried to access asset_partition_key_range, but the asset is not partitioned.",
             )
 
-        partition_key_ranges = subset.get_partition_key_ranges(self.asset_partitions_def)
+        partition_key_ranges = subset.get_partition_key_ranges(
+            self._asset_partitions_def  # pyright: ignore[reportArgumentType]
+        )
         if len(partition_key_ranges) != 1:
             check.failed(
                 "Tried to access asset_partition_key_range, but there are "
@@ -411,7 +414,20 @@ class InputContext:
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        return self.step_context.asset_partitions_time_window_for_input(self.name)
+        partitions_def = self._asset_partitions_def
+        if partitions_def is None:
+            raise DagsterInvariantViolationError(
+                "Tried to get asset partitions time window for an input that does not"
+                " have a partitions definition."
+            )
+
+        if not has_one_dimension_time_window_partitioning(partitions_def):
+            raise DagsterInvariantViolationError(
+                "Tried to get asset partitions time window for an input that corresponds"
+                " to a partitioned asset that is not time-partitioned."
+            )
+
+        return time_window_for_partition_key_range(partitions_def, self.asset_partition_key_range)
 
     @public
     def get_identifier(self) -> Sequence[str]:
@@ -625,6 +641,8 @@ def build_input_context(
     asset_partitions_def = check.opt_inst_param(
         asset_partitions_def, "asset_partitions_def", PartitionsDefinition
     )
+    if partition_key and asset_key and asset_partition_key_range is None:
+        asset_partition_key_range = PartitionKeyRange(partition_key, partition_key)
     if asset_partitions_def and asset_partition_key_range:
         with partition_loading_context(dynamic_partitions_store=instance):
             asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
@@ -668,7 +686,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def get_partition_keys(self, current_time: datetime | None = None) -> Iterable[str]:
         if self._key_range.start == self._key_range.end:
-            return self._key_range.start
+            return [self._key_range.start]
         else:
             raise NotImplementedError()
 

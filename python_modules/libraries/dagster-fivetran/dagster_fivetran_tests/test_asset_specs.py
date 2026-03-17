@@ -182,13 +182,21 @@ def test_translator_spec(
         ]
 
         first_asset_metadata = next(asset.metadata for asset in all_assets)
-        assert FivetranMetadataSet.extract(first_asset_metadata).connector_id == TEST_CONNECTOR_ID
-        assert (
-            FivetranMetadataSet.extract(first_asset_metadata).connector_name == TEST_CONNECTOR_NAME
-        )
-        assert (
-            FivetranMetadataSet.extract(first_asset_metadata).destination_id == TEST_DESTINATION_ID
-        )
+        metadata_set = FivetranMetadataSet.extract(first_asset_metadata)
+
+        # Basic connector metadata
+        assert metadata_set.connector_id == TEST_CONNECTOR_ID
+        assert metadata_set.connector_name == TEST_CONNECTOR_NAME
+        assert metadata_set.destination_id == TEST_DESTINATION_ID
+
+        # Sync schedule metadata (from conftest.py mock data)
+        assert metadata_set.sync_frequency_minutes == 360
+        assert metadata_set.schedule_type == "auto"
+        assert metadata_set.daily_sync_time == "14:00"
+
+        # Custom report metadata (not a custom report in mock data)
+        assert metadata_set.is_custom_report is None
+        assert metadata_set.custom_report_config is None
 
 
 def test_cached_load_spec_single_resource(

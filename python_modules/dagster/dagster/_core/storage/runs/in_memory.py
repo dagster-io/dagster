@@ -60,8 +60,8 @@ class InMemoryRunStorage(SqlRunStorage):
     def connect(self) -> Iterator[Connection]:
         with self._engine.connect() as conn:
             with conn.begin():
-                conn.execute(db.text("PRAGMA journal_mode=WAL;"))
-                conn.execute(db.text("PRAGMA foreign_keys=ON;"))
+                conn.execute(db.text("PRAGMA journal_mode=WAL;")).close()
+                conn.execute(db.text("PRAGMA foreign_keys=ON;")).close()
                 yield conn
 
     def upgrade(self) -> None:

@@ -1,7 +1,5 @@
 """Secret API commands following GitHub CLI patterns."""
 
-import json
-
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
@@ -11,6 +9,8 @@ from dagster_shared.plus.config_utils import dg_api_options
 # Lazy import to avoid loading pydantic at CLI startup
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_secret, format_secrets
+from dagster_dg_cli.cli.api.shared import handle_api_errors
+from dagster_dg_cli.cli.response_schema import dg_response_schema
 
 
 @click.command(name="list", cls=DgClickCommand)
@@ -29,6 +29,7 @@ from dagster_dg_cli.cli.api.formatters import format_secret, format_secrets
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecretList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -55,20 +56,13 @@ def list_secrets_command(
 
     api = DgApiSecretApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         secrets = api.list_secrets(
             location_name=location,
             scope=scope,
         )
         output = format_secrets(secrets, as_json=output_json)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to list secrets: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand)
@@ -88,6 +82,7 @@ def list_secrets_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecret")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -118,7 +113,7 @@ def get_secret_command(
 
     api = DgApiSecretApi(client)
 
-    try:
+    with handle_api_errors(ctx, output_json):
         secret = api.get_secret(
             secret_name=secret_name,
             location_name=location,
@@ -126,13 +121,6 @@ def get_secret_command(
         )
         output = format_secret(secret, as_json=output_json, show_value=show_value)
         click.echo(output)
-    except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to get secret '{secret_name}': {e}")
 
 
 @click.group(

@@ -4,10 +4,6 @@ description: Learn how to configure the state storage backend for state-backed c
 sidebar_position: 300
 ---
 
-import Beta from '@site/docs/partials/_Beta.md';
-
-<Beta />
-
 When using the `VERSIONED_STATE_STORAGE` state management strategy, you need to configure a state storage backend in your Dagster instance. Under the hood, you are just configuring a [UPath](https://github.com/fsspec/universal_pathlib) to your specific storage backend under which all state files will be stored.
 
 ## Instance configuration

@@ -9,6 +9,7 @@ from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEnt
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import JobFailureData, RunFailureReason
 from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.remote_representation.handle import JobHandle
@@ -16,6 +17,7 @@ from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     AUTO_RETRY_RUN_ID_TAG,
+    BACKFILL_ID_TAG,
     MAX_RETRIES_TAG,
     PARENT_RUN_ID_TAG,
     RESUME_RETRY_TAG,
@@ -30,6 +32,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
     filter_runs_to_should_retry,
     get_reexecution_strategy,
+    should_retry,
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 
@@ -1209,3 +1212,74 @@ def test_consume_new_runs_for_automatic_reexecution_with_root_run_deleted(
     assert any(
         ["Could not find run group" in engine_event.message for engine_event in engine_events]
     )
+
+
+def test_should_retry_skipped_for_terminal_backfill():
+    with instance_for_test() as instance:
+        # canceled backfill -> should not retry
+        canceled_backfill = PartitionBackfill(
+            backfill_id="test_backfill_canceled",
+            status=BulkActionStatus.CANCELED,
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        instance.add_backfill(canceled_backfill)
+        run_canceled_backfill = create_run_for_test(
+            instance,
+            status=DagsterRunStatus.FAILURE,
+            tags={BACKFILL_ID_TAG: "test_backfill_canceled", WILL_RETRY_TAG: "true"},
+        )
+        assert should_retry(run_canceled_backfill, instance) is False
+        engine_events = instance.all_logs(
+            run_canceled_backfill.run_id, of_type=DagsterEventType.ENGINE_EVENT
+        )
+        assert any("terminal" in e.message for e in engine_events)
+
+        # failed backfill -> should not retry
+        failed_backfill = PartitionBackfill(
+            backfill_id="test_backfill_failed",
+            status=BulkActionStatus.FAILED,
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        instance.add_backfill(failed_backfill)
+        run_failed_backfill = create_run_for_test(
+            instance,
+            status=DagsterRunStatus.FAILURE,
+            tags={BACKFILL_ID_TAG: "test_backfill_failed", WILL_RETRY_TAG: "true"},
+        )
+        assert should_retry(run_failed_backfill, instance) is False
+
+        # nonexistent backfill -> should not retry
+        run_missing_backfill = create_run_for_test(
+            instance,
+            status=DagsterRunStatus.FAILURE,
+            tags={BACKFILL_ID_TAG: "nonexistent_backfill_id", WILL_RETRY_TAG: "true"},
+        )
+        assert should_retry(run_missing_backfill, instance) is False
+        engine_events = instance.all_logs(
+            run_missing_backfill.run_id, of_type=DagsterEventType.ENGINE_EVENT
+        )
+        assert any("no longer exists" in e.message for e in engine_events)
+
+        # active (non-terminal) backfill -> should retry
+        active_backfill = PartitionBackfill(
+            backfill_id="test_backfill_active",
+            status=BulkActionStatus.REQUESTED,
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        instance.add_backfill(active_backfill)
+        run_active_backfill = create_run_for_test(
+            instance,
+            status=DagsterRunStatus.FAILURE,
+            tags={
+                BACKFILL_ID_TAG: "test_backfill_active",
+                WILL_RETRY_TAG: "true",
+                MAX_RETRIES_TAG: "2",
+            },
+        )
+        assert should_retry(run_active_backfill, instance) is True

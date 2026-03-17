@@ -267,3 +267,43 @@ These settings specify the queue(s) the agent will obtain requests from. See [Ro
 | ---------------------------------- | ---------------------------------------------------- |
 | agent_queues.include_default_queue | If true, agent processes requests from default queue |
 | agent_queues.additional_queues     | List of additional queues for agent processing       |
+
+## Using a custom agent image
+
+By default, the Dagster+ ECS agent uses the official `docker.io/dagster/dagster-cloud-agent` image. You can build and use your own custom agent image if you need additional dependencies, a different base image, or more control over the agent environment.
+
+### Building a custom agent image
+
+Create a Dockerfile that installs the `dagster-cloud` package with the `ecs` extra:
+
+```dockerfile
+FROM python:3.12-slim
+
+ARG DAGSTER_VERSION=1.12.19
+RUN pip install dagster-cloud[ecs]==${DAGSTER_VERSION}
+
+CMD ["dagster-cloud", "agent", "run"]
+```
+
+Build and push the image to your container registry (such as Amazon ECR):
+
+```shell
+docker build -t 123456789012.dkr.ecr.us-east-1.amazonaws.com/dagster-cloud-agent:custom .
+docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/dagster-cloud-agent:custom
+```
+
+### Configuring CloudFormation to use a custom image
+
+To use your custom agent image, modify the CloudFormation template that deploys the agent. Locate the agent's ECS task definition and update the `Image` property to point to your custom image:
+
+```yaml
+AgentTaskDefinition:
+  Type: AWS::ECS::TaskDefinition
+  Properties:
+    ContainerDefinitions:
+      - Name: DagsterCloudAgent
+        Image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/dagster-cloud-agent:custom
+        # ... rest of container definition
+```
+
+After updating the template, redeploy the CloudFormation stack to apply the changes.

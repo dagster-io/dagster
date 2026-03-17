@@ -6,7 +6,6 @@ import {RecoilRoot} from 'recoil';
 import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
-  BulkActionStatus,
   buildAssetBackfillData,
   buildAssetKey,
   buildAssetPartitionsStatusCounts,
@@ -14,7 +13,8 @@ import {
   buildPartitionKeyRange,
   buildPythonError,
   buildUnpartitionedAssetStatus,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
+import {BulkActionStatus} from '../../../graphql/types';
 import {
   buildQueryMock,
   mockViewportClientRect,

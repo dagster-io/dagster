@@ -409,7 +409,7 @@ class BaseTableauClient:
         jwt_token = jwt.encode(
             {
                 "iss": self.connected_app_client_id,
-                "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
+                "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5),
                 "jti": str(uuid.uuid4()),
                 "aud": "tableau",
                 "sub": self.username,

@@ -72,32 +72,35 @@ export const AssetEventDetail = ({
           </Heading>
           {isRunlessEvent(event) ? <RunlessEventTag tags={event.tags} /> : undefined}
         </Box>
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
           {icon}
-          {event.partition ? (
-            <>
-              Partition
-              <Link
-                to={assetDetailsPathForKey(assetKey, {
-                  view: 'partitions',
-                  partition: event.partition,
-                })}
-              >
-                {event.partition}
-              </Link>
-              {label.toLowerCase()}
-            </>
-          ) : (
-            <span>{label}</span>
-          )}
-          {run && (
-            <>
-              <span>in run</span>
-              <Link to={linkToRunEvent(run, event)}>
-                <Mono>{titleForRun(run)}</Mono>
-              </Link>
-            </>
-          )}
+          <div style={{overflowWrap: 'break-word', wordBreak: 'break-word'}}>
+            {event.partition ? (
+              <>
+                Partition{' '}
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {
+                    view: 'partitions',
+                    partition: event.partition,
+                  })}
+                >
+                  {event.partition}
+                </Link>{' '}
+                {label.toLowerCase()}
+              </>
+            ) : (
+              label
+            )}
+            {run && (
+              <>
+                {' '}
+                in run{' '}
+                <Link to={linkToRunEvent(run, event)}>
+                  <Mono>{titleForRun(run)}</Mono>
+                </Link>
+              </>
+            )}
+          </div>
         </Box>
       </Box>
 

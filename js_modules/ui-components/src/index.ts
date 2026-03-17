@@ -33,7 +33,6 @@ export * from './components/ProductTour';
 export * from './components/ProgressBar';
 export * from './components/Radio';
 export * from './components/RefreshableCountdown';
-export * from './components/RoundedButton';
 export * from './components/Select';
 export * from './components/Skeleton';
 export * from './components/Slider';

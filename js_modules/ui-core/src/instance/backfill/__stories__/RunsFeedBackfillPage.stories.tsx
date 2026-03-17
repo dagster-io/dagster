@@ -5,13 +5,13 @@ import {RecoilRoot} from 'recoil';
 import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
-  BulkActionStatus,
   buildAssetBackfillData,
   buildAssetKey,
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
   buildUnpartitionedAssetStatus,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
+import {BulkActionStatus} from '../../../graphql/types';
 import {RunsFeedBackfillPage} from '../RunsFeedBackfillPage';
 import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
 

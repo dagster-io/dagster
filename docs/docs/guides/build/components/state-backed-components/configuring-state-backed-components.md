@@ -4,10 +4,6 @@ description: Learn how to configure state management strategies for state-backed
 sidebar_position: 100
 ---
 
-import Beta from '@site/docs/partials/_Beta.md';
-
-<Beta />
-
 State-backed components provide flexible configuration options to control how state is fetched, stored, and updated. This guide explains the available configuration options and how to use them in your project.
 
 ## The defs_state configuration field

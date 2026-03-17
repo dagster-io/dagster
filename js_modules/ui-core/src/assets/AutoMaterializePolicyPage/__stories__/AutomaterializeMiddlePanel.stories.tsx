@@ -7,7 +7,7 @@ import {
   buildDimensionPartitionKeys,
   buildPartitionedAssetConditionEvaluationNode,
   buildUnpartitionedAssetConditionEvaluationNode,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 import {AutomaterializeMiddlePanel} from '../AutomaterializeMiddlePanel';
 import {Evaluations, TEST_EVALUATION_ID} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
 

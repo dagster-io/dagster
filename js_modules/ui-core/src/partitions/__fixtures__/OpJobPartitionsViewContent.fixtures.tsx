@@ -3,7 +3,7 @@ import {
   buildPartitionSet,
   buildPartitions,
   buildPythonError,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {OpJobPartitionSetFragment} from '../types/OpJobPartitionsView.types';
 
 export const buildOpJobPartitionSetFragmentWithError = (): OpJobPartitionSetFragment => {

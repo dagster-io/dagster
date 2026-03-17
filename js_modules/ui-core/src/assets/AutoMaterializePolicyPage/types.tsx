@@ -1,4 +1,4 @@
-import {PartitionKeyRange} from '../../graphql/types';
+type PartitionKeyRange = {start: string; end: string};
 import {AssetKey} from '../types';
 
 export type NoConditionsMetEvaluation = {

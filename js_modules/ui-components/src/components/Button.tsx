@@ -5,7 +5,11 @@ import {Intent} from './Intent';
 import {Spinner} from './Spinner';
 import styles from './css/Button.module.css';
 
-export const getButtonClassName = (intent?: Intent, outlined?: boolean) => {
+export const getButtonClassName = (
+  intent?: Intent,
+  outlined?: boolean,
+  preserveIconColor?: boolean,
+) => {
   return clsx(
     styles.button,
     outlined ? styles.outlined : styles.filled,
@@ -15,6 +19,7 @@ export const getButtonClassName = (intent?: Intent, outlined?: boolean) => {
     intent === 'primary' && styles.primary,
     intent === 'none' && styles.none,
     intent === undefined && styles.noIntent,
+    !preserveIconColor && styles.iconColor,
   );
 };
 
@@ -40,6 +45,7 @@ export interface CommonButtonProps {
   rightIcon?: ReactNode;
   intent?: Intent;
   outlined?: boolean;
+  preserveIconColor?: boolean;
 }
 
 interface ButtonProps extends CommonButtonProps, ComponentPropsWithRef<'button'> {
@@ -47,15 +53,25 @@ interface ButtonProps extends CommonButtonProps, ComponentPropsWithRef<'button'>
 }
 
 export const Button = forwardRef((props: ButtonProps, ref: ForwardedRef<HTMLButtonElement>) => {
-  const {children, disabled, icon, intent, loading, outlined, rightIcon, className, ...rest} =
-    props;
+  const {
+    children,
+    disabled,
+    icon,
+    intent,
+    loading,
+    outlined,
+    preserveIconColor,
+    rightIcon,
+    className,
+    ...rest
+  } = props;
   const iconOrSpinner = loading ? <Spinner purpose="body-text" /> : icon;
   return (
     <button
       {...rest}
       ref={ref}
       disabled={!!(disabled || loading)}
-      className={clsx(getButtonClassName(intent, outlined), className)}
+      className={clsx(getButtonClassName(intent, outlined, preserveIconColor), className)}
     >
       <ButtonChildren left={iconOrSpinner} label={children} right={rightIcon} />
     </button>
@@ -68,12 +84,13 @@ export interface ExternalAnchorButtonProps extends CommonButtonProps, ComponentP
 
 export const ExternalAnchorButton = forwardRef(
   (props: ExternalAnchorButtonProps, ref: ForwardedRef<HTMLAnchorElement>) => {
-    const {children, icon, intent, outlined, rightIcon, className, ...rest} = props;
+    const {children, icon, intent, outlined, preserveIconColor, rightIcon, className, ...rest} =
+      props;
     return (
       <a
         {...rest}
         ref={ref}
-        className={clsx(getButtonClassName(intent, outlined), className)}
+        className={clsx(getButtonClassName(intent, outlined, preserveIconColor), className)}
         target="_blank"
         rel="noreferrer nofollow"
       >

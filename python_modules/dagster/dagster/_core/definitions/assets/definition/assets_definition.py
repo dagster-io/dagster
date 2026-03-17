@@ -1086,8 +1086,18 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @cached_property
     def partitions_def(self) -> PartitionsDefinition | None:
         """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any)."""
+        selected_entity_keys = self.asset_and_check_keys
         partitions_defs = {
-            spec.partitions_def for spec in self.specs if spec.partitions_def is not None
+            *(
+                spec.partitions_def
+                for spec in self.specs
+                if spec.partitions_def is not None and spec.key in selected_entity_keys
+            ),
+            *(
+                check_spec.partitions_def
+                for check_spec in self.check_specs
+                if check_spec.partitions_def is not None and check_spec.key in selected_entity_keys
+            ),
         }
         if len(partitions_defs) == 1:
             return next(iter(partitions_defs))

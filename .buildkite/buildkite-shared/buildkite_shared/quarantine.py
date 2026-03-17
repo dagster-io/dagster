@@ -13,16 +13,22 @@ class QuarantinedObject:
     name: str
     web_url: str
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, QuarantinedObject):
+            return NotImplemented
         return self.scope == other.scope and self.name == other.name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.scope, self.name))
 
 
 @lru_cache
 def get_buildkite_quarantined_objects(
-    token, org_slug, suite_slug, annotation, suppress_errors=False
+    token: str | None,
+    org_slug: str | None,
+    suite_slug: str | None,
+    annotation: str,
+    suppress_errors: bool = False,
 ) -> set[QuarantinedObject]:
     quarantined_objects = set()
     try:
@@ -61,8 +67,11 @@ def get_buildkite_quarantined_objects(
 
 
 def filter_and_print_steps_by_quarantined(
-    ctx: BuildkiteContext, all_steps, skip_quarantined_steps, mute_quarantined_steps
-):
+    ctx: BuildkiteContext,
+    all_steps: list[dict[str, object]],
+    skip_quarantined_steps: set[str],
+    mute_quarantined_steps: set[str],
+) -> list[dict[str, object]]:
     if (skip_quarantined_steps or mute_quarantined_steps) and not ctx.config.no_skip:
         filtered_steps, skipped_steps, muted_steps = filter_steps_by_quarantined(
             ctx, all_steps, skip_quarantined_steps, mute_quarantined_steps
@@ -79,8 +88,11 @@ def filter_and_print_steps_by_quarantined(
 
 
 def filter_steps_by_quarantined(
-    ctx: BuildkiteContext, steps, skip_quarantined_steps, mute_quarantined_steps
-):
+    ctx: BuildkiteContext,
+    steps: list[dict[str, object]],
+    skip_quarantined_steps: set[str],
+    mute_quarantined_steps: set[str],
+) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
     if (not skip_quarantined_steps and not mute_quarantined_steps) or ctx.config.no_skip:
         return steps, [], []
 

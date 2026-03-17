@@ -1,7 +1,7 @@
 import os
-from collections.abc import Callable, Mapping
-from enum import Enum
-from typing import Any
+from collections.abc import Callable, Mapping, Sequence
+from enum import StrEnum
+from typing import Any, Self
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -23,25 +23,25 @@ ECR_LOGIN_FAILURE_EXIT_CODE = 200
 
 
 class ResourceRequests:
-    def __init__(self, cpu, memory, docker_cpu: str = "500m"):
+    def __init__(self, cpu: str, memory: str | None, docker_cpu: str = "500m") -> None:
         self._cpu = cpu
         self._memory = memory
         self._docker_cpu = docker_cpu
 
     @property
-    def cpu(self):
+    def cpu(self) -> str:
         return self._cpu
 
     @property
-    def memory(self):
+    def memory(self) -> str | None:
         return self._memory
 
     @property
-    def docker_cpu(self):
+    def docker_cpu(self) -> str:
         return self._docker_cpu
 
 
-class BuildkiteQueue(Enum):
+class BuildkiteQueue(StrEnum):
     KUBERNETES_GKE = os.getenv("BUILDKITE_KUBERNETES_QUEUE_GKE", "kubernetes-gke")
     KUBERNETES_EKS = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
     DOCKER = os.getenv("BUILDKITE_DOCKER_QUEUE", "buildkite-docker-october22")
@@ -49,7 +49,7 @@ class BuildkiteQueue(Enum):
     WINDOWS = os.getenv("BUILDKITE_WINDOWS_QUEUE") or "buildkite-windows-october22"
 
     @classmethod
-    def contains(cls, value):
+    def contains(cls, value: str) -> bool:
         return isinstance(value, cls)
 
 
@@ -78,12 +78,13 @@ class CommandStepBuilder:
 
     def __init__(
         self,
-        label,
+        label: str,
+        *,
         key: str | None = None,
         timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
         retry_automatically: bool = True,
         plugins: list[dict[str, object]] | None = None,
-    ):
+    ) -> None:
         self._secrets = {}
         self._k8s_secrets = []
         self._k8s_volume_mounts = []
@@ -131,32 +132,35 @@ class CommandStepBuilder:
             self._step["key"] = key
         self._resources = None
 
-    def run(self, *argc):
+    def run(self, *argc: str) -> Self:
         self._step["commands"] = list(argc)
         return self
 
-    def resources(self, resources: ResourceRequests | None) -> "CommandStepBuilder":
+    def resources(self, resources: ResourceRequests | None) -> Self:
         self._resources = resources
         return self
 
-    def no_docker(self) -> "CommandStepBuilder":
+    def no_docker(self) -> Self:
         self._requires_docker = False
         return self
 
     def on_python_image(
         self,
-        image,
-        env=None,
-        account_id=AWS_ACCOUNT_ID,
-        region=AWS_ECR_REGION,
-    ):
+        image: str,
+        *,
+        env: list[str] | None = None,
+        account_id: str | None = AWS_ACCOUNT_ID,
+        region: str = AWS_ECR_REGION,
+    ) -> Self:
         settings = self._base_docker_settings(env)
         settings["image"] = f"{account_id}.dkr.ecr.{region}.amazonaws.com/{image}"
         settings["network"] = "kind"
         self._docker_settings = settings
         return self
 
-    def on_specific_image(self, image, extra_docker_plugin_args={}):
+    def on_specific_image(
+        self, image: str, extra_docker_plugin_args: dict[str, object] = {}
+    ) -> Self:
         settings = {"image": image, **extra_docker_plugin_args}
         if self._docker_settings:
             self._docker_settings.update(settings)
@@ -164,26 +168,26 @@ class CommandStepBuilder:
             self._docker_settings = settings
         return self
 
-    def on_integration_slim_image(self, env=None):
+    def on_integration_slim_image(self, env: list[str] | None = None) -> Self:
         return self.on_python_image(
-            image="buildkite-test-image-py-slim:prod-1749737887",
+            image="buildkite-test-image-py-slim:pre-6652dfe7da",
             env=env,
         )
 
     def on_integration_image(
         self,
-        ver=SUPPORTED_PYTHON_VERSION,
-        env=None,
-        image_name=BASE_IMAGE_NAME,
-        image_version=BASE_IMAGE_TAG,
-        ecr_account_ids=[AWS_ACCOUNT_ID],
-    ):
+        ver: str = SUPPORTED_PYTHON_VERSION,
+        env: list[str] | None = None,
+        image_name: str = BASE_IMAGE_NAME,
+        image_version: str = BASE_IMAGE_TAG,
+        ecr_account_ids: list[str | None] = [AWS_ACCOUNT_ID],
+    ) -> Self:
         return self.on_python_image(
             image=f"{image_name}:py{ver}-{image_version}",
             env=env,
         ).with_ecr_login(ecr_account_ids)
 
-    def with_ecr_login(self, ecr_account_ids=[AWS_ACCOUNT_ID]):
+    def with_ecr_login(self, ecr_account_ids: list[str | None] = [AWS_ACCOUNT_ID]) -> Self:
         assert "plugins" in self._step
         self._step["plugins"].append(
             {
@@ -197,7 +201,7 @@ class CommandStepBuilder:
         )
         return self
 
-    def with_ecr_passthru(self) -> "CommandStepBuilder":
+    def with_ecr_passthru(self) -> Self:
         assert self._docker_settings
         assert self._docker_settings["environment"]
         assert self._docker_settings["volumes"]
@@ -217,72 +221,76 @@ class CommandStepBuilder:
         )
         return self
 
-    def with_artifact_paths(self, *paths):
+    def with_artifact_paths(self, *paths: str) -> Self:
         if "artifact_paths" not in self._step:
             self._step["artifact_paths"] = []
         self._step["artifact_paths"].extend(paths)
         return self
 
-    def with_condition(self, condition):
+    def with_condition(self, condition: str) -> Self:
         self._step["if"] = condition  # pyright: ignore[reportGeneralTypeIssues]
         return self
 
-    def with_secret(self, name, reference):
+    def with_secret(self, name: str, reference: str) -> Self:
         self._secrets[name] = reference
         return self
 
-    def with_timeout(self, num_minutes):
-        self._step["timeout_in_minutes"] = num_minutes
+    def with_timeout(self, num_minutes: int | None) -> Self:
+        if num_minutes is not None:
+            self._step["timeout_in_minutes"] = num_minutes
         return self
 
-    def with_retry(self, num_retries):
+    def with_retry(self, num_retries: int | None) -> Self:
         # Update default retry config to blanket limit with num_retries
         if num_retries is not None and num_retries > 0:
             self._step["retry"]["automatic"] = {"limit": num_retries}
 
         return self
 
-    def on_queue(self, queue: BuildkiteQueue):
+    def on_queue(self, queue: BuildkiteQueue) -> Self:
         self._step["agents"]["queue"] = queue.value
         return self
 
-    def with_kubernetes_secret(self, secret: str) -> "CommandStepBuilder":
+    def with_kubernetes_secret(self, secret: str) -> Self:
         self._k8s_secrets.append(secret)
         return self
 
-    def with_kubernetes_volume(self, volume: dict[str, Any]) -> "CommandStepBuilder":
+    def with_kubernetes_volume(self, volume: dict[str, Any]) -> Self:
         self._k8s_volumes.append(volume)
         return self
 
-    def with_kubernetes_volume_mount(self, volume_mount: dict[str, Any]) -> "CommandStepBuilder":
+    def with_kubernetes_volume_mount(self, volume_mount: dict[str, Any]) -> Self:
         self._k8s_volume_mounts.append(volume_mount)
         return self
 
-    def concurrency(self, limit):
+    def concurrency(self, limit: int) -> Self:
         self._step["concurrency"] = limit
         return self
 
-    def concurrency_group(self, concurrency_group_name):
+    def concurrency_group(self, concurrency_group_name: str) -> Self:
         self._step["concurrency_group"] = concurrency_group_name
         return self
 
-    def depends_on(self, dependencies):
-        self._step["depends_on"] = dependencies
+    def depends_on(self, dependencies: str | Sequence[str] | None) -> Self:
+        if dependencies is not None:
+            self._step["depends_on"] = (
+                [dependencies] if isinstance(dependencies, str) else list(dependencies)
+            )
         return self
 
-    def allow_dependency_failure(self):
+    def allow_dependency_failure(self) -> Self:
         self._step["allow_dependency_failure"] = True
         return self
 
-    def soft_fail(self, fail: bool = True):
+    def soft_fail(self, fail: bool = True) -> Self:
         self._step["soft_fail"] = fail
         return self
 
-    def skip(self, skip_reason: str | None = None):
+    def skip(self, skip_reason: str | None = None) -> Self:
         self._step["skip"] = skip_reason
         return self
 
-    def _get_resources(self):
+    def _get_resources(self) -> dict[str, object]:
         cpu = (
             self._resources.cpu
             if self._resources
@@ -297,7 +305,7 @@ class CommandStepBuilder:
             },
         }
 
-    def _base_docker_settings(self, env=None):
+    def _base_docker_settings(self, env: list[str] | None = None) -> dict[str, object]:
         return {
             "shell": ["/bin/bash", "-xeuc"],
             "mount-ssh-agent": True,
@@ -485,7 +493,7 @@ class CommandStepBuilder:
                             *(
                                 [{"secretRef": {"name": "aws-creds"}}]
                                 if self._step.get("agents", {}).get("queue")
-                                == BuildkiteQueue.KUBERNETES_GKE.value
+                                == BuildkiteQueue.KUBERNETES_GKE
                                 else []
                             ),
                             *[
@@ -502,11 +510,11 @@ class CommandStepBuilder:
             },
         }
 
-    def build(self):
+    def build(self) -> CommandStepConfiguration:
         assert "agents" in self._step
         on_k8s = self._step["agents"]["queue"] in (
-            BuildkiteQueue.KUBERNETES_GKE.value,
-            BuildkiteQueue.KUBERNETES_EKS.value,
+            BuildkiteQueue.KUBERNETES_GKE,
+            BuildkiteQueue.KUBERNETES_EKS,
         )
         if self._requires_docker is False and not on_k8s:
             raise Exception("you specified .no_docker() but you're not running on kubernetes")

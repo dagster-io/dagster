@@ -6,7 +6,7 @@ importing any CLI or GraphQL components that might have import issues.
 
 import json
 
-from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunStatus
+from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList, DgApiRunStatus
 
 
 class TestRunSchema:
@@ -124,3 +124,52 @@ class TestRunStatusEnum:
         assert DgApiRunStatus.FAILURE.value == "FAILURE"
         assert DgApiRunStatus.CANCELING.value == "CANCELING"
         assert DgApiRunStatus.CANCELED.value == "CANCELED"
+
+
+class TestRunListSchema:
+    """Test the DgApiRunList schema model."""
+
+    def test_run_list_creation(self):
+        """Test creating run list with items."""
+        runs = [
+            DgApiRun(
+                id="run-1",
+                status=DgApiRunStatus.SUCCESS,
+                created_at=1705311000.0,
+                job_name="my_job",
+            ),
+            DgApiRun(
+                id="run-2",
+                status=DgApiRunStatus.FAILURE,
+                created_at=1705312000.0,
+                job_name="other_job",
+            ),
+        ]
+        run_list = DgApiRunList(items=runs)
+
+        assert len(run_list.items) == 2
+
+    def test_run_list_empty(self):
+        """Test creating empty run list."""
+        run_list = DgApiRunList(items=[])
+
+        assert len(run_list.items) == 0
+
+    def test_run_list_json_serialization(self):
+        """Test that DgApiRunList can be serialized to JSON."""
+        runs = [
+            DgApiRun(
+                id="run-1",
+                status=DgApiRunStatus.SUCCESS,
+                created_at=1705311000.0,
+                job_name="my_job",
+            ),
+        ]
+        run_list = DgApiRunList(items=runs)
+
+        json_str = run_list.model_dump_json()
+        parsed = json.loads(json_str)
+
+        assert len(parsed["items"]) == 1
+        assert parsed["items"][0]["id"] == "run-1"
+        assert parsed["items"][0]["status"] == "SUCCESS"

@@ -3,14 +3,12 @@ import {Box} from '@dagster-io/ui-components';
 
 import {createAppCache} from '../../app/AppCache';
 import {
-  AssetFreshnessInfo,
-  FreshnessPolicy,
   buildAssetFreshnessInfo,
   buildAssetKey,
   buildAssetNode,
   buildFreshnessPolicy,
   buildQuery,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {OVERDUE_POPOVER_QUERY, OverdueTag} from '../OverdueTag';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from '../types/OverdueTag.types';
 
@@ -33,8 +31,8 @@ const LAST_MATERIALIZATION_TIME = TEST_TIME - 4 * 60 * 1000;
 // };
 
 function buildOverduePopoverMock(
-  policy: FreshnessPolicy,
-  freshnessInfo: Partial<AssetFreshnessInfo>,
+  policy: ReturnType<typeof buildFreshnessPolicy>,
+  freshnessInfo: Partial<ReturnType<typeof buildAssetFreshnessInfo>>,
   hasUsedData = true,
 ): MockedResponse<OverduePopoverQuery, OverduePopoverQueryVariables> {
   return {

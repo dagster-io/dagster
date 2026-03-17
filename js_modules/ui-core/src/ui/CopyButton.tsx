@@ -1,7 +1,6 @@
-import {Button, Colors, Icon, UnstyledButton} from '@dagster-io/ui-components';
+import {Button, Colors, Icon, UnstyledButton, showToast} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 
 interface CopyIconButtonProps {
@@ -26,7 +25,7 @@ export const CopyIconButton = ({
 
     copyToClipboard(value instanceof Function ? value() : value);
 
-    await showSharedToaster({
+    showToast({
       icon: 'copy_to_clipboard_done',
       message: 'Copied!',
       intent: 'success',
@@ -62,7 +61,7 @@ export const CopyButton = ({
       autoFocus={false}
       onClick={async () => {
         copyToClipboard(value instanceof Function ? value() : value);
-        await showSharedToaster({
+        showToast({
           icon: 'copy_to_clipboard_done',
           intent: 'success',
           message: 'Copied!',

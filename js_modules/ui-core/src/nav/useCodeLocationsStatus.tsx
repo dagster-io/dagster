@@ -1,11 +1,10 @@
-import {Box, ButtonLink} from '@dagster-io/ui-components';
+import {Box, ButtonLink, showToast} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import {atom, useRecoilValue} from 'recoil';
 import styled from 'styled-components';
 
-import {showSharedToaster} from '../app/DomUtils';
 import {DefinitionsSource, RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {CodeLocationRowStatusType} from '../workspace/CodeLocationRowStatusType';
@@ -110,7 +109,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
     }
 
     if (erroredLocationEntries.length) {
-      showSharedToaster({
+      showToast({
         intent: 'warning',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -159,7 +158,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
     let hasUpdatedEntries = entries.length !== Object.keys(previousEntriesById || {}).length;
 
     if (!isFreshPageload && hasUpdatedEntries) {
-      showSharedToaster({
+      showToast({
         intent: 'success',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -251,7 +250,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         return <span>{addedEntries.length} code locations added</span>;
       };
 
-      showSharedToaster({
+      showToast({
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -278,7 +277,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
     if (!anyPreviouslyLoading && anyCurrentlyLoading) {
       setShowSpinner(true);
 
-      showSharedToaster({
+      showToast({
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>

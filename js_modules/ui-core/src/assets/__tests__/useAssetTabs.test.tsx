@@ -1,7 +1,6 @@
 import {renderHook} from '@testing-library/react';
 
 import {
-  AutoMaterializeDecisionType,
   buildAssetKey,
   buildAssetNode,
   buildAutoMaterializePolicy,
@@ -14,7 +13,8 @@ import {
   buildRegularDagsterType,
   buildRepository,
   buildRepositoryLocation,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {AutoMaterializeDecisionType} from '../../graphql/types';
 import {useAssetTabs} from '../AssetTabs';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 

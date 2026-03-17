@@ -13,7 +13,14 @@ import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
+import {AssetKeyInput} from '../graphql/types';
+type FreshnessPolicy = {
+  __typename: 'FreshnessPolicy';
+  cronSchedule: string | null;
+  cronScheduleTimezone: string | null;
+  lastEvaluationTimestamp: string | null;
+  maximumLagMinutes: number;
+};
 import {humanCronString} from '../schedules/humanCronString';
 import {LoadingSpinner} from '../ui/Loading';
 

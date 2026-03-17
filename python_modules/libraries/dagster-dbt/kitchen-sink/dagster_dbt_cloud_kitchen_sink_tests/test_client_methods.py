@@ -47,7 +47,7 @@ def test_cloud_job_apis(
     ]
     assert created_job.id in set([job.id for job in jobs])
 
-    start_run_process = datetime.datetime.utcnow()
+    start_run_process = datetime.datetime.now(datetime.timezone.utc)
     run = DbtCloudRun.from_run_details(
         run_details=client.trigger_job_run(
             job_id=created_job.id, steps_override=["dbt run --select tag:test"]
@@ -56,7 +56,7 @@ def test_cloud_job_apis(
     polled_run = DbtCloudRun.from_run_details(
         run_details=client.poll_run(run_id=run.id, poll_timeout=600)
     )
-    end_run_process = datetime.datetime.utcnow()
+    end_run_process = datetime.datetime.now(datetime.timezone.utc)
 
     assert run.id == polled_run.id
     assert polled_run.status == DbtCloudJobRunStatusType.SUCCESS

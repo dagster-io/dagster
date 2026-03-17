@@ -1,6 +1,4 @@
 import {
-  PartitionDefinitionType,
-  PartitionRangeStatus,
   buildAssetNode,
   buildDefaultPartitionStatuses,
   buildDimensionPartitionKeys,
@@ -9,7 +7,8 @@ import {
   buildQuery,
   buildTimePartitionRangeStatus,
   buildTimePartitionStatuses,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 
 export const DIMENSION_ONE_KEYS = [

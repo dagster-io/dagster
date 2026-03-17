@@ -9,7 +9,7 @@ import {
   buildInstigationEvent,
   buildInstigationEventConnection,
   buildPartitionBackfill,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 import {REFRESHING_DATA} from '../../../live-data-provider/LiveDataRefreshButton';
 import {buildQueryMock} from '../../../testing/mocking';
 import {BACKFILL_LOGS_PAGE_QUERY, BackfillLogsTab} from '../BackfillLogsTab';

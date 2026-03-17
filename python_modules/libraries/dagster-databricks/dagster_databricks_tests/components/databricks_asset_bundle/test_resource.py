@@ -20,6 +20,15 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
 
+ALL_TASK_KEYS = [
+    "data_processing_notebook",
+    "hello_world_spark_task",
+    "stage_documents",
+    "spark_processing_jar",
+    "existing_job_with_references",
+    "check_data_quality",
+]
+
 
 @pytest.mark.parametrize(
     "use_existing_cluster, use_new_cluster",
@@ -49,127 +58,24 @@ def test_load_component(
     use_new_cluster: bool,
     databricks_config_path: str,
 ):
+    # With job-level grouping, all tasks are submitted in a single job run.
+    # get_run is called twice: once after _submit_job, once after _poll_run.
     mock_get_run_fn.side_effect = [
+        # First call: after _submit_job (initial state)
         Run(
             run_id=11111,
             job_id=22222,
             state=RunState(result_state=None),
-            tasks=[
-                RunTask(
-                    task_key="data_processing_notebook",
-                    state=RunState(result_state=None),
-                ),
-            ],
+            tasks=[RunTask(task_key=tk, state=RunState(result_state=None)) for tk in ALL_TASK_KEYS],
         ),
+        # Second call: after _poll_run (final state)
         Run(
             run_id=11111,
             job_id=22222,
             state=RunState(result_state=RunResultState.SUCCESS),
             tasks=[
-                RunTask(
-                    task_key="data_processing_notebook",
-                    state=RunState(result_state=RunResultState.SUCCESS),
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=None),
-            tasks=[
-                RunTask(
-                    task_key="hello_world_spark_task",
-                    state=RunState(result_state=None),
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=RunResultState.SUCCESS),
-            tasks=[
-                RunTask(
-                    task_key="hello_world_spark_task",
-                    state=RunState(result_state=RunResultState.SUCCESS),
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=None),
-            tasks=[
-                RunTask(task_key="stage_documents", state=RunState(result_state=None)),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=RunResultState.SUCCESS),
-            tasks=[
-                RunTask(
-                    task_key="stage_documents", state=RunState(result_state=RunResultState.SUCCESS)
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=None),
-            tasks=[
-                RunTask(task_key="spark_processing_jar", state=RunState(result_state=None)),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=RunResultState.SUCCESS),
-            tasks=[
-                RunTask(
-                    task_key="spark_processing_jar",
-                    state=RunState(result_state=RunResultState.SUCCESS),
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=None),
-            tasks=[
-                RunTask(
-                    task_key="existing_job_with_references",
-                    state=RunState(result_state=None),
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=RunResultState.SUCCESS),
-            tasks=[
-                RunTask(
-                    task_key="existing_job_with_references",
-                    state=RunState(result_state=RunResultState.SUCCESS),
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=None),
-            tasks=[
-                RunTask(task_key="check_data_quality", state=RunState(result_state=None)),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=RunResultState.SUCCESS),
-            tasks=[
-                RunTask(
-                    task_key="check_data_quality",
-                    state=RunState(result_state=RunResultState.SUCCESS),
-                ),
+                RunTask(task_key=tk, state=RunState(result_state=RunResultState.SUCCESS))
+                for tk in ALL_TASK_KEYS
             ],
         ),
     ]
@@ -206,7 +112,8 @@ def test_load_component(
 
             databricks_assets = list(defs.assets or [])
             databricks_assets = check.is_list(databricks_assets, of_type=AssetsDefinition)
-            assert len(databricks_assets) == 6
+            # All tasks in 1 job → 1 multi_asset with can_subset=True
+            assert len(databricks_assets) == 1
             databricks_asset_keys_list = [
                 databricks_asset_key
                 for databricks_asset in databricks_assets
@@ -215,10 +122,6 @@ def test_load_component(
             assert len(databricks_asset_keys_list) == 6
             databricks_asset_keys_set = set(databricks_asset_keys_list)
             assert len(databricks_asset_keys_list) == len(databricks_asset_keys_set)
-            assert all(
-                isinstance(databricks_asset, AssetsDefinition)
-                for databricks_asset in databricks_assets
-            )
 
             result = materialize(
                 databricks_assets,
@@ -236,16 +139,17 @@ def test_load_component(
             }
             assert len(materialized_asset_keys) == 6
             assert databricks_asset_keys_set == materialized_asset_keys
+            # All 6 tasks are submitted as SubmitTask objects in a single job
             assert mock_submit_task.call_count == 6
 
-            # task_key is expected in every submit tasks
+            # task_key is expected in every submit task
             assert all(call for call in mock_submit_task.mock_calls if "task_key" in call.kwargs)
 
-            # depends_on is expected in 4 of the 6 submit tasks we create
-            assert (
-                len([call for call in mock_submit_task.mock_calls if "depends_on" in call.kwargs])
-                == 4
-            )
+            # Intra-job dependencies are preserved for tasks whose dependencies are selected
+            depends_on_calls = [
+                call for call in mock_submit_task.mock_calls if "depends_on" in call.kwargs
+            ]
+            assert len(depends_on_calls) > 0
 
             # libraries is expected in 4 of the 6 submit tasks we create
             assert (

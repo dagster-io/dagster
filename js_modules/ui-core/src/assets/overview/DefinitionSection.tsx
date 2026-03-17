@@ -113,7 +113,7 @@ export const DefinitionSection = ({
       </AttributeAndValue>
       <AttributeAndValue label="Storage">
         {(tableNameMetadata || uriMetadata || storageKindTag) && (
-          <Box flex={{direction: 'column', gap: 4}} style={{minWidth: 0}}>
+          <Box flex={{direction: 'column', gap: 4}} style={{minWidth: 0, fontSize: 12}}>
             {tableNameMetadata && (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                 <MiddleTruncate text={tableNameMetadata.text} />
@@ -121,21 +121,28 @@ export const DefinitionSection = ({
               </Box>
             )}
             {uriMetadata && (
-              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} style={{minWidth: 0}}>
                 {uriMetadata.__typename === 'TextMetadataEntry' ? (
-                  uriMetadata.text
+                  <span style={{wordBreak: 'break-all', minWidth: 0}}>{uriMetadata.text}</span>
                 ) : (
-                  <a target="_blank" rel="noreferrer" href={uriMetadata.url}>
+                  <a
+                    target="_blank"
+                    rel="noreferrer"
+                    href={uriMetadata.url}
+                    style={{wordBreak: 'break-all', minWidth: 0}}
+                  >
                     {uriMetadata.url}
                   </a>
                 )}
-                <CopyIconButton
-                  value={
-                    uriMetadata.__typename === 'TextMetadataEntry'
-                      ? uriMetadata?.text
-                      : uriMetadata.url
-                  }
-                />
+                <span style={{flexShrink: 0}}>
+                  <CopyIconButton
+                    value={
+                      uriMetadata.__typename === 'TextMetadataEntry'
+                        ? uriMetadata?.text
+                        : uriMetadata.url
+                    }
+                  />
+                </span>
               </Box>
             )}
             {storageKindTag && (

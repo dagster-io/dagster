@@ -33,7 +33,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import styles from './css/CodeLocationOverviewRoot.module.css';
 
-const RIGHT_COLUMN_WIDTH = '280px';
+const RIGHT_COLUMN_WIDTH = '360px';
 
 type MetadataRowKey = 'image';
 

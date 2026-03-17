@@ -6,7 +6,7 @@ import {
   deploymentPathMatcher,
   jobsPathMatcher,
   lineagePathMatcher,
-} from '@shared/app/AppTopNav/activePathMatchers';
+} from '@shared/app/activePathMatchers';
 import {useVisibleFeatureFlagRows} from '@shared/app/useVisibleFeatureFlagRows';
 import {useContext, useState} from 'react';
 
@@ -190,7 +190,7 @@ const SupportItem = () => {
   return (
     <Popover
       isOpen={isOpen}
-      content={<HelpMenuContents dismissDaggyU={() => {}} showContactSales={false} />}
+      content={<HelpMenuContents showContactSales={false} />}
       onClose={() => setIsOpen(false)}
       placement={isCollapsed ? 'right-end' : 'top'}
       matchTargetWidth={!isCollapsed}

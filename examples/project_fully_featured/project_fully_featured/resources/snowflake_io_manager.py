@@ -105,7 +105,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:
-            with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
+            with_uppercase_cols = obj.rename(columns=str.upper)
             with_uppercase_cols.to_sql(
                 table,
                 con=con,

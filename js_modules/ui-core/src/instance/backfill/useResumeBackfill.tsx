@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, showToast} from '@dagster-io/ui-components';
 
 import {gql, useMutation} from '../../apollo-client';
 import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
@@ -7,7 +7,6 @@ import {
   ResumeBackfillMutationVariables,
 } from './types/useResumeBackfill.types';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {showSharedToaster} from '../../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 
@@ -21,7 +20,7 @@ export function useResumeBackfill(backfill: BackfillActionsBackfillFragment, ref
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
     } else if (data && data.resumePartitionBackfill.__typename === 'UnauthorizedError') {
-      await showSharedToaster({
+      showToast({
         message: (
           <Box flex={{direction: 'column', gap: 4}}>
             <div>
@@ -34,7 +33,7 @@ export function useResumeBackfill(backfill: BackfillActionsBackfillFragment, ref
       });
     } else if (data && data.resumePartitionBackfill.__typename === 'PythonError') {
       const error = data.resumePartitionBackfill;
-      await showSharedToaster({
+      showToast({
         message: <div>An unexpected error occurred. This backfill was not resumed.</div>,
         icon: 'error',
         intent: 'danger',
