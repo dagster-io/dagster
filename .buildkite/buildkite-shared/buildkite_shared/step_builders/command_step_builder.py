@@ -3,6 +3,8 @@ from collections.abc import Callable, Mapping, Sequence
 from enum import StrEnum
 from typing import Any, Self
 
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.utils import BUILDKITE_TEST_IMAGE_VERSION
 from typing_extensions import NotRequired, TypedDict
 
 DEFAULT_TIMEOUT_IN_MIN = 35
@@ -10,9 +12,6 @@ DEFAULT_TIMEOUT_IN_MIN = 35
 DOCKER_PLUGIN = "docker#v5.10.0"
 ECR_PLUGIN = "ecr#v2.7.0"
 SM_PLUGIN = "seek-oss/aws-sm#v2.3.1"
-
-# Update this when updated in main repo
-SUPPORTED_PYTHON_VERSION = "3.12"
 BASE_IMAGE_NAME = "buildkite-test"
 BASE_IMAGE_TAG = "2024-07-17T120716"
 
@@ -168,6 +167,17 @@ class CommandStepBuilder:
             self._docker_settings = settings
         return self
 
+    def on_test_image(
+        self,
+        ver: str = AvailablePythonVersion.get_cloud().value,
+        image_version: str = BUILDKITE_TEST_IMAGE_VERSION,
+        env: list[str] | None = None,
+    ) -> Self:
+        return self.on_python_image(
+            image=f"buildkite-test:py{ver}-{image_version}",
+            env=env,
+        ).with_ecr_login()
+
     def on_integration_slim_image(self, env: list[str] | None = None) -> Self:
         return self.on_python_image(
             image="buildkite-test-image-py-slim:pre-6652dfe7da",
@@ -176,7 +186,7 @@ class CommandStepBuilder:
 
     def on_integration_image(
         self,
-        ver: str = SUPPORTED_PYTHON_VERSION,
+        ver: str = AvailablePythonVersion.get_cloud().value,
         env: list[str] | None = None,
         image_name: str = BASE_IMAGE_NAME,
         image_version: str = BASE_IMAGE_TAG,

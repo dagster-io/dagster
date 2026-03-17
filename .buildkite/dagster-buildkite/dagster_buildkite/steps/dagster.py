@@ -1,7 +1,6 @@
 import os
 
 from buildkite_shared.context import BuildkiteContext
-from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     BuildkiteQueue,
     CommandStepBuilder,
@@ -10,7 +9,6 @@ from buildkite_shared.step_builders.command_step_builder import (
 from buildkite_shared.step_builders.group_step_builder import GroupStepBuilder
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.uv import UV_PIN
-from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import (
@@ -30,12 +28,7 @@ def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
     commands = [
         "pytest .buildkite/buildkite-shared/lints.py",
     ]
-    return [
-        add_test_image(
-            CommandStepBuilder(":lint-roller: :buildkite:").run(*commands),
-            AvailablePythonVersion.get_default(),
-        ).build()
-    ]
+    return [CommandStepBuilder(":lint-roller: :buildkite:").run(*commands).on_test_image().build()]
 
 
 def build_repo_wide_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
@@ -77,10 +70,8 @@ def build_dagster_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
 
 def build_repo_wide_ruff_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder(":zap: ruff", retry_automatically=False),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder(":zap: ruff", retry_automatically=False)
+        .on_test_image()
         .run(
             "uv pip install --system -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
@@ -92,10 +83,8 @@ def build_repo_wide_ruff_steps(ctx: BuildkiteContext) -> list[CommandStepConfigu
 
 def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder(":prettier: prettier", retry_automatically=False),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder(":prettier: prettier", retry_automatically=False)
+        .on_test_image()
         .run(
             "make install_prettier",
             "make check_prettier",
@@ -110,12 +99,10 @@ def build_check_changelog_steps(ctx: BuildkiteContext) -> list[CommandStepConfig
         return []
 
     return [
-        add_test_image(
-            CommandStepBuilder(":memo: changelog").run(
-                f"python scripts/check_changelog.py {ctx.release_version}"
-            ),
-            AvailablePythonVersion.get_default(),
-        ).build(),
+        CommandStepBuilder(":memo: changelog")
+        .run(f"python scripts/check_changelog.py {ctx.release_version}")
+        .on_test_image()
+        .build(),
     ]
 
 
@@ -124,10 +111,8 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
         GroupStepBuilder(
             name=":pyright: pyright",
             steps=[
-                add_test_image(
-                    CommandStepBuilder(":pyright: make pyright", retry_automatically=False),
-                    AvailablePythonVersion.get_default(),
-                )
+                CommandStepBuilder(":pyright: make pyright", retry_automatically=False)
+                .on_test_image()
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
                     f'pip install -U "{UV_PIN}"',
@@ -140,12 +125,8 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                 # Run on a larger instance
                 .on_queue(BuildkiteQueue.DOCKER)
                 .build(),
-                add_test_image(
-                    CommandStepBuilder(
-                        ":pyright: make rebuild_pyright_pins", retry_automatically=False
-                    ),
-                    AvailablePythonVersion.get_default(),
-                )
+                CommandStepBuilder(":pyright: make rebuild_pyright_pins", retry_automatically=False)
+                .on_test_image()
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
                     f'pip install -U "{UV_PIN}"',
@@ -164,15 +145,14 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
 
 def build_sql_schema_check_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder(":mysql: mysql-schema")
-            .run(
-                "uv pip install --system -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
-                "python scripts/check_schemas.py",
-            )
-            .skip(skip_mysql_if_no_changes_to_dependencies(ctx, ["dagster"])),
-            AvailablePythonVersion.get_default(),
-        ).build(),
+        CommandStepBuilder(":mysql: mysql-schema")
+        .run(
+            "uv pip install --system -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
+            "python scripts/check_schemas.py",
+        )
+        .skip(skip_mysql_if_no_changes_to_dependencies(ctx, ["dagster"]))
+        .on_test_image()
+        .build(),
     ]
 
 
@@ -180,21 +160,20 @@ def build_graphql_python_client_backcompat_steps(
     ctx: BuildkiteContext,
 ) -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
-            .run(
-                "uv pip install --system -e python_modules/dagster[test] -e python_modules/dagster-pipes"
-                " -e python_modules/libraries/dagster-shared -e python_modules/dagster-graphql"
-                " -e python_modules/automation",
-                "dagster-graphql-client query check",
+        CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
+        .run(
+            "uv pip install --system -e python_modules/dagster[test] -e python_modules/dagster-pipes"
+            " -e python_modules/libraries/dagster-shared -e python_modules/dagster-graphql"
+            " -e python_modules/automation",
+            "dagster-graphql-client query check",
+        )
+        .skip(
+            skip_graphql_if_no_changes_to_dependencies(
+                ctx, ["dagster", "dagster-graphql", "automation"]
             )
-            .skip(
-                skip_graphql_if_no_changes_to_dependencies(
-                    ctx, ["dagster", "dagster-graphql", "automation"]
-                )
-            ),
-            AvailablePythonVersion.get_default(),
-        ).build()
+        )
+        .on_test_image()
+        .build()
     ]
 
 

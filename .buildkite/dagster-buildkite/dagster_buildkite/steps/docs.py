@@ -7,16 +7,13 @@ from buildkite_shared.step_builders.group_step_builder import (
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.uv import UV_PIN
-from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import skip_if_no_docs_changes
 
 
 def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     return (
-        add_test_image(
-            CommandStepBuilder(":notebook: yarn format_check"),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder(":notebook: yarn format_check")
+        .on_test_image()
         .run(
             "cd docs",
             "yarn install",
@@ -29,7 +26,8 @@ def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConf
 
 def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     return (
-        add_test_image(CommandStepBuilder("build docs"), AvailablePythonVersion.get_default())
+        CommandStepBuilder("build docs")
+        .on_test_image()
         .run(
             "cd docs",
             f'pip install -U "{UV_PIN}"',
@@ -47,12 +45,10 @@ def build_docstring_validation_step() -> GroupLeafStepConfiguration:
     python_version = AvailablePythonVersion.get_default()
     tox_env = f"py{python_version.value.replace('.', '')}"
     return (
-        add_test_image(
-            CommandStepBuilder(
-                f":pytest: docstring validation {python_version.value}", retry_automatically=False
-            ),
-            python_version,
+        CommandStepBuilder(
+            f":pytest: docstring validation {python_version.value}", retry_automatically=False
         )
+        .on_test_image(python_version.value)
         .run(
             "cd python_modules/automation",
             f'pip install -U "{UV_PIN}"',

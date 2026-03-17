@@ -10,7 +10,6 @@ from buildkite_shared.step_builders.command_step_builder import (
     CommandStepConfiguration,
 )
 from buildkite_shared.uv import UV_PIN
-from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import make_buildkite_section_header
 
 
@@ -89,7 +88,8 @@ def build_tox_step(
     ]
 
     step_builder = (
-        add_test_image(CommandStepBuilder(label), python_version, env_vars or [])
+        CommandStepBuilder(label)
+        .on_test_image(python_version.value, env=env_vars or [])
         .run(*commands)
         .with_timeout(timeout_in_minutes)
         .with_retry(retries)
