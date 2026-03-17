@@ -1,7 +1,29 @@
 ---
-description: Configure dg from both configuration files and the command line.
-title: dg cli configuration
+description: Install the dg CLI and configure it from both configuration files and the command line.
+title: Installing and configuring the dg CLI
 ---
+
+## Installation
+
+Install the `dg` CLI using pip:
+
+```bash
+pip install dagster-dg-cli
+```
+
+Or using [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv pip install dagster-dg-cli
+```
+
+After installation, verify that the CLI is available:
+
+```bash
+dg --version
+```
+
+## Configuration
 
 `dg` can be configured from both configuration files and the command line.
 There are three kinds of settings:
