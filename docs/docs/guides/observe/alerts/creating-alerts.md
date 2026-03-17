@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-You can create alert policies in the Dagster+ UI or with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
+You can create alert policies in the Dagster+ UI or with the [`dg` CLI](/guides/build/cli/dg-reference) or [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
 
 Alert policies are configured on a per-deployment basis. This means, for example, that asset alerts configured in a prod deployment are only applicable to assets in that deployment.
 
@@ -43,6 +43,19 @@ You cannot create an alert policy that notifies on both health status changes an
 1. Create an alert policy configuration file. For examples, see the [example configuration reference](/guides/observe/alerts/example-config).
 2. Sync the alert policy configuration file to your Dagster+ deployment:
 
+<Tabs>
+  <TabItem value="dg" label="dg CLI" default>
+
+```bash
+dg api alert-policy sync /path/to/alert_policies.yaml
+```
+
+  </TabItem>
+  <TabItem value="dagster-cloud" label="dagster-cloud CLI">
+
 ```bash
 dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 ```
+
+  </TabItem>
+</Tabs>
