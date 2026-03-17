@@ -8,8 +8,7 @@ from buildkite_shared.python_packages import changed_filetypes, parse_requiremen
 from packaging.requirements import Requirement
 
 
-def requirements(name: str, directory: str, *, ctx: BuildkiteContext) -> set[Requirement]:
-    # First try to infer requirements from the python package
+def requirements(name: str, *, ctx: BuildkiteContext) -> set[Requirement]:
     package = ctx.python_packages.get(name)
     if package:
         # Return raw requirements — filtering to in-repo packages happens
@@ -19,13 +18,6 @@ def requirements(name: str, directory: str, *, ctx: BuildkiteContext) -> set[Req
             all_reqs.update(parse_requirements(extra_reqs))
         return all_reqs
 
-    # If we don't have a distribution (like many of our integration test suites)
-    # we can use a buildkite_deps.txt file to capture requirements
-    buildkite_deps_txt = Path(directory) / "buildkite_deps.txt"
-    if buildkite_deps_txt.exists():
-        return set(parse_requirements(buildkite_deps_txt.read_text().splitlines()))
-
-    # Otherwise return nothing
     return set()
 
 
@@ -77,7 +69,7 @@ def skip_reason(
 
     # Consider anything required by install or an extra to be in scope.
     # We might one day narrow this down to specific extras.
-    for requirement in requirements(name, directory, ctx=ctx):
+    for requirement in requirements(name, ctx=ctx):
         in_scope_changes = ctx.python_packages.with_changes.intersection(
             ctx.python_packages.walk_dependencies(requirement)
         )
