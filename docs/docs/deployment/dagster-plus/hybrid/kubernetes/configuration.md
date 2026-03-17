@@ -93,6 +93,8 @@ locations:
           service_metadata: # Metadata for the code server service
             annotations:
               mykey: myvalue
+          service_spec_config: # Raw config for the spec of the code server service
+            cluster_ip: None # Creates a headless service
           container_config: # Config for the main dagster container in the code server pod
             resources:
               limits:
