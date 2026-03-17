@@ -1,0 +1,20 @@
+type: project_multi_workspace_databricks.components.databricks_job_orchestrator.DatabricksJobOrchestrator
+
+attributes:
+  job_id: 12345
+  workspace_config:
+    host: "https://workspace-customer-analytics.cloud.databricks.com"
+    token: "demo-token-not-real"
+  assets:
+    - key: "customer_analytics/enriched_profiles"
+      description: "Customer profiles enriched with transaction history and behavior patterns"
+      group_name: "customer_analytics"
+      deps:
+        - "raw_erp_events"
+        - "raw_crm_events"
+        - "legacy_customer_data"
+    - key: "customer_analytics/customer_segments"
+      description: "Customer segmentation for targeted marketing campaigns"
+      group_name: "customer_analytics"
+      deps:
+        - "customer_analytics/enriched_profiles"

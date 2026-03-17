@@ -1,0 +1,21 @@
+type: project_multi_workspace_databricks.components.databricks_job_orchestrator.DatabricksJobOrchestrator
+
+attributes:
+  job_id: 12346
+  workspace_config:
+    host: "https://workspace-sales-analytics.cloud.databricks.com"
+    token: "demo-token-not-real"
+  assets:
+    - key: "sales_analytics/order_fulfillment"
+      description: "Real-time order fulfillment tracking from ERP and Salesforce"
+      group_name: "sales_analytics"
+      deps:
+        - "raw_erp_events"
+        - "salesforce_data"
+        - "legacy_transaction_data"
+    - key: "sales_analytics/revenue_forecasting"
+      description: "Revenue forecasting model based on historical and pipeline data"
+      group_name: "sales_analytics"
+      deps:
+        - "sales_analytics/order_fulfillment"
+        - "salesforce_data"
