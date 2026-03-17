@@ -18,6 +18,7 @@ import styled from 'styled-components';
 
 import {TableSchema} from './TableSchema';
 import {
+  MetadataEntryFragment_IntMetadataEntry as IntMetadataEntry,
   MetadataEntryFragment,
   TableMetadataEntryFragment,
 } from './types/MetadataEntryFragment.types';
@@ -27,7 +28,6 @@ import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
-import {IntMetadataEntry, MaterializationEvent} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
@@ -47,10 +47,7 @@ export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
   'dagster_embedded_elt/sling_replication_config',
 ]);
 
-export type MetadataEntryLabelOnly = Pick<
-  MaterializationEvent['metadataEntries'][0],
-  '__typename' | 'label'
->;
+export type MetadataEntryLabelOnly = Pick<MetadataEntryFragment, '__typename' | 'label'>;
 
 export const isCanonicalRowCountMetadataEntry = (
   m: MetadataEntryLabelOnly,

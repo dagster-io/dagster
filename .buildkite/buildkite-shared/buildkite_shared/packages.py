@@ -5,9 +5,10 @@ from pathlib import Path
 
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_packages import changed_filetypes, parse_requirements
+from packaging.requirements import Requirement
 
 
-def requirements(name: str, directory: str, *, ctx: BuildkiteContext):
+def requirements(name: str, directory: str, *, ctx: BuildkiteContext) -> set[Requirement]:
     # First try to infer requirements from the python package
     package = ctx.python_packages.get(name)
     if package:
@@ -22,11 +23,10 @@ def requirements(name: str, directory: str, *, ctx: BuildkiteContext):
     # we can use a buildkite_deps.txt file to capture requirements
     buildkite_deps_txt = Path(directory) / "buildkite_deps.txt"
     if buildkite_deps_txt.exists():
-        parsed = parse_requirements(buildkite_deps_txt.read_text().splitlines())
-        return list(parsed)
+        return set(parse_requirements(buildkite_deps_txt.read_text().splitlines()))
 
     # Otherwise return nothing
-    return []
+    return set()
 
 
 def skip_reason(

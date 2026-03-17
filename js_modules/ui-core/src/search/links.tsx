@@ -1,7 +1,6 @@
 import qs from 'qs';
 
 import {GroupMetadata} from './BuildAssetSearchResults';
-import {AssetOwner, DefinitionTag} from '../graphql/types';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -24,13 +23,17 @@ export const linkToAssetTableWithKindFilter = (kind: string) => {
   })}`;
 };
 
-export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
+export const linkToAssetTableWithTagFilter = (tag: {key: string; value: string}) => {
   return `/assets?${qs.stringify({
     'asset-selection': `tag:"${tag.key}"${tag.value ? `="${tag.value}"` : ''}`,
   })}`;
 };
 
-export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
+export const linkToAssetTableWithAssetOwnerFilter = (
+  owner:
+    | {__typename: 'TeamAssetOwner'; team: string}
+    | {__typename: 'UserAssetOwner'; email: string},
+) => {
   return `/assets?${qs.stringify({
     'asset-selection': `owner:"${owner.__typename === 'TeamAssetOwner' ? owner.team : owner.email}"`,
   })}`;
@@ -42,7 +45,7 @@ export const linkToAssetTableWithColumnsFilter = (columns: string[]) => {
   })}`;
 };
 
-export const linkToAssetTableWithColumnTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
+export const linkToAssetTableWithColumnTagFilter = (tag: {key: string; value: string}) => {
   return `/assets?${qs.stringify({
     'asset-selection': `column_tag:"${tag.key}"${tag.value ? `="${tag.value}"` : ''}`,
   })}`;

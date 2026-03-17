@@ -3,16 +3,18 @@ import {useState} from 'react';
 
 import {assertUnreachable} from '../../app/Util';
 import {
-  BoolMetadataEntry,
-  IntMetadataEntry,
-  JsonMetadataEntry,
-  TableSchemaMetadataEntry,
   buildLocalFileCodeReference,
   buildPoolMetadataEntry,
   buildUrlCodeReference,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {MetadataEntries} from '../MetadataEntry';
-import {MetadataEntryFragment} from '../types/MetadataEntryFragment.types';
+import {
+  MetadataEntryFragment_BoolMetadataEntry as BoolMetadataEntry,
+  MetadataEntryFragment_IntMetadataEntry as IntMetadataEntry,
+  MetadataEntryFragment_JsonMetadataEntry as JsonMetadataEntry,
+  MetadataEntryFragment,
+  MetadataEntryFragment_TableSchemaMetadataEntry as TableSchemaMetadataEntry,
+} from '../types/MetadataEntryFragment.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

@@ -11,6 +11,7 @@ import dagster._check as check
 from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
 from dagster._core.definitions.asset_key import (
     AssetCheckKey,
     AssetKey,
@@ -884,6 +885,7 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
 @hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="metadata", breaking_version="", emit_runtime_warning=False)
+@hidden_param(param="timing_metadata", breaking_version="", emit_runtime_warning=False)
 class AutomationResult(Generic[T_EntityKey]):
     """The result of evaluating an AutomationCondition."""
 
@@ -916,6 +918,11 @@ class AutomationResult(Generic[T_EntityKey]):
             kwargs.get("metadata"), "metadata", key_type=str, value_type=object
         )
 
+        # in-memory-only timing metadata for timestamp-precise trigger/reset resolution
+        self._timing_metadata: TimingMetadata | None = check.opt_inst_param(
+            kwargs.get("timing_metadata"), "timing_metadata", TimingMetadata
+        )
+
         # hidden_param which should only be set by builtin conditions which require high performance
         # in their serdes layer
         structured_cursor = kwargs.get("structured_cursor")
@@ -938,6 +945,10 @@ class AutomationResult(Generic[T_EntityKey]):
     @property
     def true_subset(self) -> EntitySubset[T_EntityKey]:
         return self._true_subset
+
+    @property
+    def timing_metadata(self) -> TimingMetadata | None:
+        return self._timing_metadata
 
     @property
     def start_timestamp(self) -> float:

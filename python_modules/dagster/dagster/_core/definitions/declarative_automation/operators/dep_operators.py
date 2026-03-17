@@ -8,6 +8,7 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey
+from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
 from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -22,6 +23,7 @@ from dagster._record import copy, record
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
+    from dagster._core.asset_graph_view.entity_subset import EntitySubset
     from dagster._core.definitions.asset_selection import AssetSelection
 
 
@@ -50,12 +52,12 @@ class EntityMatchesCondition(
             self.key in context.asset_graph.get(context.key).child_entity_keys
             and self.key != context.key
         ):
-            directions = ("down", "up")
+            to_direction, from_direction = "down", "up"
         else:
-            directions = ("up", "down")
+            to_direction, from_direction = "up", "down"
 
         to_candidate_subset = context.candidate_subset.compute_mapped_subset(
-            self.key, direction=directions[0]
+            self.key, direction=to_direction
         )
         to_context = context.for_child_condition(
             child_condition=self.operand,
@@ -66,9 +68,26 @@ class EntityMatchesCondition(
         to_result = await to_context.evaluate_async()
 
         true_subset = to_result.true_subset.compute_mapped_subset(
-            context.key, direction=directions[1]
+            context.key, direction=from_direction
         )
-        return AutomationResult(context=context, true_subset=true_subset, child_results=[to_result])
+
+        # Propagate timing metadata by mapping each timestamp's subset
+        child_timing = to_result.timing_metadata
+        mapped_timing = None
+        if child_timing:
+            mapped_timing = TimingMetadata(
+                timestamps={
+                    ts: sub.compute_mapped_subset(context.key, direction=from_direction)
+                    for ts, sub in child_timing.timestamps.items()
+                }
+            )
+
+        return AutomationResult(
+            context=context,
+            true_subset=true_subset,
+            child_results=[to_result],
+            timing_metadata=mapped_timing,
+        )
 
     @public
     def replace(
@@ -134,20 +153,6 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         parts = [str(parent_unique_id), str(index), self.base_name]
         return non_secure_md5_hash_str("".join(parts).encode())
 
-    def get_backcompat_node_unique_ids(
-        self,
-        *,
-        parent_unique_id: str | None = None,
-        index: int | None = None,
-        target_key: EntityKey | None = None,
-    ) -> Sequence[str]:
-        # backcompat for previous cursors where the allow/ignore selection influenced the hash
-        return [
-            super().get_node_unique_id(
-                parent_unique_id=parent_unique_id, index=index, target_key=target_key
-            )
-        ]
-
     @public
     def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
@@ -204,6 +209,19 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
 
 
+def _merge_timing_metadata(
+    results: Sequence[AutomationResult[T_EntityKey]],
+) -> TimingMetadata[T_EntityKey] | None:
+    """Merge timing metadata across multiple dep results by unioning subsets per timestamp."""
+    merged: dict[float, EntitySubset[T_EntityKey]] = {}
+    for result in results:
+        if not result.timing_metadata:
+            continue
+        for ts, sub in result.timing_metadata.timestamps.items():
+            merged[ts] = merged[ts].compute_union(sub) if ts in merged else sub
+    return TimingMetadata(timestamps=merged) if merged else None
+
+
 @whitelist_for_serdes
 class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     @property
@@ -233,7 +251,13 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
             true_subset = true_subset.compute_union(dep_result.true_subset)
 
         true_subset = context.candidate_subset.compute_intersection(true_subset)
-        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)
+
+        return AutomationResult(
+            context,
+            true_subset=true_subset,
+            child_results=dep_results,
+            timing_metadata=_merge_timing_metadata(dep_results),
+        )
 
 
 @whitelist_for_serdes

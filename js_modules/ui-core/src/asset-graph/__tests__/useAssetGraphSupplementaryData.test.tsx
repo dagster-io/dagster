@@ -6,7 +6,8 @@ import React from 'react';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {parseExpression} from '../../asset-selection/AssetSelectionSupplementaryDataVisitor';
 import {useAllAssets} from '../../assets/useAllAssets';
-import {AssetHealthStatus, buildAsset, buildAssetHealth, buildAssetKey} from '../../graphql/types';
+import {buildAsset, buildAssetHealth, buildAssetKey} from '../../graphql/builders';
+import {AssetHealthStatus} from '../../graphql/types';
 import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 // Mock the dependencies

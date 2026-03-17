@@ -1,7 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {useMemo} from 'react';
 
-import {RepositoryLocationLoadStatus, buildWorkspaceLocationStatusEntry} from '../../graphql/types';
+import {buildWorkspaceLocationStatusEntry} from '../../graphql/builders';
+import {RepositoryLocationLoadStatus} from '../../graphql/types';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {CodeLocationOverviewRoot} from '../CodeLocationOverviewRoot';
 import {buildEmptyWorkspaceLocationEntry} from '../__fixtures__/CodeLocationPages.fixtures';

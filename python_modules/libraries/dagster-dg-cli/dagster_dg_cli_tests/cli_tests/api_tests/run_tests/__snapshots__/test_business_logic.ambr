@@ -11,11 +11,11 @@
 # ---
 # name: TestFormatRun.test_format_canceled_run_text_output[0]
   '''
-  Run ID: canceled-run-789
-  Status: CANCELED
-  Created: 1705311000.0
-  Started: 1705311060.0
-  Ended: 1705311120.0
+  Run ID:   canceled-run-789
+  Status:   CANCELED
+  Created:  2024-01-15 09:30:00 UTC
+  Started:  2024-01-15 09:31:00 UTC
+  Ended:    2024-01-15 09:32:00 UTC
   Pipeline: canceled_pipeline
   '''
 # ---
@@ -31,11 +31,11 @@
 # ---
 # name: TestFormatRun.test_format_failed_run_text_output[0]
   '''
-  Run ID: failed-run-456
-  Status: FAILURE
-  Created: 1705311000.0
-  Started: 1705311060.0
-  Ended: 1705311180.0
+  Run ID:   failed-run-456
+  Status:   FAILURE
+  Created:  2024-01-15 09:30:00 UTC
+  Started:  2024-01-15 09:31:00 UTC
+  Ended:    2024-01-15 09:33:00 UTC
   Pipeline: failing_pipeline
   '''
 # ---
@@ -51,9 +51,9 @@
 # ---
 # name: TestFormatRun.test_format_minimal_run_text_output[0]
   '''
-  Run ID: minimal-run-123
-  Status: QUEUED
-  Created: 1705311000.0
+  Run ID:  minimal-run-123
+  Status:  QUEUED
+  Created: 2024-01-15 09:30:00 UTC
   '''
 # ---
 # name: TestFormatRun.test_format_run_json_output[0]
@@ -68,12 +68,59 @@
 # ---
 # name: TestFormatRun.test_format_run_text_output[0]
   '''
-  Run ID: 123e4567-e89b-12d3-a456-426614174000
-  Status: SUCCESS
-  Created: 1705311000.0
-  Started: 1705311060.0
-  Ended: 1705311900.0
+  Run ID:   123e4567-e89b-12d3-a456-426614174000
+  Status:   SUCCESS
+  Created:  2024-01-15 09:30:00 UTC
+  Started:  2024-01-15 09:31:00 UTC
+  Ended:    2024-01-15 09:45:00 UTC
   Pipeline: my_pipeline
+  '''
+# ---
+# name: TestFormatRunsList.test_format_runs_list_empty_json[0]
+  dict({
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestFormatRunsList.test_format_runs_list_empty_text[0]
+  'No runs found.'
+# ---
+# name: TestFormatRunsList.test_format_runs_list_json[0]
+  dict({
+    'items': list([
+      dict({
+        'created_at': 1705311000.0,
+        'ended_at': 1705311900.0,
+        'id': 'run-001',
+        'job_name': 'my_pipeline',
+        'started_at': 1705311060.0,
+        'status': 'SUCCESS',
+      }),
+      dict({
+        'created_at': 1705312000.0,
+        'ended_at': 1705312180.0,
+        'id': 'run-002',
+        'job_name': 'failing_pipeline',
+        'started_at': 1705312060.0,
+        'status': 'FAILURE',
+      }),
+      dict({
+        'created_at': 1705313000.0,
+        'ended_at': None,
+        'id': 'run-003',
+        'job_name': None,
+        'started_at': None,
+        'status': 'QUEUED',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatRunsList.test_format_runs_list_text[0]
+  '''
+  ID       STATUS   JOB               CREATED
+  run-001  SUCCESS  my_pipeline       2024-01-15 09:30:00 UTC
+  run-002  FAILURE  failing_pipeline  2024-01-15 09:46:40 UTC
+  run-003  QUEUED   N/A               2024-01-15 10:03:20 UTC
   '''
 # ---
 # name: TestRunDataProcessing.test_run_creation_with_all_fields[0]

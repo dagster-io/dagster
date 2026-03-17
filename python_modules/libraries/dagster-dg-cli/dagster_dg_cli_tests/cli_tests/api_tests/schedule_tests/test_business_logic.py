@@ -16,7 +16,7 @@ from dagster_dg_cli.api_layer.schemas.schedule import (
     DgApiScheduleList,
     DgApiScheduleStatus,
 )
-from dagster_dg_cli.cli.api.schedule import format_schedule, format_schedules
+from dagster_dg_cli.cli.api.formatters import format_schedule, format_schedules
 
 
 class TestProcessScheduleResponses:

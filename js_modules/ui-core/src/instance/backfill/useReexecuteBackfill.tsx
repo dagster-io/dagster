@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, showToast} from '@dagster-io/ui-components';
 
 import {gql, useMutation} from '../../apollo-client';
 import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
@@ -7,7 +7,6 @@ import {
   ReexecuteBackfillMutationVariables,
 } from './types/useReexecuteBackfill.types';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {showSharedToaster} from '../../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {ReexecutionStrategy} from '../../graphql/types';
@@ -30,7 +29,7 @@ export function useReexecuteBackfill(
       showBackfillSuccessToast(data.reexecutePartitionBackfill.backfillId);
       refetch();
     } else if (data && data.reexecutePartitionBackfill.__typename === 'UnauthorizedError') {
-      await showSharedToaster({
+      showToast({
         message: (
           <Box flex={{direction: 'column', gap: 4}}>
             <div>
@@ -44,7 +43,7 @@ export function useReexecuteBackfill(
       });
     } else if (data && data.reexecutePartitionBackfill.__typename === 'PythonError') {
       const error = data.reexecutePartitionBackfill;
-      await showSharedToaster({
+      showToast({
         message: <div>An unexpected error occurred. This backfill was not re-executed.</div>,
         icon: 'error',
         intent: 'danger',

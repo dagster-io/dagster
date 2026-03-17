@@ -109,6 +109,7 @@ class K8sContainerContext(
             top_level_k8s_config._replace(  # remove k8s service/deployment fields
                 deployment_metadata={},
                 service_metadata={},
+                service_spec_config={},
             ),
             run_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
         )

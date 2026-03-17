@@ -1,13 +1,13 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  InstigationStatus,
   buildInstigationState,
   buildScheduleStateResult,
   buildSensor,
   buildStopSensorMutationResult,
   buildUnauthorizedError,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {InstigationStatus} from '../../graphql/types';
 import {START_SCHEDULE_MUTATION, STOP_SCHEDULE_MUTATION} from '../../schedules/ScheduleMutations';
 import {
   StartThisScheduleMutation,

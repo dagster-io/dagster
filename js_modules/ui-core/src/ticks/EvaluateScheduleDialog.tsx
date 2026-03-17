@@ -10,7 +10,6 @@ import {
   MenuItem,
   Mono,
   NonIdealState,
-  NonIdealStateWrapper,
   Popover,
   Spinner,
   Subheading,
@@ -650,7 +649,7 @@ const ScheduleDescriptor = styled.div`
 `;
 
 const SkipReasonNonIdealStateWrapper = styled.div`
-  ${NonIdealStateWrapper} {
+  .dagster-non-ideal-state {
     margin: auto !important;
     width: unset !important;
     max-width: unset !important;

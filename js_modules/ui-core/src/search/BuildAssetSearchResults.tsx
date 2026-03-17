@@ -1,13 +1,16 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {isKindTag} from '../graph/KindTags';
-import {AssetOwner, DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
+
+type AssetOwner =
+  | {__typename: 'TeamAssetOwner'; team: string}
+  | {__typename: 'UserAssetOwner'; email: string};
 
 type CountByOwner = {
   owner: AssetOwner;
@@ -20,7 +23,7 @@ type CountByKind = {
 };
 
 type CountPerTag = {
-  tag: DefinitionTag;
+  tag: {key: string; value: string};
   assetCount: number;
 };
 

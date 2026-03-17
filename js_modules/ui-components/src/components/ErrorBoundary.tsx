@@ -1,10 +1,9 @@
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
 import {Body, Subheading} from './Text';
-import {FontFamily} from './styles';
+import styles from './css/ErrorBoundary.module.css';
 
 export type ErrorCollectionContextValue = {
   errorStackIncluded: boolean;
@@ -73,7 +72,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         >
           <Subheading>Sorry, {this.props.region} can&apos;t be displayed.</Subheading>
           <Body color={Colors.textLight()}>{errorCollectionMessage}</Body>
-          {errorStackIncluded && <Trace>{`${error.message}\n\n${error.stack}`}</Trace>}
+          {errorStackIncluded && (
+            <div className={styles.trace}>{`${error.message}\n\n${error.stack}`}</div>
+          )}
         </Box>
       );
     }
@@ -81,12 +82,3 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return this.props.children;
   }
 }
-
-const Trace = styled.div`
-  color: ${Colors.textLight()};
-  font-family: ${FontFamily.monospace};
-  font-variant-ligatures: none;
-  font-size: 1em;
-  white-space: pre;
-  padding-bottom: 1em;
-`;

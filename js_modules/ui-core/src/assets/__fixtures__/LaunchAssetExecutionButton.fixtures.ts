@@ -4,11 +4,6 @@ import without from 'lodash/without';
 import {generateDailyTimePartitions} from './PartitionHealthSummary.fixtures';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {
-  AssetKeyInput,
-  LaunchBackfillParams,
-  PartitionDefinitionType,
-  PartitionRangeStatus,
-  Query,
   buildAssetCheck,
   buildAssetChecks,
   buildAssetKey,
@@ -39,6 +34,12 @@ import {
   buildRunLauncher,
   buildTimePartitionRangeStatus,
   buildTimePartitionStatuses,
+} from '../../graphql/builders';
+import {
+  AssetKeyInput,
+  LaunchBackfillParams,
+  PartitionDefinitionType,
+  PartitionRangeStatus,
 } from '../../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
@@ -608,7 +609,7 @@ export const PartitionHealthAssetMocks = [
 
 export function buildLaunchAssetLoaderMock(
   assetKeys: AssetKeyInput[],
-  overrides: Partial<Query> & Partial<LaunchAssetLoaderQuery> = {},
+  overrides: Partial<ReturnType<typeof buildQuery>> & Partial<LaunchAssetLoaderQuery> = {},
 ): MockedResponse<LaunchAssetLoaderQuery> {
   return {
     request: {

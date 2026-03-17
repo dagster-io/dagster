@@ -168,10 +168,6 @@
   justify-content: center;
 }
 
-.identityItem {
-  padding: 8px 12px;
-}
-
 .identityItemText {
   overflow: hidden;
   text-overflow: ellipsis;

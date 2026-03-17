@@ -44,12 +44,13 @@ export const Dialog = (props: Props) => {
 interface HeaderProps {
   label: React.ReactNode;
   icon?: IconName;
+  right?: React.ReactNode;
   isCloseButtonShown?: boolean;
   onClose?: Props['onClose'];
 }
 
 export const DialogHeader = (props: HeaderProps) => {
-  const {icon, label, isCloseButtonShown, onClose} = props;
+  const {icon, label, right, isCloseButtonShown, onClose} = props;
   return (
     <Box
       background={Colors.backgroundDefault()}
@@ -59,6 +60,7 @@ export const DialogHeader = (props: HeaderProps) => {
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         {icon ? <Icon name={icon} color={Colors.accentPrimary()} /> : null}
         <DialogHeaderText>{label}</DialogHeaderText>
+        {right}
         {isCloseButtonShown ? (
           <UnstyledButton onClick={onClose}>
             <Icon name="close" />

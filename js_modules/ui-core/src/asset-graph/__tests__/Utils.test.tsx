@@ -1,4 +1,5 @@
-import {RunStatus, buildMaterializationEvent, buildRun} from '../../graphql/types';
+import {buildMaterializationEvent, buildRun} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
 import {shouldDisplayRunFailure} from '../Utils';
 
 describe('shouldDisplayRunFailure', () => {

@@ -1,39 +1,16 @@
 """
-Copybara configuration for importing PRs from dagster-io/dagster back to internal.
+Copybara configuration for syncing commits from dagster-io/dagster master to dagster-io/internal.
 """
-core.workflow(
-    name="pr_import",
-    origin=git.github_pr_origin(
-        url="https://github.com/dagster-io/dagster",
-        branch="master",
-    ),
-    destination=git.github_pr_destination(
-        url="https://github.com/dagster-io/internal",
-        destination_ref="master",
-        pr_branch="dagster_sync_pr_${CONTEXT_REFERENCE}",
-    ),
-    origin_files=glob(["**"]),
-    destination_files=glob(["dagster-oss/**"]),
-    authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
-    transformations=[
-        core.move("js_modules/.yarnrc.yml", "js_modules/.yarnrc.oss.yml"),
-        core.move("js_modules/package.json", "js_modules/package.oss.json"),
-        core.move("js_modules/yarn.lock", "js_modules/yarn.oss.lock"),
-        core.move("", "dagster-oss"),
-        metadata.save_author("ORIGINAL_AUTHOR"),
-        metadata.expose_label("GITHUB_PR_NUMBER", new_name = "Closes", separator = " dagster-io/dagster#"),
-    ],
-    set_rev_id = False,
-    mode="CHANGE_REQUEST",
-)
 
-"""
-Copybara configuration for syncing commits from dagster-io/dagster master to internal monorepo.
-"""
+def _skip_synced_from_internal(ctx):
+    """Skip commits that originated from dagster-io/internal so we don't double-commit them."""
+    if ctx.find_label("Internal-RevId"):
+        core.fail_with_noop("Skipping commit that originated from dagster-io/internal.")
+
 core.workflow(
     name="sync-internal",
     origin = git.origin(
-        url = "https://github.com/dagster-io/dagster.git",
+        url =  "file:///workspace/build/buildkite/dagster/copybara-dagster-to-internal",
         ref = "master",
     ),
     destination = git.destination(
@@ -43,22 +20,57 @@ core.workflow(
     ),
     origin_files = glob(["**"]),
     destination_files = glob(["dagster-oss/**"]),
+
+    # Preserve the author of the origin commit as the author of the destination
+    # commit. Note that the "Dagster Devtools" setting here is setting a
+    # default param that is required by Copybara for all authoring.* calls. For
+    # authoring.pass_thru, this default is never actually used.
     authoring=authoring.pass_thru("Dagster Devtools <devtools@dagsterlabs.com>"),
+
+    # Transformation pipeline for commits.
     transformations = [
-        # Error on commits that were synced FROM internal
-        metadata.verify_match(
-            regex = "Synced-From-Internal",
-            verify_no_match = True,
-        ),
+
+        # Skip any commit that originated from dagster-io/internal. This
+        # prevents echoing the same commit back to dagster-io/internal. 
+        core.dynamic_transform(impl = _skip_synced_from_internal),
+
+        # Yarn workspace files for OSS in dagster-io/internal use "oss.yml" so
+        # that they are not detected by yarn, which instead uses a workspace
+        # defined at the repo root. Add this prefix when exporting the commit
+        # to dagster-io/internal.
         core.move("js_modules/.yarnrc.yml", "js_modules/.yarnrc.oss.yml"),
         core.move("js_modules/package.json", "js_modules/package.oss.json"),
         core.move("js_modules/yarn.lock", "js_modules/yarn.oss.lock"),
+
+        # Mount all contents of this repo on the dagster-oss subdirectory for
+        # the dagster-io/internal commit.
         core.move("", "dagster-oss"),
-        metadata.save_author("ORIGINAL_AUTHOR"),
-        metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
-        # Mark this commit as coming from dagster so sync-dagster won't re-sync it
-        metadata.replace_message("${COPYBARA_CURRENT_MESSAGE}\n\nSynced-From-Dagster"),
     ],
+
+    # Follows this algorithm:
+    # - Find the most recent commit in destination.fetch having
+    #   GitOrigin-RevId: <HASH> in its commit message. <HASH> refers to a
+    #   commit in origin.
+    # - Find <HASH> in origin.ref. Iterate up from this commit to ref. For each
+    #   commit, apply the transformation pipeline. Commits that are transformed
+    #   into an empty diff (usually because no changes are made to the subset
+    #   of files targeted by `origin_files`) are skipped.
+    # - Push all the transformed commits to destination.push.
     mode = "ITERATIVE",
+
+    # This will cause the sync to fail if any transformations are not
+    # reversible (i.e. can be run in reverse and arrive at the original commit
+    # diff).
     reversible_check = True,
+
+    # Commits written to dagster-io/internal record the corresponding
+    # dagster-io/dagster commit hash under "Dagster-RevId" instead of the
+    # default "GitOrigin-RevId". This affects ITERATIVE mode syncing, which by
+    # default identifies the most recent commit in the destination ref
+    # containing this string. We override the default so that multiple repos
+    # can sync with dagster-io/dagster. Without overriding, ITERATIVE mode
+    # would mistakenly identify commits synced from another repo, which would
+    # also use the default GitOrigin-RevId, as having originated from this
+    # repo.
+    custom_rev_id = "Dagster-RevId",
 )

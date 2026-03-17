@@ -118,6 +118,54 @@ def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: 
     subprocess.check_call(compose_command, env=docker_env)
 
 
+def _force_disconnect_external_containers(docker_compose_yml, docker_env):
+    """Force-disconnect any non-compose containers still attached to compose networks.
+
+    `docker compose down` fails if external containers (e.g. the Buildkite agent container)
+    are still connected to a compose-managed network. This preemptively cleans those up so
+    that `docker compose down` can remove networks without error.
+    """
+    network_name = network_name_from_yml(docker_compose_yml)
+    try:
+        output = subprocess.check_output(
+            [
+                "docker",
+                "network",
+                "inspect",
+                network_name,
+                "--format",
+                "{{range .Containers}}{{.Name}} {{end}}",
+            ],
+            env=docker_env,
+            stderr=subprocess.DEVNULL,
+        )
+        connected = output.decode().split()
+    except subprocess.CalledProcessError:
+        return  # Network doesn't exist or already removed
+
+    # Get the list of containers managed by this compose file
+    try:
+        compose_output = subprocess.check_output(
+            ["docker", "compose", "--file", str(docker_compose_yml), "ps", "--format", "{{.Name}}"],
+            env=docker_env,
+            stderr=subprocess.DEVNULL,
+        )
+        compose_containers = set(compose_output.decode().splitlines())
+    except subprocess.CalledProcessError:
+        compose_containers = set()
+
+    for container in connected:
+        if container and container not in compose_containers:
+            logging.info(
+                f"Force-disconnecting external container {container} from network {network_name}"
+            )
+            subprocess.run(
+                ["docker", "network", "disconnect", "--force", network_name, container],
+                env=docker_env,
+                check=False,
+            )
+
+
 def docker_compose_down(docker_compose_yml, context, service, env_file):
     docker_env = os.environ.copy()
     if docker_env.get("BUILDKITE"):
@@ -132,9 +180,8 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
 
     if service:
         compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", service]
-        subprocess.check_call(compose_command, env=docker_env)
-
     else:
+        _force_disconnect_external_containers(docker_compose_yml, docker_env)
         compose_command += [
             "--file",
             str(docker_compose_yml),
@@ -142,7 +189,8 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
             "--volumes",
             "--remove-orphans",
         ]
-        subprocess.check_call(compose_command, env=docker_env)
+
+    subprocess.check_call(compose_command, env=docker_env)
 
 
 def list_containers():
@@ -190,7 +238,9 @@ def disconnect_container_from_network(container, network):
     if env.get("BUILDKITE"):
         env["DOCKER_API_VERSION"] = "1.41"
     try:
-        subprocess.check_call(["docker", "network", "disconnect", network, container], env=env)
+        subprocess.check_call(
+            ["docker", "network", "disconnect", "--force", network, container], env=env
+        )
         logging.info(f"Disconnected {container} from network {network}.")
     except subprocess.CalledProcessError:
         logging.warning(f"Unable to disconnect {container} from network {network}.")

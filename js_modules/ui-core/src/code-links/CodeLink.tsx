@@ -3,7 +3,14 @@ import * as React from 'react';
 
 import {CodeLinkProtocolContext, ProtocolData} from './CodeLinkProtocol';
 import {assertUnreachable} from '../app/Util';
-import {SourceLocation} from '../graphql/types';
+type SourceLocation =
+  | {
+      __typename: 'LocalFileCodeReference';
+      filePath: string;
+      lineNumber: number | null;
+      label: string | null;
+    }
+  | {__typename: 'UrlCodeReference'; url: string; label: string | null};
 
 const getCodeReferenceIcon = (codeReference: SourceLocation): IconName => {
   switch (codeReference.__typename) {

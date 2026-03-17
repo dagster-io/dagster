@@ -2,7 +2,8 @@ import {useState} from 'react';
 
 import {Box} from '../Box';
 import {Button} from '../Button';
-import {Dialog, DialogBody, DialogFooter, DialogHeader, GlobalDialogStyle} from '../Dialog';
+import {Dialog, DialogBody, DialogFooter, DialogHeader} from '../Dialog';
+import {Tag} from '../Tag';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -14,10 +15,134 @@ export const Simple = () => {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <GlobalDialogStyle />
+      <Button onClick={() => setOpen(true)}>Show me the dialog</Button>
+      <Dialog
+        isOpen={open}
+        canEscapeKeyClose
+        canOutsideClickClose
+        onClose={() => setOpen(false)}
+        icon="layers"
+        title="Start the process"
+      >
+        <DialogBody>
+          <Box flex={{direction: 'column', gap: 12}}>
+            <div>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+              incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+              exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            </div>
+            <div>
+              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+              nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
+              officia deserunt mollit anim id est laborum.
+            </div>
+          </Box>
+        </DialogBody>
+        <DialogFooter>
+          <Button intent="none" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button intent="primary" onClick={() => setOpen(false)}>
+            Perform action
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+};
+
+export const WithCloseButton = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Show me the dialog</Button>
+      <Dialog
+        isOpen={open}
+        canEscapeKeyClose
+        canOutsideClickClose
+        onClose={() => setOpen(false)}
+        icon="layers"
+        title="Start the process"
+        isCloseButtonShown
+      >
+        <DialogBody>
+          <Box flex={{direction: 'column', gap: 12}}>
+            <div>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+              incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+              exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            </div>
+            <div>
+              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+              nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
+              officia deserunt mollit anim id est laborum.
+            </div>
+          </Box>
+        </DialogBody>
+        <DialogFooter>
+          <Button intent="none" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button intent="primary" onClick={() => setOpen(false)}>
+            Perform action
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+};
+
+export const WithCustomHeader = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
       <Button onClick={() => setOpen(true)}>Show me the dialog</Button>
       <Dialog isOpen={open} canEscapeKeyClose canOutsideClickClose onClose={() => setOpen(false)}>
-        <DialogHeader icon="layers" label="Start the process" />
+        <DialogHeader
+          icon="layers"
+          label="Start the process"
+          right={<Tag intent="primary">Beta</Tag>}
+        />
+        <DialogBody>
+          <Box flex={{direction: 'column', gap: 12}}>
+            <div>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+              incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+              exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            </div>
+            <div>
+              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+              nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
+              officia deserunt mollit anim id est laborum.
+            </div>
+          </Box>
+        </DialogBody>
+        <DialogFooter>
+          <Button intent="none" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button intent="primary" onClick={() => setOpen(false)}>
+            Perform action
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+};
+
+export const WithCustomHeaderAndCloseButton = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Show me the dialog</Button>
+      <Dialog isOpen={open} canEscapeKeyClose canOutsideClickClose onClose={() => setOpen(false)}>
+        <DialogHeader
+          icon="layers"
+          label="Start the process"
+          right={<Tag intent="primary">Beta</Tag>}
+          isCloseButtonShown
+          onClose={() => setOpen(false)}
+        />
         <DialogBody>
           <Box flex={{direction: 'column', gap: 12}}>
             <div>

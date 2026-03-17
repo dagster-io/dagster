@@ -1,9 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  InstigationStatus,
-  RunRequest,
-  RunStatus,
   buildDryRunInstigationTick,
   buildErrorChainLink,
   buildInstigationState,
@@ -17,7 +14,8 @@ import {
   buildSensor,
   buildSensorData,
   buildTickEvaluation,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {InstigationStatus, RunStatus} from '../../graphql/types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
@@ -26,7 +24,7 @@ import {SetSensorCursorMutation} from '../../sensors/types/EditCursorDialog.type
 import {EVALUATE_SENSOR_MUTATION} from '../SensorDryRunDialog';
 import {SensorDryRunMutation} from '../types/SensorDryRunDialog.types';
 
-export const runRequests: RunRequest[] = [
+export const runRequests: ReturnType<typeof buildRunRequest>[] = [
   buildRunRequest({
     runKey: 'DryRunRequestTable.test.tsx:1675705668.9931223',
     runConfigYaml:
@@ -56,7 +54,7 @@ export const runRequests: RunRequest[] = [
   }),
 ];
 
-export const runRequestWithUndefinedJobName: RunRequest[] = [
+export const runRequestWithUndefinedJobName: ReturnType<typeof buildRunRequest>[] = [
   buildRunRequest({
     jobName: undefined, // undefined jobName
     runKey: 'DryRunRequestTable.test.tsx:1675705668.9931223',

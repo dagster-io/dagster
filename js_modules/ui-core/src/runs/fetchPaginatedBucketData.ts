@@ -1,5 +1,4 @@
-export type QueryResultData<DataType> = {
-  data: DataType[] | undefined;
+export type QueryResultData = {
   loading: boolean;
   error: any;
   called: boolean;
@@ -10,7 +9,7 @@ export type QueryResultData<DataType> = {
  * setQueryData doesn't actually set any data, you have to do it yourself.
  * In the case of the RunTimeline it doesn't set any data because it persists it to a cache instead
  */
-export async function fetchPaginatedBucketData<BucketType, DataType, CursorType, ErrorType>({
+export async function fetchPaginatedBucketData<BucketType, CursorType, ErrorType>({
   buckets,
   fetchData,
   setQueryData,
@@ -24,7 +23,7 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
     cursor: CursorType | undefined;
     error: ErrorType;
   }>;
-  setQueryData: React.Dispatch<React.SetStateAction<QueryResultData<DataType>>>;
+  setQueryData: React.Dispatch<React.SetStateAction<QueryResultData>>;
 }) {
   setQueryData((queryData) => ({
     ...queryData,
@@ -35,7 +34,7 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
   try {
     await Promise.all(
       buckets.map((bucket) =>
-        fetchPaginatedData<DataType, CursorType, ErrorType>({
+        fetchPaginatedData<never, CursorType, ErrorType>({
           fetchData: async (cursor) => {
             const res = await fetchData(bucket, cursor);
             return {...res, data: []};

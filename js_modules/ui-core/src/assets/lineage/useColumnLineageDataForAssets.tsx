@@ -6,8 +6,9 @@ import {
 } from './types/useColumnLineageDataForAssets.types';
 import {gql, useApolloClient} from '../../apollo-client';
 import {toGraphId} from '../../asset-graph/Utils';
-import {AssetKeyInput, DefinitionTag, TableColumnLineageMetadataEntry} from '../../graphql/types';
+import {AssetKeyInput} from '../../graphql/types';
 import {isCanonicalColumnLineageEntry} from '../../metadata/TableSchema';
+import {MetadataEntryFragment_TableColumnLineageMetadataEntry as TableColumnLineageMetadataEntry} from '../../metadata/types/MetadataEntryFragment.types';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 
@@ -15,7 +16,7 @@ export type AssetColumnLineageLocalColumn = {
   name: string;
   type: string | null;
   description: string | null;
-  tags: DefinitionTag[];
+  tags: {__typename: 'DefinitionTag'; key: string; value: string}[];
   asOf: string | undefined; // materialization timestamp
   upstream: {
     assetKey: AssetKeyInput;

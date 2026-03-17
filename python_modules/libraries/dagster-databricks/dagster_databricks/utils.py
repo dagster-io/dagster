@@ -6,3 +6,9 @@ def snake_case(name: str) -> str:
     name = re.sub(r"[^a-zA-Z0-9]+", "_", str(name))
     name = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
     return name.lower().strip("_")
+
+
+def build_job_run_url(host: str, job_id: int, run_id: int) -> str:
+    """Build a Databricks job run URL from host, job ID, and run ID."""
+    workspace_url = host.rstrip("/")
+    return f"{workspace_url}/jobs/{job_id}/runs/{run_id}"

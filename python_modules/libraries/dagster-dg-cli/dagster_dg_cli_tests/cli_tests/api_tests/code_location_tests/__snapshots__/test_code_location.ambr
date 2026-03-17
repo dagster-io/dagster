@@ -1,0 +1,52 @@
+# serializer version: 1
+# name: TestFormatCodeLocations.test_format_code_location_json[0]
+  dict({
+    'code_source': None,
+    'image': 'my-image:latest',
+    'location_name': 'my-loc',
+    'status': None,
+  })
+# ---
+# name: TestFormatCodeLocations.test_format_code_location_text[0]
+  '''
+  Name:   my-loc
+  Image:  my-image:latest
+  Module: my_mod
+  '''
+# ---
+# name: TestFormatCodeLocations.test_format_code_locations_json[0]
+  dict({
+    'items': list([
+      dict({
+        'code_source': None,
+        'image': 'img-a:latest',
+        'location_name': 'loc-a',
+        'status': 'LOADED',
+      }),
+    ]),
+    'total': 1,
+  })
+# ---
+# name: TestFormatCodeLocations.test_format_code_locations_text[0]
+  '''
+  NAME   IMAGE         STATUS
+  loc-a  img-a:latest  LOADED
+  loc-b  img-b:v2      LOADING
+  '''
+# ---
+# name: TestFormatDeleteCodeLocationResult.test_format_delete_code_location_result_json[0]
+  dict({
+    'location_name': 'my-loc',
+  })
+# ---
+# name: TestFormatDeleteCodeLocationResult.test_format_delete_code_location_result_text[0]
+  "Deleted code location 'my-loc'."
+# ---
+# name: TestFormatResult.test_format_result_json[0]
+  dict({
+    'location_name': 'my-loc',
+  })
+# ---
+# name: TestFormatResult.test_format_result_text[0]
+  "Added or updated code location 'my-loc'."
+# ---

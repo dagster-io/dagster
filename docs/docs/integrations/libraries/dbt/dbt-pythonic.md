@@ -75,7 +75,25 @@ You can customize the properties of the assets emitted by each dbt model using a
   language="python"
 />
 
-## 6. Handling incremental models
+## 6. Customize manifest generation
+
+By default, `DbtProject` runs `dbt parse --quiet` to generate the manifest during development. If you need `dbt compile` instead — for example, to access `compiled_code` on your dbt nodes — you can pass `prepare_project_cli_args` when creating your `DbtProject`:
+
+```python
+from pathlib import Path
+
+from dagster_dbt import DbtProject
+
+my_dbt_project = DbtProject(
+    project_dir=Path(__file__).absolute().parent / "dbt",
+    prepare_project_cli_args=["compile", "--quiet"],
+)
+my_dbt_project.prepare_if_dev()
+```
+
+This is useful when you want to include compiled SQL in asset descriptions or other metadata via a custom `DagsterDbtTranslator`.
+
+## 7. Handling incremental models
 
 If you have incremental models in your dbt project, you can model these as partitioned assets, and update the command that is used to run the dbt models to pass in `--vars` based on the range of partitions that are being processed.
 

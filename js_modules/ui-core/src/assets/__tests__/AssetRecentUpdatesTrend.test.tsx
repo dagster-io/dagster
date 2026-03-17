@@ -1,13 +1,13 @@
 import {render, screen} from '@testing-library/react';
 
 import {
-  RunStatus,
   buildAssetLatestInfo,
   buildFailedToMaterializeEvent,
   buildMaterializationEvent,
   buildObservationEvent,
   buildRun,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
 import {AssetRecentUpdatesTrend} from '../AssetRecentUpdatesTrend';
 
 jest.mock('../../ui/PezItem', () => ({

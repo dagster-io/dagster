@@ -32,5 +32,4 @@ dagster-sigma = "dagster_sigma.cli:app"
 [project.optional-dependencies]
 test = [
     "aioresponses",
-    "aiohttp<3.11",
 ]

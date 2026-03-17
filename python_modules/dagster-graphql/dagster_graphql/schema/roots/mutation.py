@@ -74,7 +74,7 @@ from dagster_graphql.schema.inputs import (
     GrapheneLaunchBackfillParams,
     GraphenePartitionsByAssetSelector,
     GrapheneReexecutionParams,
-    GrapheneReportAssetCheckEvaluationParams,
+    GrapheneReportAssetCheckEvaluationsParams,
     GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
 )
@@ -891,30 +891,31 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
         )
 
 
-class GrapheneReportAssetCheckEvaluationSuccess(graphene.ObjectType):
+class GrapheneReportAssetCheckEvaluationsSuccess(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
+    checkName = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "ReportAssetCheckEvaluationSuccess"
+        name = "ReportAssetCheckEvaluationsSuccess"
 
 
-class GrapheneReportAssetCheckEvaluationResult(graphene.Union):
+class GrapheneReportAssetCheckEvaluationsResult(graphene.Union):
     class Meta:
         types = (
             GrapheneUnauthorizedError,
             GraphenePythonError,
-            GrapheneReportAssetCheckEvaluationSuccess,
+            GrapheneReportAssetCheckEvaluationsSuccess,
         )
         name = "ReportAssetCheckEvaluationResult"
 
 
-class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
+class GrapheneReportAssetCheckEvaluationsMutation(graphene.Mutation):
     """Reports an asset check evaluation result."""
 
-    Output = graphene.NonNull(GrapheneReportAssetCheckEvaluationResult)
+    Output = graphene.NonNull(GrapheneReportAssetCheckEvaluationsResult)
 
     class Arguments:
-        eventParams = graphene.Argument(graphene.NonNull(GrapheneReportAssetCheckEvaluationParams))
+        eventParams = graphene.Argument(graphene.NonNull(GrapheneReportAssetCheckEvaluationsParams))
 
     class Meta:
         name = "ReportAssetCheckEvaluationMutation"
@@ -924,7 +925,7 @@ class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
     def mutate(
         self,
         graphene_info: ResolveInfo,
-        eventParams: GrapheneReportAssetCheckEvaluationParams,
+        eventParams: GrapheneReportAssetCheckEvaluationsParams,
     ):
         asset_key = AssetKey.from_graphql_input(eventParams["assetKey"])
         check_name = eventParams["checkName"]
@@ -933,7 +934,9 @@ class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
         severity = AssetCheckSeverity(severity_raw) if severity_raw else AssetCheckSeverity.ERROR
         serialized_metadata = eventParams.get("serializedMetadata")
         metadata = json.loads(serialized_metadata) if serialized_metadata else None
-        partition = eventParams.get("partition")
+        partition_keys_input = eventParams.get("partitionKeys")
+        partition_keys = [None] if partition_keys_input is None else partition_keys_input
+        description = eventParams.get("description")
 
         asset_graph = graphene_info.context.asset_graph
 
@@ -941,15 +944,18 @@ class GrapheneReportAssetCheckEvaluationMutation(graphene.Mutation):
             graphene_info, asset_graph, [asset_key], Permissions.REPORT_RUNLESS_ASSET_EVENTS
         )
 
-        return report_asset_check_evaluation(
-            graphene_info,
-            asset_key=asset_key,
-            check_name=check_name,
-            passed=passed,
-            severity=severity,
-            metadata=metadata,
-            partition=partition,
-        )
+        for pk in partition_keys:
+            report_asset_check_evaluation(
+                graphene_info,
+                asset_key=asset_key,
+                check_name=check_name,
+                passed=passed,
+                severity=severity,
+                metadata=metadata,
+                partition=pk,
+                description=description,
+            )
+        return GrapheneReportAssetCheckEvaluationsSuccess(assetKey=asset_key, checkName=check_name)
 
 
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
@@ -1142,7 +1148,7 @@ class GrapheneMutation(graphene.ObjectType):
     shutdownRepositoryLocation = GrapheneShutdownRepositoryLocationMutation.Field()
     wipeAssets = GrapheneAssetWipeMutation.Field()
     reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
-    reportAssetCheckEvaluation = GrapheneReportAssetCheckEvaluationMutation.Field()
+    reportAssetCheckEvaluations = GrapheneReportAssetCheckEvaluationsMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
     reexecutePartitionBackfill = GrapheneReexecuteBackfillMutation.Field()

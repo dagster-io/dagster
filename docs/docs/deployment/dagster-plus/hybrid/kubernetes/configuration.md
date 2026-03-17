@@ -186,6 +186,67 @@ dagsterCloudAgent:
 
 We plan to make this user the default in a future release.
 
+## Using a custom agent image
+
+By default, the Dagster+ agent uses the official `docker.io/dagster/dagster-cloud-agent` image. You can build and use your own custom agent image if you need additional dependencies, a different base image, or more control over the agent environment.
+
+### Building a custom agent image
+
+Create a Dockerfile that installs the `dagster-cloud` package with the appropriate extras for your deployment type:
+
+```dockerfile
+FROM python:3.12-slim
+
+ARG DAGSTER_VERSION=1.12.19
+RUN pip install dagster-cloud[kubernetes]==${DAGSTER_VERSION}
+
+CMD ["dagster-cloud", "agent", "run"]
+```
+
+If you're using the official Dagster+ Helm chart, pin the `dagster-cloud` version to match the chart version.
+
+Build and push the image to your container registry:
+
+```shell
+docker build -t your-registry.com/dagster-cloud-agent:custom .
+docker push your-registry.com/dagster-cloud-agent:custom
+```
+
+### Configuring the Helm chart to use a custom image
+
+Update your Helm values to specify your custom agent image:
+
+```yaml
+# values.yaml
+dagsterCloudAgent:
+  image:
+    repository: your-registry.com/dagster-cloud-agent
+    tag: custom
+    pullPolicy: Always
+```
+
+Then upgrade the Helm release:
+
+```shell
+helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
+```
+
+If your custom image is in a private registry, you'll also need to configure an image pull secret for the agent itself:
+
+```yaml
+# values.yaml
+dagsterCloudAgent:
+  image:
+    repository: your-registry.com/dagster-cloud-agent
+    tag: custom
+    pullPolicy: Always
+
+imagePullSecrets:
+  - name: regcred
+```
+
 ## Grant AWS permissions
 
 You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account). For example, you might do this to [configure an S3 IO Manager](/deployment/oss/deployment-options/aws#using-s3-for-io-management).

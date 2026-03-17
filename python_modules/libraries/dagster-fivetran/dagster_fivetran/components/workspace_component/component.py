@@ -28,6 +28,7 @@ from dagster_fivetran.components.workspace_component.scaffolder import (
     FivetranAccountComponentScaffolder,
 )
 from dagster_fivetran.resources import FivetranWorkspace
+from dagster_fivetran.sensor_builder import build_fivetran_polling_sensor
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
@@ -125,6 +126,14 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     ) = pydantic.Field(
         default=None,
         description="Function used to translate Fivetran connector table properties into Dagster asset specs.",
+    )
+    polling_sensor: bool | None = pydantic.Field(
+        default=None,
+        description=(
+            "If true, adds a polling sensor that detects externally-triggered Fivetran syncs "
+            "and emits AssetMaterialization events into Dagster's event log. "
+            "Use this when Fivetran connectors run on Fivetran's auto-schedule."
+        ),
     )
     defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
 
@@ -257,7 +266,18 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             self._get_fivetran_assets_def(connector_name, specs)
             for connector_name, specs in specs_by_connector_name.items()
         ]
-        return dg.Definitions(assets=assets)
+
+        sensors = []
+        if self.polling_sensor:
+            sensors.append(
+                build_fivetran_polling_sensor(
+                    workspace=self.workspace_resource,
+                    dagster_fivetran_translator=self.translator,
+                    connector_selector_fn=self.connector_selector,
+                )
+            )
+
+        return dg.Definitions(assets=assets, sensors=sensors)
 
 
 class FivetranComponentTranslator(

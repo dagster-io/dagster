@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import subprocess
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -36,12 +36,15 @@ class BuildkiteContext(Generic[T_Config]):
         self.python_packages = python_packages
 
     @classmethod
-    def create(cls, env: Mapping[str, str] = os.environ) -> Self:
+    def create(
+        cls, env: Mapping[str, str] = os.environ, changed_files: Iterable[Path] | None = None
+    ) -> Self:
         repo_path = Path.cwd()
-        message = _get_required_env_var("BUILDKITE_MESSAGE", env)
-        config = cls.extract_build_config(message)
+        config = cls.extract_build_config(env)
 
-        changed_files = _discover_changed_files(repo_path)
+        changed_files = (
+            frozenset(changed_files) if changed_files else _discover_changed_files(repo_path)
+        )
         python_packages = PythonPackagesData.load(repo_path, changed_files)
         return cls(
             repo_path=repo_path,
@@ -52,8 +55,8 @@ class BuildkiteContext(Generic[T_Config]):
         )
 
     @classmethod
-    def extract_build_config(cls, message: str) -> "BuildConfig":
-        return BuildConfig.from_message(message)
+    def extract_build_config(cls, env: Mapping[str, str]) -> "BuildConfig":
+        return BuildConfig.from_env(env)
 
     @overload
     def get_env(self, var: "BuildkiteEnvVar") -> str | None: ...
@@ -64,7 +67,7 @@ class BuildkiteContext(Generic[T_Config]):
     @overload
     def get_env(self, var: "BuildkiteEnvVar", default: str) -> str: ...
 
-    def get_env(self, var: "BuildkiteEnvVar", default: str | None = None):
+    def get_env(self, var: "BuildkiteEnvVar", default: str | None = None) -> str | None:
         return self.env.get(var, default)
 
     def getx_env(self, var: "BuildkiteEnvVar") -> str:
@@ -163,28 +166,38 @@ class BuildConfig:
         )
 
     @classmethod
-    def from_message(cls, buildkite_message: str) -> Self:
-        """Parses build params from the build message (usually the commit message).
+    def from_env(cls, env: Mapping[str, str]) -> Self:
+        """Build config params from environment variables and the build message.
 
-        Build params are set via "magic strings" that can be put anywhere in the message.
+        Config values are resolved from two sources, in order of increasing priority:
 
-        Note that build params are not a buildkite concept. They are a convention
-        we use to allow developers to easily control builds.
+        1. Environment variables: Any env var whose name (case-insensitive) matches a
+           config field is used as a base value. This is how triggered builds pass config
+           -- the parent build sets env vars on the triggered build.
+        2. Message magic strings: `[VAR=VALUE]` patterns in BUILDKITE_MESSAGE (usually
+           the commit message) override env var values. This is how developers manually
+           control builds via commit messages.
 
-        The format for build params is [VAR=VALUE], where VAR is the name of the
-        build parameter and VALUE is the value to set it to. Value can also be
-        omitted, which is equivalent to setting to "TRUE".
+        For message magic strings, VALUE can be omitted (equivalent to "TRUE"). VAR and
+        VALUE must contain only letters, numbers, and underscores.
 
-        VAR and VALUE must contain only letters, numbers, and underscores.
-
-        For example, a commit message of "Fix bug [STEP_FILTER=integration]
-        [REPEAT=5]" would set the TEST_ONLY and TEST_ONLY_N_TIMES
-        directives for the build.
+        Example: a commit message of "Fix bug [STEP_FILTER=integration] [REPEAT=5]"
+        sets the step_filter and repeat config params.
         """
         field_names = {field.name for field in cls.__dataclass_fields__.values()}
+
+        # Base layer: pull config from env vars (case-insensitive).
+        params: dict[str, str] = {}
+        for key, value in env.items():
+            key_norm = key.lower()
+            if key_norm in field_names and value:
+                logging.info(f"Extracted param from env: {key}={value}")
+                params[key_norm] = value
+
+        # Override layer: pull config from message magic strings.
+        buildkite_message = env.get("BUILDKITE_MESSAGE", "")
         pattern = r"\[([A-Za-z0-9_]+)(?:=([A-Za-z0-9_]+))?\]"
         matches: list[tuple[str, str]] = re.findall(pattern, buildkite_message)
-        params: dict[str, str] = {}
         for var, value in matches:
             var_norm = var.lower()
             if var_norm not in field_names:
@@ -192,7 +205,8 @@ class BuildConfig:
                 continue
             norm_value = value or "TRUE"
             logging.info(f"Extracted param from message: {var}={norm_value}")
-            params[var] = norm_value
+            params[var_norm] = norm_value
+
         return cls.from_raw(params)
 
 
@@ -450,5 +464,5 @@ def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
     return frozenset(all_files)
 
 
-def _get_commit(rev):
+def _get_commit(rev: str) -> str:
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()

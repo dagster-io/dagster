@@ -16,7 +16,7 @@
     "allowUnreachableCode": true,
     "allowSyntheticDefaultImports": true,
     "types": ["jest", "node"],
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "lib": ["es2022", "webworker"],
     "esModuleInterop": true,
     "resolveJsonModule": true,

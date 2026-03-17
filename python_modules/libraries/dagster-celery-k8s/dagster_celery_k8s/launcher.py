@@ -67,6 +67,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         postgres_password_secret,
         load_incluster_config=True,
         kubeconfig_file=None,
+        k8s_api_ssl_ca_cert_file=None,
         broker=None,
         backend=None,
         include=None,
@@ -96,6 +97,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         else:
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
+
+        if k8s_api_ssl_ca_cert_file:
+            config = kubernetes.client.Configuration.get_default_copy()
+            config.ssl_ca_cert = k8s_api_ssl_ca_cert_file
+            kubernetes.client.Configuration.set_default(config)
 
         self._api_client = DagsterKubernetesClient.production_client(
             batch_api_override=k8s_client_batch_api

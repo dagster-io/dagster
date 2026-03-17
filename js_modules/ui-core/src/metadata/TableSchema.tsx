@@ -17,14 +17,14 @@ import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
+import {AssetKeyInput} from '../graphql/types';
 import {
-  AssetKeyInput,
-  CodeReferencesMetadataEntry,
-  TableColumnLineageMetadataEntry,
-  TableSchemaMetadataEntry,
-  TextMetadataEntry,
-  UrlMetadataEntry,
-} from '../graphql/types';
+  MetadataEntryFragment_CodeReferencesMetadataEntry as CodeReferencesMetadataEntry,
+  MetadataEntryFragment_TableColumnLineageMetadataEntry as TableColumnLineageMetadataEntry,
+  MetadataEntryFragment_TableSchemaMetadataEntry as TableSchemaMetadataEntry,
+  MetadataEntryFragment_TextMetadataEntry as TextMetadataEntry,
+  MetadataEntryFragment_UrlMetadataEntry as UrlMetadataEntry,
+} from './types/MetadataEntryFragment.types';
 import {Description} from '../pipelines/Description';
 import {buildTagString} from '../ui/tagAsString';
 

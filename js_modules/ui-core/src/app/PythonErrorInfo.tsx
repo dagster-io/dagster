@@ -1,9 +1,8 @@
-import {Box, Button, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Icon, showToast} from '@dagster-io/ui-components';
 import {PythonErrorInfoHeader} from '@shared/app/PythonErrorInfoHeader';
 import clsx from 'clsx';
 import {ComponentProps, Fragment, forwardRef, useRef} from 'react';
 
-import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';
 import {ErrorSource} from '../graphql/types';
 import {MetadataEntries} from '../metadata/MetadataEntry';
@@ -98,7 +97,7 @@ export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
       outlined
       onClick={async () => {
         const message = copy();
-        await showSharedToaster({
+        showToast({
           message: message ?? <div>Copied value</div>,
           intent: 'success',
         });

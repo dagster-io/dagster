@@ -5,7 +5,7 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_shared import check
-from moto.moto_server.threaded_moto_server import ThreadedMotoServer
+from moto.server import ThreadedMotoServer  # type: ignore  # (no type stubs)
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.defs_state_storage import TestDefsStateStorage

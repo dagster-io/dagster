@@ -26,12 +26,20 @@ export const ASSET_CHECK_PARTITION_FRAGMENT = gql`
   }
 `;
 
+export const REPORT_CHECK_EVALUATION_ASSET_NODE_FRAGMENT = gql`
+  fragment ReportCheckEvaluationAssetNodeFragment on AssetNode {
+    id
+    hasReportRunlessAssetEventPermission
+  }
+`;
+
 export const ASSET_CHECKS_QUERY = gql`
   query AssetChecksQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
         ...ExecuteChecksButtonAssetNodeFragment
+        ...ReportCheckEvaluationAssetNodeFragment
 
         assetChecksOrError {
           ... on AssetCheckNeedsMigrationError {
@@ -55,4 +63,5 @@ export const ASSET_CHECKS_QUERY = gql`
   ${ASSET_CHECK_TABLE_FRAGMENT}
   ${ASSET_CHECK_KEY_FRAGMENT}
   ${ASSET_CHECK_PARTITION_FRAGMENT}
+  ${REPORT_CHECK_EVALUATION_ASSET_NODE_FRAGMENT}
 `;

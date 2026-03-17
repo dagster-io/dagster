@@ -7,7 +7,7 @@ import {
   buildRepositoryLocation,
   buildResourceRequirement,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {ASSET_VIEW_DEFINITION_QUERY} from '../AssetView';
 import {buildQueryMock} from '../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';

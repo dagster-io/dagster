@@ -112,27 +112,10 @@
 # ---
 # name: TestFormatSecrets.test_format_secrets_text_output[0]
   '''
-  Name: database_password
-  Locations: data_pipeline, analytics
-  Scopes: Full Deployment
-  Can Edit: Yes
-  Can View Value: Yes
-  Updated By: admin@company.com
-  Updated: 2022-01-01 14:20:00
-  
-  Name: api_key
-  Locations: All code locations
-  Scopes: All Branch Deployments
-  Can Edit: No
-  Can View Value: No
-  
-  Name: staging_token
-  Locations: staging_app
-  Scopes: Branch: staging, Local Deployment
-  Can Edit: Yes
-  Can View Value: Yes
-  Updated By: dev@company.com
-  Updated: 2022-01-01 14:21:00
+  NAME               LOCATIONS                 SCOPES                             UPDATED
+  database_password  data_pipeline, analytics  Full Deployment                    2022-01-01 14:20:00
+  api_key            All                       All Branch Deployments             
+  staging_token      staging_app               Branch: staging, Local Deployment  2022-01-01 14:21:00
   '''
 # ---
 # name: TestFormatSecrets.test_format_single_secret_json_output[0]

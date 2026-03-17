@@ -43,7 +43,7 @@ describe('fetchPaginatedBucketData', () => {
     const setStateMock = jest.fn();
     (useState as jest.Mock).mockImplementation((initial) => [initial, setStateMock]);
 
-    await fetchPaginatedBucketData<BucketType, DataType, CursorType, any>({
+    await fetchPaginatedBucketData<BucketType, CursorType, any>({
       buckets,
       fetchData: fetchDataMock,
       setQueryData: setQueryDataMock,
@@ -90,7 +90,7 @@ describe('fetchPaginatedBucketData', () => {
         error: undefined,
       });
 
-    await fetchPaginatedBucketData<BucketType, DataType, CursorType, any>({
+    await fetchPaginatedBucketData<BucketType, CursorType, any>({
       buckets,
       fetchData: fetchDataMock,
       setQueryData: setQueryDataMock,
@@ -120,7 +120,7 @@ describe('fetchPaginatedBucketData', () => {
         error: undefined,
       });
 
-    await fetchPaginatedBucketData<BucketType, DataType, CursorType, any>({
+    await fetchPaginatedBucketData<BucketType, CursorType, any>({
       buckets,
       fetchData: fetchDataMock,
       setQueryData: setQueryDataMock,
@@ -150,7 +150,7 @@ describe('fetchPaginatedBucketData', () => {
       error,
     });
 
-    await fetchPaginatedBucketData<BucketType, DataType, CursorType, any>({
+    await fetchPaginatedBucketData<BucketType, CursorType, any>({
       buckets,
       fetchData: fetchDataMock,
       setQueryData: setQueryDataMock,
@@ -179,7 +179,7 @@ describe('fetchPaginatedBucketData', () => {
       error: undefined,
     });
 
-    await fetchPaginatedBucketData<BucketType, DataType, CursorType, any>({
+    await fetchPaginatedBucketData<BucketType, CursorType, any>({
       buckets,
       fetchData: fetchDataMock,
       setQueryData: setQueryDataMock,

@@ -1,9 +1,12 @@
 import datetime
+import logging
+import os
 
 from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
+from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
@@ -12,6 +15,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
+    TimedSubsetAutomationCondition,
 )
 from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
@@ -185,18 +189,53 @@ class NewlyRequestedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class NewlyUpdatedCondition(SubsetAutomationCondition):
+class NewlyUpdatedCondition(TimedSubsetAutomationCondition):
     @property
     def name(self) -> str:
         return "newly_updated"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset_with_timing_metadata(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, context: AutomationContext
+    ) -> tuple[EntitySubset, TimingMetadata | None]:
         # if it's the first time evaluating, just return the empty subset
         if context.previous_temporal_context is None:
-            return context.get_empty_subset()
-        return await context.asset_graph_view.compute_updated_since_temporal_context_subset(
+            return context.get_empty_subset(), None
+
+        if not isinstance(context.key, AssetKey):
+            # For non-asset keys (e.g. checks), no timestamp enrichment yet
+            subset = await context.asset_graph_view.compute_updated_since_temporal_context_subset(
+                key=context.key, temporal_context=context.previous_temporal_context
+            )
+            return subset, None
+
+        subset = await context.asset_graph_view.compute_updated_since_temporal_context_subset(
             key=context.key, temporal_context=context.previous_temporal_context
         )
+        if subset.is_empty:
+            return subset, None
+
+        max_partitions = int(os.environ.get("DAGSTER_MAX_PARTITIONS_FOR_DA_TIMESTAMP_FETCH", "100"))
+        if subset.size > max_partitions:
+            # Too many partitions to fetch individual timestamps — use the current
+            # tick timestamp for the entire subset so that downstream SinceCondition
+            # logic still has timing metadata to work with.
+            logging.getLogger("dagster").warning(
+                "Asset %s has %d updated partitions, exceeding the maximum of %d for"
+                " per-partition timestamp fetching. Using tick timestamp as fallback.",
+                context.key.to_user_string(),
+                subset.size,
+                max_partitions,
+            )
+            return subset, TimingMetadata(
+                timestamps={context.asset_graph_view.effective_dt.timestamp(): subset}
+            )
+
+        timing_subsets = (
+            context.asset_graph_view.compute_subsets_by_latest_materialization_timestamp(subset)
+        )
+        if not timing_subsets:
+            return subset, None
+        return subset, TimingMetadata(timestamps=timing_subsets)
 
 
 @whitelist_for_serdes
@@ -232,7 +271,7 @@ class DataVersionChangedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class CronTickPassedCondition(SubsetAutomationCondition):
+class CronTickPassedCondition(TimedSubsetAutomationCondition):
     cron_schedule: str
     cron_timezone: str
 
@@ -248,7 +287,9 @@ class CronTickPassedCondition(SubsetAutomationCondition):
         )
         return next(previous_ticks)
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    def compute_subset_with_timing_metadata(
+        self, context: AutomationContext
+    ) -> tuple[EntitySubset, TimingMetadata | None]:
         previous_cron_tick = self._get_previous_cron_tick(context.evaluation_time)
         if (
             # no previous evaluation
@@ -256,9 +297,11 @@ class CronTickPassedCondition(SubsetAutomationCondition):
             # cron tick was not newly passed
             or previous_cron_tick < context.previous_evaluation_time
         ):
-            return context.get_empty_subset()
+            return context.get_empty_subset(), None
         else:
-            return context.candidate_subset
+            candidate_subset = context.candidate_subset
+            cron_tick_ts = previous_cron_tick.timestamp()
+            return candidate_subset, TimingMetadata(timestamps={cron_tick_ts: candidate_subset})
 
 
 @whitelist_for_serdes

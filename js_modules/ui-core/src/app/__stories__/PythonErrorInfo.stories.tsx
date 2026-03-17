@@ -1,4 +1,4 @@
-import {buildErrorChainLink, buildPythonError} from '../../graphql/types';
+import {buildErrorChainLink, buildPythonError} from '../../graphql/builders';
 import {PythonErrorInfo} from '../PythonErrorInfo';
 
 // eslint-disable-next-line import/no-default-export

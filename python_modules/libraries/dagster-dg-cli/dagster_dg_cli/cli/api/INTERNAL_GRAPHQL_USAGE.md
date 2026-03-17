@@ -3727,8 +3727,8 @@ These APIs provide maximum value with relatively straightforward implementation,
 
 ```bash
 # Asset lifecycle management
-dg api assets list [--limit 50] [--cursor <cursor>] [--view status]
-dg api assets get <asset-key> [--view status] [--include-checks] [--include-health]
+dg api assets list [--limit 50] [--cursor <cursor>] [--status]
+dg api assets get <asset-key> [--status] [--include-checks] [--include-health]
 dg api assets materialize <asset-key> [--partition <partition>] [--wait] [--dry-run]
 dg api assets health <asset-key>  # Comprehensive health status
 dg api assets lineage <asset-key> [--upstream] [--downstream] [--depth 3]
@@ -4101,11 +4101,8 @@ Current dg CLI architecture already provides excellent foundation:
 class DgApiAssetApi:
     client: IGraphQLClient
 
-    def list_assets(self, limit: Optional[int] = 50, cursor: Optional[str] = None, view: Optional[str] = None) -> "DgApiAssetList":
-        if view == "status":
-            return list_dg_plus_api_assets_with_status_via_graphql(self.client, limit=limit, cursor=cursor)
-        else:
-            return list_dg_plus_api_assets_via_graphql(self.client, limit=limit, cursor=cursor)
+    def list_assets(self, limit: Optional[int] = 50, cursor: Optional[str] = None, status: bool = False) -> "DgApiAssetList":
+        return list_dg_plus_api_assets_via_graphql(self.client, limit=limit, cursor=cursor, status=status)
 ```
 
 **Recommended Extensions**:
@@ -4123,8 +4120,8 @@ Focus on highest-frequency operations with clear value propositions:
 
 ```bash
 # Asset operations - highest user value
-dg api assets list [--view status]           # Asset discovery
-dg api assets get <asset-key> [--view status] # Asset details
+dg api assets list [--status]                # Asset discovery
+dg api assets get <asset-key> [--status]     # Asset details
 dg api assets materialize <asset-key>        # Asset execution
 
 # Run operations - core workflow

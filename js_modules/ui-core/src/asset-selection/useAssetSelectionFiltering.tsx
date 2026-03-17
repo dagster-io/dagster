@@ -4,7 +4,6 @@ import {getAssetsByKey} from './util';
 import {COMMON_COLLATOR} from '../app/Util';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
-import {AssetNode} from '../graphql/types';
 import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
@@ -15,9 +14,9 @@ type Nullable<T> = {
 
 export type FilterableAssetDefinition = Nullable<
   Partial<
-    Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
-      repository: Pick<AssetNode['repository'], 'name'> & {
-        location: Pick<AssetNode['repository']['location'], 'name'>;
+    Pick<WorkspaceAssetFragment, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
+      repository: Pick<WorkspaceAssetFragment['repository'], 'name'> & {
+        location: Pick<WorkspaceAssetFragment['repository']['location'], 'name'>;
       };
     }
   >

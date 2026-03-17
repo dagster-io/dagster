@@ -118,7 +118,7 @@ test-components = [
 ]
 mypy = ["mypy==1.8.0"]
 pyright = [
-    "pyright==1.1.379",
+    "pyright==1.1.389",
     # Stub packages
     "pandas-stubs",
     "types-backports",

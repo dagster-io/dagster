@@ -2,7 +2,8 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router';
 
-import {RunStatus, buildPipeline, buildRun, buildRuns, buildSchedule} from '../../graphql/types';
+import {buildPipeline, buildRun, buildRuns, buildSchedule} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
 import {DagsterTag} from '../../runs/RunTag';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsTag} from '../../workspace/repoAddressAsString';

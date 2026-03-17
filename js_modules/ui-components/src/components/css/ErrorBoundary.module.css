@@ -1,0 +1,8 @@
+.trace {
+  color: var(--color-text-light);
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: 1em;
+  white-space: pre;
+  padding-bottom: 1em;
+}

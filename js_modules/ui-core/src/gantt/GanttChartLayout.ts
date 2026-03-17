@@ -302,7 +302,7 @@ export const boxStyleFor = (
     !context.metadata.startedPipelineAt &&
     context.options.mode !== GanttChartMode.WATERFALL_TIMED
   ) {
-    return {background: `#2491eb`};
+    return {background: Colors.accentBlue()};
   }
 
   // Step has started and has state? Return state color.

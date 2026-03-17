@@ -5,9 +5,6 @@ import {
 } from '../../asset-data/types/AssetBaseDataProvider.types';
 import {MockStaleReasonData} from '../../asset-graph/__fixtures__/AssetNode.fixtures';
 import {
-  Asset,
-  RunStatus,
-  StaleStatus,
   buildAsset,
   buildAssetChecks,
   buildAssetFreshnessInfo,
@@ -24,7 +21,8 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildRun,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {RunStatus, StaleStatus} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {SINGLE_NON_SDA_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {
@@ -231,7 +229,7 @@ export const SingleAssetQueryLastRunFailed = buildQueryMock<
   },
 });
 
-export const AssetCatalogTableMockAssets: Asset[] = [
+export const AssetCatalogTableMockAssets: ReturnType<typeof buildAsset>[] = [
   buildAsset({
     id: '["dashboards", "cost_dashboard"]',
     key: buildAssetKey({path: ['dashboards', 'cost_dashboard']}),

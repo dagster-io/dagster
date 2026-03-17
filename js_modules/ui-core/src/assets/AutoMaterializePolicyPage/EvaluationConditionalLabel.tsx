@@ -12,8 +12,10 @@ import {
 import styled from 'styled-components';
 
 import {EvaluationHistoryStackItem} from './types';
-import {SinceMetadataFragment} from './types/GetEvaluationsQuery.types';
-import {EntityKey} from '../../graphql/types';
+import {
+  EntityKeyFragment as EntityKey,
+  SinceMetadataFragment,
+} from './types/GetEvaluationsQuery.types';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 interface Props {

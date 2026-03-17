@@ -10,13 +10,13 @@ RATE_LIMIT_STATUS_CODE = 429
 
 from dagster import (
     AssetExecutionContext,
-    AssetMaterialization,
     ConfigurableResource,
     Failure,
     MaterializeResult,
     _check as check,
 )
 from dagster._annotations import preview
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
@@ -24,11 +24,14 @@ from pydantic import Field
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksJob,
+    DatabricksUnknownTask,
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
     ResolvedDatabricksServerlessConfig,
     parse_libraries,
+    parse_task_from_config,
 )
+from dagster_databricks.utils import build_job_run_url
 
 if TYPE_CHECKING:
     from dagster_databricks.components.databricks_asset_bundle.component import (
@@ -58,7 +61,7 @@ class DatabricksWorkspace(ConfigurableResource):
         base_url = self.host.rstrip("/")
 
         async with aiohttp.ClientSession(headers=headers) as session:
-            list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}list"
+            list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/list"
             async with session.get(list_url) as resp:
                 resp.raise_for_status()
                 data = await resp.json()
@@ -98,10 +101,24 @@ class DatabricksWorkspace(ConfigurableResource):
                 continue
 
             settings = rj.get("settings", {})
+            job_name = settings.get("name", "Unnamed Job")
+            raw_tasks = settings.get("tasks", [])
+
+            # Convert raw task dicts to DatabricksBaseTask objects
+            parsed_tasks = []
+            for task_dict in raw_tasks:
+                augmented_task = {**task_dict, "job_name": job_name}
+                task = parse_task_from_config(augmented_task)
+                if task is not None:
+                    parsed_tasks.append(task)
+                elif task_dict.get("task_key"):
+                    # Use unknown task for unsupported task types
+                    parsed_tasks.append(DatabricksUnknownTask.from_job_task_config(augmented_task))
+
             job = DatabricksJob(
                 job_id=rj["job_id"],
-                name=settings.get("name", "Unnamed Job"),
-                tasks=settings.get("tasks", []),
+                name=job_name,
+                tasks=parsed_tasks,
             )
             final_jobs.append(job)
 
@@ -109,68 +126,77 @@ class DatabricksWorkspace(ConfigurableResource):
 
     def submit_and_poll(
         self, component: "DatabricksAssetBundleComponent", context: AssetExecutionContext
-    ) -> Iterator[AssetMaterialization | MaterializeResult]:
+    ) -> Iterator[MaterializeResult]:
         # Get selected asset keys that are being materialized
         assets_def = context.assets_def
         selected_asset_keys = context.selected_asset_keys
-        not_selected_asset_keys = assets_def.keys - selected_asset_keys
         context.log.info(f"Selected assets: {selected_asset_keys}")
 
-        # Get the task that correspond to selected assets
-        task_key = next(iter(assets_def.specs)).metadata["task_key"].value
-        task = component.databricks_config.tasks_by_task_key[task_key]
+        # Determine the job name from the first spec's metadata
+        first_spec_metadata = next(iter(assets_def.specs)).metadata
+        job_name = first_spec_metadata["job_name"].value
+        tasks_by_task_key = component.databricks_config.tasks_by_job_and_task_key[job_name]
 
-        context.log.info(f"Running task with key {task_key}")
+        # Build a map from asset key to task key using all specs
+        asset_key_to_task_key: dict = {}
+        for spec in assets_def.specs:
+            asset_key_to_task_key[spec.key] = spec.metadata["task_key"].value
 
-        # Create Databricks SDK task objects only the selected task
-        # TODO: support common config
-        context.log.info(f"Task {task_key}: parameters={task.task_parameters}")
-
-        # Create the SubmitTask params dictionary
-        submit_task_params = {
-            "task_key": task_key,
-            task.submit_task_key: task.to_databricks_sdk_task(),
+        # Determine which tasks to submit based on selected asset keys
+        selected_task_keys = {
+            asset_key_to_task_key[key]
+            for key in selected_asset_keys
+            if key in asset_key_to_task_key
         }
+        context.log.info(f"Selected tasks for job {job_name}: {selected_task_keys}")
 
-        # Convert dependency config to TaskDependency objects
-        task_dependencies = [
-            jobs.TaskDependency(task_key=dep_config.task_key, outcome=dep_config.outcome)
-            for dep_config in task.depends_on
-        ]
-        task_dependency_config = {"depends_on": task_dependencies} if task_dependencies else {}
-        context.log.info(f"Task {task_key} depends on: {task_dependencies}")
+        # Build SubmitTask objects for each selected task
+        submit_tasks = []
+        for task_key in selected_task_keys:
+            task = tasks_by_task_key[task_key]
+            context.log.info(f"Task {task_key}: parameters={task.task_parameters}")
 
-        # Determine cluster configuration based on task type
-        compute_config = {}
-        if task.needs_cluster and not (
-            isinstance(component.compute_config, ResolvedDatabricksServerlessConfig)
-            and component.compute_config.is_serverless
-        ):
-            if isinstance(component.compute_config, ResolvedDatabricksExistingClusterConfig):
-                compute_config["existing_cluster_id"] = component.compute_config.existing_cluster_id
-            elif isinstance(component.compute_config, ResolvedDatabricksNewClusterConfig):
-                compute_config["new_cluster"] = compute.ClusterSpec(
-                    spark_version=component.compute_config.spark_version,
-                    node_type_id=component.compute_config.node_type_id,
-                    num_workers=component.compute_config.num_workers,
-                )
+            submit_task_params: dict = {
+                "task_key": task_key,
+                task.submit_task_key: task.to_databricks_sdk_task(),
+            }
 
-        libraries_list = parse_libraries(task.libraries)
-        libraries_config = {"libraries": libraries_list} if libraries_list else {}
-        context.log.info(f"Task {task_key} has {len(libraries_list)} libraries configured")
+            # Determine cluster configuration based on task type
+            if task.needs_cluster and not (
+                isinstance(component.compute_config, ResolvedDatabricksServerlessConfig)
+                and component.compute_config.is_serverless
+            ):
+                if isinstance(component.compute_config, ResolvedDatabricksExistingClusterConfig):
+                    submit_task_params["existing_cluster_id"] = (
+                        component.compute_config.existing_cluster_id
+                    )
+                elif isinstance(component.compute_config, ResolvedDatabricksNewClusterConfig):
+                    submit_task_params["new_cluster"] = compute.ClusterSpec(
+                        spark_version=component.compute_config.spark_version,
+                        node_type_id=component.compute_config.node_type_id,
+                        num_workers=component.compute_config.num_workers,
+                    )
 
-        submit_task_params = {
-            **submit_task_params,
-            **task_dependency_config,
-            **compute_config,
-            **libraries_config,
-        }
-        submit_task = jobs.SubmitTask(**submit_task_params)
+            libraries_list = parse_libraries(task.libraries)
+            if libraries_list:
+                submit_task_params["libraries"] = libraries_list
+            context.log.info(f"Task {task_key} has {len(libraries_list)} libraries configured")
 
-        # Prepare job submission parameters
+            # Add intra-job dependencies for selected tasks only
+            selected_deps = [
+                jobs.TaskDependency(task_key=dep.task_key, outcome=dep.outcome)
+                for dep in task.depends_on
+                if dep.task_key in selected_task_keys
+            ]
+            if selected_deps:
+                submit_task_params["depends_on"] = selected_deps
+
+            submit_tasks.append(jobs.SubmitTask(**submit_task_params))
+
+        # Submit all selected tasks as a single Databricks job run
         job_submit_params = {
             "run_name": f"{assets_def.node_def.name}_{context.run_id}",
-            "tasks": [submit_task],
+            "tasks": submit_tasks,
         }
 
         job_run = self._submit_job(params=job_submit_params)
@@ -179,44 +205,54 @@ class DatabricksWorkspace(ConfigurableResource):
         context.log.info(f"Databricks job submitted with run ID: {run_id}")
 
         # Build Databricks job run URL
-        workspace_url = self.host.rstrip("/")
-        job_run_url = f"{workspace_url}/jobs/{job_id}/runs/{run_id}"
+        job_run_url = build_job_run_url(self.host, job_id, run_id)
         context.log.info(f"Databricks job run URL: {job_run_url}")
 
-        final_run = self._poll_run(run_id=run_id)
+        try:
+            final_run = self._poll_run(run_id=run_id)
+        except DagsterExecutionInterruptedError:
+            context.log.info(f"Run interrupted! Cancelling Databricks job run {run_id}.")
+            try:
+                self.get_client().jobs.cancel_run(run_id)
+            except Exception as e:
+                context.log.warning(f"Failed to cancel Databricks job run {run_id}: {e}")
+            raise
+
         final_run_state = check.not_none(final_run.state)
-        final_run_tasks = check.not_none(final_run.tasks)
         context.log.info(f"Job completed with overall state: {final_run_state.result_state}")
         context.log.info(f"View job details: {job_run_url}")
 
-        final_run_task = final_run_tasks[0]
-        if len(final_run_tasks) > 1 or final_run_task.task_key != task_key:
-            unexpected_tasks_keys = set([task.task_key for task in final_run_tasks]) - set(task_key)
-            raise Failure(
-                f"Final run {final_run.run_id} for job {final_run.job_id} contains unexpected tasks: {unexpected_tasks_keys}"
+        # Check individual task results
+        final_run_tasks = check.not_none(final_run.tasks)
+        failed_tasks = []
+        for run_task in final_run_tasks:
+            task_state = (
+                run_task.state.result_state.value
+                if run_task.state and run_task.state.result_state
+                else "UNKNOWN"
             )
+            context.log.info(f"Task {run_task.task_key} completed with state: {task_state}")
+            if task_state != "SUCCESS":
+                failed_tasks.append(run_task.task_key)
 
-        task_state = (
-            final_run_task.state.result_state.value
-            if final_run_task.state and final_run_task.state.result_state
-            else "UNKNOWN"
-        )
+        if failed_tasks:
+            raise Failure(f"Tasks failed in job run {run_id}: {failed_tasks}. URL: {job_run_url}")
 
-        # Build task-specific URL (task tab within the job run)
-        task_url = f"{job_run_url}#task/{task_key}"
-
-        context.log.info(f"Task {task_key} completed with state: {task_state}")
-        context.log.info(f"Task {task_key} details: {task_url}")
-
-        if task_state == "SUCCESS":
-            for asset_key in selected_asset_keys:
-                yield MaterializeResult(asset_key=asset_key)
-            for asset_key in not_selected_asset_keys:
-                context.log.warning(
-                    f"An asset that was not selected was materialized for task: {task_key}. "
-                    f"Yielding a materialization event."
-                )
-                yield AssetMaterialization(asset_key=asset_key)
+        # Yield results for selected assets in spec order (topological) to satisfy
+        # Dagster's requirement that multi_asset outputs are yielded in dependency order.
+        for spec in assets_def.specs:
+            asset_key = spec.key
+            if asset_key not in selected_asset_keys:
+                continue
+            task_key = asset_key_to_task_key.get(asset_key, "unknown")
+            yield MaterializeResult(
+                asset_key=asset_key,
+                metadata={
+                    "dagster-databricks/run_id": run_id,
+                    "dagster-databricks/run_url": job_run_url,
+                    "dagster-databricks/task_key": task_key,
+                },
+            )
 
     def _submit_job(self, params: Mapping[str, Any]) -> jobs.Run:
         client = self.get_client()

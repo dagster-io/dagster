@@ -18,6 +18,12 @@ from dagster_gcp.bigquery.resources import (
     fetch_last_updated_timestamps as fetch_last_updated_timestamps,
 )
 from dagster_gcp.bigquery.types import BigQueryError as BigQueryError
+from dagster_gcp.components import (
+    BigQueryResourceComponent as BigQueryResourceComponent,
+    DataprocResourceComponent as DataprocResourceComponent,
+    GCSFileManagerResourceComponent as GCSFileManagerResourceComponent,
+    GCSResourceComponent as GCSResourceComponent,
+)
 from dagster_gcp.dataproc.ops import (
     DataprocOpConfig as DataprocOpConfig,
     configurable_dataproc_op as configurable_dataproc_op,

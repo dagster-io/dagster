@@ -1,6 +1,7 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import LaunchpadSession, {LaunchpadConfig} from './LaunchpadSession';
+import {filterDefaultYamlOptionalResources} from './configFiltering';
 import {LaunchpadType} from './types';
 import {
   LaunchpadSessionPartitionSetsFragment,
@@ -40,11 +41,21 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
     runConfigSchema,
   } = props;
 
-  const {flagDisableAutoLoadDefaults} = useFeatureFlags();
+  const {flagDisableAutoLoadDefaults, flagSkipOptionalResourceDefaultsInRunConfig} =
+    useFeatureFlags();
+
+  const initialConfigYaml = useMemo(
+    () =>
+      rootDefaultYaml && runConfigSchema && flagSkipOptionalResourceDefaultsInRunConfig
+        ? filterDefaultYamlOptionalResources(rootDefaultYaml, runConfigSchema)
+        : rootDefaultYaml,
+    [rootDefaultYaml, runConfigSchema, flagSkipOptionalResourceDefaultsInRunConfig],
+  );
+
   const initialData = useInitialDataForMode(
     pipeline,
     partitionSets,
-    rootDefaultYaml,
+    initialConfigYaml,
     !flagDisableAutoLoadDefaults,
   );
 

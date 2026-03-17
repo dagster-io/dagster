@@ -1,11 +1,7 @@
 import {GraphQLError} from 'graphql/error';
 
-import {
-  AssetKeyInput,
-  buildAssetKey,
-  buildAssetLatestInfo,
-  buildAssetNode,
-} from '../../graphql/types';
+import {buildAssetKey, buildAssetLatestInfo, buildAssetNode} from '../../graphql/builders';
+import {AssetKeyInput} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {ASSETS_FRESHNESS_INFO_QUERY, ASSETS_GRAPH_LIVE_QUERY} from '../AssetBaseDataProvider';
 import {

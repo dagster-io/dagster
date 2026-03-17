@@ -6,8 +6,8 @@ def test_dbt_cloud_specs(ensure_cleanup: None) -> None:
     all_assets_keys = [asset.key for asset in dbt_cloud_specs]
 
     # 5 dbt models
-    assert len(dbt_cloud_specs) == 5
-    assert len(all_assets_keys) == 5
+    assert len(dbt_cloud_specs) == 6
+    assert len(all_assets_keys) == 6
 
     # Sanity check outputs
     first_asset_key = next(key for key in sorted(all_assets_keys))

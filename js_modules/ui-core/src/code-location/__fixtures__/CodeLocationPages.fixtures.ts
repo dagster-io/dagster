@@ -15,7 +15,7 @@ import {
   buildSolidDefinition,
   buildUsedSolid,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {OPS_ROOT_QUERY} from '../../ops/OpsRoot';
 import {OpsRootQuery, OpsRootQueryVariables} from '../../ops/types/OpsRoot.types';
 import {buildQueryMock} from '../../testing/mocking';

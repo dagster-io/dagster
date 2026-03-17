@@ -4,7 +4,7 @@ import {ApolloClient, ApolloQueryResult, gql, useApolloClient} from '../apollo-c
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {AssetGroupSelector, AssetKey} from '../graphql/types';
+import {AssetGroupSelector} from '../graphql/types';
 import {CacheData} from '../search/useIndexedDBCachedQuery';
 import {hashObject} from '../util/hashObject';
 import {cache} from '../util/idb-lru-cache';
@@ -309,12 +309,7 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
     }
   }
 
-  const softwareDefinedAssets: {
-    __typename: 'Asset';
-    key: AssetKey;
-    definition: WorkspaceAssetFragment;
-    id: string;
-  }[] = [];
+  const softwareDefinedAssets: (typeof softwareDefinedAssetsWithDuplicates)[number][] = [];
 
   const addedKeys = new Set();
 

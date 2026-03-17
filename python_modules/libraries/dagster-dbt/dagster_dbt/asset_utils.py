@@ -754,7 +754,7 @@ def default_asset_check_fn(
     }
     additional_deps.discard(asset_key)
 
-    severity = test_resource_props.get("config", {}).get("severity", "error")
+    severity = test_resource_props.get("config", {}).get("severity") or "error"
     blocking = severity.lower() == "error"
 
     return AssetCheckSpec(

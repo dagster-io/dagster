@@ -1,4 +1,4 @@
-import {Colors, CursorControlsContainer} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const OptionsContainer = styled.div`
@@ -12,7 +12,7 @@ export const OptionsContainer = styled.div`
   flex-wrap: wrap;
   z-index: 3;
 
-  ${CursorControlsContainer} {
+  .dagster-cursor-controls {
     margin-top: 0;
     gap: 8px;
 

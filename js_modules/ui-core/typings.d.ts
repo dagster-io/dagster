@@ -1,8 +1,6 @@
 /* eslint-disable import/no-default-export */
 /// <reference types="next" />
 
-declare module '@vx/shape';
-
 declare module '*.json' {
   const value: any;
   export default value;

@@ -3,7 +3,7 @@ import {
   buildPartitionedAssetConditionEvaluationNode,
   buildSpecificPartitionAssetConditionEvaluationNode,
   buildUnpartitionedAssetConditionEvaluationNode,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
 
 // eslint-disable-next-line import/no-default-export

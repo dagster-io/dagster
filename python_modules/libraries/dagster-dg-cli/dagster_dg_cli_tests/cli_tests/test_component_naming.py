@@ -25,7 +25,7 @@ def test_scaffold_component_acme_databricks_naming():
 
         assert any(
             json_entry["key"] == "foo_bar.components.ACMEDatabricksJobComponent"
-            for json_entry in result_json
+            for json_entry in result_json["items"]
         )
 
 

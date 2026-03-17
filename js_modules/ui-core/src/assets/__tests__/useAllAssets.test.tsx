@@ -12,7 +12,7 @@ import {
   buildTeamAssetOwner,
   buildUserAssetOwner,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../graphql/builders';
 import {buildQueryMock} from '../../testing/mocking';
 import {cache as mockedCache} from '../../util/idb-lru-cache';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';

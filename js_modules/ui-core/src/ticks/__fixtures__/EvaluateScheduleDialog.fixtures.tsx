@@ -1,7 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  RunStatus,
   buildDryRunInstigationTick,
   buildErrorChainLink,
   buildLaunchMultipleRunsResult,
@@ -13,7 +12,8 @@ import {
   buildRunRequest,
   buildSchedule,
   buildTickEvaluation,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {RunStatus} from '../../graphql/types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';

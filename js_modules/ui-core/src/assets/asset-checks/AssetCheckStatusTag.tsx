@@ -23,8 +23,6 @@ import {
 import {assertUnreachable} from '../../app/Util';
 import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
-  AssetCheckEvaluation,
-  AssetCheckExecution,
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
   AssetKeyInput,
@@ -33,6 +31,18 @@ import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {TagAction, TagActionsPopover} from '../../ui/TagActions';
 import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
+
+type AssetCheckExecution = {
+  runId: string;
+  status: AssetCheckExecutionResolvedStatus;
+  timestamp: number;
+  stepKey: string | null;
+  evaluation: {severity: AssetCheckSeverity} | null;
+};
+
+type AssetCheckEvaluation = {
+  severity: AssetCheckSeverity;
+};
 
 interface StatusTagConfig {
   icon?: IconName;

@@ -12,8 +12,6 @@ import {
 } from '../../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
 import {
-  AssetHealthStatus,
-  AssetKey,
   buildAsset,
   buildAssetConnection,
   buildAssetHealth,
@@ -24,7 +22,8 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../graphql/builders';
+import {AssetHealthStatus} from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
@@ -137,7 +136,7 @@ const statuses = [
   AssetHealthStatus.UNKNOWN,
 ];
 
-const getHealthQueryMock = (assetKeys: AssetKey[]) =>
+const getHealthQueryMock = (assetKeys: ReturnType<typeof buildAssetKey>[]) =>
   buildQueryMock<AssetHealthQuery, AssetHealthQueryVariables>({
     query: ASSETS_HEALTH_INFO_QUERY,
     variableMatcher: () => true,

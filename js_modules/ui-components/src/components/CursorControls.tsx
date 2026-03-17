@@ -1,7 +1,9 @@
-import styled, {CSSProperties} from 'styled-components';
+import clsx from 'clsx';
+import {CSSProperties, forwardRef} from 'react';
 
 import {Button} from './Button';
 import {Icon} from './Icon';
+import styles from './css/CursorControls.module.css';
 
 export interface CursorPaginationProps {
   cursor?: string;
@@ -59,10 +61,15 @@ export const CursorHistoryControls = ({
   );
 };
 
-export const CursorControlsContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-`;
+export const CursorControlsContainer = forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithRef<'div'>
+>(({className, ...props}, ref) => {
+  return (
+    <div
+      {...props}
+      className={clsx(styles.cursorControlsContainer, 'dagster-cursor-controls', className)}
+      ref={ref}
+    />
+  );
+});

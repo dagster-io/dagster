@@ -1,3 +1,4 @@
+from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.block_step_builder import BlockStepBuilder
 from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
@@ -6,7 +7,7 @@ from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.packages import _get_uncustomized_pkg_roots
 
 
-def build_prerelease_package_steps() -> list[StepConfiguration]:
+def build_prerelease_package_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     steps: list[StepConfiguration] = []
 
     packages = (
@@ -20,7 +21,7 @@ def build_prerelease_package_steps() -> list[StepConfiguration]:
             block=":question: Choose package",
         )
         .with_prompt(
-            prompt=None,
+            prompt="Choose package and version to publish",
             fields=[
                 {
                     "select": "Select a package to publish",

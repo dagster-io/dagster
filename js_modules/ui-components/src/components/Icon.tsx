@@ -208,6 +208,7 @@ import info_filled from '../icon-svgs/info_filled.svg';
 import ingest from '../icon-svgs/ingest.svg';
 import insert from '../icon-svgs/insert.svg';
 import insights from '../icon-svgs/insights.svg';
+import issue from '../icon-svgs/issue.svg';
 import job from '../icon-svgs/job.svg';
 import key_command from '../icon-svgs/key_command.svg';
 import key_option from '../icon-svgs/key_option.svg';
@@ -637,6 +638,7 @@ export const Icons = {
   ingest,
   insert,
   insights,
+  issue,
   job,
   key_command,
   key_option,

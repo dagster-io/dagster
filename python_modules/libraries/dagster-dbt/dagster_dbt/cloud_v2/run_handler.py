@@ -1,3 +1,4 @@
+import shlex
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
@@ -40,7 +41,9 @@ class DbtCloudJobRunHandler:
     def run(
         cls, job_id: int, args: Sequence[str], client: DbtCloudWorkspaceClient
     ) -> "DbtCloudJobRunHandler":
-        run_details = client.trigger_job_run(job_id, steps_override=[" ".join(["dbt", *args])])
+        run_details = client.trigger_job_run(
+            job_id, steps_override=[" ".join(shlex.quote(a) for a in ["dbt", *args])]
+        )
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return DbtCloudJobRunHandler(
             job_id=job_id,
@@ -135,6 +138,9 @@ class DbtCloudJobRunResults:
         """
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         has_asset_def: bool = bool(context and context.has_assets_def)
+        partition_key: str | None = (
+            context.partition_key if context and context.has_partition_key else None
+        )
 
         run = DbtCloudRun.from_run_details(run_details=client.get_run_details(run_id=self.run_id))
 
@@ -200,6 +206,7 @@ class DbtCloudJobRunResults:
                     yield AssetMaterialization(
                         asset_key=spec.key,
                         metadata=metadata,
+                        partition=partition_key,
                     )
             elif resource_type == NodeType.Test:
                 metadata = {

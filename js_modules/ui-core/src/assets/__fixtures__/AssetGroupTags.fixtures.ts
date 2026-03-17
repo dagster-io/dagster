@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {buildAssetNode, buildAutoMaterializePolicy, buildQuery} from '../../graphql/types';
+import {buildAssetNode, buildAutoMaterializePolicy, buildQuery} from '../../graphql/builders';
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 import {ASSET_GROUP_METADATA_QUERY} from '../AssetGroupRoot';
 import {

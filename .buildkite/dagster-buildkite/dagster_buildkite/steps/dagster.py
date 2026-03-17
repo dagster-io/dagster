@@ -198,7 +198,9 @@ def build_graphql_python_client_backcompat_steps(
     ]
 
 
-def skip_mysql_if_no_changes_to_dependencies(ctx: BuildkiteContext, dependencies: list[str]):
+def skip_mysql_if_no_changes_to_dependencies(
+    ctx: BuildkiteContext, dependencies: list[str]
+) -> str | None:
     if not ctx.is_feature_branch:
         return None
 
@@ -209,7 +211,9 @@ def skip_mysql_if_no_changes_to_dependencies(ctx: BuildkiteContext, dependencies
     return "Skip unless mysql schemas might have changed"
 
 
-def skip_graphql_if_no_changes_to_dependencies(ctx: BuildkiteContext, dependencies: list[str]):
+def skip_graphql_if_no_changes_to_dependencies(
+    ctx: BuildkiteContext, dependencies: list[str]
+) -> str | None:
     if not ctx.is_feature_branch:
         return None
 

@@ -1,4 +1,12 @@
-import {Box, Icon, Mono, Table, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  Mono,
+  Table,
+  Tooltip,
+  UnstyledButton,
+  showToast,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
 import styled from 'styled-components';
@@ -16,7 +24,6 @@ import {
   CapturedLogsSubscriptionVariables,
 } from './types/CapturedLogPanel.types';
 import {AppContext} from '../app/AppContext';
-import {showSharedToaster} from '../app/DomUtils';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {useCopyToClipboard} from '../app/browser';
 
@@ -61,7 +68,7 @@ export const CapturedOrExternalLogPanel = React.memo(
         return;
       }
       copy(value);
-      await showSharedToaster({
+      showToast({
         intent: 'success',
         icon: 'done',
         message: `${key} copied!`,

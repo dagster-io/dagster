@@ -10,7 +10,6 @@ from collections.abc import Generator, Iterator, Sequence
 from enum import Enum
 from typing import IO, Any, AnyStr
 
-import sling
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -360,6 +359,8 @@ class SlingResource(ConfigurableResource):
         Returns:
             str: The output from the Sling CLI.
         """
+        import sling
+
         with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
             return subprocess.check_output(args=[sling.SLING_BIN, *args], text=True)
 
@@ -449,6 +450,8 @@ class SlingResource(ConfigurableResource):
         debug: bool,
     ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in batch mode."""
+        import sling
+
         # convert to dict to enable updating the index
         context_streams = self._get_replication_streams_for_context(context)
 
@@ -522,6 +525,8 @@ class SlingResource(ConfigurableResource):
         debug: bool,
     ) -> Generator[MaterializeResult | AssetMaterialization, None, None]:
         """Underlying function to run replication and fetch metadata in stream mode."""
+        import sling
+
         # define variable to use to compute metadata during run
         current_stream = None
         metadata_text = []

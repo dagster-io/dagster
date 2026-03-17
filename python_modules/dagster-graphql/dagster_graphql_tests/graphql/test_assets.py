@@ -253,14 +253,14 @@ mutation reportRunlessAssetEvents($eventParams: ReportRunlessAssetEventsParams!)
 """
 
 REPORT_ASSET_CHECK_EVALUATION = """
-mutation reportAssetCheckEvaluation($eventParams: ReportAssetCheckEvaluationParams!) {
-    reportAssetCheckEvaluation(eventParams: $eventParams) {
+mutation reportAssetCheckEvaluations($eventParams: ReportAssetCheckEvaluationsParams!) {
+    reportAssetCheckEvaluations(eventParams: $eventParams) {
         __typename
         ... on PythonError {
             message
             stack
         }
-        ... on ReportAssetCheckEvaluationSuccess {
+        ... on ReportAssetCheckEvaluationsSuccess {
             assetKey {
                 path
             }
@@ -1407,12 +1407,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
         assert result.data
-        assert result.data["reportAssetCheckEvaluation"]
+        assert result.data["reportAssetCheckEvaluations"]
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
-        assert result.data["reportAssetCheckEvaluation"]["assetKey"]["path"] == list(asset_key.path)
+        assert result.data["reportAssetCheckEvaluations"]["assetKey"]["path"] == list(
+            asset_key.path
+        )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
         record = graphql_context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
@@ -1445,8 +1447,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
@@ -1482,8 +1484,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
@@ -1512,15 +1514,15 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                     "checkName": check_name,
                     "passed": True,
                     "severity": "WARN",
-                    "partition": "2024-01-01",
+                    "partitionKeys": ["2024-01-01"],
                 }
             },
         )
 
         assert result.data
         assert (
-            result.data["reportAssetCheckEvaluation"]["__typename"]
-            == "ReportAssetCheckEvaluationSuccess"
+            result.data["reportAssetCheckEvaluations"]["__typename"]
+            == "ReportAssetCheckEvaluationsSuccess"
         )
 
         check_key = AssetCheckKey(asset_key=asset_key, name=check_name)
@@ -1882,6 +1884,27 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         new_start_time = materialization["stepStats"]["startTime"]
         assert new_start_time > start_time
 
+        assert asset_node["latestMaterializationByPartition"][1] is None
+
+    def test_latest_materialization_per_partition_no_materializations(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        """Test that latestMaterializationByPartition returns early with all Nones when
+        no materializations exist (i.e. latest_storage_ids is empty).
+        """
+        selector = infer_job_selector(graphql_context, "partition_materialization_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_MATERIALIZATION_PER_PARTITION,
+            variables={"pipelineSelector": selector, "partitions": ["a", "b"]},
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
+        assert len(asset_node["latestMaterializationByPartition"]) == 2
+        assert asset_node["latestMaterializationByPartition"][0] is None
         assert asset_node["latestMaterializationByPartition"][1] is None
 
     def test_latest_run_for_partition(self, graphql_context: WorkspaceRequestContext):

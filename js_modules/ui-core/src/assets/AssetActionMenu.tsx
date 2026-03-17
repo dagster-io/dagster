@@ -8,6 +8,7 @@ import {
   Popover,
   Spinner,
   Tooltip,
+  showToast,
 } from '@dagster-io/ui-components';
 import {AddToFavoritesMenuItem} from '@shared/assets/AddToFavoritesMenuItem';
 import {memo, useContext, useMemo} from 'react';
@@ -21,7 +22,6 @@ import {useObserveAction} from './useObserveAction';
 import {useReportEventsDialog} from './useReportEventsDialog';
 import {useWipeDialog} from './useWipeDialog';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {showSharedToaster} from '../app/DomUtils';
 import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
@@ -210,7 +210,7 @@ export const useExecuteAssetMenuItem = (
             if (!definition) {
               return;
             }
-            void showSharedToaster({
+            void showToast({
               intent: 'primary',
               message: `Initiating...`,
             });

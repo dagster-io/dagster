@@ -274,7 +274,10 @@ class DbtCliEventMessage(ABC):
 
     def _is_test_execution_event(self, manifest: Mapping[str, Any]) -> bool:
         resource_props = self._get_resource_props(self._unique_id, manifest)
-        return resource_props["resource_type"] == NodeType.Test
+        return (
+            resource_props["resource_type"] == NodeType.Test
+            and self._get_node_status() != NodeStatus.Skipped
+        )
 
     def _get_resource_props(self, unique_id: str, manifest: Mapping[str, Any]) -> dict[str, Any]:
         return manifest["nodes"][unique_id]
@@ -605,7 +608,8 @@ class DbtFusionCliEventMessage(DbtCliEventMessage):
         return self.raw_event["info"]["name"] == "NodeFinished"
 
     def _get_check_passed(self) -> bool:
-        return self._get_node_status() == NodeStatus.Success
+        node_status = self._get_node_status()
+        return node_status == NodeStatus.Success or node_status == TestStatus.Pass
 
     def _get_check_severity(self) -> AssetCheckSeverity:
         node_status = self._get_node_status()

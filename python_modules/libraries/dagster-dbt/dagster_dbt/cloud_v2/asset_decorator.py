@@ -1,7 +1,13 @@
 from collections.abc import Callable
 from typing import Any
 
-from dagster import AssetsDefinition, multi_asset
+from dagster import (
+    AssetsDefinition,
+    BackfillPolicy,
+    PartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+    multi_asset,
+)
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvariantViolationError
 
@@ -27,6 +33,8 @@ def dbt_cloud_assets(
     name: str | None = None,
     group_name: str | None = None,
     dagster_dbt_translator: DagsterDbtTranslator | None = None,
+    partitions_def: PartitionsDefinition | None = None,
+    backfill_policy: BackfillPolicy | None = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt Cloud resources,
     described by a manifest.json for a given dbt Cloud workspace.
@@ -43,6 +51,11 @@ def dbt_cloud_assets(
         dagster_dbt_translator (Optional[DagsterDbtTranslator], optional): The translator to use
             to convert dbt Cloud content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterDbtTranslator`.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the dbt Cloud assets.
+        backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
+            the behavior when launching backfills for the assets. Defaults to single-run backfill
+            policy when a TimeWindowPartitionsDefinition is provided.
     """
     dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
@@ -66,6 +79,13 @@ def dbt_cloud_assets(
             f" one or more of the dbt Cloud asset specs have a group_name defined."
         )
 
+    if (
+        partitions_def
+        and isinstance(partitions_def, TimeWindowPartitionsDefinition)
+        and not backfill_policy
+    ):
+        backfill_policy = BackfillPolicy.single_run()
+
     return multi_asset(
         name=name,
         group_name=group_name,
@@ -78,4 +98,6 @@ def dbt_cloud_assets(
             exclude=exclude,
             selector=selector,
         ),
+        partitions_def=partitions_def,
+        backfill_policy=backfill_policy,
     )

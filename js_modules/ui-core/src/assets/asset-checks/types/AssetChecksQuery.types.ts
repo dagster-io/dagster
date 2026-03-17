@@ -21,6 +21,12 @@ export type AssetCheckPartitionFragment = {
   } | null;
 };
 
+export type ReportCheckEvaluationAssetNodeFragment = {
+  __typename: 'AssetNode';
+  id: string;
+  hasReportRunlessAssetEventPermission: boolean;
+};
+
 export type AssetChecksQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
@@ -32,6 +38,7 @@ export type AssetChecksQuery = {
         __typename: 'AssetNode';
         id: string;
         jobNames: Array<string>;
+        hasReportRunlessAssetEventPermission: boolean;
         assetChecksOrError:
           | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
           | {__typename: 'AssetCheckNeedsMigrationError'; message: string}
@@ -328,4 +335,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = '520c219b41a4c3a3ae2c001a6ac46f4236818c9ac992dc25dd15e14b05fa53ed';
+export const AssetChecksQueryVersion = '4e6f31f3225780c03782a1229bbbbc91eaa3b355dbd16a4b80871aa291cb875e';

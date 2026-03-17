@@ -1,5 +1,67 @@
 # Changelog
 
+## 1.12.19 (core) / 0.28.19 (libraries)
+
+### New
+
+- Added a "Report Execution" dialog to the asset checks detail view, allowing users to manually record check evaluation results.
+- Added database pool configuration options (`--db-pool-recycle`, `--db-pool-pre-ping`, and others) to `dg dev` and `dagster dev`.
+- Added `dg plus config view` command for inspecting the current CLI configuration.
+- [ui] Updated the Usage dialog and Run timeline to display "Jobless asset materializations" (previously "Ad hoc materializations") with a tooltip describing what is grouped within this category.
+- [ui] Planned run events are now excluded from the event count shown in the run log filter.
+- [dagster-azure] Added component support for `dagster-azure`, including `AzureBlobStorageResourceComponent` and `ADLS2ResourceComponent` for declarative YAML configuration of Azure resources.
+- [dagster-databricks] `DatabricksAssetBundleComponent` is now subsettable at the job level, enabling selective execution of individual Databricks tasks.
+- [dagster-databricks] `DatabricksAssetBundleComponent` now uses the Databricks CLI to resolve variable references to task and job names in bundle templates.
+- [dagster-databricks] Databricks jobs are now cancelled when the corresponding Dagster run is terminated in `DatabricksWorkspaceComponent`.
+- [dagster-dbt] `dagster-dbt` now prefers `dbt-core` for manifest parsing when it is installed.
+- [dagster-gcp] Added `BigQueryResourceComponent`, `GCSResourceComponent`, `GCSFileManagerResourceComponent`, and `DataprocResourceComponent` for declarative YAML configuration of GCP resources.
+- [dagster-gcp] `BigQueryIOManager` now supports a configurable `write_mode` parameter (`truncate`, `replace`, or `append`).
+
+### Bugfixes
+
+- Fixed an issue where auto-run reexecution would attempt to rerun jobs belonging to already-completed or cancelled backfills.
+- Fixed an issue where backfill errors that were subsequently retried would remain incorrectly associated with the backfill.
+- `dg plus pull env` now merges pulled secrets into the existing `.env` file instead of replacing it, preserving any locally-set variables not present in Dagster Plus.
+- [ui] Fixed rendering of newlines in markdown blockquotes in the UI.
+- [dagster-databricks] Fixed a `KeyError` for `run_page_url` in `DatabricksWorkspaceComponent`.
+- [dagster-databricks] Fixed asset mapping in `DatabricksAssetBundleComponent` and `DatabricksWorkspaceComponent` to use job and task key combinations, preventing conflicts when task keys are not unique across jobs.
+
+### Dagster Plus
+
+- The Dagster+ agent now automatically redeploys local code servers that enter a failure state when the control plane expects them to be loaded.
+
+## 1.12.18 (core) / 0.28.18 (libraries)
+
+### New
+
+- Added event type filtering to the asset Recent Updates timeline, allowing users to toggle between Materializations and Observations when both event types are present. Filter preference is persisted to local storage.
+- `psycopg2-binary` has been removed as a dependency from `dagster-postgres`. If you were previously relying on this transitive dependency, you may need to explicitly add `psycopg2-binary` to your project.
+- [ui] The launchpad UI no longer prefills optional resource defaults in the config editor. To see and edit the defaults, click "Scaffold all default config".
+- [ui] For op jobs in code locations that have reloaded, the launchpad now always shows a message indicating that the config may be stale.
+- [ui] Asset health status indicators now distinguish between loading, unknown, and no data states for improved debugging.
+- [ui] The asset overview timeline now correctly displays the most recent event without cutting it off.
+- [dagster-dbt] `DbtProject` and `DbtProjectComponent` now expose `prepare_project_cli_args` to allow customizing CLI arguments used to generate the manifest.
+- [dagster-looker, dagster-omni, dagster-powerbi, dagster-sigma, dagster-tableau] BI integration assets are now automatically enriched with `dagster/table_name` metadata. Additionally, `dagster-tableau` and `dagster-looker` assets now populate `dagster/storage_kind` based on the upstream connection type.
+- [dagster-sling] The `sling` package import is now deferred to improve import-time performance.
+
+### Bugfixes
+
+- Fixed a bug where Dagster incorrectly called `__enter__` on nested resource attributes annotated with `dagster.ResourceDependency` during parent resource setup. (Thanks, [@danielgafni](https://github.com/danielgafni)!)
+- [ui] Fixed text wrapping and layout for long URIs in asset storage metadata section.
+
+### Documentation
+
+- Added documentation for custom metrics in Dagster+ Insights.
+- Added and enhanced webhook alerting documentation, including a guide for incident.io integration.
+
+### Dagster Plus
+
+- Organization-level timezone settings are now supported, allowing organizations to set a default timezone for users who haven't explicitly set a preference.
+- [ui] Asset job run data is now included in Job insights.
+- [ui] Code locations with loaded but failed agents now display a warning icon with agent status details in a popover.
+- [ui] Added run queue time metric visualization to Job insights.
+- [ui] Updated Alert policy list style for improved scannability and legibility.
+
 ## 1.12.17 (core) / 0.28.17 (libraries)
 
 ### Bugfixes

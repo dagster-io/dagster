@@ -1,11 +1,10 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  WorkspaceLocationEntry,
-  WorkspaceLocationStatusEntry,
+  buildWorkspaceLocationEntry,
   buildWorkspaceLocationStatusEntries,
   buildWorkspaceLocationStatusEntry,
-} from '../../../graphql/types';
+} from '../../../graphql/builders';
 import {buildQueryMock} from '../../../testing/mocking';
 import {
   CODE_LOCATION_STATUS_QUERY,
@@ -22,7 +21,7 @@ import {
 } from '../types/WorkspaceQueries.types';
 
 export const buildCodeLocationsStatusQuery = (
-  entries: WorkspaceLocationStatusEntry[],
+  entries: ReturnType<typeof buildWorkspaceLocationStatusEntry>[],
   options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> = {},
 ): MockedResponse => {
   return buildQueryMock<CodeLocationStatusQuery, CodeLocationStatusQueryVariables>({
@@ -38,7 +37,7 @@ export const buildCodeLocationsStatusQuery = (
 };
 
 export const buildWorkspaceMocks = (
-  entries: WorkspaceLocationEntry[],
+  entries: ReturnType<typeof buildWorkspaceLocationEntry>[],
   options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> & {
     cascadingUpdates?: boolean;
   } = {},

@@ -70,7 +70,7 @@ def pull_env_command(target_path: Path, **global_options: object) -> None:
     projects_without_secrets = {project_ctx.project_name for project_ctx in project_ctxs}
     for project_ctx in project_ctxs:
         if secrets_by_location[project_ctx.project_name]:
-            env = ProjectEnvVars.empty(project_ctx).with_values(
+            env = ProjectEnvVars.from_ctx(project_ctx).with_values(
                 secrets_by_location[project_ctx.project_name]
             )
             env.write()

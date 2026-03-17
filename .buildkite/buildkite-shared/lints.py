@@ -6,7 +6,7 @@ import os
 import pytest
 
 
-def find_tox_ini():
+def find_tox_ini() -> list[str]:
     tox_files = []
     for root, dirs, files in os.walk("."):
         if "tox.ini" in files:
@@ -16,7 +16,7 @@ def find_tox_ini():
 
 
 @pytest.fixture(params=find_tox_ini(), ids=lambda i: i)
-def tox_config(request):
+def tox_config(request: pytest.FixtureRequest) -> configparser.ConfigParser:
     config = configparser.ConfigParser()
     config.read(request.param)
 
@@ -26,7 +26,7 @@ def tox_config(request):
     return config
 
 
-def test_tox_passenv(tox_config):
+def test_tox_passenv(tox_config: configparser.ConfigParser) -> None:
     PASSENV_ENV = [
         "BUILDKITE*",
         "PYTEST_ADDOPTS",
@@ -41,7 +41,7 @@ def test_tox_passenv(tox_config):
     assert not missing_env, f"tox.ini missing passenv {missing_env}"
 
 
-def test_no_subdirectory_pytest_ini():
+def test_no_subdirectory_pytest_ini() -> None:
     pytest_ini_files = []
     for root, dirs, files in os.walk("."):
         if "pytest.ini" in files:
@@ -53,7 +53,7 @@ def test_no_subdirectory_pytest_ini():
     )
 
 
-def test_no_tox_pytest_config_override(tox_config):
+def test_no_tox_pytest_config_override(tox_config: configparser.ConfigParser) -> None:
     if "commands" in tox_config["testenv"]:
         assert "pyproject.toml" not in tox_config["testenv"]["commands"], (
             "We use a global PYTEST_CONFIG that uses the root directory's pyproject.toml. Remove any -c overrides in pytest commands in tox.ini"
