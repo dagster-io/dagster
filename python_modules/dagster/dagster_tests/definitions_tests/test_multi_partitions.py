@@ -600,6 +600,37 @@ def test_context_returns_multipartition_keys():
     dg.materialize([upstream, downstream], partition_key="1|a")
 
 
+def test_context_multi_partition_key_accessor():
+    multi_partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "a": dg.StaticPartitionsDefinition(["a", "b"]),
+            "1": dg.StaticPartitionsDefinition(["1", "2"]),
+        }
+    )
+
+    @dg.asset(partitions_def=multi_partitions_def)
+    def multi_partitioned_asset(context: AssetExecutionContext):
+        key = context.multi_partition_key
+        assert isinstance(key, dg.MultiPartitionKey)
+        assert key.keys_by_dimension["a"] == "a"
+        assert key.keys_by_dimension["1"] == "1"
+
+    dg.materialize([multi_partitioned_asset], partition_key="1|a")
+
+    # multi_partition_key raises on non-multi-partitioned assets
+    single_partitions_def = dg.StaticPartitionsDefinition(["x", "y"])
+
+    @dg.asset(partitions_def=single_partitions_def)
+    def single_partitioned_asset(context: AssetExecutionContext):
+        with pytest.raises(
+            dg.DagsterInvariantViolationError,
+            match="multi_partition_key",
+        ):
+            context.multi_partition_key  # noqa: B018
+
+    dg.materialize([single_partitioned_asset], partition_key="x")
+
+
 def test_multipartitions_range_cartesian_single_key_in_secondary():
     partitions_def = dg.MultiPartitionsDefinition(
         {

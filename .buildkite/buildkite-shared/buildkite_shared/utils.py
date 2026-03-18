@@ -29,3 +29,18 @@ def _str_representer(dumper: yaml.Dumper, data: str) -> yaml.ScalarNode:
 
 
 QuotedStrDumper.add_representer(str, _str_representer)
+
+
+_OSS_ROOT = Path(__file__).resolve().parents[3]
+_IMAGES_ROOT = _OSS_ROOT / "python_modules" / "automation" / "automation" / "docker" / "images"
+
+
+def get_image_version(image_name: str) -> str:
+    """Returns the image timestamp version. All Python versions must use the same timestamp."""
+    with open(_IMAGES_ROOT / image_name / "last_updated.yaml", encoding="utf8") as f:
+        versions = set(yaml.safe_load(f).values())
+        assert len(versions) == 1
+        return versions.pop()
+
+
+BUILDKITE_TEST_IMAGE_VERSION: str = get_image_version("buildkite-test")

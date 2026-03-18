@@ -1,0 +1,26 @@
+type: project_multi_workspace_databricks.components.databricks_job_orchestrator.DatabricksJobOrchestrator
+
+attributes:
+  job_id: 12348
+  workspace_config:
+    host: "https://workspace-marketing-attribution.cloud.databricks.com"
+    token: "demo-token-not-real"
+  assets:
+    - key: "marketing/campaign_performance"
+      description: "Marketing campaign performance metrics from HubSpot and customer data"
+      group_name: "marketing"
+      deps:
+        - "hubspot_data"
+        - "customer_analytics/enriched_profiles"
+    - key: "marketing/attribution_model"
+      description: "Multi-touch attribution model linking campaigns to revenue"
+      group_name: "marketing"
+      deps:
+        - "marketing/campaign_performance"
+        - "sales_analytics/order_fulfillment"
+    - key: "marketing/customer_lifetime_value"
+      description: "Predictive customer lifetime value based on marketing touchpoints"
+      group_name: "marketing"
+      deps:
+        - "marketing/attribution_model"
+        - "customer_analytics/enriched_profiles"

@@ -15,6 +15,7 @@ from types import TracebackType
 from typing import AbstractSet, Any, cast  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.pack import deserialize_deduped
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
@@ -45,7 +46,11 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
-from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterInvariantViolationError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.execution.submit_asset_runs import (
     RunRequestExecutionData,
@@ -229,19 +234,27 @@ def asset_daemon_cursor_from_instigator_serialized_cursor(
         return AssetDaemonCursor.empty()
 
     version, encoded_bytes = serialized_cursor[0], serialized_cursor[1:]
-    if version != "0":
-        return AssetDaemonCursor.empty()
 
-    decoded_bytes = base64.b64decode(encoded_bytes)
-    decompressed_bytes = zlib.decompress(decoded_bytes)
-    decompressed_str = decompressed_bytes.decode("utf-8")
+    if version == "1":
+        # Columnar-packed format: zlib(serialize_deduped(cursor)) -> b64
+        decoded_bytes = base64.b64decode(encoded_bytes)
+        decompressed_bytes = zlib.decompress(decoded_bytes)
+        decompressed_str = decompressed_bytes.decode("utf-8")
+        return deserialize_deduped(decompressed_str, as_type=AssetDaemonCursor)
 
-    deserialized_cursor = deserialize_value(
-        decompressed_str, (LegacyAssetDaemonCursorWrapper, AssetDaemonCursor)
-    )
-    if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
-        return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
-    return deserialized_cursor
+    if version == "0":
+        # Original format: zlib(serialize_value(cursor)) -> b64
+        decoded_bytes = base64.b64decode(encoded_bytes)
+        decompressed_bytes = zlib.decompress(decoded_bytes)
+        decompressed_str = decompressed_bytes.decode("utf-8")
+        deserialized_cursor = deserialize_value(
+            decompressed_str, (LegacyAssetDaemonCursorWrapper, AssetDaemonCursor)
+        )
+        if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
+            return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
+        return deserialized_cursor
+
+    raise DagsterInvariantViolationError(f"Invalid serialized cursor version: {version}")
 
 
 class AutoMaterializeLaunchContext:

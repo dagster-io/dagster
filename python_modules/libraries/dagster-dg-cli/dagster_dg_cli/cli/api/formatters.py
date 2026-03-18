@@ -27,6 +27,10 @@ if TYPE_CHECKING:
         DgApiCodeLocationList,
         DgApiDeleteCodeLocationResult,
     )
+    from dagster_dg_cli.api_layer.schemas.compute_log import (
+        DgApiComputeLogLinkList,
+        DgApiComputeLogList,
+    )
     from dagster_dg_cli.api_layer.schemas.deployment import (
         Deployment,
         DeploymentList,
@@ -40,6 +44,7 @@ if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
     from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
     from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
+    from dagster_dg_cli.api_layer.schemas.tick import DgApiTickList
 
 MAX_COL_WIDTH = 60
 
@@ -687,6 +692,109 @@ def format_logs_table(events: "RunEventList", run_id: str) -> str:
 def format_logs_json(events: "RunEventList") -> str:
     """Format logs as JSON."""
     return events.model_dump_json(indent=2)
+
+
+# ---------------------------------------------------------------------------
+# Compute log formatters
+# ---------------------------------------------------------------------------
+
+
+def format_compute_logs(logs: "DgApiComputeLogList", as_json: bool) -> str:
+    """Format compute log content for output."""
+    if as_json:
+        return logs.model_dump_json(indent=2)
+
+    if not logs.items:
+        return f"No compute logs found for run {logs.run_id}"
+
+    lines: list[str] = [f"Compute logs for run {logs.run_id}:", ""]
+
+    for item in logs.items:
+        step_label = ", ".join(item.step_keys) if item.step_keys else "(no step)"
+        lines.append(f"--- {item.file_key} [{step_label}] ---")
+
+        if item.stdout:
+            lines.append("STDOUT:")
+            lines.append(item.stdout)
+
+        if item.stderr:
+            lines.append("STDERR:")
+            lines.append(item.stderr)
+
+        if not item.stdout and not item.stderr:
+            lines.append("(no output)")
+
+        lines.append("")
+
+    lines.append(f"Total steps with logs: {logs.total}")
+
+    return "\n".join(lines)
+
+
+def format_compute_log_links(links: "DgApiComputeLogLinkList", as_json: bool) -> str:
+    """Format compute log download URLs for output."""
+    if as_json:
+        return links.model_dump_json(indent=2)
+
+    if not links.items:
+        return f"No compute log links found for run {links.run_id}"
+
+    headers = ["FILE KEY", "STEP KEY(S)", "STDOUT URL", "STDERR URL"]
+    rows = []
+    for item in links.items:
+        rows.append(
+            [
+                item.file_key,
+                ", ".join(item.step_keys) if item.step_keys else "(none)",
+                item.stdout_download_url or "(none)",
+                item.stderr_download_url or "(none)",
+            ]
+        )
+
+    return format_table(headers, rows)
+
+
+# ---------------------------------------------------------------------------
+# Tick formatters
+# ---------------------------------------------------------------------------
+
+
+def format_ticks(ticks: "DgApiTickList", name: str, as_json: bool) -> str:
+    """Format tick list for output."""
+    if as_json:
+        return ticks.model_dump_json(indent=2)
+
+    if not ticks.items:
+        return f"No ticks found for {name}"
+
+    headers = ["TIMESTAMP", "STATUS", "RUN IDS", "SKIP REASON"]
+    rows = []
+    for tick in ticks.items:
+        rows.append(
+            [
+                _format_timestamp(tick.timestamp, "seconds"),
+                tick.status.value,
+                ", ".join(tick.run_ids) if tick.run_ids else "-",
+                tick.skip_reason or "",
+            ]
+        )
+
+    lines = [format_table(headers, rows)]
+
+    # Show errors inline after their row
+    for tick in ticks.items:
+        if tick.error:
+            lines.append(f"\nError at {_format_timestamp(tick.timestamp, 'seconds')}:")
+            lines.append(f"  {tick.error.message}")
+            if tick.error.stack:
+                for stack_line in tick.error.stack:
+                    for sub_line in stack_line.split("\n"):
+                        if sub_line.strip():
+                            lines.append(f"    {sub_line}")
+
+    lines.append(f"\nTotal ticks: {ticks.total}")
+
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------

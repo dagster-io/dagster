@@ -6,11 +6,10 @@ from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
     CommandStepConfiguration,
 )
-from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.packages import PackageSpec
 
 
-def skip_if_no_dagster_ui_components_changes(ctx: BuildkiteContext):
+def skip_if_no_dagster_ui_components_changes(ctx: BuildkiteContext) -> str | None:
     if not ctx.is_feature_branch:
         return None
 
@@ -23,10 +22,8 @@ def skip_if_no_dagster_ui_components_changes(ctx: BuildkiteContext):
 
 def build_dagster_ui_components_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder(":typescript: dagster-ui-components"),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder(":typescript: dagster-ui-components")
+        .on_test_image()
         .run(
             "cd js_modules/ui-components",
             "pip install -U uv",
@@ -37,7 +34,7 @@ def build_dagster_ui_components_steps(ctx: BuildkiteContext) -> list[CommandStep
     ]
 
 
-def skip_if_no_dagster_ui_core_changes(ctx: BuildkiteContext):
+def skip_if_no_dagster_ui_core_changes(ctx: BuildkiteContext) -> str | None:
     if not ctx.is_feature_branch:
         return None
 
@@ -55,10 +52,8 @@ def skip_if_no_dagster_ui_core_changes(ctx: BuildkiteContext):
 
 def build_dagster_ui_core_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder(":typescript: dagster-ui-core"),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder(":typescript: dagster-ui-core")
+        .on_test_image()
         .run(
             "cd js_modules",
             "pip install -U uv",
@@ -69,5 +64,5 @@ def build_dagster_ui_core_steps(ctx: BuildkiteContext) -> list[CommandStepConfig
     ]
 
 
-def skip_if_no_dagster_ui_changes(ctx: BuildkiteContext):
+def skip_if_no_dagster_ui_changes(ctx: BuildkiteContext) -> str | None:
     return skip_if_no_dagster_ui_components_changes(ctx) or skip_if_no_dagster_ui_core_changes(ctx)

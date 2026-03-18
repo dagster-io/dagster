@@ -11,6 +11,8 @@ from dagster_shared.plus.config_utils import dg_api_options
 from dagster_dg_cli.api_layer.api.run_event import DgApiRunEventApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import (
+    format_compute_log_links,
+    format_compute_logs,
     format_logs_json,
     format_logs_table,
     format_run,
@@ -216,6 +218,79 @@ def get_events_run_command(
         click.echo(output)
 
 
+@click.command(name="get-logs", cls=DgClickCommand)
+@click.argument("run_id", type=str)
+@click.option(
+    "--step-key",
+    type=str,
+    help="Filter to a specific step",
+)
+@click.option(
+    "--link-only",
+    is_flag=True,
+    help="Return download URLs instead of log content",
+)
+@click.option(
+    "--max-bytes",
+    type=int,
+    default=None,
+    help="Maximum bytes of log content per step",
+)
+@click.option(
+    "--cursor",
+    "cursor",
+    type=str,
+    help="Cursor for paginating log content",
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output in JSON format for machine readability",
+)
+@dg_response_schema(
+    module="dagster_dg_cli.api_layer.schemas.compute_log", cls="DgApiComputeLogList"
+)
+@dg_api_options(deployment_scoped=True)
+@cli_telemetry_wrapper
+@click.pass_context
+def get_logs_command(
+    ctx: click.Context,
+    run_id: str,
+    step_key: str | None,
+    link_only: bool,
+    max_bytes: int | None,
+    cursor: str | None,
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
+    view_graphql: bool,
+) -> None:
+    """Get stdout/stderr compute logs for a specific run."""
+    from dagster_dg_cli.api_layer.api.compute_log import DgApiComputeLogApi
+
+    config = DagsterPlusCliConfig.create_for_deployment(
+        deployment=deployment,
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
+    api = DgApiComputeLogApi(client)
+
+    with handle_api_errors(ctx, output_json):
+        if link_only:
+            links = api.get_log_links(run_id=run_id, step_key=step_key)
+            output = format_compute_log_links(links, as_json=output_json)
+        else:
+            logs = api.get_logs(
+                run_id=run_id, step_key=step_key, cursor=cursor, max_bytes=max_bytes
+            )
+            output = format_compute_logs(logs, as_json=output_json)
+
+        click.echo(output)
+
+
 @click.group(
     name="run",
     cls=DgClickGroup,
@@ -223,6 +298,7 @@ def get_events_run_command(
         "list": list_runs_command,
         "get": get_run_command,
         "get-events": get_events_run_command,
+        "get-logs": get_logs_command,
     },
 )
 def run_group():

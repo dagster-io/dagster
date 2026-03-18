@@ -112,6 +112,43 @@ These credential helpers generally are configured in `~/.docker.config.json`. To
     dagster-cloud agent run /opt/dagster/app
 ```
 
+## Using a custom agent image
+
+By default, the Dagster+ agent uses the official `docker.io/dagster/dagster-cloud-agent` image. You can build and use your own custom agent image if you need additional dependencies, a different base image, or more control over the agent environment.
+
+### Building a custom agent image
+
+Create a Dockerfile that installs the `dagster-cloud` package with the `docker` extra:
+
+```dockerfile
+FROM python:3.12-slim
+
+ARG DAGSTER_VERSION=1.12.19
+RUN pip install dagster-cloud[docker]==${DAGSTER_VERSION}
+
+CMD ["dagster-cloud", "agent", "run"]
+```
+
+Build and push the image to your container registry:
+
+```shell
+docker build -t your-registry.com/dagster-cloud-agent:custom .
+docker push your-registry.com/dagster-cloud-agent:custom
+```
+
+### Running the custom agent image
+
+Use your custom image when starting the agent:
+
+```shell
+docker run \
+  --network=dagster_cloud_agent \
+  --volume $PWD/dagster.yaml:/opt/dagster/app/dagster.yaml:ro \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  -it your-registry.com/dagster-cloud-agent:custom \
+  dagster-cloud agent run /opt/dagster/app
+```
+
 ## Next steps
 
 Now that you've got your agent running, what's next?

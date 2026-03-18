@@ -1,9 +1,7 @@
 from buildkite_shared.context import BuildkiteContext
-from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.block_step_builder import BlockStepBuilder
 from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
 from buildkite_shared.step_builders.step_builder import StepConfiguration
-from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.packages import _get_uncustomized_pkg_roots
 
 
@@ -21,7 +19,7 @@ def build_prerelease_package_steps(ctx: BuildkiteContext) -> list[StepConfigurat
             block=":question: Choose package",
         )
         .with_prompt(
-            prompt=None,
+            prompt="Choose package and version to publish",
             fields=[
                 {
                     "select": "Select a package to publish",
@@ -54,14 +52,13 @@ def build_prerelease_package_steps(ctx: BuildkiteContext) -> list[StepConfigurat
     steps.append(input_step)
 
     steps.append(
-        add_test_image(
-            CommandStepBuilder(":package: Build and publish package").run(
-                "pip install build",
-                "sh ./scripts/build_and_publish.sh",
-            ),
-            AvailablePythonVersion.get_default(),
-            env=["PYPI_TOKEN"],
-        ).build()
+        CommandStepBuilder(":package: Build and publish package")
+        .run(
+            "pip install build",
+            "sh ./scripts/build_and_publish.sh",
+        )
+        .on_test_image(env=["PYPI_TOKEN"])
+        .build()
     )
 
     return steps

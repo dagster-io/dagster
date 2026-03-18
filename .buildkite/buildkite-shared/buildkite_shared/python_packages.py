@@ -78,21 +78,23 @@ class PythonPackage:
                 f"expected pyproject.toml or setup.py to exist in directory {setup_path}"
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"PythonPackage({self.name})"
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PythonPackage):
+            return NotImplemented
         return self.directory == other.directory
 
     # Because we define __eq__
     # https://docs.python.org/3.1/reference/datamodel.html#object.__hash__
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.directory)
 
-    def __lt__(self, other):
+    def __lt__(self, other: "PythonPackage") -> bool:
         return self.name < other.name
 
 

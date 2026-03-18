@@ -11,7 +11,6 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupStepBuilder,
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration, is_command_step
-from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.packages import PackageSpec
 from dagster_buildkite.utils import has_helm_changes, skip_if_no_helm_changes
 
@@ -48,10 +47,8 @@ def _build_lint_steps(
     package_spec: PackageSpec, ctx: BuildkiteContext
 ) -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder("dagster-json-schema"),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder("dagster-json-schema")
+        .on_test_image()
         .run(
             "pip install -e helm/dagster/schema",
             "dagster-helm schema apply",
@@ -59,20 +56,16 @@ def _build_lint_steps(
         )
         .skip(skip_if_no_helm_changes(ctx) and package_spec.get_skip_reason(ctx))
         .build(),
-        add_test_image(
-            CommandStepBuilder(":lint-roller: dagster"),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder(":lint-roller: dagster")
+        .on_test_image()
         .run(
             "helm lint helm/dagster --with-subcharts --strict",
         )
         .skip(skip_if_no_helm_changes(ctx) or package_spec.get_skip_reason(ctx))
         .with_retry(2)
         .build(),
-        add_test_image(
-            CommandStepBuilder("dagster dependency build"),
-            AvailablePythonVersion.get_default(),
-        )
+        CommandStepBuilder("dagster dependency build")
+        .on_test_image()
         # https://github.com/dagster-io/dagster/issues/8167
         .run(
             "helm repo add bitnami-pre-2022"

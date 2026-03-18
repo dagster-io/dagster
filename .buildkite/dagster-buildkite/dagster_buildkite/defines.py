@@ -2,6 +2,7 @@ import os
 
 import packaging.version
 import requests
+from buildkite_shared.utils import get_image_version
 
 GIT_REPO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
 
@@ -27,3 +28,8 @@ GCP_CREDS_FILENAME = "gcp-key-elementl-dev.json"
 
 # GCP tests need appropriate credentials
 GCP_CREDS_LOCAL_FILE = f"/tmp/{GCP_CREDS_FILENAME}"
+
+BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION: str = get_image_version(
+    "buildkite-build-test-project-image"
+)
+TEST_PROJECT_BASE_IMAGE_VERSION: str = get_image_version("test-project-base")

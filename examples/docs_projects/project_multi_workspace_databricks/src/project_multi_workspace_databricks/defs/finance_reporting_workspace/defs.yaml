@@ -1,0 +1,42 @@
+type: project_multi_workspace_databricks.components.databricks_job_orchestrator.DatabricksJobOrchestrator
+
+attributes:
+  job_id: 12347
+  workspace_config:
+    host: "https://workspace-finance-reporting.cloud.databricks.com"
+    token: "demo-token-not-real"
+  assets:
+    - key: "finance/invoice_reconciliation"
+      description: "Automated invoice reconciliation from ERP events and legacy systems"
+      group_name: "finance"
+      deps:
+        - "raw_erp_events"
+        - "legacy_transaction_data"
+    - key: "finance/payment_tracking"
+      description: "Real-time payment status and collections tracking"
+      group_name: "finance"
+      deps:
+        - "raw_erp_events"
+        - "raw_crm_events"
+    - key: "finance/financial_statements"
+      description: "Automated financial statement generation for monthly reporting"
+      group_name: "finance"
+      deps:
+        - "finance/invoice_reconciliation"
+        - "finance/payment_tracking"
+
+---
+
+type: project_multi_workspace_databricks.components.databricks_job_orchestrator.DatabricksJobOrchestrator
+
+attributes:
+  job_id: 12349
+  workspace_config:
+    host: "https://workspace-finance-2-reporting.cloud.databricks.com"
+    token: "demo-token-not-real"
+  assets:
+    - key: "finance_2/customer_segments_aggregation"
+      description: "Automated customer segments aggregation from ERP events and legacy systems"
+      group_name: "finance_2"
+      deps:
+        - "customer_analytics/customer_segments"

@@ -6,14 +6,16 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Generic, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Generic, Literal, TypeAlias, overload
 
 from buildkite_shared.python_packages import PythonPackagesData
-from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.transform import filter_steps, repeat_steps, simplify_steps
 from buildkite_shared.utils import pushd
 from packaging import version
 from typing_extensions import Self, TypeVar
+
+if TYPE_CHECKING:
+    from buildkite_shared.step_builders.step_builder import StepConfiguration
 
 INTERNAL_OSS_PREFIX = "dagster-oss"
 
@@ -67,7 +69,7 @@ class BuildkiteContext(Generic[T_Config]):
     @overload
     def get_env(self, var: "BuildkiteEnvVar", default: str) -> str: ...
 
-    def get_env(self, var: "BuildkiteEnvVar", default: str | None = None):
+    def get_env(self, var: "BuildkiteEnvVar", default: str | None = None) -> str | None:
         return self.env.get(var, default)
 
     def getx_env(self, var: "BuildkiteEnvVar") -> str:
@@ -134,7 +136,9 @@ class BuildkiteContext(Generic[T_Config]):
         else:
             return self.changed_files
 
-    def apply_transforms(self, steps: Sequence[StepConfiguration]) -> Sequence[StepConfiguration]:
+    def apply_transforms(
+        self, steps: Sequence["StepConfiguration"]
+    ) -> Sequence["StepConfiguration"]:
         # Filter and repeat settings are only applied on feature branches.
         if self.is_feature_branch and self.config.step_filter:
             steps = filter_steps(
@@ -464,5 +468,5 @@ def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
     return frozenset(all_files)
 
 
-def _get_commit(rev):
+def _get_commit(rev: str) -> str:
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
