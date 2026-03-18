@@ -196,6 +196,19 @@ db.Index(
     },
 )
 
+db.Index(
+    "idx_asset_check_executions_partition_latest",
+    AssetCheckExecutionsTable.c.asset_key,
+    AssetCheckExecutionsTable.c.check_name,
+    AssetCheckExecutionsTable.c.partition,
+    AssetCheckExecutionsTable.c.id,
+    mysql_length={
+        "asset_key": 64,
+        "partition": 64,
+        "check_name": 64,
+    },
+)
+
 # This index doesn't enforce the uniqueness how we want it to because partition and run_id can be
 # null. Postgres and other dbms's consider each null value distinct.
 db.Index(
