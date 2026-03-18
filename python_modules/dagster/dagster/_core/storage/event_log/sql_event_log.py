@@ -119,6 +119,8 @@ if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 MIN_ASSET_ROWS = 25
+ASSET_CHECK_PARTITION_INFO_BATCH_SIZE = 400
+ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS = 900
 DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
 
 
@@ -3250,51 +3252,92 @@ class SqlEventLogStorage(EventLogStorage):
             results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
         return results
 
-    def _get_asset_check_partition_info_for_key(
+    def _latest_materialization_ids_by_asset_partition_subquery(
         self,
-        check_key: AssetCheckKey,
-        after_storage_id: int | None,
-        partition_keys: Sequence[str] | None,
-        latest_unpartitioned_materialization_storage_ids: Mapping[AssetKey, int],
-    ) -> Sequence[AssetCheckPartitionInfo]:
-        # Build the base filter conditions
-        filter_conditions = [
-            AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
-            AssetCheckExecutionsTable.c.check_name == check_key.name,
-            # Historical records may have NULL in the evaluation_event_storage_id column for
-            # PLANNED events
-            AssetCheckExecutionsTable.c.evaluation_event_storage_id.isnot(None),
-        ]
-        if partition_keys is not None:
-            filter_conditions.append(AssetCheckExecutionsTable.c.partition.in_(partition_keys))
+        asset_keys: Sequence[AssetKey],
+        asset_partitions: Sequence[str] | None = None,
+    ):
+        query = db_select(
+            [
+                SqlEventLogStorageTable.c.asset_key,
+                SqlEventLogStorageTable.c.partition,
+                db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+            ]
+        ).where(
+            db.and_(
+                SqlEventLogStorageTable.c.asset_key.in_(
+                    [asset_key.to_string() for asset_key in asset_keys]
+                ),
+                SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                SqlEventLogStorageTable.c.dagster_event_type
+                == DagsterEventType.ASSET_MATERIALIZATION.value,
+            )
+        )
+        if asset_partitions is not None:
+            query = query.where(SqlEventLogStorageTable.c.partition.in_(asset_partitions))
 
-        # Subquery to find the max id for each partition
+        latest_event_ids_subquery = query.group_by(
+            SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition
+        )
+        assets_details = self._get_assets_details(asset_keys)
+        return db_subquery(
+            self._add_assets_wipe_filter_to_query(
+                latest_event_ids_subquery, assets_details, asset_keys
+            ),
+            "latest_event_ids_by_asset_partition_subquery",
+        )
+
+    def _get_asset_check_partition_info_rows_for_keys(
+        self,
+        keys: Sequence[AssetCheckKey],
+        after_storage_id: int | None = None,
+        partition_keys: Sequence[str] | None = None,
+    ) -> Sequence[Mapping[str, Any]]:
+        unique_asset_keys = list(dict.fromkeys(key.asset_key for key in keys))
         latest_check_ids_subquery = db_subquery(
             db_select(
                 [
                     db.func.max(AssetCheckExecutionsTable.c.id).label("id"),
+                    AssetCheckExecutionsTable.c.asset_key.label("asset_key"),
+                    AssetCheckExecutionsTable.c.check_name.label("check_name"),
                     AssetCheckExecutionsTable.c.partition.label("partition"),
                 ]
             )
-            .where(db.and_(*filter_conditions))
-            .group_by(AssetCheckExecutionsTable.c.partition),
+            .where(
+                db.and_(
+                    db.tuple_(
+                        AssetCheckExecutionsTable.c.asset_key,
+                        AssetCheckExecutionsTable.c.check_name,
+                    ).in_([(key.asset_key.to_string(), key.name) for key in keys]),
+                    # Historical records may have NULL in the evaluation_event_storage_id column for
+                    # PLANNED events.
+                    AssetCheckExecutionsTable.c.evaluation_event_storage_id.isnot(None),
+                    *(
+                        [AssetCheckExecutionsTable.c.partition.in_(partition_keys)]
+                        if partition_keys is not None
+                        else []
+                    ),
+                )
+            )
+            .group_by(
+                AssetCheckExecutionsTable.c.asset_key,
+                AssetCheckExecutionsTable.c.check_name,
+                AssetCheckExecutionsTable.c.partition,
+            ),
             "latest_check_ids_subquery",
         )
 
-        # Subquery to find the latest materialization storage id for each partition of the
-        # target asset. Note: we don't filter by after_storage_id here because we always want
-        # to return the latest materialization storage id, even if it's older than after_storage_id.
-        latest_materialization_ids_subquery = self._latest_event_ids_by_partition_subquery(
-            check_key.asset_key,
-            [DagsterEventType.ASSET_MATERIALIZATION],
-            asset_partitions=partition_keys,
+        latest_materialization_ids_subquery = (
+            self._latest_materialization_ids_by_asset_partition_subquery(
+                unique_asset_keys,
+                asset_partitions=partition_keys,
+            )
         )
 
-        # Main query to get all columns for the latest records, joined with latest
-        # materialization storage ids
         query = db_select(
             [
-                AssetCheckExecutionsTable.c.id,
+                AssetCheckExecutionsTable.c.asset_key,
+                AssetCheckExecutionsTable.c.check_name,
                 AssetCheckExecutionsTable.c.partition,
                 AssetCheckExecutionsTable.c.execution_status,
                 AssetCheckExecutionsTable.c.evaluation_event_storage_id,
@@ -3308,14 +3351,18 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetCheckExecutionsTable.c.id == latest_check_ids_subquery.c.id,
             ).join(
                 latest_materialization_ids_subquery,
-                AssetCheckExecutionsTable.c.partition
-                == latest_materialization_ids_subquery.c.partition,
+                db.and_(
+                    AssetCheckExecutionsTable.c.asset_key
+                    == latest_materialization_ids_subquery.c.asset_key,
+                    AssetCheckExecutionsTable.c.partition
+                    == latest_materialization_ids_subquery.c.partition,
+                ),
                 isouter=True,
             )
         )
 
-        # these filters are applied to the main query rather than the individual subqueries to ensure
-        # we don't miss records that only have a new materialization or a new check execution but not both
+        # Apply the cursor filter once after selecting the latest row for each partition so we keep
+        # rows that changed via either a new check execution or a new materialization.
         if after_storage_id is not None:
             query = query.where(
                 db.or_(
@@ -3325,31 +3372,33 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         with self.index_connection() as conn:
-            rows = db_fetch_mappings(conn, query)
+            return db_fetch_mappings(conn, query)
 
+    def _get_asset_check_partition_info_partition_key_chunks(
+        self, partition_keys: Sequence[str] | None
+    ) -> Sequence[Sequence[str] | None]:
+        if partition_keys is None:
+            return [None]
+
+        max_partition_keys_per_query = max(1, ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS - 2)
+        unique_partition_keys = list(dict.fromkeys(partition_keys))
         return [
-            AssetCheckPartitionInfo(
-                check_key=check_key,
-                partition_key=row["partition"],
-                latest_execution_status=AssetCheckExecutionRecordStatus(row["execution_status"]),
-                latest_target_materialization_storage_id=row["materialization_event_storage_id"],
-                latest_planned_run_id=row["run_id"],
-                latest_check_event_storage_id=row["evaluation_event_storage_id"],
-                latest_materialization_storage_id=max(
-                    filter(
-                        None,
-                        [
-                            row["latest_materialization_storage_id"],
-                            latest_unpartitioned_materialization_storage_ids.get(
-                                check_key.asset_key
-                            ),
-                        ],
-                    ),
-                    default=None,
-                ),
-            )
-            for row in rows
+            unique_partition_keys[i : i + max_partition_keys_per_query]
+            for i in range(0, len(unique_partition_keys), max_partition_keys_per_query)
         ]
+
+    def _get_asset_check_partition_info_key_batch_size(
+        self, partition_keys: Sequence[str] | None
+    ) -> int:
+        partition_key_count = len(partition_keys) if partition_keys is not None else 0
+        remaining_bind_budget = ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS - partition_key_count
+        return max(
+            1,
+            min(
+                ASSET_CHECK_PARTITION_INFO_BATCH_SIZE,
+                remaining_bind_budget // 2,
+            ),
+        )
 
     def get_asset_check_partition_info(
         self,
@@ -3360,24 +3409,67 @@ class SqlEventLogStorage(EventLogStorage):
         check.list_param(keys, "keys", of_type=AssetCheckKey)
         check.opt_int_param(after_storage_id, "after_storage_id")
 
-        infos = []
+        if not keys:
+            return []
+        if partition_keys is not None and len(partition_keys) == 0:
+            return []
+
+        unique_keys = list(dict.fromkeys(keys))
+        unique_asset_keys = list(dict.fromkeys(key.asset_key for key in unique_keys))
         latest_unpartitioned_materialization_storage_ids = (
             self._get_latest_unpartitioned_materialization_storage_ids(
-                list(set(key.asset_key for key in keys))
+                unique_asset_keys
             )
         )
-        # the inner query is not feasible to join in a single query because the latest materialization ids subquery,
-        # so for now we fetch the info for each key separately
-        for key in keys:
-            infos.extend(
-                self._get_asset_check_partition_info_for_key(
-                    key,
-                    after_storage_id,
-                    partition_keys,
-                    latest_unpartitioned_materialization_storage_ids,
-                )
+        infos_by_key = defaultdict(list)
+        key_by_tuple = {
+            (key.asset_key.to_string(), key.name): key for key in unique_keys
+        }
+
+        # Fetch rows in bounded chunks so large bulk state reads do not exceed backend bind limits,
+        # while still avoiding the old O(number_of_checks) per-key query fan-out.
+        for partition_key_chunk in self._get_asset_check_partition_info_partition_key_chunks(
+            partition_keys
+        ):
+            key_batch_size = self._get_asset_check_partition_info_key_batch_size(
+                partition_key_chunk
             )
-        return infos
+            for chunk_start in range(0, len(unique_keys), key_batch_size):
+                chunk = unique_keys[chunk_start : chunk_start + key_batch_size]
+                for row in self._get_asset_check_partition_info_rows_for_keys(
+                    chunk,
+                    after_storage_id=after_storage_id,
+                    partition_keys=partition_key_chunk,
+                ):
+                    check_key = key_by_tuple[(row["asset_key"], row["check_name"])]
+                    infos_by_key[check_key].append(
+                        AssetCheckPartitionInfo(
+                            check_key=check_key,
+                            partition_key=row["partition"],
+                            latest_execution_status=AssetCheckExecutionRecordStatus(
+                                row["execution_status"]
+                            ),
+                            latest_target_materialization_storage_id=row[
+                                "materialization_event_storage_id"
+                            ],
+                            latest_planned_run_id=row["run_id"],
+                            latest_check_event_storage_id=row["evaluation_event_storage_id"],
+                            latest_materialization_storage_id=max(
+                                filter(
+                                    None,
+                                    [
+                                        row["latest_materialization_storage_id"],
+                                        latest_unpartitioned_materialization_storage_ids.get(
+                                            check_key.asset_key
+                                        ),
+                                    ],
+                                ),
+                                default=None,
+                            ),
+                        )
+                    )
+
+        return [info for key in keys for info in infos_by_key.get(key, [])]
 
     @property
     def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]

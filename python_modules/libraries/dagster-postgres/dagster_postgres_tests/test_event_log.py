@@ -1,18 +1,30 @@
 import gc
+import math
 import time
 from contextlib import contextmanager
 
+import dagster_postgres.event_log.event_log as dagster_postgres_event_log
 import objgraph
 import pytest
 import yaml
+from dagster import AssetCheckKey, AssetKey, StaticPartitionsDefinition
+from dagster._core.storage.event_log.sql_event_log import (
+    ASSET_CHECK_PARTITION_INFO_BATCH_SIZE,
+    ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS,
+)
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.sql import stamp_alembic_rev
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
+from sqlalchemy import event, inspect
+from dagster_postgres.utils import pg_alembic_config
 from dagster_postgres.event_log import PostgresEventLogStorage
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
+    _create_check_evaluation_event,
+    _create_check_planned_event,
     create_test_event_log_record,
 )
 
@@ -47,6 +59,156 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
 
     def can_wipe_asset_partitions(self) -> bool:
         return False
+
+    def test_asset_check_partition_info_uses_single_batched_query(self, storage):
+        check_keys = [
+            AssetCheckKey(AssetKey(["asset_one"]), "check_one"),
+            AssetCheckKey(AssetKey(["asset_two"]), "check_two"),
+            AssetCheckKey(AssetKey(["asset_three"]), "check_three"),
+        ]
+        partitions_subset = StaticPartitionsDefinition(["a"]).subset_with_partition_keys(["a"])
+
+        for check_key in check_keys:
+            run_id = make_new_run_id()
+            storage.store_event(
+                _create_check_planned_event(run_id, check_key, partitions_subset=partitions_subset)
+            )
+            storage.store_event(
+                _create_check_evaluation_event(run_id, check_key, passed=True, partition="a")
+            )
+
+        statements = []
+
+        def _capture_statement(
+            conn, cursor, statement, parameters, context, executemany
+        ):  # noqa: ARG001
+            statements.append(statement)
+
+        event.listen(storage._engine, "before_cursor_execute", _capture_statement)
+        try:
+            storage.get_asset_check_partition_info(check_keys)
+        finally:
+            event.remove(storage._engine, "before_cursor_execute", _capture_statement)
+
+        asset_check_selects = [
+            statement
+            for statement in statements
+            if statement.lstrip().upper().startswith("SELECT")
+            and "asset_check_executions" in statement
+        ]
+        assert len(asset_check_selects) == 1
+
+    def test_asset_check_partition_info_uses_bounded_queries_for_large_batches(self, storage):
+        check_keys = [
+            AssetCheckKey(AssetKey([f"asset_{index}"]), f"check_{index}")
+            for index in range(ASSET_CHECK_PARTITION_INFO_BATCH_SIZE + 200)
+        ]
+        partitions_subset = StaticPartitionsDefinition(["a"]).subset_with_partition_keys(["a"])
+
+        for check_key in check_keys:
+            run_id = make_new_run_id()
+            storage.store_event(
+                _create_check_planned_event(run_id, check_key, partitions_subset=partitions_subset)
+            )
+            storage.store_event(
+                _create_check_evaluation_event(run_id, check_key, passed=True, partition="a")
+            )
+
+        statements = []
+
+        def _capture_statement(
+            conn, cursor, statement, parameters, context, executemany
+        ):  # noqa: ARG001
+            statements.append(statement)
+
+        event.listen(storage._engine, "before_cursor_execute", _capture_statement)
+        try:
+            records = storage.get_asset_check_partition_info(check_keys)
+        finally:
+            event.remove(storage._engine, "before_cursor_execute", _capture_statement)
+
+        assert len(records) == len(check_keys)
+
+        asset_check_selects = [
+            statement
+            for statement in statements
+            if statement.lstrip().upper().startswith("SELECT")
+            and "asset_check_executions" in statement
+        ]
+        assert len(asset_check_selects) == math.ceil(
+            len(check_keys) / ASSET_CHECK_PARTITION_INFO_BATCH_SIZE
+        )
+
+    def test_asset_check_partition_info_uses_bounded_queries_for_large_filtered_batches(
+        self, storage
+    ):
+        check_keys = [
+            AssetCheckKey(AssetKey([f"asset_{index}"]), f"check_{index}")
+            for index in range(600)
+        ]
+        partition_keys = ["a", *[f"unused_{index}" for index in range(250)]]
+        partitions_subset = StaticPartitionsDefinition(["a"]).subset_with_partition_keys(["a"])
+
+        for check_key in check_keys:
+            run_id = make_new_run_id()
+            storage.store_event(
+                _create_check_planned_event(run_id, check_key, partitions_subset=partitions_subset)
+            )
+            storage.store_event(
+                _create_check_evaluation_event(run_id, check_key, passed=True, partition="a")
+            )
+
+        statements = []
+
+        def _capture_statement(
+            conn, cursor, statement, parameters, context, executemany
+        ):  # noqa: ARG001
+            statements.append(statement)
+
+        event.listen(storage._engine, "before_cursor_execute", _capture_statement)
+        try:
+            records = storage.get_asset_check_partition_info(
+                check_keys,
+                partition_keys=partition_keys,
+            )
+        finally:
+            event.remove(storage._engine, "before_cursor_execute", _capture_statement)
+
+        assert len(records) == len(check_keys)
+
+        asset_check_selects = [
+            statement
+            for statement in statements
+            if statement.lstrip().upper().startswith("SELECT")
+            and "asset_check_executions" in statement
+        ]
+        expected_batch_size = min(
+            ASSET_CHECK_PARTITION_INFO_BATCH_SIZE,
+            (ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS - len(partition_keys)) // 2,
+        )
+        assert len(asset_check_selects) == math.ceil(len(check_keys) / expected_batch_size)
+
+    def test_asset_check_partition_latest_index_migration(self, instance):
+        event_log_storage = instance.event_log_storage
+        assert isinstance(event_log_storage, PostgresEventLogStorage)
+
+        with event_log_storage.index_connection() as conn:
+            conn.exec_driver_sql("DROP INDEX IF EXISTS idx_asset_check_executions_partition_latest")
+            stamp_alembic_rev(
+                pg_alembic_config(dagster_postgres_event_log.__file__),
+                conn,
+                "29b539ebc72a",
+            )
+
+        instance.upgrade()
+
+        indexes = {
+            index["name"]
+            for index in inspect(event_log_storage._engine).get_indexes(
+                "asset_check_executions"
+            )
+        }
+        assert "idx_asset_check_executions_partition_latest" in indexes
 
     def test_event_log_storage_two_watchers(self, conn_string):
         with _clean_storage(conn_string) as storage:
