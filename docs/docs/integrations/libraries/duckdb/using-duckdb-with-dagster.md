@@ -6,6 +6,10 @@ sidebar_position: 100
 
 This tutorial focuses on creating and interacting with DuckDB tables using Dagster's [asset definitions](/guides/build/assets/defining-assets).
 
+:::tip
+This integration also supports [MotherDuck](https://motherduck.com/), the cloud-hosted DuckDB service. To connect to MotherDuck, use a `md:` connection string as your database path (e.g., `md:my_database`).
+:::
+
 The `dagster-duckdb` library provides two ways to interact with DuckDB tables:
 
 - [Resource](/guides/build/external-resources): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject section="libraries" integration="duckdb" module="dagster_duckdb" object="DuckDBResource" />.
