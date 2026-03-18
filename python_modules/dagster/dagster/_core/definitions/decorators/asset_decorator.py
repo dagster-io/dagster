@@ -216,8 +216,10 @@ def asset(
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
-        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
-            attached to runs of the asset.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are
+            **not** attached to runs of the asset and do not affect execution behavior. Use
+            ``op_tags`` for execution behavior such as Kubernetes resource requests, or the
+            ``pool`` parameter for concurrency pool assignment.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
@@ -229,10 +231,38 @@ def asset(
             will be executed on the output of the decorated function after it runs.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
-        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
-            Frameworks may expect and require certain metadata to be attached to a op. Values that
-            are not strings will be json encoded and must meet the criteria that
-            `json.loads(json.dumps(value)) == value`.
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the
+            asset. Unlike ``tags``, these are applied at execution time and control execution
+            behavior. Common uses include:
+
+            - **Kubernetes resource limits** (when using ``k8s_job_executor``): set
+              ``"dagster-k8s/config"`` to configure CPU/memory requests and limits for the
+              step pod that executes this asset.
+            - **Framework execution hints**: other executor frameworks may read op tags to
+              prioritize or route work.
+
+            These tags apply regardless of which job executes the asset, including when the
+            asset is materialized directly from the Dagster UI. Values that are not strings
+            will be json encoded and must meet the criteria that
+            ``json.loads(json.dumps(value)) == value``.
+
+            Example - setting Kubernetes resource requests per asset:
+
+            .. code-block:: python
+
+                @asset(
+                    op_tags={
+                        "dagster-k8s/config": {
+                            "container_config": {
+                                "resources": {
+                                    "requests": {"cpu": "500m", "memory": "512Mi"},
+                                    "limits": {"cpu": "1", "memory": "2Gi"},
+                                }
+                            }
+                        }
+                    }
+                )
+                def my_asset(): ...
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         resource_defs (Optional[Mapping[str, object]]):
