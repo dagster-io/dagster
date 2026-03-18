@@ -25,6 +25,13 @@ You can assign assets and ops to concurrency pools which allow you to limit the 
   language="python"
 />
 
+:::tip
+The `pool` parameter on `@asset` applies regardless of how the asset is executed — whether
+run via a named job, a schedule, a sensor, or materialized directly from the Dagster UI.
+This makes it the right place to enforce concurrency limits on shared resources like
+databases or APIs, even when team members trigger ad-hoc materializations.
+:::
+
 You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
 
 ![Viewing the pool tag](/images/guides/operate/managing-concurrency/asset-pool-tag.png)
