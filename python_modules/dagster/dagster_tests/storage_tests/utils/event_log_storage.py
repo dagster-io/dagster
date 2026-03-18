@@ -7414,6 +7414,183 @@ class TestEventLogStorage:
         assert len(partition_records) == 1
         assert not partition_records[0].is_current
 
+    def test_asset_check_partition_info_batched_across_keys(
+        self,
+        storage: EventLogStorage,
+    ):
+        run_ids = [make_new_run_id() for _ in range(4)]
+        asset_key_one = dg.AssetKey(["asset_one"])
+        asset_key_two = dg.AssetKey(["asset_two"])
+        check_key_one = dg.AssetCheckKey(asset_key_one, "check_one")
+        check_key_two = dg.AssetCheckKey(asset_key_two, "check_two")
+        partitions_def = dg.StaticPartitionsDefinition(["a", "b"])
+
+        storage.store_event(
+            _create_check_planned_event(
+                run_ids[0],
+                check_key_one,
+                partitions_subset=partitions_def.subset_with_partition_keys(["a"]),
+            )
+        )
+        storage.store_event(
+            _create_check_evaluation_event(run_ids[0], check_key_one, passed=True, partition="a")
+        )
+        storage.store_event(
+            _create_check_planned_event(
+                run_ids[1],
+                check_key_one,
+                partitions_subset=partitions_def.subset_with_partition_keys(["b"]),
+            )
+        )
+
+        storage.store_event(
+            _create_check_planned_event(
+                run_ids[2],
+                check_key_two,
+                partitions_subset=partitions_def.subset_with_partition_keys(["a"]),
+            )
+        )
+        storage.store_event(
+            _create_check_evaluation_event(run_ids[2], check_key_two, passed=False, partition="a")
+        )
+        storage.store_event(
+            _create_check_planned_event(
+                run_ids[3],
+                check_key_two,
+                partitions_subset=partitions_def.subset_with_partition_keys(["b"]),
+            )
+        )
+        storage.store_event(
+            _create_check_evaluation_event(run_ids[3], check_key_two, passed=True, partition="b")
+        )
+
+        partition_records = storage.get_asset_check_partition_info([check_key_one, check_key_two])
+        assert len(partition_records) == 4
+        records_by_key_and_partition = {
+            (record.check_key, record.partition_key): record for record in partition_records
+        }
+
+        assert (
+            records_by_key_and_partition[(check_key_one, "a")].latest_execution_status
+            == AssetCheckExecutionRecordStatus.SUCCEEDED
+        )
+        assert (
+            records_by_key_and_partition[(check_key_one, "b")].latest_execution_status
+            == AssetCheckExecutionRecordStatus.PLANNED
+        )
+        assert (
+            records_by_key_and_partition[(check_key_two, "a")].latest_execution_status
+            == AssetCheckExecutionRecordStatus.FAILED
+        )
+        assert (
+            records_by_key_and_partition[(check_key_two, "b")].latest_execution_status
+            == AssetCheckExecutionRecordStatus.SUCCEEDED
+        )
+
+        filtered_records = storage.get_asset_check_partition_info(
+            [check_key_one, check_key_two], partition_keys=["a"]
+        )
+        assert {(record.check_key, record.partition_key) for record in filtered_records} == {
+            (check_key_one, "a"),
+            (check_key_two, "a"),
+        }
+
+        latest_storage_id = max(
+            record.latest_check_event_storage_id for record in partition_records
+        )
+
+        storage.store_event(
+            _create_materialization_event(make_new_run_id(), asset_key_one, partition="a")
+        )
+        storage.store_event(
+            _create_materialization_event(make_new_run_id(), asset_key_two, partition="b")
+        )
+
+        updated_records = storage.get_asset_check_partition_info(
+            [check_key_one, check_key_two], after_storage_id=latest_storage_id
+        )
+        assert {(record.check_key, record.partition_key) for record in updated_records} == {
+            (check_key_one, "a"),
+            (check_key_two, "b"),
+        }
+
+        partition_records = storage.get_asset_check_partition_info([check_key_one, check_key_two])
+        records_by_key_and_partition = {
+            (record.check_key, record.partition_key): record for record in partition_records
+        }
+        assert not records_by_key_and_partition[(check_key_one, "a")].is_current
+        assert not records_by_key_and_partition[(check_key_two, "b")].is_current
+
+    def test_asset_check_partition_info_large_batch_safe(
+        self,
+        storage: EventLogStorage,
+    ):
+        partitions_subset = dg.StaticPartitionsDefinition(["a"]).subset_with_partition_keys(["a"])
+        check_keys = [
+            dg.AssetCheckKey(dg.AssetKey([f"asset_{index}"]), f"check_{index}")
+            for index in range(600)
+        ]
+
+        for check_key in check_keys:
+            run_id = make_new_run_id()
+            storage.store_event(
+                _create_check_planned_event(
+                    run_id,
+                    check_key,
+                    partitions_subset=partitions_subset,
+                )
+            )
+            storage.store_event(
+                _create_check_evaluation_event(run_id, check_key, passed=True, partition="a")
+            )
+
+        partition_records = storage.get_asset_check_partition_info(check_keys)
+
+        assert len(partition_records) == len(check_keys)
+        assert {record.check_key for record in partition_records} == set(check_keys)
+        assert {record.partition_key for record in partition_records} == {"a"}
+        assert all(
+            record.latest_execution_status == AssetCheckExecutionRecordStatus.SUCCEEDED
+            for record in partition_records
+        )
+
+    def test_asset_check_partition_info_large_filtered_batch_safe(
+        self,
+        storage: EventLogStorage,
+    ):
+        partitions_subset = dg.StaticPartitionsDefinition(["a"]).subset_with_partition_keys(["a"])
+        check_keys = [
+            dg.AssetCheckKey(dg.AssetKey([f"asset_{index}"]), f"check_{index}")
+            for index in range(600)
+        ]
+        partition_keys = ["a", *[f"unused_{index}" for index in range(250)]]
+
+        for check_key in check_keys:
+            run_id = make_new_run_id()
+            storage.store_event(
+                _create_check_planned_event(
+                    run_id,
+                    check_key,
+                    partitions_subset=partitions_subset,
+                )
+            )
+            storage.store_event(
+                _create_check_evaluation_event(run_id, check_key, passed=True, partition="a")
+            )
+
+        partition_records = storage.get_asset_check_partition_info(
+            check_keys,
+            partition_keys=partition_keys,
+        )
+
+        assert len(partition_records) == len(check_keys)
+        assert {record.check_key for record in partition_records} == set(check_keys)
+        assert {record.partition_key for record in partition_records} == {"a"}
+        assert all(
+            record.latest_execution_status == AssetCheckExecutionRecordStatus.SUCCEEDED
+            for record in partition_records
+        )
+
 
 def _create_check_planned_event(
     run_id: str,

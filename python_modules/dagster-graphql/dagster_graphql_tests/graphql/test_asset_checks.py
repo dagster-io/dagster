@@ -114,6 +114,30 @@ query GetLatestExecution($assetKey: AssetKeyInput!) {
 }
 """
 
+GET_PARTITION_STATUSES = """
+query GetPartitionStatuses($assetKey: AssetKeyInput!) {
+    assetNodes(assetKeys: [$assetKey]) {
+        assetChecksOrError {
+            ... on AssetChecks {
+                checks {
+                    name
+                    partitionStatuses {
+                        __typename
+                        ... on AssetCheckDefaultPartitionStatuses {
+                            succeededPartitions
+                            failedPartitions
+                            inProgressPartitions
+                            skippedPartitions
+                            executionFailedPartitions
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
 GET_ASSET_CHECK_HISTORY_WITH_STEP_KEY = """
 query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!) {
     assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: 10) {
@@ -1688,3 +1712,87 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
         executions = res.data["assetCheckExecutions"]
         assert len(executions) == 2
+
+    def test_partitioned_asset_check_partition_statuses(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        run_id_one, run_id_two, run_id_three = [make_new_run_id() for _ in range(3)]
+        create_run_for_test(graphql_context.instance, run_id=run_id_one)
+        create_run_for_test(graphql_context.instance, run_id=run_id_two)
+        create_run_for_test(graphql_context.instance, run_id=run_id_three)
+
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run_id_one,
+                AssetCheckEvaluationPlanned(
+                    asset_key=AssetKey(["partitioned_asset_for_checks"]),
+                    check_name="partitioned_asset_check",
+                    partitions_subset=DefaultPartitionsSubset({"a"}),
+                ),
+            )
+        )
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run_id_one,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["partitioned_asset_for_checks"]),
+                    check_name="partitioned_asset_check",
+                    passed=True,
+                    severity=AssetCheckSeverity.WARN,
+                    partition="a",
+                ),
+            )
+        )
+
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run_id_two,
+                AssetCheckEvaluationPlanned(
+                    asset_key=AssetKey(["partitioned_asset_for_checks"]),
+                    check_name="partitioned_asset_check",
+                    partitions_subset=DefaultPartitionsSubset({"b"}),
+                ),
+            )
+        )
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run_id_two,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["partitioned_asset_for_checks"]),
+                    check_name="partitioned_asset_check",
+                    passed=False,
+                    severity=AssetCheckSeverity.ERROR,
+                    partition="b",
+                ),
+            )
+        )
+
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run_id_three,
+                AssetCheckEvaluationPlanned(
+                    asset_key=AssetKey(["partitioned_asset_for_checks"]),
+                    check_name="partitioned_asset_check",
+                    partitions_subset=DefaultPartitionsSubset({"c"}),
+                ),
+            )
+        )
+
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATUSES,
+            variables={"assetKey": {"path": ["partitioned_asset_for_checks"]}},
+        )
+
+        assert res.data is not None
+        checks = res.data["assetNodes"][0]["assetChecksOrError"]["checks"]
+        partitioned_check = next(check for check in checks if check["name"] == "partitioned_asset_check")
+
+        assert partitioned_check["partitionStatuses"] == {
+            "__typename": "AssetCheckDefaultPartitionStatuses",
+            "succeededPartitions": ["a"],
+            "failedPartitions": ["b"],
+            "inProgressPartitions": ["c"],
+            "skippedPartitions": [],
+            "executionFailedPartitions": [],
+        }
