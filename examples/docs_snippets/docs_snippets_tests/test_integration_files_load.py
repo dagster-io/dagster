@@ -11,6 +11,8 @@ EXCLUDED_FILES = {
     # exclude community integrations because they require non-editable dagster depdendencies
     f"{snippets_folder}/cube.py",
     f"{snippets_folder}/hightouch.py",
+    f"{snippets_folder}/hightouch_component.py",
+    f"{snippets_folder}/hightouch_resource.py",
     f"{snippets_folder}/hashicorp.py",
     f"{snippets_folder}/meltano.py",
     f"{snippets_folder}/lakefs.py",
