@@ -1,3 +1,6 @@
+import logging
+from pathlib import Path
+
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
@@ -7,7 +10,6 @@ from buildkite_shared.step_builders.group_step_builder import (
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.uv import UV_PIN
-from dagster_buildkite.utils import skip_if_no_docs_changes
 
 
 def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
@@ -19,7 +21,7 @@ def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConf
             "yarn install",
             "yarn format_check",
         )
-        .skip(skip_if_no_docs_changes(ctx))
+        .skip(_get_docs_step_skip_reason(ctx))
         .build()
     )
 
@@ -36,7 +38,7 @@ def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
             "yarn build-api-docs",
             "yarn build",
         )
-        .skip(skip_if_no_docs_changes(ctx))
+        .skip(_get_docs_step_skip_reason(ctx))
         .build()
     )
 
@@ -73,3 +75,26 @@ def build_docs_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
             ],
         ).build()
     ]
+
+
+def _get_docs_step_skip_reason(ctx: BuildkiteContext) -> str | None:
+    if ctx.config.no_skip:
+        return None
+
+    if "BUILDKITE_DOCS" in ctx.message:
+        return None
+
+    if not ctx.is_feature_branch:
+        return None
+
+    # If anything changes in the docs directory
+    if ctx.has_docs_changes():
+        logging.info("Run docs steps because files in the dagster-oss/docs directory changed")
+        return None
+
+    # If anything changes in the examples directory. This is where our docs snippets live.
+    if any(Path("dagster-oss/examples") in path.parents for path in ctx.all_changed_oss_files):
+        logging.info("Run docs steps because files in the dagster-oss/examples directory changed")
+        return None
+
+    return "No docs changes"

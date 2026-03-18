@@ -136,6 +136,68 @@ class BuildkiteContext(Generic[T_Config]):
         else:
             return self.changed_files
 
+    # ########################
+    # ##### CHANGE DETECTION
+    # ########################
+
+    def has_package_changes(self, name: str) -> bool:
+        return self.python_packages.get(name) in self.python_packages.with_changes
+
+    def has_python_changes(self) -> bool:
+        return any(path.suffix == ".py" for path in self.changed_files)
+
+    def has_yaml_changes(self) -> bool:
+        return any(path.suffix in (".yml", ".yaml") for path in self.changed_files)
+
+    def has_helm_changes(self) -> bool:
+        return any(Path("helm") in path.parents for path in self.changed_files)
+
+    def has_docs_changes(self) -> bool:
+        return any(Path("docs") in path.parents for path in self.changed_files)
+
+    def has_non_docs_markdown_changes(self) -> bool:
+        return any(
+            path.suffix == ".md" and Path("docs") not in path.parents for path in self.changed_files
+        )
+
+    def has_pyright_requirements_txt_changes(self) -> bool:
+        return any(path.match("pyright/*/requirements.txt") for path in self.all_changed_oss_files)
+
+    def has_dagster_airlift_changes(self) -> bool:
+        return any("dagster-airlift" in str(path) for path in self.all_changed_oss_files)
+
+    def has_dg_changes(self) -> bool:
+        return any(
+            "dagster-dg" in str(path) or "docs_snippets" in str(path)
+            for path in self.all_changed_oss_files
+        )
+
+    def has_component_integration_changes(self) -> bool:
+        component_integrations = [
+            "dagster-sling",
+            "dagster-dbt",
+            "dagster-databricks",
+            "dagster-airbyte",
+            "dagster-powerbi",
+            "dagster-omni",
+            "dagster-polytomic",
+            "dagster-fivetran",
+            "dagster-dlt",
+        ]
+        return any(
+            any(integration in str(path) for integration in component_integrations)
+            for path in self.all_changed_oss_files
+        )
+
+    def has_dg_or_component_integration_changes(self) -> bool:
+        return self.has_dg_changes() or self.has_component_integration_changes()
+
+    def has_storage_test_fixture_changes(self) -> bool:
+        return any(
+            Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
+            for path in self.all_changed_oss_files
+        )
+
     def apply_transforms(
         self, steps: Sequence["StepConfiguration"]
     ) -> Sequence["StepConfiguration"]:

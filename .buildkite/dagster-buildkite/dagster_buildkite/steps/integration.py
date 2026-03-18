@@ -19,7 +19,6 @@ from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
-    has_helm_changes,
     library_version_from_core_version,
     network_buildkite_container,
 )
@@ -136,7 +135,7 @@ def build_celery_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         ctx,
         pytest_tox_factors,
         queue=BuildkiteQueue.DOCKER,  # crashes on python 3.11/3.12 without additional resources
-        always_run_if=lambda: has_helm_changes(ctx),
+        force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=celery_k8s_integration_suite_pytest_extra_cmds,
     )
 
@@ -195,7 +194,7 @@ def skip_if_not_gcp_commit(ctx: BuildkiteContext) -> str | None:
 def build_azure_live_test_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests"),
-        skip=lambda: skip_if_not_azure_commit(ctx),
+        skip_run_fn=skip_if_not_azure_commit,
         env_vars=[
             "TEST_AZURE_TENANT_ID",
             "TEST_AZURE_CLIENT_ID",
@@ -231,7 +230,7 @@ def build_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigurati
         directory,
         ctx,
         pytest_tox_factors,
-        always_run_if=lambda: has_helm_changes(ctx),
+        force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=k8s_integration_suite_pytest_extra_cmds,
         queue=BuildkiteQueue.DOCKER,
     )
@@ -248,7 +247,7 @@ def build_integration_suite_steps(
     pytest_tox_factors: list[ToxFactor] | None = None,
     pytest_extra_cmds: PytestExtraCommandsFunction | None = None,
     queue=None,
-    always_run_if: Callable[[], bool] | None = None,
+    force_run_fn: Callable[[BuildkiteContext], bool] | None = None,
     unsupported_python_versions: list[AvailablePythonVersion]
     | UnsupportedVersionsFunction
     | None = None,
@@ -269,7 +268,7 @@ def build_integration_suite_steps(
         retries=2,
         timeout_in_minutes=30,
         queue=queue,
-        always_run_if=always_run_if,
+        force_run_fn=force_run_fn,
         unsupported_python_versions=unsupported_python_versions,
     ).build_steps(ctx)
 

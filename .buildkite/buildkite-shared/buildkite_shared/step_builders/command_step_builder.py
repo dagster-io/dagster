@@ -44,8 +44,8 @@ class BuildkiteQueue(StrEnum):
     KUBERNETES_GKE = os.getenv("BUILDKITE_KUBERNETES_QUEUE_GKE", "kubernetes-gke")
     KUBERNETES_EKS = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
     DOCKER = os.getenv("BUILDKITE_DOCKER_QUEUE", "buildkite-docker-october22")
-    MEDIUM = os.getenv("BUILDKITE_MEDIUM_QUEUE") or "buildkite-medium-october22"
-    WINDOWS = os.getenv("BUILDKITE_WINDOWS_QUEUE") or "buildkite-windows-october22"
+    MEDIUM = os.getenv("BUILDKITE_MEDIUM_QUEUE", "buildkite-medium-october22")
+    WINDOWS = os.getenv("BUILDKITE_WINDOWS_QUEUE", "buildkite-windows-october22")
 
     @classmethod
     def contains(cls, value: str) -> bool:

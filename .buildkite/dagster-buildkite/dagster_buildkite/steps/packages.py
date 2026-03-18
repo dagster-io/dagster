@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TypeAlias
 
 from buildkite_shared.context import BuildkiteContext
-from buildkite_shared.packages import skip_reason
+from buildkite_shared.packages import get_python_package_step_skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.group_step_builder import (
@@ -21,16 +21,7 @@ from buildkite_shared.step_builders.step_builder import (
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
-from dagster_buildkite.utils import (
-    connect_sibling_docker_container,
-    has_component_integration_changes,
-    has_dagster_airlift_changes,
-    has_dg_changes,
-    has_storage_test_fixture_changes,
-    network_buildkite_container,
-    skip_if_not_dagster_dbt_cloud_commit,
-    skip_if_not_dagster_dbt_commit,
-)
+from dagster_buildkite.utils import connect_sibling_docker_container, network_buildkite_container
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -139,8 +130,8 @@ class PackageSpec:
     queue: BuildkiteQueue | None = None
     run_pytest: bool = True
     splits: int = 1
-    always_run_if: Callable[[], bool] | None = None
-    skip: Callable[[], str | None] | None = None
+    force_run_fn: Callable[[BuildkiteContext], bool] | None = None
+    skip_run_fn: Callable[[BuildkiteContext], str | None] | None = None
 
     def __post_init__(self):
         if not self.name:
@@ -271,8 +262,8 @@ class PackageSpec:
                 )
             return self._skip_reason
 
-        self._skip_reason = skip_reason(
-            self.directory, self.name, self.always_run_if, self.skip, is_oss=True, ctx=ctx
+        self._skip_reason = get_python_package_step_skip_reason(
+            self.directory, self.name, self.force_run_fn, self.skip_run_fn, is_oss=True, ctx=ctx
         )
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
@@ -433,11 +424,6 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
 ui_extra_cmds = ["make rebuild_ui"]
 
 
-def has_dg_or_component_integration_changes(ctx: BuildkiteContext) -> bool:
-    """Check for changes in dagster-dg-cli or in integrations that implement components."""
-    return has_dg_changes(ctx) or has_component_integration_changes(ctx)
-
-
 mysql_extra_cmds = [
     "pushd python_modules/libraries/dagster-mysql/dagster_mysql_tests/",
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
@@ -504,7 +490,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("integrations"),
                 ToxFactor("docs_snapshot_test", splits=3),
             ],
-            always_run_if=lambda: has_dg_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dg_changes,
         ),
         PackageSpec(
             "examples/project_fully_featured",
@@ -575,7 +561,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         # beefier instance
         PackageSpec(
             "examples/airlift-federation-tutorial",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
             queue=BuildkiteQueue.DOCKER,
             unsupported_python_versions=[
@@ -587,7 +573,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             "examples/airlift-migration-tutorial",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -757,7 +743,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             "python_modules/libraries/dagster-dbt/",
-            skip=lambda: skip_if_not_dagster_dbt_commit(ctx),
+            skip_run_fn=_get_dbt_only_skip_reason,
             name="dagster-dbt-fusion",
             pytest_tox_factors=[
                 ToxFactor(
@@ -833,7 +819,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("plus"),
             ],
             env_vars=["SHELL"],
-            always_run_if=lambda: has_dg_or_component_integration_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dg_or_component_integration_changes,
             # general tests depend on dagster-dbt which does not support Python 3.14
             unsupported_python_versions=(
                 lambda tox_factor: (
@@ -847,7 +833,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             "python_modules/libraries/dagster-dg-cli",
             name="dagster-dg-cli-mcp",
             pytest_tox_factors=[ToxFactor("mcp")],
-            always_run_if=lambda: has_dg_or_component_integration_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dg_or_component_integration_changes,
         ),
         PackageSpec(
             "python_modules/libraries/dagster-aws",
@@ -983,7 +969,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
             ],
-            always_run_if=lambda: has_storage_test_fixture_changes(ctx),
+            force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
         ),
         PackageSpec(
             "python_modules/libraries/dagster-snowflake-pandas",
@@ -1006,7 +992,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("storage_tests"),
                 ToxFactor("storage_tests_sqlalchemy_1_3"),
             ],
-            always_run_if=lambda: has_storage_test_fixture_changes(ctx),
+            force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
         ),
         PackageSpec(
             "python_modules/libraries/dagster-twilio",
@@ -1043,7 +1029,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             "python_modules/libraries/dagster-airlift/perf-harness",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -1053,7 +1039,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             "python_modules/libraries/dagster-airlift/kitchen-sink",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -1067,7 +1053,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         # nightly build
         PackageSpec(
             "python_modules/libraries/dagster-dbt/kitchen-sink",
-            skip=lambda: skip_if_not_dagster_dbt_cloud_commit(ctx),
+            skip_run_fn=_get_dbt_cloud_only_skip_reason,
             name="dagster-dbt-cloud-live",
             env_vars=[
                 "KS_DBT_CLOUD_ACCOUNT_ID",
@@ -1087,3 +1073,26 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
     ]
+
+
+def _get_dbt_only_skip_reason(ctx: BuildkiteContext) -> str | None:
+    """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (any("dagster_dbt" in str(path) for path in ctx.all_changed_oss_files))
+        else "Not a dagster-dbt commit"
+    )
+
+
+def _get_dbt_cloud_only_skip_reason(ctx: BuildkiteContext) -> str | None:
+    """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (
+            any("dagster_dbt/cloud_v2" in str(path) for path in ctx.all_changed_oss_files)
+            # The kitchen sink in dagster-dbt in only testing the dbt Cloud integration v2.
+            # Do not skip tests if changes are made to this test suite.
+            or any("dagster-dbt/kitchen-sink" in str(path) for path in ctx.all_changed_oss_files)
+        )
+        else "Not a dagster-dbt Cloud commit"
+    )

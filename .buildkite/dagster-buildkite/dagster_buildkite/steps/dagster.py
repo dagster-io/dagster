@@ -1,6 +1,7 @@
 import os
 
 from buildkite_shared.context import BuildkiteContext
+from buildkite_shared.packages import get_general_python_step_skip_reason
 from buildkite_shared.step_builders.command_step_builder import (
     BuildkiteQueue,
     CommandStepBuilder,
@@ -16,12 +17,6 @@ from dagster_buildkite.steps.packages import (
     build_library_packages_steps,
 )
 from dagster_buildkite.steps.test_project import build_test_project_steps
-from dagster_buildkite.utils import (
-    skip_if_no_non_docs_markdown_changes,
-    skip_if_no_pyright_requirements_txt_changes,
-    skip_if_no_python_changes,
-    skip_if_no_yaml_changes,
-)
 
 
 def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
@@ -76,7 +71,7 @@ def build_repo_wide_ruff_steps(ctx: BuildkiteContext) -> list[CommandStepConfigu
             "uv pip install --system -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
         )
-        .skip(skip_if_no_python_changes(ctx))
+        .skip(get_general_python_step_skip_reason(ctx))
         .build(),
     ]
 
@@ -89,19 +84,19 @@ def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepCon
             "make install_prettier",
             "make check_prettier",
         )
-        .skip(skip_if_no_yaml_changes(ctx) and skip_if_no_non_docs_markdown_changes(ctx))
+        .skip(_get_prettier_step_skip_reason(ctx))
         .build(),
     ]
 
 
 def build_check_changelog_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
-    if not ctx.is_release_branch:
-        return []
-
+    skip_reason = _get_check_changelog_step_skip_reason(ctx)
+    release_version = "" if skip_reason else ctx.release_version
     return [
         CommandStepBuilder(":memo: changelog")
-        .run(f"python scripts/check_changelog.py {ctx.release_version}")
+        .run(f"python scripts/check_changelog.py {release_version}")
         .on_test_image()
+        .skip(skip_reason)
         .build(),
     ]
 
@@ -121,7 +116,7 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                     "make install_pyright",
                     "make pyright",
                 )
-                .skip(skip_if_no_python_changes(ctx, overrides=["pyright"]))
+                .skip(get_general_python_step_skip_reason(ctx, other_paths=["pyright"]))
                 # Run on a larger instance
                 .on_queue(BuildkiteQueue.DOCKER)
                 .build(),
@@ -135,7 +130,7 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                     "make install_pyright",
                     "make rebuild_pyright_pins",
                 )
-                .skip(skip_if_no_pyright_requirements_txt_changes(ctx))
+                .skip(_get_pyright_pin_step_skip_reason(ctx))
                 .build(),
             ],
             key="pyright",
@@ -150,7 +145,7 @@ def build_sql_schema_check_steps(ctx: BuildkiteContext) -> list[CommandStepConfi
             "uv pip install --system -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "python scripts/check_schemas.py",
         )
-        .skip(skip_mysql_if_no_changes_to_dependencies(ctx, ["dagster"]))
+        .skip(_get_sql_schema_check_skip_reason(ctx, ["dagster"]))
         .on_test_image()
         .build(),
     ]
@@ -168,7 +163,7 @@ def build_graphql_python_client_backcompat_steps(
             "dagster-graphql-client query check",
         )
         .skip(
-            skip_graphql_if_no_changes_to_dependencies(
+            _get_graphql_python_client_backcompat_skip_reason(
                 ctx, ["dagster", "dagster-graphql", "automation"]
             )
         )
@@ -177,27 +172,58 @@ def build_graphql_python_client_backcompat_steps(
     ]
 
 
-def skip_mysql_if_no_changes_to_dependencies(
-    ctx: BuildkiteContext, dependencies: list[str]
+# ########################
+# ##### SKIP HELPERS
+# ########################
+
+
+def _get_sql_schema_check_skip_reason(
+    ctx: BuildkiteContext, sql_schema_dependencies: list[str]
 ) -> str | None:
-    if not ctx.is_feature_branch:
+    if ctx.config.no_skip:
         return None
+    elif not ctx.is_feature_branch:
+        return None
+    elif any(ctx.has_package_changes(dep) for dep in sql_schema_dependencies):
+        return None
+    return "No MySQL schema changes"
 
-    for dependency in dependencies:
-        if ctx.python_packages.get(dependency) in ctx.python_packages.with_changes:
-            return None
 
-    return "Skip unless mysql schemas might have changed"
-
-
-def skip_graphql_if_no_changes_to_dependencies(
-    ctx: BuildkiteContext, dependencies: list[str]
+def _get_graphql_python_client_backcompat_skip_reason(
+    ctx: BuildkiteContext, gql_schema_dependencies: list[str]
 ) -> str | None:
-    if not ctx.is_feature_branch:
+    if ctx.config.no_skip:
         return None
+    elif not ctx.is_feature_branch:
+        return None
+    elif any(ctx.has_package_changes(dep) for dep in gql_schema_dependencies):
+        return None
+    return "No GraphQL schema changes"
 
-    for dependency in dependencies:
-        if ctx.python_packages.get(dependency) in ctx.python_packages.with_changes:
-            return None
 
-    return "Skip unless GraphQL schemas might have changed"
+def _get_pyright_pin_step_skip_reason(ctx: BuildkiteContext) -> str | None:
+    if ctx.config.no_skip:
+        return None
+    elif not ctx.is_feature_branch:
+        return None
+    elif ctx.has_pyright_requirements_txt_changes():
+        return None
+    return "No pyright requirements.txt changes"
+
+
+def _get_prettier_step_skip_reason(ctx: BuildkiteContext) -> str | None:
+    if ctx.config.no_skip:
+        return None
+    elif not ctx.is_feature_branch:
+        return None
+    elif ctx.has_yaml_changes():
+        return None
+    elif ctx.has_non_docs_markdown_changes():
+        return None
+    return "No yaml changes or markdown changes outside docs"
+
+
+def _get_check_changelog_step_skip_reason(ctx: BuildkiteContext) -> str | None:
+    if not ctx.is_release_branch:
+        return "Not a release branch"
+    return None
