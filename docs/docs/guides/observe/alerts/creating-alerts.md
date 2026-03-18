@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-You can create alert policies in the Dagster+ UI or with the [`dg` CLI](/guides/build/cli/dg-reference) or [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
+You can create alert policies in the Dagster+ UI or with the [`dg` CLI](/api/clis/dg-cli/dg-cli-reference) or [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
 
 Alert policies are configured on a per-deployment basis. This means, for example, that asset alerts configured in a prod deployment are only applicable to assets in that deployment.
 
