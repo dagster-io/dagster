@@ -162,7 +162,7 @@ Before following the steps in this section, you must first [create a Dagster pro
 
 :::
 
-If you don't want to use our automated GitHub/GitLab process, you can use the [`dg` CLI](/api/clis/dg-cli) or the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, you can use the [`dg` CLI](/api/clis/dg-cli/dg-cli-reference) or the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
 
 1. First, [create a new project with the `create-dagster project` command](/guides/build/projects/creating-projects) and activate the project virtual environment.
 

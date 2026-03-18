@@ -50,7 +50,7 @@ For full details, see the [`dg plus` reference](/api/clis/dg-cli/dg-plus).
 
 :::warning Deprecated
 
-The `dagster-cloud` CLI is deprecated. We recommend using the [`dg` CLI](/api/clis/dg-cli) for new projects.
+The `dagster-cloud` CLI is deprecated. We recommend using the [`dg` CLI](/api/clis/dg-cli/dg-cli-reference) for new projects.
 
 :::
 

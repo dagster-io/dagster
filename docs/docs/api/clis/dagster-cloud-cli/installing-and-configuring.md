@@ -14,7 +14,7 @@ In this guide, we'll cover how to install and configure the `dagster-cloud` CLI,
 
 :::tip Recommended: Use the `dg` CLI
 
-For new projects, we recommend using the [`dg` CLI](/api/clis/dg-cli) instead. See the [Configuring Dagster+ with the dg CLI](/api/clis/dg-cli/configuring-dagster-plus) guide for the equivalent commands and a full migration table.
+For new projects, we recommend using the [`dg` CLI](/api/clis/dg-cli/dg-cli-reference) instead. See the [Configuring Dagster+ with the dg CLI](/api/clis/dg-cli/configuring-dagster-plus) guide for the equivalent commands and a full migration table.
 
 :::
 
