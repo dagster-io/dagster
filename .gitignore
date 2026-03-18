@@ -193,3 +193,7 @@ exponent.txt
 .erk/scratch/
 .impl/
 .erk/config.local.toml
+
+# local agent working directories
+.claude-flow/
+docs/superpowers/
