@@ -1,73 +1,256 @@
 ---
-description: The build.yaml file defines the location of Dagster projects for Dagster+ Hybrid deployments, along with environment variables and secrets.
+description: Configuration files for Dagster+ deployments - build.yaml, container_context.yaml, and pyproject.toml.
 sidebar_position: 1000
 tags: [dagster-plus-feature]
-title: build.yaml reference (Dagster+)
+title: Deployment configuration reference (Dagster+)
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-`build.yaml` is used to define the location of Dagster projects for Dagster+ Hybrid so they can be discovered by CI/CD processes. It can also be used to manage environment variables and secrets.
+Dagster+ uses several configuration files to manage deployments. This page describes each file and what configuration belongs in each.
+
+## Overview
+
+Modern Dagster+ projects use three separate configuration files, each with a specific purpose:
+
+| File                                               | Purpose                                                 | Required    |
+| -------------------------------------------------- | ------------------------------------------------------- | ----------- |
+| [`build.yaml`](#buildyaml)                         | Docker build settings (directory, registry)             | Hybrid only |
+| [`container_context.yaml`](#container_contextyaml) | Agent-specific runtime configuration (K8s, ECS, Docker) | Optional    |
+| [`pyproject.toml`](#pyprojecttoml)                 | Project settings (code location name, root module)      | Yes         |
 
 :::note
 
-In older deployments, this file may be called `dagster_cloud.yaml`.
+In older deployments, you may have a `dagster_cloud.yaml` file that combines all of these settings. This format is deprecated but still supported. See [Legacy format](#legacy-format-dagster_cloudyaml) for migration guidance.
 
 :::
 
-## File location
+## File locations
 
 <Tabs>
 <TabItem value="single_project" label="Single project">
 
-The `build.yaml` file should be placed in the root of your Dagster project, similar to the example below:
-
 ```shell
 my-project
-├── build.yaml
+├── build.yaml              # Build configuration (hybrid only)
+├── container_context.yaml  # Runtime configuration (optional)
 ├── Dockerfile
-├── pyproject.toml
+├── pyproject.toml          # Project configuration
 ├── README.md
 ├── src
-│   └── my_project
-│       ├── __init__.py
-│       ├── definitions.py
-│       └── defs
-│           └── __init__.py
+│   └── my_project
+│       ├── __init__.py
+│       ├── definitions.py
+│       └── defs
+│           └── __init__.py
 ├── tests
-│   └── __init__.py
+│   └── __init__.py
 └── uv.lock
-
 ```
 
 </TabItem>
 <TabItem value="multiple_projects" label="Workspace (multiple projects)">
 
-The `build.yaml` file should be placed in the root of your Dagster workspace, similar to the example below:
+In a workspace, configuration files can exist at both the workspace and project levels:
 
 ```shell
 my-workspace
-├── build.yaml
-├── deployments
-│   └── local
-│       ├── pyproject.toml
-│       └── uv.lock
-├── dg.toml
+├── build.yaml              # Workspace-level build config (shared registry)
+├── container_context.yaml  # Workspace-level runtime config
+├── dg.toml                 # Workspace configuration
 └── projects
-
+    ├── project-a
+    │   ├── build.yaml              # Project-specific build config (optional)
+    │   ├── container_context.yaml  # Project-specific runtime config (optional)
+    │   ├── Dockerfile
+    │   └── pyproject.toml
+    └── project-b
+        ├── build.yaml
+        ├── container_context.yaml
+        ├── Dockerfile
+        └── pyproject.toml
 ```
 
 </TabItem>
 </Tabs>
 
-## File structure
+## build.yaml
 
-Settings are formatted using YAML. For example, using the file structure above as an example:
+The `build.yaml` file configures Docker image building for **Hybrid deployments only**. Serverless deployments do not require this file.
+
+### Basic structure
 
 ```yaml
 # build.yaml
+
+# Container registry URL for pushing Docker images.
+# Examples:
+#   ECR:       123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo
+#   GCR:       gcr.io/my-project/my-image
+#   Azure:     myregistry.azurecr.io/my-image
+#   DockerHub: docker.io/myuser/my-image
+#   GHCR:      ghcr.io/myorg/my-image
+registry: '123456789012.dkr.ecr.us-east-1.amazonaws.com/my-dagster-image'
+
+# Path to the directory containing the Dockerfile (defaults to current directory)
+directory: .
+```
+
+### Settings
+
+| Property    | Description                                     | Format                  | Default |
+| ----------- | ----------------------------------------------- | ----------------------- | ------- |
+| `registry`  | The Docker registry URL to push images to       | `string` (registry URL) | -       |
+| `directory` | Path to the directory containing the Dockerfile | `string` (path)         | `.`     |
+
+### Workspace vs project configuration
+
+In a workspace with multiple projects:
+
+- **Workspace-level `build.yaml`**: Define a shared `registry` that applies to all projects
+- **Project-level `build.yaml`**: Override with project-specific settings if needed
+
+```yaml
+# Workspace build.yaml
+registry: '123456789012.dkr.ecr.us-east-1.amazonaws.com/shared-registry'
+```
+
+```yaml
+# Project build.yaml (inherits registry from workspace)
+directory: .
+# registry: '...'  # Uncomment to override workspace registry
+```
+
+## container_context.yaml
+
+The `container_context.yaml` file configures agent-specific runtime settings for Hybrid deployments. This includes environment variables, secrets, resource limits, and other platform-specific configuration.
+
+### Kubernetes agent
+
+```yaml
+# container_context.yaml (Kubernetes)
+
+k8s:
+  server_k8s_config: # Config for code servers launched by the agent
+    pod_spec_config:
+      node_selector:
+        disktype: standard
+    pod_template_spec_metadata:
+      annotations:
+        mykey: myvalue
+    container_config:
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+  run_k8s_config: # Config for runs launched by the agent
+    pod_spec_config:
+      node_selector:
+        disktype: ssd
+    container_config:
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1024Mi
+    pod_template_spec_metadata:
+      annotations:
+        mykey: myvalue
+    job_spec_config:
+      ttl_seconds_after_finished: 7200
+```
+
+For complete Kubernetes configuration options, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).
+
+### Amazon ECS agent
+
+```yaml
+# container_context.yaml (ECS)
+
+ecs:
+  env_vars:
+    - DATABASE_NAME=staging
+    - DATABASE_PASSWORD
+  secrets:
+    - name: 'MY_API_TOKEN'
+      valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
+  server_resources:
+    cpu: '256'
+    memory: '512'
+  run_resources:
+    cpu: '4096'
+    memory: '16384'
+  execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
+  task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
+```
+
+For complete ECS configuration options, see the [Amazon ECS agent configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference).
+
+### Docker agent
+
+```yaml
+# container_context.yaml (Docker)
+
+docker:
+  env_vars:
+    - DATABASE_NAME=staging
+    - DATABASE_PASSWORD
+```
+
+For complete Docker configuration options, see the [Docker agent configuration reference](/deployment/dagster-plus/hybrid/docker/configuration).
+
+## pyproject.toml
+
+Project settings are configured in `pyproject.toml` under the `[tool.dg]` section. This includes the code location name, root module, and other project-level settings.
+
+### Basic structure
+
+```toml
+# pyproject.toml
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+# The root Python module for this project (required)
+root_module = "my_project"
+
+# Custom name for the code location (optional)
+# Defaults to the project name (hyphenated variant of root_module)
+code_location_name = "my-custom-location-name"
+
+# Module containing the top-level Definitions object (optional)
+# Defaults to <root_module>.definitions
+code_location_target_module = "my_project.definitions"
+
+# Module where new components are scaffolded (optional)
+# Defaults to <root_module>.defs
+defs_module = "my_project.defs"
+```
+
+### Settings
+
+| Property                      | Description                                             | Default                     |
+| ----------------------------- | ------------------------------------------------------- | --------------------------- |
+| `root_module`                 | The root Python module for the project                  | Required                    |
+| `code_location_name`          | Custom name shown in the Dagster UI Code Locations page | Project name (hyphenated)   |
+| `code_location_target_module` | Module containing the `Definitions` object              | `<root_module>.definitions` |
+| `defs_module`                 | Module where new components are scaffolded              | `<root_module>.defs`        |
+
+For complete `pyproject.toml` configuration options, see [Installing and configuring the dg CLI](/api/clis/dg-cli/dg-cli-configuration).
+
+## Legacy format (dagster_cloud.yaml) {#legacy-format-dagster_cloudyaml}
+
+Older Dagster+ deployments may use a single `dagster_cloud.yaml` (or `build.yaml` with the legacy format) that combines all configuration. This format is deprecated but still supported for backwards compatibility.
+
+<details>
+<summary>Legacy format reference</summary>
+
+The legacy format uses a `locations` key containing a list of code location configurations:
+
+```yaml
+# dagster_cloud.yaml (legacy format)
 locations:
   - location_name: data-eng-pipeline
     code_source:
@@ -75,14 +258,8 @@ locations:
     build:
       directory: ./example_etl
       registry: localhost:5000/docker_image
-  - location_name: ml-pipeline
-    code_source:
-      package_name: example_ml
-    working_directory: ./ml_project
-    executable_path: venvs/path/to/ml_tensorflow/bin/python
-  - location_name: my_random_assets
-    code_source:
-      python_file: random_assets.py
+    working_directory: ./project_directory
+    executable_path: venvs/path/to/python
     container_context:
       k8s:
         env_vars:
@@ -92,168 +269,85 @@ locations:
           - database_password
 ```
 
-## Settings
+### Legacy settings reference
 
-The `build.yaml` file contains a single top-level key, `locations`. This key accepts a list of Dagster projects; for each project, you can configure the following:
-
-- [Location name](#location-name)
-- [Code source](#code-source)
-- [Working directory](#working-directory)
-- [Build](#build)
-- [Python executable](#python-executable)
-- [Container context](#container-context)
-
-### Location name
-
-**This key is required.** The `location_name` key specifies the name of the Dagster project. The location name will always be paired with a [code source](#code-source).
-
-```yaml
-# build.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: example_etl
-```
+#### Location name
 
 | Property        | Description                                                                              | Format   |
 | --------------- | ---------------------------------------------------------------------------------------- | -------- |
 | `location_name` | The name of your Dagster project that will appear in the Dagster UI Code locations page. | `string` |
 
-### Code source
+#### Code source
 
-**This section is required.** The `code_source` defines how a Dagster project is sourced.
+| Property                   | Description                                         | Format                   |
+| -------------------------- | --------------------------------------------------- | ------------------------ |
+| `code_source.package_name` | The name of a package containing Dagster code       | `string` (folder name)   |
+| `code_source.python_file`  | The name of a Python file containing Dagster code   | `string` (.py file name) |
+| `code_source.module_name`  | The name of a Python module containing Dagster code | `string` (module name)   |
 
-A `code_source` key must contain either a `module_name`, `package_name`, or `file_name` parameter that specifies where to find the definitions in the Dagster project.
+#### Build
 
-<Tabs>
-<TabItem value="Single Dagster project">
+| Property          | Description                                         | Format                     | Default |
+| ----------------- | --------------------------------------------------- | -------------------------- | ------- |
+| `build.directory` | The path to the directory containing the Dockerfile | `string` (path)            | `.`     |
+| `build.registry`  | The Docker registry to push images to (Hybrid only) | `string` (docker registry) |         |
 
-```yaml
-# build.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: example_etl
-```
-
-</TabItem>
-<TabItem value="Multiple Dagster projects">
-
-```yaml
-# build.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: example_etl
-  - location_name: machine_learning
-    code_source:
-      python_file: ml/ml_model.py
-```
-
-</TabItem>
-</Tabs>
-
-| Property                   | Description                                                                       | Format                   |
-| -------------------------- | --------------------------------------------------------------------------------- | ------------------------ |
-| `code_source.package_name` | The name of a package containing Dagster code                                     | `string` (folder name)   |
-| `code_source.python_file`  | The name of a Python file containing Dagster code (e.g. `analytics_pipeline.py` ) | `string` (.py file name) |
-| `code_source.module_name`  | The name of a Python module containing Dagster code (e.g. `analytics_etl`)        | `string` (module name)   |
-
-### Working directory
-
-Use the `working_directory` setting to load Dagster code from a different directory than the root of your code repository. This setting allows you to specify the directory you want to load your code from.
-
-Consider the following project:
-
-```shell
-example_etl
-├── README.md
-├── project_directory
-│   ├── example_etl
-│     ├── __init__.py
-│     ├── assets
-│   ├── example_etl_tests
-├── build.yaml
-├── pyproject.toml
-├── setup.cfg
-└── setup.py
-```
-
-To load from `/project_directory`, the `build.yaml` file would look like this:
-
-```yaml
-# build.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: example_etl
-    working_directory: ./project_directory
-```
+#### Working directory
 
 | Property            | Description                                                             | Format          |
 | ------------------- | ----------------------------------------------------------------------- | --------------- |
 | `working_directory` | The path of the directory that Dagster should load the code source from | `string` (path) |
 
-### Build
-
-The `build` section contains two parameters:
-
-- `directory` - Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python modules within a single Dagster project.
-- `registry` - **Applicable only to Hybrid deployments.** Specifies the Docker registry to push the Dagster project to.
-
-In the example below, the Docker image for the Dagster project is in the root directory and the registry and image defined:
-
-```yaml
-# build.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: example_etl
-    build:
-      directory: ./
-      registry: your-docker-image-registry/image-name # e.g. localhost:5000/myimage
-```
-
-| Property          | Description                                                                                                                                                           | Format                     | Default |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------- |
-| `build.directory` | The path to the directory in your project that you want to deploy. If there are subdirectories, you can specify the path to only deploy a specific project directory. | `string` (path)            | `.`     |
-| `build.registry`  | **Applicable to Hybrid deployments.** The Docker registry to push your Dagster project to                                                                             | `string` (docker registry) |         |
-
-### Python executable
-
-For Dagster+ Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different Dagster projects.
-
-For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/deployment/dagster-plus/serverless/runtime-environment#use-a-different-python-version).
-
-```yaml
-# build.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: example_etl
-    executable_path: venvs/path/to/dataengineering_spark_team/bin/python
-  - location_name: machine_learning
-    code_source:
-      python_file: ml_model.py
-    executable_path: venvs/path/to/ml_tensorflow/bin/python
-```
+#### Python executable
 
 | Property          | Description                                   | Format          |
 | ----------------- | --------------------------------------------- | --------------- |
 | `executable_path` | The file path of the Python executable to use | `string` (path) |
 
-### Container context
+#### Container context
 
-If using Hybrid deployment, you can define additional configuration options for Dagster projects using the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
-
-Refer to the configuration reference for your agent for more info:
+The `container_context` key accepts agent-specific configuration. Refer to the agent configuration references:
 
 - [Docker agent configuration reference](/deployment/dagster-plus/hybrid/docker/configuration)
 - [Amazon ECS agent configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference)
 - [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration)
+
+### Migrating from legacy format
+
+To migrate from the legacy format:
+
+1. **Move build settings to `build.yaml`**:
+
+   ```yaml
+   # build.yaml
+   directory: ./example_etl
+   registry: localhost:5000/docker_image
+   ```
+
+2. **Move container context to `container_context.yaml`**:
+
+   ```yaml
+   # container_context.yaml
+   k8s:
+     env_vars:
+       - database_name
+       - database_username=hooli_testing
+     env_secrets:
+       - database_password
+   ```
+
+3. **Move project settings to `pyproject.toml`**:
+
+   ```toml
+   # pyproject.toml
+   [tool.dg]
+   directory_type = "project"
+
+   [tool.dg.project]
+   root_module = "example_etl"
+   code_location_name = "data-eng-pipeline"
+   ```
+
+4. **Delete the `dagster_cloud.yaml` file** once migration is complete.
+
+</details>

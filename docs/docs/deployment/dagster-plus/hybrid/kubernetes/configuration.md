@@ -45,104 +45,94 @@ Additionally, the [`imagePullSecrets`](https://artifacthub.io/packages/helm/dags
 
 ## Per-location configuration
 
-When [adding a code location](/guides/build/projects) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `build.yaml` file, using the same format.
+For per-location Kubernetes configuration, create a `container_context.yaml` file in your project directory. This file contains agent-specific runtime settings like resource limits, environment variables, and pod configuration.
 
-The following example [`build.yaml`](/deployment/dagster-plus/management/build-yaml) file illustrates the available fields:
+For a complete overview of the configuration file structure, see the [Deployment configuration reference](/deployment/dagster-plus/management/build-yaml).
+
+The following example `container_context.yaml` file illustrates the available Kubernetes-specific fields:
 
 ```yaml
-# build.yaml
-locations:
-  - location_name: cloud-examples
-    image: dagster/dagster-cloud-examples:latest
-    code_source:
-      package_name: dagster_cloud_examples
-    container_context:
-      k8s:
-        env_config_maps:
-          - my_config_map
-        env_secrets:
-          - my_secret
-        env_vars:
-          - FOO_ENV_VAR=foo_value
-          - BAR_ENV_VAR
-        image_pull_policy: Always
-        image_pull_secrets:
-          - name: my_image_pull_secret
-        labels:
-          my_label_key: my_label_value
-        namespace: my_k8s_namespace
-        service_account_name: my_service_account_name
-        volume_mounts:
-          - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
-            name: test-volume
-            sub_path: volume_mounted_file.yaml
-        volumes:
-          - name: test-volume
-            config_map:
-              name: test-volume-configmap
-        server_k8s_config: # Raw kubernetes config for code servers launched by the agent
-          pod_spec_config: # Config for the code server pod spec
-            node_selector:
-              disktype: standard
-          pod_template_spec_metadata: # Metadata for the code server pod
-            annotations:
-              mykey: myvalue
-          deployment_metadata: # Metadata for the code server deployment
-            annotations:
-              mykey: myvalue
-          service_metadata: # Metadata for the code server service
-            annotations:
-              mykey: myvalue
-          service_spec_config: # Raw config for the spec of the code server service
-            cluster_ip: None # Creates a headless service
-          container_config: # Config for the main dagster container in the code server pod
-            resources:
-              limits:
-                cpu: 100m
-                memory: 128Mi
-        run_k8s_config: # Raw kubernetes config for runs launched by the agent
-          pod_spec_config: # Config for the run's PodSpec
-            node_selector:
-              disktype: ssd
-          container_config: # Config for the main dagster container in the run pod
-            resources:
-              limits:
-                cpu: 500m
-                memory: 1024Mi
-          pod_template_spec_metadata: # Metadata for the run pod
-            annotations:
-              mykey: myvalue
-          job_spec_config: # Config for the Kubernetes job for the run
-            ttl_seconds_after_finished: 7200
-          job_metadata: # Metadata for the Kubernetes job for the run
-            annotations:
-              mykey: myvalue
+# container_context.yaml
+k8s:
+  env_config_maps:
+    - my_config_map
+  env_secrets:
+    - my_secret
+  env_vars:
+    - FOO_ENV_VAR=foo_value
+    - BAR_ENV_VAR
+  image_pull_policy: Always
+  image_pull_secrets:
+    - name: my_image_pull_secret
+  labels:
+    my_label_key: my_label_value
+  namespace: my_k8s_namespace
+  service_account_name: my_service_account_name
+  volume_mounts:
+    - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
+      name: test-volume
+      sub_path: volume_mounted_file.yaml
+  volumes:
+    - name: test-volume
+      config_map:
+        name: test-volume-configmap
+  server_k8s_config: # Raw kubernetes config for code servers launched by the agent
+    pod_spec_config: # Config for the code server pod spec
+      node_selector:
+        disktype: standard
+    pod_template_spec_metadata: # Metadata for the code server pod
+      annotations:
+        mykey: myvalue
+    deployment_metadata: # Metadata for the code server deployment
+      annotations:
+        mykey: myvalue
+    service_metadata: # Metadata for the code server service
+      annotations:
+        mykey: myvalue
+    service_spec_config: # Raw config for the spec of the code server service
+      cluster_ip: None # Creates a headless service
+    container_config: # Config for the main dagster container in the code server pod
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+  run_k8s_config: # Raw kubernetes config for runs launched by the agent
+    pod_spec_config: # Config for the run's PodSpec
+      node_selector:
+        disktype: ssd
+    container_config: # Config for the main dagster container in the run pod
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1024Mi
+    pod_template_spec_metadata: # Metadata for the run pod
+      annotations:
+        mykey: myvalue
+    job_spec_config: # Config for the Kubernetes job for the run
+      ttl_seconds_after_finished: 7200
+    job_metadata: # Metadata for the Kubernetes job for the run
+      annotations:
+        mykey: myvalue
 ```
 
 :::note
 
-If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+Older deployments may use a `dagster_cloud.yaml` file with a `locations` key that embeds `container_context` within each location. This legacy format is still supported. See the [Deployment configuration reference](/deployment/dagster-plus/management/build-yaml#legacy-format-dagster_cloudyaml) for migration guidance.
 
 :::
 
 ### Environment variables and secrets
 
-Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
+Using the `k8s.env_vars` and `k8s.env_secrets` properties in your `container_context.yaml`, you can specify environment variables and secrets for a specific code location. For example:
 
 ```yaml
-# build.yaml
-location:
-  - location_name: cloud-examples
-    image: dagster/dagster-cloud-examples:latest
-    code_source:
-      package_name: dagster_cloud_examples
-    container_context:
-      k8s:
-        env_vars:
-          - database_name
-          - database_username=hooli_testing
-        env_secrets:
-          - database_password
+# container_context.yaml
+k8s:
+  env_vars:
+    - database_name
+    - database_username=hooli_testing
+  env_secrets:
+    - database_password
 ```
 
 | Property      | Description                                                                                                                                                                                                                                                                                                                |

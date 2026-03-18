@@ -19,105 +19,93 @@ We expose `AgentMemory`, and `AgentCpu` fields in the Cloud Formation templates 
 
 ## Per-location configuration
 
-When [adding a code location](/guides/build/projects) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
+For per-location ECS configuration, create a `container_context.yaml` file in your project directory. This file contains agent-specific runtime settings like resource limits, environment variables, and ECS task configuration.
 
-**Note**: If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `build.yaml` file.
+For a complete overview of the configuration file structure, see the [Deployment configuration reference](/deployment/dagster-plus/management/build-yaml).
 
-The following example [`build.yaml`](/deployment/dagster-plus/management/build-yaml) file illustrates the available fields:
+The following example `container_context.yaml` file illustrates the available ECS-specific fields:
 
 ```yaml
-# build.yaml
-locations:
-  - location_name: cloud-examples
-    image: dagster/dagster-cloud-examples:latest
-    code_source:
-      package_name: dagster_cloud_examples
-    container_context:
-      ecs:
-        env_vars:
-          - DATABASE_NAME=staging
-          - DATABASE_PASSWORD
-        secrets:
-          - name: 'MY_API_TOKEN'
-            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
-          - name: 'MY_PASSWORD'
-            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
-        secrets_tags:
-          - 'my_tag_name'
-        server_resources: # Resources for code servers launched by the agent for this location
-          cpu: '256'
-          memory: '512'
-          replica_count: 1
-        run_resources: # Resources for runs launched by the agent for this location
-          cpu: '4096'
-          memory: '16384'
-        execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
-        task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
-        mount_points:
-          - sourceVolume: myEfsVolume
-            containerPath: '/mount/efs'
-            readOnly: True
-        volumes:
-          - name: myEfsVolume
-            efsVolumeConfiguration:
-              fileSystemId: fs-1234
-              rootDirectory: /path/to/my/data
-        server_sidecar_containers:
-          - name: DatadogAgent
-            image: public.ecr.aws/datadog/agent:latest
-            environment:
-              - name: ECS_FARGATE
-                value: true
-        run_sidecar_containers:
-          - name: DatadogAgent
-            image: public.ecr.aws/datadog/agent:latest
-            environment:
-              - name: ECS_FARGATE
-                value: true
-        server_ecs_tags:
-          - key: MyEcsTagKey
-            value: MyEcsTagValue
-        run_ecs_tags:
-          - key: MyEcsTagKeyWithoutValue
-        repository_credentials: MyRepositoryCredentialsSecretArn
+# container_context.yaml
+ecs:
+  env_vars:
+    - DATABASE_NAME=staging
+    - DATABASE_PASSWORD
+  secrets:
+    - name: 'MY_API_TOKEN'
+      valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
+    - name: 'MY_PASSWORD'
+      valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
+  secrets_tags:
+    - 'my_tag_name'
+  server_resources: # Resources for code servers launched by the agent for this location
+    cpu: '256'
+    memory: '512'
+    replica_count: 1
+  run_resources: # Resources for runs launched by the agent for this location
+    cpu: '4096'
+    memory: '16384'
+  execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
+  task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
+  mount_points:
+    - sourceVolume: myEfsVolume
+      containerPath: '/mount/efs'
+      readOnly: True
+  volumes:
+    - name: myEfsVolume
+      efsVolumeConfiguration:
+        fileSystemId: fs-1234
+        rootDirectory: /path/to/my/data
+  server_sidecar_containers:
+    - name: DatadogAgent
+      image: public.ecr.aws/datadog/agent:latest
+      environment:
+        - name: ECS_FARGATE
+          value: true
+  run_sidecar_containers:
+    - name: DatadogAgent
+      image: public.ecr.aws/datadog/agent:latest
+      environment:
+        - name: ECS_FARGATE
+          value: true
+  server_ecs_tags:
+    - key: MyEcsTagKey
+      value: MyEcsTagValue
+  run_ecs_tags:
+    - key: MyEcsTagKeyWithoutValue
+  repository_credentials: MyRepositoryCredentialsSecretArn
 ```
 
 :::note
 
-If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+Older deployments may use a `dagster_cloud.yaml` file with a `locations` key that embeds `container_context` within each location. This legacy format is still supported. See the [Deployment configuration reference](/deployment/dagster-plus/management/build-yaml#legacy-format-dagster_cloudyaml) for migration guidance.
 
 :::
 
 ### Environment variables and secrets
 
-Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
+Using the `ecs.env_vars` and `ecs.secrets` properties in your `container_context.yaml`, you can configure environment variables and secrets for a specific code location.
 
 ```yaml
-# build.yaml
-locations:
-  - location_name: cloud-examples
-    image: dagster/dagster-cloud-examples:latest
-    code_source:
-      package_name: dagster_cloud_examples
-    container_context:
-      ecs:
-        env_vars:
-          - DATABASE_NAME=testing
-          - DATABASE_PASSWORD
-        secrets:
-          - name: 'MY_API_TOKEN'
-            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
-          - name: 'MY_PASSWORD'
-            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
-        secrets_tags:
-          - 'my_tag_name'
+# container_context.yaml
+ecs:
+  env_vars:
+    - DATABASE_NAME=testing
+    - DATABASE_PASSWORD
+  secrets:
+    - name: 'MY_API_TOKEN'
+      valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
+    - name: 'MY_PASSWORD'
+      valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
+  secrets_tags:
+    - 'my_tag_name'
 ```
 
-| Property                           | Description                                                                                                                                                                                                                                                                                                 |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| container_context.ecs.env_vars     | A list of keys or key-value pairs for task inclusion. If value unspecified, pulls from agent task. Example: `FOO_ENV_VAR` set to `foo_value`, `BAR_ENV_VAR` set to agent task value.                                                                                                                        |
-| container_context.ecs.secrets      | Individual secrets specified using the [same structure as the ECS API.](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html)                                                                                                                                                          |
-| container_context.ecs.secrets_tags | A list of tag names. Each secret tagged with any of those tag names in AWS Secrets Manager will be included in the launched tasks as environment variables. The name of the environment variable will be the name of the secret, and the value of the environment variable will be the value of the secret. |
+| Property         | Description                                                                                                                                                                                                                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ecs.env_vars     | A list of keys or key-value pairs for task inclusion. If value unspecified, pulls from agent task. Example: `FOO_ENV_VAR` set to `foo_value`, `BAR_ENV_VAR` set to agent task value.                                                                                                                        |
+| ecs.secrets      | Individual secrets specified using the [same structure as the ECS API.](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html)                                                                                                                                                          |
+| ecs.secrets_tags | A list of tag names. Each secret tagged with any of those tag names in AWS Secrets Manager will be included in the launched tasks as environment variables. The name of the environment variable will be the name of the secret, and the value of the environment variable will be the value of the secret. |
 
 Refer to the following guides for more info about environment variables:
 
