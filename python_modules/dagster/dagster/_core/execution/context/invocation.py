@@ -548,7 +548,9 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         else:
             check.failed("Tried to access partition_key range for a non-partitioned run")
 
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+    def asset_partition_key_for_output(
+        self, output_name: str = "result"
+    ) -> str | MultiPartitionKey:
         return self.partition_key
 
     def has_tag(self, key: str) -> bool:

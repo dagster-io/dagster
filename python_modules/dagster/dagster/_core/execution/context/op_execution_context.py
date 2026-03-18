@@ -314,7 +314,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
 
                 @asset(partitions_def=MultiPartitionsDefinition(...))
-                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
+                def my_asset(context: AssetExecutionContext):
                     context.log.info(context.multi_partition_key.keys_by_dimension)
         """
         partition_key = self.partition_key
@@ -323,24 +323,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 "Cannot access multi_partition_key for a non-multipartitioned run."
             )
         return partition_key
-
-                partitions_def = MultiPartitionsDefinition(
-                    {
-                        "date": DailyPartitionsDefinition("2023-08-20"),
-                        "color": StaticPartitionsDefinition(["red", "blue"]),
-                    }
-                )
-
-                @asset(partitions_def=partitions_def)
-                def my_asset(context: AssetExecutionContext):
-                    key = context.multi_partition_key
-                    context.log.info(key.keys_by_dimension)
-
-                # materializing the 2023-08-21|red partition of this asset will log:
-                #   {"date": "2023-08-21", "color": "red"}
-        """
-        return self._step_execution_context.multi_partition_key
-
 
     @public
     @property
@@ -357,7 +339,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 partitions_def = DailyPartitionsDefinition("2023-08-20")
 
                 @asset(partitions_def=partitions_def)
-                def an_asset(context: AssetExecutionContext[MultiPartitionKey]):
+                def an_asset(context: AssetExecutionContext):
                     context.log.info(context.partition_keys)
 
 
@@ -407,7 +389,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def
                 )
-                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
+                def my_asset(context: AssetExecutionContext):
                     context.log.info(context.partition_key_range)
 
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
@@ -431,7 +413,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def
                 )
-                def my_asset(context: AssetExecutionContext[MultiPartitionKey]):
+                def my_asset(context: AssetExecutionContext):
                     context.log.info(context.partition_time_window)
 
                 # materializing the 2023-08-21 partition of this asset will log:
