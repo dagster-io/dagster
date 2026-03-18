@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from dagster._core.assets import AssetDetails
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.sqlalchemy_compat import db_result, db_select
 from dagster._time import datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log
@@ -55,7 +55,8 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
     with event_log_storage.index_connection() as conn:
         if print_fn:
             print_fn("Querying event logs.")
-        to_insert = conn.execute(query).fetchall()
+        with db_result(conn, query) as result:
+            to_insert = result.fetchall()
         if print_fn:
             print_fn(f"Found {len(to_insert)} records to index")
             to_insert = tqdm(to_insert)
@@ -124,7 +125,8 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     .order_by(SqlEventLogStorageTable.c.timestamp.desc())
                     .limit(1)
                 )
-                materialization_row = conn.execute(materialization_query).fetchone()
+                with db_result(conn, materialization_query) as mat_result:
+                    materialization_row = mat_result.fetchone()
                 if materialization_row:
                     event = deserialize_value(materialization_row[0], NamedTuple)  # pyright: ignore[reportCallIssue,reportArgumentType]
 
@@ -148,7 +150,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     AssetKeyTable.update()
                     .values(
                         last_materialization=serialize_value(event),
-                        last_materialization_timestamp=datetime_from_timestamp(event.timestamp),
+                        last_materialization_timestamp=datetime_from_timestamp(event.timestamp),  # pyright: ignore[reportAttributeAccessIssue]
                         wipe_timestamp=(
                             datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
                         ),
@@ -169,7 +171,8 @@ def sql_asset_event_generator(conn, cursor=None, batch_size=1000):
         if cursor:
             query = query.where(SqlEventLogStorageTable.c.id < cursor)
         query = query.order_by(SqlEventLogStorageTable.c.id.desc()).limit(batch_size)
-        fetched = conn.execute(query).fetchall()
+        with db_result(conn, query) as result:
+            fetched = result.fetchall()
 
         for record_id, event_json in fetched:
             cursor = record_id
