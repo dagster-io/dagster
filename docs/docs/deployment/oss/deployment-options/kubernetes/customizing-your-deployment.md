@@ -54,6 +54,14 @@ The value for each of these keys is a dictionary with the YAML configuration for
 
 Other run launchers will ignore the `dagster-k8s/config` tag.
 
+:::note
+If you are using the `k8s_job_executor`, the `dagster-k8s/config` tag set on a **job** is
+**not** applied to individual step pods. To configure Kubernetes resources per-asset or
+per-op (including when assets are materialized directly from the Dagster UI), use
+`op_tags` on the `@asset` or `@op` decorator instead. See
+[Kubernetes configuration on individual steps in a run](#kubernetes-configuration-on-individual-steps-in-a-run).
+:::
+
 The default [executor](/guides/operate/run-executors) - <PyObject section="execution" module="dagster" object="multi_or_in_process_executor" /> - will run each job in its own pod, executing each step in an individual process. If your Dagster job produces assets which have a short compute time (compared to the step overhead time), consider avoiding the step process creation cost by using the <PyObject section="execution" module="dagster" object="in_process_executor" /> executor, which runs each step serially in a single process. This can be especially useful where parallelism is obtained through a <PyObject section="partitions" module="dagster" object="PartitionsDefinition" /> and is unnecessary within the job.
 
 For this use-case, the <PyObject section="execution" module="dagster" object="in_process_executor" /> is more efficient than running each step in its own process. The <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="k8s_job_executor" /> is contraindicated, as the delay of scheduling and starting up a new Dagster pod to execute every step would significantly slow down overall execution time.
@@ -121,7 +129,9 @@ Kubernetes configuration can be applied at several different scopes:
 - At the deployment level, applying to every run in the deployment
 - At the code location, applying to every run launched from the code location
 - At the job level, applying to every run launched for that job
-- At the step level, if using the <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="k8s_job_executor" />
+- At the asset or op level, via `op_tags` on `@asset` or `@op` — applies to that specific step
+  pod regardless of which job (or direct UI materialization) executes the asset
+- At the step level for every step in a run, using the `step_k8s_config` field on the <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="k8s_job_executor" />
 
 By default, if Kubernetes configuration is specified in multiple places, the configuration is merged recursively. Scalar values will be replaced by the configuration for the more specific scope, dictionary fields will be combined, and list fields will be appended to each other, discarding duplicate values. List fields that cannot be meaningfully appended, like `command` or `args`, are replaced.
 
