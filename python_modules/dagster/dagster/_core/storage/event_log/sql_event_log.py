@@ -3380,7 +3380,7 @@ class SqlEventLogStorage(EventLogStorage):
         if partition_keys is None:
             return [None]
 
-        max_partition_keys_per_query = max(1, ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS - 2)
+        max_partition_keys_per_query = max(1, (ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS - 3) // 2)
         unique_partition_keys = list(dict.fromkeys(partition_keys))
         return [
             unique_partition_keys[i : i + max_partition_keys_per_query]
@@ -3391,12 +3391,12 @@ class SqlEventLogStorage(EventLogStorage):
         self, partition_keys: Sequence[str] | None
     ) -> int:
         partition_key_count = len(partition_keys) if partition_keys is not None else 0
-        remaining_bind_budget = ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS - partition_key_count
+        remaining_bind_budget = ASSET_CHECK_PARTITION_INFO_MAX_BIND_PARAMS - (2 * partition_key_count)
         return max(
             1,
             min(
                 ASSET_CHECK_PARTITION_INFO_BATCH_SIZE,
-                remaining_bind_budget // 2,
+                remaining_bind_budget // 3,
             ),
         )
 
