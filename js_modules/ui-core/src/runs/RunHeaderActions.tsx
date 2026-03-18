@@ -8,11 +8,11 @@ import {
   Tooltip,
   showToast,
 } from '@dagster-io/ui-components';
-import {CreateIssueForRunDialog} from '@shared/runs/CreateIssueForRunDialog';
-import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {CreateIssueForRunDialog} from '@shared/runs/CreateIssueForRunDialog';
 import {RunAlertNotifications} from '@shared/runs/RunAlertNotifications';
 import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
+import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 

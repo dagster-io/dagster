@@ -14,10 +14,10 @@ import {
   Popover,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {CreateIssueForRunDialog} from '@shared/runs/CreateIssueForRunDialog';
-import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {CreateIssueForRunDialog} from '@shared/runs/CreateIssueForRunDialog';
 import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
+import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
