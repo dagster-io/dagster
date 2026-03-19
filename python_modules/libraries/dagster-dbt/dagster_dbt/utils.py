@@ -53,36 +53,43 @@ def _compile_manifest_relative_glob(selector: str) -> tuple[tuple[str, ...], boo
     return tuple(part for part in stripped_selector.split("/") if part), directory_only
 
 
+@lru_cache(maxsize=None)
+def _match_manifest_relative_glob_parts(
+    pattern_parts: tuple[str, ...], path_parts: tuple[str, ...], pattern_index: int, path_index: int
+) -> bool:
+    if pattern_index == len(pattern_parts):
+        return path_index == len(path_parts)
+
+    pattern_part = pattern_parts[pattern_index]
+    if pattern_part == "**":
+        if pattern_index == len(pattern_parts) - 1:
+            return True
+        return any(
+            _match_manifest_relative_glob_parts(
+                pattern_parts, path_parts, pattern_index + 1, candidate_path_index
+            )
+            for candidate_path_index in range(path_index, len(path_parts) + 1)
+        )
+
+    if path_index == len(path_parts):
+        return False
+
+    if not fnmatchcase(path_parts[path_index], pattern_part):
+        return False
+
+    return _match_manifest_relative_glob_parts(
+        pattern_parts, path_parts, pattern_index + 1, path_index + 1
+    )
+
+
+@lru_cache(maxsize=None)
 def _matches_manifest_relative_glob(path_str: str, selector: str, *, is_dir: bool) -> bool:
     pattern_parts, directory_only = _compile_manifest_relative_glob(selector)
     if directory_only and not is_dir:
         return False
 
     path_parts = _split_manifest_relative_path(path_str)
-
-    @lru_cache(maxsize=None)
-    def _matches(pattern_index: int, path_index: int) -> bool:
-        if pattern_index == len(pattern_parts):
-            return path_index == len(path_parts)
-
-        pattern_part = pattern_parts[pattern_index]
-        if pattern_part == "**":
-            if pattern_index == len(pattern_parts) - 1:
-                return True
-            return any(
-                _matches(pattern_index + 1, candidate_path_index)
-                for candidate_path_index in range(path_index, len(path_parts) + 1)
-            )
-
-        if path_index == len(path_parts):
-            return False
-
-        if not fnmatchcase(path_parts[path_index], pattern_part):
-            return False
-
-        return _matches(pattern_index + 1, path_index + 1)
-
-    return _matches(0, 0)
+    return _match_manifest_relative_glob_parts(pattern_parts, path_parts, 0, 0)
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
