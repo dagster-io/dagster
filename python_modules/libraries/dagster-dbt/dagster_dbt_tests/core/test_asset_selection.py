@@ -333,6 +333,61 @@ def test_dbt_asset_selection_selector(
     assert selected_asset_keys == expected_asset_keys
 
 
+@pytest.mark.parametrize(
+    ["dbt_selector", "expected_dbt_resource_names"],
+    [
+        (
+            "select-with-fqn",
+            {
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        (
+            "select-with-path",
+            {
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        (
+            "select-staging-with-path",
+            {
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+            },
+        ),
+    ],
+)
+def test_dbt_asset_selection_selector_path_method(
+    test_jaffle_shop_manifest: dict[str, Any],
+    dbt_selector: str,
+    expected_dbt_resource_names: set[str],
+) -> None:
+    expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def all_dbt_assets(): ...
+
+    asset_selection = build_dbt_asset_selection([all_dbt_assets], dbt_selector=dbt_selector)
+    selected_asset_keys = asset_selection.resolve([all_dbt_assets])
+
+    assert selected_asset_keys == expected_asset_keys
+
+
 def test_dbt_asset_selection_selector_invalid(
     test_jaffle_shop_manifest: dict[str, Any],
 ) -> None:

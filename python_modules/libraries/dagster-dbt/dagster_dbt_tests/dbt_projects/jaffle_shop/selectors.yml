@@ -1,4 +1,19 @@
 selectors:
+  - name: select-with-fqn
+    description: "Equivalent to fqn:*"
+    definition:
+      method: fqn
+      value: "*"
+  - name: select-with-path
+    description: "Equivalent to path:*"
+    definition:
+      method: path
+      value: "*"
+  - name: select-staging-with-path
+    description: "Select staging models via path"
+    definition:
+      method: path
+      value: "models/staging"
   - name: raw_customer_child_models
     description: "Equivalent to raw_customers+,resource_type:model"
     definition:
