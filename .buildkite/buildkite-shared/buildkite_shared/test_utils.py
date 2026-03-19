@@ -1,34 +1,38 @@
 from collections.abc import Sequence
-from pathlib import Path
 from typing import Any
 
 import yaml
-from buildkite_shared.context import INTERNAL_OSS_PREFIX
 from buildkite_shared.step_builders.step_builder import StepConfiguration, is_group_step
-from buildkite_shared.utils import discover_git_repo_root
 
 
 def _step_skip(step: StepConfiguration) -> str | None:
     if is_group_step(step):
-        return step["steps"][0].get("skip")
+        return step.get("skip") or step["steps"][0].get("skip")
     return step.get("skip")
 
 
 def get_step_skip(steps: Sequence[StepConfiguration], name: str) -> str | None:
-    """Return the skip value for a package step in the pipeline.
+    """Return the skip value for a step in the pipeline.
 
-    Matches on `key` first (exact), then falls back to matching the `group`
-    label (which may contain emoji prefixes). The group match requires the name
-    to appear as a distinct suffix after a space to avoid substring collisions
-    (e.g. "dagster" matching "dagster-cloud").
+    Matches on `key` first (exact), then falls back to matching the `group` or
+    `label` as a distinct suffix after a space to avoid substring collisions
+    (e.g. "dagster" matching "dagster-cloud"). Finally, falls back to a
+    word-boundary `in` check for cases where the name appears in the middle of
+    the label.
     """
     # Prefer exact key match
     for step in steps:
         if step.get("key") == name:
             return _step_skip(step)
-    # Fall back to group label match
+    # Suffix match on group or label
     for step in steps:
-        if step.get("group", "").endswith(f" {name}"):
+        label = step.get("group") or step.get("label") or ""
+        if label.endswith(f" {name}"):
+            return _step_skip(step)
+    # Substring match — require surrounding spaces or start/end of string
+    for step in steps:
+        label = step.get("group") or step.get("label") or ""
+        if f" {name} " in f" {label} ":
             return _step_skip(step)
     raise KeyError(f"No step matching {name!r} found in pipeline")
 
@@ -43,15 +47,3 @@ def assert_valid_pipeline_yaml(captured_out: str) -> dict[str, Any]:
     assert "CI_NAME" in pipeline["env"]
     assert "CI_BRANCH" in pipeline["env"]
     return pipeline
-
-
-GIT_REPO_ROOT = discover_git_repo_root()
-# When running inside the internal repo, OSS paths need the dagster-oss/ prefix.
-_IS_INTERNAL = (Path(GIT_REPO_ROOT) / INTERNAL_OSS_PREFIX).is_dir()
-
-
-def oss_path(path: str) -> Path:
-    """Convert an OSS-relative path to a repo-relative path."""
-    if _IS_INTERNAL:
-        return Path(INTERNAL_OSS_PREFIX) / path
-    return Path(path)

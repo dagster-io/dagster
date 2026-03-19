@@ -3,7 +3,7 @@
 from collections.abc import Iterable
 from pathlib import Path
 
-from buildkite_shared.context import BuildkiteContext
+from buildkite_shared.context import BuildkiteContext, PythonPackage
 
 _ENV_DEFAULTS = {
     "BUILDKITE_BRANCH": "test-feature-branch",
@@ -16,10 +16,13 @@ _ENV_DEFAULTS = {
 
 
 def get_test_buildkite_context(
-    env: dict[str, str] = {}, changed_files: Iterable[Path] | None = None
+    env: dict[str, str] = {},
+    changed_files: Iterable[Path] | None = None,
+    packages: dict[str, PythonPackage] | None = None,
 ) -> BuildkiteContext:
     """Return a BuildkiteContext with test data."""
     return BuildkiteContext.create(
         env={**_ENV_DEFAULTS, **env},
         changed_files=changed_files,
+        packages=packages,
     )

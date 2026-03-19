@@ -9,6 +9,7 @@ from buildkite_shared.step_builders.command_step_builder import (
 )
 from buildkite_shared.step_builders.group_step_builder import GroupStepBuilder
 from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.utils import oss_path
 from buildkite_shared.uv import UV_PIN
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import build_integration_steps
@@ -21,6 +22,7 @@ from dagster_buildkite.steps.test_project import build_test_project_steps
 
 def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
     commands = [
+        f"cd {oss_path('.')}",
         "pytest .buildkite/buildkite-shared/lints.py",
     ]
     return [CommandStepBuilder(":lint-roller: :buildkite:").run(*commands).on_test_image().build()]
@@ -68,8 +70,8 @@ def build_repo_wide_ruff_steps(ctx: BuildkiteContext) -> list[CommandStepConfigu
         CommandStepBuilder(":zap: ruff", retry_automatically=False)
         .on_test_image()
         .run(
-            "uv pip install --system -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
-            "make check_ruff",
+            f"uv pip install --system -e {oss_path('python_modules/dagster')}[ruff] -e {oss_path('python_modules/dagster-pipes')} -e {oss_path('python_modules/libraries/dagster-shared')}",
+            f"make -C {oss_path('.')} check_ruff",
         )
         .skip(get_general_python_step_skip_reason(ctx))
         .build(),
@@ -81,8 +83,8 @@ def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepCon
         CommandStepBuilder(":prettier: prettier", retry_automatically=False)
         .on_test_image()
         .run(
-            "make install_prettier",
-            "make check_prettier",
+            f"make -C {oss_path('.')} install_prettier",
+            f"make -C {oss_path('.')} check_prettier",
         )
         .skip(_get_prettier_step_skip_reason(ctx))
         .build(),
@@ -92,7 +94,7 @@ def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepCon
 def build_check_changelog_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     skip_reason = _get_check_changelog_step_skip_reason(ctx)
     cmd = (
-        f"python scripts/check_changelog.py {ctx.release_version}"
+        f"python {oss_path('scripts/check_changelog.py')} {ctx.release_version}"
         if not skip_reason
         else "echo skipped"
     )
@@ -113,8 +115,8 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                     f'pip install -U "{UV_PIN}"',
                     "uv venv",
                     "source .venv/bin/activate",
-                    "make install_pyright",
-                    "make pyright",
+                    f"make -C {oss_path('.')} install_pyright",
+                    f"make -C {oss_path('.')} pyright",
                 )
                 .skip(get_general_python_step_skip_reason(ctx, other_paths=["pyright"]))
                 # Run on a larger instance
@@ -127,8 +129,8 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                     f'pip install -U "{UV_PIN}"',
                     "uv venv",
                     "source .venv/bin/activate",
-                    "make install_pyright",
-                    "make rebuild_pyright_pins",
+                    f"make -C {oss_path('.')} install_pyright",
+                    f"make -C {oss_path('.')} rebuild_pyright_pins",
                 )
                 .skip(_get_pyright_pin_step_skip_reason(ctx))
                 .build(),
@@ -142,8 +144,8 @@ def build_sql_schema_check_steps(ctx: BuildkiteContext) -> list[CommandStepConfi
     return [
         CommandStepBuilder(":mysql: mysql-schema")
         .run(
-            "uv pip install --system -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
-            "python scripts/check_schemas.py",
+            f"uv pip install --system -e {oss_path('python_modules/dagster')} -e {oss_path('python_modules/dagster-pipes')} -e {oss_path('python_modules/libraries/dagster-shared')}",
+            f"python {oss_path('scripts/check_schemas.py')}",
         )
         .skip(_get_sql_schema_check_skip_reason(ctx, ["dagster"]))
         .on_test_image()
@@ -157,9 +159,9 @@ def build_graphql_python_client_backcompat_steps(
     return [
         CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
         .run(
-            "uv pip install --system -e python_modules/dagster[test] -e python_modules/dagster-pipes"
-            " -e python_modules/libraries/dagster-shared -e python_modules/dagster-graphql"
-            " -e python_modules/automation",
+            f"uv pip install --system -e {oss_path('python_modules/dagster')}[test] -e {oss_path('python_modules/dagster-pipes')}"
+            f" -e {oss_path('python_modules/libraries/dagster-shared')} -e {oss_path('python_modules/dagster-graphql')}"
+            f" -e {oss_path('python_modules/automation')}",
             "dagster-graphql-client query check",
         )
         .skip(

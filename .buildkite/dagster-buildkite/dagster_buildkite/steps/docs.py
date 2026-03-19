@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -9,6 +8,7 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupStepBuilder,
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.utils import oss_path
 from buildkite_shared.uv import UV_PIN
 
 
@@ -17,7 +17,7 @@ def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConf
         CommandStepBuilder(":notebook: yarn format_check")
         .on_test_image()
         .run(
-            "cd docs",
+            f"cd {oss_path('docs')}",
             "yarn install",
             "yarn format_check",
         )
@@ -31,7 +31,7 @@ def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
         CommandStepBuilder("build docs")
         .on_test_image()
         .run(
-            "cd docs",
+            f"cd {oss_path('docs')}",
             f'pip install -U "{UV_PIN}"',
             "yarn install",
             "yarn test",
@@ -52,7 +52,7 @@ def build_docstring_validation_step() -> GroupLeafStepConfiguration:
         )
         .on_test_image(python_version.value)
         .run(
-            "cd python_modules/automation",
+            f"cd {oss_path('python_modules/automation')}",
             f'pip install -U "{UV_PIN}"',
             "uv pip install --system -e .[buildkite]",
             f"echo -e '--- \\033[0;32m:pytest: Running tox env: {tox_env}\\033[0m'",
@@ -93,7 +93,7 @@ def _get_docs_step_skip_reason(ctx: BuildkiteContext) -> str | None:
         return None
 
     # If anything changes in the examples directory. This is where our docs snippets live.
-    if any(Path("dagster-oss/examples") in path.parents for path in ctx.all_changed_oss_files):
+    if any(oss_path("examples") in path.parents for path in ctx.changed_files):
         logging.info("Run docs steps because files in the dagster-oss/examples directory changed")
         return None
 

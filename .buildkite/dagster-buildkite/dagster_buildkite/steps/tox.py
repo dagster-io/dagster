@@ -2,6 +2,7 @@ import os
 import re
 import shlex
 from dataclasses import dataclass
+from pathlib import Path
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
@@ -39,7 +40,7 @@ _COMMAND_TYPE_TO_EMOJI_MAP = {
 
 
 def build_tox_step(
-    root_dir: str,
+    root_dir: str | Path,
     tox_env: str,
     base_label: str | None = None,
     command_type: str = "miscellaneous",

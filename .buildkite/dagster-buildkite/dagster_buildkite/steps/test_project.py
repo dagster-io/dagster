@@ -7,6 +7,7 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupStepBuilder,
     GroupStepConfiguration,
 )
+from buildkite_shared.utils import oss_path
 from dagster_buildkite.defines import (
     BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
     GCP_CREDS_FILENAME,
@@ -61,7 +62,7 @@ def build_test_project_steps() -> list[GroupStepConfiguration]:
                 " TEST_PROJECT_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project:$${BUILDKITE_BUILD_ID}-"
                 + version.value,
                 "git config --global --add safe.directory /workdir",
-                "./python_modules/dagster-test/dagster_test/test_project/build.sh "
+                f"./{oss_path('python_modules/dagster-test/dagster_test/test_project/build.sh')} "
                 + version.value
                 + " $${TEST_PROJECT_IMAGE}",
                 #

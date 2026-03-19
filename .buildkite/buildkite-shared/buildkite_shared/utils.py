@@ -56,3 +56,15 @@ def discover_git_repo_root() -> str:
         if parent_dir == current_dir:
             raise Exception("Could not find git repository root")
         current_dir = parent_dir
+
+
+GIT_REPO_ROOT = discover_git_repo_root()
+_INTERNAL_OSS_PREFIX = "dagster-oss"
+_IS_INTERNAL = (Path(GIT_REPO_ROOT) / _INTERNAL_OSS_PREFIX).is_dir()
+
+
+def oss_path(path: str) -> Path:
+    """Convert an OSS-relative path to a repo-relative path."""
+    if _IS_INTERNAL:
+        return Path(_INTERNAL_OSS_PREFIX) / path
+    return Path(path)

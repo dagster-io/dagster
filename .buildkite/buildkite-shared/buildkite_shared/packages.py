@@ -4,10 +4,11 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from buildkite_shared.context import BuildkiteContext
+from buildkite_shared.utils import oss_path
 
 
 def get_python_package_step_skip_reason(
-    directory: str,
+    directory: str | Path,
     name: str | None = None,
     force_run_fn: Callable[[BuildkiteContext], bool] | None = None,
     skip_run_fn: Callable[[BuildkiteContext], str | None] | None = None,
@@ -60,9 +61,9 @@ def get_general_python_step_skip_reason(
     elif ctx.has_python_changes():
         return None
     elif other_paths and any(
-        Path(path) in changed_path.parents
+        oss_path(path) in changed_path.parents
         for path in other_paths
-        for changed_path in ctx.all_changed_oss_files
+        for changed_path in ctx.changed_files
     ):
         return None
     return "No python changes"

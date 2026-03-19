@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, overload
 
 import tomllib
 from buildkite_shared.transform import filter_steps, repeat_steps, simplify_steps
-from buildkite_shared.utils import pushd
+from buildkite_shared.utils import oss_path, pushd
 from packaging import version
 from packaging.requirements import Requirement
 from typing_extensions import Self, TypeVar
@@ -55,21 +55,29 @@ class BuildkiteContext(Generic[T_Config]):
 
     @classmethod
     def create(
-        cls, env: Mapping[str, str] = os.environ, changed_files: Iterable[Path] | None = None
+        cls,
+        env: Mapping[str, str] = os.environ,
+        changed_files: Iterable[Path] | None = None,
+        packages: dict[str, "PythonPackage"] | None = None,
     ) -> Self:
         repo_path = Path.cwd()
         config = cls.extract_build_config(env)
         resolved_changed_files = (
-            frozenset(changed_files) if changed_files else _discover_changed_files(repo_path)
+            frozenset(changed_files)
+            if changed_files is not None
+            else _discover_changed_files(repo_path)
         )
-        packages = _discover_python_packages(repo_path)
-        all_packages = {pkg.name: pkg for pkg in sorted(packages)}
+        resolved_packages = (
+            packages
+            if packages is not None
+            else {pkg.name: pkg for pkg in sorted(discover_python_packages(repo_path))}
+        )
         return cls(
             repo_path=repo_path,
             env=env,
             config=config,
             changed_files=resolved_changed_files,
-            packages=all_packages,
+            packages=resolved_packages,
         )
 
     @classmethod
@@ -139,22 +147,13 @@ class BuildkiteContext(Generic[T_Config]):
         if not self.is_release_branch:
             raise ValueError(f"Branch {self.branch} is not a release branch")
 
-    @cached_property
-    def all_changed_oss_files(self) -> frozenset[Path]:
-        if (self.repo_path / INTERNAL_OSS_PREFIX).exists():  # is internal
-            return frozenset(
-                {
-                    _strip_oss_prefix(path)
-                    for path in self.changed_files
-                    if path.parts[0] == INTERNAL_OSS_PREFIX
-                }
-            )
-        else:
-            return self.changed_files
-
     # ########################
     # ##### CHANGE DETECTION
     # ########################
+
+    def has_oss_changes(self) -> bool:
+        """True if any changed files are within the OSS directory."""
+        return any(oss_path(".") in (path, *path.parents) for path in self.changed_files)
 
     def get_package(self, name: str) -> "PythonPackage":
         norm_name = name.replace("_", "-")
@@ -223,10 +222,10 @@ class BuildkiteContext(Generic[T_Config]):
         return any(path.suffix in (".yml", ".yaml") for path in self.changed_files)
 
     def has_helm_changes(self) -> bool:
-        return any(Path("helm") in path.parents for path in self.changed_files)
+        return any(oss_path("helm") in path.parents for path in self.changed_files)
 
     def has_docs_changes(self) -> bool:
-        return any(Path("docs") in path.parents for path in self.changed_files)
+        return any(oss_path("docs") in path.parents for path in self.changed_files)
 
     def has_non_docs_markdown_changes(self) -> bool:
         return any(
@@ -234,15 +233,16 @@ class BuildkiteContext(Generic[T_Config]):
         )
 
     def has_pyright_requirements_txt_changes(self) -> bool:
-        return any(path.match("pyright/*/requirements.txt") for path in self.all_changed_oss_files)
+        return any(
+            path.match(str(oss_path("pyright/*/requirements.txt"))) for path in self.changed_files
+        )
 
     def has_dagster_airlift_changes(self) -> bool:
-        return any("dagster-airlift" in str(path) for path in self.all_changed_oss_files)
+        return any("dagster-airlift" in str(path) for path in self.changed_files)
 
     def has_dg_changes(self) -> bool:
         return any(
-            "dagster-dg" in str(path) or "docs_snippets" in str(path)
-            for path in self.all_changed_oss_files
+            "dagster-dg" in str(path) or "docs_snippets" in str(path) for path in self.changed_files
         )
 
     def has_component_integration_changes(self) -> bool:
@@ -259,7 +259,7 @@ class BuildkiteContext(Generic[T_Config]):
         ]
         return any(
             any(integration in str(path) for integration in component_integrations)
-            for path in self.all_changed_oss_files
+            for path in self.changed_files
         )
 
     def has_dg_or_component_integration_changes(self) -> bool:
@@ -267,8 +267,8 @@ class BuildkiteContext(Generic[T_Config]):
 
     def has_storage_test_fixture_changes(self) -> bool:
         return any(
-            Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
-            for path in self.all_changed_oss_files
+            oss_path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
+            for path in self.changed_files
         )
 
     # ########################
@@ -593,11 +593,6 @@ def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
     return frozenset(all_files)
 
 
-def _strip_oss_prefix(path: Path) -> Path:
-    """If the path is within the dagster-oss/ directory, strip that prefix."""
-    return Path(*path.parts[1:]) if next(iter(path.parts), None) == INTERNAL_OSS_PREFIX else path
-
-
 def _get_commit(rev: str) -> str:
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
@@ -644,7 +639,7 @@ def _parse_requirements(lines: list[str]) -> list[Requirement]:
     ]
 
 
-def _discover_python_packages(repo_path: Path) -> list[PythonPackage]:
+def discover_python_packages(repo_path: Path) -> list[PythonPackage]:
     """Discover all Python packages in the git repository."""
     logging.info("Finding Python packages:")
 

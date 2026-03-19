@@ -12,12 +12,13 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupStepBuilder,
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration, is_command_step
+from buildkite_shared.utils import oss_path
 from dagster_buildkite.steps.packages import PackageSpec
 
 
 def build_helm_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     package_spec = PackageSpec(
-        os.path.join("helm", "dagster", "schema"),
+        oss_path(os.path.join("helm", "dagster", "schema")),
         # run helm schema tests only once, on the latest python version
         unsupported_python_versions=AvailablePythonVersion.get_all()[:-1],
         name="dagster-helm",
@@ -50,7 +51,7 @@ def _build_lint_steps(
         CommandStepBuilder("dagster-json-schema")
         .on_test_image()
         .run(
-            "pip install -e helm/dagster/schema",
+            f"pip install -e {oss_path('helm/dagster/schema')}",
             "dagster-helm schema apply",
             "git diff --exit-code",
         )
@@ -59,7 +60,7 @@ def _build_lint_steps(
         CommandStepBuilder(":lint-roller: dagster")
         .on_test_image()
         .run(
-            "helm lint helm/dagster --with-subcharts --strict",
+            f"helm lint {oss_path('helm/dagster')} --with-subcharts --strict",
         )
         .skip(_get_helm_step_skip_reason(ctx) or package_spec.get_skip_reason(ctx))
         .with_retry(2)
@@ -70,7 +71,7 @@ def _build_lint_steps(
         .run(
             "helm repo add bitnami-pre-2022"
             " https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
-            "helm dependency build helm/dagster",
+            f"helm dependency build {oss_path('helm/dagster')}",
         )
         .skip(_get_helm_step_skip_reason(ctx) and package_spec.get_skip_reason(ctx))
         .build(),

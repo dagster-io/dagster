@@ -26,10 +26,10 @@ def build_prerelease_package_steps(ctx: BuildkiteContext) -> list[StepConfigurat
                     "key": "package-to-release-path",
                     "options": [
                         {
-                            "label": package[len("python_modules/") :]
-                            if package.startswith("python_modules/")
-                            else package,
-                            "value": package,
+                            "label": str(package)[len("python_modules/") :]
+                            if str(package).startswith("python_modules/")
+                            else str(package),
+                            "value": str(package),
                         }
                         for package in packages
                     ],
