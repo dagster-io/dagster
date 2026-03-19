@@ -620,6 +620,13 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
 
     @property
     def _snapshot_id(self) -> str:
+        # Intentionally stateful: once _index is populated (via job_snapshot), we return
+        # the real JobDataSnap snapshot ID instead of the stale JobRefSnap ID.
+        # The _index attribute only ever transitions None → non-None, making this
+        # check safe without acquiring _memo_lock.
+        if self._index is not None:
+            return self._job_index.job_snapshot_id
+
         if self._job_ref_snap:
             return self._job_ref_snap.snapshot_id
 
