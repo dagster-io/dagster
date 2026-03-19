@@ -1,4 +1,49 @@
 selectors:
+  - name: select-with-fqn
+    description: "Equivalent to fqn:*"
+    definition:
+      method: fqn
+      value: "*"
+  - name: select-with-path
+    description: "Equivalent to path:*"
+    definition:
+      method: path
+      value: "*"
+  - name: select-staging-with-path
+    description: "Select staging models via path"
+    definition:
+      method: path
+      value: "models/staging"
+  - name: select-model-sql-files
+    description: "Select model SQL files recursively via path"
+    definition:
+      method: path
+      value: "models/**/*.sql"
+  - name: select-root-sql-files
+    description: "Select SQL files at the dbt project root"
+    definition:
+      method: path
+      value: "*.sql"
+  - name: select-staging-schema-patch
+    description: "Select nodes patched by the staging schema file"
+    definition:
+      method: path
+      value: "models/staging/schema.yml"
+  - name: select-model-directories
+    description: "Select model directories recursively via trailing-slash path glob"
+    definition:
+      method: path
+      value: "models/**/"
+  - name: select-staging-directory
+    description: "Select the staging directory via trailing-slash path"
+    definition:
+      method: path
+      value: "models/staging/"
+  - name: select-missing-path
+    description: "Select no nodes when the path does not exist"
+    definition:
+      method: path
+      value: "models/does_not_exist.sql"
   - name: raw_customer_child_models
     description: "Equivalent to raw_customers+,resource_type:model"
     definition:
