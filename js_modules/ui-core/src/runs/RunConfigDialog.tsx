@@ -66,7 +66,6 @@ export const RunConfigDialog = (props: Props) => {
               <StyledRawCodeMirror
                 value={runConfigYaml}
                 options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
-                theme={['config-editor']}
               />
             </CodeMirrorContainer>
           </Box>

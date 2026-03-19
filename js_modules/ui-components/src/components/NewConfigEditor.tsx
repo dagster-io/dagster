@@ -11,12 +11,12 @@ import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import 'codemirror/keymap/sublime';
 
+import './css/ConfigEditorStyle.css';
+
 import debounce from 'lodash/debounce';
 import {forwardRef, useImperativeHandle, useMemo, useRef} from 'react';
-import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
-import {Colors} from './Color';
 import {StyledRawCodeMirror} from './StyledRawCodeMirror';
 import {patchLint} from './configeditor/codemirror-yaml/lint';
 import {
@@ -27,7 +27,6 @@ import {
 } from './configeditor/codemirror-yaml/mode';
 import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
 import {ConfigSchema} from './configeditor/types/ConfigSchema';
-import {FontFamily} from './styles';
 
 export {isHelpContextEqual} from './configeditor/isHelpContextEqual';
 export {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
@@ -62,39 +61,6 @@ const performInitialPass = (
   const {context} = expandAutocompletionContextAtCursor(editor);
   onHelpContextChange(context ? {type: context.closestMappingType} : null);
 };
-
-const ConfigEditorStyle = createGlobalStyle`
-  .CodeMirror.cm-s-config-editor {
-    background-color: ${Colors.backgroundLight()};
-    height: initial;
-    position: absolute;
-    inset: 0;
-  }
-
-  .dagster.CodeMirror-hints {
-    background-color: ${Colors.backgroundDefault()};
-    box-shadow: 2px 3px 5px ${Colors.shadowDefault()};
-    border: none;
-    font-family: ${FontFamily.monospace};
-    font-size: 14px;
-    z-index: 100;
-    border-radius: 8px;
-    overflow: hidden;
-    padding: 2px;
-    margin-top: 2px;
-  }
-
-  .dagster .CodeMirror-hint {
-    border-radius: 6px;
-    padding: 4px 8px;
-    color: ${Colors.textDefault()};
-  }
-
-  .dagster .CodeMirror-hint-active {
-    background-color: ${Colors.backgroundBlue()};
-    color: ${Colors.textDefault()};
-  }
-`;
 
 export type ConfigEditorHandle = {
   moveCursor: (line: number, ch: number) => void;
@@ -215,7 +181,6 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
 
   return (
     <div style={{flex: 1, position: 'relative'}}>
-      <ConfigEditorStyle />
       <StyledRawCodeMirror
         value={configCode}
         theme={['config-editor']}

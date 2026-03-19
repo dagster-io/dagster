@@ -1,0 +1,92 @@
+.dagster-popover.bp5-popover,
+.dagster-popover.bp5-popover {
+  box-shadow: var(--color-shadow-default) 0px 2px 12px;
+}
+
+.dagster-popover .bp5-popover-content,
+.dagster-popover .bp5-popover-content {
+  background-color: var(--color-popover-background);
+  border-radius: 4px;
+}
+
+.dagster-popover .bp5-popover-content > :first-child,
+.dagster-popover .bp5-popover-content > :first-child {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
+.dagster-popover .bp5-popover-content > :last-child,
+.dagster-popover .bp5-popover-content > :last-child {
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.dagster-popover .bp5-popover-content .bp5-menu,
+.dagster-popover .bp5-popover-content .bp5-menu {
+  background-color: var(--color-popover-background);
+  color: var(--color-text-default);
+}
+
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-icon.bp5-icon-search,
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-icon.bp5-icon-search {
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent-gray);
+  mask-image: url("data:image/svg+xml,%3Csvg%20width=%2220%22%20height=%2220%22%20viewBox=%220%200%2020%2020%22%20fill=%22none%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%0A%3Cpath%20d=%22M12.9167%2011.6667H12.2583L12.025%2011.4417C12.8699%2010.4617%2013.3343%209.21058%2013.3333%207.91667C13.3333%206.84535%2013.0157%205.7981%2012.4205%204.90733C11.8253%204.01656%2010.9793%203.3223%209.98954%202.91232C8.99977%202.50235%207.91066%202.39508%206.85993%202.60408C5.8092%202.81309%204.84404%203.32897%204.08651%204.08651C3.32897%204.84404%202.81309%205.8092%202.60408%206.85993C2.39508%207.91066%202.50235%208.99977%202.91232%209.98954C3.3223%2010.9793%204.01656%2011.8253%204.90733%2012.4205C5.7981%2013.0157%206.84535%2013.3333%207.91667%2013.3333C9.25834%2013.3333%2010.4917%2012.8417%2011.4417%2012.025L11.6667%2012.2583V12.9167L15.8333%2017.075L17.075%2015.8333L12.9167%2011.6667ZM7.91667%2011.6667C5.84167%2011.6667%204.16667%209.99167%204.16667%207.91667C4.16667%205.84167%205.84167%204.16667%207.91667%204.16667C9.99167%204.16667%2011.6667%205.84167%2011.6667%207.91667C11.6667%209.99167%209.99167%2011.6667%207.91667%2011.6667Z%22%20fill=%22%23030615%22/%3E%0A%3C/svg%3E");
+  mask-size: cover;
+}
+
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-icon.bp5-icon-search::before,
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-icon.bp5-icon-search::before {
+  content: '';
+}
+
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-icon.bp5-icon-search svg,
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-icon.bp5-icon-search svg {
+  display: none;
+}
+
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-input,
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-input {
+  background-color: var(--color-popover-background);
+  border: none;
+  border-radius: 8px;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px, var(--color-keyline-default) inset 2px 2px 1.5px;
+  color: var(--color-text-default);
+  font-family: var(--font-default);
+}
+
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-input::placeholder,
+.dagster-popover .bp5-popover-content .bp5-input-group .bp5-input::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.dagster-popover .bp5-popover-arrow-fill {
+  fill: var(--color-popover-background);
+}
+
+.dagster-popover.bp5-dark .bp5-popover-arrow-fill {
+  fill: var(--color-tooltip-background);
+}
+
+.dagster-popover.bp5-dark .bp5-popover-arrow-border {
+  fill: var(--color-shadow-default);
+  fill-opacity: 0.7;
+}
+
+.dagster-popover.bp5-dark .bp5-popover-arrow {
+  z-index: 9;
+}
+
+.dagster-popover.bp5-dark .bp5-popover-arrow:before {
+  display: none;
+}
+
+.dagster-popover.bp5-dark a {
+  color: inherit;
+}
+
+.dagster-popover .bp5-popover.bp5-dark .bp5-popover-content,
+.bp5-dark .dagster-popover .bp5-popover .bp5-popover-content {
+  background-color: var(--color-tooltip-background);
+}
