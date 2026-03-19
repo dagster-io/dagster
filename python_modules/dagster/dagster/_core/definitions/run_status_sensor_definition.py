@@ -42,7 +42,13 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.event_api import RunStatusChangeEventType, RunStatusChangeRecordsFilter
-from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
+from dagster._core.events import (
+    PIPELINE_RUN_STATUS_TO_EVENT_TYPE,
+    DagsterEvent,
+    DagsterEventType,
+)
+
+_EVENT_TYPE_TO_DAGSTER_RUN_STATUS = {v: k for k, v in PIPELINE_RUN_STATUS_TO_EVENT_TYPE.items()}
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import serialize_value, whitelist_for_serdes
@@ -639,7 +645,15 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
         if isinstance(run_status, DagsterRunStatus):
             run_statuses = [run_status]
         else:
-            run_statuses = check.sequence_param(run_status, "run_status", of_type=DagsterRunStatus)
+            run_statuses = list(
+                dict.fromkeys(  # deduplicate while preserving order
+                    check.sequence_param(run_status, "run_status", of_type=DagsterRunStatus)
+                )
+            )
+        if not run_statuses:
+            raise DagsterInvalidDefinitionError(
+                f"Sensor '{name}': run_status must not be an empty sequence."
+            )
         check.callable_param(run_status_sensor_fn, "run_status_sensor_fn")
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
         check.opt_str_param(description, "description")
@@ -735,6 +749,10 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
             fetch_limit = _get_run_status_sensor_fetch_limit(
                 monitor_all_code_locations=cast("bool", monitor_all_code_locations)
             )
+            # When querying multiple event types, fetch up to fetch_limit per type so that after
+            # merging and sorting by storage_id we have enough events to fill fetch_limit slots.
+            # Without this, a type with many events could crowd out another type's events entirely.
+            per_type_fetch_limit = fetch_limit * len(event_types)
 
             # Fetch events after the cursor id
             # * we move the cursor forward to the latest visited event's id to avoid revisits
@@ -757,7 +775,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                                 ).timestamp(),
                             ),
                             ascending=True,
-                            limit=fetch_limit,
+                            limit=per_type_fetch_limit,
                         ).records
                     )
                 event_records = sorted(all_event_records, key=lambda r: r.storage_id)[:fetch_limit]
@@ -791,7 +809,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                                 job_names=job_names,
                             ),
                             ascending=True,
-                            limit=fetch_limit,
+                            limit=per_type_fetch_limit,
                         ).records
                     )
                 event_records = sorted(all_event_records, key=lambda r: r.storage_id)[:fetch_limit]
@@ -809,7 +827,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                                 after_storage_id=sensor_cursor.record_id,
                             ),
                             ascending=True,
-                            limit=fetch_limit,
+                            limit=per_type_fetch_limit,
                         ).records
                     )
                 event_records = sorted(all_event_records, key=lambda r: r.storage_id)[:fetch_limit]
@@ -995,9 +1013,12 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                 # The sensor machinery would
                 # * report back to the original run if success
                 # * update cursor and job state
+                triggered_status = _EVENT_TYPE_TO_DAGSTER_RUN_STATUS.get(
+                    event_log_entry.dagster_event.event_type  # type: ignore[union-attr]
+                )
                 yield DagsterRunReaction(
                     dagster_run=dagster_run,
-                    run_status=dagster_run.status,
+                    run_status=triggered_status,
                     error=serializable_error,
                 )
 
