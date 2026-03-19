@@ -1,0 +1,41 @@
+type: dagster.TemplatedSqlComponent
+
+attributes:
+  connection: "{{ context.load_component('snowflake_connection') }}"
+  sql_template:
+    path: ingest.sql
+  sql_template_vars:
+    database: "{{ env.SNOWFLAKE_DATABASE }}"
+    schema: "{{ env.SNOWFLAKE_SCHEMA }}"
+    table_name: leads
+    stage_name: s3_leads_stage
+    s3_bucket: "{{ env('S3_BUCKET_URL', 's3://your-bucket') }}"
+    s3_prefix: leads/
+    file_format: CSV
+    file_pattern: ".*[.]csv"
+  assets:
+    - key: raw_data/leads
+      group_name: ingestion
+      description: >
+        Leads data ingested from S3 into Snowflake via COPY INTO.
+---
+type: dagster.TemplatedSqlComponent
+
+attributes:
+  connection: "{{ context.load_component('snowflake_connection') }}"
+  sql_template:
+    path: ingest.sql
+  sql_template_vars:
+    database: "{{ env.SNOWFLAKE_DATABASE }}"
+    schema: "{{ env.SNOWFLAKE_SCHEMA }}"
+    table_name: accounts
+    stage_name: s3_accounts_stage
+    s3_bucket: "{{ env('S3_BUCKET_URL', 's3://your-bucket') }}"
+    s3_prefix: accounts/
+    file_format: CSV
+    file_pattern: ".*[.]csv"
+  assets:
+    - key: raw_data/accounts
+      group_name: ingestion
+      description: >
+        Accounts data ingested from S3 into Snowflake via COPY INTO.
