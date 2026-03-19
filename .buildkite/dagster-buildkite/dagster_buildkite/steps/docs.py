@@ -43,9 +43,8 @@ def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     )
 
 
-def build_docstring_validation_step() -> GroupLeafStepConfiguration:
+def build_docstring_validation_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     python_version = AvailablePythonVersion.get_default()
-    tox_env = f"py{python_version.value.replace('.', '')}"
     return (
         CommandStepBuilder(
             f":pytest: docstring validation {python_version.value}", retry_automatically=False
@@ -55,12 +54,21 @@ def build_docstring_validation_step() -> GroupLeafStepConfiguration:
             f"cd {oss_path('python_modules/automation')}",
             f'pip install -U "{UV_PIN}"',
             "uv pip install --system -e .[buildkite]",
-            f"echo -e '--- \\033[0;32m:pytest: Running tox env: {tox_env}\\033[0m'",
-            f"tox -vv -e {tox_env}",
             "python -m automation.dagster_docs.main check docstrings --all",
         )
+        .skip(_get_docstring_validation_skip_reason(ctx))
         .build()
     )
+
+
+def _get_docstring_validation_skip_reason(ctx: BuildkiteContext) -> str | None:
+    if ctx.config.no_skip:
+        return None
+    if not ctx.is_feature_branch:
+        return None
+    if ctx.has_python_changes():
+        return None
+    return "No python changes"
 
 
 def build_docs_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
@@ -71,7 +79,7 @@ def build_docs_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
             steps=[
                 build_build_docs_step(ctx),
                 build_repo_wide_format_docs_step(ctx),
-                build_docstring_validation_step(),
+                build_docstring_validation_step(ctx),
             ],
         ).build()
     ]

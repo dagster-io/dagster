@@ -195,3 +195,23 @@ def test_sql_schema_check_steps(packages):
         packages,
     )
     assert get_step_skip(steps, "mysql-schema") is None
+
+
+def test_docstring_validation_steps(packages):
+    # No changes: skipped
+    steps = _build_steps([], packages)
+    assert get_step_skip(steps, "docstring validation") is not None
+
+    # Python change: runs
+    steps = _build_steps(
+        [oss_path("python_modules/dagster/dagster/some_module.py")],
+        packages,
+    )
+    assert get_step_skip(steps, "docstring validation") is None
+
+    # Docs-only change: skipped
+    steps = _build_steps(
+        [oss_path("docs/content/some_page.mdx")],
+        packages,
+    )
+    assert get_step_skip(steps, "docstring validation") is not None
