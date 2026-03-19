@@ -2,7 +2,14 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from dagster._utils.container import CGroupVersion, retrieve_containerized_utilization_metrics
+from dagster._utils.container import (
+    CGroupVersion,
+    _retrieve_containerized_cpu_cfs_period_us_v2,
+    _retrieve_containerized_cpu_cfs_quota_us_v2,
+    _retrieve_containerized_memory_limit_v2,
+    _retrieve_containerized_memory_usage_v2,
+    retrieve_containerized_utilization_metrics,
+)
 from dagster._utils.env import environ
 
 
@@ -189,3 +196,86 @@ def test_containerized_utilization_metrics_cgroup_v2(
     assert utilization_metrics["previous_measurement_timestamp"] == (
         1.0 if was_previous_timestamp_previously_set else None
     )
+
+
+def test_cgroup_v2_missing_files_return_partial_metrics(temp_dir: str, cgroup_version_mock: mock.Mock):
+    with open(f"{temp_dir}/cpu.stat", "w") as f:
+        f.write("usage_usec 1000000")
+
+    with open(f"{temp_dir}/cpuinfo", "w") as f:
+        f.write("processor : 0")
+
+    cgroup_version_mock.return_value = CGroupVersion.V2
+
+    utilization_metrics = retrieve_containerized_utilization_metrics(logger=None)
+
+    assert utilization_metrics["cpu_usage"] == 1.0
+    assert utilization_metrics["num_allocated_cores"] == 1
+    assert utilization_metrics["cpu_cfs_quota_us"] is None
+    assert utilization_metrics["cpu_cfs_period_us"] is None
+    assert utilization_metrics["memory_usage"] is None
+    assert utilization_metrics["memory_limit"] is None
+
+
+def test_cgroup_v2_missing_files_do_not_log_exceptions(cgroup_version_mock: mock.Mock):
+    logger = mock.Mock()
+    with mock.patch("dagster._utils.container._retrieve_containerized_num_allocated_cores", return_value=1):
+        with mock.patch("dagster._utils.container._retrieve_containerized_cpu_usage_v2", return_value=1.0):
+            cgroup_version_mock.return_value = CGroupVersion.V2
+
+            retrieve_containerized_utilization_metrics(logger=logger)
+
+    logger.error.assert_not_called()
+    logger.exception.assert_not_called()
+
+
+def test_cgroup_v2_empty_override_files_return_none(temp_dir: str):
+    Path(f"{temp_dir}/cpu.max").write_text("")
+    Path(f"{temp_dir}/memory.current").write_text("")
+    Path(f"{temp_dir}/memory.max").write_text("")
+
+    assert _retrieve_containerized_cpu_cfs_quota_us_v2(logger=None) is None
+    assert _retrieve_containerized_cpu_cfs_period_us_v2(logger=None) is None
+    assert _retrieve_containerized_memory_usage_v2(logger=None) is None
+    assert _retrieve_containerized_memory_limit_v2(logger=None) is None
+
+
+def test_cgroup_v2_empty_override_files_do_not_log_exceptions(temp_dir: str):
+    logger = mock.Mock()
+    Path(f"{temp_dir}/cpu.max").write_text("")
+    Path(f"{temp_dir}/memory.current").write_text("")
+    Path(f"{temp_dir}/memory.max").write_text("")
+
+    assert _retrieve_containerized_cpu_cfs_quota_us_v2(logger=logger) is None
+    assert _retrieve_containerized_cpu_cfs_period_us_v2(logger=logger) is None
+    assert _retrieve_containerized_memory_usage_v2(logger=logger) is None
+    assert _retrieve_containerized_memory_limit_v2(logger=logger) is None
+
+    logger.error.assert_not_called()
+    logger.exception.assert_not_called()
+
+
+def test_cgroup_v2_cpu_max_with_unlimited_quota_returns_none_for_quota(temp_dir: str):
+    Path(f"{temp_dir}/cpu.max").write_text("max 100000")
+
+    assert _retrieve_containerized_cpu_cfs_quota_us_v2(logger=None) is None
+    assert _retrieve_containerized_cpu_cfs_period_us_v2(logger=None) == 100000.0
+
+
+def test_cgroup_v2_memory_max_with_unlimited_limit_returns_none(temp_dir: str):
+    Path(f"{temp_dir}/memory.max").write_text("max")
+
+    assert _retrieve_containerized_memory_limit_v2(logger=None) is None
+
+
+def test_cgroup_v2_unlimited_values_do_not_log_exceptions(temp_dir: str):
+    logger = mock.Mock()
+    Path(f"{temp_dir}/cpu.max").write_text("max 100000")
+    Path(f"{temp_dir}/memory.max").write_text("max")
+
+    assert _retrieve_containerized_cpu_cfs_quota_us_v2(logger=logger) is None
+    assert _retrieve_containerized_cpu_cfs_period_us_v2(logger=logger) == 100000.0
+    assert _retrieve_containerized_memory_limit_v2(logger=logger) is None
+
+    logger.error.assert_not_called()
+    logger.exception.assert_not_called()
