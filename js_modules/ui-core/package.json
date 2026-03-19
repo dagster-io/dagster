@@ -29,7 +29,7 @@
     "find-circular-dependencies": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/findCircularDependencies.ts"
   },
   "peerDependencies": {
-    "@apollo/client": "^3.14.0",
+    "@apollo/client": "^3.14.1",
     "@blueprintjs/core": "^5",
     "@blueprintjs/popover2": "^2",
     "@blueprintjs/select": "^5",
@@ -91,7 +91,7 @@
     "yaml": "^2.4.2"
   },
   "devDependencies": {
-    "@apollo/client": "^3.14.0",
+    "@apollo/client": "^3.14.1",
     "@babel/cli": "^7.13.15",
     "@babel/core": "^7.13.15",
     "@babel/plugin-proposal-class-properties": "^7.14.5",
