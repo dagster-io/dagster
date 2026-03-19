@@ -73,6 +73,7 @@ def watch_grpc_server_thread(
         max_reconnect_attempts, "max_reconnect_attempts", MAX_RECONNECT_ATTEMPTS
     )
 
+    needs_location_refresh_count = 0
     server_id = {"current": None, "error": False}
 
     def current_server_id() -> str | None:
@@ -83,11 +84,17 @@ def watch_grpc_server_thread(
 
     def _needs_location_refresh() -> bool:
         current_id = current_server_id()
-        return current_id is not None and needs_location_refresh(location_name, current_id)
+        result = current_id is not None and needs_location_refresh(location_name, current_id)
+        if result:
+            nonlocal needs_location_refresh_count
+            needs_location_refresh_count += 1
+        return result
 
     def set_server_id(new_id: str) -> None:
         server_id["current"] = new_id
         server_id["error"] = False
+        nonlocal needs_location_refresh_count
+        needs_location_refresh_count = 0
 
     def set_error() -> None:
         # Clearing current server ID ensures that post-error recovery always takes
@@ -97,6 +104,8 @@ def watch_grpc_server_thread(
         server_id["error"] = True
 
     def watch_for_changes():
+        nonlocal needs_location_refresh_count
+        needs_location_refresh_count = 0
         while True:
             if shutdown_event.is_set():
                 break
@@ -110,15 +119,17 @@ def watch_grpc_server_thread(
                 set_server_id(new_server_id)
                 on_updated(location_name, new_server_id)
             elif _needs_location_refresh():
-                # Give client.get_server_id() a chance to potentially throw
-                # DagsterUserCodeUnreachableError and trigger the reconnect_loop.
-                client.get_server_id(timeout=REQUEST_TIMEOUT)
-                if _needs_location_refresh():
-                    # get_server_id() is still succeeding, and _needs_location_refresh() still
-                    # returns True. There must have been a disconnect that was registered during
-                    # a previous callback, but has since been resolved. The workspace entry is
-                    # errored/stale. Fire the missing disconnect callback, then a new reconnect
-                    # callback (to trigger a recovery refresh even with the same server ID).
+                # Wait 2 cycles to confirm the error persists (giving get_server_id() a
+                # chance to throw DagsterUserCodeUnreachableError and trigger reconnect_loop
+                # instead). After that, retry every 10 cycles to avoid log spam and
+                # unnecessary gRPC calls when the location is permanently stuck.
+                if (
+                    needs_location_refresh_count >= 2
+                    and (needs_location_refresh_count - 2) % 10 == 0
+                ):
+                    # get_server_id() keeps succeeding but _needs_location_refresh() still
+                    # returns True. The workspace entry is errored/stale. Fire disconnect +
+                    # reconnect callbacks to trigger a recovery refresh.
                     on_disconnect(location_name)
                     on_reconnected(location_name)
 

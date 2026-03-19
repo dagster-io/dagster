@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 import threading
-import time
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
@@ -1298,30 +1297,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
 
     def refresh_code_location(self, name: str) -> None:
         # This method reloads the webserver's copy of the code from the remote gRPC server without
-        # restarting it, and returns a new request context created from the updated process context.
-        #
-        # Retries with exponential backoff on failure to handle transient errors during e.g.
-        # Kubernetes rolling deployments, where gRPC calls may briefly route to a dying pod.
-        max_retries = 5
-        backoff = 0.5
-        logger = logging.getLogger("dagster-webserver")
-        origin = self._current_workspace.code_location_entries[name].origin
-
-        for attempt in range(max_retries):
-            new_entry = self._load_location(origin, reload=False)
-            with self._lock:
-                self._current_workspace = self._current_workspace.with_code_location(
-                    name, new_entry
-                )
-            if new_entry.load_error is None:
-                return
-            if attempt < max_retries - 1:
-                logger.info(
-                    f"Failed to load location {name} (attempt {attempt + 1}/{max_retries}),"
-                    f" retrying in {backoff}s"
-                )
-                time.sleep(backoff)
-                backoff *= 2
+        # restarting it, and returns a new request context created from the updated process context
+        new_entry = self._load_location(
+            self._current_workspace.code_location_entries[name].origin, reload=False
+        )
+        with self._lock:
+            # Relying on GC to clean up the old location once nothing else
+            # is referencing it
+            self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
 
     def __enter__(self) -> Self:
         return self

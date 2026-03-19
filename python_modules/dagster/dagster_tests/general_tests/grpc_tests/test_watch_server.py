@@ -388,7 +388,7 @@ def test_grpc_watch_thread_recovery_when_errored(process_cleanup, instance):
     wait_for_condition(
         lambda: called["on_reconnected_count"] > 0,
         interval=watch_interval,
-        timeout=watch_interval * 5,
+        timeout=5,
     )
     assert called["on_disconnect_count"] > 0
 
@@ -398,7 +398,7 @@ def test_grpc_watch_thread_recovery_when_errored(process_cleanup, instance):
     wait_for_condition(
         lambda: called["on_reconnected_count"] > reconnect_count_after_first,
         interval=watch_interval,
-        timeout=watch_interval * 5,
+        timeout=5,
     )
     assert called["on_disconnect_count"] > disconnect_count_after_first
 
