@@ -427,7 +427,7 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     ]
 
 
-ui_extra_cmds = ["make rebuild_ui"]
+ui_extra_cmds = [f"make -C {oss_path('.')} rebuild_ui"]
 
 
 mysql_extra_cmds = [

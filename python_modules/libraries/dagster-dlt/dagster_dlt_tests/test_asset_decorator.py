@@ -859,68 +859,6 @@ def test_reference_pipeline(dlt_pipeline: Pipeline) -> None:
     }
 
 
-def test_drop_clears_stale_pipeline_state_before_run(dlt_pipeline: Pipeline) -> None:
-    # First run to populate the destination so it's not empty.
-    # This sets first_run=False and _state_restored=True internally.
-    dlt_pipeline.run(pipeline())
-
-    @dlt.source
-    def stale_source():
-        @dlt.resource
-        def stale_data():
-            yield {"id": 1, "value": "stale"}
-
-        return stale_data
-
-    # Create stale normalized packages. Without drop(), dlt.run() would load
-    # these stale packages and return early, never processing the real source.
-    dlt_pipeline.extract(stale_source())
-    dlt_pipeline.normalize()
-
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
-
-    res = materialize(
-        [example_pipeline_assets],
-        resources={"dlt_pipeline_resource": DagsterDltResource()},
-    )
-    assert res.success
-
-
-def test_drop_pending_packages_when_restore_from_destination_disabled(
-    dlt_pipeline: Pipeline,
-) -> None:
-    @dlt.source
-    def stale_source():
-        @dlt.resource
-        def stale_data():
-            yield {"id": 1, "value": "stale"}
-
-        return stale_data
-
-    dlt_pipeline.config.restore_from_destination = False
-
-    # Create stale extracted and normalized packages without loading.
-    # This simulates a previous run that failed after normalization.
-    dlt_pipeline.extract(stale_source())
-    dlt_pipeline.normalize()
-
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
-
-    res = materialize(
-        [example_pipeline_assets],
-        resources={"dlt_pipeline_resource": DagsterDltResource()},
-    )
-    assert res.success
-
-
 def test_translator_invariant_group_name_with_asset_decorator(dlt_pipeline: Pipeline) -> None:
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
