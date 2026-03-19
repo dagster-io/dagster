@@ -62,6 +62,11 @@ class BuildkiteContext(Generic[T_Config]):
     ) -> Self:
         repo_path = Path.cwd()
         config = cls.extract_build_config(env)
+
+        # In CI environments, we need to explicitly set up the git repo to be
+        # able to detect changed files, since we start with a shallow clone.
+        if os.environ.get("BUILDKITE"):
+            _setup_git_repo(repo_path)
         resolved_changed_files = (
             frozenset(changed_files)
             if changed_files is not None
@@ -551,6 +556,43 @@ BuildkiteEnvVar: TypeAlias = Literal[
     "CI",
 ]
 
+# ########################
+# ##### GIT REPO PREP
+# ########################
+
+
+def _setup_git_repo(repo_path: Path) -> None:
+    """Set up the git repository for change detection. This is a no-op if the repo is already set up."""
+    with pushd(repo_path):
+        # Mark directory as safe for git (needed on CI where the Docker container
+        # user differs from the repo owner). Uses check=False because $HOME may
+        # not be set in some CI environments, causing git config --global to fail.
+        cwd = str(repo_path)
+        existing = subprocess.run(
+            ["git", "config", "--global", "--get-all", "safe.directory"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if cwd not in existing.stdout.splitlines():
+            subprocess.run(
+                ["git", "config", "--global", "--add", "safe.directory", cwd],
+                check=False,
+            )
+
+        # Only fetch if origin/master doesn't exist locally (e.g. shallow clone on CI).
+        # Avoids a slow network call when running locally or in tests.
+        has_origin_master = (
+            subprocess.run(
+                ["git", "rev-parse", "--verify", "origin/master"],
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+        )
+        if not has_origin_master:
+            subprocess.run(["git", "fetch", "origin", "master"], check=True)
+
 
 # ########################
 # ##### CHANGED FILES
@@ -558,34 +600,29 @@ BuildkiteEnvVar: TypeAlias = Literal[
 
 
 def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
-    """Shared logic for loading changed files from git. Returns (all_files, all_oss_files)."""
-    # Mark current directory as safe (needed when running from internal repo's dagster-oss/)
+    """Shared logic for loading changed files from git."""
     with pushd(repo_path):
-        subprocess.call(["git", "config", "--global", "--add", "safe.directory", os.getcwd()])
-
-        subprocess.call(["git", "fetch", "origin", "master"])
         origin = _get_commit("origin/master")
         head = _get_commit("HEAD")
         logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
-        paths = (
-            subprocess.check_output(
-                [
-                    "git",
-                    "diff",
-                    "origin/master...HEAD",
-                    "--name-only",
-                    "--relative",  # Paths relative to cwd
-                    "--",
-                    ".",  # Only files in current directory
-                ]
-            )
-            .decode("utf-8")
-            .strip()
-            .split("\n")
+
+        result = subprocess.run(
+            [
+                "git",
+                "diff",
+                "origin/master...HEAD",
+                "--name-only",
+                "--relative",
+                "--",
+                ".",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
         all_files: set[Path] = set()
-        for path in sorted(paths):
+        for path in sorted(result.stdout.strip().split("\n")):
             if path:
                 logging.info("  - " + path)
                 all_files.add(Path(path))
@@ -594,7 +631,12 @@ def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
 
 
 def _get_commit(rev: str) -> str:
-    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
+    return subprocess.run(
+        ["git", "rev-parse", "--short", rev],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
 
 
 # ########################
