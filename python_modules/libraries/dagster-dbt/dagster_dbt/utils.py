@@ -1,6 +1,8 @@
 from argparse import Namespace
 from collections.abc import Mapping
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
+from unittest import mock
 
 import dagster_shared.check as check
 import orjson
@@ -17,6 +19,32 @@ if TYPE_CHECKING:
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
 clean_name = clean_name_lower
+
+
+def _match_path_selector(path_str: str, selector: str, *, include_parents: bool) -> bool:
+    path = PurePosixPath(path_str.replace("\\", "/"))
+    normalized_selector = selector.replace("\\", "/")
+
+    if path.match(normalized_selector):
+        return True
+
+    return include_parents and any(
+        parent.match(normalized_selector) for parent in path.parents if str(parent) != "."
+    )
+
+
+def _search_manifest_relative_paths(self, included_nodes, selector):
+    """Apply dbt path selectors against manifest-relative paths instead of the process cwd."""
+    for unique_id, node in self.all_nodes(included_nodes):
+        if _match_path_selector(node.original_file_path, selector, include_parents=True):
+            yield unique_id
+            continue
+
+        patch_path = getattr(node, "patch_path", None)
+        if patch_path and _match_path_selector(
+            patch_path.split("://", 1)[1], selector, include_parents=False
+        ):
+            yield unique_id
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
@@ -228,8 +256,12 @@ def _select_unique_ids_from_manifest(
         parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
     # execute this selection against the graph
-    node_selector = graph_selector.NodeSelector(graph, manifest)
-    selected, _ = node_selector.select_nodes(parsed_spec)
+    with mock.patch(
+        "dbt.graph.selector_methods.PathSelectorMethod.search",
+        _search_manifest_relative_paths,
+    ):
+        node_selector = graph_selector.NodeSelector(graph, manifest)
+        selected, _ = node_selector.select_nodes(parsed_spec)
     return selected
 
 
