@@ -19,9 +19,6 @@ classifiers = [
 ]
 dependencies = [
     "dagster==1!0+dev",
-    # Follow the version support constraints for dbt Core:
-    # https://docs.getdbt.com/docs/dbt-versions/core
-    "dbt-core>=1.7,<1.12",
     "gitpython",
     "Jinja2",
     "networkx",
@@ -44,6 +41,11 @@ dagster-dbt = "dagster_dbt.cli.app:app"
 dagster_dbt = "dagster_dbt"
 
 [project.optional-dependencies]
+core = [
+    # Follow the version support constraints for dbt Core:
+    # https://docs.getdbt.com/docs/dbt-versions/core
+    "dbt-core>=1.7,<1.12",
+]
 # used for dbtfusion tests that don't use adapters
 test-bare = [
     "pytest-rerunfailures",

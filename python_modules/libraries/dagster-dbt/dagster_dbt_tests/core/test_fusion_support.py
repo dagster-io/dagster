@@ -1,10 +1,55 @@
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import dagster as dg
 import pytest
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 from dagster_dbt_tests.dbt_projects import test_fusion_compatible_jaffle_shop_path
+
+
+def test_package_root_imports_without_dbt_core() -> None:
+    package_root = Path(__file__).resolve().parents[2]
+    script = """
+import builtins
+
+real_import = builtins.__import__
+
+def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == "dbt" or name.startswith("dbt."):
+        raise ModuleNotFoundError(name)
+    return real_import(name, globals, locals, fromlist, level)
+
+builtins.__import__ = blocked_import
+
+import dagster_dbt
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+from dagster_dbt.compat import DBT_PYTHON_VERSION
+
+assert dagster_dbt.__version__
+assert DbtCliResource is not None
+assert DbtProject is not None
+assert dbt_assets is not None
+assert DBT_PYTHON_VERSION is None
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={
+            **os.environ,
+            "PYTHONPATH": os.pathsep.join(
+                [os.fspath(package_root), os.environ.get("PYTHONPATH", "")]
+            ).rstrip(os.pathsep),
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.fixture(name="project", scope="module")
