@@ -6,18 +6,31 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, overload
 
-from buildkite_shared.python_packages import PythonPackagesData
+import tomllib
 from buildkite_shared.transform import filter_steps, repeat_steps, simplify_steps
 from buildkite_shared.utils import pushd
 from packaging import version
+from packaging.requirements import Requirement
 from typing_extensions import Self, TypeVar
 
 if TYPE_CHECKING:
     from buildkite_shared.step_builders.step_builder import StepConfiguration
 
 INTERNAL_OSS_PREFIX = "dagster-oss"
+
+# When detecting Python package changes, only look at these filetypes.
+_PACKAGE_CHANGE_DETECTION_FILETYPES = [
+    ".py",
+    ".cfg",
+    ".toml",
+    ".yaml",
+    ".ipynb",
+    ".yml",
+    ".ini",
+    ".jinja",
+]
 
 T_Config = TypeVar("T_Config", bound="BuildConfig", default="BuildConfig", covariant=True)
 
@@ -29,13 +42,16 @@ class BuildkiteContext(Generic[T_Config]):
         env: Mapping[str, str],
         config: T_Config,
         changed_files: frozenset[Path],
-        python_packages: PythonPackagesData,
+        packages: dict[str, "PythonPackage"],
     ) -> None:
         self.repo_path = repo_path
         self.env = env
         self.config = config
         self.changed_files = changed_files
-        self.python_packages = python_packages
+        self._packages = packages
+        self._has_package_changes_cache: dict[PythonPackage, bool] = {}
+        self._has_package_test_changes_cache: dict[PythonPackage, bool] = {}
+        self._has_package_dependency_changes_cache: dict[PythonPackage, bool] = {}
 
     @classmethod
     def create(
@@ -43,17 +59,17 @@ class BuildkiteContext(Generic[T_Config]):
     ) -> Self:
         repo_path = Path.cwd()
         config = cls.extract_build_config(env)
-
-        changed_files = (
+        resolved_changed_files = (
             frozenset(changed_files) if changed_files else _discover_changed_files(repo_path)
         )
-        python_packages = PythonPackagesData.load(repo_path, changed_files)
+        packages = _discover_python_packages(repo_path)
+        all_packages = {pkg.name: pkg for pkg in sorted(packages)}
         return cls(
             repo_path=repo_path,
             env=env,
             config=config,
-            changed_files=changed_files,
-            python_packages=python_packages,
+            changed_files=resolved_changed_files,
+            packages=all_packages,
         )
 
     @classmethod
@@ -140,8 +156,65 @@ class BuildkiteContext(Generic[T_Config]):
     # ##### CHANGE DETECTION
     # ########################
 
+    def get_package(self, name: str) -> "PythonPackage":
+        norm_name = name.replace("_", "-")
+        if norm_name not in self._packages:
+            all_packages_str = "\n".join([pkg.name for pkg in sorted(self._packages.values())])
+            raise Exception(f"Could not find {name} in package list. Packages:\n{all_packages_str}")
+        return self._packages[norm_name]
+
+    def has_package(self, name: str) -> bool:
+        norm_name = name.replace("_", "-")
+        return norm_name in self._packages
+
     def has_package_changes(self, name: str) -> bool:
-        return self.python_packages.get(name) in self.python_packages.with_changes
+        """True if this package has non-test source file changes."""
+        pkg = self.get_package(name)
+        if pkg not in self._has_package_changes_cache:
+            self._has_package_changes_cache[pkg] = self._detect_package_changes(
+                pkg, include_test_files=False
+            )
+        return self._has_package_changes_cache[pkg]
+
+    def has_package_test_changes(self, name: str) -> bool:
+        """True if this package has any changes (including test-only changes)."""
+        pkg = self.get_package(name)
+        if pkg not in self._has_package_test_changes_cache:
+            self._has_package_test_changes_cache[pkg] = self._detect_package_changes(
+                pkg, include_test_files=True
+            )
+        return self._has_package_test_changes_cache[pkg]
+
+    def has_package_dependency_changes(self, name: str) -> bool:
+        """True if any in-repo dependency of this package has non-test changes."""
+        pkg = self.get_package(name)
+        if pkg not in self._has_package_dependency_changes_cache:
+            result = False
+            for dep in pkg.dependencies:
+                if not self.has_package(dep.name):
+                    continue
+                elif self.has_package_changes(dep.name) or self.has_package_dependency_changes(
+                    dep.name
+                ):
+                    result = True
+                    break
+            self._has_package_dependency_changes_cache[pkg] = result
+        return self._has_package_dependency_changes_cache[pkg]
+
+    def _detect_package_changes(
+        self,
+        package: "PythonPackage",
+        include_test_files: bool,
+    ) -> bool:
+        for path in self.changed_files:
+            abs_path = self.repo_path / path
+            if (
+                _path_is_relative_to(abs_path, package.directory)
+                and path.suffix in _PACKAGE_CHANGE_DETECTION_FILETYPES
+                and (include_test_files or "_tests/" not in str(path))
+            ):
+                return True
+        return False
 
     def has_python_changes(self) -> bool:
         return any(path.suffix == ".py" for path in self.changed_files)
@@ -197,6 +270,10 @@ class BuildkiteContext(Generic[T_Config]):
             Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
             for path in self.all_changed_oss_files
         )
+
+    # ########################
+    # ##### TRANSFORMS
+    # ########################
 
     def apply_transforms(
         self, steps: Sequence["StepConfiguration"]
@@ -275,6 +352,10 @@ class BuildConfig:
 
         return cls.from_raw(params)
 
+
+# ########################
+# ##### BUILDKITE ENV VARS
+# ########################
 
 ## Buildkite environment variables.
 BuildkiteEnvVar: TypeAlias = Literal[
@@ -471,27 +552,9 @@ BuildkiteEnvVar: TypeAlias = Literal[
 ]
 
 
-def _get_required_env_var(var: str, env: Mapping[str, str]) -> str:
-    if var not in env:
-        raise Exception(f"Missing required environment variable: {var}")
-    return env[var]
-
-
-def _is_release_branch(branch: str) -> bool:
-    return branch.startswith("release-")
-
-
-def _is_master_branch(branch: str) -> bool:
-    return branch == "master"
-
-
-def _is_feature_branch(branch: str) -> bool:
-    return not _is_release_branch(branch) and not _is_master_branch(branch)
-
-
-def _strip_oss_prefix(path: Path) -> Path:
-    """If the path is within the dagster-oss/ directory, strip that prefix."""
-    return Path(*path.parts[1:]) if next(iter(path.parts), None) == INTERNAL_OSS_PREFIX else path
+# ########################
+# ##### CHANGED FILES
+# ########################
 
 
 def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
@@ -530,5 +593,114 @@ def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
     return frozenset(all_files)
 
 
+def _strip_oss_prefix(path: Path) -> Path:
+    """If the path is within the dagster-oss/ directory, strip that prefix."""
+    return Path(*path.parts[1:]) if next(iter(path.parts), None) == INTERNAL_OSS_PREFIX else path
+
+
 def _get_commit(rev: str) -> str:
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
+
+
+# ########################
+# ##### PYTHON PACKAGES
+# ########################
+
+
+class PythonPackage:
+    def __init__(self, directory: Path, project: dict[str, Any]):
+        self.directory = directory
+        # Use the directory basename for package name since project["name"] is
+        # not unique and sometimes does not mtach.
+        self.name = directory.name.replace("_", "-")
+        all_deps = set(_parse_requirements(project.get("dependencies", [])))
+        for extra_reqs in project.get("optional_dependencies", {}).values():
+            all_deps.update(_parse_requirements(extra_reqs))
+        self.dependencies = all_deps
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
+        return f"PythonPackage({self.name})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PythonPackage):
+            return NotImplemented
+        return self.directory == other.directory
+
+    # Because we define __eq__
+    # https://docs.python.org/3.1/reference/datamodel.html#object.__hash__
+    def __hash__(self) -> int:
+        return hash(self.directory)
+
+    def __lt__(self, other: "PythonPackage") -> bool:
+        return self.name < other.name
+
+
+def _parse_requirements(lines: list[str]) -> list[Requirement]:
+    return [
+        Requirement(line) for line in lines if line.strip() and not line.strip().startswith("#")
+    ]
+
+
+def _discover_python_packages(repo_path: Path) -> list[PythonPackage]:
+    """Discover all Python packages in the git repository."""
+    logging.info("Finding Python packages:")
+
+    output = subprocess.check_output(
+        ["git", "ls-files", "**/tox.ini"],
+        cwd=str(repo_path),
+    ).decode("utf-8")
+
+    packages = []
+    for line in output.strip().split("\n"):
+        if not line:
+            continue
+        pkg_path = (repo_path / line).parent
+
+        if (pyproject_path := pkg_path / "pyproject.toml").exists():
+            with open(pyproject_path, "rb") as f:
+                data = tomllib.load(f)
+            project = data.get("project")
+            if not project:
+                continue
+        else:
+            # create a synthetic pyproject.toml project entry with empty
+            # dependencies
+            project = {"name": pkg_path.name, "dependencies": [], "optional-dependencies": {}}
+
+        packages.append(PythonPackage(pyproject_path.parent, project))
+
+    for package in sorted(packages):
+        logging.info("  - " + package.name)
+
+    return packages
+
+
+def _path_is_relative_to(p: Path, u: Path) -> bool:
+    # see https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_relative_to
+    return u == p or u in p.parents
+
+
+# ########################
+# ##### OTHER
+# ########################
+
+
+def _get_required_env_var(var: str, env: Mapping[str, str]) -> str:
+    if var not in env:
+        raise Exception(f"Missing required environment variable: {var}")
+    return env[var]
+
+
+def _is_release_branch(branch: str) -> bool:
+    return branch.startswith("release-")
+
+
+def _is_master_branch(branch: str) -> bool:
+    return branch == "master"
+
+
+def _is_feature_branch(branch: str) -> bool:
+    return not _is_release_branch(branch) and not _is_master_branch(branch)

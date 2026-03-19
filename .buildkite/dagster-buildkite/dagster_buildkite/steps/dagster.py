@@ -91,13 +91,13 @@ def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepCon
 
 def build_check_changelog_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     skip_reason = _get_check_changelog_step_skip_reason(ctx)
-    release_version = "" if skip_reason else ctx.release_version
+    cmd = (
+        f"python scripts/check_changelog.py {ctx.release_version}"
+        if not skip_reason
+        else "echo skipped"
+    )
     return [
-        CommandStepBuilder(":memo: changelog")
-        .run(f"python scripts/check_changelog.py {release_version}")
-        .on_test_image()
-        .skip(skip_reason)
-        .build(),
+        CommandStepBuilder(":memo: changelog").run(cmd).on_test_image().skip(skip_reason).build(),
     ]
 
 

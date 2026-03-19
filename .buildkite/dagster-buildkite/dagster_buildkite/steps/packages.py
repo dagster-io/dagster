@@ -18,7 +18,7 @@ from buildkite_shared.step_builders.step_builder import (
     TopLevelStepConfiguration,
     is_command_step,
 )
-from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
 from dagster_buildkite.utils import connect_sibling_docker_container, network_buildkite_container
@@ -263,7 +263,7 @@ class PackageSpec:
             return self._skip_reason
 
         self._skip_reason = get_python_package_step_skip_reason(
-            self.directory, self.name, self.force_run_fn, self.skip_run_fn, is_oss=True, ctx=ctx
+            self.directory, force_run_fn=self.force_run_fn, skip_run_fn=self.skip_run_fn, ctx=ctx
         )
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
@@ -329,12 +329,12 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 # Find packages under a root subdirectory that are not configured above.
 def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: list[str]) -> list[str]:
     all_files_in_root = [
-        os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
+        os.path.relpath(p, OSS_ROOT) for p in glob(os.path.join(OSS_ROOT, root, "*"))
     ]
     return [
         p
         for p in all_files_in_root
-        if p not in custom_pkg_roots and os.path.exists(os.path.join(GIT_REPO_ROOT, p, "tox.ini"))
+        if p not in custom_pkg_roots and os.path.exists(os.path.join(OSS_ROOT, p, "tox.ini"))
     ]
 
 
