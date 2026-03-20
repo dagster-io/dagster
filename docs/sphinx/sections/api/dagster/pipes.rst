@@ -29,6 +29,8 @@ Clients
 
 .. autoclass:: PipesClient
 
+.. autoclass:: PipesClientCompletedInvocation
+
 .. autoclass:: PipesSubprocessClient
 
 ----
