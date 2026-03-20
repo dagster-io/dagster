@@ -252,7 +252,7 @@ def fix_inventory_uris(app: Sphinx, env: BuildEnvironment | None) -> None:
                 continue
             if not isinstance(store, dict):
                 continue
-            for _name, entry in store.items():
+            for entry in store.values():
                 if (
                     isinstance(entry, tuple)
                     and entry
