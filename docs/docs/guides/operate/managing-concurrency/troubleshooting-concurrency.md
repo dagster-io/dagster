@@ -68,6 +68,4 @@ This tells the daemon to automatically free concurrency slots held by finished r
 
 **Immediate recovery:** If you are currently deadlocked, you can free stale slots immediately using the Dagster UI. Navigate to **Deployment > Concurrency** and manually release the slots held by the cancelled run. Alternatively, you can use the `dagster` CLI:
 
-```bash
-dagster instance concurrency reset <pool_name>
-```
+dagster instance concurrency set <pool_name> <limit>
