@@ -1,5 +1,7 @@
 {{- $celeryConfigSecretName := .Values.global.celeryConfigSecretName | default .Values.celeryConfigSecretName }}
-{{ range $deployment := .Values.deployments }}
+{{- range $item := include "dagster-user-deployments.deployments" . | trim | split "\n" }}
+{{- if $item }}
+{{- $deployment := $item | fromJson }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -221,4 +223,5 @@ spec:
       schedulerName: {{ $deployment.schedulerName }}
       {{- end }}
 ---
-{{ end }}
+{{- end }}
+{{- end }}

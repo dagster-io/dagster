@@ -640,7 +640,6 @@
                 }
             },
             "required": [
-                "name",
                 "image",
                 "port"
             ],
@@ -694,11 +693,22 @@
             "type": "boolean"
         },
         "deployments": {
-            "items": {
-                "$ref": "#/$defs/UserDeployment"
-            },
-            "title": "Deployments",
-            "type": "array"
+            "anyOf": [
+                {
+                    "items": {
+                        "$ref": "#/$defs/UserDeployment"
+                    },
+                    "title": "Deployments",
+                    "type": "array"
+                },
+                {
+                    "additionalProperties": {
+                        "$ref": "#/$defs/UserDeployment"
+                    },
+                    "title": "Deployments",
+                    "type": "object"
+                }
+            ]
         },
         "imagePullSecrets": {
             "items": {
