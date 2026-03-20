@@ -14,11 +14,11 @@ class ModelStoreResource(dg.ConfigurableResource, ABC):
     """Abstract base class for model storage resources."""
 
     @abstractmethod
-    def save_model(self, model_data: dict[str, Any], model_name: str):
+    def save_model(self, model: Any, model_name: str):
         pass
 
     @abstractmethod
-    def load_model(self, model_name: str) -> dict[str, Any]:
+    def load_model(self, model_name: str) -> Any:
         pass
 
     @abstractmethod
@@ -35,15 +35,15 @@ class LocalModelStoreResource(ModelStoreResource):
 
     models_path: str = "./models"
 
-    def save_model(self, model_data: dict[str, Any], model_name: str):
+    def save_model(self, model: Any, model_name: str):
         """Save model data to local filesystem."""
         os.makedirs(self.models_path, exist_ok=True)
         model_path = os.path.join(self.models_path, f"{model_name}.pkl")
 
         with open(model_path, "wb") as f:
-            pickle.dump(model_data, f)
+            pickle.dump(model, f)
 
-    def load_model(self, model_name: str) -> dict[str, Any]:
+    def load_model(self, model_name: str) -> Any:
         """Load model data from local filesystem."""
         model_path = os.path.join(self.models_path, f"{model_name}.pkl")
         with open(model_path, "rb") as f:

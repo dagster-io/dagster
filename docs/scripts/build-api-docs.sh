@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # Builds and synchronizes mdx API docs, and objects.inv using Sphinx
 #

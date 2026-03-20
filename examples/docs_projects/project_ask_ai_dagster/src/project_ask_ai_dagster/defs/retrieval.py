@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import dagster as dg
 from dagster_openai import OpenAIResource
 
@@ -54,9 +56,12 @@ def query(
 
     results = []
     for namespace in ["dagster-github", "dagster-docs"]:
-        index_obj, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace=namespace)
-        search_results = index_obj.query(
-            vector=question_embedding, top_k=3, include_metadata=True, **namespace_kwargs
+        index_obj, _ = pinecone.get_index("dagster-knowledge", namespace=namespace)
+        search_results = cast(
+            "Any",
+            index_obj.query(
+                vector=question_embedding, top_k=3, include_metadata=True, namespace=namespace
+            ),
         )
         results.extend(search_results.matches)
 

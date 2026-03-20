@@ -3,9 +3,8 @@ name = "project_dspy"
 requires-python = ">=3.10,<3.15"
 version = "0.1.0"
 dependencies = [
-    "dagster==1.11.10",
+    "dagster",
     "dspy>=2.6.27",
-    "ipykernel>=6.30.1",
     "openai>=1.107.2",
     "pandas>=2.3.2",
     "pydantic>=2.11.9",
@@ -14,7 +13,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["dagster-webserver", "dagster-dg-cli"]
+dev = ["dagster-webserver", "dagster-dg-cli", "ipykernel>=6.30.1"]
 
 [build-system]
 requires = ["hatchling>=1.19.0"]

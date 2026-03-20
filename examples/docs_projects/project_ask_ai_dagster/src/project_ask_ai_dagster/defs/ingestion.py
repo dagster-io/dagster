@@ -101,7 +101,7 @@ def github_issues_embeddings(
 ) -> dg.MaterializeResult:
     # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
-    index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
+    index, namespace = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
 
     texts = [doc.page_content for doc in github_issues_raw]
     with openai.get_client(context) as client:
@@ -117,12 +117,14 @@ def github_issues_embeddings(
 
     # Upsert to Pinecone with namespace
     index.upsert(
-        vectors=zip(
-            [str(i) for i in range(len(texts))],  # IDs
-            embeddings,
-            metadata,
+        vectors=list(
+            zip(
+                [str(i) for i in range(len(texts))],  # IDs
+                embeddings,
+                metadata,
+            )
         ),
-        **namespace_kwargs,  # Include namespace parameters
+        namespace=namespace,
     )
 
     return dg.MaterializeResult(
@@ -212,7 +214,7 @@ def github_discussions_embeddings(
 
     # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
-    index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
+    index, namespace = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
 
     all_texts = [doc.page_content for doc in github_discussions_raw]
     all_embeddings = []
@@ -238,12 +240,14 @@ def github_discussions_embeddings(
 
     # Upsert to Pinecone with namespace
     index.upsert(
-        vectors=zip(
-            [str(i) for i in range(len(all_texts))],
-            all_embeddings,
-            metadata,
+        vectors=list(
+            zip(
+                [str(i) for i in range(len(all_texts))],
+                all_embeddings,
+                metadata,
+            )
         ),
-        **namespace_kwargs,
+        namespace=namespace,
     )
 
     return dg.MaterializeResult(
@@ -379,7 +383,7 @@ def docs_embedding(
     PINECONE_BATCH_SIZE = 100
 
     pinecone.create_index("dagster-knowledge", dimension=1536)
-    index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-docs")
+    index, namespace = pinecone.get_index("dagster-knowledge", namespace="dagster-docs")
 
     # Split each document into chunks
     all_chunks = []
@@ -416,7 +420,7 @@ def docs_embedding(
 
         # Upsert when batch is full or at end
         if len(vectors) >= PINECONE_BATCH_SIZE or i == len(all_embeddings) - 1:
-            index.upsert(vectors=vectors, **namespace_kwargs)
+            index.upsert(vectors=vectors, namespace=namespace)
             vectors = []
             time.sleep(1)
     # end_batch

@@ -61,12 +61,11 @@ class MdxBuilder(Builder):
                 pass
 
     def get_target_uri(self, docname: str, typ: str | None = None) -> str:
-        # Transform the docname to match the actual documentation URL structure.
-        # Sphinx source files live under a sections/ directory, but the built
-        # documentation is served without that prefix.
+        # Transform the docname to match the actual documentation URL structure
+        # Remove 'sections/api/apidocs/' prefix if present
         transformed = docname
-        if transformed.startswith("sections/"):
-            transformed = transformed[len("sections/") :]
+        if transformed.startswith("sections/api/apidocs/"):
+            transformed = transformed.replace("sections/api/apidocs/", "api/", 1)
         return self.link_transform(transformed)
 
     def prepare_writing(self, docnames: set[str]) -> None:

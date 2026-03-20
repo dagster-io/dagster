@@ -54,7 +54,6 @@ class PipesClient(ABC):
         """
 
 
-@public
 class PipesClientCompletedInvocation:
     """A wrapper for the results of a pipes client invocation, typically returned from `PipesClient.run`.
 

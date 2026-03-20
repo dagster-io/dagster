@@ -62,7 +62,7 @@ def batch_digit_predictions(
 
         # Handle both formats: dict with 'model' key or direct model object
         if isinstance(model_data, dict) and "model" in model_data:
-            production_model = model_data["model"]
+            production_model: Any = model_data["model"]
         else:
             production_model = model_data  # Direct model object
 
@@ -156,7 +156,7 @@ def digit_predictions(
 
         # Handle both formats: dict with 'model' key or direct model object
         if isinstance(model_data, dict) and "model" in model_data:
-            production_model = model_data["model"]
+            production_model: Any = model_data["model"]
         else:
             production_model = model_data  # Direct model object
 

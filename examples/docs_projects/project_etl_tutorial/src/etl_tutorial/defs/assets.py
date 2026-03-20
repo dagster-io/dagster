@@ -23,7 +23,7 @@ def serialize_duckdb_query(duckdb_path: str, sql: str):
 ...
 
 
-def import_url_to_duckdb(url: str, duckdb_path: str, table_name: str):
+def import_url_to_duckdb(url: str, duckdb_path: str, table_name: str):  # pyright: ignore[reportRedeclaration]
     create_query = f"""
         create or replace table {table_name} as (
             select * from read_csv_auto('{url}')
@@ -44,28 +44,28 @@ import dagster as dg
 
 
 @dg.asset(kinds={"duckdb"}, key=["target", "main", "raw_customers"])
-def raw_customers() -> None:
-    import_url_to_duckdb(
+def raw_customers() -> None:  # pyright: ignore[reportRedeclaration]
+    import_url_to_duckdb(  # type: ignore[call-arg]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv",
-        duckdb_path="/tmp/jaffle_platform.duckdb",
+        duckdb_path="/tmp/jaffle_platform.duckdb",  # type: ignore[call-arg]
         table_name="jaffle_platform.main.raw_customers",
     )
 
 
 @dg.asset(kinds={"duckdb"}, key=["target", "main", "raw_orders"])
-def raw_orders() -> None:
-    import_url_to_duckdb(
+def raw_orders() -> None:  # pyright: ignore[reportRedeclaration]
+    import_url_to_duckdb(  # type: ignore[call-arg]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv",
-        duckdb_path="/tmp/jaffle_platform.duckdb",
+        duckdb_path="/tmp/jaffle_platform.duckdb",  # type: ignore[call-arg]
         table_name="jaffle_platform.main.raw_orders",
     )
 
 
 @dg.asset(kinds={"duckdb"}, key=["target", "main", "raw_payments"])
-def raw_payments() -> None:
-    import_url_to_duckdb(
+def raw_payments() -> None:  # pyright: ignore[reportRedeclaration]
+    import_url_to_duckdb(  # type: ignore[call-arg]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv",
-        duckdb_path="/tmp/jaffle_platform.duckdb",
+        duckdb_path="/tmp/jaffle_platform.duckdb",  # type: ignore[call-arg]
         table_name="jaffle_platform.main.raw_payments",
     )
 
@@ -99,7 +99,7 @@ def import_url_to_duckdb(url: str, duckdb: DuckDBResource, table_name: str):
     key=["target", "main", "raw_customers"],
 )
 # highlight-start
-def raw_customers(duckdb: DuckDBResource) -> None:
+def raw_customers(duckdb: DuckDBResource) -> None:  # pyright: ignore[reportRedeclaration]
     # highlight-end
     import_url_to_duckdb(
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv",
@@ -113,7 +113,7 @@ def raw_customers(duckdb: DuckDBResource) -> None:
     key=["target", "main", "raw_orders"],
 )
 # highlight-start
-def raw_orders(duckdb: DuckDBResource) -> None:
+def raw_orders(duckdb: DuckDBResource) -> None:  # pyright: ignore[reportRedeclaration]
     # highlight-end
     import_url_to_duckdb(
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv",
@@ -127,7 +127,7 @@ def raw_orders(duckdb: DuckDBResource) -> None:
     key=["target", "main", "raw_payments"],
 )
 # highlight-start
-def raw_payments(duckdb: DuckDBResource) -> None:
+def raw_payments(duckdb: DuckDBResource) -> None:  # pyright: ignore[reportRedeclaration]
     # highlight-end
     import_url_to_duckdb(
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv",
@@ -229,7 +229,7 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2018-01-01")
     automation_condition=dg.AutomationCondition.eager(),
     description="Monthly sales performance",
 )
-def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
+def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):  # pyright: ignore[reportRedeclaration]
     # highlight-start
     partition_date_str = context.partition_key
     # highlight-end

@@ -558,13 +558,11 @@ from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as De
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
 from dagster._core.pipes.client import (
     PipesClient as PipesClient,
-    PipesClientCompletedInvocation as PipesClientCompletedInvocation,
     PipesContextInjector as PipesContextInjector,
     PipesExecutionResult as PipesExecutionResult,
     PipesMessageReader as PipesMessageReader,
 )
 from dagster._core.pipes.context import (
-    PipesLaunchedData as PipesLaunchedData,
     PipesMessageHandler as PipesMessageHandler,
     PipesSession as PipesSession,
 )
