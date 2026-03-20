@@ -16,6 +16,8 @@ Sessions
 
 .. autoclass:: PipesSession
 
+.. autoclass:: PipesLaunchedData
+
 .. autofunction:: open_pipes_session
 
 .. currentmodule:: dagster._core.pipes.subprocess
@@ -28,6 +30,8 @@ Clients
 .. currentmodule:: dagster
 
 .. autoclass:: PipesClient
+
+.. autoclass:: PipesClientCompletedInvocation
 
 .. autoclass:: PipesSubprocessClient
 

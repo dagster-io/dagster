@@ -7,17 +7,9 @@ import dspy
 from dspy.teleprompt import MIPROv2
 from pydantic import Field
 
-from dspy_modules.connections_metrics import (  # type: ignore[import-not-found]
-    success_metric,
-)
-from dspy_modules.puzzle import (  # type: ignore[import-not-found]
-    load_puzzles_from_csv,
-    shuffle_and_split_puzzles,
-)
-from dspy_modules.solver import (  # type: ignore[import-not-found]
-    ConnectionsSolver,
-    create_dataset,
-)
+from dspy_modules.connections_metrics import success_metric
+from dspy_modules.puzzle import load_puzzles_from_csv, shuffle_and_split_puzzles
+from dspy_modules.solver import ConnectionsSolver, create_dataset
 from project_dspy.defs.resources import DSPyResource
 
 

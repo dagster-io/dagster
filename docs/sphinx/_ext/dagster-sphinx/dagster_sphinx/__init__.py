@@ -18,7 +18,7 @@ from dagster._annotations import (
 )
 from dagster._record import get_original_class, is_record
 from sphinx.application import Sphinx
-from sphinx.domains.python import ObjectEntry
+from sphinx.domains.python import ModuleEntry, ObjectEntry
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
     ClassDocumenter,
@@ -171,67 +171,99 @@ def get_child_as(node: nodes.Node, index: int, node_type: type[T_Node]) -> T_Nod
     return child
 
 
-def transform_inventory_uri(uri: str) -> str:
-    """Transform Sphinx source paths to final documentation URLs.
+def _strip_sections_prefix(docname: str) -> str:
+    """Strip the ``sections/`` prefix from a Sphinx docname.
 
-    Transforms paths like:
-        sections/api/apidocs/dagster/internals/
-    to:
-        api/dagster/internals
+    The RST source files live under ``docs/sphinx/sections/`` but the built
+    documentation is served without that prefix (e.g. ``api/dagster/pipes``
+    rather than ``sections/api/dagster/pipes``).
     """
-    # Remove the 'sections/api/apidocs/' prefix
-    if uri.startswith("sections/api/apidocs/"):
-        transformed = uri.replace("sections/api/apidocs/", "api/", 1)
-        # Remove trailing slash if present
-        if transformed.endswith("/"):
-            transformed = transformed[:-1]
-        return transformed
-    return uri
+    if docname.startswith("sections/"):
+        return docname[len("sections/") :]
+    return docname
 
 
-def fix_inventory_uris(app: Sphinx, env) -> None:
-    """Fix URIs in the Sphinx inventory before it's written.
+def fix_inventory_uris(app: Sphinx, env: BuildEnvironment | None) -> None:
+    """Strip ``sections/`` from inventory docnames so ``objects.inv`` URIs
+    match the published URL structure.
 
-    This hook runs during env-updated which happens after all documents are read
-    and before the build writes output files, allowing us to transform the URIs
-    in the domain data.
+    Only touches explicitly listed domain stores whose entries are known to
+    store a *docname* as their first tuple element.
     """
     if env is None:
         return
 
-    # Access the inventory data from the Python domain
-    py_domain = env.domaindata.get("py", {})
-    objects = py_domain.get("objects", {})
+    # Each entry is (domain_name, store_key).  Only stores whose values are
+    # tuples with a docname as the first element should appear here.
+    DOMAIN_STORES: list[tuple[str, str]] = [
+        ("py", "objects"),
+        ("py", "modules"),
+        ("std", "labels"),
+        ("std", "anonlabels"),
+        ("std", "objects"),
+        ("std", "progoptions"),
+    ]
+    targeted = {(d, k) for d, k in DOMAIN_STORES}
 
-    # Transform each URI
-    # In modern Sphinx (8.x), objects is dict[str, ObjectEntry]
-    # ObjectEntry is a namedtuple/dataclass with (docname, node_id, objtype, aliased)
     modified_count = 0
-    for name, obj_data in list(objects.items()):
-        if isinstance(obj_data, ObjectEntry):
-            # New format: ObjectEntry with docname attribute
-            old_docname = obj_data.docname
-            new_docname = transform_inventory_uri(old_docname)
-            if new_docname != old_docname:
-                # Create a new ObjectEntry with the transformed docname
-                objects[name] = ObjectEntry(
-                    docname=new_docname,
-                    node_id=obj_data.node_id,
-                    objtype=obj_data.objtype,
-                    aliased=obj_data.aliased,
+    for domain_name, store_key in DOMAIN_STORES:
+        domain_data = env.domaindata.get(domain_name)
+        if domain_data is None:
+            continue
+        store = domain_data.get(store_key)
+        if not isinstance(store, dict):
+            continue
+        for name, entry in list(store.items()):
+            if not isinstance(entry, tuple) or not entry or not isinstance(entry[0], str):
+                continue
+            new_docname = _strip_sections_prefix(entry[0])
+            if new_docname == entry[0]:
+                continue
+            if isinstance(entry, ObjectEntry):
+                store[name] = ObjectEntry(new_docname, *entry[1:])
+                modified_count += 1
+            elif isinstance(entry, ModuleEntry):
+                store[name] = ModuleEntry(new_docname, *entry[1:])
+                modified_count += 1
+            elif type(entry) is tuple:
+                # std domain stores use plain tuples
+                store[name] = (new_docname, *entry[1:])
+                modified_count += 1
+            else:
+                logger.warning(
+                    f"[dagster_sphinx] Unexpected entry type {type(entry).__name__} "
+                    f"in {domain_name}/{store_key}: {name}"
                 )
-                modified_count += 1
-        elif isinstance(obj_data, tuple):
-            # Old format: (docname, node_id, objtype, aliased)
-            docname, node_id, objtype, aliased = obj_data
-            new_docname = transform_inventory_uri(docname)
-            if new_docname != docname:
-                objects[name] = (new_docname, node_id, objtype, aliased)
-                modified_count += 1
 
-    if modified_count > 0:
-        logger.info(
-            f"[dagster_sphinx] Transformed {modified_count} inventory URIs for correct URL structure"
+    if modified_count == 0:
+        logger.warning(
+            "[dagster_sphinx] fix_inventory_uris transformed 0 entries — "
+            "has the Sphinx source tree structure changed?"
+        )
+    else:
+        logger.info(f"[dagster_sphinx] Transformed {modified_count} inventory URIs")
+
+    # Warn about any untransformed sections/ docnames in stores we didn't target.
+    # This catches new Sphinx domain stores that may need to be added to DOMAIN_STORES.
+    missed = 0
+    for domain_name, domain_data in env.domaindata.items():
+        for store_key, store in domain_data.items():
+            if (domain_name, store_key) in targeted:
+                continue
+            if not isinstance(store, dict):
+                continue
+            for _name, entry in store.items():
+                if (
+                    isinstance(entry, tuple)
+                    and entry
+                    and isinstance(entry[0], str)
+                    and entry[0].startswith("sections/")
+                ):
+                    missed += 1
+    if missed > 0:
+        logger.warning(
+            f"[dagster_sphinx] {missed} domain entries still have 'sections/' "
+            f"prefix in stores not listed in DOMAIN_STORES — consider updating the list"
         )
 
 
@@ -245,7 +277,6 @@ def setup(app):
     app.add_node(flag, html=(visit_flag, depart_flag))
     app.add_role("inline-flag", inline_flag_role)
     app.connect("autodoc-process-docstring", process_docstring)
-    # Connect to env-updated event which happens after reading all docs and before writing
     app.connect("env-updated", fix_inventory_uris)
     # app.connect("doctree-resolved", substitute_deprecated_text)
 

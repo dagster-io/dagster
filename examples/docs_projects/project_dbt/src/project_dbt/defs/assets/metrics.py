@@ -15,6 +15,5 @@ def manhattan_stats(database: DuckDBResource) -> dg.MaterializeResult:
     """
 
     with database.get_connection() as conn:
-        result = conn.execute(query).fetchone()
-        count = result[0] if result else 0
+        count = conn.execute(query).fetchone()[0]
         return dg.MaterializeResult(metadata={"table_count": dg.MetadataValue.int(count)})

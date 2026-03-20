@@ -57,7 +57,7 @@ class DatabricksJobOrchestrator(dg.Component, dg.Model, dg.Resolvable):
         )
         workspace = client.workspace_client
         run_response = workspace.jobs.run_now(job_id=self.job_id)
-        finished = run_response.result(timeout=timedelta(hours=1))  # type: ignore[arg-type]
+        finished = run_response.result(timeout=timedelta(hours=1))
         return {
             "start_time": finished.start_time,
             "end_time": finished.end_time,

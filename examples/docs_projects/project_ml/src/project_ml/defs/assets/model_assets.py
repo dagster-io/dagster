@@ -77,7 +77,7 @@ class ModelConfig(dg.Config):
 class DigitCNN(nn.Module):
     """Improved CNN for MNIST digit classification based on research."""
 
-    def __init__(self, config: ModelConfig | None = None):
+    def __init__(self, config: ModelConfig = None):
         super().__init__()
         if config is None:
             config = ModelConfig()
@@ -199,7 +199,6 @@ def train_model(context, model, train_loader, val_loader, config: ModelConfig):
     context.log.info(f"- Early stopping patience: {EARLY_STOPPING_PATIENCE}")
     context.log.info(f"- Model architecture:\n{model!s}")
 
-    epoch = -1
     for epoch in range(config.epochs):
         # Training phase
         model.train()
@@ -426,7 +425,7 @@ def model_evaluation(
         model_data = model_store.load_model(latest_model_name)
 
         if isinstance(model_data, dict) and "model" in model_data:
-            model_to_evaluate: Any = model_data["model"]
+            model_to_evaluate = model_data["model"]
         else:
             model_to_evaluate = model_data  # Direct model object
 
@@ -551,7 +550,7 @@ def production_digit_classifier(
 
             # Handle both formats: dict with 'model' key or direct model object
             if isinstance(custom_model_data, dict) and "model" in custom_model_data:
-                custom_model: Any = custom_model_data["model"]
+                custom_model = custom_model_data["model"]
             else:
                 custom_model = custom_model_data  # Direct model object
 

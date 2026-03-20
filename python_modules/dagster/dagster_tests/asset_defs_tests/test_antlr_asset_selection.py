@@ -13,6 +13,7 @@ from dagster._core.definitions.asset_selection import (
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    PartitionsAssetSelection,
     StatusAssetSelection,
     TableNameAssetSelection,
 )
@@ -202,6 +203,7 @@ def test_antlr_tree_invalid(selection_str):
         ("table_name:my_table", TableNameAssetSelection(selected_table_name="my_table")),
         ("column_tag:my_key=my_value", ColumnTagAssetSelection(key="my_key", value="my_value")),
         ("changed_in_branch:any", ChangedInBranchAssetSelection(selected_changed_in_branch="any")),
+        ("partitions:static", PartitionsAssetSelection(selected_partitions="static")),
         ('tag:"<null>"', AssetSelection.tag("<null>", "", include_sources=True)),
         ('tag:""', AssetSelection.tag("", "", include_sources=True)),
         ('tag:"fake"=""', AssetSelection.tag("fake", "", include_sources=True)),
@@ -222,6 +224,7 @@ def test_antlr_tree_invalid(selection_str):
             "changed_in_branch:<null>",
             ChangedInBranchAssetSelection(selected_changed_in_branch=None),
         ),
+        ("partitions:<null>", PartitionsAssetSelection(selected_partitions=None)),
     ],
 )
 def test_antlr_visit_basic(selection_str, expected_assets) -> None:
@@ -272,3 +275,71 @@ def test_full_test_coverage() -> None:
         ), (
             f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"
         )
+
+
+def test_partitions_asset_selection_resolve() -> None:
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+    from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+    from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+    from dagster._core.definitions.partitions.definition.time_window import (
+        TimeWindowPartitionsDefinition,
+    )
+
+    @dg.asset
+    def unpartitioned(): ...
+
+    @dg.asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def static_partitioned(): ...
+
+    @dg.asset(partitions_def=DynamicPartitionsDefinition(name="dynamic"))
+    def dynamic_partitioned(): ...
+
+    @dg.asset(
+        partitions_def=TimeWindowPartitionsDefinition(
+            start="2020-01-01", cron_schedule="@daily", fmt="%Y-%m-%d"
+        )
+    )
+    def time_partitioned(): ...
+
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"))
+    def daily_partitioned(): ...
+
+    @dg.asset(
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "date": dg.DailyPartitionsDefinition(start_date="2020-01-01"),
+                "color": StaticPartitionsDefinition(["red", "blue"]),
+            }
+        )
+    )
+    def multi_partitioned(): ...
+
+    asset_graph = AssetGraph.from_assets(
+        [
+            unpartitioned,
+            static_partitioned,
+            dynamic_partitioned,
+            time_partitioned,
+            daily_partitioned,
+            multi_partitioned,
+        ]
+    )
+
+    assert PartitionsAssetSelection(selected_partitions="none").resolve(asset_graph) == {
+        dg.AssetKey("unpartitioned")
+    }
+    assert PartitionsAssetSelection(selected_partitions="static").resolve(asset_graph) == {
+        dg.AssetKey("static_partitioned")
+    }
+    assert PartitionsAssetSelection(selected_partitions="dynamic").resolve(asset_graph) == {
+        dg.AssetKey("dynamic_partitioned")
+    }
+    # time includes subclasses like DailyPartitionsDefinition
+    assert PartitionsAssetSelection(selected_partitions="time").resolve(asset_graph) == {
+        dg.AssetKey("time_partitioned"),
+        dg.AssetKey("daily_partitioned"),
+    }
+    assert PartitionsAssetSelection(selected_partitions="multipartitions").resolve(asset_graph) == {
+        dg.AssetKey("multi_partitioned")
+    }
