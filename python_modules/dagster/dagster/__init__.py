@@ -564,6 +564,7 @@ from dagster._core.pipes.client import (
     PipesMessageReader as PipesMessageReader,
 )
 from dagster._core.pipes.context import (
+    PipesLaunchedData as PipesLaunchedData,
     PipesMessageHandler as PipesMessageHandler,
     PipesSession as PipesSession,
 )
