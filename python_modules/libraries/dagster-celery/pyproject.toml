@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-celery"
-version = "0.28.17"
+version = "1!0+dev"
 description = "Package for using Celery as Dagster's execution engine."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
@@ -14,7 +14,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster>=1.12.0",
+    "dagster==1!0+dev",
     "celery>=4.3.0",
     "click>=5.0,<9.0",
     "importlib_metadata<5.0.0; python_version<'3.8'",
