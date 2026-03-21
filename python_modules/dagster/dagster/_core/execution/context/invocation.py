@@ -967,7 +967,7 @@ def build_op_context(
             Defaults to DagsterInstance.ephemeral().
         mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic
             output. Can be accessed using ``context.get_mapping_key()``.
-        partition_key (Optional[Union[str, MultiPartitionKey]]): String value representing
+        partition_key (str | MultiPartitionKey | None): String value representing
             partition key to execute with.
         partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
         run_tags: Optional[Mapping[str, str]]: The tags for the executing run.
@@ -1067,7 +1067,7 @@ def build_asset_context(
         asset_config (Optional[Mapping[str, Any]]): The config to provide to the asset.
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
-        partition_key (Optional[Union[str, MultiPartitionKey]]): String value representing
+        partition_key (str | MultiPartitionKey | None): String value representing
             partition key to execute with.
         partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
         run_tags: Optional[Mapping[str, str]]: The tags for the executing run.
