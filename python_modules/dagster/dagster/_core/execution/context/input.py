@@ -68,7 +68,7 @@ class InputContext:
         resources: Union["Resources", Mapping[str, Any]] | None = None,
         step_context: Optional["StepExecutionContext"] = None,
         asset_key: AssetKey | None = None,
-        partition_key: str | None = None,
+        partition_key: str | MultiPartitionKey | None = None,
         asset_partitions_subset: PartitionsSubset | None = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
         instance: DagsterInstance | None = None,

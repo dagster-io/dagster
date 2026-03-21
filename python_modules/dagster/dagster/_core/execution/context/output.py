@@ -123,7 +123,7 @@ class OutputContext:
         op_def: Optional["OpDefinition"] = None,
         asset_key: AssetKey | None = None,
         warn_on_step_context_use: bool = False,
-        partition_key: str | None = None,
+        partition_key: str | MultiPartitionKey | None = None,
         output_metadata: Mapping[str, RawMetadataValue] | None = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
         asset_partitions_subset: PartitionsSubset | None = None,
