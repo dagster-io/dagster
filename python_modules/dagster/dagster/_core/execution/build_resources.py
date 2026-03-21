@@ -128,10 +128,15 @@ def wrap_resources_for_execution(
 
     resource_defs: dict[str, ResourceDefinition] = {}
     for resource_key, resource in resources.items():
-        if resource_key == DEFAULT_IO_MANAGER_KEY and resource is None:
+        if resource is None:
+            if resource_key == DEFAULT_IO_MANAGER_KEY:
+                raise DagsterInvalidDefinitionError(
+                    "Resource 'io_manager' was set to None. Remove this key to use the default IO"
+                    " manager, or provide an IOManager/IOManagerDefinition."
+                )
             raise DagsterInvalidDefinitionError(
-                "Resource 'io_manager' was set to None. Remove this key to use the default IO"
-                " manager, or provide an IOManager/IOManagerDefinition."
+                f"Resource '{resource_key}' was set to None. Provide a resource definition or"
+                " instance, or remove this key if it is unused."
             )
         resource_defs[resource_key] = wrap_resource_for_execution(resource)
     return resource_defs

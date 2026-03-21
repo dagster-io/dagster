@@ -668,7 +668,26 @@ def test_io_manager_none_resource():
             " or provide an IOManager/IOManagerDefinition."
         ),
     ):
-        Definitions.validate_loadable(dg.Definitions(assets=[an_asset], resources={"io_manager": None}))
+        Definitions.validate_loadable(
+            dg.Definitions(assets=[an_asset], resources={"io_manager": None})
+        )
+
+
+def test_resource_none_value():
+    @dg.asset
+    def an_asset():
+        pass
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=re.escape(
+            "Resource 'my_db' was set to None. Provide a resource definition or instance, or"
+            " remove this key if it is unused."
+        ),
+    ):
+        Definitions.validate_loadable(
+            dg.Definitions(assets=[an_asset], resources={"my_db": None})
+        )
 
 
 def test_resource_defs_on_asset():
