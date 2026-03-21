@@ -649,11 +649,26 @@ def test_asset_missing_io_manager():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match=(
-            r"io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not"
+            r"io manager with key 'blah' required by output 'result' of op 'asset_foo' was not"
             " provided."
         ),
     ):
         Definitions.validate_loadable(dg.Definitions(assets=[asset_foo]))
+
+
+def test_io_manager_none_resource():
+    @dg.asset
+    def an_asset():
+        pass
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=re.escape(
+            "Resource 'io_manager' was set to None. Remove this key to use the default IO manager,"
+            " or provide an IOManager/IOManagerDefinition."
+        ),
+    ):
+        Definitions.validate_loadable(dg.Definitions(assets=[an_asset], resources={"io_manager": None}))
 
 
 def test_resource_defs_on_asset():
