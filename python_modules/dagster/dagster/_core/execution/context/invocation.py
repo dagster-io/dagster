@@ -997,7 +997,7 @@ def build_op_context(
         ),
         op_config=op_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
-        partition_key=check.opt_inst_param(partition_key, "partition_key", str),
+        partition_key=check.opt_inst_param(partition_key, "partition_key", (str, MultiPartitionKey)),
         partition_key_range=check.opt_inst_param(
             partition_key_range, "partition_key_range", PartitionKeyRange
         ),
