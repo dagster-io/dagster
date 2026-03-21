@@ -1008,8 +1008,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def multi_partition_key(self) -> "MultiPartitionKey":
-        from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
-
         partition_key = self.partition_key
         if not isinstance(partition_key, MultiPartitionKey):
             raise DagsterInvariantViolationError(

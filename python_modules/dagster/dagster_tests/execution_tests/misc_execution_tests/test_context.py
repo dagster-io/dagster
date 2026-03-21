@@ -692,3 +692,87 @@ def test_location_name_property():
         with execute_run(InMemoryJob(location_check_job), run, instance) as result:
             assert result.success
             assert result.output_for_node("location_check") == location_name
+
+
+def test_partition_key_string_backward_compatibility():
+    """Test that plain string partition keys still work correctly in all contexts."""
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.asset(partitions_def=partitions_def)
+    def string_partitioned_asset(context: AssetExecutionContext):
+        # String partition keys should be directly usable
+        key = context.partition_key
+        assert isinstance(key, str)
+        assert key == "2024-01-02"
+        return key
+
+    # Test in materialization
+    result = dg.materialize(
+        [string_partitioned_asset],
+        partition_key="2024-01-02",
+    )
+    assert result.success
+
+    # Test in direct invocation with build_asset_context
+    context = dg.build_asset_context(partition_key="2024-01-02")
+    assert context.partition_key == "2024-01-02"
+    assert isinstance(context.partition_key, str)
+
+
+def test_partition_key_type_narrowing_patterns():
+    """Test that code can safely narrow between str and MultiPartitionKey using isinstance."""
+    multipartitions_def = dg.MultiPartitionsDefinition(
+        {
+            "date": dg.StaticPartitionsDefinition(["2024-01-01"]),
+            "region": dg.StaticPartitionsDefinition(["us"]),
+        }
+    )
+
+    @dg.asset(partitions_def=multipartitions_def)
+    def multipartitioned_asset(context: AssetExecutionContext):
+        key = context.partition_key  # Returns str | MultiPartitionKey
+
+        # Type narrowing pattern 1: isinstance check
+        if isinstance(key, dg.MultiPartitionKey):
+            keys_dict = key.keys_by_dimension
+            assert "date" in keys_dict
+            assert "region" in keys_dict
+        else:
+            # Unreachable for this asset, but pattern is valid
+            assert False, "Expected MultiPartitionKey"
+
+    result = dg.materialize(
+        [multipartitioned_asset],
+        partition_key=dg.MultiPartitionKey({"date": "2024-01-01", "region": "us"}),
+    )
+    assert result.success
+
+
+def test_partition_key_union_type_handling():
+    """Test handling of str | MultiPartitionKey union type in different scenarios."""
+
+    @dg.op
+    def process_partition_key(context: OpExecutionContext):
+        # This op can handle being called with or without a partition key
+        if context.has_partition_key:
+            key = context.partition_key
+            # Safe type handling: convert to string representation
+            key_str = str(key)
+            return {"key": key_str, "is_multi": isinstance(key, dg.MultiPartitionKey)}
+        else:
+            return {"key": None, "is_multi": False}
+
+    # Test without partition key
+    result1 = process_partition_key(dg.build_op_context())
+    assert result1 == {"key": None, "is_multi": False}
+
+    # Test with string partition key
+    result2 = process_partition_key(dg.build_op_context(partition_key="2024-01-02"))
+    assert result2["key"] == "2024-01-02"
+    assert result2["is_multi"] is False
+
+    # Test with MultiPartitionKey
+    mpk = dg.MultiPartitionKey({"date": "2024-01-01", "region": "us"})
+    result3 = process_partition_key(dg.build_op_context(partition_key=mpk))
+    assert "2024-01-01" in result3["key"]
+    assert result3["is_multi"] is True
