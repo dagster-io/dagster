@@ -37,6 +37,27 @@ def _extract_table_name_from_omni_table_name(table_name: str) -> str:
     return table_parts[-1]
 
 
+def _extract_table_name_from_field(field: str) -> str | None:
+    if "." not in field:
+        return None
+    table_name, _field_name = field.split(".", 1)
+    table_name = table_name.strip()
+    return table_name or None
+
+
+def _collect_query_table_names_from_fields(query: OmniQuery) -> list[str]:
+    table_names: list[str] = []
+    seen: set[str] = set()
+    for field in query.query_config.fields:
+        table_name = _extract_table_name_from_field(field)
+        if table_name and table_name not in seen:
+            seen.add(table_name)
+            table_names.append(table_name)
+    if not table_names:
+        table_names.append(query.query_config.table)
+    return table_names
+
+
 @preview
 class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     """Pulls in the contents of an Omni workspace into Dagster assets.
@@ -61,6 +82,12 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Defines how to translate an Omni object into an AssetSpec object.",
     )
+    derive_document_dependencies_from_query_fields: bool = Field(
+        default=False,
+        description=(
+            "If true, derive document dependencies from query field references instead of only the base table."
+        ),
+    )
     defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.versioned_state_storage()
 
     @property
@@ -82,12 +109,22 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         """Core function for converting an Omni document into an AssetSpec object."""
         if isinstance(data.obj, OmniDocument):
             doc = data.obj
-            maybe_deps = [
-                self.get_asset_spec(
-                    context, OmniTranslatorData(obj=query, workspace_data=data.workspace_data)
-                )
-                for query in data.obj.queries
-            ]
+            if self.derive_document_dependencies_from_query_fields:
+                table_names: list[str] = []
+                seen: set[str] = set()
+                for query in data.obj.queries:
+                    for table_name in _collect_query_table_names_from_fields(query):
+                        if table_name not in seen:
+                            seen.add(table_name)
+                            table_names.append(table_name)
+                deps = [dg.AssetKey([table_name]) for table_name in table_names]
+            else:
+                deps = [
+                    self.get_asset_spec(
+                        context, OmniTranslatorData(obj=query, workspace_data=data.workspace_data)
+                    )
+                    for query in data.obj.queries
+                ]
 
             prefix = doc.folder.path.split("/") if doc.folder else []
             user = data.workspace_data.get_user(doc.owner.id)
@@ -97,7 +134,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
                 key=dg.AssetKey([*prefix, doc.name]),
                 group_name=prefix[0].replace("-", "_") if prefix else None,
                 tags={label.name: "" for label in doc.labels},
-                deps=list(filter(None, maybe_deps)),
+                deps=list(filter(None, deps)),
                 metadata={
                     **OmniDocumentMetadataSet.from_document(workspace, doc),
                     TRANSLATOR_DATA_METADATA_KEY: data,

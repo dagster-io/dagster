@@ -6,6 +6,7 @@ import pytest
 from dagster import AssetKey, DagsterInvalidDefinitionError
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster_omni.component import OmniComponent, OmniTranslatorData
+from dagster_omni.objects import OmniQuery, OmniQueryConfig
 from dagster_omni.workspace import OmniWorkspace
 
 from dagster_omni_tests.utils import (
@@ -99,6 +100,37 @@ def test_get_asset_spec_query_table_metadata_extracted_name(component: OmniCompo
     assert spec.key == AssetKey(["my_schema__my_table"])
     assert "dagster/table_name" in spec.metadata
     assert spec.metadata["dagster/table_name"] == "my_table"
+
+
+def test_get_asset_spec_document_field_based_deps(omni_workspace: OmniWorkspace):
+    component = OmniComponent(
+        workspace=omni_workspace,
+        derive_document_dependencies_from_query_fields=True,
+    )
+    query = OmniQuery(
+        id="query-1",
+        name="Field Based Query",
+        query_config=OmniQueryConfig(
+            table="omni_dbt_marts__fct_events",
+            fields=[
+                "omni_dbt_marts__fct_events.event_id",
+                "omni_dbt_marts__dim_users.user_id",
+                "omni_dbt_marts__dim_products.category_lvl_1",
+            ],
+        ),
+    )
+    doc = create_sample_document(queries=[query])
+    workspace_data = create_sample_workspace_data([doc])
+    data = OmniTranslatorData(obj=doc, workspace_data=workspace_data)
+
+    spec = component.get_asset_spec(context, data)
+    assert spec
+
+    assert {dep.asset_key for dep in spec.deps} == {
+        AssetKey(["omni_dbt_marts__fct_events"]),
+        AssetKey(["omni_dbt_marts__dim_users"]),
+        AssetKey(["omni_dbt_marts__dim_products"]),
+    }
 
 
 def test_get_asset_spec_with_translation(component: OmniComponent):
