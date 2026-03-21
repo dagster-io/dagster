@@ -117,6 +117,58 @@ class ContainerUtilizationMetrics(TypedDict):
     cgroup_version: str | None
 
 
+def _read_cgroup_file(path: str, logger: logging.Logger | None, debug_message: str) -> str | None:
+    try:
+        with open(path) as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        if logger:
+            logger.debug(debug_message)
+        return None
+    except Exception:
+        if logger:
+            logger.debug(debug_message, exc_info=True)
+        return None
+
+
+def _parse_cgroup_numeric_value(
+    raw_value: str | None,
+    logger: logging.Logger | None,
+    debug_message: str,
+    *,
+    unlimited_sentinel: str | None = None,
+) -> int | None:
+    if raw_value is None or raw_value == "" or raw_value == unlimited_sentinel:
+        return None
+
+    try:
+        return int(raw_value)
+    except ValueError:
+        if logger:
+            logger.debug(debug_message, exc_info=True)
+        return None
+
+
+def _retrieve_cpu_max_fields_v2(logger: logging.Logger | None) -> tuple[str, str] | None:
+    raw_value = _read_cgroup_file(
+        cpu_max_path_cgroup_v2(),
+        logger,
+        "Unable to read cpu.max from cgroup v2. CPU limits may be unavailable in this environment.",
+    )
+    if raw_value is None or raw_value == "":
+        return None
+
+    parts = raw_value.split()
+    if len(parts) != 2:
+        if logger:
+            logger.debug(
+                "Unable to parse cpu.max from cgroup v2. Expected '$MAX $PERIOD'.",
+            )
+        return None
+
+    return parts[0], parts[1]
+
+
 def retrieve_containerized_utilization_metrics(
     logger: logging.Logger | None,
     previous_measurement_timestamp: float | None = None,
@@ -124,13 +176,21 @@ def retrieve_containerized_utilization_metrics(
 ) -> ContainerUtilizationMetrics:
     """Retrieve the CPU and memory utilization metrics from cgroup and proc files."""
     cgroup_version = _retrieve_cgroup_version(logger)
+    # Pre-fetch cpu.max once for v2 so quota and period readers share a single disk read.
+    cpu_max_fields_v2 = (
+        _retrieve_cpu_max_fields_v2(logger) if cgroup_version == CGroupVersion.V2 else None
+    )
     return {
         "num_allocated_cores": _retrieve_containerized_num_allocated_cores(logger),
         "cpu_usage": _retrieve_containerized_cpu_usage(logger, cgroup_version),
         "previous_cpu_usage": previous_cpu_usage,
         "previous_measurement_timestamp": previous_measurement_timestamp,
-        "cpu_cfs_quota_us": _retrieve_containerized_cpu_cfs_quota_us(logger, cgroup_version),
-        "cpu_cfs_period_us": _retrieve_containerized_cpu_cfs_period_us(logger, cgroup_version),
+        "cpu_cfs_quota_us": _retrieve_containerized_cpu_cfs_quota_us(
+            logger, cgroup_version, cpu_max_fields_v2
+        ),
+        "cpu_cfs_period_us": _retrieve_containerized_cpu_cfs_period_us(
+            logger, cgroup_version, cpu_max_fields_v2
+        ),
         "memory_usage": _retrieve_containerized_memory_usage(logger, cgroup_version),
         "memory_limit": _retrieve_containerized_memory_limit(logger, cgroup_version),
         "measurement_timestamp": get_current_timestamp(),
@@ -178,15 +238,21 @@ def _retrieve_containerized_cpu_usage_v1(logger: logging.Logger | None) -> float
 
 def _retrieve_containerized_cpu_usage_v2(logger: logging.Logger | None) -> float | None:
     try:
-        with open(cpu_stat_path_cgroup_v2()) as f:
-            lines = f.readlines()
-            for line in lines:
-                if line.startswith("usage_usec"):
-                    return float(line.split()[1]) / 1e6  # Cpu.stat usage_usec is in microseconds
+        raw_value = _read_cgroup_file(
+            cpu_stat_path_cgroup_v2(),
+            logger,
+            "Unable to read cpu.stat from cgroup v2. CPU usage metrics may be unavailable in this environment.",
+        )
+        if raw_value is None:
             return None
+
+        for line in raw_value.splitlines():
+            if line.startswith("usage_usec"):
+                return float(line.split()[1]) / 1e6  # Cpu.stat usage_usec is in microseconds
+        return None
     except Exception as e:
         if logger:
-            logger.error(f"Failed to retrieve CPU time from cgroup: {e}")
+            logger.debug(f"Failed to retrieve CPU time from cgroup: {e}")
         return None
 
 
@@ -224,13 +290,15 @@ def _retrieve_containerized_memory_usage_v1(logger: logging.Logger | None) -> in
 
 
 def _retrieve_containerized_memory_usage_v2(logger: logging.Logger | None) -> int | None:
-    try:
-        with open(memory_usage_path_cgroup_v2()) as f:
-            return int(f.read())
-    except Exception as e:
-        if logger:
-            logger.error(f"Failed to retrieve memory usage from cgroup: {e}")
-        return None
+    return _parse_cgroup_numeric_value(
+        _read_cgroup_file(
+            memory_usage_path_cgroup_v2(),
+            logger,
+            "Unable to read memory.current from cgroup v2. Memory usage metrics may be unavailable in this environment.",
+        ),
+        logger,
+        "Unable to parse memory.current from cgroup v2. Memory usage metrics may be unavailable in this environment.",
+    )
 
 
 def _retrieve_containerized_memory_limit(
@@ -256,25 +324,28 @@ def _retrieve_containerized_memory_limit_v1(logger: logging.Logger | None) -> in
 
 
 def _retrieve_containerized_memory_limit_v2(logger: logging.Logger | None) -> int | None:
-    try:
-        with open(memory_limit_path_cgroup_v2()) as f:
-            return int(f.read())
-    except:
-        if logger:
-            logger.exception(
-                "Failed to retrieve memory limit from cgroup. There may be no limit set on the container."
-            )
-        return None
+    return _parse_cgroup_numeric_value(
+        _read_cgroup_file(
+            memory_limit_path_cgroup_v2(),
+            logger,
+            "Unable to read memory.max from cgroup v2. There may be no memory limit in this environment.",
+        ),
+        logger,
+        "Unable to parse memory.max from cgroup v2. There may be no memory limit in this environment.",
+        unlimited_sentinel="max",
+    )
 
 
 def _retrieve_containerized_cpu_cfs_period_us(
-    logger: logging.Logger | None, cgroup_version: CGroupVersion | None
+    logger: logging.Logger | None,
+    cgroup_version: CGroupVersion | None,
+    cpu_max_fields_v2: tuple[str, str] | None = None,
 ) -> float | None:
     """Retrieve the CPU period in microseconds from the cgroup file."""
     if cgroup_version == CGroupVersion.V1:
         return _retrieve_containerized_cpu_cfs_period_us_v1(logger)
     elif cgroup_version == CGroupVersion.V2:
-        return _retrieve_containerized_cpu_cfs_period_us_v2(logger)
+        return _retrieve_containerized_cpu_cfs_period_us_v2(logger, cpu_max_fields_v2)
     else:
         return None
 
@@ -293,26 +364,32 @@ def _retrieve_containerized_cpu_cfs_period_us_v1(
 
 def _retrieve_containerized_cpu_cfs_period_us_v2(
     logger: logging.Logger | None,
+    cpu_max_fields: tuple[str, str] | None = None,
 ) -> float | None:
     # We can retrieve period information from the cpu.max file. The file is in the format $MAX $PERIOD and is only one line.
+    if cpu_max_fields is None:
+        cpu_max_fields = _retrieve_cpu_max_fields_v2(logger)
+    if cpu_max_fields is None:
+        return None
+
     try:
-        with open(cpu_max_path_cgroup_v2()) as f:
-            line = f.readline()
-            return float(line.split()[1])
-    except:
+        return float(cpu_max_fields[1])
+    except ValueError:
         if logger:
-            logger.exception("Failed to retrieve CPU period from cgroup")
+            logger.debug("Unable to parse CPU period from cgroup v2.", exc_info=True)
         return None
 
 
 def _retrieve_containerized_cpu_cfs_quota_us(
-    logger: logging.Logger | None, cgroup_version: CGroupVersion | None
+    logger: logging.Logger | None,
+    cgroup_version: CGroupVersion | None,
+    cpu_max_fields_v2: tuple[str, str] | None = None,
 ) -> float | None:
     """Retrieve the CPU quota in microseconds from the cgroup file."""
     if cgroup_version == CGroupVersion.V1:
         return _retrieve_containerized_cpu_cfs_quota_us_v1(logger)
     elif cgroup_version == CGroupVersion.V2:
-        return _retrieve_containerized_cpu_cfs_quota_us_v2(logger)
+        return _retrieve_containerized_cpu_cfs_quota_us_v2(logger, cpu_max_fields_v2)
     else:
         return None
 
@@ -331,16 +408,20 @@ def _retrieve_containerized_cpu_cfs_quota_us_v1(
 
 def _retrieve_containerized_cpu_cfs_quota_us_v2(
     logger: logging.Logger | None,
+    cpu_max_fields: tuple[str, str] | None = None,
 ) -> float | None:
     # We can retrieve quota information from the cpu.max file. The file is in the format $MAX $PERIOD .
+    if cpu_max_fields is None:
+        cpu_max_fields = _retrieve_cpu_max_fields_v2(logger)
+    if cpu_max_fields is None or cpu_max_fields[0] == "max":
+        return None
+
     try:
-        with open(cpu_max_path_cgroup_v2()) as f:
-            line = f.readline()
-            return float(line.split()[0])
-    except:
+        return float(cpu_max_fields[0])
+    except ValueError:
         if logger:
             logger.debug(
-                "Failed to retrieve CPU quota from cgroup. There might not be a limit set on the container.",
+                "Unable to parse CPU quota from cgroup v2. There might not be a CPU limit set on the container.",
                 exc_info=True,
             )
         return None
