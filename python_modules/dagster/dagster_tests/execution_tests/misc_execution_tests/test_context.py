@@ -661,7 +661,7 @@ def test_multi_partition_key_accessor_raises_on_non_multipartitioned_run():
     def static_partitioned_asset(context: AssetExecutionContext):
         with pytest.raises(
             dg.DagsterInvariantViolationError,
-            match="Cannot access multi_partition_key for a non-multipartitioned run",
+            match=r"Cannot access multi_partition_key for a run that is not partitioned with a MultiPartitionsDefinition\.",
         ):
             _ = context.multi_partition_key
 
