@@ -317,7 +317,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         partition_key = self.partition_key
         if not isinstance(partition_key, MultiPartitionKey):
             raise DagsterInvariantViolationError(
-                "Cannot access multi_partition_key for a non-multipartitioned run."
+                "Cannot access multi_partition_key for a run that is not partitioned with a"
+                " MultiPartitionsDefinition."
             )
         return partition_key
 
