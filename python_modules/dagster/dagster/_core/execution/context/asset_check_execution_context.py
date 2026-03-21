@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -23,9 +23,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 
 
 @public

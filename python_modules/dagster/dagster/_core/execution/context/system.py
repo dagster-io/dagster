@@ -71,7 +71,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
-    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan

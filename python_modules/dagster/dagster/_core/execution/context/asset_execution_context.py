@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any  # noqa: UP035
+from typing import AbstractSet, Any  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
@@ -26,9 +26,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 
 
 def _copy_docs_from_op_execution_context(obj):
@@ -217,7 +214,9 @@ class AssetExecutionContext:
     @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
     @public
     @_copy_docs_from_op_execution_context
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+    def asset_partition_key_for_output(
+        self, output_name: str = "result"
+    ) -> str | MultiPartitionKey:
         return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
 
     @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
