@@ -508,7 +508,7 @@ class InProcessCodeLocation(CodeLocation):
         return RemoteExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
-                remote_job.identifying_job_snapshot_id,
+                remote_job.job_snapshot.snapshot_id,
             )
         )
 
@@ -891,7 +891,7 @@ class GrpcServerCodeLocation(CodeLocation):
             api_client=self.client,
             job_origin=remote_job.get_remote_origin(),
             run_config=run_config,
-            job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            job_snapshot_id=remote_job.job_snapshot.snapshot_id,
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
             op_selection=remote_job.op_selection,
@@ -930,7 +930,7 @@ class GrpcServerCodeLocation(CodeLocation):
             api_client=self.client,
             job_origin=remote_job.get_remote_origin(),
             run_config=run_config,
-            job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            job_snapshot_id=remote_job.job_snapshot.snapshot_id,
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
             op_selection=remote_job.op_selection,

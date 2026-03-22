@@ -1,5 +1,6 @@
 import sys
 from contextlib import contextmanager
+from unittest import mock
 
 import dagster as dg
 import dagster._check as check
@@ -12,7 +13,8 @@ from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
+from dagster._core.remote_representation.external import RemoteJob, RemoteRepository
 from dagster._core.remote_representation.external_data import (
     DISABLE_FAST_EXTRACT_ENV_VAR,
     JobDataSnap,
@@ -21,6 +23,7 @@ from dagster._core.remote_representation.external_data import (
     extract_serialized_job_snap_from_serialized_job_data_snap,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils.env import environ
@@ -110,6 +113,11 @@ def giant_repo():
             "giant": giant_job,
         },
     }
+
+
+@job
+def snapshot_id_job():
+    do_something()
 
 
 @contextmanager
@@ -229,3 +237,79 @@ def test_job_data_snap_layout():
 
     # must remain last position
     assert get_storage_fields(JobDataSnap)[-1] == "pipeline_snapshot"
+
+
+def test_remote_job_uses_loaded_job_snapshot_id_when_ref_snapshot_id_differs():
+    job_data_snap = JobDataSnap.from_job_def(snapshot_id_job, include_parent_snapshot=True)
+    remote_job = RemoteJob(
+        job_data_snap=None,
+        repository_handle=RepositoryHandle.for_test(),
+        job_ref_snap=JobRefSnap(
+            name=job_data_snap.name,
+            snapshot_id="stale-snapshot-id",
+            active_presets=job_data_snap.active_presets,
+            parent_snapshot_id=None,
+        ),
+        ref_to_data_fn=lambda _ref: job_data_snap,
+    )
+
+    # Before materialising the snapshot, the deferred ref ID is returned.
+    assert remote_job.identifying_job_snapshot_id == "stale-snapshot-id"
+    # Accessing job_snapshot forces the JobDataSnap to load (sets self._index).
+    assert remote_job.job_snapshot.snapshot_id == job_data_snap.job.snapshot_id
+    # After loading, _snapshot_id prefers the resolved ID.
+    assert remote_job.identifying_job_snapshot_id == job_data_snap.job.snapshot_id
+    assert remote_job.computed_job_snapshot_id == job_data_snap.job.snapshot_id
+
+
+def test_grpc_execution_plan_uses_loaded_job_snapshot_id(monkeypatch: pytest.MonkeyPatch):
+    job_data_snap = JobDataSnap.from_job_def(snapshot_id_job, include_parent_snapshot=True)
+    remote_job = RemoteJob(
+        job_data_snap=None,
+        repository_handle=RepositoryHandle.for_test(),
+        job_ref_snap=JobRefSnap(
+            name=job_data_snap.name,
+            snapshot_id="stale-snapshot-id",
+            active_presets=job_data_snap.active_presets,
+            parent_snapshot_id=None,
+        ),
+        ref_to_data_fn=lambda _ref: job_data_snap,
+    )
+
+    captured_args = {}
+    expected_snapshot = ExecutionPlanSnapshot(
+        steps=[],
+        artifacts_persisted=False,
+        job_snapshot_id=job_data_snap.job.snapshot_id,
+        step_keys_to_execute=[],
+        initial_known_state=None,
+        snapshot_version=1,
+        executor_name=None,
+        repository_load_data=None,
+    )
+
+    def _fake_sync_get_external_execution_plan_grpc(**kwargs):
+        captured_args.update(kwargs)
+        return expected_snapshot
+
+    monkeypatch.setattr(
+        "dagster._api.snapshot_execution_plan.sync_get_external_execution_plan_grpc",
+        _fake_sync_get_external_execution_plan_grpc,
+    )
+
+    location = object.__new__(GrpcServerCodeLocation)
+    location.client = mock.Mock()
+
+    remote_execution_plan = location.get_execution_plan(
+        remote_job,
+        run_config={},
+        step_keys_to_execute=None,
+        known_state=None,
+        instance=None,
+    )
+
+    assert captured_args["job_snapshot_id"] == job_data_snap.job.snapshot_id
+    assert (
+        remote_execution_plan.execution_plan_snapshot.job_snapshot_id
+        == job_data_snap.job.snapshot_id
+    )
