@@ -50,6 +50,8 @@ def _collect_query_table_names_from_fields(query: OmniQuery) -> list[str]:
     seen: set[str] = set()
     for field in query.query_config.fields:
         table_name = _extract_table_name_from_field(field)
+        if table_name is None:
+            table_name = query.query_config.table
         if table_name and table_name not in seen:
             seen.add(table_name)
             table_names.append(table_name)

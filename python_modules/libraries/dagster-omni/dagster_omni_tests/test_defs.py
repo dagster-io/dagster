@@ -133,6 +133,62 @@ def test_get_asset_spec_document_field_based_deps(omni_workspace: OmniWorkspace)
     }
 
 
+def test_get_asset_spec_document_field_based_deps_all_unqualified_falls_back_to_base_table(
+    omni_workspace: OmniWorkspace,
+):
+    component = OmniComponent(
+        workspace=omni_workspace,
+        derive_document_dependencies_from_query_fields=True,
+    )
+    query = OmniQuery(
+        id="query-2",
+        name="Unqualified Fields Query",
+        query_config=OmniQueryConfig(
+            table="omni_dbt_marts__fct_events",
+            fields=["event_id", "created_at"],
+        ),
+    )
+    doc = create_sample_document(queries=[query])
+    workspace_data = create_sample_workspace_data([doc])
+    data = OmniTranslatorData(obj=doc, workspace_data=workspace_data)
+
+    spec = component.get_asset_spec(context, data)
+    assert spec
+
+    assert {dep.asset_key for dep in spec.deps} == {AssetKey(["omni_dbt_marts__fct_events"])}
+
+
+def test_get_asset_spec_document_field_based_deps_mixed_unqualified_includes_base_table(
+    omni_workspace: OmniWorkspace,
+):
+    component = OmniComponent(
+        workspace=omni_workspace,
+        derive_document_dependencies_from_query_fields=True,
+    )
+    query = OmniQuery(
+        id="query-3",
+        name="Mixed Fields Query",
+        query_config=OmniQueryConfig(
+            table="omni_dbt_marts__fct_events",
+            fields=[
+                "omni_dbt_marts__dim_users.user_id",
+                "event_id",
+            ],
+        ),
+    )
+    doc = create_sample_document(queries=[query])
+    workspace_data = create_sample_workspace_data([doc])
+    data = OmniTranslatorData(obj=doc, workspace_data=workspace_data)
+
+    spec = component.get_asset_spec(context, data)
+    assert spec
+
+    assert {dep.asset_key for dep in spec.deps} == {
+        AssetKey(["omni_dbt_marts__fct_events"]),
+        AssetKey(["omni_dbt_marts__dim_users"]),
+    }
+
+
 def test_get_asset_spec_with_translation(component: OmniComponent):
     """Test get_asset_spec with custom translation function."""
 
