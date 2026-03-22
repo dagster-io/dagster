@@ -349,17 +349,27 @@ def _dagster_cloud_entry_for_project(
         dg_context.container_context_config,
     )
 
+    # agent_queue is a top-level location field in dagster_cloud.yaml; extract it from
+    # the merged build config so users can set it in build.yaml.
+    agent_queue = merged_build_config.get("agent_queue") if merged_build_config else None
+    build_config = (
+        {k: v for k, v in merged_build_config.items() if k != "agent_queue"}
+        if merged_build_config
+        else {}
+    )
+
     return {
         "location_name": dg_context.code_location_name,
         "code_source": {
             **dg_context.target_args,
         },
-        **({"build": merged_build_config} if merged_build_config else {}),
+        **({"build": build_config} if build_config else {}),
         **(
             {"container_context": merged_container_context_config}
             if merged_container_context_config
             else {}
         ),
+        **({"agent_queue": agent_queue} if agent_queue else {}),
     }
 
 

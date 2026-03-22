@@ -102,6 +102,7 @@ The `build.yaml` file contains a single top-level key, `locations`. This key acc
 - [Build](#build)
 - [Python executable](#python-executable)
 - [Container context](#container-context)
+- [Agent queue](#agent-queue)
 
 ### Location name
 
@@ -257,3 +258,21 @@ Refer to the configuration reference for your agent for more info:
 - [Docker agent configuration reference](/deployment/dagster-plus/hybrid/docker/configuration)
 - [Amazon ECS agent configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference)
 - [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration)
+
+### Agent queue
+
+Use the `agent_queue` setting to route a code location to a specific [Hybrid agent queue](/deployment/dagster-plus/hybrid/managing-multiple-agent-deployments). If omitted, the code location is served by the default agent queue.
+
+```yaml
+# build.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: example_etl
+    agent_queue: my-queue
+```
+
+| Property      | Description                                                        | Format   |
+| ------------- | ------------------------------------------------------------------ | -------- |
+| `agent_queue` | The name of the agent queue that should serve this code location   | `string` |

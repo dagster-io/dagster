@@ -323,6 +323,7 @@ class DgRawCliConfig(TypedDict, total=False):
 class DgRawBuildConfig(TypedDict):
     registry: str | None
     directory: str | None
+    agent_queue: str | None
 
 
 def merge_build_configs(

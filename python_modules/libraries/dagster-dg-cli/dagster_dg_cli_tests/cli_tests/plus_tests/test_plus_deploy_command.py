@@ -808,6 +808,145 @@ def test_plus_deploy_hybrid_with_merged_yaml_files(
                 }
 
 
+def test_plus_deploy_hybrid_with_agent_queue_in_project_build_yaml(
+    logged_in_dg_cli_config,
+    project,
+    runner,
+    mocker,
+):
+    """agent_queue specified in a single-project build.yaml is surfaced as a top-level
+    location field in the generated dagster_cloud.yaml (not nested inside build:).
+    """
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+
+    build_yaml_path = project / "build.yaml"
+    build_yaml_path.write_text("registry: my-repo\ndirectory: .\nagent_queue: my-queue\n")
+    try:
+        with mock_external_dagster_cloud_cli_command():
+            with patch("dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image"):
+                result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+                assert not result.exit_code, result.output
+
+                dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+                with open(dagster_cloud_yaml_path) as f:
+                    file = yaml.safe_load(f)
+                    location = file["locations"][0]
+                    assert location["agent_queue"] == "my-queue"
+                    # agent_queue must not be nested under build:
+                    assert "agent_queue" not in location.get("build", {})
+    finally:
+        build_yaml_path.unlink(missing_ok=True)
+
+
+def test_plus_deploy_hybrid_with_agent_queue_in_workspace_build_yaml(
+    logged_in_dg_cli_config,
+    workspace,
+    runner,
+    mocker,
+    workspace_build_yaml_file,
+):
+    """agent_queue set in the workspace-level build.yaml is inherited by all projects."""
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+
+    # Overwrite the fixture's build.yaml with one that includes agent_queue
+    workspace_build_yaml_file.write_text(
+        "registry: my-workspace-repo\ndirectory: .\nagent_queue: workspace-queue\n"
+    )
+
+    with mock_external_dagster_cloud_cli_command():
+        with patch("dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image"):
+            result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+            assert not result.exit_code, result.output
+
+            dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+            with open(dagster_cloud_yaml_path) as f:
+                file = yaml.safe_load(f)
+                for location in file["locations"]:
+                    assert location["agent_queue"] == "workspace-queue"
+                    assert "agent_queue" not in location.get("build", {})
+
+
+def test_plus_deploy_hybrid_project_agent_queue_overrides_workspace(
+    logged_in_dg_cli_config,
+    workspace,
+    runner,
+    mocker,
+    workspace_build_yaml_file,
+):
+    """Project-level agent_queue overrides workspace-level agent_queue."""
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+
+    # Workspace has agent_queue: ws-queue
+    workspace_build_yaml_file.write_text(
+        "registry: my-workspace-repo\ndirectory: .\nagent_queue: ws-queue\n"
+    )
+
+    # foo-bar project has agent_queue: proj-queue
+    project_build_yaml_path = workspace / "foo-bar" / "build.yaml"
+    project_build_yaml_path.write_text(
+        "registry: my-project-repo\ndirectory: .\nagent_queue: proj-queue\n"
+    )
+    try:
+        with mock_external_dagster_cloud_cli_command():
+            with patch("dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image"):
+                result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+                assert not result.exit_code, result.output
+
+                dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+                with open(dagster_cloud_yaml_path) as f:
+                    file = yaml.safe_load(f)
+                    locations = {loc["location_name"]: loc for loc in file["locations"]}
+                    # foo-bar project overrides workspace queue
+                    assert locations["foo-bar"]["agent_queue"] == "proj-queue"
+                    # foo-bar-2 has no project-level build.yaml, inherits workspace queue
+                    assert locations["foo-bar-2"]["agent_queue"] == "ws-queue"
+                    # agent_queue must not appear under build: for any location
+                    for loc in file["locations"]:
+                        assert "agent_queue" not in loc.get("build", {})
+    finally:
+        project_build_yaml_path.unlink(missing_ok=True)
+
+
+def test_plus_deploy_hybrid_agent_queue_only_build_yaml(
+    logged_in_dg_cli_config,
+    project,
+    runner,
+    mocker,
+):
+    """build.yaml with only agent_queue (no registry/directory) omits build: key in output."""
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+
+    build_yaml_path = project / "build.yaml"
+    build_yaml_path.write_text("agent_queue: only-queue\n")
+    try:
+        with mock_external_dagster_cloud_cli_command():
+            with patch("dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image"):
+                result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+                assert not result.exit_code, result.output
+
+                dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+                with open(dagster_cloud_yaml_path) as f:
+                    file = yaml.safe_load(f)
+                    location = file["locations"][0]
+                    assert location["agent_queue"] == "only-queue"
+                    # No build: key since there's no registry or directory
+                    assert "build" not in location
+    finally:
+        build_yaml_path.unlink(missing_ok=True)
+
+
 def test_plus_deploy_subcommands(
     logged_in_dg_cli_config, project, runner, mocker, build_yaml_file
 ) -> None:
