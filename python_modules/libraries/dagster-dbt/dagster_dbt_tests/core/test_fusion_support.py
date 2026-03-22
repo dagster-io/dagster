@@ -1,8 +1,10 @@
+import importlib
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest import mock
 
 import dagster as dg
 import pytest
@@ -93,3 +95,30 @@ def test_basic(project: DbtProject, fail: bool) -> None:
     else:
         assert n_materializations == n_assets
         assert n_check_evaluations == n_checks
+
+
+def test_select_unique_ids_raises_without_dbt_core_or_project() -> None:
+    """Regression: dbt Cloud users without an adapter package (no dbt-core) must get a clear error."""
+    from dagster_dbt.utils import select_unique_ids
+    from dagster_shared.check import CheckError
+
+    blocked = {
+        "dbt": None,
+        **{k: None for k in list(sys.modules) if k.startswith("dbt.")},
+    }
+    import dagster_dbt.compat as compat_mod
+
+    with mock.patch.dict(sys.modules, blocked):
+        importlib.reload(compat_mod)
+        with mock.patch("dagster_dbt.utils.DBT_PYTHON_VERSION", None):
+            with pytest.raises(CheckError, match="dbt-core is not installed"):
+                select_unique_ids(
+                    select="fqn:*",
+                    exclude="",
+                    selector="",
+                    project=None,
+                    manifest_json={},
+                )
+
+    # Restore compat module state so DBT_PYTHON_VERSION is not permanently None
+    importlib.reload(compat_mod)
