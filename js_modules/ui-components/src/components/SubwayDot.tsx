@@ -1,9 +1,10 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
-import styled from 'styled-components';
+import {CSSProperties} from 'react';
 
 import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
+import styles from './css/SubwayDot.module.css';
 
 const SECONDARY_COLORS = {
   Orchid: '#8982DD',
@@ -52,49 +53,26 @@ interface Props {
 }
 
 export const SubwayDot = React.memo(
-  ({label, fontSize = 13, blobColor, icon, iconSize = 16, blobSize = 24}: Props) => (
-    <Blob $color={blobColor || colorForString(label)} $blobSize={blobSize} $fontSize={fontSize}>
-      {icon ? (
-        <Icon
-          size={iconSize}
-          name={icon}
-          color={Colors.accentReversed()}
-          style={{marginLeft: 0, marginTop: 0, opacity: 0.9}}
-        />
-      ) : (
-        label.slice(0, 1)
-      )}
-    </Blob>
-  ),
+  ({label, fontSize = 13, blobColor, icon, iconSize = 16, blobSize = 24}: Props) => {
+    const style: CSSProperties = {
+      '--blob-color': blobColor || colorForString(label),
+      '--blob-size': `${blobSize}px`,
+      '--blob-font-size': `${fontSize}px`,
+    } as CSSProperties;
+
+    return (
+      <div className={styles.blob} style={style}>
+        {icon ? (
+          <Icon
+            size={iconSize}
+            name={icon}
+            color={Colors.accentReversed()}
+            style={{marginLeft: 0, marginTop: 0, opacity: 0.9}}
+          />
+        ) : (
+          label.slice(0, 1)
+        )}
+      </div>
+    );
+  },
 );
-
-interface BlobProps {
-  $color: string;
-  $blobSize: number;
-  $fontSize: number;
-}
-
-const Blob = styled.div<BlobProps>`
-  align-items: center;
-  background-color: ${({$color}) => $color};
-  border-radius: 50%;
-  color: ${Colors.accentReversed()};
-  cursor: pointer;
-  display: flex;
-  flex-shrink: 0;
-  font-size: ${({$fontSize}) => `${$fontSize}px`};
-  height: ${({$blobSize}) => `${$blobSize}px`};
-  justify-content: center;
-  outline: none;
-  text-transform: uppercase;
-  transition:
-    background 50ms linear,
-    color 50ms linear;
-  user-select: none;
-  width: ${({$blobSize}) => `${$blobSize}px`};
-
-  :focus,
-  :active {
-    outline: none;
-  }
-`;

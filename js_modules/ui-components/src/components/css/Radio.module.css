@@ -1,0 +1,48 @@
+.radioContainer :global(.bp5-control) {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.radioContainer :global(.bp5-control) input {
+  display: none;
+}
+
+.radioContainer :global(.bp5-control.bp5-radio) {
+  padding: 4px 4px 4px 0;
+}
+
+.radioContainer :global(.bp5-control.bp5-radio.bp5-disabled) {
+  cursor: default;
+  color: var(--color-text-disabled);
+}
+
+.radioContainer :global(.bp5-control.bp5-radio.bp5-disabled) :global(.iconGlobal) {
+  opacity: 0.4;
+}
+
+.radioContainer :global(.bp5-control) :global(.bp5-control-indicator) {
+  margin: 0;
+  margin-right: 8px;
+}
+
+.radioContainer :global(.bp5-control) input:checked ~ :global(.bp5-control-indicator) {
+  background-color: var(--color-accent-blue);
+}
+
+.radioContainer :global(.bp5-control.bp5-radio) input:disabled ~ :global(.bp5-control-indicator) {
+  cursor: default;
+  opacity: 0.7;
+  box-shadow: inset 0 0 1px var(--color-accent-primary);
+}
+
+.radioContainer :global(.bp5-control.bp5-radio) input:disabled:checked ~ :global(.bp5-control-indicator) {
+  background-color: var(--color-accent-blue);
+}
+
+.radioContainer :global(.bp5-control) :global(.bp5-control-indicator),
+.radioContainer :global(.bp5-control) :global(.bp5-control-indicator)::before {
+  width: 18px;
+  height: 18px;
+}
