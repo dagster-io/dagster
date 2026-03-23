@@ -1,0 +1,38 @@
+diff --git a/lib/layout.js b/lib/layout.js
+index 26b07304cab84c20bfcc0c45c0c1c8baaf6b8aff..16e892422e16b80ef743ea1b77942bbb1865f159 100644
+--- a/lib/layout.js
++++ b/lib/layout.js
+@@ -94,8 +94,8 @@ function updateInputGraph(inputGraph, layoutGraph) {
+   inputGraph.graph().height = layoutGraph.graph().height;
+ }
+ 
+-var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy"];
+-var graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb" };
++var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy","clusterpaddingtop", "clusterpaddingbottom"];
++var graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb", clusterpaddingtop: 20, clusterpaddingbottom: 20 };
+ var graphAttrs = ["acyclicer", "ranker", "rankdir", "align"];
+ var nodeNumAttrs = ["width", "height"];
+ var nodeDefaults = { width: 0, height: 0 };
+@@ -339,6 +339,7 @@ function insertSelfEdges(g) {
+     var orderShift = 0;
+     _.forEach(layer, function(v, i) {
+       var node = g.node(v);
++      if (!node) { return }
+       node.order = i + orderShift;
+       _.forEach(node.selfEdges, function(selfEdge) {
+         util.addDummyNode(g, "selfedge", {
+diff --git a/lib/order/index.js b/lib/order/index.js
+index 4ac2d9fa3837bfe103b9c8459a8e83cc3a3faa6a..a2182feab209a4472147d805f382d55e60f38ab2 100644
+--- a/lib/order/index.js
++++ b/lib/order/index.js
+@@ -73,7 +73,9 @@ function sweepLayerGraphs(layerGraphs, biasRight) {
+ function assignOrder(g, layering) {
+   _.forEach(layering, function(layer) {
+     _.forEach(layer, function(v, i) {
+-      g.node(v).order = i;
++      try {
++        g.node(v).order = i;
++      } catch (e) {}
+     });
+   });
+ }
