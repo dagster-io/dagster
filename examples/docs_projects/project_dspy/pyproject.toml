@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["dagster-webserver", "dagster-dg-cli"]
+dev = ["dagster-webserver", "dagster-dg-cli", "pytest"]
 
 [build-system]
 requires = ["hatchling>=1.19.0"]

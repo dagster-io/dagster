@@ -1,13 +1,13 @@
 // eslint-disable-next-line no-restricted-imports
 import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
+import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
 import {ErrorBoundary} from './ErrorBoundary';
 import {Icon, IconName} from './Icon';
 import {UnstyledButton} from './UnstyledButton';
-import styles from './css/Dialog.module.css';
 
 interface Props extends Omit<
   React.ComponentProps<typeof BlueprintDialog>,
@@ -103,6 +103,11 @@ export const DialogFooter = ({children, left, topBorder}: DialogFooterProps) => 
   );
 };
 
-export const DialogHeaderText = ({children}: {children: React.ReactNode}) => (
-  <div className={styles.dialogHeaderText}>{children}</div>
-);
+export const DialogHeaderText = styled.div`
+  font-size: 16px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+`;

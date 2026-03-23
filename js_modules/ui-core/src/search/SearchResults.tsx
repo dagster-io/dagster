@@ -1,11 +1,11 @@
 import {
-  BaseTag,
   Box,
   Caption,
   CaptionBolded,
   Colors,
   Icon,
   IconName,
+  StyledTag,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -189,25 +189,20 @@ export const SearchResultItem = <T extends ResultType>({
           style={{width: '100%'}}
         >
           <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>
-            <BaseTag
-              fillColor={Colors.backgroundGray()}
-              textColor={Colors.textDefault()}
-              tooltipText={item.label}
-              icon={
-                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} margin={{right: 4}}>
-                  {buildSearchIcons(item, isHighlight)}
-                </Box>
-              }
-              label={
-                <>
-                  {isAssetFilterSearchResultType(item.type) && (
-                    <Caption>{assetFilterPrefixString(item.type)}:</Caption>
-                  )}
-                  {labelComponents}
-                  {item.repoPath ? <Caption> in {item.repoPath}</Caption> : null}
-                </>
-              }
-            />
+            <StyledTag
+              $fillColor={Colors.backgroundGray()}
+              $interactive={false}
+              $textColor={Colors.textDefault()}
+            >
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                {buildSearchIcons(item, isHighlight)}
+                {isAssetFilterSearchResultType(item.type) && (
+                  <Caption>{assetFilterPrefixString(item.type)}:</Caption>
+                )}
+                <div>{labelComponents}</div>
+                {item.repoPath && <Caption>in {item.repoPath}</Caption>}
+              </Box>
+            </StyledTag>
             <div style={{marginLeft: '8px'}}>
               <Description isHighlight={isHighlight}>
                 {item.numResults ? `${item.numResults} assets` : item.description}

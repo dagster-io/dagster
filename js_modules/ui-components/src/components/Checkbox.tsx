@@ -1,9 +1,8 @@
-import clsx from 'clsx';
 import * as React from 'react';
 import {useRef} from 'react';
+import styled, {css} from 'styled-components';
 
 import {Colors} from './Color';
-import styles from './css/Checkbox.module.css';
 
 type Format = 'check' | 'star' | 'switch';
 type Size = 'small' | 'large';
@@ -173,7 +172,7 @@ const CheckIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) => 
 let counter = 0;
 const uniqueId = () => `checkbox-${counter++}`;
 
-export const Checkbox = ({
+const Base = ({
   id,
   checked,
   label,
@@ -183,7 +182,7 @@ export const Checkbox = ({
   indeterminate = false,
   fillColor = Colors.checkboxChecked(),
   children: _children, // not passed to input
-  size = 'large',
+  size: _size,
   onClick,
   ...rest
 }: Props) => {
@@ -199,17 +198,8 @@ export const Checkbox = ({
     }
   }, [format]);
 
-  const labelClassName = clsx(
-    styles.checkbox,
-    disabled && styles.disabled,
-    size === 'large' && styles.sizeLarge,
-    size === 'small' && styles.sizeSmall,
-    format === 'switch' && styles.formatSwitch,
-    className,
-  );
-
   return (
-    <label htmlFor={uid.current} className={labelClassName} onClick={onClick}>
+    <label htmlFor={uid.current} className={className} onClick={onClick}>
       <input
         {...rest}
         type="checkbox"
@@ -232,3 +222,76 @@ export const Checkbox = ({
     </label>
   );
 };
+
+const svgStyle = (values: {size?: Size; format?: Format}) => {
+  const {size = 'large', format = 'check'} = values;
+
+  if (size === 'large') {
+    return css`
+      margin: -3px;
+    `;
+  }
+
+  if (format === 'switch') {
+    return css`
+      margin: -3px -9px;
+      transform: scale(0.5);
+    `;
+  }
+
+  return css`
+    margin: -3px -6px;
+    transform: scale(0.75);
+  `;
+};
+
+export const Checkbox = styled(Base)`
+  display: inline-flex;
+  position: relative;
+  user-select: none;
+  align-items: flex-start;
+  color: ${({disabled}) => (disabled ? Colors.textDisabled() : Colors.textDefault())};
+  cursor: pointer;
+  gap: 8px;
+
+  svg {
+    flex-shrink: 0;
+    ${svgStyle}
+  }
+
+  input[type='checkbox'] {
+    position: absolute;
+    cursor: pointer;
+    opacity: 0;
+    height: 0;
+    width: 0;
+  }
+
+  input:focus + svg {
+    .interaction-focus-outline {
+      stroke: ${Colors.focusRing()};
+      stroke-width: 6px;
+      paint-order: stroke fill;
+    }
+  }
+  /* Focus outline only when using keyboard, not when focusing via mouse,
+     if focus-visible is supported and this rule is understood. */
+  input:focus:not(input:focus-visible) + svg {
+    .interaction-focus-outline {
+      stroke-width: 0;
+    }
+  }
+
+  ${({disabled}) =>
+    !disabled &&
+    `
+    svg:hover {
+      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.12));
+
+      &.interaction-darken,
+      .interaction-darken {
+        filter: brightness(0.8);
+      }
+    }
+  `}
+`;
