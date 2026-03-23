@@ -178,6 +178,17 @@ def _pandera_schema_to_type_check_fn(
 ) -> Callable[[TypeCheckContext, object], TypeCheck]:
     def type_check_fn(_context, value: object) -> TypeCheck:
         if isinstance(value, VALID_DATAFRAME_CLASSES):
+            # Skip re-validation if the DataFrame already carries a matching schema.
+            # Pandera attaches the schema to the DataFrame via the `.pandera` accessor
+            # after a successful `validate()` call. This is an internal Pandera mechanism
+            # (not part of its public API) and may change across versions.
+            if (
+                hasattr(value, "pandera")
+                and value.pandera.schema is not None  # type: ignore[union-attr]
+                and value.pandera.schema == schema  # type: ignore[union-attr]
+            ):
+                return TypeCheck(success=True)
+
             try:
                 # `lazy` instructs pandera to capture every (not just the first) validation error
                 # TODO: pending alternative dataframe support

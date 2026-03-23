@@ -188,3 +188,21 @@ def test_validate_inv_missing_column(dagster_type, dataframe):
     dataframe.drop("a", axis=1, inplace=True)
     result = check_dagster_type(dagster_type, dataframe)
     assert not result.success
+
+
+def test_skip_revalidation_when_schema_attached(dataframe):
+    # Use sample_dataframe_schema so we can call schema.validate() directly with the
+    # same schema instance that the dagster type was built from.
+    schema = sample_dataframe_schema()
+    dagster_type = pandera_schema_to_dagster_type(schema)
+
+    # schema.validate() returns a new DataFrame with the schema attached via
+    # the .pandera accessor — that's the internal mechanism the guard relies on.
+    validated_df = schema.validate(dataframe)
+
+    # Mutate the already-validated DataFrame to make it invalid. If re-validation
+    # were run this would fail; the guard should skip it and return success.
+    validated_df.loc[0, "a"] = 999  # violates le(10)
+
+    result = check_dagster_type(dagster_type, validated_df)
+    assert result.success, "Should skip re-validation for DataFrame with matching schema attached"
