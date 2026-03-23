@@ -44,17 +44,23 @@ import {
 const DEFAULT_MIN_VALUE = 1;
 const DEFAULT_MAX_VALUE = 1000;
 
-export const InstanceConcurrencyPageContent = React.memo(() => {
-  const {concurrencyKey} = useParams<{concurrencyKey?: string}>();
-  if (!concurrencyKey) {
-    return <InstanceConcurrencyIndexContent />;
-  }
+interface ConcurrencyPageContentProps {
+  readOnly?: boolean;
+}
 
-  const decodedKey = decodeURIComponent(concurrencyKey);
-  return <InstanceConcurrencyKeyInfo concurrencyKey={decodedKey} />;
-});
+export const InstanceConcurrencyPageContent = React.memo(
+  ({readOnly}: ConcurrencyPageContentProps) => {
+    const {concurrencyKey} = useParams<{concurrencyKey?: string}>();
+    if (!concurrencyKey) {
+      return <InstanceConcurrencyIndexContent readOnly={readOnly} />;
+    }
 
-export const InstanceConcurrencyIndexContent = React.memo(() => {
+    const decodedKey = decodeURIComponent(concurrencyKey);
+    return <InstanceConcurrencyKeyInfo concurrencyKey={decodedKey} readOnly={readOnly ?? false} />;
+  },
+);
+
+export const InstanceConcurrencyIndexContent = React.memo(({readOnly}: {readOnly?: boolean}) => {
   useTrackPageView();
   useDocumentTitle('Concurrency');
   const queryResult = useQuery<
@@ -95,6 +101,7 @@ export const InstanceConcurrencyIndexContent = React.memo(() => {
           refetch={queryResult.refetch}
           minValue={data.instance.minConcurrencyLimitValue}
           maxValue={data.instance.maxConcurrencyLimitValue}
+          readOnly={readOnly ?? false}
         />
       </div>
     );
@@ -230,19 +237,19 @@ export const ConcurrencyLimits = ({
   refetch,
   minValue,
   maxValue,
+  readOnly,
 }: {
   concurrencyKeys: string[];
   refetch: () => void;
   hasSupport?: boolean;
   maxValue?: number;
   minValue?: number;
-  selectedKey?: string | null;
-  onSelectKey?: (key: string | undefined) => void;
+  readOnly: boolean;
 }) => {
   const [showAdd, setShowAdd] = React.useState<boolean>(false);
   const [search, setSearch] = React.useState('');
 
-  const onAdd = () => setShowAdd(true);
+  const onAdd = readOnly ? undefined : () => setShowAdd(true);
 
   const sortedKeys = React.useMemo(() => {
     return [...concurrencyKeys]
@@ -278,10 +285,14 @@ export const ConcurrencyLimits = ({
             icon="error"
             title="No pool limits"
             description={
-              <>
-                No pool limits have been configured for this instance.&nbsp;
-                <ButtonLink onClick={() => onAdd()}>Add a pool limit</ButtonLink>.
-              </>
+              readOnly ? (
+                'No pool limits have been configured for this instance.'
+              ) : (
+                <>
+                  No pool limits have been configured for this instance.&nbsp;
+                  <ButtonLink onClick={() => setShowAdd(true)}>Add a pool limit</ButtonLink>.
+                </>
+              )
             }
           />
         </Box>
