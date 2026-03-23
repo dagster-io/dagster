@@ -17,7 +17,7 @@ def _spark_pipelines_available_locally() -> bool:
         return True
 
     try:
-        import pyspark  # type: ignore
+        import pyspark
 
         pyspark_bin_dir = Path(pyspark.__file__).resolve().parent / "bin"
         for candidate in ("spark-pipelines.cmd", "spark-pipelines.bat", "spark-pipelines"):
@@ -48,7 +48,7 @@ def _find_spark_pipelines_script() -> str | None:
         return script
 
     try:
-        import pyspark  # type: ignore
+        import pyspark
 
         pyspark_bin_dir = Path(pyspark.__file__).resolve().parent / "bin"
         candidate = pyspark_bin_dir / "spark-pipelines"
