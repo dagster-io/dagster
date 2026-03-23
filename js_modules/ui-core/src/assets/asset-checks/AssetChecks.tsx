@@ -1,7 +1,6 @@
 import {
   Body2,
   Box,
-  Button,
   Caption,
   Colors,
   Icon,
@@ -9,7 +8,6 @@ import {
   NonIdealState,
   Subtitle1,
   TextInput,
-  Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
 import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
@@ -269,16 +267,21 @@ export const AssetChecks = ({
             </Box>
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               {reportDialogElement}
-              <Tooltip content={DEFAULT_DISABLED_REASON} canShow={!canReportEvaluation}>
-                <Button
-                  icon={<Icon name="asset_check" />}
-                  disabled={!canReportEvaluation}
-                  onClick={() => setReportDialogOpen(true)}
-                >
-                  Report evaluation
-                </Button>
-              </Tooltip>
-              <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
+              <ExecuteChecksButton
+                assetNode={assetNode}
+                checks={[selectedCheck]}
+                label="Execute"
+                isPartitioned={isPartitioned}
+                additionalDropdownOptions={[
+                  {
+                    label: 'Report evaluation',
+                    icon: 'asset_check',
+                    onClick: () => setReportDialogOpen(true),
+                    disabled: !canReportEvaluation,
+                    disabledReason: DEFAULT_DISABLED_REASON,
+                  },
+                ]}
+              />
             </Box>
           </Box>
           <Box padding={{horizontal: 24}} border="bottom">
