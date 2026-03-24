@@ -200,6 +200,97 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     )
 
 
+def test_dynamic_table_name_metadata(dlt_pipeline: Pipeline) -> None:
+    def dynamic_table_name(item: dict[str, Any]) -> str:
+        return item["category"]
+
+    @dlt.source
+    def dynamic_source():
+        @dlt.resource(table_name=dynamic_table_name)
+        def events():
+            yield {"id": 1, "category": "alpha", "values": [1, 2]}
+            yield {"id": 2, "category": "beta", "values": [3]}
+
+        return events
+
+    @dlt_assets(dlt_source=dynamic_source(), dlt_pipeline=dlt_pipeline)
+    def dynamic_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(context=context)
+
+    res = materialize(
+        [dynamic_pipeline_assets],
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    )
+
+    assert res.success
+
+    [materialization] = [event.materialization for event in res.get_asset_materialization_events()]
+    assert materialization.asset_key == AssetKey("dlt_dynamic_source_events")
+    assert materialization.metadata["rows_loaded"] == IntMetadataValue(2)
+    assert "dagster/table_name" not in materialization.metadata
+    assert "dagster/column_schema" not in materialization.metadata
+    assert materialization.metadata["alpha"] == TableSchemaMetadataValue(
+        schema=TableSchema(
+            columns=[
+                TableColumn(
+                    name="id",
+                    type="bigint",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="category",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_load_id",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=False, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=True, other=["row_key"]
+                    ),
+                ),
+            ]
+        ),
+    )
+    assert materialization.metadata["alpha__values"] == TableSchemaMetadataValue(
+        schema=TableSchema(
+            columns=[
+                TableColumn(
+                    name="value",
+                    type="bigint",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_parent_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["parent_key"]
+                    ),
+                ),
+                TableColumn(
+                    name="_dlt_list_idx",
+                    type="bigint",
+                    constraints=TableColumnConstraints(nullable=False, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=True, other=["row_key"]
+                    ),
+                ),
+            ]
+        ),
+    )
+
+
 def test_multi_asset_names_do_not_conflict(dlt_pipeline: Pipeline) -> None:
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
