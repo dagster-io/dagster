@@ -2,6 +2,8 @@ from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_spark.components.spark_declarative_pipeline import (
     SparkDeclarativePipelineComponent as SparkDeclarativePipelineComponent,
+    SparkDeclarativePipelineScaffolder as SparkDeclarativePipelineScaffolder,
+    SparkPipelinesResource as SparkPipelinesResource,
 )
 from dagster_spark.configs import define_spark_config as define_spark_config
 from dagster_spark.ops import create_spark_op as create_spark_op
