@@ -90,6 +90,24 @@ from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
+# Classes that benefit from columnar packing in the cursor.  These are
+# high-repetition classes (thousands of instances) where deduplication saves
+# significant space and speeds up deserialization.  Low-repetition classes
+# (singletons, metadata entries) are serialized inline to avoid the
+# hashing overhead of the columnar collector.
+_CURSOR_COLUMNAR_CLASSES: frozenset[str] = frozenset(
+    {
+        "AutomationConditionNodeCursor",
+        "AssetSubset",
+        "AssetKey",
+        "AutomationConditionCursor",
+        "TimeWindow",
+        "TimestampWithTimezone",
+        "TimeWindowPartitionsSubset",
+        "TimeWindowPartitionsDefinition",
+    }
+)
+
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
 _PRE_SENSOR_ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 _MIGRATED_CURSOR_TO_SENSORS_KEY = "MIGRATED_CURSOR_TO_SENSORS"
@@ -216,14 +234,17 @@ def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCurso
     as a string value.
 
     When DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR is set, uses version "1" with columnar
-    packing (serialize_compressed) for smaller payloads and faster deserialization. Otherwise
+    packing (serialize_deduped) for smaller payloads and faster deserialization. Otherwise
     uses the original version "0" format. Deploy the reader change first before enabling the
     writer via the env var.
     """
     if os.environ.get("DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR"):
         VERSION = "1"
         with skip_num_partitions_serialization_ctx():
-            serialized_bytes = serialize_deduped(cursor).encode("utf-8")
+            serialized_bytes = serialize_deduped(
+                cursor,
+                columnar_classes=_CURSOR_COLUMNAR_CLASSES,
+            ).encode("utf-8")
     else:
         # increment the version if the cursor format changes
         VERSION = "0"
