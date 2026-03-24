@@ -1,8 +1,11 @@
-from unittest.mock import MagicMock
+import os
+from unittest.mock import MagicMock, patch
 
 import pytest
 from dagster import AssetsDefinition
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.resolved.context import ResolutionContext
+from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.utils.defs_state import DefsStateConfigArgs
 from dagster_dbt.cloud_v2.component.dbt_cloud_component import DbtCloudComponent
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
@@ -114,3 +117,68 @@ def test_dbt_cloud_component_execution(mock_workspace):
     mock_workspace.cli.assert_called_once()
     call_args = mock_workspace.cli.call_args[1]
     assert call_args["args"] == ["build", "--select", "tag:staging"]
+
+
+BASIC_DBT_CLOUD_COMPONENT_BODY = {
+    "type": "dagster_dbt.DbtCloudComponent",
+    "attributes": {
+        "workspace": {
+            "account_id": 123456,
+            "token": "test-token",
+            "access_url": "https://cloud.getdbt.com",
+            "project_id": 11111,
+            "environment_id": 22222,
+        },
+        "select": "tag:dagster",
+    },
+}
+
+
+def test_dbt_cloud_component_from_yaml(mock_workspace_data):
+    """Test that DbtCloudComponent can be loaded from YAML configuration."""
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=BASIC_DBT_CLOUD_COMPONENT_BODY,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert isinstance(component.workspace, DbtCloudWorkspace)
+            assert component.workspace.credentials.account_id == 123456
+            assert component.workspace.credentials.token == "test-token"
+            assert component.workspace.credentials.access_url == "https://cloud.getdbt.com"
+            assert component.workspace.project_id == 11111
+            assert component.workspace.environment_id == 22222
+            assert component.select == "tag:dagster"
+
+
+def test_dbt_cloud_component_from_yaml_with_env_vars(mock_workspace_data):
+    """Test that DbtCloudComponent resolves Jinja env var templates from YAML."""
+    body = {
+        "type": "dagster_dbt.DbtCloudComponent",
+        "attributes": {
+            "workspace": {
+                "account_id": 123456,
+                "token": "{{ env.DBT_CLOUD_TOKEN }}",
+                "project_id": 11111,
+                "environment_id": 22222,
+            },
+        },
+    }
+    with (
+        patch.dict(os.environ, {"DBT_CLOUD_TOKEN": "my-secret-token"}),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert component.workspace.credentials.token == "my-secret-token"
