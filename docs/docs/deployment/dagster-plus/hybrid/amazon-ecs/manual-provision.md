@@ -97,24 +97,6 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
 
   You can also include any additional permissions required to run your ops, such as permissions to interact with an S3 bucket.
 
-**Note**: Both roles must include a trust relationship that allows ECS to use them:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ecs-tasks.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-```
-
 ## Step 3: Create an ECS service
 
 1. Create an ECS service to run the agent. You can do this [in the Amazon ECS console](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-service-console-v2.html) or [via the CreateService API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html).
