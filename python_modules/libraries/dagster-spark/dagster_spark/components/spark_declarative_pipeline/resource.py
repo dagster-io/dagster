@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from dagster import AssetKey, ConfigurableResource
+from dagster._annotations import preview
 from pydantic import Field
 
 from dagster_spark.components.spark_declarative_pipeline.discovery import (
@@ -23,6 +24,7 @@ from dagster_spark.components.spark_declarative_pipeline.discovery import (
 ExecutionMode = Literal["incremental", "full_refresh"]
 
 
+@preview
 class SparkPipelinesResource(ConfigurableResource):
     """Dagster resource for Spark Declarative Pipelines: discovery and run.
 
