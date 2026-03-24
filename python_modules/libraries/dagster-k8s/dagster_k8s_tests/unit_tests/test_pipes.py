@@ -551,12 +551,12 @@ def test_run_ignores_404_on_pod_cleanup():
     exception chain, making it harder for callers to handle the failure correctly.
     """
     import kubernetes
-    from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
+    from dagster_k8s.client import DagsterK8sError
 
     not_found = kubernetes.client.exceptions.ApiException(status=404)
     not_found.status = 404
 
-    mock_k8s_client = mock.MagicMock(spec=DagsterKubernetesClient)
+    mock_k8s_client = mock.MagicMock()
     mock_k8s_client.core_api.delete_namespaced_pod.side_effect = not_found
     mock_k8s_client.wait_for_pod.side_effect = DagsterK8sError(
         'Pod "dagster-abc123-run-batch" was unexpectedly killed'
