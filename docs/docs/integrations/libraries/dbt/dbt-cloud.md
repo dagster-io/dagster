@@ -153,26 +153,26 @@ type: dagster_dbt.DbtCloudComponent
 attributes:
   workspace:
     account_id: 123456
-    token: "{{ env.DBT_CLOUD_TOKEN }}"
-    access_url: "https://cloud.getdbt.com"
+    token: '{{ env.DBT_CLOUD_TOKEN }}'
+    access_url: 'https://cloud.getdbt.com'
     project_id: 11111
     environment_id: 22222
-  select: "tag:dagster"
+  select: 'tag:dagster'
 ```
 
 #### Workspace fields
 
-| Field                  | Type    | Default                         | Description                                        |
-| :--------------------- | :------ | :------------------------------ | :------------------------------------------------- |
-| `account_id`           | `int`   | **Required**                    | The ID of your dbt Cloud account.                  |
-| `token`                | `str`   | **Required**                    | Your dbt Cloud API token.                          |
-| `access_url`           | `str`   | `https://cloud.getdbt.com`     | Your dbt Cloud workspace URL.                      |
-| `project_id`           | `int`   | **Required**                    | The ID of the dbt Cloud project.                   |
-| `environment_id`       | `int`   | **Required**                    | The ID of the dbt Cloud environment.               |
-| `adhoc_job_name`       | `str`   | Auto-generated                  | Custom name for the ad hoc job created by Dagster.  |
-| `request_max_retries`  | `int`   | `3`                             | Maximum number of request retries.                 |
-| `request_retry_delay`  | `float` | `0.25`                          | Delay between request retries in seconds.          |
-| `request_timeout`      | `int`   | `15`                            | Request timeout in seconds.                        |
+| Field                 | Type    | Default                    | Description                                        |
+| :-------------------- | :------ | :------------------------- | :------------------------------------------------- |
+| `account_id`          | `int`   | **Required**               | The ID of your dbt Cloud account.                  |
+| `token`               | `str`   | **Required**               | Your dbt Cloud API token.                          |
+| `access_url`          | `str`   | `https://cloud.getdbt.com` | Your dbt Cloud workspace URL.                      |
+| `project_id`          | `int`   | **Required**               | The ID of the dbt Cloud project.                   |
+| `environment_id`      | `int`   | **Required**               | The ID of the dbt Cloud environment.               |
+| `adhoc_job_name`      | `str`   | Auto-generated             | Custom name for the ad hoc job created by Dagster. |
+| `request_max_retries` | `int`   | `3`                        | Maximum number of request retries.                 |
+| `request_retry_delay` | `float` | `0.25`                     | Delay between request retries in seconds.          |
+| `request_timeout`     | `int`   | `15`                       | Request timeout in seconds.                        |
 
 ### Limitations
 
