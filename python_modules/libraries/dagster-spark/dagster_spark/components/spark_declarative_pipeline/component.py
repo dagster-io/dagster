@@ -11,6 +11,7 @@ from typing import Annotated, Any, Literal
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec, Definitions, deserialize_value, serialize_value
+from dagster._annotations import preview, public
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.core_models import OpSpec
@@ -50,6 +51,8 @@ def _resolve_spark_pipelines_resource(_context: Any, value: Any) -> SparkPipelin
     )
 
 
+@public
+@preview
 @scaffold_with(SparkDeclarativePipelineScaffolder)
 @dataclass
 class SparkDeclarativePipelineComponent(StateBackedComponent, dg.Resolvable):
