@@ -8,10 +8,6 @@ type FeatureFlagRow = {key: string; flagType: FeatureFlag; label?: React.ReactNo
  */
 export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
   {
-    key: 'Display resources in navigation sidebar',
-    flagType: FeatureFlag.flagSidebarResources,
-  },
-  {
     key: 'Disable WebSockets',
     flagType: FeatureFlag.flagDisableWebsockets,
   },
