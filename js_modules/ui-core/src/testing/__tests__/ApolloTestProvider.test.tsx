@@ -1,15 +1,13 @@
 import {render, screen} from '@testing-library/react';
-import {loader} from 'graphql.macro';
 
 import {useQuery} from '../../apollo-client';
+import typeDefs from '../../graphql/schema.graphql';
 import {INSTANCE_CONFIG_QUERY} from '../../instance/InstanceConfig';
 import {
   InstanceConfigQuery,
   InstanceConfigQueryVariables,
 } from '../../instance/types/InstanceConfig.types';
 import {ApolloTestProvider} from '../ApolloTestProvider';
-
-const typeDefs = loader('../../graphql/schema.graphql');
 
 describe('ApolloTestProvider', () => {
   const Thing = () => {

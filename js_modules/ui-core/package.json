@@ -67,7 +67,6 @@
     "fuse.js": "^6.4.2",
     "graphql": "^16.8.1",
     "graphql-codegen-persisted-query-ids": "^0.2.0",
-    "graphql.macro": "^1.4.2",
     "highlight.js": "11.6.0",
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
