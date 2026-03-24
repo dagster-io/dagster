@@ -23,7 +23,7 @@ import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus, RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
+import {LiveTickTimeline} from '../../instigation/LiveTickTimeline';
 import {isStuckStartedTick} from '../../instigation/util';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
