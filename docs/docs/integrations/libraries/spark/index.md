@@ -48,14 +48,11 @@ Dagster also provides native support for the new **Spark Declarative Pipelines (
 The `SparkDeclarativePipelineComponent` leverages the `spark-pipelines` CLI to automatically discover your datasets and dependencies using `spark-pipelines dry-run`.
 
 **Key benefits include:**
-
-- **Auto-Discovery:** No need to manually define `AssetSpec`s. The component infers Materialized Views and Streaming Tables automatically at load time.
-- **Incremental & Full Refresh:** Natively supports both `--refresh` and `--full-refresh` execution modes.
-- **Real-time Observability:** Streams execution logs and events directly back to the Dagster UI during execution.
-- **UI Clutter Reduction:** Pipeline-scoped intermediate datasets (Temporary Views) are automatically filtered out from the Dagster lineage unless explicitly overridden.
+* **Auto-Discovery:** No need to manually define `AssetSpec`s. The component infers Materialized Views and Streaming Tables automatically at load time.
+* **Incremental & Full Refresh:** Natively supports both `--refresh` and `--full-refresh` execution modes.
+* **Real-time Observability:** Streams execution logs and events directly back to the Dagster UI during execution.
+* **UI Clutter Reduction:** Pipeline-scoped intermediate datasets (Temporary Views) are automatically filtered out from the Dagster lineage unless explicitly overridden.
 
 You can quickly initialize a new SDP component in your Dagster project using the `dg` CLI:
-
 ```bash
 dg scaffold component dagster_spark.SparkDeclarativePipelineComponent my_sdp_pipeline --pipeline-spec-path ./path/to/spark-pipeline.yml
-```

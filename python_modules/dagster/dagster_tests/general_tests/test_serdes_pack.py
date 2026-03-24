@@ -1,6 +1,8 @@
 """Tests for compressed columnar packing (dagster_shared.serdes.pack)."""
 
 import json
+import os
+import unittest.mock
 
 import dagster as dg
 from dagster import DagsterInstance
@@ -259,3 +261,31 @@ def test_cursor_round_trip():
     packed_json = serialize_deduped(cursor)
     result = deserialize_deduped(packed_json, as_type=AssetDaemonCursor)
     assert result == cursor
+
+
+def test_instigator_cursor_reads_both_versions():
+    """The reader handles both v0 (plain serdes) and v1 (columnar-packed) cursors."""
+    from dagster._daemon.asset_daemon import (
+        asset_daemon_cursor_from_instigator_serialized_cursor,
+        asset_daemon_cursor_to_instigator_serialized_cursor,
+    )
+
+    cursor = _make_cursor(num_upstream=10)
+
+    # Default writer produces version "0"
+    v0_stored = asset_daemon_cursor_to_instigator_serialized_cursor(cursor)
+    assert v0_stored.startswith("0")
+
+    # With env var set, writer produces version "1"
+    with unittest.mock.patch.dict(
+        os.environ, {"DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR": "1"}
+    ):
+        v1_stored = asset_daemon_cursor_to_instigator_serialized_cursor(cursor)
+    assert v1_stored.startswith("1")
+
+    # Both should deserialize to the same cursor
+    from_v0 = asset_daemon_cursor_from_instigator_serialized_cursor(v0_stored, None)
+    from_v1 = asset_daemon_cursor_from_instigator_serialized_cursor(v1_stored, None)
+
+    assert from_v0 == cursor
+    assert from_v1 == cursor

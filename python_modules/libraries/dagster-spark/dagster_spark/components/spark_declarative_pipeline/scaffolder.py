@@ -1,12 +1,10 @@
 """Scaffolder for Spark Declarative Pipeline component."""
 
-from dagster._annotations import preview
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
 
 
-@preview
 class SparkDeclarativePipelineScaffolder(Scaffolder):
     """Scaffolds a Spark Declarative Pipeline component defs.yaml and pipeline spec path."""
 

@@ -9,8 +9,6 @@ from dagster_spark.components.spark_declarative_pipeline.discovery import (
 )
 from dagster_spark.components.spark_declarative_pipeline.resource import SparkPipelinesResource
 
-pytestmark = pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
-
 
 def test_run_and_observe_completes_successfully_with_asset_keys() -> None:
     """run_and_observe runs the subprocess and returns None; the asset yields MaterializeResults."""

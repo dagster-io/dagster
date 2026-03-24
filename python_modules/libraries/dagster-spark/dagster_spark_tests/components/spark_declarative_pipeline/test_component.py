@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import dagster as dg
-import pytest
 from dagster import AssetKey
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing.utils import create_defs_folder_sandbox
@@ -17,8 +16,6 @@ from dagster_spark.components.spark_declarative_pipeline import (
     SparkDeclarativePipelineComponent,
     SparkPipelineState,
 )
-
-pytestmark = pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
 
 
 @contextmanager

@@ -15,7 +15,7 @@ from types import TracebackType
 from typing import AbstractSet, Any, cast  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.pack import deserialize_deduped
+from dagster_shared.serdes.pack import deserialize_deduped, serialize_deduped
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
@@ -214,14 +214,48 @@ def _serialize_asset_daemon_cursor(cursor: AssetDaemonCursor) -> str:
 def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCursor) -> str:
     """This method compresses the serialized cursor and returns a b64 encoded string to be stored
     as a string value.
-    """
-    # increment the version if the cursor format changes
-    VERSION = "0"
 
-    serialized_bytes = _serialize_asset_daemon_cursor(cursor).encode("utf-8")
+    When DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR is set, uses version "1" with columnar
+    packing (serialize_compressed) for smaller payloads and faster deserialization. Otherwise
+    uses the original version "0" format. Deploy the reader change first before enabling the
+    writer via the env var.
+    """
+    if os.environ.get("DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR"):
+        VERSION = "1"
+        with skip_num_partitions_serialization_ctx():
+            serialized_bytes = serialize_deduped(cursor).encode("utf-8")
+    else:
+        # increment the version if the cursor format changes
+        VERSION = "0"
+        serialized_bytes = _serialize_asset_daemon_cursor(cursor).encode("utf-8")
+
     compressed_bytes = zlib.compress(serialized_bytes)
     encoded_cursor = base64.b64encode(compressed_bytes).decode("utf-8")
     return VERSION + encoded_cursor
+
+
+def _decode_instigator_cursor_payload(encoded_bytes: str) -> str:
+    """Shared decode step: b64 -> zlib decompress -> utf-8 string."""
+    decoded_bytes = base64.b64decode(encoded_bytes)
+    decompressed_bytes = zlib.decompress(decoded_bytes)
+    return decompressed_bytes.decode("utf-8")
+
+
+def _read_v0_instigator_cursor(
+    payload: str, asset_graph: BaseAssetGraph | None
+) -> AssetDaemonCursor:
+    """Original format: zlib(serialize_value(cursor)) -> b64."""
+    deserialized_cursor = deserialize_value(
+        payload, (LegacyAssetDaemonCursorWrapper, AssetDaemonCursor)
+    )
+    if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
+        return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
+    return deserialized_cursor
+
+
+def _read_v1_instigator_cursor(payload: str) -> AssetDaemonCursor:
+    """Columnar-packed format: zlib(serialize_deduped(cursor)) -> b64."""
+    return deserialize_deduped(payload, as_type=AssetDaemonCursor)
 
 
 def asset_daemon_cursor_from_instigator_serialized_cursor(
@@ -234,25 +268,12 @@ def asset_daemon_cursor_from_instigator_serialized_cursor(
         return AssetDaemonCursor.empty()
 
     version, encoded_bytes = serialized_cursor[0], serialized_cursor[1:]
+    payload = _decode_instigator_cursor_payload(encoded_bytes)
 
     if version == "1":
-        # Columnar-packed format: zlib(serialize_deduped(cursor)) -> b64
-        decoded_bytes = base64.b64decode(encoded_bytes)
-        decompressed_bytes = zlib.decompress(decoded_bytes)
-        decompressed_str = decompressed_bytes.decode("utf-8")
-        return deserialize_deduped(decompressed_str, as_type=AssetDaemonCursor)
-
+        return _read_v1_instigator_cursor(payload)
     if version == "0":
-        # Original format: zlib(serialize_value(cursor)) -> b64
-        decoded_bytes = base64.b64decode(encoded_bytes)
-        decompressed_bytes = zlib.decompress(decoded_bytes)
-        decompressed_str = decompressed_bytes.decode("utf-8")
-        deserialized_cursor = deserialize_value(
-            decompressed_str, (LegacyAssetDaemonCursorWrapper, AssetDaemonCursor)
-        )
-        if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
-            return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
-        return deserialized_cursor
+        return _read_v0_instigator_cursor(payload, asset_graph)
 
     raise DagsterInvariantViolationError(f"Invalid serialized cursor version: {version}")
 
