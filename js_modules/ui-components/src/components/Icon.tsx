@@ -258,6 +258,7 @@ import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
 import not from '../icon-svgs/not.svg';
 import notifications from '../icon-svgs/notifications.svg';
+import notifications_off from '../icon-svgs/notifications_off.svg';
 import observation from '../icon-svgs/observation.svg';
 import observation_planned from '../icon-svgs/observation_planned.svg';
 import observation_started from '../icon-svgs/observation_started.svg';
@@ -687,6 +688,7 @@ export const Icons = {
   no_access,
   not,
   notifications,
+  notifications_off,
   observation,
   observation_planned,
   observation_started,
