@@ -3,7 +3,6 @@ export enum FeatureFlag {
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
   flagAssetGraphGroupsPerCodeLocation = 'flagAssetGraphGroupsPerCodeLocation',
-  flagAssetCatalogSidebar = 'flagAssetCatalogSidebar',
   flagSkipOptionalResourceDefaultsInRunConfig = 'flagSkipOptionalResourceDefaultsInRunConfig',
 
   // Flags for tests
