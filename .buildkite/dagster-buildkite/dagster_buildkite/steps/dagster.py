@@ -32,7 +32,6 @@ def build_repo_wide_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
     # the target. `pyright` and `ruff` are run for the whole repo at once.
     return [
-        *build_check_changelog_steps(ctx),
         *build_repo_wide_pyright_steps(ctx),
         *build_repo_wide_ruff_steps(ctx),
         *build_repo_wide_prettier_steps(ctx),
@@ -88,18 +87,6 @@ def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepCon
         )
         .skip(_get_prettier_step_skip_reason(ctx))
         .build(),
-    ]
-
-
-def build_check_changelog_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
-    skip_reason = _get_check_changelog_step_skip_reason(ctx)
-    cmd = (
-        f"python {oss_path('scripts/check_changelog.py')} {ctx.release_version}"
-        if not skip_reason
-        else "echo skipped"
-    )
-    return [
-        CommandStepBuilder(":memo: changelog").run(cmd).on_test_image().skip(skip_reason).build(),
     ]
 
 
@@ -223,9 +210,3 @@ def _get_prettier_step_skip_reason(ctx: BuildkiteContext) -> str | None:
     elif ctx.has_non_docs_markdown_changes():
         return None
     return "No yaml changes or markdown changes outside docs"
-
-
-def _get_check_changelog_step_skip_reason(ctx: BuildkiteContext) -> str | None:
-    if not ctx.is_release_branch:
-        return "Not a release branch"
-    return None
