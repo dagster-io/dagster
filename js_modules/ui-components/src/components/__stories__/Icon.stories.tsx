@@ -5,7 +5,7 @@ import {Box} from '../Box';
 import {Colors} from '../Color';
 import {Icon, IconName, IconNames as _iconNames} from '../Icon';
 import {TextInput} from '../TextInput';
-import {Tooltip} from '../Tooltip';
+import {UnstyledButton} from '../UnstyledButton';
 
 const IconNames = _iconNames.slice().sort();
 
@@ -13,6 +13,41 @@ const IconNames = _iconNames.slice().sort();
 export default {
   title: 'Icon',
   component: Icon,
+};
+
+const CopyableText = ({text}: {text: string}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleClick = () => {
+    navigator.clipboard.writeText(text);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  return (
+    <UnstyledButton
+      style={{
+        fontSize: '14px',
+        lineHeight: '16px',
+        color: Colors.textLight(),
+        cursor: 'pointer',
+        display: 'flex',
+        gap: '4px',
+        alignItems: 'center',
+      }}
+      onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {text}
+      {isCopied ? (
+        <Icon name="copy_to_clipboard_done" size={16} />
+      ) : (
+        isHovered && <Icon name="copy_to_clipboard" size={16} />
+      )}
+    </UnstyledButton>
+  );
 };
 
 const IconGallery = ({
@@ -37,11 +72,20 @@ const IconGallery = ({
           {filtered.length} of {IconNames.length} icons
         </span>
       </Box>
-      <Box flex={{gap: 6, wrap: 'wrap'}}>
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateRows: `repeat(${Math.ceil(filtered.length / 4)}, auto)`,
+          gridGap: '8px',
+          gridAutoFlow: 'column',
+        }}
+      >
         {filtered.map((name, idx) => (
-          <Tooltip content={name} key={name}>
+          <Box key={name} flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             {renderIcon(name, idx)}
-          </Tooltip>
+            <CopyableText text={name} />
+          </Box>
         ))}
       </Box>
     </Box>
