@@ -226,6 +226,23 @@ class ConfigurableResourceFactory(
         # Populate config values
         super().__init__(**data_without_resources, **resource_pointers)
 
+        # After Pydantic initialises the model (populating defaults from the class), re-scan
+        # the instance dict for any resource-typed fields that were not explicitly provided
+        # by the caller.  This handles the case where a ConfigurableResource subclass is
+        # used as a default value:
+        #
+        #     class Outer(ConfigurableResource):
+        #         inner: ResourceDependency[Inner] = Inner()
+        #
+        # Because ConfigurableResource instances are Python data descriptors (they inherit
+        # __get__/__set__ from TypecheckAllowPartialResourceInitParams), Pydantic's field
+        # introspection previously could not read the default, leaving ``_nested_resources``
+        # empty and causing a RecursionError when ``self.inner`` was accessed.  The
+        # descriptor __get__/__set__ fix now lets Pydantic store the default in the instance
+        # __dict__, so we can safely pick it up here.
+        all_resource_pointers, _ = separate_resource_params(self.__class__, dict(self.__dict__))
+        resource_pointers = {**all_resource_pointers, **resource_pointers}
+
         # We pull the values from the Pydantic config object, which may cast values
         # to the correct type under the hood - useful in particular for enums
         casted_data_without_resources = {
@@ -902,6 +919,7 @@ def separate_resource_params(cls: type[BaseModel], data: dict[str, Any]) -> Sepa
         non_resources=non_resources,
     )
     return out
+
 
 
 def _call_resource_fn_with_default(
