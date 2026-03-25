@@ -6,17 +6,16 @@ from dagster_shared.record import record
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import FreshnessPolicy
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -25,6 +24,7 @@ from dagster._core.definitions.partitions.definition import (
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injected, Model, Resolver
@@ -459,15 +459,19 @@ def apply_post_processor_to_defs(
 
     target_keys = _resolve_target_keys(defs, model.target)
 
-    # Use map_asset_specs (not map_resolved_asset_specs) to avoid triggering
-    # resolve_asset_graph() -> get_repository_def(), which validates resource
-    # requirements prematurely before parent component resources are merged.
-    return defs.map_asset_specs(
+    # Use permissive_map_resolved_asset_specs with selection=None to:
+    # 1. Avoid triggering resolve_asset_graph() -> get_repository_def(), which
+    #    validates resource requirements prematurely before parent component
+    #    resources are merged (selection=None skips resolution).
+    # 2. Allow SourceAsset and CacheableAssetsDefinition to pass through
+    #    unchanged, since map_resolved_asset_specs rejects those types.
+    return defs.permissive_map_resolved_asset_specs(
         func=lambda spec: (
             apply_post_processor_to_spec(model, spec, context)
             if target_keys is None or spec.key in target_keys
             else spec
         ),
+        selection=None,
     )
 
 
