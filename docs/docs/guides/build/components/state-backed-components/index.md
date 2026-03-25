@@ -15,7 +15,7 @@ Before working with state-backed components, you should be familiar with the bas
 <PyObject section="components" module="dagster" object="StateBackedComponent" pluralize={true} /> are a specialized type of Dagster component designed to handle cases where your Dagster definitions depend on information from external systems or tools, rather than purely the code and configuration files in your repository.
 
 
-## What is the "state" in state-backed components?
+## About "state" in state-backed components
 
 Some integrations require doing non-trivial work to turn their configuration into actual definition objects. For example:
 
@@ -49,11 +49,11 @@ State-backed components support three different strategies for managing state, e
 
 | Strategy | Storage Location | Best For |
 |----------|-----------------|----------|
-| Local Filesystem | `.local_defs_state/` directory | Docker/PEX deployments where state is updated during image builds |
-| Versioned State Storage | Cloud storage (S3, GCS, etc.) | Deployments where you want to update state without rebuilding images |
-| Code Server Snapshots | In-memory | Legacy compatibility only (not recommended) |
+| [Local filesystem](#local-filesystem) | `.local_defs_state/` directory | Docker/PEX deployments where state is updated during image builds |
+| [Versioned state storage](#versioned-state-storage) | Cloud storage (S3, GCS, etc.) | Deployments where you want to update state without rebuilding images |
+| [Code server snapshots](#code-server-snapshots-legacy) | In-memory | Legacy compatibility only (not recommended) |
 
-### Local Filesystem
+### Local filesystem
 
 **Best for:**
 - Docker-based deployments
@@ -85,7 +85,7 @@ State files can be large and change frequently based on external system metadata
 
 :::
 
-### Versioned State Storage
+### Versioned state storage
 
 **Best for:**
 - Deployments where you want to update state without rebuilding Docker or PEX images
@@ -97,14 +97,13 @@ State files can be large and change frequently based on external system metadata
 - All runs and definitions point to a consistent version until the code location reloads
 - Requires configuring a state storage backend in your Dagster instance (see [Configuring versioned state storage](/guides/build/components/state-backed-components/configuring-versioned-state-storage) for more information)
 
-
 **Benefits:**
 
 This strategy allows you to update state in production without rebuilding Docker images. For example, you could write a Dagster job that:
 1. Executes and updates component state
 2. Reloads the code location to pick up the latest state version
 
-### Code Server Snapshots (Legacy)
+### Code server snapshots (Legacy)
 
 :::warning Not recommended
 

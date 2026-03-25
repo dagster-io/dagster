@@ -1,5 +1,6 @@
+###########
 Dagster CLI
-===========
+###########
 
 .. currentmodule:: dagster
 

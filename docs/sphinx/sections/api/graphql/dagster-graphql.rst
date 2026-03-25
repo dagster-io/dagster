@@ -1,8 +1,10 @@
+#########################
 GraphQL (dagster-graphql)
-=========================
+#########################
 
-Python Client
--------------
+*************
+Python client
+*************
 
 .. currentmodule:: dagster_graphql
 

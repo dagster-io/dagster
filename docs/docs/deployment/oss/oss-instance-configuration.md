@@ -136,7 +136,7 @@ To use a [MySQL database](/integrations/libraries/mysql/dagster-mysql) for stora
 
 ### Run launcher
 
-The `run_launcher` key allows you to configure the run launcher for your instance. Run launchers determine where runs are executed. You can use one of the Dagster-provided options or write your own custom run launcher. For more information, see "[Run launchers](/deployment/execution/run-launchers)".
+The `run_launcher` key allows you to configure the run launcher for your instance. Run launchers determine where runs are executed. You can use one of the Dagster-provided options or write your own custom run launcher. For more information, see [Run launchers](/deployment/execution/run-launchers).
 
 Refer to the following tabs for available options and sample configuration. Keep in mind that databases should be configured to use UTC timezone.
 
@@ -184,14 +184,12 @@ The <PyObject section="libraries" integration="k8s" module="dagster_k8s" object=
 
 ### Run coordinator
 
-The `run_coordinator` key allows you to configure the run coordinator for your instance. Run coordinators determine the policy used to set the prioritization rules and concurrency limits for runs. For more information and troubleshooting help, see "[Run coordinators](/deployment/execution/run-coordinators)".
+The `run_coordinator` key allows you to configure the run coordinator for your instance. Run coordinators determine the policy used to set the prioritization rules and concurrency limits for runs. For more information and troubleshooting help, see [Run coordinators](/deployment/execution/run-coordinators).
 
 Refer to the following tabs for available options and sample configuration.
 
 <Tabs>
 <TabItem value="DefaultRunCoordinator (default)" label="DefaultRunCoordinator (default)">
-
-**DefaultRunCoordinator (default)**
 
 The default run coordinator, the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the [run launcher](#run-launcher). There isn't a notion of `Queued` runs.
 
@@ -204,9 +202,7 @@ The default run coordinator, the <PyObject section="internals" module="dagster._
 </TabItem>
 <TabItem value="QueuedRunCoordinator" label="QueuedRunCoordinator">
 
-**QueuedRunCoordinator**
-
-The <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note** This requires an active [dagster-daemon process](/deployment/execution/dagster-daemon) to launch the runs.
+The <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note that this requires an active [dagster-daemon process](/deployment/execution/dagster-daemon) to launch the runs.**
 
 This run coordinator supports both limiting the overall number of concurrent runs and specific limits based on run tags. For example, to avoid throttling, you can specify a concurrency limit for runs that interact with a specific cloud service.
 
@@ -228,8 +224,6 @@ Refer to the following tabs for available options and sample configuration.
 <Tabs>
 <TabItem value="LocalComputeLogManager (default)" label="LocalComputeLogManager (default)">
 
-**LocalComputeLogManager**
-
 Used by default, the <PyObject section="internals" module="dagster._core.storage.local_compute_log_manager" object="LocalComputeLogManager" /> writes `stdout` and `stderr` logs to disk.
 
 <CodeExample
@@ -240,8 +234,6 @@ Used by default, the <PyObject section="internals" module="dagster._core.storage
 
 </TabItem>
 <TabItem value="NoOpComputeLogManager" label="NoOpComputeLogManager">
-
-**NoOpComputeLogManager**
 
 The <PyObject section="internals" module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" /> does not store `stdout` and `stderr` logs for any step.
 
@@ -254,8 +246,6 @@ The <PyObject section="internals" module="dagster._core.storage.noop_compute_log
 </TabItem>
 <TabItem value="AzureBlobComputeLogManager" label="AzureBlobComputeLogManager">
 
-**AzureBlobComputeLogManager**
-
 The <PyObject section="libraries" integration="azure" module="dagster_azure" object="blob.AzureBlobComputeLogManager" /> writes `stdout` and `stderr` to Azure Blob Storage.
 
 <CodeExample
@@ -267,8 +257,6 @@ The <PyObject section="libraries" integration="azure" module="dagster_azure" obj
 </TabItem>
 <TabItem value="GCSComputeLogManager" label="GCSComputeLogManager">
 
-**GCSComputeLogManager**
-
 The <PyObject section="libraries" integration="gcp" module="dagster_gcp" object="gcs.GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
 
 <CodeExample
@@ -279,8 +267,6 @@ The <PyObject section="libraries" integration="gcp" module="dagster_gcp" object=
 
 </TabItem>
 <TabItem value="S3ComputeLogManager" label="S3ComputeLogManager">
-
-**S3ComputeLogManager**
 
 The <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.S3ComputeLogManager" /> writes `stdout` and `stderr` to an Amazon Web Services S3 bucket.
 
@@ -366,7 +352,7 @@ By default, Dagster retains skipped sensor ticks for seven days and all other ti
 
 The `purge_after_days` key accepts either:
 
-- A single integer that indicates how long, in days, to retain ticks of all types. **Note**: A value of `-1` retains ticks indefinitely.
+- A single integer that indicates how long, in days, to retain ticks of all types. A value of `-1` retains ticks indefinitely.
 - A mapping of tick types (`skipped`, `failure`, `success`) to integers. The integers indicate how long, in days, to retain the tick type.
 
 ### Sensor evaluation

@@ -11,7 +11,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 Change tracking in branch deployments makes it easier for you and your team to identify how changes in a pull request will impact data assets.
 
-## How it works
+## Overview
 
 Branch deployments compare asset definitions in the branch deployment against the asset definitions in the branch's base deployment. The UI will then mark changed assets accordingly. For example, if the pull request associated with the branch deployment adds a new asset, the UI will display a **New in branch** label indicating the addition.
 

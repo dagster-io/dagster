@@ -29,7 +29,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 <ScaffoldAsset />
 
-## Step one: Understanding data versions
+## Step 1: Understand data versions
 
 By default, Dagster automatically computes a data version for each materialization of an asset. It does this by hashing a code version together with the data versions of any input assets.
 
@@ -84,7 +84,7 @@ The "Unsynced" label can appear for three reasons:
 
 The `versioned_number` asset must be materialized again to become up-to-date. Click the toggle to the right side of the **Materialize** button to display the **Materialize unsynced** option. Confirm the materialization of `versioned_number`. This will update the latest materialization `code_version` shown in the sidebar to `v2` and bring the asset up-to-date.
 
-## Step two: data versions with dependencies
+## Step 2: Data versions with dependencies
 
 Tracking changes becomes more powerful when there are dependencies in play. Let's add an asset downstream of our first asset:
 
@@ -107,7 +107,7 @@ As before, this will cause `versioned_number` to get an "Unsynced" label indicat
 
 Materialize `multiplied_number` to get both assets up-to-date again.
 
-## Step three: Computing your own data versions
+## Step 2: Compute your own data versions
 
 A data version is like a fingerprint for the value that an asset represents, i.e. the output of its materialization function. Therefore, we want our data versions to correspond on a one-to-one basis to the possible return values of a materialization function. Dagster auto-generates data versions by hashing the code version together with input data versions. This satisfies the above criterion in many cases, but sometimes a different approach is necessary.
 
@@ -135,7 +135,7 @@ Notice that, unlike the last time we materialized `versioned_number`, `multiplie
 
 If `versioned_number` had used a Dagster-generated data version, the data version of `versioned_number` would have changed due to its updated code version despite the fact that the returned value did not change. `multiplied_number` would have a label indicating that an upstream data version had changed.
 
-## Step four: data versions with source assets
+## Step 4: Data versions with source assets
 
 In the real world, data pipelines depend on external upstream data. So far in this guide, we haven't used any external data; we've been substituting hardcoded data in the asset at the root of our graph and using a code version as a stand-in for the version of that data. We can do better than this.
 

@@ -1,5 +1,6 @@
+#############################
 dagster-duckdb-polars library
------------------------------
+#############################
 
 This library provides an integration with the `DuckDB <https://duckdb.org>`_ database and Polars data processing library.
 
@@ -16,8 +17,9 @@ Related guides:
 
 .. autoclass:: DuckDBPolarsTypeHandler
 
+******
 Legacy
-=======
+******
 
 .. autoconfigurable:: duckdb_polars_io_manager
   :annotation: IOManagerDefinition

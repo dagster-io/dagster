@@ -19,7 +19,7 @@ Here’s how incremental models work:
 - **First run**: the model processes the full dataset with no filters.
 - **Subsequent runs**: dbt applies the `is_incremental()` filter, using `min_date` and `max_date` values provided at runtime.
 
-## 1. Include a template var
+## Step 1: Include a template var
 
 The first step is to add a new [template var](/guides/build/components/building-pipelines-with-components/using-template-variables) to your component. This will be used to define the partitions definition that will be used to partition the assets.
 
@@ -29,7 +29,7 @@ The first step is to add a new [template var](/guides/build/components/building-
   title="src/project_dbt/defs/transform/template_vars.py"
 />
 
-## 2. Update dbt component configuration
+## Step 2: Update dbt component configuration
 
 The next step is to update the `defs.yaml` file to use the new template var and apply this partitions definition to all assets using the `post_process` field:
 

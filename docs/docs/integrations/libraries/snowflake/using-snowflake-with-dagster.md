@@ -58,7 +58,7 @@ To connect to Snowflake, we'll use the `dagster-snowflake` <PyObject section="li
 
 With this configuration, if you materialized an asset named `iris_dataset`, <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" /> would use the role `WRITER` and store the data in the `FLOWERS.IRIS.IRIS_DATASET` table using the `PLANTS` warehouse.
 
-For more info about each of the configuration values, refer to the <PyObject section="libraries" integration="snowflake" module="dagster_snowflake" object="SnowflakeResource" /> API documentation.
+For more info about each of the configuration values, see the <PyObject section="libraries" integration="snowflake" module="dagster_snowflake" object="SnowflakeResource" /> API documentation.
 
 ## Step 2: Create tables in Snowflake
 

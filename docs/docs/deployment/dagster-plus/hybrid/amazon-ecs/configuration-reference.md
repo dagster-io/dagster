@@ -21,7 +21,11 @@ We expose `AgentMemory`, and `AgentCpu` fields in the Cloud Formation templates 
 
 When [adding a code location](/guides/build/projects) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
 
-**Note**: If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `build.yaml` file.
+:::note
+
+If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `build.yaml` file.
+
+:::
 
 The following example [`build.yaml`](/deployment/dagster-plus/management/build-yaml) file illustrates the available fields:
 
@@ -255,7 +259,7 @@ agent_queues:
 | config.repository_credentials         | Optional arn of the secret to authenticate into your private container registry. This does not apply if you are leveraging ECR for your images, see the [AWS private auth guide.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | config.enable_ecs_exec                | Boolean that determines whether tasks created by the agent should be configured with the needed linuxParameters and permissions to use [ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) to shell into the task. Also grants the `SYS_PTRACE` linux capability to enable running tools like py-spy to debug slow or hanging tasks. Defaults to false. **Note**: For ECS Exec to work, the task IAM role must be granted [certain permissions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html#ecs-exec-required-iam-permissions).                                                                                                                                                    |
 
-### Cross-account service discovery
+### Cross-account service discovery \{#cross-account-service-discovery}
 
 If your AWS Cloud Map namespace lives in a different AWS account than the ECS agent (for example, centralized networking in an AWS Organizations setup), you can configure the agent to assume a cross-account IAM role for service discovery API calls using the `service_discovery_role_arn` configuration option.
 

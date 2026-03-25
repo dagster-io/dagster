@@ -9,8 +9,7 @@ import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 In this guide, you'll configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -21,8 +20,6 @@ To follow the steps in this guide, you'll need:
 - **The following in Dagster+:**
   - A Pro plan
   - [Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in your organization
-
-</details>
 
 ## Step 1: Add the Dagster+ app in OneLogin \{#dagster-app}
 

@@ -72,7 +72,6 @@ query AssetMetrics($metricName: String, $after: Float, $before: Float) {
 
 """
 
-
 def get_client():
     url = "YOUR_ORG.dagster.cloud/prod"  # Your deployment-scoped url
     user_token = "YOUR_TOKEN"  # A token generated from Organization Settings > Tokens

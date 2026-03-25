@@ -43,7 +43,7 @@ Clicking on the **Docs** tab on the right edge of the playground opens up intera
 
 ## Python client
 
-Dagster also provides a Python client to interface with Dagster's GraphQL API from Python. For more information, see "[Dagster Python GraphQL client](/api/graphql/graphql-client)".
+Dagster also provides a Python client to interface with Dagster's GraphQL API from Python. For more information, see [Dagster Python GraphQL client](/api/graphql/graphql-client).
 
 ## Example queries
 
@@ -168,7 +168,7 @@ query JobsQuery(
 To launch a run, use the `launchRun` mutation. Here, we define `LaunchRunMutation` to wrap our mutation and pass in the required arguments as query variables. For this query, the required arguments are:
 
 - `selector` - A dictionary that contains the repository location name, repository name, and job name.
-- `runConfigData` - The run config for the job execution. **Note**: Note that `runConfigData` is of type `RunConfigData`. This type is used when passing in an arbitrary object for run config. This is any-typed in the GraphQL type system, but must conform to the constraints of the config schema for this job. If it doesn't, the mutation returns a `RunConfigValidationInvalid` response.
+- `runConfigData` - The run config for the job execution. **Note that `runConfigData` is of type `RunConfigData`.** This type is used when passing in an arbitrary object for run config. This is any-typed in the GraphQL type system, but must conform to the constraints of the config schema for this job. If it doesn't, the mutation returns a `RunConfigValidationInvalid` response.
 
 ```shell
 mutation LaunchRunMutation(

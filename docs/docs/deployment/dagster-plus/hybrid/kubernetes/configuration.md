@@ -173,8 +173,7 @@ def k8s_job():
 
 ## Per-job and per-op configuration
 
-{/* To add configuration to specific Dagster jobs, ops, or assets, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/guides/kubernetes/customizing-your-deployment#per-job-kubernetes-configuration) for more info. */}
-To add configuration to specific Dagster jobs, ops, or assets, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment) for more info.
+To add configuration to specific Dagster jobs, ops, or assets, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. For more information, see [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment).
 
 ## Running as a non-root user
 

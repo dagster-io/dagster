@@ -18,7 +18,11 @@ import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md'
 
 <p>{frontMatter.description}</p>
 
-**Note** that this integration can also be [managed from the Meltano platform](https://hub.meltano.com/utilities/dagster) using `meltano add utility dagster` and configured using `meltano config dagster set --interactive`.
+:::note
+
+This integration can also be [managed from the Meltano platform](https://hub.meltano.com/utilities/dagster) using `meltano add utility dagster` and configured using `meltano config dagster set --interactive`.
+
+:::
 
 ## Installation
 

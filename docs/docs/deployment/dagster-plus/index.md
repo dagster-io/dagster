@@ -30,7 +30,7 @@ In addition to managed infrastructure, Dagster+ also adds core capabilities on t
 
 Ready to [get started](/deployment/dagster-plus/getting-started)?
 
-## Other resources
+## Additional resources
 
 - Learn more about Dagster+ [pricing and plan types](https://dagster.io/pricing) or [contact the Dagster team](https://dagster.io/contact)
 - Learn more about [Dagster+ support](https://dagster.io/support)

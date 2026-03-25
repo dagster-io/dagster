@@ -108,7 +108,7 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 | Run duration     | Wall clock time from when a run starts to when it completes. For jobs which run steps in parallel, the run duration may be shorter than the sum of the compute duration for all steps.                                                      |
 | Materializations | The number of asset materializations associated with computing this object.                                                                                                                                                                 |
 | Observations     | The number of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) associated with computing this object.                                                                                                        |
-| Step failures    | The number of times steps failed when computing this object. **Note**: Steps that retry and succeed aren't included in this metric.                                                                                                         |
+| Step failures    | The number of times steps failed when computing this object. Steps that retry and succeed aren't included in this metric.                                                                                                                   |
 
 ## Export metrics
 

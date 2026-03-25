@@ -1,10 +1,12 @@
+######
 Config
-======
+######
 
 .. currentmodule:: dagster
 
+**********************
 Pythonic config system
-----------------------
+**********************
 
 The following classes are used as part of the new `Pythonic config system <https://docs.dagster.io/guides/operate/configuration/advanced-config-types>`_. They are used in conjunction with builtin types.
 
@@ -14,8 +16,9 @@ The following classes are used as part of the new `Pythonic config system <https
 
 .. autoclass:: RunConfig
 
+***************************
 Legacy Dagster config types
----------------------------
+***************************
 
 The following types are used as part of the legacy `Dagster config system <https://docs.dagster.io/guides/operate/configuration>`_. They are used in conjunction with builtin types.
 
@@ -140,8 +143,9 @@ The following types are used as part of the legacy `Dagster config system <https
         )
 
 
+*****************
 Config Utilities
-----------------
+*****************
 
 .. autoclass:: ConfigMapping
 

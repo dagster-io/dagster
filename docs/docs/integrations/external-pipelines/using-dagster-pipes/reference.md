@@ -3,7 +3,7 @@ title: 'Dagster Pipes subprocess reference'
 description: 'Executing external code with Dagster Pipes with different entities in the Dagster system.'
 ---
 
-This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step walkthrough, refer to the [Dagster Pipes tutorial](/integrations/external-pipelines/using-dagster-pipes).
+This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step tutorial, see [Using Dagster Pipes](/integrations/external-pipelines/using-dagster-pipes).
 
 ## Specifying environment variables and extras
 
@@ -35,7 +35,7 @@ Note: We're using `os.environ` in this example, but we recommend using <PyObject
 </TabItem>
 </Tabs>
 
-## Working with @asset_check
+## Working with `@asset_check`
 
 Sometimes, you may not want to materialize an asset, but instead want to report a data quality check result. When your asset has data quality checks defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
 
@@ -71,7 +71,7 @@ Sometimes, you may invoke a single call to an API that results in multiple table
 
 <TabItem value="External code in external_code.py">
 
-**Note**: When working with multi-assets, <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext.report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
+When working with multi-assets, <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext.report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
 
 ```bash
 Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
@@ -136,7 +136,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
 
 ### Examples for complex metadata types
 
-#### URL Metadata
+#### URL metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/url_metadata.py"
@@ -144,7 +144,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_url"
 />
 
-#### Path Metadata
+#### Path metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/path_metadata.py"
@@ -152,7 +152,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_path"
 />
 
-#### Notebook Metadata
+#### Notebook metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/notebook_metadata.py"
@@ -160,7 +160,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_notebook"
 />
 
-#### JSON Metadata
+#### JSON metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/json_metadata.py"
@@ -168,7 +168,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_json"
 />
 
-#### Markdown Metadata
+#### Markdown metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/markdown_metadata.py"
@@ -176,7 +176,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_markdown"
 />
 
-#### Table Metadata
+#### Table metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_metadata.py"
@@ -184,7 +184,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_table"
 />
 
-#### Table Schema Metadata
+#### Table schema metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_schema_metadata.py"
@@ -192,7 +192,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_table_schema"
 />
 
-#### Table Column Lineage Metadata
+#### Table column lineage metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_column_lineage.py"
@@ -200,7 +200,7 @@ Below are examples of specifying data for all supported metadata types. Float, i
   endBefore="end_table_column_lineage"
 />
 
-#### Timestamp Metadata
+#### Timestamp metadata
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/timestamp_metadata.py"

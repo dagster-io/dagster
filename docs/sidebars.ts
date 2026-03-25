@@ -282,12 +282,6 @@ const sidebars: SidebarsConfig = {
         },
       ],
     },
-    {
-      type: 'category',
-      label: 'Guides',
-      collapsed: true,
-      items: ['integrations/guides/multi-asset-integration'],
-    },
   ],
   api: [
     {

@@ -21,9 +21,14 @@ To use these features, you will need:
   - For more information, see the [Snowflake Documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles)
 - The following packages installed:
 
-```bash
-pip install dagster dagster-cloud dagster-snowflake
-```
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    ```bash uv add dagster dagster-cloud dagster-snowflake ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    ```bash pip install dagster dagster-cloud dagster-snowflake ```
+  </TabItem>
+</Tabs>
 
 ## Limitations
 

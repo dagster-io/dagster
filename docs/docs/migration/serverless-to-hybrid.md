@@ -17,7 +17,7 @@ Transitioning from Serverless to Hybrid requires some downtime, as your Dagster+
 
 To follow the steps in this guide, you'll need [**Organization Admin** permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in your Dagster+ account.
 
-## 1. Deactivate your Serverless agent
+## Step 1: Deactivate your Serverless agent
 
 1. In the Dagster+ UI, navigate to the **Deployment > Agents** page.
 2. On the right side of the page, click the dropdown arrow and select **Switch to Hybrid**.
@@ -26,7 +26,7 @@ To follow the steps in this guide, you'll need [**Organization Admin** permissio
 
 It may take a few minutes for the agent to deactivate and be removed from the list of agents.
 
-## 2. Create a Hybrid agent
+## Step 2: Create a Hybrid agent
 
 Next, you'll need to create a Hybrid agent to execute your code. Follow the setup instructions for the agent of your choice:
 
@@ -36,13 +36,13 @@ Next, you'll need to create a Hybrid agent to execute your code. Follow the setu
 - **[Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)**, which launches user code on a Kubernetes cluster.
 - **[Local](/deployment/dagster-plus/hybrid/local)**, which launches user code in operating system subprocesses on your machine.
 
-## 3. Update your code locations' configuration in `build.yaml`
+## Step 3: Update your code locations' configuration in `build.yaml`
 
 See the documentation for the agent of your choice:
 
 - [Amazon Web Services (AWS)](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#per-location-configuration)
 - [Docker](/deployment/dagster-plus/hybrid/docker/configuration)
-- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure/acr-user-code#update-the-buildyaml-build-configuration-to-use-the-azure-container-registry)
+- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure/acr-user-code#step-34-update-the-buildyaml-build-configuration-to-use-the-azure-container-registry)
 - [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes/configuration#per-location-configuration)
 
 :::note
@@ -51,17 +51,17 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 
 :::
 
-## 4. Confirm successful setup
+## Step 4: Confirm successful setup
 
 Once you've set up a Hybrid agent, navigate to the **Deployment > Agents** page in the UI. The new agent should display in the list with a `RUNNING` status:
 
 ![Running Hybrid agent displayed in Dagster+ UI](/images/dagster-plus/deployment/running-agent.png)
 
-## 5. Update your build process
+## Step 5: Update your build process
 
 Update your build process to publish a new container image and configuration for each code location. To use Dagster's CI/CD process, see [Configuring CI/CD in Dagster+](/deployment/dagster-plus/deploying-code/configuring-ci-cd).
 
-## 6. Replace Serverless-only features with their Hybrid equivalents
+## Step 6: Replace Serverless-only features with their Hybrid equivalents
 
 | Serverless-only feature                                                                                                                                          | Hybrid equivalent                                                                                                                                                                                                                                                                                                         |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

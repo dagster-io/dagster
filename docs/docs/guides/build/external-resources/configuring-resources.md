@@ -22,9 +22,7 @@ To use environment variables, pass an <PyObject section="resources" module="dags
 
 **What about `os.getenv()`?** When `os.getenv()` is used, the value of the variable is retrieved when Dagster loads the code location. Using `EnvVar` not only tells Dagster to retrieve the value at runtime, but also not to display the value in the UI.
 
-<!-- Lives in /next/components/includes/EnvVarsBenefits.mdx -->
-
-For more information on using environment variables with Dagster, refer to the [Environment variables guide](/guides/operate/configuration/using-environment-variables-and-secrets).
+For more information on using environment variables with Dagster, see the [Environment variables guide](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 :::
 
@@ -60,4 +58,4 @@ Because `credentials` requires launch time configuration through the launchpad, 
 
 ## Next steps
 
-Resources are a powerful way to encapsulate reusable logic in your assets and ops. For more information on the supported config types for resources, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types). For information on the Dagster config system, which you can use to parameterize assets and ops, refer to the [run configuration documentation](/guides/operate/configuration/run-configuration).
+Resources are a powerful way to encapsulate reusable logic in your assets and ops. For more information on the supported config types for resources, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types). For information on the Dagster config system, which you can use to parameterize assets and ops, see the [run configuration documentation](/guides/operate/configuration/run-configuration).

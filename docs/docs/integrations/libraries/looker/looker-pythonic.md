@@ -29,17 +29,11 @@ This guide provides instructions for using Dagster with Looker using the `dagste
 - How to customize asset definition metadata for these Looker assets.
 - How to materialize Looker PDTs from Dagster.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster-looker` library installed in your environment
-- Familiarity with asset definitions and the Dagster asset graph
-- Familiarity with Dagster resources
-- Familiarity with Looker concepts, like views, explores, and dashboards
 - A Looker instance
 - Looker API credentials to access your Looker instance. For more information, see [Looker API authentication](https://cloud.google.com/looker/docs/api-auth) in the Looker documentation.
-
-</details>
 
 ## Set up your environment
 

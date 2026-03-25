@@ -48,7 +48,7 @@ You can add dependencies by including the corresponding Python libraries in your
   </TabItem>
 </Tabs>
 
-### Add dependencies from tarballs
+### Adding dependencies from tarballs
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -292,8 +292,8 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 
 :::
 
-1.  Build you base image
-2.  Specify this base image tag in your GitHub workflow, or using the `dagster-cloud` CLI:
+1. Build you base image
+2. Specify this base image tag in your GitHub workflow, or using the `dagster-cloud` CLI:
 
 <Tabs groupId="method">
 

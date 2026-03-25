@@ -1,8 +1,9 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
+#####################
 dagster-slack library
----------------------
+#####################
 
 :raw-html-m2r:`<img src="https://user-images.githubusercontent.com/609349/57994610-c581f680-7a72-11e9-85cd-41fd649cc26d.png" />`
 
@@ -50,7 +51,9 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
   :annotation: HookDefinition
 
 
+******
 Legacy
-=========
+******
+
 .. autodata:: slack_resource
   :annotation: ResourceDefinition

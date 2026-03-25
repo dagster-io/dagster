@@ -12,12 +12,6 @@ Configuration settings include:
 - The log level loggers are set to
 - The handlers/formatters used to process log messages produced by runs
 
-## Relevant APIs
-
-| Name                                                                         | Description                                                                             |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| <PyObject section="utilities" module="dagster" object="get_dagster_logger"/> | A function that returns a Python logger that will automatically be captured by Dagster. |
-
 ## Production environments and event log storage
 
 In a production context, it's recommended that you be selective about which logs are captured. It's possible to overload the event log storage with these events, which may cause some pages in the UI to take a long time to load.
@@ -64,7 +58,7 @@ If `python_log_level` is set, the loggers listed here will be set to the given l
 
 To set a global log level in a Dagster instance, set the `python_log_level` parameter in your instance's `dagster.yaml` file.
 
-This setting controls the log level of all loggers managed by Dagster. By default, this will just be the `context.log` logger. If there are custom Python loggers that you want to capture, refer to the [Capturing Python logs section](#capturing-python-logs).
+This setting controls the log level of all loggers managed by Dagster. By default, this will just be the `context.log` logger. If there are custom Python loggers that you want to capture, see the [section on capturing Python logs](#capturing-python-logs).
 
 Setting a global log level allows you to filter out logs below a given level. For example, setting a log level of `INFO` will filter out all `DEBUG` level logs:
 

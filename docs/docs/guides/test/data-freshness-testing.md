@@ -18,17 +18,6 @@ Freshness checks provide a way to identify data assets that are overdue for an u
 
 Freshness checks can also communicate SLAs for their data freshness. For example, downstream asset consumers can determine how often assets are expected to be updated by looking at the defined checks.
 
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need familiarity with:
-
-- [Assets](/guides/build/assets/defining-assets)
-- [External assets](/guides/build/assets/external-assets)
-- [Asset checks](/guides/test/asset-checks)
-
-</details>
-
 ## Getting started
 
 To get started with freshness checks, follow these general steps:
@@ -70,7 +59,9 @@ The example below defines a freshness check and adds a schedule to run the check
 ### Testing freshness with anomaly detection \{#anomaly-detection}
 
 :::note
+
 Anomaly detection is a Dagster+ Pro feature.
+
 :::
 
 Instead of applying policies on an asset-by-asset basis, Dagster+ Pro users can use `build_anomaly_detection_freshness_checks` to take advantage of a time series anomaly detection model to determine if data arrives later than expected.
@@ -82,13 +73,17 @@ Instead of applying policies on an asset-by-asset basis, Dagster+ Pro users can 
 />
 
 :::note
+
 If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.
+
 :::
 
 ## Alerting on overdue assets
 
 :::note
+
 Freshness check alerts are a Dagster+ feature.
+
 :::
 
 In Dagster+, you can set up alerts to notify you when assets are overdue for an update. Refer to the [Dagster+ alerting guide](/guides/observe/alerts) for more information.

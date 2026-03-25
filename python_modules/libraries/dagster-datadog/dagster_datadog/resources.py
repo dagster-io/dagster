@@ -81,9 +81,9 @@ class DatadogResource(ConfigurableResource):
     """This resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
 
-    As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
-    `Datadog documentation <https://docs.datadoghq.com/developers/dogstatsd/>`_ for how to use this
-    resource.
+    As such, we directly mirror the public API methods of DogStatsd here;
+    for more information on how to use this resource, see the
+    `Datadog documentation <https://docs.datadoghq.com/developers/dogstatsd/>`_.
 
     Examples:
         .. code-block:: python

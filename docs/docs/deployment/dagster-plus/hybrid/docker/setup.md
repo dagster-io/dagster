@@ -93,7 +93,7 @@ To view the agent in Dagster+, click the Dagster icon in the top left to navigat
 
 ![Instance Status](/images/dagster-plus/deployment/agents/dagster-cloud-instance-status.png)
 
-## Credential Helpers
+## Credential helpers
 
 If your images are stored in a private registry, configuring a [Docker credentials helper](https://docs.docker.com/engine/reference/commandline/login/#credential-helpers) allows the agent to log in to your registry. The agent image comes with several popular credentials helpers preinstalled:
 
@@ -151,7 +151,4 @@ docker run \
 
 ## Next steps
 
-Now that you've got your agent running, what's next?
-
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/guides/build/projects) using the agent.
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/guides/build/projects) guide for more info.
+Now that you've got your agent running, you can follow the steps in [Creating Dagster projects](/guides/build/projects/creating-projects) to create and deploy a project to Dagster+.

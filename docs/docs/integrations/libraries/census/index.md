@@ -26,7 +26,7 @@ The [`dagster-census` library](/integrations/libraries/census/dagster-census) pr
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -42,7 +42,7 @@ Finally, add the `dagster-census` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/census-component/2-add-census.txt" />
 
-## 2. Scaffold a Census component definition
+## Step 2: Scaffold a Census component definition
 
 Now that you have a Dagster project, you can scaffold a Census component definition. You'll need to provide your Census API key, which you can set as an environment variable on the command line:
 
@@ -62,7 +62,7 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
   language="yaml"
 />
 
-## 3. Check the component configuration
+## Step 3: Check the component configuration
 
 You can check the configuration of your component with `dg list defs`:
 
@@ -70,7 +70,7 @@ You can check the configuration of your component with `dg list defs`:
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/census-component/6-list-defs.txt" />
 </WideContent>
 
-## 4. Select specific syncs
+## Step 4: Select specific syncs
 
 You can select specific Census syncs to include in your component using the `sync_selector` key. This allows you to filter which syncs are represented as assets:
 
@@ -94,4 +94,4 @@ You can also select syncs by ID:
 
 ## About Census
 
-**Census** syncs data from your cloud warehouse to the SaaS tools your organization uses. It allows everyone in your organization to take action with good data, no custom scripts or API integrations required.
+**[Census](https://www.getcensus.com/)** syncs data from your cloud warehouse to the SaaS tools your organization uses. It allows everyone in your organization to take action with good data, no custom scripts or API integrations required.

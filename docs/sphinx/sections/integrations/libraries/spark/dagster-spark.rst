@@ -1,5 +1,6 @@
+#####################
 dagster-spark library
----------------------
+#####################
 
 .. currentmodule:: dagster_spark
 
@@ -11,8 +12,9 @@ dagster-spark library
 
 .. autofunction:: construct_spark_shell_command
 
-Spark Declarative Pipelines
-===========================
+***************************
+Spark declarative pipelines
+***************************
 
 .. autoclass:: SparkDeclarativePipelineComponent
 
@@ -24,8 +26,9 @@ Spark Declarative Pipelines
 
 .. currentmodule:: dagster_spark
 
+******
 Legacy
-=======
+******
 
 .. autoconfigurable:: spark_resource
   :annotation: ResourceDefinition
