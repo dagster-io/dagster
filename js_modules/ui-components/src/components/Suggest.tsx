@@ -10,11 +10,11 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import deepmerge from 'deepmerge';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Icon, IconName} from './Icon';
 import {Container, Inner, Row} from './VirtualizedTable';
+import styles from './css/Suggest.module.css';
 
 export const MENU_ITEM_HEIGHT = 32;
 
@@ -68,12 +68,12 @@ export const Suggest = <T,>(props: Props<T>) => {
 
   if (icon) {
     return (
-      <SuggestWithIconWrapper>
+      <div className={styles.suggestWithIconWrapper}>
         <div>
           <Icon name={icon} />
         </div>
         {suggest}
-      </SuggestWithIconWrapper>
+      </div>
     );
   }
   return suggest;
@@ -126,20 +126,3 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
     </div>
   );
 };
-
-const SuggestWithIconWrapper = styled.div`
-  position: relative;
-  > :first-child {
-    position: absolute;
-    left: 8px;
-    z-index: 1;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-  }
-
-  &&& input {
-    padding-left: 28px;
-  }
-`;
