@@ -42,6 +42,37 @@ interface Props2025 {
   onChangeAssetSelection?: (selection: string) => void;
 }
 
+const getCustomBackgroundForAsset = (
+  tags?: {key: string; value: string}[],
+): string | undefined => {
+  const uiColorTag = tags?.find(
+    (t) => t.key === 'dagster/ui_color' || t.key === 'dagster/ui/color',
+  );
+  if (!uiColorTag) {
+    return undefined;
+  }
+  switch (uiColorTag.value.toLowerCase()) {
+    case 'red':
+      return Colors.backgroundRed();
+    case 'yellow':
+      return Colors.backgroundYellow();
+    case 'green':
+      return Colors.backgroundGreen();
+    case 'blue':
+      return Colors.backgroundBlue();
+    case 'olive':
+      return Colors.backgroundOlive();
+    case 'cyan':
+      return Colors.backgroundCyan();
+    case 'lime':
+      return Colors.backgroundLime();
+    case 'gray':
+      return Colors.backgroundGray();
+    default:
+      return undefined;
+  }
+};
+
 export const ASSET_NODE_HOVER_EXPAND_HEIGHT = 3;
 
 export const AssetNode = React.memo((props: Props2025) => {
@@ -85,7 +116,11 @@ export const AssetNodeWithLiveData = ({
       ) : (
         <div style={{minHeight: ASSET_NODE_HOVER_EXPAND_HEIGHT}} />
       )}
-      <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
+      <AssetNodeBox
+        $selected={selected}
+        $isMaterializable={definition.isMaterializable}
+        $customBackground={getCustomBackgroundForAsset(definition.tags)}
+      >
         <AssetNameRow definition={definition} />
         {facets.has(AssetNodeFacet.Description) && (
           <AssetNodeRow label={null}>
@@ -698,6 +733,7 @@ export const AssetNodeBox = styled.div<{
   $isMaterializable: boolean;
   $selected: boolean;
   $noScale?: boolean;
+  $customBackground?: string;
 }>`
   ${(p) =>
     !p.$isMaterializable
@@ -707,7 +743,7 @@ export const AssetNodeBox = styled.div<{
         }`};
   ${(p) => p.$selected && `outline: 2px solid ${Colors.lineageNodeBorderSelected()}`};
 
-  background: ${Colors.backgroundDefault()};
+  background: ${(p) => p.$customBackground || Colors.backgroundDefault()};
   border-radius: 10px;
   position: relative;
   margin: ${ASSET_NODE_VERTICAL_MARGIN}px 0;
