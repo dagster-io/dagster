@@ -23,6 +23,7 @@ from dagster_dbt.asset_utils import (
     build_dbt_specs,
 )
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
+from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 from dagster_dbt.components.dbt_component_utils import (
     DagsterDbtComponentTranslatorSettings,
     _set_resolution_context,
@@ -179,6 +180,13 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         ],
     )
 
+    create_sensor: Annotated[
+        bool,
+        Resolver.default(
+            description="Whether to create a polling sensor that reports materializations for runs triggered outside of Dagster.",
+        ),
+    ] = True
+
     defs_state: Annotated[
         DefsStateConfigArgs,
         Resolver.passthrough(
@@ -257,7 +265,16 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             with _set_resolution_context(res_ctx):
                 yield from self.execute(context=context)
 
-        return Definitions(assets=[_dbt_cloud_assets])
+        sensors = []
+        if self.create_sensor:
+            sensors.append(
+                build_dbt_cloud_polling_sensor(
+                    workspace=self.workspace,
+                    dagster_dbt_translator=self.translator,
+                )
+            )
+
+        return Definitions(assets=[_dbt_cloud_assets], sensors=sensors)
 
     def execute(self, context: AssetExecutionContext) -> Iterator:
         invocation = self.workspace.cli(
