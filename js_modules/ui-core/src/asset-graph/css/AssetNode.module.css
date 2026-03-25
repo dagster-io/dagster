@@ -1,7 +1,7 @@
 .UserDisplayWrapNoPadding {
   min-width: 0;
 }
-.UserDisplayWrapNoPadding :global(.StyledTag) {
+.UserDisplayWrapNoPadding :global(.BaseTag) {
   background: none;
   padding: 0;
 }

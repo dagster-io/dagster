@@ -1,0 +1,58 @@
+.checkbox {
+  display: inline-flex;
+  position: relative;
+  user-select: none;
+  align-items: flex-start;
+  color: var(--color-text-default);
+  cursor: pointer;
+  gap: 8px;
+}
+
+.checkbox.disabled {
+  color: var(--color-text-disabled);
+}
+
+.checkbox svg {
+  flex-shrink: 0;
+}
+
+.checkbox.sizeLarge svg {
+  margin: -3px;
+}
+
+.checkbox.sizeSmall svg {
+  margin: -3px -6px;
+  transform: scale(0.75);
+}
+
+.checkbox.sizeSmall.formatSwitch svg {
+  margin: -3px -9px;
+  transform: scale(0.5);
+}
+
+.checkbox input[type='checkbox'] {
+  position: absolute;
+  cursor: pointer;
+  opacity: 0;
+  height: 0;
+  width: 0;
+}
+
+.checkbox input:focus + svg :global(.interaction-focus-outline) {
+  stroke: var(--color-focus-ring);
+  stroke-width: 6px;
+  paint-order: stroke fill;
+}
+
+/* Focus outline only when using keyboard, not when focusing via mouse */
+.checkbox input:focus:not(:focus-visible) + svg :global(.interaction-focus-outline) {
+  stroke-width: 0;
+}
+
+.checkbox:not(.disabled) svg:hover {
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.12));
+}
+
+.checkbox:not(.disabled) svg:hover :global(.interaction-darken) {
+  filter: brightness(0.8);
+}
