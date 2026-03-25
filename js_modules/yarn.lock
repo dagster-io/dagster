@@ -12,9 +12,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apollo/client@npm:^3.14.0":
-  version: 3.14.0
-  resolution: "@apollo/client@npm:3.14.0"
+"@apollo/client@npm:^3.14.1":
+  version: 3.14.1
+  resolution: "@apollo/client@npm:3.14.1"
   dependencies:
     "@graphql-typed-document-node/core": "npm:^3.1.1"
     "@wry/caches": "npm:^1.0.0"
@@ -44,7 +44,7 @@ __metadata:
       optional: true
     subscriptions-transport-ws:
       optional: true
-  checksum: 10/c5f8ce8c50028d199f9d20e7751cdeafad1bf085ae2b78ff12493a11966070dc0e78fa5d93372b64c75dc33cd7b9699d809217f78299d5103ab76be957173c6d
+  checksum: 10/e22f3449b0d3710e5e1e7be9668cf83f69af907b8647c6caf18d58a421dd0f7cb2921f13733930613f243a6da59aa68a8add60ef24f8229a226881450e1ee07b
   languageName: node
   linkType: hard
 
@@ -1832,7 +1832,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/app-oss@workspace:app-oss"
   dependencies:
-    "@apollo/client": "npm:^3.14.0"
+    "@apollo/client": "npm:^3.14.1"
     "@blueprintjs/core": "npm:^5"
     "@blueprintjs/popover2": "npm:^2"
     "@blueprintjs/select": "npm:^5"
@@ -1862,6 +1862,8 @@ __metadata:
     file-loader: "npm:^6.2.0"
     graphql: "npm:^16.8.1"
     next: "npm:^15.5.9"
+    postcss: "npm:^8.5.8"
+    postcss-import: "npm:^16.1.1"
     prettier: "npm:3.8.1"
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
@@ -2036,7 +2038,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/ui-core@workspace:ui-core"
   dependencies:
-    "@apollo/client": "npm:^3.14.0"
+    "@apollo/client": "npm:^3.14.1"
     "@babel/cli": "npm:^7.13.15"
     "@babel/core": "npm:^7.13.15"
     "@babel/plugin-proposal-class-properties": "npm:^7.14.5"
@@ -2114,7 +2116,7 @@ __metadata:
     clsx: "npm:^2.1.1"
     codemirror: "npm:^5.65.2"
     cronstrue: "npm:^2.51.0"
-    dagre: "dagster-io/dagre#0.8.5"
+    dagre: "patch:dagre@npm%3A0.8.5#~/.yarn/patches/dagre-npm-0.8.5-f3eb4059c5.patch"
     date-fns: "npm:^4.1.0"
     dayjs: "npm:^1.11.7"
     deepmerge: "npm:^4.2.2"
@@ -2132,7 +2134,6 @@ __metadata:
     graphql-codegen-typescript-mock-data: "npm:^3.7.1"
     graphql-config: "npm:^5.0.3"
     graphql-tag: "npm:^2.10.1"
-    graphql.macro: "npm:^1.4.2"
     highlight.js: "npm:11.6.0"
     identity-obj-proxy: "npm:^3.0.0"
     jest: "npm:^29.7.0"
@@ -2174,7 +2175,7 @@ __metadata:
     worker-loader: "npm:^3.0.8"
     yaml: "npm:^2.4.2"
   peerDependencies:
-    "@apollo/client": ^3.14.0
+    "@apollo/client": ^3.14.1
     "@blueprintjs/core": ^5
     "@blueprintjs/popover2": ^2
     "@blueprintjs/select": ^5
@@ -9041,13 +9042,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dagre@dagster-io/dagre#0.8.5":
+"dagre@npm:0.8.5":
   version: 0.8.5
-  resolution: "dagre@https://github.com/dagster-io/dagre.git#commit=c2a1821cc7f8a220e819461b82b6ddbf48189100"
+  resolution: "dagre@npm:0.8.5"
   dependencies:
     graphlib: "npm:^2.1.8"
     lodash: "npm:^4.17.15"
-  checksum: 10/6a94d8d9b1c3132b406b5921fd2bbd1a207c78fc1048216787fec68fad1d96f649cb084d1ae576f5456532a4275f22a113d140265f05937db60e5918a25adac5
+  checksum: 10/f39899e29e9090581d67177ef6e2dd3ca5d7f764fbf3de81758d879bba66fee6fd8802d41d0c5d3d9a0563b334e99e1454a8d6ab4ce17e8e4f50836a3a403fdd
+  languageName: node
+  linkType: hard
+
+"dagre@patch:dagre@npm%3A0.8.5#~/.yarn/patches/dagre-npm-0.8.5-f3eb4059c5.patch":
+  version: 0.8.5
+  resolution: "dagre@patch:dagre@npm%3A0.8.5#~/.yarn/patches/dagre-npm-0.8.5-f3eb4059c5.patch::version=0.8.5&hash=7eeff8"
+  dependencies:
+    graphlib: "npm:^2.1.8"
+    lodash: "npm:^4.17.15"
+  checksum: 10/ce6fa5b95767d2a14fd67165868e2d00cad87037fb0a21d6f1c460f385dfe24e643e4d4c0d626a49d5cf6a905e7451aa3d4f3c8d272195533fd16fb816bda260
   languageName: node
   linkType: hard
 
@@ -15711,6 +15722,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pify@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "pify@npm:2.3.0"
+  checksum: 10/9503aaeaf4577acc58642ad1d25c45c6d90288596238fb68f82811c08104c800e5a7870398e9f015d82b44ecbcbef3dc3d4251a1cbb582f6e5959fe09884b2ba
+  languageName: node
+  linkType: hard
+
 "pify@npm:^4.0.1":
   version: 4.0.1
   resolution: "pify@npm:4.0.1"
@@ -15828,6 +15846,19 @@ __metadata:
   peerDependencies:
     postcss: ^8.2.15
   checksum: 10/d64d4a545aa2c81b22542895cfcddc787d24119f294d35d29b0599a1c818b3cc51f4ee80b80f5a0a09db282453dd5ac49f104c2117cc09112d0ac9b40b499a41
+  languageName: node
+  linkType: hard
+
+"postcss-import@npm:^16.1.1":
+  version: 16.1.1
+  resolution: "postcss-import@npm:16.1.1"
+  dependencies:
+    postcss-value-parser: "npm:^4.0.0"
+    read-cache: "npm:^1.0.0"
+    resolve: "npm:^1.1.7"
+  peerDependencies:
+    postcss: ^8.0.0
+  checksum: 10/2afac2b6e25f263f45ac2168c5f5e4b2e49e3d44c620338138fe89cf81bd83e6056784a26d54c58611d05dda18bc56069212484ec750bbf6d2e29b623460a7f9
   languageName: node
   linkType: hard
 
@@ -16162,7 +16193,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-value-parser@npm:^4.0.2, postcss-value-parser@npm:^4.1.0, postcss-value-parser@npm:^4.2.0":
+"postcss-value-parser@npm:^4.0.0, postcss-value-parser@npm:^4.0.2, postcss-value-parser@npm:^4.1.0, postcss-value-parser@npm:^4.2.0":
   version: 4.2.0
   resolution: "postcss-value-parser@npm:4.2.0"
   checksum: 10/e4e4486f33b3163a606a6ed94f9c196ab49a37a7a7163abfcd469e5f113210120d70b8dd5e33d64636f41ad52316a3725655421eb9a1094f1bcab1db2f555c62
@@ -16188,6 +16219,17 @@ __metadata:
     picocolors: "npm:^1.1.1"
     source-map-js: "npm:^1.2.1"
   checksum: 10/9e4fbe97574091e9736d0e82a591e29aa100a0bf60276a926308f8c57249698935f35c5d2f4e80de778d0cbb8dcffab4f383d85fd50c5649aca421c3df729b86
+  languageName: node
+  linkType: hard
+
+"postcss@npm:^8.5.8":
+  version: 8.5.8
+  resolution: "postcss@npm:8.5.8"
+  dependencies:
+    nanoid: "npm:^3.3.11"
+    picocolors: "npm:^1.1.1"
+    source-map-js: "npm:^1.2.1"
+  checksum: 10/cbacbfd7f767e2c820d4bf09a3a744834dd7d14f69ff08d1f57b1a7defce9ae5efcf31981890d9697a972a64e9965de677932ef28e4c8ba23a87aad45b82c459
   languageName: node
   linkType: hard
 
@@ -16671,6 +16713,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"read-cache@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "read-cache@npm:1.0.0"
+  dependencies:
+    pify: "npm:^2.3.0"
+  checksum: 10/83a39149d9dfa38f0c482ea0d77b34773c92fef07fe7599cdd914d255b14d0453e0229ef6379d8d27d6947f42d7581635296d0cfa7708f05a9bd8e789d398b31
+  languageName: node
+  linkType: hard
+
 "readable-stream@npm:^3.4.0":
   version: 3.6.2
   resolution: "readable-stream@npm:3.6.2"
@@ -17143,6 +17194,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"resolve@npm:^1.1.7, resolve@npm:^1.19.0, resolve@npm:^1.20.0, resolve@npm:^1.22.1, resolve@npm:^1.22.11, resolve@npm:^1.22.4, resolve@npm:^1.22.8":
+  version: 1.22.11
+  resolution: "resolve@npm:1.22.11"
+  dependencies:
+    is-core-module: "npm:^2.16.1"
+    path-parse: "npm:^1.0.7"
+    supports-preserve-symlinks-flag: "npm:^1.0.0"
+  bin:
+    resolve: bin/resolve
+  checksum: 10/e1b2e738884a08de03f97ee71494335eba8c2b0feb1de9ae065e82c48997f349f77a2b10e8817e147cf610bfabc4b1cb7891ee8eaf5bf80d4ad514a34c4fab0a
+  languageName: node
+  linkType: hard
+
 "resolve@npm:^1.12.0":
   version: 1.22.8
   resolution: "resolve@npm:1.22.8"
@@ -17153,19 +17217,6 @@ __metadata:
   bin:
     resolve: bin/resolve
   checksum: 10/c473506ee01eb45cbcfefb68652ae5759e092e6b0fb64547feadf9736a6394f258fbc6f88e00c5ca36d5477fbb65388b272432a3600fa223062e54333c156753
-  languageName: node
-  linkType: hard
-
-"resolve@npm:^1.19.0, resolve@npm:^1.20.0, resolve@npm:^1.22.1, resolve@npm:^1.22.11, resolve@npm:^1.22.4, resolve@npm:^1.22.8":
-  version: 1.22.11
-  resolution: "resolve@npm:1.22.11"
-  dependencies:
-    is-core-module: "npm:^2.16.1"
-    path-parse: "npm:^1.0.7"
-    supports-preserve-symlinks-flag: "npm:^1.0.0"
-  bin:
-    resolve: bin/resolve
-  checksum: 10/e1b2e738884a08de03f97ee71494335eba8c2b0feb1de9ae065e82c48997f349f77a2b10e8817e147cf610bfabc4b1cb7891ee8eaf5bf80d4ad514a34c4fab0a
   languageName: node
   linkType: hard
 
@@ -17185,6 +17236,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"resolve@patch:resolve@npm%3A^1.1.7#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.19.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.20.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.11#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.4#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.8#optional!builtin<compat/resolve>":
+  version: 1.22.11
+  resolution: "resolve@patch:resolve@npm%3A1.22.11#optional!builtin<compat/resolve>::version=1.22.11&hash=c3c19d"
+  dependencies:
+    is-core-module: "npm:^2.16.1"
+    path-parse: "npm:^1.0.7"
+    supports-preserve-symlinks-flag: "npm:^1.0.0"
+  bin:
+    resolve: bin/resolve
+  checksum: 10/fd342cad25e52cd6f4f3d1716e189717f2522bfd6641109fe7aa372f32b5714a296ed7c238ddbe7ebb0c1ddfe0b7f71c9984171024c97cf1b2073e3e40ff71a8
+  languageName: node
+  linkType: hard
+
 "resolve@patch:resolve@npm%3A^1.12.0#optional!builtin<compat/resolve>":
   version: 1.22.8
   resolution: "resolve@patch:resolve@npm%3A1.22.8#optional!builtin<compat/resolve>::version=1.22.8&hash=c3c19d"
@@ -17195,19 +17259,6 @@ __metadata:
   bin:
     resolve: bin/resolve
   checksum: 10/f345cd37f56a2c0275e3fe062517c650bb673815d885e7507566df589375d165bbbf4bdb6aa95600a9bc55f4744b81f452b5a63f95b9f10a72787dba3c90890a
-  languageName: node
-  linkType: hard
-
-"resolve@patch:resolve@npm%3A^1.19.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.20.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.11#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.4#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.8#optional!builtin<compat/resolve>":
-  version: 1.22.11
-  resolution: "resolve@patch:resolve@npm%3A1.22.11#optional!builtin<compat/resolve>::version=1.22.11&hash=c3c19d"
-  dependencies:
-    is-core-module: "npm:^2.16.1"
-    path-parse: "npm:^1.0.7"
-    supports-preserve-symlinks-flag: "npm:^1.0.0"
-  bin:
-    resolve: bin/resolve
-  checksum: 10/fd342cad25e52cd6f4f3d1716e189717f2522bfd6641109fe7aa372f32b5714a296ed7c238ddbe7ebb0c1ddfe0b7f71c9984171024c97cf1b2073e3e40ff71a8
   languageName: node
   linkType: hard
 
