@@ -2111,7 +2111,6 @@ __metadata:
     chart.js: "npm:^4.5.0"
     chartjs-adapter-date-fns: "npm:^3.0.0"
     chartjs-plugin-zoom: "npm:^2.0.0"
-    child-process: "npm:^1.0.2"
     clsx: "npm:^2.1.1"
     codemirror: "npm:^5.65.2"
     cronstrue: "npm:^2.51.0"
@@ -2142,7 +2141,7 @@ __metadata:
     lodash: "npm:^4.17.15"
     lru-cache: "npm:^6.0.0"
     prettier: "npm:3.8.1"
-    qs: "npm:^6.14.1"
+    qs: "npm:^6.14.2"
     react: "npm:^18.3.1"
     react-chartjs-2: "npm:^5.1.0"
     react-docgen-typescript-plugin: "npm:^1.0.8"
@@ -8316,13 +8315,6 @@ __metadata:
   version: 2.1.3
   resolution: "check-error@npm:2.1.3"
   checksum: 10/f1868d3db60f5a7da92e140ccf33e9152bf6124161fa9b7a4ae8eafdb05e66e1f13570401e56f314f037b0f1b71eaf38ad0c7256310d82c6105e9d85ded0f202
-  languageName: node
-  linkType: hard
-
-"child-process@npm:^1.0.2":
-  version: 1.0.2
-  resolution: "child-process@npm:1.0.2"
-  checksum: 10/dfbce629d6e660d2beab0e31b6ed049f5c8795539175b8568d4c4d636202b5dbc79282b2253be5610f9612ef459390dde76f172d8ef31d57965a6148d0a5cd1f
   languageName: node
   linkType: hard
 
@@ -16348,7 +16340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qs@npm:^6.14.1":
+"qs@npm:^6.14.2":
   version: 6.15.0
   resolution: "qs@npm:6.15.0"
   dependencies:

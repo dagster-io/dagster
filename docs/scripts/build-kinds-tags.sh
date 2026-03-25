@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
@@ -14,7 +14,7 @@ uv_install() {
 uv_activate_venv() {
   export UV_PYTHON_DOWNLOADS=automatic
   uv python install 3.11
-  uv venv --python 3.11
+  uv venv --python 3.11 --clear
   source .venv/bin/activate
   uv pip install tox
 }

@@ -12,7 +12,7 @@ from dagster._daemon.auto_run_reexecution.event_log_consumer import (
 TEST_EVENT_LOG_FETCH_LIMIT = 10
 
 
-class TestEventLogConsumerDaemon(EventLogConsumerDaemon):
+class MockEventLogConsumerDaemon(EventLogConsumerDaemon):
     """Override the actual handlers so that we can just test which run records they receive."""
 
     def __init__(self):
@@ -48,7 +48,7 @@ def _create_success_event(instance, run):
 
 
 def test_daemon(instance: DagsterInstance, empty_workspace_context):
-    daemon = TestEventLogConsumerDaemon()
+    daemon = MockEventLogConsumerDaemon()
 
     list(daemon.run_iteration(empty_workspace_context))
     assert daemon.run_records == []
@@ -66,7 +66,7 @@ def test_daemon(instance: DagsterInstance, empty_workspace_context):
 
 
 def test_events_exceed_limit(instance: DagsterInstance, empty_workspace_context):
-    daemon = TestEventLogConsumerDaemon()
+    daemon = MockEventLogConsumerDaemon()
     list(daemon.run_iteration(empty_workspace_context))
 
     for _ in range(TEST_EVENT_LOG_FETCH_LIMIT + 1):
@@ -81,7 +81,7 @@ def test_events_exceed_limit(instance: DagsterInstance, empty_workspace_context)
 
 
 def test_success_and_failure_events(instance: DagsterInstance, empty_workspace_context):
-    daemon = TestEventLogConsumerDaemon()
+    daemon = MockEventLogConsumerDaemon()
     list(daemon.run_iteration(empty_workspace_context))
 
     for _ in range(TEST_EVENT_LOG_FETCH_LIMIT + 1):
@@ -105,7 +105,7 @@ SUCCESS_KEY = "EVENT_LOG_CONSUMER_CURSOR-PIPELINE_SUCCESS"
 def test_cursors(instance: DagsterInstance, empty_workspace_context):
     assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == {}
 
-    daemon = TestEventLogConsumerDaemon()
+    daemon = MockEventLogConsumerDaemon()
     list(daemon.run_iteration(empty_workspace_context))
 
     assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == {
@@ -149,7 +149,7 @@ def test_cursors(instance: DagsterInstance, empty_workspace_context):
 
 def test_cursor_init(instance: DagsterInstance, empty_workspace_context):
     instance.run_storage.wipe()
-    daemon = TestEventLogConsumerDaemon()
+    daemon = MockEventLogConsumerDaemon()
 
     run1 = create_run_for_test(instance, "foo")
     run2 = create_run_for_test(instance, "foo")

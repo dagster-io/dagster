@@ -162,18 +162,11 @@ Before following the steps in this section, you must first [create a Dagster pro
 
 :::
 
-If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-line CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, you can use the [`dg` CLI](/api/clis/dg-cli/dg-cli-reference) or the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
 
 1. First, [create a new project with the `create-dagster project` command](/guides/build/projects/creating-projects) and activate the project virtual environment.
 
-2. Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization:
-
-   ```shell
-   pip install dagster-cloud
-   dagster-cloud configure
-   ```
-
-You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). For new projects, consider using the `dg` CLI command `dg plus login` instead.
+2. Next, [authenticate to your Dagster+ organization](/api/clis/dg-cli/configuring-dagster-plus). For interactive use, run `dg plus login`. For CI environments, see the [non-interactive setup](/api/clis/dg-cli/configuring-dagster-plus#setting-config-non-interactively) instructions.
 
 3. Finally, deploy your project to Dagster+ using the `serverless` command, replacing `YOUR_PACKAGE_NAME` with the name of your Dagster package:
 
@@ -208,7 +201,7 @@ Before following the steps in this section, you must:
 
 - [Create a Dagster project](/guides/build/projects/creating-projects)
 - Scaffold deployment configuration files (Dockerfile, `build.yaml`, `containter_context.yaml`) in the project root directory with `dg plus deploy configure`
-- Log in to your Dagster organization with `dg plus login`
+- [Log in to your Dagster+ organization](/api/clis/dg-cli/configuring-dagster-plus) with `dg plus login`
 
 :::
 

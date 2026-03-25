@@ -1,5 +1,6 @@
 """Validation for dg plus deploy commands."""
 
+import os
 import pathlib
 
 import click
@@ -39,18 +40,22 @@ def validate_deploy_configuration(
     """
     # defer for import performance
     from dagster_cloud_cli.commands.ci import checks
-    from dagster_cloud_cli.config_utils import get_org_url
+    from dagster_cloud_cli.config_utils import URL_ENV_VAR_NAME, get_org_url
 
     yaml_path = pathlib.Path(dagster_cloud_yaml_path)
 
     yaml_result = checks.check_dagster_cloud_yaml(yaml_path)
 
-    dagster_env = None
-    if DagsterPlusCliConfig.exists():
-        config = DagsterPlusCliConfig.get()
-        dagster_env = _extract_dagster_env_from_url(config.url)
+    env_url = os.getenv(URL_ENV_VAR_NAME)
+    if env_url:
+        url = env_url
+    else:
+        dagster_env = None
+        if DagsterPlusCliConfig.exists():
+            config = DagsterPlusCliConfig.get()
+            dagster_env = _extract_dagster_env_from_url(config.url)
+        url = get_org_url(organization, dagster_env)
 
-    url = get_org_url(organization, dagster_env)
     connect_result = checks.check_connect_dagster_cloud(url)
 
     all_errors = yaml_result.errors + connect_result.errors

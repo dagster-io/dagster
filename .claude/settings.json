@@ -129,11 +129,6 @@
       "Read(./python_modules/dagit/node_modules/**)",
       "Read(./python_modules/dagit/yarn.lock)",
       "Read(./js_modules/dagit/**)",
-      "Read(./docs/gatsby/**/node_modules/**)",
-      "Read(./docs/gatsby/**/_build/**)",
-      "Read(./docs/gatsby/**/public/**)",
-      "Read(./docs/next/.mdx-data/**)",
-      "Read(./docs/next/public/sitemap.xml)",
       "Read(./data/**)",
       "Read(./dask-worker-space/**)",
       "Read(./.idea/**)",
@@ -150,7 +145,15 @@
       "Read(./scripts/.build/**)",
       "Read(./.user.yml)",
       "Read(./exponent.txt)",
-      "Read(./.cloudstorage/**)"
+      "Read(./.cloudstorage/**)",
+      "Read(docs/.tox/**)",
+      "Read(docs/**/__pycache__/**)",
+      "Read(docs/.docusaurus/**)",
+      "Read(docs/build/**)",
+      "Read(docs/static/objects.inv)",
+      "Read(docs/vale/**)",
+      "Read(docs/src/code-examples-content.js)",
+      "Read(docs/sphinx/_build/**)"
     ]
   },
   "hooks": {

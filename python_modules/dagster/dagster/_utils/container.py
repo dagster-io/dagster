@@ -249,7 +249,7 @@ def _retrieve_containerized_memory_limit_v1(logger: logging.Logger | None) -> in
     try:
         with open(memory_limit_path_cgroup_v1()) as f:
             return int(f.read())
-    except:
+    except Exception:
         if logger:
             logger.exception("Failed to retrieve memory limit from cgroup")
         return None
@@ -259,7 +259,7 @@ def _retrieve_containerized_memory_limit_v2(logger: logging.Logger | None) -> in
     try:
         with open(memory_limit_path_cgroup_v2()) as f:
             return int(f.read())
-    except:
+    except Exception:
         if logger:
             logger.exception(
                 "Failed to retrieve memory limit from cgroup. There may be no limit set on the container."
@@ -285,7 +285,7 @@ def _retrieve_containerized_cpu_cfs_period_us_v1(
     try:
         with open(cpu_cfs_period_us_path()) as f:
             return float(f.read())
-    except:
+    except Exception:
         if logger:
             logger.exception("Failed to retrieve CPU period from cgroup")
         return None
@@ -299,7 +299,7 @@ def _retrieve_containerized_cpu_cfs_period_us_v2(
         with open(cpu_max_path_cgroup_v2()) as f:
             line = f.readline()
             return float(line.split()[1])
-    except:
+    except Exception:
         if logger:
             logger.exception("Failed to retrieve CPU period from cgroup")
         return None
@@ -323,7 +323,7 @@ def _retrieve_containerized_cpu_cfs_quota_us_v1(
     try:
         with open(cpu_cfs_quota_us_path()) as f:
             return float(f.read())
-    except:
+    except Exception:
         if logger:
             logger.debug("Failed to retrieve CPU quota from cgroup", exc_info=True)
         return None
@@ -337,7 +337,7 @@ def _retrieve_containerized_cpu_cfs_quota_us_v2(
         with open(cpu_max_path_cgroup_v2()) as f:
             line = f.readline()
             return float(line.split()[0])
-    except:
+    except Exception:
         if logger:
             logger.debug(
                 "Failed to retrieve CPU quota from cgroup. There might not be a limit set on the container.",

@@ -1,0 +1,71 @@
+@import '@blueprintjs/core/lib/css/blueprint.css' layer(blueprint);
+@import '@blueprintjs/select/lib/css/blueprint-select.css' layer(blueprint);
+@import '@blueprintjs/popover2/lib/css/blueprint-popover2.css' layer(blueprint);
+@import '../palettes/CoreColorStyles.css';
+@import '../palettes/TranslucentColorStyles.css';
+@import '../palettes/DataVizColorStyles.css';
+@import '../fonts/Fonts.css';
+@import '../fonts/GlobalGeist.css';
+@import '../fonts/GlobalGeistMono.css';
+@import '../theme/GlobalThemeStyle.css';
+@import '../components/css/GlobalDialogStyle.css';
+@import '../components/css/GlobalPopoverStyle.css';
+@import '../components/css/GlobalSuggestStyle.css';
+
+/* Base styles shared by all apps using ui-components */
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: var(--browser-color-scheme);
+}
+
+body {
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  font-family: var(--font-default);
+}
+
+a,
+a:hover,
+a:active {
+  color: var(--color-link-default);
+}
+
+input,
+select,
+textarea {
+  font-family: var(--font-default);
+}
+
+button {
+  font-family: inherit;
+  color: var(--color-text-default);
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-ligatures: none;
+}
+
+:focus-visible {
+  outline: var(--color-focus-ring) auto 1px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:not(a):focus,
+:not(a):focus-visible {
+  outline-offset: 1px;
+}

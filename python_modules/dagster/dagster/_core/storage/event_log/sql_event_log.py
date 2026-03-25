@@ -93,6 +93,7 @@ from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import (
     db_case,
     db_fetch_mappings,
+    db_result,
     db_select,
     db_subquery,
 )
@@ -379,8 +380,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         event_id = None
 
-        with self.run_connection(run_id) as conn:
-            result = conn.execute(insert_event_statement)
+        with self.run_connection(run_id) as conn, db_result(conn, insert_event_statement) as result:
             event_id = result.inserted_primary_key[0]
 
         if (
@@ -458,8 +458,8 @@ class SqlEventLogStorage(EventLogStorage):
         if limit:
             query = query.limit(limit)
 
-        with self.run_connection(run_id) as conn:
-            results = conn.execute(query).fetchall()
+        with self.run_connection(run_id) as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         last_record_id = None
         try:
@@ -515,8 +515,8 @@ class SqlEventLogStorage(EventLogStorage):
             .group_by("dagster_event_type")
         )
 
-        with self.run_connection(run_id) as conn:
-            results = conn.execute(query).fetchall()
+        with self.run_connection(run_id) as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         try:
             counts = {}
@@ -592,8 +592,8 @@ class SqlEventLogStorage(EventLogStorage):
                 SqlEventLogStorageTable.c.step_key.in_(step_keys)
             )
 
-        with self.run_connection(run_id) as conn:
-            results = conn.execute(raw_event_query).fetchall()
+        with self.run_connection(run_id) as conn, db_result(conn, raw_event_query) as result:
+            results = result.fetchall()
 
         try:
             records = deserialize_values((json_str for (json_str,) in results), EventLogEntry)
@@ -749,7 +749,8 @@ class SqlEventLogStorage(EventLogStorage):
                 .where(SqlEventLogStorageTable.c.id == record_id)
                 .order_by(SqlEventLogStorageTable.c.id.asc())
             )
-            return conn.execute(query).fetchone()
+            with db_result(conn, query) as result:
+                return result.fetchone()
 
     def has_secondary_index(self, name: str) -> bool:
         """This method uses a checkpoint migration table to see if summary data has been constructed
@@ -761,8 +762,8 @@ class SqlEventLogStorage(EventLogStorage):
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         return len(results) > 0
 
@@ -925,8 +926,8 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             query = query.order_by(SqlEventLogStorageTable.c.id.desc())
 
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         event_records = []
         for row_id, json_str in results:
@@ -1105,8 +1106,8 @@ class SqlEventLogStorage(EventLogStorage):
         if limit:
             query = query.limit(limit)
 
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         events = {}
         record_id = None
@@ -1122,9 +1123,12 @@ class SqlEventLogStorage(EventLogStorage):
         return events
 
     def get_maximum_record_id(self) -> int | None:
-        with self.index_connection() as conn:
-            result = conn.execute(db_select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
-            return result[0]  # type: ignore
+        with (
+            self.index_connection() as conn,
+            db_result(conn, db_select([db.func.max(SqlEventLogStorageTable.c.id)])) as result,
+        ):
+            row = result.fetchone()
+            return row[0]  # type: ignore
 
     def _construct_asset_record_from_row(
         self,
@@ -1711,8 +1715,8 @@ class SqlEventLogStorage(EventLogStorage):
         if filter_event_id is not None:
             tags_query = tags_query.where(AssetEventTagsTable.c.event_id == filter_event_id)
 
-        with self.index_connection() as conn:
-            results = conn.execute(tags_query).fetchall()
+        with self.index_connection() as conn, db_result(conn, tags_query) as result:
+            results = result.fetchall()
 
         tags_by_event_id: dict[int, dict[str, str]] = defaultdict(dict)
         for row in results:
@@ -1823,8 +1827,8 @@ class SqlEventLogStorage(EventLogStorage):
         if before_cursor:
             query = query.where(SqlEventLogStorageTable.c.id < before_cursor)
 
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         return set([cast("str", row[0]) for row in results])
 
@@ -1895,8 +1899,11 @@ class SqlEventLogStorage(EventLogStorage):
             ]
         )
 
-        with self.index_connection() as conn:
-            rows = conn.execute(latest_event_ids_by_partition).fetchall()
+        with (
+            self.index_connection() as conn,
+            db_result(conn, latest_event_ids_by_partition) as result,
+        ):
+            rows = result.fetchall()
 
         latest_materialization_storage_id_by_partition: dict[str, int] = {}
         for row in rows:
@@ -1952,8 +1959,11 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         latest_tags_by_partition: dict[str, dict[str, str]] = defaultdict(dict)
-        with self.index_connection() as conn:
-            rows = conn.execute(latest_tags_by_partition_query).fetchall()
+        with (
+            self.index_connection() as conn,
+            db_result(conn, latest_tags_by_partition_query) as result,
+        ):
+            rows = result.fetchall()
 
         for row in rows:
             latest_tags_by_partition[cast("str", row[0])][cast("str", row[1])] = cast("str", row[2])
@@ -2064,8 +2074,8 @@ class SqlEventLogStorage(EventLogStorage):
             .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
             .order_by(DynamicPartitionsTable.c.id)
         )
-        with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            rows = result.fetchall()
 
         return [cast("str", row[1]) for row in rows]
 
@@ -2094,8 +2104,8 @@ class SqlEventLogStorage(EventLogStorage):
             else:
                 query = query.where(DynamicPartitionsTable.c.id < last_storage_id)
 
-        with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            rows = result.fetchall()
 
         if rows:
             next_cursor = StorageIdCursor(storage_id=cast("int", rows[-1][0])).to_string()
@@ -2122,8 +2132,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .limit(1)
         )
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         return len(results) > 0
 
@@ -2231,8 +2241,11 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def _has_rows(self, table) -> bool:
-        with self.index_connection() as conn:
-            row = conn.execute(db_select([True]).select_from(table).limit(1)).fetchone()
+        with (
+            self.index_connection() as conn,
+            db_result(conn, db_select([True]).select_from(table).limit(1)) as result,
+        ):
+            row = result.fetchone()
         return bool(row[0]) if row else False
 
     def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
@@ -2646,8 +2659,8 @@ class SqlEventLogStorage(EventLogStorage):
         if step_key:
             select_query = select_query.where(PendingStepsTable.c.step_key == step_key)
 
-        with self.index_connection() as conn:
-            rows = conn.execute(select_query).fetchall()
+        with self.index_connection() as conn, db_result(conn, select_query) as result:
+            rows = result.fetchall()
             if not rows:
                 return []
 
@@ -2749,7 +2762,8 @@ class SqlEventLogStorage(EventLogStorage):
                         ConcurrencyLimitsTable.c.using_default_limit,
                     ]
                 ).select_from(ConcurrencyLimitsTable)
-                rows = conn.execute(query).fetchall()
+                with db_result(conn, query) as result:
+                    rows = result.fetchall()
                 return [
                     PoolLimit(
                         name=cast("str", row[0]),
@@ -2781,7 +2795,8 @@ class SqlEventLogStorage(EventLogStorage):
                         ConcurrencySlotsTable.c.concurrency_key,
                     )
                 )
-            rows = conn.execute(query).fetchall()
+            with db_result(conn, query) as result:
+                rows = result.fetchall()
             return [
                 PoolLimit(
                     name=cast("str", row[0]),
@@ -2807,7 +2822,8 @@ class SqlEventLogStorage(EventLogStorage):
                     .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
                     .distinct()
                 )
-            rows = conn.execute(query).fetchall()
+            with db_result(conn, query) as result:
+                rows = result.fetchall()
             return {cast("str", row[0]) for row in rows}
 
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
@@ -2895,8 +2911,11 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def get_concurrency_run_ids(self) -> set[str]:
-        with self.index_connection() as conn:
-            rows = conn.execute(db_select([PendingStepsTable.c.run_id]).distinct()).fetchall()
+        with (
+            self.index_connection() as conn,
+            db_result(conn, db_select([PendingStepsTable.c.run_id]).distinct()) as result,
+        ):
+            rows = result.fetchall()
             return set([cast("str", row[0]) for row in rows])
 
     def free_concurrency_slots_for_run(self, run_id: str) -> None:
@@ -2947,7 +2966,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             if step_key:
                 select_query = select_query.where(ConcurrencySlotsTable.c.step_key == step_key)
-            rows = conn.execute(select_query).fetchall()
+            with db_result(conn, select_query) as result:
+                rows = result.fetchall()
             if not rows:
                 return []
 
@@ -3466,8 +3486,11 @@ class SqlEventLogStorage(EventLogStorage):
             .where(data_version_by_partition_subquery.c.rank == 1)
         )
 
-        with self.index_connection() as conn:
-            rows = conn.execute(latest_data_version_by_partition_query).fetchall()
+        with (
+            self.index_connection() as conn,
+            db_result(conn, latest_data_version_by_partition_query) as result,
+        ):
+            rows = result.fetchall()
 
         return {cast("str", row[0]): cast("str", row[1]) for row in rows}
 

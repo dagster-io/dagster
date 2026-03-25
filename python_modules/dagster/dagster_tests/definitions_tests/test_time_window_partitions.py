@@ -2610,6 +2610,291 @@ def test_multiple_cron_and_timestamp_exclusions():
     ]
 
 
+def test_has_any_partitions_in_window_no_exclusions():
+    """Test has_any_partitions_in_window for basic daily partitions without exclusions."""
+    daily = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
+
+    # Window covering several days - has partitions
+    assert daily.has_any_partitions_in_window(time_window("2025-01-05", "2025-01-10")) is True
+
+    # Window covering exactly one partition
+    assert daily.has_any_partitions_in_window(time_window("2025-01-05", "2025-01-06")) is True
+
+    # Empty window (start == end)
+    assert daily.has_any_partitions_in_window(time_window("2025-01-05", "2025-01-05")) is False
+
+    # Reversed window (start > end)
+    assert daily.has_any_partitions_in_window(time_window("2025-01-10", "2025-01-05")) is False
+
+
+def test_has_any_partitions_in_window_with_exclusions():
+    """Test has_any_partitions_in_window correctly skips excluded partitions."""
+    weekday_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+        ],
+    )
+
+    # Window covering a weekday - has partitions
+    assert (
+        weekday_calendar.has_any_partitions_in_window(time_window("2025-01-06", "2025-01-07"))
+        is True
+    )
+
+    # Window covering only a weekend (Sat Jan 11 to Mon Jan 13) - no partitions
+    assert (
+        weekday_calendar.has_any_partitions_in_window(time_window("2025-01-11", "2025-01-13"))
+        is False
+    )
+
+    # Window starting on Saturday and ending on Tuesday - has Monday
+    assert (
+        weekday_calendar.has_any_partitions_in_window(time_window("2025-01-11", "2025-01-14"))
+        is True
+    )
+
+
+def test_has_any_partitions_in_window_with_holiday_exclusions():
+    """Test has_any_partitions_in_window with both cron and timestamp exclusions."""
+    partitions_def = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+            create_datetime(2025, 1, 20),  # MLK Day (Mon)
+        ],
+    )
+
+    # Window covering Sat Jan 18 through Tue Jan 21 - Sat/Sun excluded, Mon excluded by holiday
+    # Only non-excluded day would be Tue Jan 21, but window ends at Jan 21 (exclusive)
+    assert (
+        partitions_def.has_any_partitions_in_window(time_window("2025-01-18", "2025-01-21"))
+        is False
+    )
+
+    # Extend window to include Tue Jan 21
+    assert (
+        partitions_def.has_any_partitions_in_window(time_window("2025-01-18", "2025-01-22")) is True
+    )
+
+    # Window covering just the holiday (Mon Jan 20 to Tue Jan 21) - excluded
+    assert (
+        partitions_def.has_any_partitions_in_window(time_window("2025-01-20", "2025-01-21"))
+        is False
+    )
+
+    # Window covering Fri Jan 17 to Sat Jan 18 - Friday is not excluded
+    assert (
+        partitions_def.has_any_partitions_in_window(time_window("2025-01-17", "2025-01-18")) is True
+    )
+
+
+def test_subset_contiguity_with_exclusions():
+    """Test that partition keys from a subset with exclusions can be turned back into a
+    contiguous subset - i.e. the excluded partitions between time windows don't prevent
+    merging adjacent windows.
+    """
+    weekday_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+        ],
+    )
+
+    next_month = datetime.strptime("2025-02-01", "%Y-%m-%d")
+    with partition_loading_context(effective_dt=next_month):
+        # Create a subset with all partition keys
+        all_keys = list(weekday_calendar.get_partition_keys())
+        subset = cast(
+            "TimeWindowPartitionsSubset",
+            weekday_calendar.subset_with_partition_keys(all_keys),
+        )
+
+        # The subset should have a single contiguous time window even though weekends
+        # are excluded - the windows on either side of a weekend should merge together
+        assert len(subset.included_time_windows) == 1
+
+        # Verify round-tripping: keys -> subset -> ranges -> keys
+        ranges = subset.get_partition_key_ranges(weekday_calendar)
+        assert len(ranges) == 1
+        assert ranges[0].start == "2025-01-01"
+        assert ranges[0].end == "2025-01-31"
+
+        keys_from_range = weekday_calendar.get_partition_keys_in_range(ranges[0])
+        assert keys_from_range == all_keys
+
+
+def test_subset_contiguity_with_exclusions_partial_range():
+    """Test that a partial range of keys with exclusions between them still merges into a
+    single window when all keys in the non-excluded range are present.
+    """
+    weekday_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+        ],
+    )
+
+    next_month = datetime.strptime("2025-02-01", "%Y-%m-%d")
+    with partition_loading_context(effective_dt=next_month):
+        # Take just one week: Fri Jan 10 through Fri Jan 17 (skipping weekend)
+        week_keys = [
+            "2025-01-10",  # Fri
+            "2025-01-13",  # Mon
+            "2025-01-14",  # Tue
+            "2025-01-15",  # Wed
+            "2025-01-16",  # Thu
+            "2025-01-17",  # Fri
+        ]
+        subset = cast(
+            "TimeWindowPartitionsSubset",
+            weekday_calendar.subset_with_partition_keys(week_keys),
+        )
+
+        # Should be one contiguous window since the weekend between Fri 10 and Mon 13
+        # is excluded
+        assert len(subset.included_time_windows) == 1
+
+        ranges = subset.get_partition_key_ranges(weekday_calendar)
+        assert len(ranges) == 1
+        assert ranges[0].start == "2025-01-10"
+        assert ranges[0].end == "2025-01-17"
+
+
+def test_subset_non_contiguous_with_exclusions():
+    """Test that a subset with a gap (non-excluded partition key missing) correctly
+    produces multiple time windows / ranges.
+    """
+    weekday_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+        ],
+    )
+
+    next_month = datetime.strptime("2025-02-01", "%Y-%m-%d")
+    with partition_loading_context(effective_dt=next_month):
+        # Take keys with a gap: omit Wed Jan 15 (a non-excluded weekday)
+        keys_with_gap = [
+            "2025-01-13",  # Mon
+            "2025-01-14",  # Tue
+            # gap: "2025-01-15" Wed is missing but not excluded
+            "2025-01-16",  # Thu
+            "2025-01-17",  # Fri
+        ]
+        subset = cast(
+            "TimeWindowPartitionsSubset",
+            weekday_calendar.subset_with_partition_keys(keys_with_gap),
+        )
+
+        # Should be two separate windows since a non-excluded partition is missing
+        assert len(subset.included_time_windows) == 2
+
+        ranges = subset.get_partition_key_ranges(weekday_calendar)
+        assert len(ranges) == 2
+        assert ranges[0].start == "2025-01-13"
+        assert ranges[0].end == "2025-01-14"
+        assert ranges[1].start == "2025-01-16"
+        assert ranges[1].end == "2025-01-17"
+
+
+def test_subset_contiguity_with_holiday_exclusions():
+    """Test subset merging with both cron and timestamp exclusions (holidays)."""
+    company_holidays = [
+        create_datetime(2025, 1, 1),  # New Year's Day (Wed)
+        create_datetime(2025, 1, 20),  # MLK Day (Mon)
+    ]
+    partitions_def = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",
+            *company_holidays,
+        ],
+    )
+
+    next_month = datetime.strptime("2025-02-01", "%Y-%m-%d")
+    with partition_loading_context(effective_dt=next_month):
+        all_keys = list(partitions_def.get_partition_keys())
+        subset = cast(
+            "TimeWindowPartitionsSubset",
+            partitions_def.subset_with_partition_keys(all_keys),
+        )
+
+        # All keys should form a single contiguous window
+        assert len(subset.included_time_windows) == 1
+
+        ranges = subset.get_partition_key_ranges(partitions_def)
+        assert len(ranges) == 1
+
+        # Round-trip check
+        keys_from_range = partitions_def.get_partition_keys_in_range(ranges[0])
+        assert keys_from_range == all_keys
+
+        # Now omit a non-excluded key (Tue Jan 21, the day after MLK Day)
+        keys_with_gap = [k for k in all_keys if k != "2025-01-21"]
+        subset_with_gap = cast(
+            "TimeWindowPartitionsSubset",
+            partitions_def.subset_with_partition_keys(keys_with_gap),
+        )
+
+        # Should be two windows since Jan 21 is a valid partition that's missing
+        assert len(subset_with_gap.included_time_windows) == 2
+
+
+def test_subset_contiguity_without_exclusions():
+    """Verify that the merging behavior is unchanged for partitions without exclusions -
+    adjacent windows merge only when timestamps match exactly.
+    """
+    daily = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-01-15",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
+
+    end_dt = datetime.strptime("2025-01-15", "%Y-%m-%d")
+    with partition_loading_context(effective_dt=end_dt):
+        all_keys = list(daily.get_partition_keys())
+        subset = cast(
+            "TimeWindowPartitionsSubset",
+            daily.subset_with_partition_keys(all_keys),
+        )
+
+        # Without exclusions, all keys should still be one window
+        assert len(subset.included_time_windows) == 1
+
+        # With a gap, should be two windows
+        keys_with_gap = [k for k in all_keys if k != "2025-01-07"]
+        subset_with_gap = cast(
+            "TimeWindowPartitionsSubset",
+            daily.subset_with_partition_keys(keys_with_gap),
+        )
+        assert len(subset_with_gap.included_time_windows) == 2
+
+
 def test_validate_partition_definition():
     partitions_def = dg.TimeWindowPartitionsDefinition(
         start="2025-01-01",

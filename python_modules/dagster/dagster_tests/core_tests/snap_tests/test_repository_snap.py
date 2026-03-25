@@ -311,8 +311,8 @@ def test_repository_snap_definitions_env_vars() -> None:
                 ),
             ),
             "quux": MyDataStructureResource(
-                str_list=[dg.EnvVar("MY_STRING")],  # type: ignore[arg-type]
-                str_dict={"foo": dg.EnvVar("MY_STRING"), "bar": dg.EnvVar("MY_OTHER_STRING")},  # type: ignore
+                str_list=[dg.EnvVar("MY_STRING")],
+                str_dict={"foo": dg.EnvVar("MY_STRING"), "bar": dg.EnvVar("MY_OTHER_STRING")},
             ),
             "quuz": MyResourceWithConfig(
                 config=MyInnerConfig(

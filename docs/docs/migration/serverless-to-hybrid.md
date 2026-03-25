@@ -68,6 +68,38 @@ Update your build process to publish a new container image and configuration for
 | [Disabling PEX-based deploys](/deployment/dagster-plus/serverless/runtime-environment#disable-pex-deploys) and customizing the Docker image with lifecycle hooks | To customize a code location's runtime environment, you can customize the code location's [Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) to build its image.                                                                                                            |
 | Enabling [non-isolated runs](/deployment/dagster-plus/serverless/run-isolation#non-isolated-runs)                                                                | While this feature doesn't have a direct Hybrid equivalent, you can experiment with the <PyObject section="execution" module="dagster" object="in_process_executor" /> or <PyObject section="execution" module="dagster" object="multiprocess_executor" /> for specific jobs or entire code locations to reduce overhead. |
 
+## 7. Migrate asset data to your own storage (optional)
+
+In Serverless deployments, asset values are stored by default using Dagster-managed S3 storage. After switching to Hybrid, you may want to migrate that data to your own S3 bucket or other storage backend so that your assets remain loadable under the new IO manager configuration. The alternative is to re-materialize all assets against your new storage backend, but this may be time-consuming for large assets or asset graphs.
+
+You can use <PyObject section="io-managers" module="dagster" object="migrate_io_storage" /> to copy all materialized asset data from the Serverless-managed IO manager to your new IO manager without re-materializing any assets.
+
+The example below shows a job that migrates asset data from the default IO manager (which in Serverless is Dagster-managed S3 storage) to a new S3 bucket that you control:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/migrations/migrate_io_storage.py"
+  language="python"
+  startAfter="start_migrate_io_storage"
+  endBefore="end_migrate_io_storage"
+/>
+
+:::note
+
+- The `context` argument provides both the set of assets to migrate and the
+  source IO manager for each asset— they are resolved from the code location
+  that the currently executing op belongs to. Alternatively, you can pass a
+  `definitions` argument (along with an `instance`) instead of `context` to
+  provide the assets and IO managers explicitly. In a standard serverless
+  deployment, all assets will by default use the same Dagster-managed S3 IO
+  manager, but in other deployments there may be multiple IO managers in use.
+  The `destination_io_manager` is the same for all assets and should be an
+  instance of the new IO manager you want to write data to.
+- Progress is logged to the Dagster event log when `migrate_io_storage` is called inside an op.
+- For large partitioned assets, use `batch_partitions=True` to migrate partitions in batches using `PartitionKeyRange` contexts instead of one at a time.
+- Use the `transform` parameter if the in-memory Python type differs between your source and destination IO managers. For example, if your source IO manager deserializes data to Pandas DataFrames but your destination IO manager serializes PyArrow tables, you could provide a transform function that converts the DataFrame to a PyArrow table in memory before writing it to the new storage backend.
+
+:::
+
 ## Next steps
 
 - Learn about the configuration options for [dagster.yaml](/deployment/oss/dagster-yaml)

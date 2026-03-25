@@ -34,7 +34,7 @@ from dagster._time import create_datetime
 from typing_extensions import Self
 
 
-class TestRunLauncher(RunLauncher, ConfigurableClass):
+class MockRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data: ConfigurableClassData | None = None):
         self._inst_data = inst_data
         self.should_fail_termination = False
@@ -97,7 +97,7 @@ def instance():
         overrides={
             "run_launcher": {
                 "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
-                "class": "TestRunLauncher",
+                "class": "MockRunLauncher",
             },
             "run_monitoring": {
                 "enabled": True,
@@ -293,7 +293,7 @@ def test_monitor_started(
     run_record = instance.get_run_record_by_id(run_id)
     assert run_record is not None
     workspace = workspace_context.create_request_context()
-    run_launcher = cast("TestRunLauncher", instance.run_launcher)
+    run_launcher = cast("MockRunLauncher", instance.run_launcher)
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
         monitor_started_run(instance, workspace, run_record, logger)
         run = instance.get_run_by_id(run_record.dagster_run.run_id)
@@ -389,7 +389,7 @@ def test_long_running_termination(
         assert no_tag_record.start_time == started_time.timestamp()
 
         workspace = workspace_context.create_request_context()
-        run_launcher = cast("TestRunLauncher", instance.run_launcher)
+        run_launcher = cast("MockRunLauncher", instance.run_launcher)
 
         eval_time = started_time + datetime.timedelta(seconds=501)
         with freeze_time(eval_time):
@@ -491,7 +491,7 @@ def test_long_running_termination_failure(
         assert too_long_record.start_time == started_time.timestamp()
 
         workspace = workspace_context.create_request_context()
-        run_launcher = cast("TestRunLauncher", instance.run_launcher)
+        run_launcher = cast("MockRunLauncher", instance.run_launcher)
 
         eval_time = started_time + datetime.timedelta(seconds=501)
         with freeze_time(eval_time):
@@ -546,7 +546,7 @@ def test_invalid_max_runtime_tag_value(
         assert invalid_tag_record.dagster_run.status == DagsterRunStatus.STARTED
 
         workspace = workspace_context.create_request_context()
-        run_launcher = cast("TestRunLauncher", instance.run_launcher)
+        run_launcher = cast("MockRunLauncher", instance.run_launcher)
 
         # Advance time well past what would be a typical timeout
         eval_time = started_time + datetime.timedelta(seconds=10000)

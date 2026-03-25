@@ -1,0 +1,65 @@
+# serializer version: 1
+# name: TestFormatTicks.test_format_ticks_json[0]
+  dict({
+    'cursor': 'tick-3',
+    'items': list([
+      dict({
+        'cursor': None,
+        'end_timestamp': 1641046810.0,
+        'error': None,
+        'id': 'tick-1',
+        'run_ids': list([
+          'run-abc',
+        ]),
+        'skip_reason': None,
+        'status': 'SUCCESS',
+        'timestamp': 1641046800.0,
+      }),
+      dict({
+        'cursor': None,
+        'end_timestamp': None,
+        'error': None,
+        'id': 'tick-2',
+        'run_ids': list([
+        ]),
+        'skip_reason': 'No new data',
+        'status': 'SKIPPED',
+        'timestamp': 1641046700.0,
+      }),
+      dict({
+        'cursor': None,
+        'end_timestamp': None,
+        'error': dict({
+          'message': 'ConnectionError: timeout',
+          'stack': list([
+            '''
+                File "/app/sensor.py", line 10
+  
+            ''',
+          ]),
+        }),
+        'id': 'tick-3',
+        'run_ids': list([
+        ]),
+        'skip_reason': None,
+        'status': 'FAILURE',
+        'timestamp': 1641046600.0,
+      }),
+    ]),
+    'total': 3,
+  })
+# ---
+# name: TestFormatTicks.test_format_ticks_table[0]
+  '''
+  TIMESTAMP                STATUS   RUN IDS  SKIP REASON
+  2022-01-01 14:20:00 UTC  SUCCESS  run-abc  
+  2022-01-01 14:18:20 UTC  SKIPPED  -        No new data
+  2022-01-01 14:16:40 UTC  FAILURE  -        
+  
+  Error at 2022-01-01 14:16:40 UTC:
+    ConnectionError: timeout
+        File "/app/sensor.py", line 10
+  
+  Total ticks: 3
+  '''
+# ---

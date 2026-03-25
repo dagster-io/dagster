@@ -4,9 +4,19 @@ sidebar_position: 4100
 title: Installing and configuring the dagster-cloud CLI
 ---
 
+import SupersededDagsterCloudCLI from '@site/docs/partials/_SupersededDagsterCloudCLI.md';
+
+<SupersededDagsterCloudCLI />
+
 The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster+.
 
 In this guide, we'll cover how to install and configure the `dagster-cloud` CLI, get help, and use some helpful environment variables and CLI options.
+
+:::tip Recommended: Use the `dg` CLI
+
+For new projects, we recommend using the [`dg` CLI](/api/clis/dg-cli/dg-cli-reference) instead. See the [Configuring Dagster+ with the dg CLI](/api/clis/dg-cli/configuring-dagster-plus) guide for the equivalent commands and a full migration table.
+
+:::
 
 :::note
 
@@ -45,6 +55,12 @@ dagster-cloud --show-completion
 The recommended way to set up your CLI's config for long-term use is through the configuration file, located by default at `~/.dagster_cloud_cli/config`.
 
 ### Setting up the configuration file
+
+:::tip `dg` equivalent
+
+See [Configuring Dagster+: Logging in](/api/clis/dg-cli/configuring-dagster-plus#logging-in).
+
+:::
 
 Set up the config file:
 
@@ -99,6 +115,12 @@ When prompted, specify the following:
 
 ### Viewing and modifying the configuration file
 
+:::tip `dg` equivalent
+
+See [Configuring Dagster+: Viewing config](/api/clis/dg-cli/configuring-dagster-plus#viewing-config).
+
+:::
+
 To view the contents of the CLI configuration file, run:
 
 ```shell
@@ -118,6 +140,12 @@ dagster-cloud config setup
 ```
 
 ## Toggling between deployments
+
+:::tip `dg` equivalent
+
+See [Configuring Dagster+: Switching deployments](/api/clis/dg-cli/configuring-dagster-plus#switching-deployments).
+
+:::
 
 To quickly toggle between deployments, run:
 

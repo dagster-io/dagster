@@ -179,6 +179,7 @@ user_code_launcher:
     security_group_ids:
       - <Security Group ID>
     service_discovery_namespace_id: <Service Discovery Namespace Id>
+    service_discovery_role_arn: <Optional IAM Role ARN for cross-account Cloud Map>
     execution_role_arn: <Task Execution Role Arn>
     task_role_arn: <Task Role Arn>
     log_group: <Log Group Name>
@@ -236,6 +237,7 @@ agent_queues:
 | config.subnets                        | **At least one subnet is required**. Dagster+ tasks require a route to the internet so they can access our API server. How this requirement is satisfied depends on the type of subnet provided: <br/>• **Public subnets** - The ECS agent will assign each task a public IP address. Note that [ECS tasks on EC2](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-networking-awsvpc.html) launched within public subnets do not have access to the internet, so a public subnet will only work for Fargate tasks. <br/>•**Private subnets** - The ECS agent assumes you've configured a NAT gateway with an attached NAT gateway. Tasks will **not** be assigned a public IP address. |
 | config.security_group_ids             | A list of [security groups](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-securitygroup.html) to use for tasks launched by the agent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | config.service_discovery_namespace_id | The name of a [private DNS namespace](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-servicediscovery-privatednsnamespace.html).<br/>The ECS agent launches each code location as its own ECS service. The agent communicates with these services via [AWS CloudMap service discovery.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html)                                                                                                                                                                                                                                                                                                |
+| config.service_discovery_role_arn     | An optional IAM role ARN to assume when making AWS Cloud Map (service discovery) API calls. Use this when the Cloud Map namespace lives in a different AWS account than the ECS agent, for example in AWS Organizations setups where networking is centralized in a dedicated account. The agent assumes this role via STS to obtain temporary credentials (1-hour sessions, auto-refreshed). <br/>**Requirements**: The agent's task role must have `sts:AssumeRole` permission for this role, and the target role must include a trust policy that allows the agent's task role to assume it. The target role needs the same `servicediscovery:*` permissions listed in the [cross-account service discovery setup](#cross-account-service-discovery). |
 | config.execution_role_arn             | The ARN of the [Amazon ECS task execution IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html). This role allows ECS to interact with AWS resources on your behalf, such as getting an image from ECR or pushing logs to CloudWatch. <br/>**Note**:This role must include a trust relationship that allows ECS to use it.                                                                                                                                                                                                                                                                                                                                |
 | config.task_role_arn                  | The ARN of the [Amazon ECS task IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html). This role allows the containers running in the ECS task to interact with AWS. <br/> **Note**: This role must include a trust relationship that allows ECS to use it.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | config.log_group                      | The name of a CloudWatch [log group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html#Create-Log-Group).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -253,6 +255,90 @@ agent_queues:
 | config.repository_credentials         | Optional arn of the secret to authenticate into your private container registry. This does not apply if you are leveraging ECR for your images, see the [AWS private auth guide.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html)                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | config.enable_ecs_exec                | Boolean that determines whether tasks created by the agent should be configured with the needed linuxParameters and permissions to use [ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) to shell into the task. Also grants the `SYS_PTRACE` linux capability to enable running tools like py-spy to debug slow or hanging tasks. Defaults to false. **Note**: For ECS Exec to work, the task IAM role must be granted [certain permissions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html#ecs-exec-required-iam-permissions).                                                                                                   |
 
+### Cross-account service discovery {#cross-account-service-discovery}
+
+If your AWS Cloud Map namespace lives in a different AWS account than the ECS agent (for example, centralized networking in an AWS Organizations setup), you can configure the agent to assume a cross-account IAM role for service discovery API calls using the `service_discovery_role_arn` configuration option.
+
+To set this up:
+
+1. **In the account that owns the Cloud Map namespace** (e.g., the Networks account), create an IAM role with the required `servicediscovery:*` permissions:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "CloudMapAccess",
+         "Effect": "Allow",
+         "Action": [
+           "servicediscovery:CreateService",
+           "servicediscovery:DeleteService",
+           "servicediscovery:DeregisterInstance",
+           "servicediscovery:GetNamespace",
+           "servicediscovery:GetOperation",
+           "servicediscovery:ListInstances",
+           "servicediscovery:ListServices",
+           "servicediscovery:ListTagsForResource",
+           "servicediscovery:TagResource"
+         ],
+         "Resource": "*"
+       }
+     ]
+   }
+   ```
+
+2. **Add a trust policy** on that role that allows the ECS agent's task role to assume it:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": {
+           "AWS": "arn:aws:iam::AGENT_ACCOUNT_ID:role/YOUR_AGENT_TASK_ROLE"
+         },
+         "Action": "sts:AssumeRole"
+       }
+     ]
+   }
+   ```
+
+3. **Add `sts:AssumeRole` permission** to the agent's task role (in the agent's account):
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": "sts:AssumeRole",
+         "Resource": "arn:aws:iam::NETWORK_ACCOUNT_ID:role/YOUR_CROSS_ACCOUNT_ROLE"
+       }
+     ]
+   }
+   ```
+
+4. **Set `service_discovery_role_arn`** in your agent's `dagster.yaml` to the ARN of the role created in step 1.
+
+**Note**: Both roles must include a trust relationship that allows ECS to use them:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
 ### isolated_agents properties
 
 | Property                | Description                                                                                                                                                                                      |
@@ -267,3 +353,43 @@ These settings specify the queue(s) the agent will obtain requests from. See [Ro
 | ---------------------------------- | ---------------------------------------------------- |
 | agent_queues.include_default_queue | If true, agent processes requests from default queue |
 | agent_queues.additional_queues     | List of additional queues for agent processing       |
+
+## Using a custom agent image
+
+By default, the Dagster+ ECS agent uses the official `docker.io/dagster/dagster-cloud-agent` image. You can build and use your own custom agent image if you need additional dependencies, a different base image, or more control over the agent environment.
+
+### Building a custom agent image
+
+Create a Dockerfile that installs the `dagster-cloud` package with the `ecs` extra:
+
+```dockerfile
+FROM python:3.12-slim
+
+ARG DAGSTER_VERSION=1.12.19
+RUN pip install dagster-cloud[ecs]==${DAGSTER_VERSION}
+
+CMD ["dagster-cloud", "agent", "run"]
+```
+
+Build and push the image to your container registry (such as Amazon ECR):
+
+```shell
+docker build -t 123456789012.dkr.ecr.us-east-1.amazonaws.com/dagster-cloud-agent:custom .
+docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/dagster-cloud-agent:custom
+```
+
+### Configuring CloudFormation to use a custom image
+
+To use your custom agent image, modify the CloudFormation template that deploys the agent. Locate the agent's ECS task definition and update the `Image` property to point to your custom image:
+
+```yaml
+AgentTaskDefinition:
+  Type: AWS::ECS::TaskDefinition
+  Properties:
+    ContainerDefinitions:
+      - Name: DagsterCloudAgent
+        Image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/dagster-cloud-agent:custom
+        # ... rest of container definition
+```
+
+After updating the template, redeploy the CloudFormation stack to apply the changes.

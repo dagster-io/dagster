@@ -558,11 +558,13 @@ from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as De
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
 from dagster._core.pipes.client import (
     PipesClient as PipesClient,
+    PipesClientCompletedInvocation as PipesClientCompletedInvocation,
     PipesContextInjector as PipesContextInjector,
     PipesExecutionResult as PipesExecutionResult,
     PipesMessageReader as PipesMessageReader,
 )
 from dagster._core.pipes.context import (
+    PipesLaunchedData as PipesLaunchedData,
     PipesMessageHandler as PipesMessageHandler,
     PipesSession as PipesSession,
 )
@@ -612,6 +614,10 @@ from dagster._core.storage.io_manager import (
 from dagster._core.storage.mem_io_manager import (
     InMemoryIOManager as InMemoryIOManager,
     mem_io_manager as mem_io_manager,
+)
+from dagster._core.storage.migrate import (
+    MigrateIOStorageResult as MigrateIOStorageResult,
+    migrate_io_storage as migrate_io_storage,
 )
 from dagster._core.storage.partition_status_cache import (
     AssetPartitionStatus as AssetPartitionStatus,

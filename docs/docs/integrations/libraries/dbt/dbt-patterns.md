@@ -1,7 +1,7 @@
 ---
 title: dbt patterns and best practices
 description: Best practices and advanced patterns for dbt.
-sidebar_position: 50
+sidebar_position: 250
 ---
 
 This guide covers advanced patterns and best practices for integrating dbt with Dagster, helping you build more maintainable data pipelines.

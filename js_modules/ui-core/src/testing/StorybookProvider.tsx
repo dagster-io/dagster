@@ -1,28 +1,27 @@
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import * as React from 'react';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
-import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 import {CustomAlertProvider} from '../app/CustomAlertProvider';
-import typeDefs from '../graphql/schema.graphql';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 interface Props {
   children: React.ReactNode;
   routerProps?: MemoryRouterProps;
-  apolloProps?: ApolloTestProps;
+  mocks?: MockedResponse[];
 }
 
 export const StorybookProvider = (props: Props) => {
-  const {apolloProps, routerProps} = props;
+  const {mocks = [], routerProps} = props;
 
   return (
     <RecoilRoot>
       <MemoryRouter {...routerProps}>
-        <ApolloTestProvider {...apolloProps} typeDefs={typeDefs as any}>
+        <MockedProvider mocks={mocks}>
           <CustomAlertProvider />
           <WorkspaceProvider>{props.children}</WorkspaceProvider>
-        </ApolloTestProvider>
+        </MockedProvider>
       </MemoryRouter>
     </RecoilRoot>
   );

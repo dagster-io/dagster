@@ -49,6 +49,13 @@ The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers
 .. autoclass:: UPathIOManager
 
 
+IO Storage Migration
+--------------------
+
+.. autofunction:: migrate_io_storage
+
+.. autoclass:: MigrateIOStorageResult
+
 Input Managers
 --------------
 

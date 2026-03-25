@@ -86,9 +86,9 @@ function CardLayout({
   const hrefString = typeof href === 'string' ? href : '';
   const isExamplesPage = pathname.startsWith('/examples');
   const isExamplesCard = isExamplesPage || hrefString.startsWith('/examples');
-  const isMiniExampleCard = hrefString.includes('/mini-examples/');
-  const examplePill = hrefString.includes('/mini-examples/')
-    ? 'Mini example'
+  const isMiniExampleCard = hrefString.includes('/best-practices/');
+  const examplePill = hrefString.includes('/best-practices/')
+    ? 'Best practice'
     : hrefString.includes('/full-pipelines/')
       ? 'Full pipeline'
       : hrefString === '/examples'

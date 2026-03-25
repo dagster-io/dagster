@@ -29,5 +29,6 @@ dagster_powerbi = "dagster_powerbi"
 
 [project.optional-dependencies]
 test = [
-    "dagster-dg[test]",
+    "dagster-dg-core[test]==1!0+dev",
+    "dagster-dg-cli==1!0+dev",
 ]

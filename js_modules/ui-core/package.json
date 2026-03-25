@@ -29,7 +29,7 @@
     "find-circular-dependencies": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/findCircularDependencies.ts"
   },
   "peerDependencies": {
-    "@apollo/client": "^3.14.0",
+    "@apollo/client": "^3.14.1",
     "@blueprintjs/core": "^5",
     "@blueprintjs/popover2": "^2",
     "@blueprintjs/select": "^5",
@@ -58,7 +58,7 @@
     "clsx": "^2.1.1",
     "codemirror": "^5.65.2",
     "cronstrue": "^2.51.0",
-    "dagre": "dagster-io/dagre#0.8.5",
+    "dagre": "patch:dagre@npm%3A0.8.5#~/.yarn/patches/dagre-npm-0.8.5-f3eb4059c5.patch",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.7",
     "deepmerge": "^4.2.2",
@@ -67,7 +67,6 @@
     "fuse.js": "^6.4.2",
     "graphql": "^16.8.1",
     "graphql-codegen-persisted-query-ids": "^0.2.0",
-    "graphql.macro": "^1.4.2",
     "highlight.js": "11.6.0",
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
@@ -91,7 +90,7 @@
     "yaml": "^2.4.2"
   },
   "devDependencies": {
-    "@apollo/client": "^3.14.0",
+    "@apollo/client": "^3.14.1",
     "@babel/cli": "^7.13.15",
     "@babel/core": "^7.13.15",
     "@babel/plugin-proposal-class-properties": "^7.14.5",
@@ -154,7 +153,6 @@
     "babel-loader": "9.1.2",
     "babel-plugin-graphql-tag": "^3.3.0",
     "babel-plugin-macros": "^2.8.0",
-    "child-process": "^1.0.2",
     "eslint": "^9.0.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-prettier": "^5.0.0",

@@ -37,7 +37,8 @@ attributeExpr:
 	| TABLE_NAME COLON value				# TableNameAttributeExpr
 	| COLUMN_TAG COLON value (EQUAL value)?	# ColumnTagAttributeExpr
 	| CODE_LOCATION COLON value				# CodeLocationAttributeExpr
-	| CHANGED_IN_BRANCH COLON value			# ChangedInBranchAttributeExpr;
+	| CHANGED_IN_BRANCH COLON value			# ChangedInBranchAttributeExpr
+	| PARTITIONS COLON value				# PartitionsAttributeExpr;
 
 // Define EQUAL token for tag:value=value syntax
 EQUAL: '=';
@@ -78,6 +79,7 @@ COLUMN: 'column';
 TABLE_NAME: 'table_name';
 COLUMN_TAG: 'column_tag';
 CHANGED_IN_BRANCH: 'changed_in_branch';
+PARTITIONS: 'partitions';
 // Function names
 SINKS: 'sinks';
 ROOTS: 'roots';

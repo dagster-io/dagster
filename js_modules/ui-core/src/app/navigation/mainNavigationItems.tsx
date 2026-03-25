@@ -190,7 +190,7 @@ const SupportItem = () => {
   return (
     <Popover
       isOpen={isOpen}
-      content={<HelpMenuContents dismissDaggyU={() => {}} showContactSales={false} />}
+      content={<HelpMenuContents showContactSales={false} />}
       onClose={() => setIsOpen(false)}
       placement={isCollapsed ? 'right-end' : 'top'}
       matchTargetWidth={!isCollapsed}

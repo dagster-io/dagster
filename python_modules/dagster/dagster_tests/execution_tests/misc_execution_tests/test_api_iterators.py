@@ -109,7 +109,7 @@ def test_execute_run_iterator():
             overrides={
                 "run_launcher": {
                     "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
-                    "class": "TestRunLauncher",
+                    "class": "MockRunLauncher",
                 },
                 "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
             }

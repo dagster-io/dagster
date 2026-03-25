@@ -1,7 +1,7 @@
 import {RetryLink} from '@apollo/client/link/retry';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
-import {CustomTooltipProvider} from '@dagster-io/ui-components';
+import {CustomTooltipProvider, Toaster} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
@@ -34,7 +34,6 @@ import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
-import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -184,6 +183,7 @@ export const AppProvider = (props: AppProviderProps) => {
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>
               <GlobalStyleProvider />
+              <Toaster richColors />
               <CompatRouter>
                 <TimeProvider>
                   <CodeLinkProtocolProvider>

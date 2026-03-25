@@ -4,12 +4,13 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
-from dagster import AssetExecutionContext, AssetKey, Failure
+from dagster import AssetExecutionContext, AssetKey, Failure, RetryRequested
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.materialize import materialize
 from dagster._core.test_utils import environ
 from dagster._vendored.dateutil import parser
 from dagster_fivetran import FivetranOutput, FivetranSyncConfig, FivetranWorkspace, fivetran_assets
+from dagster_fivetran.resources import FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES
 from dagster_fivetran.translator import MIN_TIME_STR, FivetranConnectorSetupStateType
 
 from dagster_fivetran_tests.conftest import (
@@ -536,6 +537,177 @@ def test_fivetran_resync_and_poll_with_resync_parameters(
             connector_id=connector_id,
             resync_parameters={"schema_name_in_destination_1": ["table_name_in_destination_1"]},
         )
+
+
+def test_poll_sync_rescheduled_connector(connector_id: str) -> None:
+    """Test that poll_sync raises RetryRequested when Fivetran reschedules a sync due to quota limits."""
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+
+    # The rescheduled_for time is after the previous sync completion (MIN_TIME_STR),
+    # indicating Fivetran has rescheduled the sync (e.g., due to quota limits).
+    # Use a far-future time so seconds_to_wait is positive.
+    rescheduled_time = "2099-06-01T12:00:00.000000Z"
+
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=MIN_TIME_STR,
+                    failed_at=MIN_TIME_STR,
+                    rescheduled_for=rescheduled_time,
+                ),
+            )
+            client.poll_sync(
+                connector_id=connector_id,
+                previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
+                poll_timeout=2,
+                poll_interval=0.1,
+            )
+
+    with pytest.raises(RetryRequested) as exc_info:
+        _mock_interaction()
+
+    retry = exc_info.value
+    assert retry.max_retries == FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES
+    assert retry.seconds_to_wait is not None
+    assert retry.seconds_to_wait > 0
+
+
+def test_poll_sync_rescheduled_for_in_past_is_ignored(connector_id: str) -> None:
+    """Test that a rescheduled_for timestamp in the past (before previous sync) is ignored."""
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+
+    # rescheduled_for is before the previous_sync_completed_at, so it should be ignored
+    old_rescheduled_time = "0001-01-01 00:00:00+00"
+
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            # First poll: sync not yet completed, rescheduled_for is old
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=MIN_TIME_STR,
+                    failed_at=MIN_TIME_STR,
+                    rescheduled_for=old_rescheduled_time,
+                ),
+            )
+            # Second poll: sync completed successfully
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=TEST_MAX_TIME_STR,
+                    failed_at=TEST_PREVIOUS_MAX_TIME_STR,
+                ),
+            )
+            return client.poll_sync(
+                connector_id=connector_id,
+                previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
+                poll_interval=0.1,
+            )
+
+    # Should succeed without raising
+    result = _mock_interaction()
+    assert result is not None
+    assert result["id"] == connector_id
+
+
+def test_poll_sync_rescheduled_no_retry(connector_id: str) -> None:
+    """Test that poll_sync continues polling (no RetryRequested) when retry_on_reschedule=False."""
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID,
+        api_key=TEST_API_KEY,
+        api_secret=TEST_API_SECRET,
+        retry_on_reschedule=False,
+    )
+    client = resource.get_client()
+
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+
+    rescheduled_time = "2099-06-01T12:00:00.000000Z"
+
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            # First poll: rescheduled, but retry_on_reschedule=False so keep polling
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=MIN_TIME_STR,
+                    failed_at=MIN_TIME_STR,
+                    rescheduled_for=rescheduled_time,
+                ),
+            )
+            # Second poll: sync completed successfully
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=TEST_MAX_TIME_STR,
+                    failed_at=TEST_PREVIOUS_MAX_TIME_STR,
+                ),
+            )
+            return client.poll_sync(
+                connector_id=connector_id,
+                previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
+                poll_interval=0.1,
+            )
+
+    # Should succeed without raising RetryRequested
+    result = _mock_interaction()
+    assert result is not None
+    assert result["id"] == connector_id
+
+
+def test_poll_sync_rescheduled_retry_default(connector_id: str) -> None:
+    """Test that poll_sync raises RetryRequested with default retry_on_reschedule=True."""
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+    assert client.retry_on_reschedule is True
+
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+    rescheduled_time = "2099-06-01T12:00:00.000000Z"
+
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=MIN_TIME_STR,
+                    failed_at=MIN_TIME_STR,
+                    rescheduled_for=rescheduled_time,
+                ),
+            )
+            client.poll_sync(
+                connector_id=connector_id,
+                previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
+                poll_timeout=2,
+                poll_interval=0.1,
+            )
+
+    with pytest.raises(RetryRequested) as exc_info:
+        _mock_interaction()
+
+    retry = exc_info.value
+    assert retry.max_retries == FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES
+    assert retry.seconds_to_wait is not None
+    assert retry.seconds_to_wait > 0
 
 
 def test_fetch_workspace_data_empty_groups_warning(

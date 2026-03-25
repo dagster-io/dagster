@@ -194,7 +194,7 @@ def test_construct_log_message_with_error_raise_from():
 
 @pytest.mark.parametrize("use_handler", [True, False])
 def test_user_code_error_boundary_python_capture(use_handler):
-    class TestHandler(logging.Handler):
+    class MockCaptureHandler(logging.Handler):
         def __init__(self):
             self.captured = []
             super().__init__()
@@ -202,7 +202,7 @@ def test_user_code_error_boundary_python_capture(use_handler):
         def emit(self, record):
             self.captured.append(record)
 
-    capture_handler = TestHandler()
+    capture_handler = MockCaptureHandler()
     user_logger = logging.getLogger("user_logger")
     user_logger.addHandler(capture_handler)
 
@@ -241,7 +241,7 @@ def test_user_code_error_boundary_python_capture(use_handler):
 
 
 def test_log_handler_emit_by_handlers_level():
-    class TestHandler(logging.Handler):
+    class MockCaptureHandler(logging.Handler):
         def __init__(self, level=logging.NOTSET):
             self.captured = []
             super().__init__(level)
@@ -249,7 +249,7 @@ def test_log_handler_emit_by_handlers_level():
         def emit(self, record):
             self.captured.append(record)
 
-    capture_handler = TestHandler(level=logging.ERROR)
+    capture_handler = MockCaptureHandler(level=logging.ERROR)
     test_extra = {"foo": 1, "bar": {2: 3, "baz": 4}}
 
     with user_code_error_boundary(

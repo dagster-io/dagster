@@ -4,6 +4,10 @@ sidebar_position: 4200
 title: dagster-cloud CLI reference
 ---
 
+import SupersededDagsterCloudCLI from '@site/docs/partials/_SupersededDagsterCloudCLI.md';
+
+<SupersededDagsterCloudCLI />
+
 ## Custom configuration file path
 
 Point the `dagster-cloud` CLI at an alternate config location by specifying the `DAGSTER_CLOUD_CLI_CONFIG` environment variable.

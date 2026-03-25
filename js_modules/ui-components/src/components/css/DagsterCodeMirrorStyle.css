@@ -1,0 +1,143 @@
+.CodeMirror-gutter-elt .CodeMirror-lint-marker-error {
+  background-image: none;
+  background: var(--color-accent-red);
+  mask-image: url("data:image/svg+xml,%3Csvg%20width=%2220%22%20height=%2220%22%20viewBox=%220%200%2020%2020%22%20fill=%22none%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%0A%3Cpath%20d=%22M10.0003%2014.1666C10.2364%2014.1666%2010.4344%2014.0868%2010.5941%2013.927C10.7538%2013.7673%2010.8337%2013.5694%2010.8337%2013.3333C10.8337%2013.0972%2010.7538%2012.8993%2010.5941%2012.7395C10.4344%2012.5798%2010.2364%2012.5%2010.0003%2012.5C9.76421%2012.5%209.5663%2012.5798%209.40658%2012.7395C9.24685%2012.8993%209.16699%2013.0972%209.16699%2013.3333C9.16699%2013.5694%209.24685%2013.7673%209.40658%2013.927C9.5663%2014.0868%209.76421%2014.1666%2010.0003%2014.1666ZM9.16699%2010.8333H10.8337V5.83329H9.16699V10.8333ZM10.0003%2018.3333C8.84755%2018.3333%207.76421%2018.1145%206.75033%2017.677C5.73644%2017.2395%204.85449%2016.6458%204.10449%2015.8958C3.35449%2015.1458%202.76074%2014.2638%202.32324%2013.25C1.88574%2012.2361%201.66699%2011.1527%201.66699%209.99996C1.66699%208.84718%201.88574%207.76385%202.32324%206.74996C2.76074%205.73607%203.35449%204.85413%204.10449%204.10413C4.85449%203.35413%205.73644%202.76038%206.75033%202.32288C7.76421%201.88538%208.84755%201.66663%2010.0003%201.66663C11.1531%201.66663%2012.2364%201.88538%2013.2503%202.32288C14.2642%202.76038%2015.1462%203.35413%2015.8962%204.10413C16.6462%204.85413%2017.2399%205.73607%2017.6774%206.74996C18.1149%207.76385%2018.3337%208.84718%2018.3337%209.99996C18.3337%2011.1527%2018.1149%2012.2361%2017.6774%2013.25C17.2399%2014.2638%2016.6462%2015.1458%2015.8962%2015.8958C15.1462%2016.6458%2014.2642%2017.2395%2013.2503%2017.677C12.2364%2018.1145%2011.1531%2018.3333%2010.0003%2018.3333Z%22%20fill=%22%23030615%22/%3E%0A%3C/svg%3E");
+  mask-size: cover;
+  margin-bottom: 2px;
+}
+
+.CodeMirror-cursor.CodeMirror-cursor {
+  border-color: var(--color-text-light);
+}
+
+.CodeMirror-hint,
+.CodeMirror-lint-marker-error,
+.CodeMirror-lint-marker-warning,
+.CodeMirror-lint-message-error,
+.CodeMirror-lint-message-warning {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-ligatures: none;
+}
+
+.CodeMirror.cm-s-dagster {
+  background-color: var(--color-background-light);
+  color: var(--color-text-default);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-ligatures: none;
+}
+
+.CodeMirror.cm-s-dagster .CodeMirror-code .CodeMirror-line {
+  font-variant-ligatures: none;
+}
+
+/* Note: Theme overrides */
+.CodeMirror.cm-s-dagster.cm-s-default .cm-comment {
+  color: var(--color-text-light);
+}
+
+.CodeMirror.cm-s-dagster .cm-atom {
+  color: var(--color-text-blue);
+}
+
+.CodeMirror.cm-s-dagster .cm-comment {
+  color: var(--color-text-light);
+}
+
+.CodeMirror.cm-s-dagster .cm-meta {
+  color: var(--color-text-light);
+}
+
+.CodeMirror.cm-s-dagster .cm-number {
+  color: var(--color-text-red);
+}
+
+.CodeMirror.cm-s-dagster .cm-string {
+  color: var(--color-text-green);
+}
+
+.CodeMirror.cm-s-dagster .cm-string-2 {
+  color: var(--color-text-cyan);
+}
+
+.CodeMirror.cm-s-dagster .cm-variable-2 {
+  color: var(--color-text-blue);
+}
+
+.CodeMirror.cm-s-dagster .cm-keyword {
+  color: var(--color-text-yellow);
+}
+
+.CodeMirror.cm-s-dagster .cm-property {
+  color: var(--color-text-blue);
+}
+
+.CodeMirror.cm-s-dagster .CodeMirror-selected {
+  background-color: var(--color-background-blue-hover);
+}
+
+.CodeMirror.cm-s-dagster .CodeMirror-gutters {
+  background-color: var(--color-background-default);
+  opacity: 0.6;
+}
+
+.CodeMirror.cm-s-dagster .CodeMirror-matchingbracket {
+  color: var(--color-text-cyan);
+}
+
+.CodeMirror.cm-s-dagster .CodeMirror-nonmatchingbracket {
+  color: var(--color-text-red);
+}
+
+.CodeMirror.cm-s-dagster .cm-indent {
+  display: inline-block;
+}
+
+.CodeMirror.cm-s-dagster .cm-indent.cm-zero {
+  box-shadow: -1px 0 0 var(--color-background-green);
+}
+
+.CodeMirror.cm-s-dagster .cm-indent.cm-one {
+  box-shadow: -1px 0 0 var(--color-background-blue);
+}
+
+.CodeMirror.cm-s-dagster .cm-indent.cm-two {
+  box-shadow: -1px 0 0 var(--color-background-cyan);
+}
+
+.CodeMirror.cm-s-dagster .cm-indent.cm-three {
+  box-shadow: -1px 0 0 var(--color-background-red);
+}
+
+.CodeMirror.cm-s-dagster .cm-indent.cm-four {
+  box-shadow: -1px 0 0 var(--color-background-yellow);
+}
+
+.CodeMirror.cm-s-dagster .cm-indent.cm-five {
+  box-shadow: -1px 0 0 var(--color-background-olive);
+}
+
+.CodeMirror.cm-s-dagster .cm-indent.cm-six {
+  box-shadow: -1px 0 0 var(--color-background-gray);
+}
+
+div.CodeMirror-lint-tooltip {
+  background: var(--color-background-default);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-default);
+  font-family: var(--font-mono);
+}
+
+.CodeMirror-lint-message {
+  background: transparent;
+}
+
+.CodeMirror-lint-message.CodeMirror-lint-message-error {
+  background: transparent;
+}
+
+/* Ensure that hints aren't vertically cutoff*/
+.CodeMirror-hint div {
+  max-height: none !important;
+}
