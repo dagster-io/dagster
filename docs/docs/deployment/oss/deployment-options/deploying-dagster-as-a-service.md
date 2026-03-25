@@ -5,23 +5,19 @@ description: 'Learn how to deploy open source Dagster as a service on a single m
 sidebar_position: 2000
 ---
 
-<details>
-  <summary>Prerequisites</summary>
+This guide will walk you through deploying Dagster as a service on a single machine. It includes instructions for setting up the Dagster webserver and daemon. This approach is suitable for small-scale deployments or for testing purposes. For production environments, consider using containerized deployments or cloud-based solutions.
 
-To follow the steps in this guide, you'll need:
+:::note Prerequisites
 
-- A Dagster project created
-- Working knowledge of containerization and managing services
+Before following the steps in this guide, you will need to [create a Dagster project](/guides/build/projects/creating-projects).
 
-</details>
+:::
 
-This guide will walk you through deploying Dagster as a service on a single machine. It includes instructions for setting up the Dagster webserver and daemon. This approach is suitable for small-scale deployments or for testing purposes. For production environments, consider using containerized deployments or cloud-based solutions
-
-## Running the Dagster Webserver
+## Running the Dagster webserver
 
 The Dagster webserver is the core component of any Dagster deployment. It serves the Dagster UI and responds to GraphQL queries.
 
-### Installation
+### Step 1: Install the Dagster webserver
 
 First, install the Dagster webserver:
 
@@ -29,7 +25,7 @@ First, install the Dagster webserver:
 pip install dagster-webserver
 ```
 
-### Starting the Dagster Webserver
+### Step 2: Start the Dagster webserver
 
 Before starting the webserver, set the `DAGSTER_HOME` environment variable, which tells Dagster where to store its persistent data and logs.
 
@@ -63,11 +59,11 @@ This configuration will:
 - Write execution logs to `$DAGSTER_HOME/logs`
 - Listen on `0.0.0.0:3000`
 
-## Running the Dagster Daemon
+## Running the Dagster daemon
 
 The Dagster daemon is necessary if you're using schedules, sensors, backfills, or want to set limits on the number of runs that can be executed simultaneously.
 
-### Installation
+### Step 1: Install the Dagster daemon
 
 Install the Dagster daemon:
 
@@ -75,7 +71,7 @@ Install the Dagster daemon:
 pip install dagster
 ```
 
-### Starting the Daemon
+### Step 2: Start the Dagster daemon
 
 Make sure you've set the `DAGSTER_HOME` environment variable, see [Running the Dagster Webserver](#running-the-dagster-webserver) for instructions.
 Then, run the Dagster daemon with this command:
@@ -98,20 +94,15 @@ Ensure that the `dagster-daemon` process has access to:
 - The repositories defined in your workspace
   :::
 
-### Monitoring the Daemon
+### Monitoring the Dagster daemon
 
 You can check the status of your `dagster-daemon` process in the Dagster UI:
 
-1. Navigate to the Instance tab in the left-hand navigation bar
-2. View the daemon status
+1. Navigate to the Instance tab in the left-hand navigation bar.
+2. View the daemon status.
 
 :::important
+
 A deployment can have multiple instances of `dagster-webserver`, but should include only a single `dagster-daemon` process.
+
 :::
-
-## Next Steps
-
-Now that you have Dagster running as a service, you might want to explore:
-
-- [Configuring your Dagster instance](/deployment/oss/oss-instance-configuration)
-- [Setting up schedules and sensors](/guides/automate/schedules)

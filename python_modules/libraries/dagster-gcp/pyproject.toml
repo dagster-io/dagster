@@ -37,6 +37,7 @@ pyarrow = [
 ]
 test = [
     "gcp-storage-emulator",
+    "setuptools<82", # gcp-storage-emulator depends on pkg_resources
 ]
 dataproc = [
     "google-cloud-dataproc",

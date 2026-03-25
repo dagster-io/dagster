@@ -1,0 +1,19 @@
+[project]
+name = "celery-k8s-test-suite"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-graphql",
+    "dagster-test",
+    "dagster-pandas",
+    "dagster-k8s",
+    "dagster-celery",
+    "dagster-celery-k8s",
+    "dagster-celery-docker",
+    "dagster-postgres",
+    "dagster-airflow",
+    "dagster-docker",
+    "dagster-aws",
+    "dagster-gcp",
+    "dagster-k8s-test-infra",
+]

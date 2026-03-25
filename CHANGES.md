@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.12.21 (core) / 0.28.21 (libraries)
+
+### New
+
+- Removed the `setuptools<82` pin from the `dagster` package.
+- Added support for the `partitions` attribute in asset selection syntax to filter assets by partition definition type (e.g., `partitions:"static"`).
+- [dagster-spark] Added Spark Declarative Pipeline support in feature preview.
+- [ui] Added a date range picker to the backfill modal for date-formatted partitions.
+- [ui] The "Report evaluation" action for asset checks has been moved to a consolidated dropdown menu.
+
+### Bugfixes
+
+- [dagster-dbt] Fixed issue that could cause `DbtProjectComponent`s with custom translation methods to not work with utilities like `build_schedule_from_dbt_selection`.
+- [ui] Fixed asset catalog sidebar not clearing key prefix filters when navigating back to root.
+- [ui] Fixed deployment switcher button text color in Light Mode.
+- [ui] Fixed duplicate "Catalog" breadcrumb on asset detail pages.
+- [ui] Fixed lineage graph edges disappearing when zoomed out by increasing the maximum visible edge limit.
+
+### Documentation
+
+- Added cross-account service discovery documentation for ECS agents, including the `service_discovery_role_arn` configuration parameter.
+- Added Snowflake EL ingestion pattern documentation.
+
+## 1.12.20 (core) / 0.28.20 (libraries)
+
+### New
+
+- Execution context classes (`OpExecutionContext`, `AssetExecutionContext`, `AssetCheckExecutionContext`) now expose a `multi_partition_key` property that returns a `MultiPartitionKey` when the current run is a multi-partition run.
+- Added `Braze` and `Runpod` kind tags. (Thanks, [@dragos-pop](https://github.com/dragos-pop)!)
+- [dagster-databricks] The Databricks job run URL is now rendered as a clickable link in the Dagster UI.
+- [dagster-dbt] Added `DbtCloudComponent` for loading dbt Cloud projects as Dagster assets using the Components API.
+- [dagster-dbt] The `dbt_cloud_assets` decorator now supports partitioned assets via the `partitions_def` parameter.
+- [dagster-fivetran] Added a polling sensor for Fivetran observability, which detects externally-triggered syncs and emits materialization events.
+- [dagster-fivetran] `FivetranWorkspace` now supports a `retry_on_reschedule` option to automatically retry syncs rescheduled by Fivetran due to quota limits, as well as `resync` operations.
+- [dagster-fivetran] The Fivetran translator now includes sync schedule and custom report metadata on connector assets.
+- [dagster-k8s] The Dagster Helm chart and Dagster+ Kubernetes Agent Helm chart now support `k8sApiCaBundlePath` to configure a custom CA certificate path for Kubernetes API communication.
+- [dagster-k8s] Code location server Kubernetes Services now support a `service_spec_config` field for arbitrary Kubernetes Service spec overrides (for example, `clusterIP: None` for headless services).
+
+### Bugfixes
+
+- Fixed an issue where time window partitions with exclusions would sometimes create more runs than needed when using single-run backfills.
+- Fixed a "Cannot access partition_key for a non-partitioned run" error that could occur with multi-asset definitions that included non-partitioned assets or asset checks alongside partitioned ones.
+- [dagster-aws] Fixed `s3_pickle_io_manager` failing with dynamic outputs when step keys contain bracket characters in the generated S3 object path.
+- [dagster-aws] Fixed an issue in `PipesEMRServerlessClient` where a custom CloudWatch log group name configured in `monitoringConfiguration.cloudWatchLoggingConfiguration.logGroupName` was ignored, causing log streaming to always use the default `/aws/emr-serverless` log group. (Thanks, [@kchainani-figma](https://github.com/kchainani-figma)!)
+- [ui] Fixed the asset recent updates trend visualization when multiple event types share the same run ID.
+- [ui] Fixed text wrapping and spacing in the asset event detail view for long partition names and run titles.
+
+### Documentation
+
+- Added a troubleshooting guide for Kubernetes agent network connectivity issues, including TCP keepalive configuration recommendations for Helm chart deployments.
+
 ## 1.12.19 (core) / 0.28.19 (libraries)
 
 ### New

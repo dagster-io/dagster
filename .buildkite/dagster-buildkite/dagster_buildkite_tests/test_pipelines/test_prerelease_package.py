@@ -2,8 +2,9 @@
 
 from unittest.mock import patch
 
+from buildkite_shared.test_utils import assert_valid_pipeline_yaml
 from dagster_buildkite.cli import prerelease_package
-from dagster_buildkite_tests.helpers import assert_valid_pipeline_yaml, get_test_buildkite_context
+from dagster_buildkite_tests.helpers import get_test_buildkite_context
 from pytest import CaptureFixture
 
 

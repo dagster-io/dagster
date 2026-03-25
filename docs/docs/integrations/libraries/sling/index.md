@@ -15,7 +15,7 @@ slug: '/integrations/libraries/sling'
 
 The [dagster-sling](/integrations/libraries/sling/dagster-sling) library provides a `SlingReplicationCollectionComponent` which can be used to easily represent a collection of [Sling](https://slingdata.io) replications as assets in Dagster.
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -29,7 +29,7 @@ Finally, add the `dagster-sling` library to the project. We will also add `duckd
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/2-add-sling.txt" />
 
-## 2. Scaffold a Sling component definition
+## Step 2: Scaffold a Sling component definition
 
 Now that you have a Dagster project, you can scaffold a Sling component definition:
 
@@ -55,7 +55,7 @@ The generated file is a template, which still needs to be configured:
   language="yaml"
 />
 
-## 3. Configure Sling replications
+## Step 3: Configure Sling replications
 
 In the `defs.yaml` file, you can directly specify a list of Sling [connections](https://docs.slingdata.io/sling-platform/platform/connections) which you can use in your replications. Here, you can specify a connection to DuckDB:
 
@@ -83,7 +83,7 @@ Our newly configured Sling component will produce an asset for each replicated f
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/10-list-defs.txt" />
 </WideContent>
 
-## 4. Customize Sling assets
+## Step 4: Customize Sling assets
 
 Properties of the assets emitted by each replication can be customized in the `defs.yaml` file using the `translation` key:
 

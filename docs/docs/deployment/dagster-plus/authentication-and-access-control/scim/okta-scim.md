@@ -45,7 +45,7 @@ Keep the API token handy - you'll need it in the next step.
 
 2. Using the sidebar, click **Applications > Applications**.
 
-3. Click the Dagster+ app. **Note**: If you haven't set up SSO for Okta, [follow this guide](/deployment/dagster-plus/authentication-and-access-control/sso/okta-sso) to do so before continuing.
+3. Click the Dagster+ app. If you haven't set up SSO for Okta, [follow this guide](/deployment/dagster-plus/authentication-and-access-control/sso/okta-sso) to do so before continuing.
 
 4. Click the **Sign On** tab and complete the following:
 
@@ -87,7 +87,7 @@ After you confirm that your API credentials work in the Dagster+ Okta applicatio
 
    ![Highlighted Create users setting and default username setting in Okta](/images/dagster-plus/features/authentication-and-access-control/okta/provisioning-to-app-create-users.png)
 
-   **Note**: The default username used to create accounts must be set to **Email** or user provisioning may not work correctly.
+   **Note that the default username used to create accounts must be set to "Email" or user provisioning may not work correctly.**
 
 5. Optionally, check **Enable** next to **Update User Attributes** and **Deactivate Users** to enable these features.
 

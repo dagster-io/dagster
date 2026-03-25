@@ -1,5 +1,6 @@
+##################
 dagster-papertrail
-------------------
+##################
 
 This library provides an integration with `Papertrail <https://papertrailapp.com>`_ for logging.
 

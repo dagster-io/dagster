@@ -1,7 +1,8 @@
 .. currentmodule:: dagster
 
+###########
 IO Managers
-==================================
+###########
 
 IO managers are user-provided objects that store op outputs and load them as inputs to downstream
 ops.
@@ -18,8 +19,9 @@ ops.
 
 .. autodecorator:: io_manager
 
-Input and Output Contexts
--------------------------
+*************************
+Input and output contexts
+*************************
 
 .. autoclass:: InputContext
 
@@ -34,8 +36,9 @@ Input and Output Contexts
 
 .. currentmodule:: dagster
 
-Built-in IO Managers
-------------------------
+********************
+Built-in IO managers
+********************
 
 .. autodata:: FilesystemIOManager
   :annotation: IOManagerDefinition
@@ -49,8 +52,17 @@ The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers
 .. autoclass:: UPathIOManager
 
 
-Input Managers
---------------
+********************
+IO storage migration
+********************
+
+.. autofunction:: migrate_io_storage
+
+.. autoclass:: MigrateIOStorageResult
+
+**************
+Input managers
+**************
 
 Input managers load inputs from either upstream outputs or from provided default values.
 
@@ -60,9 +72,9 @@ Input managers load inputs from either upstream outputs or from provided default
 
 .. autoclass:: InputManagerDefinition
 
-
+******
 Legacy
-------
+******
 
 .. autodata:: fs_io_manager
   :annotation: IOManagerDefinition

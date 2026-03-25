@@ -58,9 +58,15 @@ While technically the 0.y.z phase of semantic versioning is "anything goes", we'
 
 Each Dagster release strives to support the currently active versions of Python.
 
-When a new version of Python is released, Dagster will work to add support once Dagster's own core dependencies have been updated to support it. **Note**: Some external libraries may not always be compatible with the latest version of Python.
+When a new version of Python is released, Dagster will work to add support once Dagster's own core dependencies have been updated to support it.
 
 When a version of Python reaches end of life, Dagster will drop support for it at the next convenient non-patch release.
+
+:::note
+
+Some external libraries may not always be compatible with the latest version of Python.
+
+:::
 
 ## Changelog
 

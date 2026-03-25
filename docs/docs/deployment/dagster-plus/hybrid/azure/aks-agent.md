@@ -18,10 +18,10 @@ To complete the steps in this guide, you'll need:
 - The azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 - `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools/install-kubectl).
 - `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install).
-- An existing AKS cluster. If you need to create a new AKS cluster, refer to the [Azure documentation](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-portal?tabs=azure-cli).
+- An existing AKS cluster. If you need to create a new AKS cluster, see the [Azure documentation](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-portal?tabs=azure-cli).
 - A Dagster+ organization, with an agent token for that organization.
 
-## Step 1: Generate a Dagster+ agent token.
+## Step 1: Generate a Dagster+ agent token
 
 In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent will use this to authenticate to the agent API.
 
@@ -33,7 +33,7 @@ In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent
 
 Keep the token somewhere handy - you'll need it to complete the setup.
 
-## Step 2: Log in to your AKS cluster.
+## Step 2: Log in to your AKS cluster
 
 We'll use the `azure` CLI to log in to your AKS cluster. Run the following command and follow the prompts to log in:
 
@@ -48,7 +48,7 @@ We should now be able to verify our installation by running a command that tells
 kubectl config current-context
 ```
 
-## Step 3: Install the Dagster+ agent on the AKS cluster.
+## Step 3: Install the Dagster+ agent on the AKS cluster
 
 Next, we'll install the agent helm chart. You should be able to follow the guide [here](/deployment/dagster-plus/hybrid/kubernetes/configuration) to install the agent on the AKS cluster.
 

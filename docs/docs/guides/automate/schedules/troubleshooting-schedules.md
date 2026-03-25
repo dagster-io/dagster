@@ -8,20 +8,20 @@ If you have issues with a schedule, use the following steps to diagnose and reso
 
 ## Step 1: Verify that the schedule has been started
 
-1. In the Dagster UI, click **Overview > Schedules tab**.
+1. In the Dagster UI, click **Automation** in the top navigation.
 2. Locate the schedule. Schedules that have been started will have an enabled toggle in the **Running** column:
 
    ![Enabled toggle next to a schedule in the Schedules tab of the Overview page](/images/guides/automate/schedules/schedules-enabled-toggle.png)
 
 ## Step 2: Check for execution failures
 
-Next, check that the schedule executed successfully. You can do this by looking at the **Last tick** column in the **Schedules tab**.
+Next, check that the schedule executed successfully. You can do this by looking at the **Last tick** column in the **Automation** tab.
 
 If the scheduled failed to execute, this column will contain a **Failed** badge. Click the badge to display the error and stack trace describing the failure.
 
 ## Step 3: Verify the schedule's interval configuration
 
-Next, verify that the schedule is using the time interval you expect. In the **Schedules** tab, locate the schedule and look at the **Schedule** column:
+Next, verify that the schedule is using the time interval you expect. In the **Automation** tab, locate the schedule and look at the **Schedule** column:
 
 ![Highlighted Next tick value for a schedule in the Dagster UI](/images/guides/automate/schedules/schedules-next-tick.png)
 
@@ -59,7 +59,7 @@ This section is applicable to Open Source (OSS) deployments.
 
 :::
 
-If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, refer to the [Open Source Deployment guides](/deployment/oss/deployment-options) for more info.
+If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, see the [open source deployment guides](/deployment/oss/deployment-options).
 
 ### Verify the daemon is running
 
@@ -81,8 +81,4 @@ If the logs don't indicate the cause of the issue, move on to the next step.
 
 ### Check for execution failures
 
-The last step is to check that the schedule executed successfully. If you didn't do this already, refer to [Step 2](#step-2-check-for-execution-failures) for more information.
-
-## More help
-
-**Still stuck?** If these steps didn't resolve the issue, reach out in [Slack](https://dagster.io/slack or [file an issue on GitHub](https://github.com/dagster-io/dagster/issues).
+The last step is to check that the schedule executed successfully. If you didn't do this already, see [step 2](#step-2-check-for-execution-failures).

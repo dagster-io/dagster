@@ -5,7 +5,7 @@
   "description": "Dagster UI OSS Application Shell",
   "license": "Apache-2.0",
   "dependencies": {
-    "@apollo/client": "^3.14.0",
+    "@apollo/client": "^3.14.1",
     "@blueprintjs/core": "^5",
     "@blueprintjs/popover2": "^2",
     "@blueprintjs/select": "^5",
@@ -48,6 +48,8 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-webpack-plugin": "^4.2.0",
     "file-loader": "^6.2.0",
+    "postcss": "^8.5.8",
+    "postcss-import": "^16.1.1",
     "prettier": "3.8.1",
     "typescript": "5.9.2",
     "webpack": "^5.94.0",

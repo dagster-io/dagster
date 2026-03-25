@@ -731,6 +731,7 @@ class DagsterK8sJobConfig(
                             ),
                             "deployment_metadata": Permissive(),
                             "service_metadata": Permissive(),
+                            "service_spec_config": Permissive(),
                         }
                     ),
                     is_required=False,

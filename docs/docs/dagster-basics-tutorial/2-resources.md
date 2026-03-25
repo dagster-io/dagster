@@ -14,7 +14,7 @@ Resources are Dagster objects much like assets, but they are not executed. Some 
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/resources.png)
 
-## 1. Define the DuckDB resource
+## Step 1: Define the DuckDB resource
 
 First, install the `dagster-duckdb` library:
 
@@ -54,7 +54,7 @@ Within this file, you can define a `DuckDBResource` that consolidates the databa
 
 Here, the `duckdb` key is set to the `DuckDBResource` defined above. Any Dagster object that uses this resource key will use the underlying DuckDB connection.
 
-## 2. Add the resource to the assets
+## Step 2: Add the resource to the assets
 
 With the resource defined, you can update the asset code. First, set the `DuckDBResource` as a parameter in each asset, using the name `duckdb`. This matches the key that was set when defining the resource, and allows it to be used inside the asset. Then, use the `get_connection` method from the resource to connect to the database and execute the query to create the tables:
 
@@ -66,13 +66,13 @@ With the resource defined, you can update the asset code. First, set the `DuckDB
   title="src/dagster_tutorial/defs/assets.py"
 />
 
-## 3. Check definitions
+## Step 3: Check definitions
 
 Run `dg check` again to confirm that the assets and resources are configured correctly. If there is a mismatch between the key set in the resource and the key required by the asset, `dg check` will fail.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-check-defs.txt" />
 
-## 4. View the resource
+## Step 4: View the resource
 
 Back in the UI, your assets will not look different, but you can view the resource in the **Definitions** tab:
 

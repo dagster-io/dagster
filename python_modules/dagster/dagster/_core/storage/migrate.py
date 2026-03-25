@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 class MigrateIOStorageResult:
     """Result of a call to :py:func:`migrate_io_storage`.
 
-    Attributes:
+    Args:
         migrated: EntitySubsets of assets/partitions that were successfully migrated.
         skipped: EntitySubsets of assets/partitions that were skipped (via ``should_skip``).
         failed: EntitySubsets of assets/partitions that failed to migrate.

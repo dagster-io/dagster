@@ -86,7 +86,7 @@ In the **Roles** section, you can assign a [user role](/deployment/dagster-plus/
 
 ## Removing users
 
-Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the IdP. Removing the user in Dagster+ doesn't remove them from the IdP.
+Removing a user removes them from the organization.
 
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
@@ -95,6 +95,12 @@ Removing a user removes them from the organization. **Note**: If using a SAML-ba
 5. Click **Edit**.
 6. Click **Remove user**.
 7. When prompted, confirm the removal.
+
+:::info Additional steps for SAML-based SSO
+
+If you are using a SAML-based SSO solution like Okta, you'll also need to remove the user from the identity provider. Removing the user in Dagster+ doesn't remove them from the identity provider.
+
+:::
 
 ## Service users
 

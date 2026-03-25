@@ -38,12 +38,12 @@ To run the examples, you'll need to:
    </TabItem>
 </Tabs>
 
-- Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- Configure AWS authentication credentials. If you don't have this set up already, see the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - In AWS, you'll need:
   - An existing AWS account
   - Prepared infrastructure such as S3 buckets, IAM roles, and other resources required for your EMR job
 
-## Step 1: Install the dagster-pipes module in your EMR environment
+## Step 1: Install the `dagster-pipes` module in your EMR environment
 
 Choose one of the [options](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html#python-package-management) to install `dagster-pipes` in the EMR environment.
 
@@ -98,7 +98,7 @@ Finally, use the `--files` and `spark.pyspark.python` options to specify the pat
 spark-submit ... --files s3://your-bucket/venv.pex --conf spark.pyspark.python=./venv.pex
 ```
 
-## Step 2: Add dagster-pipes to the EMR job script
+## Step 2: Add `dagster-pipes` to the EMR job script
 
 Call `open_dagster_pipes` in the EMR script to create a context that can be used to send messages to Dagster:
 
@@ -110,7 +110,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-## Step 3: Create an asset using the PipesEMRClient to launch the job
+## Step 3: Create an asset using the `PipesEMRClient` to launch the job
 
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 

@@ -26,7 +26,7 @@ import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
-import {LiveTickTimeline} from './LiveTickTimeline2';
+import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';

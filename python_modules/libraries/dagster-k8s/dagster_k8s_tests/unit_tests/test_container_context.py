@@ -43,6 +43,7 @@ def container_context_config():
                 "container_config": {"command": ["echo", "SERVER"]},
                 "pod_template_spec_metadata": {"namespace": "my_pod_server_amespace"},
                 "service_metadata": {"annotations": {"foo_service": "bar"}},
+                "service_spec_config": {"cluster_ip": "None"},
                 "deployment_metadata": {"annotations": {"foo_deployment": "baz"}},
             },
             "run_k8s_config": {
@@ -316,6 +317,7 @@ def test_container_context(container_context):
             "labels": {"foo_label": "bar_value"},
             "annotations": {"foo_service": "bar"},
         },
+        service_spec_config={"cluster_ip": "None"},
         merge_behavior=K8sConfigMergeBehavior.DEEP,
     )
 

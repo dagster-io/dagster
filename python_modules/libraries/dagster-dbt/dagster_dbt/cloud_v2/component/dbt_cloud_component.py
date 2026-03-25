@@ -22,7 +22,8 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
 )
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
+from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 from dagster_dbt.components.dbt_component_utils import (
     DagsterDbtComponentTranslatorSettings,
     _set_resolution_context,
@@ -36,12 +37,55 @@ if TYPE_CHECKING:
     from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
 
 
+class DbtCloudWorkspaceArgs(dg.Model, dg.Resolvable):
+    """Arguments for configuring a dbt Cloud workspace connection from YAML."""
+
+    account_id: int = Field(description="The ID of your dbt Cloud account.")
+    token: str = Field(description="Your dbt Cloud API token.")
+    access_url: str = Field(
+        default="https://cloud.getdbt.com",
+        description="Your dbt Cloud workspace URL.",
+    )
+    project_id: int = Field(description="The ID of the dbt Cloud project.")
+    environment_id: int = Field(description="The ID of the dbt Cloud environment.")
+    adhoc_job_name: str | None = Field(
+        default=None,
+        description="Optional custom name for the ad hoc job created by Dagster.",
+    )
+    request_max_retries: int = Field(
+        default=3,
+        description="Maximum number of request retries.",
+    )
+    request_retry_delay: float = Field(
+        default=0.25,
+        description="Delay between request retries in seconds.",
+    )
+    request_timeout: int = Field(
+        default=15,
+        description="Request timeout in seconds.",
+    )
+
+
 def resolve_workspace(context: ResolutionContext, model: Any) -> DbtCloudWorkspace:
     """Resolves the DbtCloudWorkspace from the component configuration."""
     resolved_val = context.resolve_value(model)
     if isinstance(resolved_val, DbtCloudWorkspace):
         return resolved_val
-    return DbtCloudWorkspace(**resolved_val)
+    args = DbtCloudWorkspaceArgs.resolve_from_model(context, model)
+    credentials = DbtCloudCredentials(
+        account_id=args.account_id,
+        token=args.token,
+        access_url=args.access_url,
+    )
+    return DbtCloudWorkspace(
+        credentials=credentials,
+        project_id=args.project_id,
+        environment_id=args.environment_id,
+        adhoc_job_name=args.adhoc_job_name,
+        request_max_retries=args.request_max_retries,
+        request_retry_delay=args.request_retry_delay,
+        request_timeout=args.request_timeout,
+    )
 
 
 @public
@@ -54,7 +98,17 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         DbtCloudWorkspace,
         Resolver(
             fn=resolve_workspace,
+            model_field_type=DbtCloudWorkspaceArgs.model(),
             description="The dbt Cloud workspace resource to use for this component.",
+            examples=[
+                {
+                    "account_id": 123456,
+                    "token": "{{ env.DBT_CLOUD_TOKEN }}",
+                    "access_url": "https://cloud.getdbt.com",
+                    "project_id": 11111,
+                    "environment_id": 22222,
+                },
+            ],
         ),
     ]
 
@@ -125,6 +179,13 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             },
         ],
     )
+
+    create_sensor: Annotated[
+        bool,
+        Resolver.default(
+            description="Whether to create a polling sensor that reports materializations for runs triggered outside of Dagster.",
+        ),
+    ] = True
 
     defs_state: Annotated[
         DefsStateConfigArgs,
@@ -204,7 +265,16 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             with _set_resolution_context(res_ctx):
                 yield from self.execute(context=context)
 
-        return Definitions(assets=[_dbt_cloud_assets])
+        sensors = []
+        if self.create_sensor:
+            sensors.append(
+                build_dbt_cloud_polling_sensor(
+                    workspace=self.workspace,
+                    dagster_dbt_translator=self.translator,
+                )
+            )
+
+        return Definitions(assets=[_dbt_cloud_assets], sensors=sensors)
 
     def execute(self, context: AssetExecutionContext) -> Iterator:
         invocation = self.workspace.cli(

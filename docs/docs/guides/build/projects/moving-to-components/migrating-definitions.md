@@ -6,7 +6,7 @@ title: Autoloading existing Dagster definitions
 
 :::note
 
-This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/build/projects/moving-to-components/migrating-project)".
+This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see [Converting an existing project to use `dg`](/guides/build/projects/moving-to-components/migrating-project).
 
 :::
 

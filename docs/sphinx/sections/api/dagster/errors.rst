@@ -1,5 +1,6 @@
+######
 Errors
-=========
+######
 
 .. automodule:: dagster._core.errors
    :no-members:

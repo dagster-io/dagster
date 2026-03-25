@@ -6,7 +6,7 @@ sidebar_position: 30
 
 We've now created our own ingest assets and combined them with assets from the dbt component to model the data. In this step, we will revisit the ingest assets, and add another Dagster object to assist with managing our DuckDB connection. Currently, each of our assets handles its own connection separately. Adding a [resource](/guides/build/external-resources) will allow us to centralize our connection to DuckDB in a single object that can be shared across all our Dagster objects.
 
-## 1. Define the DuckDB resource
+## Step 1: Define the DuckDB resource
 
 In Dagster, resources are reusable objects that provide external context or functionality, such as database connections, clients, or configurations. Resources can be used by a number of different Dagster objects.
 
@@ -71,7 +71,7 @@ Here we are setting the key `duckdb` to the `DuckDBResource` we just defined. No
     Resource -.-> DuckDB
 ```
 
-## 2. Add a resource to our assets
+## Step 2: Add a resource to our assets
 
 With our resource defined, we need to update our asset code. Since all of our ingestion assets rely on the `import_url_to_duckdb` to execute the query, we will first update that function to use the `DuckDBResource` to handle query execution:
 
@@ -95,7 +95,7 @@ The `DuckDBResource` is designed to handle concurrent queries, so we no longer n
 
 We can run `dg check` again to ensure that the assets and resources are configured properly. If there was a mismatch between the key set in the resource and the resource key required by the asset, `dg check` would fail.
 
-## 3. Viewing the resource
+## Step 3: View the resource
 
 Back in the UI, your assets will not appear any different, but you can view the resource in the **Definitions** tab:
 

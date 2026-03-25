@@ -15,7 +15,9 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {CreateIssueForRunDialog} from '@shared/runs/CreateIssueForRunDialog';
 import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
+import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -56,9 +58,10 @@ interface Props {
 }
 
 export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) => {
+  const canCreateIssue = useCanCreateIssueForRun(run.status);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
-    'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics'
+    'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics' | 'create-issue'
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
@@ -124,6 +127,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
           content={
             <Menu>
               <AISummaryForRunMenuItem run={run} />
+              {canCreateIssue && (
+                <MenuItem
+                  icon="issue"
+                  text="Create issue"
+                  onClick={() => setVisibleDialog('create-issue')}
+                />
+              )}
               <MenuItem
                 style={{minWidth: 200}}
                 text={loading ? 'Loading configuration...' : 'View configuration...'}
@@ -284,6 +294,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
         runConfigYaml={runConfigYaml || ''}
         isJob={isJob}
       />
+      {canCreateIssue && (
+        <CreateIssueForRunDialog
+          isOpen={visibleDialog === 'create-issue'}
+          onClose={closeDialogs}
+          runId={run.id}
+        />
+      )}
     </>
   );
 });

@@ -14,7 +14,7 @@ In this step, you will use a custom component to streamline the development of s
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/components.png)
 
-## 1. Scaffold a custom component
+## Step 1: Scaffold a custom component
 
 First, scaffold a custom component using `dg`:
 
@@ -26,7 +26,7 @@ This adds a new directory, `components`, within `src/dagster_tutorial`:
 
 This directory contains the files needed to define the custom component.
 
-## 2. Define the custom component
+## Step 2: Define the custom component
 
 When designing a component, keep its interface in mind. In this case, the assets that the component will create share the following attributes:
 
@@ -66,7 +66,7 @@ Run the check again to ensure that the component code is correct:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-check-defs.txt" />
 
-## 3. Scaffold the component definition
+## Step 3: Scaffold the component definition
 
 If you list your components again, you should see that the custom component is now registered:
 
@@ -80,7 +80,7 @@ This adds a new directory, `tutorials`, within `defs`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/step-6b.txt" />
 
-## 4. Configure the component
+## Step 4: Configure the component
 
 To configure the component, update the YAML file created when you scaffolded a definition from the component:
 
@@ -90,13 +90,13 @@ To configure the component, update the YAML file created when you scaffolded a d
   title="src/dagster_tutorial/defs/tutorial/defs.yaml"
 />
 
-## 5. Remove the old definitions
+## Step 5: Remove the old definitions
 
 Before running `dg check` again, remove the `customers`, `orders`, and `payments` assets from `assets.py` and the `resource.py` file. The component is now responsible for generating these objects (otherwise there will be duplicate keys in the asset lineage).
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/step-6c.txt" />
 
-## 6. Materialize the assets
+## Step 6: Materialize the assets
 
 When you materialize your assets in the Dagster UI at [http://127.0.0.1:3000/assets](http://127.0.0.1:3000/assets), you should see that the asset graph looks the same as before.
 

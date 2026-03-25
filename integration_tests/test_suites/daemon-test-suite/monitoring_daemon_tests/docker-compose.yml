@@ -10,7 +10,11 @@ services:
       POSTGRES_DB: "test"
 
   s3:
-    image: localstack/localstack:s3-latest
+    image: minio/minio
     container_name: s3
     ports:
       - "4566:4566"
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+    command: server /data --address :4566

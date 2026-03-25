@@ -62,6 +62,7 @@ from dagster._core.storage.runs.schema import (
 from dagster._core.storage.sql import SqlAlchemyQuery
 from dagster._core.storage.sqlalchemy_compat import (
     db_fetch_mappings,
+    db_result,
     db_scalar_subquery,
     db_select,
     db_subquery,
@@ -104,11 +105,11 @@ class SqlRunStorage(RunStorage):
             return db_fetch_mappings(conn, query)
 
     def fetchone(self, query: SqlAlchemyQuery) -> Any | None:
-        with self.connect() as conn:
+        with self.connect() as conn, db_result(conn, query) as result:
             if db.__version__.startswith("2."):
-                return conn.execute(query).mappings().first()
+                return result.mappings().first()
             else:
-                return conn.execute(query).fetchone()
+                return result.fetchone()
 
     def _get_run_insertion_values(
         self, dagster_run: DagsterRun, run_creation_time: datetime | None = None

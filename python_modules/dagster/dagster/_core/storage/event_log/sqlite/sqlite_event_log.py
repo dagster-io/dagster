@@ -53,7 +53,7 @@ from dagster._core.storage.sql import (
     safe_commit,
     stamp_alembic_rev,
 )
-from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.sqlalchemy_compat import db_result, db_select
 from dagster._core.storage.sqlite import (
     LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION,
     create_db_conn_string,
@@ -262,8 +262,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event_id = None
 
             # mirror the event in the cross-run index database
-            with self.index_connection() as conn:
-                result = conn.execute(insert_event_statement)
+            with (
+                self.index_connection() as conn,
+                db_result(conn, insert_event_statement) as result,
+            ):
                 event_id = result.inserted_primary_key[0]
 
             self.store_asset_event(event, event_id)
@@ -277,8 +279,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             # mirror the event in the cross-run index database
-            with self.index_connection() as conn:
-                result = conn.execute(insert_event_statement)
+            with (
+                self.index_connection() as conn,
+                db_result(conn, insert_event_statement) as result,
+            ):
                 event_id = result.inserted_primary_key[0]
 
             self.store_asset_check_event(event, event_id)
@@ -367,8 +371,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         def _get_event_records_for_run(run_id: str) -> Sequence[EventLogRecord]:
             records = []
-            with self.run_connection(run_id) as conn:
-                results = conn.execute(query).fetchall()
+            with self.run_connection(run_id) as conn, db_result(conn, query) as result:
+                results = result.fetchall()
 
             for row_id, json_str in results:
                 try:

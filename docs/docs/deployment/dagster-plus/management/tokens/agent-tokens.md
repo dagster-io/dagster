@@ -7,8 +7,6 @@ tags: [dagster-plus-feature]
 
 In this guide, we'll walk you through creating and revoking agent tokens in Dagster+.
 
-## Managing agent tokens
-
 :::note
 
 To manage agent tokens, you need to be an [Organization Admin](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) in Dagster+.
@@ -17,7 +15,7 @@ To manage agent tokens, you need to be an [Organization Admin](/deployment/dagst
 
 Agent tokens are used to authenticate [Hybrid agents](/deployment/dagster-plus/hybrid) with the Dagster+ Agents API.
 
-### Creating agent tokens
+## Creating agent tokens
 
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
@@ -29,7 +27,7 @@ After the token is created:
 - **To view a token**, click **Reveal token**. Clicking on the token value will copy it to the clipboard.
 - **To edit a token's description**, click the **pencil icon**.
 
-### Assigning agent token permissions
+## Assigning agent token permissions
 
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
@@ -38,7 +36,7 @@ After the token is created:
 
 The permissions dialog allows you to edit a token's ability to access certain deployments. By default, agent tokens have permission to access any deployment in the organization including branch deployments. This is called **Org Agent** and is set using the toggle in the top right of the dialog. To edit individual deployment permissions, **Org Agent** has to first be toggled off.
 
-### Revoking agent tokens
+## Revoking agent tokens
 
 To revoke a token:
 

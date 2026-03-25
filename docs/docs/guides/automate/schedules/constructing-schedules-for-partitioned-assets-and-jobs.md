@@ -4,23 +4,12 @@ description: 'Learn to construct schedules from partitioned Dagster assets and j
 sidebar_position: 400
 ---
 
-In this guide, we'll walk you through how to construct schedules from partitioned [assets](/guides/build/assets) and jobs. By the end, you'll be able to:
+In this guide, we'll walk you through how to construct schedules from partitioned assets and jobs. By the end, you'll be able to:
 
 - Construct a schedule for a time-partitioned job
 - Customize a partitioned job's starting time
 - Customize the most recent partition in a set
 - Construct a schedule for a statically-partitioned job
-
-:::note
-
-This article assumes familiarity with:
-
-- Schedules
-- [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
-- [Asset definitions](/guides/build/assets/defining-assets)
-- [Asset jobs](/guides/build/jobs/asset-jobs) and [op jobs](/guides/build/jobs/op-jobs)
-
-:::
 
 ## Working with time-based partitions
 
@@ -31,9 +20,7 @@ Refer to the following tabs for examples of asset and op-based jobs using <PyObj
 <Tabs>
 <TabItem value="Asset jobs">
 
-**Asset jobs**
-
-Asset jobs are defined using <PyObject section="assets" module="dagster" object="define_asset_job" />. In this example, we created an asset job named `partitioned_job` and then constructed `asset_partitioned_schedule` by using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
+[Asset jobs](/guides/build/jobs/asset-jobs) are defined using <PyObject section="assets" module="dagster" object="define_asset_job" />. In this example, we created an asset job named `partitioned_job` and then constructed `asset_partitioned_schedule` by using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
@@ -45,9 +32,7 @@ Asset jobs are defined using <PyObject section="assets" module="dagster" object=
 </TabItem>
 <TabItem value="Op jobs">
 
-**Op jobs**
-
-Op jobs are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
+[Op jobs](/guides/build/jobs/op-jobs) are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"

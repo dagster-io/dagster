@@ -9,7 +9,7 @@ Data quality is critical in data pipelines. Inspecting individual assets ensures
 - Define an asset check
 - Execute that asset check in the UI
 
-## 1. Define an asset check
+## Step 1: Define an asset check
 
 In Dagster, you can define [asset checks](/guides/test/asset-checks) the same way you define assets. Asset checks run when an asset is materialized and ensure that certain criteria are met based on logic defined within the asset check.
 

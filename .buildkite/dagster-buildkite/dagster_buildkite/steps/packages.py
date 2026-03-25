@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TypeAlias
 
 from buildkite_shared.context import BuildkiteContext
-from buildkite_shared.packages import skip_reason
+from buildkite_shared.packages import get_python_package_step_skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.group_step_builder import (
@@ -18,42 +18,38 @@ from buildkite_shared.step_builders.step_builder import (
     TopLevelStepConfiguration,
     is_command_step,
 )
-from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
+from buildkite_shared.utils import oss_path
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
-from dagster_buildkite.utils import (
-    connect_sibling_docker_container,
-    has_component_integration_changes,
-    has_dagster_airlift_changes,
-    has_dg_changes,
-    has_storage_test_fixture_changes,
-    network_buildkite_container,
-    skip_if_not_dagster_dbt_cloud_commit,
-    skip_if_not_dagster_dbt_commit,
-)
+from dagster_buildkite.utils import connect_sibling_docker_container, network_buildkite_container
 
 _CORE_PACKAGES = [
-    "python_modules/dagster",
-    "python_modules/dagit",
-    "python_modules/dagster-graphql",
-    "js_modules",
+    oss_path("python_modules/dagster"),
+    oss_path("python_modules/dagit"),
+    oss_path("python_modules/dagster-graphql"),
+    oss_path("js_modules"),
 ]
 
 _INFRASTRUCTURE_PACKAGES = [
-    ".buildkite/dagster-buildkite",
-    "python_modules/automation",
-    "python_modules/dagster-test",
+    oss_path(".buildkite/dagster-buildkite"),
+    oss_path("python_modules/automation"),
+    oss_path("python_modules/dagster-test"),
 ]
 
 
-def _infer_package_type(directory: str) -> str:
+def _infer_package_type(directory: str | Path) -> str:
+    directory = Path(directory)
     if directory in _CORE_PACKAGES:
         return "core"
-    elif directory.startswith("examples/"):
+    elif oss_path("examples") in directory.parents or directory == oss_path("examples"):
         return "example"
-    elif directory.startswith("python_modules/libraries/"):
+    elif oss_path("python_modules/libraries") in directory.parents:
         return "extension"
-    elif directory in _INFRASTRUCTURE_PACKAGES or directory.startswith("integration_tests"):
+    elif directory in _INFRASTRUCTURE_PACKAGES or oss_path("integration_tests") in (
+        directory,
+        *directory.parents,
+    ):
         return "infrastructure"
     else:
         return "unknown"
@@ -123,7 +119,7 @@ class PackageSpec:
             This allows parallelizing tests even when no specific tox factors are specified. Defaults to 1.
     """
 
-    directory: str
+    directory: str | Path
     name: str | None = None
     package_type: str | None = None
     unsupported_python_versions: (
@@ -139,8 +135,8 @@ class PackageSpec:
     queue: BuildkiteQueue | None = None
     run_pytest: bool = True
     splits: int = 1
-    always_run_if: Callable[[], bool] | None = None
-    skip: Callable[[], str | None] | None = None
+    force_run_fn: Callable[[BuildkiteContext], bool] | None = None
+    skip_run_fn: Callable[[BuildkiteContext], str | None] | None = None
 
     def __post_init__(self):
         if not self.name:
@@ -271,8 +267,8 @@ class PackageSpec:
                 )
             return self._skip_reason
 
-        self._skip_reason = skip_reason(
-            self.directory, self.name, self.always_run_if, self.skip, is_oss=True, ctx=ctx
+        self._skip_reason = get_python_package_step_skip_reason(
+            self.directory, force_run_fn=self.force_run_fn, skip_run_fn=self.skip_run_fn, ctx=ctx
         )
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
@@ -287,7 +283,7 @@ def build_example_packages_steps(ctx: BuildkiteContext) -> list[StepConfiguratio
             _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
             + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
         )
-        if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
+        if pkg not in (oss_path("examples/deploy_ecs"), oss_path("examples/starlift-demo"))
     ]
 
     example_packages = custom_packages + example_packages_with_standard_config
@@ -336,14 +332,15 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 
 
 # Find packages under a root subdirectory that are not configured above.
-def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: list[str]) -> list[str]:
+def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: Sequence[str | Path]) -> list[Path]:
     all_files_in_root = [
-        os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
+        os.path.relpath(p, OSS_ROOT) for p in glob(os.path.join(OSS_ROOT, root, "*"))
     ]
     return [
-        p
+        oss_path(p)
         for p in all_files_in_root
-        if p not in custom_pkg_roots and os.path.exists(os.path.join(GIT_REPO_ROOT, p, "tox.ini"))
+        if oss_path(p) not in custom_pkg_roots
+        and os.path.exists(os.path.join(OSS_ROOT, p, "tox.ini"))
     ]
 
 
@@ -360,7 +357,7 @@ def airflow_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
 
 
 airline_demo_extra_cmds = [
-    "pushd examples/airline_demo",
+    f"pushd {oss_path('examples/airline_demo')}",
     # Run the postgres db. We are in docker running docker
     # so this will be a sibling container.
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
@@ -377,7 +374,7 @@ airline_demo_extra_cmds = [
 def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
     if tox_factor and tox_factor.factor.startswith("postgres"):
         return [
-            "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
+            f"pushd {oss_path('python_modules/dagster-graphql/dagster_graphql_tests/graphql/')}",
             "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
             # Can't use host networking on buildkite and communicate via localhost
             # between these sibling containers, so pass along the ip.
@@ -392,7 +389,7 @@ def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
 
 
 deploy_docker_example_extra_cmds = [
-    "pushd examples/deploy_docker/from_source",
+    f"pushd {oss_path('examples/deploy_docker/from_source')}",
     "./build.sh",
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
     *network_buildkite_container("docker_example_network"),
@@ -409,7 +406,7 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "pushd python_modules/libraries/dagster-celery",
+        f"pushd {oss_path('python_modules/libraries/dagster-celery')}",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
@@ -430,16 +427,11 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     ]
 
 
-ui_extra_cmds = ["make rebuild_ui"]
-
-
-def has_dg_or_component_integration_changes(ctx: BuildkiteContext) -> bool:
-    """Check for changes in dagster-dg-cli or in integrations that implement components."""
-    return has_dg_changes(ctx) or has_component_integration_changes(ctx)
+ui_extra_cmds = [f"make -C {oss_path('.')} rebuild_ui"]
 
 
 mysql_extra_cmds = [
-    "pushd python_modules/libraries/dagster-mysql/dagster_mysql_tests/",
+    f"pushd {oss_path('python_modules/libraries/dagster-mysql/dagster_mysql_tests/')}",
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
     *network_buildkite_container("mysql"),
     *network_buildkite_container("mysql_pinned"),
@@ -480,20 +472,20 @@ gcp_creds_extra_cmds = (
 def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageSpec]:
     return [
         PackageSpec(
-            "examples/assets_smoke_test",
+            oss_path("examples/assets_smoke_test"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
             ],
         ),
         PackageSpec(
-            "examples/deploy_docker",
+            oss_path("examples/deploy_docker"),
             pytest_extra_cmds=deploy_docker_example_extra_cmds,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
             ],
         ),
         PackageSpec(
-            "examples/docs_snippets",
+            oss_path("examples/docs_snippets"),
             # The docs_snippets test suite also installs a ton of packages in the same environment,
             # which is liable to cause dependency collisions. It's not necessary to test all these
             # snippets in all python versions since we are testing the core code exercised by the
@@ -504,10 +496,10 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("integrations"),
                 ToxFactor("docs_snapshot_test", splits=3),
             ],
-            always_run_if=lambda: has_dg_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dg_changes,
         ),
         PackageSpec(
-            "examples/project_fully_featured",
+            oss_path("examples/project_fully_featured"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,  # duckdb
                 AvailablePythonVersion.V3_13,  # duckdb
@@ -515,19 +507,19 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "examples/with_great_expectations",
+            oss_path("examples/with_great_expectations"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # great_expectations incompatible
             ],
         ),
         PackageSpec(
-            "examples/with_pyspark",
+            oss_path("examples/with_pyspark"),
         ),
         PackageSpec(
-            "examples/with_pyspark_emr",
+            oss_path("examples/with_pyspark_emr"),
         ),
         PackageSpec(
-            "examples/with_wandb",
+            oss_path("examples/with_wandb"),
             unsupported_python_versions=[
                 # dagster-wandb dep
                 AvailablePythonVersion.V3_12,
@@ -537,14 +529,14 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
         PackageSpec(
-            "examples/assets_modern_data_stack",
+            oss_path("examples/assets_modern_data_stack"),
             pytest_tox_factors=[ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
             ],
         ),
         PackageSpec(
-            "examples/assets_dbt_python",
+            oss_path("examples/assets_dbt_python"),
             pytest_tox_factors=[ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,  # duckdb
@@ -553,7 +545,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "examples/assets_dynamic_partitions",
+            oss_path("examples/assets_dynamic_partitions"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,  # duckdb
                 AvailablePythonVersion.V3_13,  # duckdb
@@ -561,21 +553,21 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "examples/quickstart_etl",
+            oss_path("examples/quickstart_etl"),
             pytest_tox_factors=[ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # PyO3 max supported version is 3.13
             ],
         ),
         PackageSpec(
-            "examples/use_case_repository",
+            oss_path("examples/use_case_repository"),
             pytest_tox_factors=[ToxFactor("source")],
         ),
         # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
         # beefier instance
         PackageSpec(
-            "examples/airlift-federation-tutorial",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            oss_path("examples/airlift-federation-tutorial"),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
             queue=BuildkiteQueue.DOCKER,
             unsupported_python_versions=[
@@ -586,8 +578,8 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "examples/airlift-migration-tutorial",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            oss_path("examples/airlift-migration-tutorial"),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -643,16 +635,16 @@ def tox_factors_for_folder(tests_folder_name: str) -> list[ToxFactor]:
 def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageSpec]:
     return [
         PackageSpec(
-            "python_modules/automation",
+            oss_path("python_modules/automation"),
             # automation is internal code that doesn't need to be tested in every python version. The
             # test suite also installs a ton of packages in the same environment, which is liable to
             # cause dependency collisions.
             unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
             retries=0,
         ),
-        PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
+        PackageSpec(oss_path("python_modules/dagster-webserver"), pytest_extra_cmds=ui_extra_cmds),
         PackageSpec(
-            "python_modules/dagster",
+            oss_path("python_modules/dagster"),
             env_vars=["AWS_ACCOUNT_ID"],
             pytest_tox_factors=[
                 ToxFactor("api_tests"),
@@ -680,7 +672,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             unsupported_python_versions=_unsupported_dagster_python_versions,
         ),
         PackageSpec(
-            "python_modules/dagster-graphql",
+            oss_path("python_modules/dagster-graphql"),
             pytest_extra_cmds=dagster_graphql_extra_cmds,
             pytest_tox_factors=[
                 ToxFactor("not_graphql_context_test_suite", splits=2),
@@ -730,7 +722,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             timeout_in_minutes=30,
         ),
         PackageSpec(
-            "python_modules/dagster-test",
+            oss_path("python_modules/dagster-test"),
             unsupported_python_versions=[
                 # dagster-airflow
                 AvailablePythonVersion.V3_12,
@@ -739,7 +731,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-dbt",
+            oss_path("python_modules/libraries/dagster-dbt"),
             pytest_tox_factors=[
                 ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
                 for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
@@ -756,8 +748,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ),
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-dbt/",
-            skip=lambda: skip_if_not_dagster_dbt_commit(ctx),
+            oss_path("python_modules/libraries/dagster-dbt/"),
+            skip_run_fn=_get_dbt_only_skip_reason,
             name="dagster-dbt-fusion",
             pytest_tox_factors=[
                 ToxFactor(
@@ -776,7 +768,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-snowflake",
+            oss_path("python_modules/libraries/dagster-snowflake"),
             env_vars=[
                 "SNOWFLAKE_ACCOUNT",
                 "SNOWFLAKE_USER",
@@ -784,7 +776,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-airlift",
+            oss_path("python_modules/libraries/dagster-airlift"),
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -798,7 +790,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-airbyte",
+            oss_path("python_modules/libraries/dagster-airbyte"),
             pytest_tox_factors=[ToxFactor("unit"), ToxFactor("integration")],
         ),
         # PackageSpec(
@@ -826,14 +818,14 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         #     ],
         # ),
         PackageSpec(
-            "python_modules/libraries/dagster-dg-cli",
+            oss_path("python_modules/libraries/dagster-dg-cli"),
             pytest_tox_factors=[
                 ToxFactor("general", splits=3),
                 ToxFactor("docs"),
                 ToxFactor("plus"),
             ],
             env_vars=["SHELL"],
-            always_run_if=lambda: has_dg_or_component_integration_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dg_or_component_integration_changes,
             # general tests depend on dagster-dbt which does not support Python 3.14
             unsupported_python_versions=(
                 lambda tox_factor: (
@@ -844,79 +836,79 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ),
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-dg-cli",
+            oss_path("python_modules/libraries/dagster-dg-cli"),
             name="dagster-dg-cli-mcp",
             pytest_tox_factors=[ToxFactor("mcp")],
-            always_run_if=lambda: has_dg_or_component_integration_changes(ctx),
+            force_run_fn=BuildkiteContext.has_dg_or_component_integration_changes,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-aws",
+            oss_path("python_modules/libraries/dagster-aws"),
             env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-azure",
+            oss_path("python_modules/libraries/dagster-azure"),
             env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-celery",
+            oss_path("python_modules/libraries/dagster-celery"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-celery-docker",
+            oss_path("python_modules/libraries/dagster-celery-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-dask",
+            oss_path("python_modules/libraries/dagster-dask"),
             env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-databricks",
+            oss_path("python_modules/libraries/dagster-databricks"),
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-docker",
+            oss_path("python_modules/libraries/dagster-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=docker_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-duckdb",
+            oss_path("python_modules/libraries/dagster-duckdb"),
             unsupported_python_versions=[
                 # duckdb
                 AvailablePythonVersion.V3_12,
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-duckdb-pandas",
+            oss_path("python_modules/libraries/dagster-duckdb-pandas"),
             unsupported_python_versions=[
                 # duckdb
                 AvailablePythonVersion.V3_12,
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-duckdb-polars",
+            oss_path("python_modules/libraries/dagster-duckdb-polars"),
             unsupported_python_versions=[
                 # duckdb
                 AvailablePythonVersion.V3_12,
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-duckdb-pyspark",
+            oss_path("python_modules/libraries/dagster-duckdb-pyspark"),
             unsupported_python_versions=[
                 # duckdb
                 AvailablePythonVersion.V3_12,
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-pandas",
+            oss_path("python_modules/libraries/dagster-pandas"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-gcp",
+            oss_path("python_modules/libraries/dagster-gcp"),
             env_vars=[
                 "AWS_ACCESS_KEY_ID",
                 "AWS_SECRET_ACCESS_KEY",
@@ -928,7 +920,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             retries=2,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-gcp-pandas",
+            oss_path("python_modules/libraries/dagster-gcp-pandas"),
             env_vars=[
                 "AWS_ACCESS_KEY_ID",
                 "AWS_SECRET_ACCESS_KEY",
@@ -939,7 +931,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             retries=2,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-gcp-pyspark",
+            oss_path("python_modules/libraries/dagster-gcp-pyspark"),
             env_vars=[
                 "AWS_ACCESS_KEY_ID",
                 "AWS_SECRET_ACCESS_KEY",
@@ -951,13 +943,13 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             unsupported_python_versions=[AvailablePythonVersion.V3_14],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-ge",
+            oss_path("python_modules/libraries/dagster-ge"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # great_expectations incompatible
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-k8s",
+            oss_path("python_modules/libraries/dagster-k8s"),
             env_vars=[
                 "AWS_ACCOUNT_ID",
                 "AWS_ACCESS_KEY_ID",
@@ -971,10 +963,10 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_extra_cmds=k8s_extra_cmds,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-mlflow",
+            oss_path("python_modules/libraries/dagster-mlflow"),
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-mysql",
+            oss_path("python_modules/libraries/dagster-mysql"),
             pytest_extra_cmds=mysql_extra_cmds,
             pytest_tox_factors=[
                 ToxFactor("storage_tests", splits=2),
@@ -983,39 +975,39 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
             ],
-            always_run_if=lambda: has_storage_test_fixture_changes(ctx),
+            force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-snowflake-pandas",
+            oss_path("python_modules/libraries/dagster-snowflake-pandas"),
             env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-snowflake-pyspark",
+            oss_path("python_modules/libraries/dagster-snowflake-pyspark"),
             env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # pyspark<4 not available
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-snowflake-polars",
+            oss_path("python_modules/libraries/dagster-snowflake-polars"),
             env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-postgres",
+            oss_path("python_modules/libraries/dagster-postgres"),
             pytest_tox_factors=[
                 ToxFactor("storage_tests"),
                 ToxFactor("storage_tests_sqlalchemy_1_3"),
             ],
-            always_run_if=lambda: has_storage_test_fixture_changes(ctx),
+            force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-twilio",
+            oss_path("python_modules/libraries/dagster-twilio"),
             env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
             # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
             retries=2,
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-wandb",
+            oss_path("python_modules/libraries/dagster-wandb"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
                 AvailablePythonVersion.V3_13,
@@ -1023,7 +1015,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagstermill",
+            oss_path("python_modules/libraries/dagstermill"),
             pytest_tox_factors=[
                 ToxFactor("papermill1", splits=2),
                 ToxFactor("papermill2", splits=2),
@@ -1042,8 +1034,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ),
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-airlift/perf-harness",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            oss_path("python_modules/libraries/dagster-airlift/perf-harness"),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -1052,8 +1044,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            "python_modules/libraries/dagster-airlift/kitchen-sink",
-            always_run_if=lambda: has_dagster_airlift_changes(ctx),
+            oss_path("python_modules/libraries/dagster-airlift/kitchen-sink"),
+            force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -1066,8 +1058,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         # Runs against live dbt cloud instance, we only want to run on commits and on the
         # nightly build
         PackageSpec(
-            "python_modules/libraries/dagster-dbt/kitchen-sink",
-            skip=lambda: skip_if_not_dagster_dbt_cloud_commit(ctx),
+            oss_path("python_modules/libraries/dagster-dbt/kitchen-sink"),
+            skip_run_fn=_get_dbt_cloud_only_skip_reason,
             name="dagster-dbt-cloud-live",
             env_vars=[
                 "KS_DBT_CLOUD_ACCOUNT_ID",
@@ -1081,9 +1073,32 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
-            ".buildkite/dagster-buildkite",
+            oss_path(".buildkite/dagster-buildkite"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_10,  # requires tomllib (3.11+)
             ],
         ),
     ]
+
+
+def _get_dbt_only_skip_reason(ctx: BuildkiteContext) -> str | None:
+    """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (any("dagster_dbt" in str(path) for path in ctx.changed_files))
+        else "Not a dagster-dbt commit"
+    )
+
+
+def _get_dbt_cloud_only_skip_reason(ctx: BuildkiteContext) -> str | None:
+    """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (
+            any("dagster_dbt/cloud_v2" in str(path) for path in ctx.changed_files)
+            # The kitchen sink in dagster-dbt in only testing the dbt Cloud integration v2.
+            # Do not skip tests if changes are made to this test suite.
+            or any("dagster-dbt/kitchen-sink" in str(path) for path in ctx.changed_files)
+        )
+        else "Not a dagster-dbt Cloud commit"
+    )

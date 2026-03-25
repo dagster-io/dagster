@@ -80,6 +80,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     group: groups,
     kind: kinds,
     code_location: codeLocations,
+    partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
   };
   if (assetHealthEnabled()) {
     const statuses = [
@@ -113,6 +114,7 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   owner: 'owner',
   tag: 'tag',
   status: 'status',
+  partitions: 'partition',
 };
 
 export const assetSelectionSyntaxSupportedAttributes: Attribute[] = Object.keys(

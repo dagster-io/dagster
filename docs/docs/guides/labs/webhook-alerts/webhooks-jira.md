@@ -77,7 +77,7 @@ Save the resulting Base64 string as an Environment Variable in Dagster+ (e.g. `A
 }
 ```
 
-## Official References
+## Official Atlassian references
 
 - [Jira REST API v2 (Legacy)](https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/): Reference for simple text payloads.
 - [Jira REST API v3 (Latest)](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/): Reference for ADF payloads.

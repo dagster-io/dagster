@@ -1,7 +1,9 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from typing import Any
 
 import sqlalchemy as db
+from sqlalchemy.engine import Connection
 
 IS_SQLALCHEMY_VERSION_1 = db.__version__.startswith("1.")
 
@@ -30,12 +32,37 @@ def db_subquery(query, name: str = "subquery"):
     return query.alias(name)
 
 
-def db_fetch_mappings(conn, query: Any) -> Sequence[Any]:
+def db_fetch_mappings(conn: Connection, query: Any) -> Sequence[Any]:
     """Utility class that allows compatibility between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
-    if not IS_SQLALCHEMY_VERSION_1:
-        return conn.execute(query).mappings().all()
+    with db_result(conn, query) as result:
+        if not IS_SQLALCHEMY_VERSION_1:
+            return result.mappings().all()
+        return result.fetchall()
 
-    return conn.execute(query).fetchall()
+
+@contextmanager
+def db_result(conn: Connection, query: Any) -> Iterator[Any]:
+    """Context manager that ensures a CursorResult is closed after use.
+
+    In SQLAlchemy 2.x, CursorResult is natively a context manager, but in 1.x
+    ResultProxy is not. This shim provides uniform cleanup across both versions,
+    preventing connection pool exhaustion when Python's garbage collector delays
+    cleanup of CursorResult reference cycles (particularly on Python 3.14+).
+
+    Usage::
+
+        with db_result(conn, query) as result:
+            row = result.fetchone()
+    """
+    if IS_SQLALCHEMY_VERSION_1:
+        result = conn.execute(query)
+        try:
+            yield result
+        finally:
+            result.close()
+    else:
+        with conn.execute(query) as result:  # type: ignore (bad stubs)
+            yield result
 
 
 def db_scalar_subquery(query):

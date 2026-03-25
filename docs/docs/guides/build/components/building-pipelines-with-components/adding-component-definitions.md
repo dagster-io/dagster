@@ -8,11 +8,9 @@ import DgScaffoldDefsTip from '@site/docs/partials/\_DgScaffoldDefsTip.md';
 
 You can scaffold Dagster Component definitions in your project from the command line with the `dg scaffold defs` command, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
 
-:::note Prerequisites
+## Prerequisites
 
 Before scaffolding a component definition, you must either [create a components-ready Dagster project](/guides/build/projects/creating-projects) or [migrate an existing project to `dg`](/guides/build/projects/moving-to-components/migrating-project).
-
-:::
 
 ## Viewing available components
 

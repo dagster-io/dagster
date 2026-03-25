@@ -28,8 +28,6 @@ alert_policies:
       ...
 ```
 
----
-
 ## Event types
 
 ### Job events
@@ -87,8 +85,6 @@ alert_policies:
 | ------------------------------- | --------------------------------- |
 | `INSIGHTS_CONSUMPTION_EXCEEDED` | Consumption exceeded threshold    |
 | `METRIC_MONITOR_ALERT`          | Metric monitor threshold exceeded |
-
----
 
 ## Alert targets
 
@@ -286,8 +282,6 @@ alert_targets:
         max_allowed_value: 100 # At least one threshold required
 ```
 
----
-
 ## Notification services
 
 ### Email
@@ -336,8 +330,6 @@ notification_service:
     integration_key: 'your-integration-key'
 ```
 
----
-
 ## Policy options
 
 ```yaml
@@ -362,8 +354,6 @@ policy_options:
     - COLUMN_TAGS_CHANGED
 ```
 
----
-
 ## Validation rules
 
 1. **Event type compatibility**: All event types in a single policy must belong to the same category (job, asset, schedule/sensor, infrastructure, or insights).
@@ -387,8 +377,6 @@ policy_options:
 8. **Renotify interval**: Only valid for `TICK_FAILURE`, `AGENT_UNAVAILABLE`, and `CODE_LOCATION_ERROR` events. Must be >= 1 minute.
 
 9. **Email owners notification**: Only valid for asset-related alerts where assets have owners defined.
-
----
 
 ## Complete examples
 

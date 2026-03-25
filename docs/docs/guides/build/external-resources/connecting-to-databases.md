@@ -8,19 +8,12 @@ When building a data pipeline, you may need to extract data from or load data in
 
 This guide demonstrates how to standardize database connections and customize their configuration using Dagster resources.
 
-:::note
-
-This guide assumes familiarity with [assets](/guides/build/assets).
-
-:::
-
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To run the example code in this article, you'll need:
 
 - Connection information for a Snowflake database
-- Install the necessary Python libraries:
+- To install the necessary Python libraries:
 
 <Tabs groupId="package-manager">
    <TabItem value="uv" label="uv">
@@ -41,8 +34,6 @@ To run the example code in this article, you'll need:
 
    </TabItem>
 </Tabs>
-
-</details>
 
 ## Step 1: Write a resource \{#step-one}
 

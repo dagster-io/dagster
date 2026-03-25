@@ -235,6 +235,16 @@ class AssetSelectionListener(ParseTreeListener):
     ):
         pass
 
+    # Enter a parse tree produced by AssetSelectionParser#PartitionsAttributeExpr.
+    def enterPartitionsAttributeExpr(
+        self, ctx: AssetSelectionParser.PartitionsAttributeExprContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#PartitionsAttributeExpr.
+    def exitPartitionsAttributeExpr(self, ctx: AssetSelectionParser.PartitionsAttributeExprContext):
+        pass
+
     # Enter a parse tree produced by AssetSelectionParser#value.
     def enterValue(self, ctx: AssetSelectionParser.ValueContext):
         pass

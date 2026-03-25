@@ -8,8 +8,7 @@ This guide will walk you through how to run the Dagster-specific components of a
 
 Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master/helm) for deploying Dagster that you can customize for your specific needs. For each Dagster component used by the Helm chart, Dagster publishes a corresponding image to [DockerHub](https://hub.docker.com/u/dagster).
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -25,8 +24,6 @@ To follow the steps in this guide, you'll need:
   ```bash
   dagster project from-example --example deploy_k8s --name deploy_k8s
   ```
-
-</details>
 
 ## Step 1: Write and build a Docker image containing your Dagster project
 
@@ -166,8 +163,7 @@ dagster-dagster-user-deployments-iris-analysis-564cbcf9f-fbqlw    1/1     Runnin
 dagster-postgresql-0                                              1/1     Running     3m41s
 ```
 
-<details>
-  <summary>Debugging failed pods</summary>
+### Debugging failed pods
 
 If one of the pods is in an error state, you can view the logs using the command
 
@@ -180,8 +176,6 @@ For example, if the pod `dagster-webserver-7c5b5c7f5c-rqrf8` is in a `CrashLoopB
 ```
 kubectl logs dagster-webserver-7c5b5c7f5c-rqrf8
 ```
-
-</details>
 
 ## Step 6: Connect to your Dagster deployment and materialize your assets
 
@@ -213,8 +207,3 @@ $ kubectl get jobs
 NAME                                               COMPLETIONS   DURATION   AGE
 dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
 ```
-
-## Next steps
-
-- Forwarding Dagster logs from a Kubernetes deployment to AWS, Azure, GCP
-- Other configuration options for K8s deployment - secrets,

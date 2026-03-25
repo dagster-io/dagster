@@ -6,16 +6,31 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Generic, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, overload
 
-from buildkite_shared.python_packages import PythonPackagesData
-from buildkite_shared.step_builders.step_builder import StepConfiguration
+import tomllib
 from buildkite_shared.transform import filter_steps, repeat_steps, simplify_steps
-from buildkite_shared.utils import pushd
+from buildkite_shared.utils import oss_path, pushd
 from packaging import version
+from packaging.requirements import Requirement
 from typing_extensions import Self, TypeVar
 
+if TYPE_CHECKING:
+    from buildkite_shared.step_builders.step_builder import StepConfiguration
+
 INTERNAL_OSS_PREFIX = "dagster-oss"
+
+# When detecting Python package changes, only look at these filetypes.
+_PACKAGE_CHANGE_DETECTION_FILETYPES = [
+    ".py",
+    ".cfg",
+    ".toml",
+    ".yaml",
+    ".ipynb",
+    ".yml",
+    ".ini",
+    ".jinja",
+]
 
 T_Config = TypeVar("T_Config", bound="BuildConfig", default="BuildConfig", covariant=True)
 
@@ -27,31 +42,47 @@ class BuildkiteContext(Generic[T_Config]):
         env: Mapping[str, str],
         config: T_Config,
         changed_files: frozenset[Path],
-        python_packages: PythonPackagesData,
+        packages: dict[str, "PythonPackage"],
     ) -> None:
         self.repo_path = repo_path
         self.env = env
         self.config = config
         self.changed_files = changed_files
-        self.python_packages = python_packages
+        self._packages = packages
+        self._has_package_changes_cache: dict[PythonPackage, bool] = {}
+        self._has_package_test_changes_cache: dict[PythonPackage, bool] = {}
+        self._has_package_dependency_changes_cache: dict[PythonPackage, bool] = {}
 
     @classmethod
     def create(
-        cls, env: Mapping[str, str] = os.environ, changed_files: Iterable[Path] | None = None
+        cls,
+        env: Mapping[str, str] = os.environ,
+        changed_files: Iterable[Path] | None = None,
+        packages: dict[str, "PythonPackage"] | None = None,
     ) -> Self:
         repo_path = Path.cwd()
         config = cls.extract_build_config(env)
 
-        changed_files = (
-            frozenset(changed_files) if changed_files else _discover_changed_files(repo_path)
+        # In CI environments, we need to explicitly set up the git repo to be
+        # able to detect changed files, since we start with a shallow clone.
+        if os.environ.get("BUILDKITE"):
+            _setup_git_repo(repo_path)
+        resolved_changed_files = (
+            frozenset(changed_files)
+            if changed_files is not None
+            else _discover_changed_files(repo_path)
         )
-        python_packages = PythonPackagesData.load(repo_path, changed_files)
+        resolved_packages = (
+            packages
+            if packages is not None
+            else {pkg.name: pkg for pkg in sorted(discover_python_packages(repo_path))}
+        )
         return cls(
             repo_path=repo_path,
             env=env,
             config=config,
-            changed_files=changed_files,
-            python_packages=python_packages,
+            changed_files=resolved_changed_files,
+            packages=resolved_packages,
         )
 
     @classmethod
@@ -121,20 +152,137 @@ class BuildkiteContext(Generic[T_Config]):
         if not self.is_release_branch:
             raise ValueError(f"Branch {self.branch} is not a release branch")
 
-    @cached_property
-    def all_changed_oss_files(self) -> frozenset[Path]:
-        if (self.repo_path / INTERNAL_OSS_PREFIX).exists():  # is internal
-            return frozenset(
-                {
-                    _strip_oss_prefix(path)
-                    for path in self.changed_files
-                    if path.parts[0] == INTERNAL_OSS_PREFIX
-                }
-            )
-        else:
-            return self.changed_files
+    # ########################
+    # ##### CHANGE DETECTION
+    # ########################
 
-    def apply_transforms(self, steps: Sequence[StepConfiguration]) -> Sequence[StepConfiguration]:
+    def has_oss_changes(self) -> bool:
+        """True if any changed files are within the OSS directory."""
+        return any(oss_path(".") in (path, *path.parents) for path in self.changed_files)
+
+    def get_package(self, name: str) -> "PythonPackage":
+        norm_name = name.replace("_", "-")
+        if norm_name not in self._packages:
+            all_packages_str = "\n".join([pkg.name for pkg in sorted(self._packages.values())])
+            raise Exception(f"Could not find {name} in package list. Packages:\n{all_packages_str}")
+        return self._packages[norm_name]
+
+    def has_package(self, name: str) -> bool:
+        norm_name = name.replace("_", "-")
+        return norm_name in self._packages
+
+    def has_package_changes(self, name: str) -> bool:
+        """True if this package has non-test source file changes."""
+        pkg = self.get_package(name)
+        if pkg not in self._has_package_changes_cache:
+            self._has_package_changes_cache[pkg] = self._detect_package_changes(
+                pkg, include_test_files=False
+            )
+        return self._has_package_changes_cache[pkg]
+
+    def has_package_test_changes(self, name: str) -> bool:
+        """True if this package has any changes (including test-only changes)."""
+        pkg = self.get_package(name)
+        if pkg not in self._has_package_test_changes_cache:
+            self._has_package_test_changes_cache[pkg] = self._detect_package_changes(
+                pkg, include_test_files=True
+            )
+        return self._has_package_test_changes_cache[pkg]
+
+    def has_package_dependency_changes(self, name: str) -> bool:
+        """True if any in-repo dependency of this package has non-test changes."""
+        pkg = self.get_package(name)
+        if pkg not in self._has_package_dependency_changes_cache:
+            result = False
+            for dep in pkg.dependencies:
+                if not self.has_package(dep.name):
+                    continue
+                elif self.has_package_changes(dep.name) or self.has_package_dependency_changes(
+                    dep.name
+                ):
+                    result = True
+                    break
+            self._has_package_dependency_changes_cache[pkg] = result
+        return self._has_package_dependency_changes_cache[pkg]
+
+    def _detect_package_changes(
+        self,
+        package: "PythonPackage",
+        include_test_files: bool,
+    ) -> bool:
+        for path in self.changed_files:
+            abs_path = self.repo_path / path
+            if (
+                _path_is_relative_to(abs_path, package.directory)
+                and path.suffix in _PACKAGE_CHANGE_DETECTION_FILETYPES
+                and (include_test_files or "_tests/" not in str(path))
+            ):
+                return True
+        return False
+
+    def has_python_changes(self) -> bool:
+        return any(path.suffix == ".py" for path in self.changed_files)
+
+    def has_yaml_changes(self) -> bool:
+        return any(path.suffix in (".yml", ".yaml") for path in self.changed_files)
+
+    def has_helm_changes(self) -> bool:
+        return any(oss_path("helm") in path.parents for path in self.changed_files)
+
+    def has_docs_changes(self) -> bool:
+        return any(oss_path("docs") in path.parents for path in self.changed_files)
+
+    def has_non_docs_markdown_changes(self) -> bool:
+        return any(
+            path.suffix == ".md" and Path("docs") not in path.parents for path in self.changed_files
+        )
+
+    def has_pyright_requirements_txt_changes(self) -> bool:
+        return any(
+            path.match(str(oss_path("pyright/*/requirements.txt"))) for path in self.changed_files
+        )
+
+    def has_dagster_airlift_changes(self) -> bool:
+        return any("dagster-airlift" in str(path) for path in self.changed_files)
+
+    def has_dg_changes(self) -> bool:
+        return any(
+            "dagster-dg" in str(path) or "docs_snippets" in str(path) for path in self.changed_files
+        )
+
+    def has_component_integration_changes(self) -> bool:
+        component_integrations = [
+            "dagster-sling",
+            "dagster-dbt",
+            "dagster-databricks",
+            "dagster-airbyte",
+            "dagster-powerbi",
+            "dagster-omni",
+            "dagster-polytomic",
+            "dagster-fivetran",
+            "dagster-dlt",
+        ]
+        return any(
+            any(integration in str(path) for integration in component_integrations)
+            for path in self.changed_files
+        )
+
+    def has_dg_or_component_integration_changes(self) -> bool:
+        return self.has_dg_changes() or self.has_component_integration_changes()
+
+    def has_storage_test_fixture_changes(self) -> bool:
+        return any(
+            oss_path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
+            for path in self.changed_files
+        )
+
+    # ########################
+    # ##### TRANSFORMS
+    # ########################
+
+    def apply_transforms(
+        self, steps: Sequence["StepConfiguration"]
+    ) -> Sequence["StepConfiguration"]:
         # Filter and repeat settings are only applied on feature branches.
         if self.is_feature_branch and self.config.step_filter:
             steps = filter_steps(
@@ -209,6 +357,10 @@ class BuildConfig:
 
         return cls.from_raw(params)
 
+
+# ########################
+# ##### BUILDKITE ENV VARS
+# ########################
 
 ## Buildkite environment variables.
 BuildkiteEnvVar: TypeAlias = Literal[
@@ -404,6 +556,174 @@ BuildkiteEnvVar: TypeAlias = Literal[
     "CI",
 ]
 
+# ########################
+# ##### GIT REPO PREP
+# ########################
+
+
+def _setup_git_repo(repo_path: Path) -> None:
+    """Set up the git repository for change detection. This is a no-op if the repo is already set up."""
+    with pushd(repo_path):
+        # Mark directory as safe for git (needed on CI where the Docker container
+        # user differs from the repo owner). Uses check=False because $HOME may
+        # not be set in some CI environments, causing git config --global to fail.
+        cwd = str(repo_path)
+        existing = subprocess.run(
+            ["git", "config", "--global", "--get-all", "safe.directory"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if cwd not in existing.stdout.splitlines():
+            subprocess.run(
+                ["git", "config", "--global", "--add", "safe.directory", cwd],
+                check=False,
+            )
+
+        # Only fetch if origin/master doesn't exist locally (e.g. shallow clone on CI).
+        # Avoids a slow network call when running locally or in tests.
+        has_origin_master = (
+            subprocess.run(
+                ["git", "rev-parse", "--verify", "origin/master"],
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+        )
+        if not has_origin_master:
+            subprocess.run(["git", "fetch", "origin", "master"], check=True)
+
+
+# ########################
+# ##### CHANGED FILES
+# ########################
+
+
+def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
+    """Shared logic for loading changed files from git."""
+    with pushd(repo_path):
+        origin = _get_commit("origin/master")
+        head = _get_commit("HEAD")
+        logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
+
+        result = subprocess.run(
+            [
+                "git",
+                "diff",
+                "origin/master...HEAD",
+                "--name-only",
+                "--relative",
+                "--",
+                ".",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        all_files: set[Path] = set()
+        for path in sorted(result.stdout.strip().split("\n")):
+            if path:
+                logging.info("  - " + path)
+                all_files.add(Path(path))
+
+    return frozenset(all_files)
+
+
+def _get_commit(rev: str) -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "--short", rev],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+
+# ########################
+# ##### PYTHON PACKAGES
+# ########################
+
+
+class PythonPackage:
+    def __init__(self, directory: Path, project: dict[str, Any]):
+        self.directory = directory
+        # Use the directory basename for package name since project["name"] is
+        # not unique and sometimes does not mtach.
+        self.name = directory.name.replace("_", "-")
+        all_deps = set(_parse_requirements(project.get("dependencies", [])))
+        for extra_reqs in project.get("optional_dependencies", {}).values():
+            all_deps.update(_parse_requirements(extra_reqs))
+        self.dependencies = all_deps
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
+        return f"PythonPackage({self.name})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PythonPackage):
+            return NotImplemented
+        return self.directory == other.directory
+
+    # Because we define __eq__
+    # https://docs.python.org/3.1/reference/datamodel.html#object.__hash__
+    def __hash__(self) -> int:
+        return hash(self.directory)
+
+    def __lt__(self, other: "PythonPackage") -> bool:
+        return self.name < other.name
+
+
+def _parse_requirements(lines: list[str]) -> list[Requirement]:
+    return [
+        Requirement(line) for line in lines if line.strip() and not line.strip().startswith("#")
+    ]
+
+
+def discover_python_packages(repo_path: Path) -> list[PythonPackage]:
+    """Discover all Python packages in the git repository."""
+    logging.info("Finding Python packages:")
+
+    output = subprocess.check_output(
+        ["git", "ls-files", "**/tox.ini"],
+        cwd=str(repo_path),
+    ).decode("utf-8")
+
+    packages = []
+    for line in output.strip().split("\n"):
+        if not line:
+            continue
+        pkg_path = (repo_path / line).parent
+
+        if (pyproject_path := pkg_path / "pyproject.toml").exists():
+            with open(pyproject_path, "rb") as f:
+                data = tomllib.load(f)
+            project = data.get("project")
+            if not project:
+                continue
+        else:
+            # create a synthetic pyproject.toml project entry with empty
+            # dependencies
+            project = {"name": pkg_path.name, "dependencies": [], "optional-dependencies": {}}
+
+        packages.append(PythonPackage(pyproject_path.parent, project))
+
+    for package in sorted(packages):
+        logging.info("  - " + package.name)
+
+    return packages
+
+
+def _path_is_relative_to(p: Path, u: Path) -> bool:
+    # see https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_relative_to
+    return u == p or u in p.parents
+
+
+# ########################
+# ##### OTHER
+# ########################
+
 
 def _get_required_env_var(var: str, env: Mapping[str, str]) -> str:
     if var not in env:
@@ -421,48 +741,3 @@ def _is_master_branch(branch: str) -> bool:
 
 def _is_feature_branch(branch: str) -> bool:
     return not _is_release_branch(branch) and not _is_master_branch(branch)
-
-
-def _strip_oss_prefix(path: Path) -> Path:
-    """If the path is within the dagster-oss/ directory, strip that prefix."""
-    return Path(*path.parts[1:]) if next(iter(path.parts), None) == INTERNAL_OSS_PREFIX else path
-
-
-def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
-    """Shared logic for loading changed files from git. Returns (all_files, all_oss_files)."""
-    # Mark current directory as safe (needed when running from internal repo's dagster-oss/)
-    with pushd(repo_path):
-        subprocess.call(["git", "config", "--global", "--add", "safe.directory", os.getcwd()])
-
-        subprocess.call(["git", "fetch", "origin", "master"])
-        origin = _get_commit("origin/master")
-        head = _get_commit("HEAD")
-        logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
-        paths = (
-            subprocess.check_output(
-                [
-                    "git",
-                    "diff",
-                    "origin/master...HEAD",
-                    "--name-only",
-                    "--relative",  # Paths relative to cwd
-                    "--",
-                    ".",  # Only files in current directory
-                ]
-            )
-            .decode("utf-8")
-            .strip()
-            .split("\n")
-        )
-
-        all_files: set[Path] = set()
-        for path in sorted(paths):
-            if path:
-                logging.info("  - " + path)
-                all_files.add(Path(path))
-
-    return frozenset(all_files)
-
-
-def _get_commit(rev: str) -> str:
-    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()

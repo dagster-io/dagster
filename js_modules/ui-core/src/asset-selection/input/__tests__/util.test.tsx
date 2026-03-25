@@ -64,6 +64,7 @@ describe('getAttributesMap', () => {
       group: [''],
       kind: [''],
       code_location: ['repo1@location1', 'repo2@location2'],
+      partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
     });
   });
 
@@ -87,6 +88,7 @@ describe('getAttributesMap', () => {
       group: [],
       kind: [],
       code_location: [],
+      partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
       status: [
         AssetHealthStatus.HEALTHY,
         AssetHealthStatus.DEGRADED,

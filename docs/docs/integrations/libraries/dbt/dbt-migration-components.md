@@ -7,9 +7,9 @@ sidebar_position: 200
 
 Dagster supports two ways to integrate with dbt: the [dbt component](/integrations/libraries/dbt) (recommended) and the [Pythonic integration library](/integrations/libraries/dbt/dbt-pythonic). If you built your Dagster and dbt project with the Pythonic integration, you can migrate to the dbt component and get the same result.
 
-## 1. Scaffold the dbt component
+## Step 1: Scaffold the dbt component
 
-The first step is to [scaffold a dbt component definition](/integrations/libraries/dbt#3-scaffold-a-dbt-component-definition). This will generate the `defs.yaml` configuration file with a path to your dbt project:
+The first step is to [scaffold a dbt component definition](/integrations/libraries/dbt#step-3-scaffold-a-dbt-component-definition). This will generate the `defs.yaml` configuration file with a path to your dbt project:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml"
@@ -17,7 +17,7 @@ The first step is to [scaffold a dbt component definition](/integrations/librari
   language="yaml"
 />
 
-## 2. Remove Pythonic definitions
+## Step 2: Remove Pythonic definitions
 
 Since the component handles the creation of any dbt assets in your Dagster project, as well as the configuration of the underlying resource, you can remove the explicit dbt resource creation code:
 
@@ -51,7 +51,7 @@ dg list defs
 
 This will list all the assets in your project and allow you to see that the expected dbt assets are present.
 
-## 3. Migrating custom translators (Optional)
+## Step 3: Migrate custom translators (Optional)
 
 If you had defined a custom `DagsterDbtTranslator` for your dbt project, the **recommended approach** is to create a custom subclass of `DbtProjectComponent` and override the `get_asset_spec` method. This provides more flexibility and type safety than YAML configuration.
 
@@ -100,7 +100,7 @@ For simpler customizations, you can also use YAML configuration with the `transl
   language="yaml"
 />
 
-## 4. Migrating incremental models (Optional)
+## Step 4: Migrate incremental models (Optional)
 
 If you had incremental models defined in your dbt project, the **recommended approach** is to create a custom subclass of `DbtProjectComponent` and override the `execute` method. This allows you to customize the dbt CLI arguments based on partition information.
 
@@ -140,7 +140,7 @@ Then reference the custom component and apply the partition in your `defs.yaml`:
   language="yaml"
 />
 
-### Alternative: YAML configuration with cli_args
+### Alternative: YAML configuration with `cli_args`
 
 For simpler cases where you don't need custom logic, you can use YAML configuration with the `cli_args` field:
 

@@ -19,7 +19,7 @@ export const AssetRecentUpdatesTrend = React.memo(({latestInfo, events}: Props) 
   const states = allItems.map((event, index) => {
     const opacity = calculatePezOpacity(index, 5);
 
-    const key = () => {
+    const keyId = () => {
       switch (event?.__typename) {
         case 'AssetLatestInfo':
           return event.latestRun?.id ?? index;
@@ -32,8 +32,10 @@ export const AssetRecentUpdatesTrend = React.memo(({latestInfo, events}: Props) 
       }
     };
 
+    const key = `${event?.__typename}-${keyId()}`;
+
     if (!event) {
-      return <PezItem key={key()} opacity={opacity} color={Colors.backgroundDisabled()} />;
+      return <PezItem key={key} opacity={opacity} color={Colors.backgroundDisabled()} />;
     }
 
     const color = () => {
@@ -48,7 +50,7 @@ export const AssetRecentUpdatesTrend = React.memo(({latestInfo, events}: Props) 
     };
 
     return (
-      <EventPopover key={key()} event={event}>
+      <EventPopover key={key} event={event}>
         <PezItem opacity={opacity} color={color()} />
       </EventPopover>
     );

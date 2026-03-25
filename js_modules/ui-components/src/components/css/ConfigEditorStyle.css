@@ -1,0 +1,30 @@
+.CodeMirror.cm-s-config-editor {
+  background-color: var(--color-background-light);
+  height: initial;
+  position: absolute;
+  inset: 0;
+}
+
+.dagster.CodeMirror-hints {
+  background-color: var(--color-background-default);
+  box-shadow: 2px 3px 5px var(--color-shadow-default);
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  z-index: 100;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 2px;
+  margin-top: 2px;
+}
+
+.dagster .CodeMirror-hint {
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--color-text-default);
+}
+
+.dagster .CodeMirror-hint-active {
+  background-color: var(--color-background-blue);
+  color: var(--color-text-default);
+}

@@ -1,33 +1,35 @@
+###################
 dagster-gcp library
-===================
+###################
 
 .. currentmodule:: dagster_gcp
 
+********
 BigQuery
---------
+********
 
-Related Guides:
+Related guides:
 
 * `Using Dagster with BigQuery <https://docs.dagster.io/integrations/libraries/gcp/bigquery>`_
 * `BigQuery I/O manager reference <https://docs.dagster.io/integrations/libraries/gcp/bigquery/reference>`_
 
 
-BigQuery Resource
-^^^^^^^^^^^^^^^^^^
+BigQuery resource
+=================
 
 .. autoconfigurable:: BigQueryResource
   :annotation: ResourceDefinition
 
 
-BigQuery I/O Manager
-^^^^^^^^^^^^^^^^^^^^^
+BigQuery I/O manager
+====================
 
 .. autoconfigurable:: BigQueryIOManager
   :annotation: IOManagerDefinition
 
 
-BigQuery Ops
-^^^^^^^^^^^^^^^
+BigQuery ops
+============
 
 .. autofunction:: bq_create_dataset
 
@@ -42,41 +44,42 @@ BigQuery Ops
 .. autofunction:: import_gcs_paths_to_bq
 
 
-Data Freshness
-^^^^^^^^^^^^^^
+Data freshness
+==============
 
 .. autofunction:: fetch_last_updated_timestamps
 
 Other
-^^^^^^^
+=====
 
 .. autoclass:: BigQueryError
 
+***
 GCS
----
+***
 
-GCS Resource
-^^^^^^^^^^^^^
+GCS resource
+============
 
 .. autoconfigurable:: GCSResource
   :annotation: ResourceDefinition
 
 
-GCS I/O Manager
-^^^^^^^^^^^^^^^^^^
+GCS I/O manager
+===============
 
 .. autoconfigurable:: GCSPickleIOManager
   :annotation: IOManagerDefinition
 
 
-GCS Sensor
-^^^^^^^^^^
+GCS sensor
+==========
 
 .. autofunction:: dagster_gcp.gcs.sensor.get_gcs_keys
 
 
-File Manager
-^^^^^^^^^^^^
+File manager
+============
 
 .. autoclass:: GCSFileHandle
   :members:
@@ -84,49 +87,52 @@ File Manager
 .. autoconfigurable:: GCSFileManagerResource
   :annotation: ResourceDefinition
 
-GCS Compute Log Manager
-^^^^^^^^^^^^^^^^^^^^^^^^
+GCS compute log manager
+=======================
 
 .. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
 
+********
 Dataproc
---------
+********
 
-Dataproc Resource
-^^^^^^^^^^^^^^^^^^
+Dataproc resource
+=================
 
 .. autoconfigurable:: DataprocResource
   :annotation: ResourceDefinition
 
-Dataproc Ops
-^^^^^^^^^^^^^^
+Dataproc ops
+============
 
 .. autoconfigurable:: dataproc_op
 
 .. currentmodule:: dagster_gcp.pipes
 
+*****
 Pipes
---------------
+*****
 
 Clients
-^^^^^^^
+=======
 
 .. autoclass:: dagster_gcp.pipes.PipesDataprocJobClient
 
-Context Injectors
-^^^^^^^^^^^^^^^^^
+Context injectors
+=================
 
 .. autoclass:: dagster_gcp.pipes.PipesGCSContextInjector
 
-Message Readers
-^^^^^^^^^^^^^^^
+Message readers
+===============
 
 .. autoclass:: dagster_gcp.pipes.PipesGCSMessageReader
 
 .. currentmodule:: dagster_gcp
 
+******
 Legacy
-------
+******
 
 .. autoconfigurable:: ConfigurablePickledObjectGCSIOManager
   :annotation: IOManagerDefinition
@@ -149,13 +155,14 @@ Legacy
 .. autoconfigurable:: dataproc_resource
   :annotation: ResourceDefinition
 
+**********
 Components
-----------
+**********
 
 Resource components for use with Dagster's component system.
 
-Resource Components
-^^^^^^^^^^^^^^^^^^^
+Resource components
+===================
 
 .. autoclass:: dagster_gcp.BigQueryResourceComponent
 

@@ -1,36 +1,35 @@
+#####################
 dagster-pipes library
-=====================
+#####################
 
 .. currentmodule:: dagster_pipes
 
 The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes <https://docs.dagster.io/integrations/external-pipelines>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
 
-For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/integrations/external-pipelines/dagster-pipes-details-and-customization>`__.
+For a detailed look at the Pipes process, including how to customize it, see `Dagster Pipes details and customization <https://docs.dagster.io/integrations/external-pipelines/dagster-pipes-details-and-customization>`__.
 
 **Looking to set up a Pipes client in Dagster?** See the `Dagster Pipes API reference <https://docs.dagster.io/api/dagster/pipe>`_.
 
 **Note**: This library isn't included with ``dagster`` and must be `installed separately <https://pypi.org/project/dagster-pipes>`_.
 
-----
-
+*******
 Context
--------
+*******
 
 .. autofunction:: open_dagster_pipes
 
 .. autoclass:: PipesContext
 
-----
-
+********
 Advanced
---------
+********
 
 Most Pipes users won't need to use the APIs in the following sections unless they are customizing the Pipes protocol.
 
 Refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/integrations/external-pipelines/dagster-pipes-details-and-customization>`__ for more information.
 
 Context loaders
-^^^^^^^^^^^^^^^
+===============
 
 Context loaders load the context payload from the location specified in the bootstrap payload.
 
@@ -46,10 +45,8 @@ Context loaders load the context payload from the location specified in the boot
 
 .. autoclass:: PipesAzureBlobStorageContextLoader
 
-----
-
 Params loaders
-^^^^^^^^^^^^^^
+==============
 
 Params loaders load the bootstrap payload from some globally accessible key-value store.
 
@@ -61,10 +58,8 @@ Params loaders load the bootstrap payload from some globally accessible key-valu
 
 .. autoclass:: PipesMappingParamsLoader
 
-----
-
 Message writers
-^^^^^^^^^^^^^^^
+===============
 
 Message writers write messages to the location specified in the bootstrap payload.
 
@@ -82,10 +77,8 @@ Message writers write messages to the location specified in the bootstrap payloa
 
 .. autoclass:: PipesAzureBlobStorageMessageWriter
 
-----
-
 Message writer channels
-^^^^^^^^^^^^^^^^^^^^^^^
+=======================
 
 Message writer channels are objects that write messages back to the Dagster orchestration process.
 
@@ -105,10 +98,8 @@ Message writer channels are objects that write messages back to the Dagster orch
 
 .. autoclass:: PipesAzureBlobStorageMessageWriterChannel
 
-----
-
 Utilities
-^^^^^^^^^
+=========
 
 .. autofunction:: encode_env_var
 

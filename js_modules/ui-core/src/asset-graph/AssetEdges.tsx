@@ -6,6 +6,8 @@ import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
 import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
+const MAX_EDGES = 200;
+
 interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
   selected: string[] | null;
@@ -25,7 +27,6 @@ function getEdgesToShow({
     const viewportDistance =
       Math.pow(viewportRect.right - viewportRect.left, 2) +
       Math.pow(viewportRect.top - viewportRect.bottom, 2);
-    const MAX_EDGES = 50; // arbitrary number
 
     //https://stackoverflow.com/a/20925869/1162881
     function doesViewportContainEdge(
@@ -81,7 +82,7 @@ function getEdgesToShow({
           doesViewportContainPoint(edge.from, viewportRect) ||
           doesViewportContainPoint(edge.to, viewportRect),
       );
-      if (visibleToFromEdges.length < 50) {
+      if (visibleToFromEdges.length < MAX_EDGES) {
         return visibleToFromEdges;
       }
       const center = {

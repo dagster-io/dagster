@@ -298,6 +298,8 @@ class K8sContainerContext(
                 model_class = kubernetes.client.V1PodSpec
             elif key == "job_spec_config":
                 model_class = kubernetes.client.V1JobSpec
+            elif key == "service_spec_config":
+                model_class = kubernetes.client.V1ServiceSpec
             else:
                 raise Exception(f"Unexpected key in allowlist {key}")
             result[key] = k8s_snake_case_keys(

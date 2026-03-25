@@ -44,7 +44,7 @@ To run the examples, you'll need to:
    </TabItem>
 </Tabs>
 
-- Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- Configure AWS authentication credentials. If you don't have this set up already, see the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - In AWS, you'll need:
   - An existing AWS account with access to Lambda
   - Permissions that allow you to create and modify Lambda functions
@@ -69,7 +69,7 @@ After the function is created, you'll be redirected to a page like the following
 
 ![The lambda function details page in the AWS UI](/images/guides/build/external-pipelines/aws-lambda/aws-lambda-function-details.png)
 
-### Step 1.2: Add a dagster-pipes file
+### Step 1.2: Add a `dagster-pipes` file
 
 Next, you'll add `dagster-pipes` to the function.
 
@@ -89,7 +89,7 @@ For simplicity, we're going to copy the contents of the single Dagster Pipes fil
    https://raw.githubusercontent.com/dagster-io/dagster/master/python_modules/dagster-pipes/dagster_pipes/__init__.py
    ```
 
-3. Copy the contents of `__init__.py` into the new file you created in AWS. **Note**: We recommend adding the source link and the date you copied the contents to the top of the file as comments:
+3. Copy the contents of `__init__.py` into the new file you created in AWS. We recommend adding the source link and the date you copied the contents to the top of the file as comments:
 
    ![The copied contents of the Dagster Pipes file into a file in the AWS UI](/images/guides/build/external-pipelines/aws-lambda/aws-lambda-add-dagster-pipes.png)
 
@@ -163,7 +163,7 @@ Here's what we did in this example:
 - Returned a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the execution in AWS Lambda has completed.
   {/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="libraries" module="pipes" object="dagster.PipesClientCompletedInvocation" /> */}
 
-### Step 2.2: Create Dagster Definitions
+### Step 2.2: Create Dagster definitions
 
 import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 

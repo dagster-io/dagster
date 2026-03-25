@@ -12,7 +12,7 @@ By the end of this guide, you’ll:
 - Learn how to define custom prioritization rules
 - Understand how prioritization rules and concurrency limits work together
 
-## Understanding the run queue
+## About the run queue
 
 The run queue is a sequence of Dagster runs waiting to be executed. Dagster pulls runs from the queue and calls `launch_run` on submitted runs. It operates as a first-in, first-out priority queue.
 
@@ -40,8 +40,6 @@ When defining a priority value, note that:
 <Tabs>
 <TabItem value="In Python" label="In Python">
 
-**In Python**
-
 In this example, the priority is set to `-1` with a `dagster/priority` tag value of `"-1"`:
 
 <CodeExample
@@ -54,8 +52,6 @@ In this example, the priority is set to `-1` with a `dagster/priority` tag value
 </TabItem>
 <TabItem value="In the Dagster UI" label="In the Dagster UI">
 
-**In the Dagster UI**
-
 Using the launchpad in the Dagster UI, you can also override priority tag values. In this example, we clicked the **Edit tags** button to display the following modal:
 
 ![Add tags to run modal in Dagster UI Launchpad](/images/guides/deploy/execution/dagster-priority-in-launchpad.png)
@@ -63,7 +59,7 @@ Using the launchpad in the Dagster UI, you can also override priority tag values
 </TabItem>
 </Tabs>
 
-**Understanding prioritization rules and concurrency limits**
+### About prioritization rules and concurrency limits
 
 Unless tag concurrency limits and/or prioritization rules are in place, queued runs are executed in the order they’re submitted to the queue. However, a run blocked by tag concurrency limits won’t block runs submitted after it.
 

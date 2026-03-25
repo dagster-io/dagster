@@ -12,6 +12,7 @@ from typing import Any, Literal, TextIO
 
 import dagster._check as check
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -136,9 +137,60 @@ class BasePipesDatabricksClient(PipesClient):
         metadata["Databricks Job Run ID"] = str(run_id)
 
         if run_page_url := run.run_page_url:
-            metadata["Databricks Job Run URL"] = run_page_url
+            metadata["Databricks Job Run URL"] = UrlMetadataValue(run_page_url)
 
         return metadata
+
+    def _submit_multi_task_and_poll(
+        self,
+        *,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None,
+        tasks: Sequence[jobs.SubmitTask],
+        submit_args: Mapping[str, Any] | None,
+        context_injector: PipesContextInjector,
+        message_reader: PipesMessageReader,
+    ) -> PipesClientCompletedInvocation:
+        """Shared implementation for multi-task job submission and polling."""
+        with open_pipes_session(
+            context=context,
+            extras=extras,
+            context_injector=context_injector,
+            message_reader=message_reader,
+        ) as pipes_session:
+            enriched_tasks = []
+            for task in tasks:
+                submit_task_dict = task.as_dict()
+                submit_task_dict = self._enrich_submit_task_dict(
+                    context=context, session=pipes_session, submit_task_dict=submit_task_dict
+                )
+                enriched_tasks.append(jobs.SubmitTask.from_dict(submit_task_dict))
+
+            run_id = self.client.jobs.submit(
+                tasks=enriched_tasks,
+                **(submit_args or {}),
+            ).bind()["run_id"]
+
+            try:
+                self._poll_til_success(context, run_id)
+            except DagsterExecutionInterruptedError as e:
+                if self.forward_termination:
+                    context.log.info("[pipes] execution interrupted, canceling Databricks job.")
+                    self.client.jobs.cancel_run(run_id)
+                    self._poll_til_terminating(run_id)
+                raise e
+
+        return PipesClientCompletedInvocation(
+            pipes_session, metadata=self._extract_dagster_metadata(run_id)
+        )
+
+    def _enrich_submit_task_dict(
+        self,
+        context: OpExecutionContext | AssetExecutionContext,
+        session: PipesSession,
+        submit_task_dict: dict[str, Any],
+    ) -> dict[str, Any]:
+        raise NotImplementedError()
 
     def get_task_fields_which_support_cli_parameters(self) -> set[str]:
         return {"spark_python_task", "python_wheel_task"}
@@ -302,6 +354,43 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
 
         return PipesClientCompletedInvocation(
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
+        )
+
+    def run_multi_task(
+        self,
+        *,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None = None,
+        tasks: Sequence[jobs.SubmitTask],
+        submit_args: Mapping[str, Any] | None = None,
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously execute a multi-task Databricks job with the pipes protocol.
+
+        Args:
+            tasks (Sequence[databricks.sdk.service.jobs.SubmitTask]): A sequence of task
+                specifications to run as a multi-task Databricks job. Each task is enriched with
+                Pipes bootstrap parameters following the same rules as the single-task ``run`` method.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
+            extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
+                subprocess.
+            submit_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
+                forwarded as-is to ``WorkspaceClient.jobs.submit``.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
+        """
+        if not tasks:
+            raise ValueError("tasks sequence cannot be empty")
+        context_injector = self.context_injector or PipesDbfsContextInjector(client=self.client)
+        message_reader = self.message_reader or self.get_default_message_reader(tasks[0])
+        return self._submit_multi_task_and_poll(
+            context=context,
+            extras=extras,
+            tasks=tasks,
+            submit_args=submit_args,
+            context_injector=context_injector,
+            message_reader=message_reader,
         )
 
     def _enrich_submit_task_dict(
@@ -664,6 +753,49 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
 
         return PipesClientCompletedInvocation(
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
+        )
+
+    def run_multi_task(
+        self,
+        *,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None = None,
+        tasks: Sequence[jobs.SubmitTask],
+        submit_args: Mapping[str, Any] | None = None,
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously execute a multi-task Databricks Serverless job with the pipes protocol.
+
+        Args:
+            tasks (Sequence[databricks.sdk.service.jobs.SubmitTask]): A sequence of task
+                specifications to run as a multi-task Databricks Serverless job. Each task is
+                enriched with Pipes bootstrap parameters following the same rules as the
+                single-task ``run`` method.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
+            extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
+                subprocess.
+            submit_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
+                forwarded as-is to ``WorkspaceClient.jobs.submit``.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
+        """
+        if not tasks:
+            raise ValueError("tasks sequence cannot be empty")
+        context_injector = self.context_injector or PipesUnityCatalogVolumesContextInjector(
+            client=self.client, volume_path=self.volume_path
+        )
+        message_reader = self.message_reader or PipesUnityCatalogVolumesMessageReader(
+            client=self.client,
+            volume_path=self.volume_path,
+        )
+        return self._submit_multi_task_and_poll(
+            context=context,
+            extras=extras,
+            tasks=tasks,
+            submit_args=submit_args,
+            context_injector=context_injector,
+            message_reader=message_reader,
         )
 
     def _enrich_submit_task_dict(

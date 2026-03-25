@@ -6,27 +6,17 @@ title: Customizing Dagster's built-in loggers
 
 Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems. For a list of all built-in loggers, see the [API documentation](/api/dagster/loggers#built-in-loggers).
 
-:::note Limitations
+:::info Limitations
 
 It's not currently possible to globally configure the logger for all jobs in a repository.
 
 :::
 
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- A basic understanding of Dagster concepts such as assets, jobs and definitions
-- A working knowledge of the Python logging module
-
-</details>
-
 ## Step 1: Add a prebuilt custom logger to your jobs
 
 This step shows how to add an existing custom logger, the <PyObject section="loggers" module="dagster" object="_loggers.json_console_logger" />, to your jobs. This will override the default <PyObject section="loggers" module="dagster" object="_loggers.colored_console_logger" /> and produce logs in JSON format.
 
-### Add the custom logger to your asset jobs
+### Step 1.1 Add the custom logger to your asset jobs
 
 The following example shows how to add the custom logger to your code location definitions and configure an asset job to use it.
 
@@ -36,7 +26,7 @@ The following example shows how to add the custom logger to your code location d
   title="Add custom logger to asset job"
 />
 
-### Add the custom logger to your ops-based jobs
+### Step 1.2 Add the custom logger to your ops-based jobs
 
 Configuring an ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
 

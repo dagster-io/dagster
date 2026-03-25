@@ -1752,7 +1752,11 @@
     },
     {
       "source": "/guides/integrations/writing-a-multi-asset-decorator-integration",
-      "destination": "/integrations/guides/multi-asset-integration"
+      "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component"
+    },
+    {
+      "source": "/integrations/guides/:path*",
+      "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component"
     },
     {
       "source": "/guides/dagster/how-assets-relate-to-ops-and-graphs",
@@ -1819,12 +1823,20 @@
       "destination": "/guides/build/projects/structuring-your-dagster-project"
     },
     {
+      "source": "/guides/build/ml-pipelines/:path*",
+      "destination": "/examples/ml"
+    },
+    {
+      "source": "/guides/build/ml-pipelines",
+      "destination": "/examples/ml"
+    },
+    {
       "source": "/guides/dagster/ml-pipeline",
-      "destination": "/guides/build/ml-pipelines/managing-ml"
+      "destination": "/examples/ml"
     },
     {
       "source": "/guides/dagster/managing-ml",
-      "destination": "/guides/build/ml-pipelines/managing-ml"
+      "destination": "/examples/ml"
     },
     {
       "source": "/guides/dagster/example_project",

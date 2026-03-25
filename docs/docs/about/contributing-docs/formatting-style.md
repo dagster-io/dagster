@@ -12,7 +12,9 @@ We will build out our own approach over time, but for now, we roughly follow the
 
 - Use the active voice as much as possible. Sometimes you may need to use the passive voice when the object that is being acted on is the focus of the sentence.
 - Avoid superlatives like `very`, `easy`, `extremely`, and `simply` .
-- See the [Dagster docs contributing guidelines](https://github.com/dagster-io/dagster/blob/master/docs/CONTRIBUTING.md) for information on code example formatting, custom and built-in Docusaurus components, and more.
+- Avoid "The key question is" phrasing
+- Include as much overview information as possible in the first paragraph (or paragraphs). Avoid putting critical information at the bottom of the page.
+- If you apply bold to a word or phrase before the colon, make the colon bold too. For example: `**A bold item:** More text`
 
 ## Acronyms and abbreviations
 
@@ -67,20 +69,27 @@ Here's a note.
 
 When updating **reStructuredText files**, you will need to follow the [reStructuredText syntax](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html). Frequently used syntax is described below.
 
-### Headings
+### Section headings
 
-Headings are formatted as follows:
+Section headings are formatted as follows:
 
 ```
+##########
 H1 heading
-==========
+##########
 
+**********
 H2 heading
-----------
+**********
 
 H3 heading
-^^^^^^^^^^
+==========
+
+H4 heading
+----------
 ```
+
+Unlike non-API docs, API docs need an H1 heading. If an H1 is not included, Sphinx will format the first heading it finds on the page as H1. For more information, see the [Sphinx docs](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#sections).
 
 ### autodoc directives
 
@@ -228,6 +237,10 @@ def iris_dataset(iris_db: SnowflakeResource) -> None:
   pass
 ```
 
+### Explanatory text for code examples
+
+Most explanatory text about example code should go above the code example, preceded by the phrase "In the example below,", especially if the code example is fairly long.
+
 ## Diagrams
 
 You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
@@ -351,13 +364,13 @@ On MacOS the Command+Shift+5 hotkey opens a screenshot utility that can be usefu
 Docusaurus doesn't always render relative links correctly, which can result in users seeing intermittent 404s when accessing those links. Use full paths instead of relative links, like this:
 
 ```
-For more information, see "[Defining assets](/guides/build/assets/defining-assets)".
+For more information, see [Defining assets](/guides/build/assets/defining-assets).
 ```
 
 instead of this:
 
 ```
-For more information, see "[Defining assets](defining-assets)".
+For more information, see [Defining assets](defining-assets).
 ```
 
 #### Use non-trailing slash links
@@ -433,13 +446,14 @@ Use regular Markdown headings for prerequisites:
 - Configure that
 ```
 
-A prerequisites section should only include steps that the reader must take in order to successfully complete the steps in the documentation.
+A prerequisites section should only include steps that the reader must take in order to successfully complete the steps in the documentation that follows. Do not include prerequisites like "Familiarity with assets" or "Knowledge of SQL".
 
 ## Procedural steps
 
 - Use numbered steps for [procedures](/about/contributing-docs/content-model#procedural-content).
 - Each step should describe an action the user can take, for example, "Click **Materialize all**". Steps can be marked as optional in parentheses: "(Optional) Click **Materialize all**".
 - In general, when writing procedural steps, it is best to describe the outcome of an action, then describe the action(s) needed to achieve it. For example: "To sign in, enter your username and password, then click **Sign in**". This keeps the focus on the task the user is trying to complete, not the intricacies of the UI or implementation details of the code needed to complete the task.
+- If a guide contains steps that themselves contain sub-steps, format section headers as "Step x: Do something", where x is the step number. For example: `## Step 1: Enable SCIM provisioning in Dagster+`
 
 ## Tabs
 
@@ -458,7 +472,7 @@ Tabs are formatted as follows:
 
 You can add labels to tags, customize headings, and sync tab choices with the `groupId` prop. For more information, see the [Docusaurus Tabs docs](https://docusaurus.io/docs/markdown-features/tabs).
 
-Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, since those will generate confusing items in the right sidebar.
+Do not use Markdown headings in tabs, since those will generate confusing items in the right sidebar. If you need to emphasize content in tabs, use `**strong**`.
 
 ### Synced tabs
 
@@ -541,7 +555,7 @@ The `sidebar_custom_props` values are used to render the doc cards on the integr
 ## Titles and headings
 
 - Use sentence case for titles and headings. For example, `Building pipelines with Databricks`, `Metadata and tags`.
-- The H1 for the page is inherited from the title, so you don't need to include it, unless it differs from the title. In general, try not to have these different, since that's confusing for readers.
+- Do not include an H1. The title is set in the frontmatter under the `title` key. If the title displayed in the sidebar should be different from the title displayed on the page, set the sidebar title in the frontmatter with the `sidebar_label` key.
 
 ## UI components
 

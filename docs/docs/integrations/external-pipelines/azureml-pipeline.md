@@ -59,7 +59,7 @@ dependencies:
       - azure-identity
 ```
 
-## Step 2: Add dagster-pipes to the Azure ML job script
+## Step 2: Add `dagster-pipes` to the Azure ML job script
 
 Call `open_dagster_pipes` in your Azure ML script to create a context that can be used to send messages to Dagster:
 
@@ -80,7 +80,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-## Step 3: Create an asset using the PipesAzureMLClient to launch the job
+## Step 3: Create an asset using the `PipesAzureMLClient` to launch the job
 
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 

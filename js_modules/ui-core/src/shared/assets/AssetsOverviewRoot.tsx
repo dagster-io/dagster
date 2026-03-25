@@ -7,7 +7,7 @@ import {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {gql} from '../../apollo-client';
-import {useTrackPageView} from '../../app/analytics';
+import {useTrackAssetPageView} from '../../app/analytics';
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {AssetView} from '../../assets/AssetView';
 import {AssetsCatalogTable} from '../../assets/AssetsCatalogTable';
@@ -27,8 +27,6 @@ export const AssetsOverviewRoot = ({
   headerBreadcrumbs: BreadcrumbProps[];
   documentTitlePrefix: string;
 }) => {
-  useTrackPageView();
-
   const params = useParams();
   const [searchParams] = useAssetViewParams();
 
@@ -44,6 +42,10 @@ export const AssetsOverviewRoot = ({
     [currentPathStr],
   );
   const assetKey = useMemo(() => ({path: currentPath}), [currentPath]);
+
+  const isAssetView = currentPath.length > 0 && searchParams.view !== 'folder';
+  const assetView = isAssetView ? searchParams.view || 'overview' : undefined;
+  useTrackAssetPageView(assetView);
 
   useDocumentTitle(
     currentPath && currentPath.length
