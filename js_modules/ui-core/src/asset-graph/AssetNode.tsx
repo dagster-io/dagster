@@ -46,7 +46,7 @@ const getCustomBackgroundForAsset = (
   tags?: {key: string; value: string}[],
 ): string | undefined => {
   const uiColorTag = tags?.find(
-    (t) => t.key === 'dagster/ui_color' || t.key === 'dagster/ui/color',
+    (t) => t.key === 'dagster/ui_color',
   );
   if (!uiColorTag) {
     return undefined;
@@ -121,7 +121,10 @@ export const AssetNodeWithLiveData = ({
         $isMaterializable={definition.isMaterializable}
         $customBackground={getCustomBackgroundForAsset(definition.tags)}
       >
-        <AssetNameRow definition={definition} />
+        <AssetNameRow
+          definition={definition}
+          $customBackground={getCustomBackgroundForAsset(definition.tags)}
+        />
         {facets.has(AssetNodeFacet.Description) && (
           <AssetNodeRow label={null}>
             {definition.description ? (
@@ -469,12 +472,18 @@ export const AutomationConditionEvaluationLink = ({
   );
 };
 
-export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+export const AssetNameRow = ({
+  definition,
+  $customBackground,
+}: {
+  definition: AssetNodeFragment;
+  $customBackground?: string;
+}) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
-    <AssetName $isMaterializable={definition.isMaterializable}>
+    <AssetName $isMaterializable={definition.isMaterializable} $customBackground={$customBackground}>
       <span style={{marginTop: 1}}>
         <Icon name={definition.isMaterializable ? 'asset' : 'source_asset'} />
       </span>
@@ -786,12 +795,12 @@ const NameTooltipStyleSource = JSON.stringify({
   border: `none`,
 });
 
-const AssetName = styled.div<{$isMaterializable: boolean}>`
+const AssetName = styled.div<{$isMaterializable: boolean; $customBackground?: string}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
   background: ${(p) =>
-    p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight()};
+    p.$customBackground || (p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight())};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
