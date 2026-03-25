@@ -32,6 +32,7 @@ export * from './components/Popover';
 export * from './components/ProductTour';
 export * from './components/ProgressBar';
 export * from './components/Radio';
+export * from './components/RadioTags';
 export * from './components/RefreshableCountdown';
 export * from './components/Select';
 export * from './components/Skeleton';
