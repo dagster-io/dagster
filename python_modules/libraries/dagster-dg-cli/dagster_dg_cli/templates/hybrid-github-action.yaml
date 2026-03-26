@@ -53,7 +53,7 @@ jobs:
       - name: Set up Python ${{ env.PYTHON_VERSION }} for target
         id: setup-python-version
         if: steps.prerun.outputs.result != 'skip'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
