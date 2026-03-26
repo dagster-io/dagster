@@ -3017,7 +3017,7 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
 
     assert "Evaluating asset backfill backfill_with_multiple_assets_selected" in logs
     assert "DefaultPartitionsSubset(subset={'foo_b'})" in logs
-    assert "latest_storage_id=None" in logs
+    assert "latest_storage_id=0" in logs
     assert "AssetBackfillData" in logs
     assert (
         """Asset partitions to request:
