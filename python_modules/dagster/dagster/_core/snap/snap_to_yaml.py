@@ -4,6 +4,7 @@ from typing import Any
 
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
+from dagster._config.config_type import ConfigTypeKind
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
 
 
@@ -16,20 +17,37 @@ def _safe_json_loads(json_str: str | None) -> object:
 
 PRIORITY_CONFIG_KEYS = ("ops", "resources")
 
+_DICT_LIKE_KINDS = frozenset(
+    {ConfigTypeKind.PERMISSIVE_SHAPE, ConfigTypeKind.MAP, ConfigTypeKind.NONEABLE}
+)
 
-def _filter_empty_dicts(to_filter: Any) -> Any:
+
+def _filter_empty_dicts(
+    to_filter: Any,
+    type_snap: ConfigTypeSnap | None = None,
+    snapshot: ConfigSchemaSnapshot | None = None,
+) -> Any:
+    """Remove empty dicts that are just structural scaffolding, while preserving
+    empty dicts that represent real config values (Permissive, Map, Noneable).
+    """
     if not isinstance(to_filter, Mapping):
         return to_filter
-    else:
-        filtered_dict = {k: _filter_empty_dicts(v) for k, v in to_filter.items()}
-        return {k: v for k, v in filtered_dict.items() if v is not None and v != {}}
 
-
-def _cleanup_run_config_dict(run_config_dict: Any) -> Any:
-    """Performs cleanup of the run config dict to remove empty dicts and strip the default executor
-    config if it has not been overridden, to make the output more readable.
-    """
-    return _filter_empty_dicts(run_config_dict)
+    filtered_dict = {}
+    for k, v in to_filter.items():
+        field = type_snap.get_field(k) if type_snap and k in type_snap.field_names else None
+        field_snap = (
+            snapshot.get_config_snap(field.type_key)
+            if field and snapshot and snapshot.has_config_snap(field.type_key)
+            else None
+        )
+        filtered_v = _filter_empty_dicts(v, field_snap, snapshot)
+        if filtered_v is None:
+            continue
+        if filtered_v == {} and not (field_snap and field_snap.kind in _DICT_LIKE_KINDS):
+            continue
+        filtered_dict[k] = filtered_v
+    return filtered_dict
 
 
 def default_values_yaml_from_type_snap(
@@ -37,7 +55,9 @@ def default_values_yaml_from_type_snap(
     type_snap: ConfigTypeSnap,
 ) -> str:
     """Returns a YAML representation of the default values for the given type snap."""
-    run_config_dict = _cleanup_run_config_dict(default_values_from_type_snap(type_snap, snapshot))
+    run_config_dict = _filter_empty_dicts(
+        default_values_from_type_snap(type_snap, snapshot), type_snap, snapshot
+    )
 
     # Sort the keys so that the output begins with the most useful keys (ops, resources)
     # We use a dict rather than an OrderedDict because in Py3.7+ the order of keys in a dict
