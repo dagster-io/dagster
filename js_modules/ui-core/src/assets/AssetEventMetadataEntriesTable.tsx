@@ -50,6 +50,10 @@ type TableEvent = Pick<
 > & {
   timestamp?: string | number;
   runId?: string;
+  // Present on MaterializationEvent when asset_level_metadata_keys is set on the Python event.
+  // Null means unset (legacy events). When set, these labels are shown in the "Asset metadata"
+  // section; all other event metadata goes in the "Latest partition" section.
+  assetLevelMetadataKeys?: string[] | null;
 };
 
 interface Props {
@@ -60,6 +64,9 @@ interface Props {
   definitionMetadata?: MetadataEntryFragment[];
   definitionLoadTimestamp?: number;
   assetHasDefinedPartitions?: boolean;
+  // When provided (partitioned asset overview), the table splits into two sections:
+  // "Asset metadata" and "Latest partition (partitionKey)".
+  partitionKey?: string | null;
   showDescriptions?: boolean;
   showTimestamps?: boolean;
   showHeader?: boolean;
@@ -80,6 +87,7 @@ export const AssetEventMetadataEntriesTable = ({
   definitionMetadata,
   definitionLoadTimestamp,
   assetHasDefinedPartitions,
+  partitionKey,
   showDescriptions,
   showTimestamps,
   showHeader,
@@ -100,6 +108,14 @@ export const AssetEventMetadataEntriesTable = ({
   // or if a metadata key is present on the definition and then emitted in an event,
   // only show the latest version (first one found)
   const allRows = useMemo(() => {
+    // For partitioned assets on the overview page, we split rows into "asset-level" and
+    // "partition-level". assetLevelMetadataKeys from the event tells us which event metadata
+    // keys are asset-level. If null (legacy events or unset), all event metadata is treated as
+    // partition-level when partitionKey is provided.
+    const assetLevelKeySet = event?.assetLevelMetadataKeys
+      ? new Set(event.assetLevelMetadataKeys)
+      : null;
+
     const eventRows = event
       ? event.metadataEntries.map((entry) => ({
           tooltip: `Materialized ${dayjs(Number(event.timestamp)).fromNow()}${
@@ -108,6 +124,9 @@ export const AssetEventMetadataEntriesTable = ({
           icon: 'materialization' as const,
           timestamp: event.timestamp,
           runId: null,
+          // An event entry is asset-level only if explicitly listed in assetLevelMetadataKeys.
+          // Legacy events (null) default to partition-level when partitionKey is present.
+          isAssetLevel: assetLevelKeySet ? assetLevelKeySet.has(entry.label) : false,
           entry,
         }))
       : [];
@@ -120,6 +139,7 @@ export const AssetEventMetadataEntriesTable = ({
         icon: 'observation' as const,
         timestamp: o.timestamp,
         runId: o.runId,
+        isAssetLevel: true, // Observations are always asset-level
         entry,
       })),
     );
@@ -138,6 +158,7 @@ export const AssetEventMetadataEntriesTable = ({
         icon: 'asset' as const,
         timestamp: definitionLoadTimestamp,
         runId: null,
+        isAssetLevel: true, // Definition metadata is always asset-level
         entry,
       }));
 
@@ -151,6 +172,17 @@ export const AssetEventMetadataEntriesTable = ({
         .filter((row) => !isEntryHidden(row.entry, {hideEntriesShownOnOverview})),
     [allRows, filter, hideEntriesShownOnOverview],
   );
+
+  // When a partitionKey is provided (partitioned asset overview), split rows into two groups.
+  const {assetRows, partitionRows} = useMemo(() => {
+    if (!partitionKey) {
+      return {assetRows: filteredRows, partitionRows: []};
+    }
+    return {
+      assetRows: filteredRows.filter((row) => row.isAssetLevel),
+      partitionRows: filteredRows.filter((row) => !row.isAssetLevel),
+    };
+  }, [filteredRows, partitionKey]);
 
   if (emptyState && allRows.length === 0) {
     return emptyState;
@@ -216,7 +248,18 @@ export const AssetEventMetadataEntriesTable = ({
                   </td>
                 </tr>
               )}
-              {filteredRows
+              {partitionKey && (assetRows.length > 0 || partitionRows.length > 0) && (
+                <tr>
+                  <MetadataSectionHeaderCell colSpan={showTimestamps ? 3 : 2}>
+                    <Box flex={{gap: 4, alignItems: 'center'}}>
+                      <Icon name="asset" size={12} />
+                      <Caption>Asset metadata</Caption>
+                    </Box>
+                  </MetadataSectionHeaderCell>
+                  {showDescriptions && <MetadataSectionHeaderCell />}
+                </tr>
+              )}
+              {(partitionKey ? assetRows : filteredRows)
                 .slice(0, displayedCount)
                 .map(({entry, timestamp, runId, icon, tooltip}) => (
                   <tr key={`metadata-${timestamp}-${entry.label}`}>
@@ -254,6 +297,56 @@ export const AssetEventMetadataEntriesTable = ({
                     )}
                   </tr>
                 ))}
+              {partitionKey && partitionRows.length > 0 && (
+                <tr>
+                  <MetadataSectionHeaderCell colSpan={showTimestamps ? 3 : 2}>
+                    <Box flex={{gap: 4, alignItems: 'center'}}>
+                      <Icon name="partition" size={12} />
+                      <Caption>Latest partition ({partitionKey})</Caption>
+                    </Box>
+                  </MetadataSectionHeaderCell>
+                  {showDescriptions && <MetadataSectionHeaderCell />}
+                </tr>
+              )}
+              {partitionKey &&
+                partitionRows
+                  .slice(0, Math.max(0, displayedCount - assetRows.length))
+                  .map(({entry, timestamp, runId, icon, tooltip}) => (
+                    <tr key={`metadata-${timestamp}-${entry.label}`}>
+                      <td>
+                        <Mono>{entry.label}</Mono>
+                      </td>
+                      {showTimestamps && (
+                        <td>
+                          <Tooltip content={tooltip}>
+                            <Tag>
+                              <Box flex={{gap: 4, alignItems: 'center'}}>
+                                <Icon name={icon} />
+                                <Timestamp timestamp={{ms: Number(timestamp)}} />
+                              </Box>
+                            </Tag>
+                          </Tooltip>
+                        </td>
+                      )}
+                      <td>
+                        <Mono>
+                          <MetadataEntry entry={entry} expandSmallValues={true} />
+                        </Mono>
+                      </td>
+                      {showDescriptions && (
+                        <td style={{opacity: 0.7}}>
+                          {runId && (
+                            <ObservedInRun
+                              runId={runId}
+                              timestamp={timestamp}
+                              relativeTo={event?.timestamp}
+                            />
+                          )}
+                          {entry.description}
+                        </td>
+                      )}
+                    </tr>
+                  ))}
             </tbody>
           </StyledTableWithHeader>
           {displayedCount < filteredRows.length ? (
@@ -305,6 +398,15 @@ const ObservedInRun = ({
 const AssetEventMetadataScrollContainer = styled.div`
   width: 100%;
   overflow-x: auto;
+`;
+
+const MetadataSectionHeaderCell = styled.td`
+  background-color: ${Colors.backgroundLight()};
+  color: ${Colors.textLight()};
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 12px !important;
 `;
 
 export const StyledTableWithHeader = styled.table`

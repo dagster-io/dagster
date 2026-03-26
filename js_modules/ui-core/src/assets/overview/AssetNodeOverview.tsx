@@ -232,6 +232,7 @@ export const AssetNodeOverview = ({
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
               assetHasDefinedPartitions={!!cachedOrLiveAssetNode.partitionDefinition}
+              partitionKey={liveDataPartition}
               repoAddress={repoAddress}
               event={materialization || observation || null}
               emptyState={

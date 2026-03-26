@@ -249,6 +249,7 @@ export const ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT = gql`
     assetLineage {
       ...AssetLineageFragment
     }
+    assetLevelMetadataKeys
   }
 
   ${METADATA_ENTRY_FRAGMENT}

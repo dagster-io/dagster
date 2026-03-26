@@ -653,6 +653,12 @@ def _get_output_asset_events(
         **(unpartitioned_asset_metadata or {}),
     }
     if asset_partitions:
+        # Track which metadata keys are asset-level (not partition-specific) so the UI can
+        # display them separately from partition-scoped metadata. Asset-level keys are those
+        # added via add_asset_metadata() without a partition_key.
+        asset_level_keys = (
+            list(unpartitioned_asset_metadata.keys()) if unpartitioned_asset_metadata else []
+        )
         for partition in asset_partitions:
             with disable_dagster_warnings():
                 partition_scoped_metadata = step_context.get_asset_metadata(
@@ -672,12 +678,21 @@ def _get_output_asset_events(
                     else {}
                 )
 
-                yield event_class(
-                    asset_key=asset_key,
-                    partition=partition,
-                    metadata=all_metadata_for_partitioned_event,
-                    tags=tags_for_event,
-                )
+                if execution_type == AssetExecutionType.MATERIALIZATION:
+                    yield AssetMaterialization(
+                        asset_key=asset_key,
+                        partition=partition,
+                        metadata=all_metadata_for_partitioned_event,
+                        tags=tags_for_event,
+                        asset_level_metadata_keys=asset_level_keys,
+                    )
+                else:
+                    yield event_class(
+                        asset_key=asset_key,
+                        partition=partition,
+                        metadata=all_metadata_for_partitioned_event,
+                        tags=tags_for_event,
+                    )
     else:
         with disable_dagster_warnings():
             yield event_class(
