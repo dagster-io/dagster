@@ -142,7 +142,7 @@ To install Dagster skills with Codex, you will need `npx`, which comes with Node
 In Claude Code, invoke the skill using the namespaced format:
 
 ```text
-/dagster-skills:dagster-expert create a new Dagster project called my-pipeline
+/dagster-expert create a new Dagster project called my-pipeline
 ```
 
 </TabItem>
