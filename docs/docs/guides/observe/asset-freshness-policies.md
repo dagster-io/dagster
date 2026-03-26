@@ -4,9 +4,9 @@ description: Dagster+ freshness policies help you understand which of your asset
 sidebar_position: 400
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
+import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPreview.md';
 
-<Beta />
+<FreshnessPoliciesPreview />
 
 Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health. Freshness policies also communicate expectations for data freshness, allowing downstream asset consumers to determine how often assets are expected to be updated.
 
@@ -119,3 +119,10 @@ To do so, you can use `map_asset_specs` with `overwrite_existing` set to `False`
 ### Limitations
 
 Freshness policies are not currently supported for source observable assets (<PyObject section="assets" module="dagster" object="SourceAsset" pluralize />) and cacheable assets (`CacheableAssetsDefinition`).
+
+## Future enhancements
+
+- More freshness policy types, including:
+  - Anomaly detection-based
+  - Custom (user-defined) freshness
+- Support for source observable assets

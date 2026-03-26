@@ -6,17 +6,20 @@
 #
 # Required status check: the job name "copybara-sync-gate".
 #
-# Works with GitHub merge queue: the merge_group trigger ensures the check
-# runs at merge time. If the sync is not yet caught up, the check polls
-# for up to 10 minutes before failing.
+# Works with GitHub merge queue: the pull_request trigger provides a
+# passthrough (instant success) so the PR can enter the merge queue. The
+# real check runs on the merge_group trigger at merge time, polling for
+# up to 10 minutes if the sync is behind.
 #
 # Prerequisites:
-#   - Repository secret INTERNAL_REPO_PAT: a GitHub PAT with read access to
-#     dagster-io/internal (needed to check internal commit history).
+#   - Repository secret ELEMENTL_DEVTOOLS_PAT: a GitHub PAT with read
+#     access to dagster-io/internal (needed to check internal commit history).
 
 name: Copybara Sync Gate
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   merge_group:
 
 permissions:
@@ -27,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for internal-to-OSS sync to catch up
+        if: github.event_name == 'merge_group'
         env:
           GH_TOKEN: ${{ secrets.ELEMENTL_DEVTOOLS_PAT }}
         run: |
