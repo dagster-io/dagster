@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-shared"
-version = "1!0+dev"
+version = "1.12.21"
 description = "Shared code between dagster and dagster-dg-core."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
