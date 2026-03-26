@@ -8,7 +8,7 @@ The [dagster-airlift](/integrations/libraries/airlift) library provides an `Airf
 
 ## Setup and peering
 
-### 1. Prepare a Dagster project
+### Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -26,7 +26,7 @@ Finally, add the `dagster-airlift` library to the project:
 uv add 'dagster-airlift[core]'
 ```
 
-### 2. Scaffold an AirflowInstanceComponent
+### Step 2: Scaffold an AirflowInstanceComponent
 
 :::note
 
@@ -42,7 +42,7 @@ This will create a component definition file called `defs.yaml` in your project 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/2-tree.txt" />
 
-### 4. Update `defs.yaml` with Airflow configuration
+### Step 3: Update `defs.yaml` with Airflow configuration
 
 By default, the Airlift component reads values from the environment variables `AIRFLOW_WEBSERVER_URL`, `AIRFLOW_USERNAME`, and `AIRFLOW_PASSWORD`. While you should never include your password directly in this file, you can update `defs.yaml` to add the webserver URL and username:
 

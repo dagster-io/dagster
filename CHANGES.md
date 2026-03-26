@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.12.21 (core) / 0.28.21 (libraries)
+
+### New
+
+- Removed the `setuptools<82` pin from the `dagster` package.
+- Added support for the `partitions` attribute in asset selection syntax to filter assets by partition definition type (e.g., `partitions:"static"`).
+- [dagster-spark] Added Spark Declarative Pipeline support in feature preview.
+- [ui] Added a date range picker to the backfill modal for date-formatted partitions.
+- [ui] The "Report evaluation" action for asset checks has been moved to a consolidated dropdown menu.
+
+### Bugfixes
+
+- [dagster-dbt] Fixed issue that could cause `DbtProjectComponent`s with custom translation methods to not work with utilities like `build_schedule_from_dbt_selection`.
+- [ui] Fixed asset catalog sidebar not clearing key prefix filters when navigating back to root.
+- [ui] Fixed deployment switcher button text color in Light Mode.
+- [ui] Fixed duplicate "Catalog" breadcrumb on asset detail pages.
+- [ui] Fixed lineage graph edges disappearing when zoomed out by increasing the maximum visible edge limit.
+
+### Documentation
+
+- Added cross-account service discovery documentation for ECS agents, including the `service_discovery_role_arn` configuration parameter.
+- Added Snowflake EL ingestion pattern documentation.
+
 ## 1.12.20 (core) / 0.28.20 (libraries)
 
 ### New

@@ -6,13 +6,13 @@ sidebar_position: 700
 
 :::note
 
-Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libraries/dbt/dbt-cloud).
+Using dbt Cloud? See [Dagster & dbt Cloud](/integrations/libraries/dbt/dbt-cloud).
 
 :::
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets) framework using the [`dagster-dbt` integration library](/integrations/libraries/dbt/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt).
+For a step-by-step implementation walkthrough, see [Dagster & dbt](/integrations/libraries/dbt).
 
 ## Relevant APIs
 
@@ -190,7 +190,7 @@ It is possible to leverage [dbt defer](https://docs.getdbt.com/reference/node-se
 
 In practice, this is most useful when combined with branch deployments in Dagster+, to test changes made in your branches. This can be done by updating your CI/CD files and your Dagster code.
 
-First, let's take a look at your CI/CD files. You might have one or two CI/CD files to manage your production and branch deployments. In these files, find the steps related to your dbt project - refer to the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section for more information.
+First, let's take a look at your CI/CD files. You might have one or two CI/CD files to manage your production and branch deployments. In these files, find the steps related to your dbt project. For more information, see [the section on deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project).
 
 Once your dbt steps are located, add the following step to manage the state of your dbt project.
 

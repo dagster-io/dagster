@@ -38,17 +38,11 @@ Your Fivetran connectors must have been synced at least once to be represented i
 - How to handle Fivetran quota-based rescheduling.
 - How to customize asset definition metadata for these Fivetran assets.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster` and `dagster-fivetran` libraries installed in your environment
-- Familiarity with asset definitions and the Dagster asset graph
-- Familiarity with Dagster resources
-- Familiarity with Fivetran concepts, like connectors and connector tables
 - A Fivetran workspace
 - A Fivetran API key and API secret. For more information, see [Getting Started](https://fivetran.com/docs/rest-api/getting-started) in the Fivetran REST API documentation.
-
-</details>
 
 ## Set up your environment
 

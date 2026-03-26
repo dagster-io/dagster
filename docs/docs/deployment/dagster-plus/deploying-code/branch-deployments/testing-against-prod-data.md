@@ -123,7 +123,7 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
   title="src/<project_name>/defs/jobs.py"
 />
 
-## Step 4: Create our database clone upon opening a branch
+## Step 4: Create database clone upon opening a branch
 
 <Tabs groupId="CICDProvider">
 <TabItem value="github" label="Using GitHub Actions">
@@ -184,7 +184,7 @@ We can also view our database in Snowflake to confirm that a clone exists for ea
 
 </Tabs>
 
-## Step 5: Delete our database clone upon closing a branch
+## Step 5: Delete database clone upon closing a branch
 
 <Tabs groupId="CICDProvider">
 <TabItem value="github" label="Using GitHub Actions">

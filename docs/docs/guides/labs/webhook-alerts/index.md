@@ -22,11 +22,11 @@ Navigate to **Deployment Settings > Alert Policies** to configure a webhook.
 
 We suggest storing secrets, such as API keys, as [environment variables](/deployment/dagster-plus/management/environment-variables) and including them in the webhook using [template tokens](#environment-variable-tokens).
 
-## Domain Whitelist (Early Access Limitation)
+## Domain whitelist (Early Access limitation)
 
 During the Early Access period, we are limiting outgoing webhooks to a whitelisted set of domains. Please let us know which domains you'd like to send webhooks to.
 
-## Example Webhook Configurations
+## Example webhook configurations
 
 Use these guides to get started using webhooks with these common services:
 
@@ -34,13 +34,11 @@ Use these guides to get started using webhooks with these common services:
 - [Discord](/guides/labs/webhook-alerts/webhooks-discord)
 - [incident.io](/guides/labs/webhook-alerts/webhooks-incidentio)
 
----
-
-## Token Reference
+## Token reference
 
 Dagster provides dynamic tokens that are replaced with actual event data at runtime. Token availability depends on the **Event Type**.
 
-### Globally Available Tokens
+### Globally available tokens
 
 These tokens are available for **every** notification type.
 
@@ -56,11 +54,11 @@ These tokens are available for **every** notification type.
 | `{{notification_type}}`        | Type of notification event (e.g., `JOB`, `TICK`).    | `JOB`                            |
 | `{{is_sample}}`                | `true` if this is a test/sample notification.        | `false`                          |
 
-### Environment Variable Tokens
+### Environment variable tokens
 
 You can access environment variables, such as `{{env.WEBHOOK_API_KEY}}`, to avoid hardcoding secrets. See [Environment Variables](/deployment/dagster-plus/management/environment-variables) for setup instructions.
 
-### Job & Run Tokens
+### Job and run tokens
 
 Available for **Job** events (Success, Failure, Long-running).
 
@@ -80,7 +78,7 @@ Available for **Job** events (Success, Failure, Long-running).
 | `{{start_time}}`      | Start time of the run.                       | `Jan 8, 2026 10:00 AM`       |
 | `{{end_time}}`        | End time of the run.                         | `Jan 8, 2026 10:05 AM`       |
 
-### Asset Materialization Tokens
+### Asset materialization tokens
 
 Available for **Asset Materialization** events (Success/Failure/Check Failure).
 
@@ -92,7 +90,7 @@ Available for **Asset Materialization** events (Success/Failure/Check Failure).
 | `{{user_name}}`       | Name of the user who launched the run.  |
 | `{{user_email}}`      | Email of the user who launched the run. |
 
-### Asset Health & Freshness Tokens
+### Asset health and freshness tokens
 
 Available for **Asset Health** and **Freshness** events.
 
@@ -104,7 +102,7 @@ Available for **Asset Health** and **Freshness** events.
 | `{{checks_status}}`          | Asset checks status.                               | Asset Health       |
 | `{{freshness_status}}`       | Freshness state (`PASS`, `FAIL`, `UNKNOWN`, `OK`). | Freshness / Health |
 
-### Table Schema Tokens
+### Table schema tokens
 
 | Token                             | Description                                                             |
 | :-------------------------------- | :---------------------------------------------------------------------- |
@@ -116,7 +114,7 @@ Available for **Asset Health** and **Freshness** events.
 | `{{columns_uniqueness_changed}}`  | List of `[column, old_unique, new_unique]` for uniqueness changes.      |
 | `{{columns_tags_changed}}`        | List of `[column, old_tags, new_tags]` for tag changes.                 |
 
-### Code Location Tokens
+### Code location tokens
 
 | Token                 | Description                                |
 | :-------------------- | :----------------------------------------- |
@@ -124,7 +122,7 @@ Available for **Asset Health** and **Freshness** events.
 | `{{location_link}}`   | URL to the code location.                  |
 | `{{failure_message}}` | Error message describing the load failure. |
 
-### Tick (Schedules & Sensors) Tokens
+### Tick (schedules and sensors) tokens
 
 | Token                 | Description                                               |
 | :-------------------- | :-------------------------------------------------------- |
@@ -133,7 +131,7 @@ Available for **Asset Health** and **Freshness** events.
 | `{{schedule_name}}`   | Name of the schedule (empty if this is a sensor failure). |
 | `{{sensor_name}}`     | Name of the sensor (empty if this is a schedule failure). |
 
-### Agent Downtime Tokens
+### Agent downtime tokens
 
 | Token           | Description                        |
 | :-------------- | :--------------------------------- |

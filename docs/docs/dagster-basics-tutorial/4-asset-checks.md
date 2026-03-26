@@ -10,7 +10,7 @@ In Dagster, these quality measures are called [asset checks](/guides/test/asset-
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/asset-checks.png)
 
-## 1. Define an asset check
+## Step 1: Define an asset check
 
 To create an asset check, define a function and decorate it with the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator /> decorator. Within the asset check, set the `asset` parameter to indicate which asset the check runs against.
 
@@ -32,7 +32,7 @@ The asset check uses the same `DuckDBResource` resource defined for the assets. 
 
 :::
 
-## 2. Verify that the asset check runs
+## Step 2: Verify that the asset check runs
 
 In the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000), you should now see an asset check associated with the `orders_aggregation` asset:
 

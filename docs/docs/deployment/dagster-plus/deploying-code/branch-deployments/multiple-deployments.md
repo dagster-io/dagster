@@ -95,7 +95,7 @@ locations:
     agent_queue: <queue name>
 ```
 
-For more information about agent queue routing or code location configuration, refer to:
+For more information about agent queue routing or code location configuration, see:
 
 - [Agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents)
 - [build.yaml code location configuration reference](/deployment/dagster-plus/management/build-yaml)
@@ -139,7 +139,7 @@ See: [Dagster+ branch deployments](/guides/operate/configuration/using-environme
 
 There is an organization-scoped setting `max_concurrent_branch_deployment_runs` that controls concurrency across all branch deployments. By default its value is 50.
 
-Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/api/clis/dagster-cloud-cli). The CLI must be [authenticated](/api/clis/dagster-cloud-cli/installing-and-configuring#setting-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
+Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/api/clis/dagster-cloud-cli). The CLI must be [authenticated](/api/clis/dagster-cloud-cli/installing-and-configuring#step-21-set-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
 
 To view the organization settings in the terminal:
 
@@ -183,7 +183,7 @@ See `dagster_cloud_api.agent_queues` in `dagster.yaml` (for Docker, local, and E
 ### No agent is serving my branch deployment
 
 - Ensure that at least one agent is configured to serve branch deployments. See `dagster_cloud_api.branch_deployments` in `dagster.yaml` (for Docker, local, and ECS agents) or `dagsterCloud.branchDeployments` in the Helm chart (for Kubernetes agents).
-- This agent's token must also be either organization-scoped or have the "All branch deployments" permission. See [Managing agent tokens](/deployment/dagster-plus/management/tokens/agent-tokens#managing-agent-tokens)
+- This agent's token must also be either organization-scoped or have the "All branch deployments" permission. See [Managing agent tokens](/deployment/dagster-plus/management/tokens/agent-tokens)
 
 ### I have configured my agent to serve branch deployments, but now I have no agent serving my full deployment
 

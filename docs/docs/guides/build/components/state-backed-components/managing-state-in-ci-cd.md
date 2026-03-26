@@ -1,29 +1,28 @@
 ---
-title: 'Managing state in CI/CD'
+title: Managing state in CI/CD
 description: Learn how to refresh and manage component state in production deployments using the dg CLI.
 sidebar_position: 200
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 This guide explains how to refresh state for both Local Filesystem and Versioned State Storage strategies while deploying your Dagster project.
 
 :::tip Dagster+ users
+
 If you're using Dagster+, the `dg scaffold github-actions` command will generate a GitHub Actions workflow that automatically refreshes state for all `StateBackedComponents` in your project.
+
 :::
 
-## Understanding state storage
+## About state storage
 
 Before configuring state refresh in your CI/CD pipeline, it's important to understand where component state is stored:
 
-### Versioned State Storage
+### Versioned state storage
 
 State is written to your Dagster instance:
 - **Dagster+**: State is written to Dagster+ managed state storage
 - **OSS**: State is written to a configured backend (S3, GCS, etc.) that you set up
 
-### Local Filesystem
+### Local filesystem
 
 State is written to a `.local_defs_state` directory within your Python project, then copied into your Docker image or PEX build as part of your deployment artifact.
 
@@ -63,7 +62,7 @@ Run state refresh commands in your CI/CD pipeline (GitHub Actions, GitLab CI, et
   run: docker build -t my-dagster-image .
 ```
 
-### Making the instance available (Versioned State Storage)
+### Making the instance available (Versioned state storage)
 
 If you're using Versioned State Storage, your refresh command needs access to your Dagster instance configuration.
 
@@ -102,7 +101,7 @@ For Kubernetes deployments using Helm, you'll need to mount your instance Config
 
 For more information, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment).
 
-### Copying files into your Docker image (Local Filesystem)
+### Copying files into your Docker image (Local filesystem)
 
 When using Local Filesystem state storage, the `.local_defs_state` directory must be included in your Docker image.
 

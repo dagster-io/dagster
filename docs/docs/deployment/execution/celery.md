@@ -24,7 +24,7 @@ pip install dagster dagster-celery
 
 - You will also need **a running broker**, which is required to run the Celery executor. Refer to the [Celery documentation](https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#choosing-a-broker) for more info about choosing a broker.
 
-## Part 1: Write and execute a job
+## Step 1: Write and execute a job
 
 To demonstrate, we'll start by constructing a parallel toy job that uses the Celery executor.
 
@@ -52,16 +52,16 @@ dagster dev -f celery_job.py
 
 Now you can execute the parallel job from the [Dagster UI](/guides/operate/webserver).
 
-## Part 2: Ensuring workers are in sync
+## Step 2: Ensure workers are in sync
 
-In Part 1, we took a few shortcuts:
+In step 1, we took a few shortcuts:
 
 - **We ran a single Celery worker on the same node as the Dagster webserver.** This allowed us to share local ephemeral run storage and event log storage between them and use the filesystem I/O manager to exchange values between the worker's task executions.
 - **We ran the Celery worker in the same directory as `celery_job.py`**. This meant that our Dagster code was available to both the webserver and the worker, specifically that they could both find the job definition in the same file (`-f celery_job.py`)
 
 In production, more configuration is required.
 
-### Step 1: Configure persistent run and event log storage
+### Step 2.1: Configure persistent run and event log storage
 
 First, configure appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage` on your [Dagster instance](/deployment/oss/oss-instance-configuration) (via [`dagster.yaml`](/deployment/oss/dagster-yaml)). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/deployment/oss/oss-instance-configuration#dagster-storage) for information on how to do this.
 
@@ -71,7 +71,7 @@ The same instance config must be present in the webserver's environment and in t
 
 :::
 
-### Step 2: Configure a persistent I/O manager
+### Step 2.2: Configure a persistent I/O manager
 
 When using the Celery executor for job runs, you'll need to use storage that's accessible from all nodes where Celery workers are running. This is necessary because data is exchanged between ops that might be in different worker processes, possibly on different nodes. Common options for such accessible storage include an Amazon S3 or Google Cloud Storage (GCS) bucket or an NFS mount.
 
@@ -81,7 +81,7 @@ To do this, include an appropriate I/O manager in the job's resource. For exampl
 - <PyObject section="libraries" integration="azure" module="dagster_azure" object="adls2.adls2_pickle_io_manager" />
 - <PyObject section="libraries" integration="gcp" module="dagster_gcp" object="gcs_pickle_io_manager" />
 
-### Step 3: Supply executor and worker config
+### Step 2.3: Supply executor and worker config
 
 If using custom config for your runs - such as using a different Celery broker URL or backend - you'll need to ensure that your workers start up with the config.
 
@@ -94,7 +94,7 @@ To do this:
    dagster-celery worker start -y /path/to/celery_config.yaml
    ```
 
-### Step 4: Ensure Dagster code is accessible
+### Step 2.4: Ensure Dagster code is accessible
 
 Lastly, you'll need to make sure that the Dagster code you want the workers to execute is:
 
@@ -115,7 +115,7 @@ This told the webserver the file containing the job (`celery_job.py`) and to sta
 
 ### Using the dagster-celery CLI
 
-In the walkthrough, we started our workers using the `dagster-celery` CLI instead of invoking Celery directly. This CLI is intended as a convenient wrapper that shields you from the complexity of full Celery configuration. **Note**: It's still possible to directly start Celery workers - let us know if your use case requires this.
+In the walkthrough, we started our workers using the `dagster-celery` CLI instead of invoking Celery directly. This CLI is intended as a convenient wrapper that shields you from the complexity of full Celery configuration. It's still possible to directly start Celery workers - let us know if your use case requires this.
 
 For all of these commands, it's essential that your broker is running.
 
@@ -132,7 +132,7 @@ dagster-celery worker terminate
 
 :::note
 
-If running Celery with custom config, include the config file path in these commands to ensure workers start with the correct config. Refer to [Step 3](#step-3-supply-executor-and-worker-config) of the walkthrough for more information.
+If running Celery with custom config, include the config file path in these commands to ensure workers start with the correct config. For more information, see [step 3](#step-23-supply-executor-and-worker-config).
 
 :::
 

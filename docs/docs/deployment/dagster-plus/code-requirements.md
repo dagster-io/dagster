@@ -8,15 +8,6 @@ tags: [dagster-plus-feature]
 
 Your Dagster project must meet a few requirements to run in Dagster+.
 
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- A basic understanding of Python project structure and Docker
-
-</details>
-
 ## General requirements
 
 :::tip
@@ -31,10 +22,12 @@ To work with Dagster+, your Dagster code:
 
 - **Must run in an environment where the `dagster`, `dagster-dg-cli` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
 
-**Note**:
+:::note
 
 - Different code locations can use different versions of Dagster
 - Dagster+ doesn't require a [`workspace.yaml` file](/guides/build/projects/workspaces/workspace-yaml). You can still create a `workspace.yaml` file to load your code in an open source Dagster webserver instance, but doing so won't affect how your code is loaded in Dagster+.
+
+:::
 
 ## Hybrid deployment requirements
 

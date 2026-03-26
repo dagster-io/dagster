@@ -63,7 +63,7 @@ GRANT ROLE dagster_connection_role TO USER dagster_connection_user;
 
 :::
 
-### Step 1.2: (Optional) Grant lineage tracking permissions
+### Step 1.2: Grant lineage tracking permissions (Optional)
 
 To track table lineage from Snowflake query history, grant access to system tables:
 

@@ -13,7 +13,7 @@ sidebar_position: 50
 
 In this step, you will create a time-based asset partitioned by month.
 
-## 1. Create a time-based partitioned asset
+## Step 1: Create a time-based partitioned asset
 
 There are many ways to partition an asset. When an asset is partitioned, it is still represented as a single asset in the asset graph, but is defined by the number of underlying partitions. We will create a new asset that calculates the monthly performance for each sales rep. Before we define the asset, however, we must define the partition definition.
 
@@ -43,7 +43,7 @@ Partitions are accessed through the `context` object, which is passed to each as
 Do not worry about the `automation_condition` in the `dg.asset` decorator for now. This is not necessary, but will make more sense when we discuss automation later.
 :::
 
-## 2. Materialize partitioned assets
+## Step 2: Materialize partitioned assets
 
 To materialize these assets:
 

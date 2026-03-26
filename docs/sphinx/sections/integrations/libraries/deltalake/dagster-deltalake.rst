@@ -1,5 +1,6 @@
+#########################
 dagster-deltalake library
--------------------------
+#########################
 
 This library provides an integration with the `Delta Lake <https://delta.io>`_ storage framework.
 

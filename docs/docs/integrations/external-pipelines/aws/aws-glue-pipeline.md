@@ -40,16 +40,16 @@ To run the examples, you'll need to:
    </TabItem>
 </Tabs>
 
-- Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- Configure AWS authentication credentials. If you don't have this set up already, see the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - **In AWS**, you'll need:
   - An existing AWS account
   - An AWS Glue job with a Python 3.9+ runtime environment
 
-## Step 1: Provide the dagster-pipes module in your Glue environment
+## Step 1: Provide the `dagster-pipes` module in your Glue environment
 
 Provide the `dagster-pipes` module to the AWS Glue job either by installing it in the Glue job environment or packaging it along with the job script.
 
-## Step 2: Add dagster-pipes to the Glue job
+## Step 2: Add `dagster-pipes` to the Glue job
 
 Call `open_dagster_pipes` in the Glue job script to create a context that can be used to send messages to Dagster:
 
@@ -61,7 +61,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-## Step 3: Add the PipesGlueClient to Dagster code
+## Step 3: Add the `PipesGlueClient` to Dagster code
 
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 

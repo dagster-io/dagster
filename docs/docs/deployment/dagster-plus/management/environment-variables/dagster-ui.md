@@ -10,15 +10,14 @@ Environment variable are key-value pairs that are set outside of your source cod
 
 Dagster supports several approaches for [accessing environment variable in your code](/guides/operate/configuration/using-environment-variables-and-secrets). You can also set environment variables in several ways, but this guide will focus on the Dagster+ UI.
 
-<details>
-  <summary>Prerequisites</summary>
+:::note Required permissions
 
 To configure environment variables in the Dagster+ UI , you'll need:
 
 - **Organization Admin**, **Admin**, or **Editor** permissions for your Dagster+ account
 - To be using Dagster version 1.0.17 or later
 
-</details>
+:::
 
 ## Overview
 

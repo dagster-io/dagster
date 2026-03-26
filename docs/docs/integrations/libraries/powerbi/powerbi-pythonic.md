@@ -29,17 +29,11 @@ If you are just getting started with the Power BI integration, we recommend usin
 - How to materialize Power BI semantic models from Dagster.
 - How to customize how Power BI semantic models are materialized.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster` and `dagster-powerbi` libraries installed in your environment
-- Familiarity with asset definitions and the Dagster asset graph
-- Familiarity with Dagster resources
-- Familiarity with Power BI concepts, like semantic models, data sources, reports, and dashboards
 - A Power BI workspace
 - A service principal configured to access Power BI, or an API access token. For more information, see [Embed Power BI content with service principal and an application secret](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-service-principal) in the Power BI documentation.
-
-</details>
 
 ## Set up your environment
 

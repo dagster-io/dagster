@@ -1,8 +1,10 @@
+######################
 dagster-celery library
-----------------------
+######################
 
+**********
 Quickstart
-~~~~~~~~~~
+**********
 
 To get a local rabbitmq broker started and available via the default
 ``pyamqp://guest@localhost:5672``, in the ``dagster/python_modules/libraries/dagster-celery/``
@@ -45,7 +47,7 @@ the celery_executor.
 
 
 Monitoring your Celery tasks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+============================
 
 We advise using `Flower <https://celery.readthedocs.io/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor>`_:
 
@@ -54,7 +56,7 @@ We advise using `Flower <https://celery.readthedocs.io/en/latest/userguide/monit
     celery -A dagster_celery.app flower
 
 Customizing the Celery broker, backend, and other app configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+===================================================================
 
 By default this will use ``amqp://guest:**@localhost:5672//`` as the Celery broker URL and
 ``rpc://`` as the results backend. In production, you will want to change these values. Pending the
@@ -82,17 +84,18 @@ You can then run the celery worker using:
 
 This customization mechanism is used to implement `dagster_celery_k8s` and `dagster_celery_k8s` which delegate the execution of steps to ephemeral kubernetes pods and docker containers, respectively.
 
+***
 API
-~~~
+***
 
 .. currentmodule:: dagster_celery
 
 .. autoconfigurable:: celery_executor
   :annotation: ExecutorDefinition
 
-
+***
 CLI
-~~~
+***
 
 The ``dagster-celery`` CLI lets you start, monitor, and terminate workers.
 

@@ -24,7 +24,7 @@ The `dagster-cloud` CLI requires Python 3.10 through 3.13 and a recent version o
 
 :::
 
-## Installing the CLI
+## Step 1: Install the CLI
 
 The Dagster+ Agent library is available in PyPi. To install, run:
 
@@ -32,7 +32,7 @@ The Dagster+ Agent library is available in PyPi. To install, run:
 pip install dagster-cloud
 ```
 
-Refer to the [configuration section](#configuring-the-cli) for next steps.
+For next steps, see the [configuration section](#step-2-configure-the-cli).
 
 ### Completions
 
@@ -50,11 +50,11 @@ To print out the completion for copying or manual installation:
 dagster-cloud --show-completion
 ```
 
-## Configuring the CLI
+## Step 2: Configure the CLI
 
 The recommended way to set up your CLI's config for long-term use is through the configuration file, located by default at `~/.dagster_cloud_cli/config`.
 
-### Setting up the configuration file
+### Step 2.1: Set up the configuration file
 
 :::tip `dg` equivalent
 
@@ -68,10 +68,10 @@ Set up the config file:
 dagster-cloud config setup
 ```
 
-Select your authentication method. **Note**: Browser authentication is the easiest method to configure.
+### Step 2.2: Select your authentication method
 
-<details>
-<summary><strong>BROWSER AUTHENTICATION</strong></summary>
+<Tabs>
+<TabItem value="browser-auth" label="Browser authentication">
 
 The easiest way to set up is to authenticate through the browser.
 
@@ -87,10 +87,8 @@ Authorized for organization `hooli`
 
 When prompted, you can specify a default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster+ organization is `prod`.
 
-</details>
-
-<details>
-<summary><strong>TOKEN AUTHENTICATION</strong></summary>
+</TabItem>
+<TabItem value="token-auth" label="Token authentication">
 
 Alternatively, you may authenticate using a user token. Refer to the [User tokens guide](/deployment/dagster-plus/management/tokens) for more info.
 
@@ -111,7 +109,8 @@ When prompted, specify the following:
 - **User token** - The user token.
 - **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster+ organization is `prod`.
 
-</details>
+</TabItem>
+</Tabs>
 
 ### Viewing and modifying the configuration file
 

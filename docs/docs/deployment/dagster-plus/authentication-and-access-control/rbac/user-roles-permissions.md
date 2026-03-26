@@ -33,7 +33,7 @@ For example, the **Admin** user role includes permissions specific to this role 
 
 :::tip Teams in Dagster+ Pro
 
-Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see "[Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams)".
+Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see [Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams).
 
 :::
 
@@ -210,7 +210,11 @@ User management is accessed in the UI by navigating to **user menu (your icon) >
 
 Team management is accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Teams**.
 
-**Note**: Admin users can modify teams only in deployments where they're an Admin.
+:::note
+
+Admin users can modify teams only in deployments where they're an Admin.
+
+:::
 
 |                                                                                     | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ----------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |

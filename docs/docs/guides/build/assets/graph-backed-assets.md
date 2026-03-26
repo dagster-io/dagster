@@ -6,14 +6,6 @@ position: 1400
 
 Basic assets are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and assembling them into an op graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries, but doesn't require you to link each intermediate value to an asset in persistent storage.
 
-## Relevant APIs
-
-| Name                                                       | Description                                                                                                                                                              |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <PyObject section="assets" module="dagster" object="graph_asset" decorator />                | Decorator for defining an asset that's computed using a graph of ops. The dependencies between the ops are specified inside the body of the decorated function.          |
-| <PyObject section="assets" module="dagster" object="graph_multi_asset" decorator />          | Decorator for defining a set of assets that are computed using a graph of ops. The dependencies between the ops are specified inside the body of the decorated function. |
-| <PyObject section="assets" module="dagster" object="AssetsDefinition.from_graph" /> | Constructs an asset, given a graph definition. Useful if you have a single graph that you want to use to power multiple different assets.                                |
-
 ## Defining graph-backed assets
 
 To define a graph-backed asset, use the <PyObject section="assets" module="dagster" object="graph_asset" decorator /> decorator. The decorated function defines the dependencies between a set of ops, which are combined to compute the asset.

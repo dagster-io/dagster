@@ -1,8 +1,9 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
+######################
 dagster-github library
-----------------------
+######################
 
 This library provides an integration with GitHub Apps, to support performing various automation
 operations within your github repositories and with the tighter permissions scopes that github apps
@@ -37,10 +38,11 @@ To use this integration, you'll first need to create a GitHub App for it.
 Sharing your App ID and Installation ID is fine, but make sure that the Private Key for your app is
 stored securily.
 
-Posting Issues
-==============
+*********************
+Posting GitHub issues
+*********************
 
-Now, you can create issues in GitHub from Dagster with the GitHub resource:
+You can create GitHub issues from Dagster with the GitHub resource:
 
 .. code-block:: python
 
@@ -89,8 +91,9 @@ as part of your github config like below.
 By provisioning ``GithubResource`` as a Dagster resource, you can post to GitHub from
 within any asset or op execution.
 
+*************************
 Executing GraphQL queries
-=========================
+*************************
 
 .. code-block:: python
 
@@ -125,8 +128,9 @@ Executing GraphQL queries
    github_job.execute_in_process()
 
 
+*********
 Resources
-=========
+*********
 
 .. currentmodule:: dagster_github.resources
 
@@ -135,8 +139,9 @@ Resources
 .. autoconfigurable:: GithubResource
   :annotation: ResourceDefinition
 
+******
 Legacy
-=======
+******
 
 .. autoconfigurable:: github_resource
   :annotation: ResourceDefinition

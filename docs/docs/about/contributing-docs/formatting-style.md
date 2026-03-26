@@ -69,20 +69,27 @@ Here's a note.
 
 When updating **reStructuredText files**, you will need to follow the [reStructuredText syntax](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html). Frequently used syntax is described below.
 
-### Headings
+### Section headings
 
-Headings are formatted as follows:
+Section headings are formatted as follows:
 
 ```
+##########
 H1 heading
-==========
+##########
 
+**********
 H2 heading
-----------
+**********
 
 H3 heading
-^^^^^^^^^^
+==========
+
+H4 heading
+----------
 ```
+
+Unlike non-API docs, API docs need an H1 heading. If an H1 is not included, Sphinx will format the first heading it finds on the page as H1. For more information, see the [Sphinx docs](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#sections).
 
 ### autodoc directives
 
@@ -357,13 +364,13 @@ On MacOS the Command+Shift+5 hotkey opens a screenshot utility that can be usefu
 Docusaurus doesn't always render relative links correctly, which can result in users seeing intermittent 404s when accessing those links. Use full paths instead of relative links, like this:
 
 ```
-For more information, see "[Defining assets](/guides/build/assets/defining-assets)".
+For more information, see [Defining assets](/guides/build/assets/defining-assets).
 ```
 
 instead of this:
 
 ```
-For more information, see "[Defining assets](defining-assets)".
+For more information, see [Defining assets](defining-assets).
 ```
 
 #### Use non-trailing slash links

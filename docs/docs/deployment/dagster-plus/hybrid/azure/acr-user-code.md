@@ -16,7 +16,7 @@ This guide will use a Github repository to store the Dagster code, and GitHub Ac
 - The azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 - A GitHub account, and the ability to run GitHub Actions workflows in a repository.
 
-## Step 1: Creating a repository for Dagster code
+## Step 1: Create a repository for Dagster code
 
 We'll create a new repository based on the [Dagster+ hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart). We'll go through these steps using a brand new repository in GitHub, but you should be able to adapt these steps to an existing repository or other version control systems.
 
@@ -66,7 +66,7 @@ The project has the following structure:
                 └── schedules.py
 ```
 
-## Step 2: Setting up an Azure Container Registry
+## Step 2: Set up an Azure Container Registry
 
 Next, we'll set up an Azure Container Registry to store our Docker images. We'll use the Azure CLI to create the registry.
 
@@ -81,13 +81,13 @@ Then, we'll make images from our ACR available to our AKS cluster.
 az aks update -n <your-cluster-name> -g <your_resource_group> --attach-acr <your-acr-name>
 ```
 
-## Step 3: Setting up GitHub Actions
+## Step 3: Set up GitHub Actions
 
 Now, we'll set up a Github Actions workflow to build and push our Docker image to Azure Container Registry.
 
 We already have a GitHub Actions workflow in our repository, located at `.github/workflows/dagster-cloud-deploy.yml`. This workflow will build the Docker image, push it to ACR, and update the code location in Dagster+. To get it working with your repository, you'll need to do a few things.
 
-#### Generate Azure credentials
+### Step 3.1: Generate Azure credentials
 
 First, we'll need to generate a service principal for GitHub Actions to use to authenticate with Azure. We'll use the Azure CLI to create the service principal.
 
@@ -97,7 +97,7 @@ az ad sp create-for-rbac --name "github-actions-acr" --role contributor --scopes
 
 This command will output a JSON object with the service principal details. Make sure to save the `appId` and `password` values - we'll use them in the next step.
 
-### Add secrets to your repository
+### Step 3.2: Add secrets to your repository
 
 We'll add the service principal details as secrets in our repository. Go to your repository in GitHub, and navigate to `Settings` -> `Secrets`. Add the following secrets:
 
@@ -105,7 +105,7 @@ We'll add the service principal details as secrets in our repository. Go to your
 - `AZURE_CLIENT_ID`: The `appId` from the service principal JSON object.
 - `AZURE_CLIENT_SECRET`: The `password` from the service principal JSON object.
 
-### Update the GitHub Actions workflow
+### Step 3.3: Update the GitHub Actions workflow
 
 For this step, open `.github/workflows/dagster-cloud-deploy.yml` in your repository with your preferred text editor to perform the changes below.
 
@@ -142,7 +142,7 @@ Finally, update the tags in the "Build and upload Docker image" step to match th
     cache-to: type=gha,mode=max
 ```
 
-### Update the `build.yaml` build configuration to use the Azure Container Registry
+### Step 3.4: Update the `build.yaml` build configuration to use the Azure Container Registry
 
 Edit the `build.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
 
@@ -163,7 +163,7 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 
 :::
 
-### Push and run the workflow
+### Step 3.5: Push and run the workflow
 
 Now, commit and push the changes to your repository. The GitHub Actions workflow should run automatically. You can check the status of the workflow in the `Actions` tab of your repository.
 

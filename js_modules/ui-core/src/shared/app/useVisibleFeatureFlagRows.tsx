@@ -20,10 +20,6 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
   },
   {
-    key: 'Use new catalog layout (beta)',
-    flagType: FeatureFlag.flagAssetCatalogSidebar,
-  },
-  {
     key: 'Skip optional resource defaults in run config',
     flagType: FeatureFlag.flagSkipOptionalResourceDefaultsInRunConfig,
   },

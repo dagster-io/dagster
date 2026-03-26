@@ -71,7 +71,7 @@ computeLogs:
 
 ### Other compute log storage options
 
-For a full list of available compute log storage options, see "[Dagster instance configuration](/deployment/oss/oss-instance-configuration#compute-log-storage)".
+For a full list of available compute log storage options, see [Dagster instance configuration](/deployment/oss/oss-instance-configuration#compute-log-storage).
 
 ## Masking error messages
 

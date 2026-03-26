@@ -1,5 +1,6 @@
+#############################
 dagster-duckdb-pandas library
------------------------------
+#############################
 
 This library provides an integration with the `DuckDB <https://duckdb.org>`_ database and Pandas data processing library.
 
@@ -16,8 +17,9 @@ Related guides:
 
 .. autoclass:: DuckDBPandasTypeHandler
 
+******
 Legacy
-=======
+******
 
 .. autoconfigurable:: duckdb_pandas_io_manager
   :annotation: IOManagerDefinition

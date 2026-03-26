@@ -41,12 +41,12 @@ To run the examples, you'll need to:
    </TabItem>
 </Tabs>
 
-- Configure AWS authentication credentials: If you don't have these set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- Configure AWS authentication credentials: If you don't have these set up already, see the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - In AWS:
   - An existing AWS account
   - An [EMR Virtual Cluster](https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/virtual-cluster.html) set up
 
-## Step 1: Install the dagster-pipes module in your EMR environment
+## Step 1: Install the `dagster-pipes` module in your EMR environment
 
 There are [a few options](https://aws.github.io/aws-emr-containers-best-practices/submit-applications/docs/spark/pyspark/#python-code-with-python-dependencies) for deploying Python code & dependencies for PySpark jobs. In this tutorial, we are going to build a custom Docker image for this purpose.
 
@@ -62,7 +62,7 @@ It's also recommended to upgrade the default Python version included in the base
 
 We copy the EMR job script (`script.py`) to the image in the last step.
 
-## Step 2: Invoke dagster-pipes in the EMR job script
+## Step 2: Invoke `dagster-pipes` in the EMR job script
 
 Call `open_dagster_pipes` in the EMR script to create a context that can be used to send messages to Dagster:
 
@@ -74,7 +74,7 @@ It's best to use the `PipesS3MessageWriter` with EMR on EKS, because this messag
 
 :::
 
-## Step 3: Create an asset using the PipesEMRcontainersClient to launch the job
+## Step 3: Create an asset using the `PipesEMRcontainersClient` to launch the job
 
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 

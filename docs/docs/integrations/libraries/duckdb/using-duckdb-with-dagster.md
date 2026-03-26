@@ -187,7 +187,7 @@ When finished, your code should look like the following:
 
 ## Related
 
-For more DuckDB features, refer to the [DuckDB reference](/integrations/libraries/duckdb/reference).
+For more DuckDB features, see the [DuckDB reference](/integrations/libraries/duckdb/reference).
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets).
 

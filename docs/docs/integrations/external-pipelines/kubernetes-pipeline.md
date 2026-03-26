@@ -117,9 +117,11 @@ Then, build the image:
 docker build -t pipes-example:v1 .
 ```
 
-**Note**: Depending on the Kubernetes setup you're using, you may need to upload the container image to a registry or otherwise make it available to the cluster. For example: `kind load docker-image pipes-example:v1`
+:::note
 
----
+Depending on the Kubernetes setup you're using, you may need to upload the container image to a registry or otherwise make it available to the cluster. For example: `kind load docker-image pipes-example:v1`
+
+:::
 
 ## Step 2: Create the Dagster objects
 

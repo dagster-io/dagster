@@ -28,17 +28,11 @@ If you are just getting started with the Sigma integration, we recommend using t
 - How to represent Sigma assets in the Dagster asset graph, including lineage to other Dagster assets.
 - How to customize asset definition metadata for these Sigma assets.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster-sigma` library installed in your environment
-- Familiarity with asset definitions and the Dagster asset graph
-- Familiarity with Dagster resources
-- Familiarity with Sigma concepts, like datasets and workbooks
 - A Sigma organization
 - A Sigma client ID and client secret. For more information, see [Generate API client credentials](https://help.sigmacomputing.com/reference/generate-client-credentials#generate-api-client-credentials) in the Sigma documentation.
-
-</details>
 
 ## Set up your environment
 

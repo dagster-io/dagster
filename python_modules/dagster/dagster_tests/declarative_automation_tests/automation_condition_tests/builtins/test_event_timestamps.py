@@ -276,3 +276,51 @@ def test_since_any_deps_updated_uses_timestamps() -> None:
         defs=[A, B], instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 0
+
+
+def test_eager_fires_on_consecutive_dep_updates() -> None:
+    """An eager asset should fire on consecutive dep updates.
+
+    When dep A is updated twice in a row, B should be requested both times.
+    On the second tick, both trigger (any_deps_updated) and reset (newly_requested)
+    fire simultaneously. Without timestamps on NewlyRequestedCondition, the reset
+    would win and B would not be requested. With timestamps, the materialization
+    timestamp is after the previous tick timestamp, so trigger wins.
+    """
+    condition = AutomationCondition.any_deps_match(AutomationCondition.newly_updated()).since(
+        AutomationCondition.newly_requested()
+    )
+
+    @dg.asset
+    def A() -> None: ...
+
+    @dg.asset(deps=[A], automation_condition=condition)
+    def B() -> None: ...
+
+    instance = dg.DagsterInstance.ephemeral()
+    current_time = datetime.datetime(2020, 2, 2, 0, 55)
+
+    # baseline
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # First dep update — B should be requested
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    current_time += datetime.timedelta(minutes=5)
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1
+
+    # Second dep update — B should be requested again.
+    # Both trigger (newly_updated on A) and reset (newly_requested on B) fire.
+    # Trigger's materialization timestamp is after reset's previous-tick timestamp,
+    # so trigger wins via timestamp resolution.
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    current_time += datetime.timedelta(minutes=5)
+    result = dg.evaluate_automation_conditions(
+        defs=[A, B], instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1

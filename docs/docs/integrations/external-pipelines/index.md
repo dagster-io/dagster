@@ -11,12 +11,6 @@ Dagster Pipes provides a powerful mechanism for invoking code outside of Dagster
 
 In this guide, we'll walk you through how to invoke non-Dagster code through Pipes.
 
-:::note
-
-This documentation assumes familiarity with [Dagster assets](/guides/build/assets).
-
-:::
-
 ## Setting up an asset that invokes your external code
 
 To set up invoking code outside of Dagster, you first need to set up an asset. We can invoke the external code within the asset function by using a Dagster Pipes client resource.

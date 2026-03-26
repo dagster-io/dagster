@@ -38,7 +38,7 @@ To specify resource dependencies on a sensor, annotate the resource type as a pa
 
 [Schedules](/guides/automate/schedules) can use resources in case your schedule logic needs to interface with an external tool or to make your schedule logic more testable.
 
-To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information, see "[Using resources in schedules](/guides/automate/schedules/using-resources-in-schedules).
+To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information, see [Using resources in schedules](/guides/automate/schedules/using-resources-in-schedules).
 
 ## With jobs
 

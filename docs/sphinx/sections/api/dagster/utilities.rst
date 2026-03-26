@@ -1,5 +1,6 @@
+#########
 Utilities
-=========
+#########
 
 .. currentmodule:: dagster
 

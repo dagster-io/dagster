@@ -10,7 +10,7 @@ This guide covers advanced patterns and best practices for integrating dbt with 
 
 [dbt snapshots](https://docs.getdbt.com/docs/build/snapshots) track changes to data over time by comparing current data to previous snapshots. Running snapshots concurrently can corrupt these tables, so it's critical to ensure only one snapshot operation runs at a time.
 
-### 1. Separate snapshots from other models
+### Option 1: Separate snapshots from other models
 
 Create separate dbt component definitions to isolate snapshots from your regular dbt models. First, scaffold two dbt components:
 
@@ -38,7 +38,7 @@ Configure the snapshots component with concurrency control:
   language="yaml"
 />
 
-### 2. Configure concurrency pools
+### Option 2: Configure concurrency pools
 
 Configure your Dagster instance to create pools with maximum concurrency of 1. Add this configuration to your `dagster.yaml` (for Dagster Open Source) or deployment settings (for Dagster+):
 
@@ -55,7 +55,7 @@ Then set the pool limit for the snapshot pool:
 dagster instance concurrency set dbt-snapshots 1
 ```
 
-### 3. Manage multiple snapshot groups with Dagster components
+### Option 3: Manage multiple snapshot groups with Dagster components
 
 For large projects with many snapshots, you can create multiple snapshot groups while still preventing concurrency issues within each group. Create separate [Dagster components](/guides/build/components/creating-new-components/creating-and-registering-a-component) for different business domains:
 

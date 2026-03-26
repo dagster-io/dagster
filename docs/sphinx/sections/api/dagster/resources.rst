@@ -1,10 +1,12 @@
 .. currentmodule:: dagster
 
+#########
 Resources
-=========
+#########
 
+************************
 Pythonic resource system
-------------------------
+************************
 
 The following classes are used as part of the new `Pythonic resources system <https://docs.dagster.io/guides/build/external-resources>`_.
 
@@ -24,13 +26,15 @@ The following classes are used as part of the new `Pythonic resources system <ht
 
 .. autofunction:: with_resources
 
+*********
 Utilities
----------
+*********
 
 .. autoclass:: EnvVar
 
+**********************
 Legacy resource system
-----------------------
+**********************
 
 The following classes are used as part of the `legacy resource system <https://legacy-docs.dagster.io/concepts/resources-legacy>`_.
 

@@ -1,5 +1,6 @@
+#########
 Internals
-=========
+#########
 
 .. currentmodule:: dagster
 
@@ -11,8 +12,9 @@ We're curious what you're up to, happy to help, excited for new community contri
 to make the system as easy to work with as possible -- including for teams who are looking to
 customize it.
 
+*********
 Executors
----------
+*********
 
 APIs for constructing custom executors. This is considered advanced usage. Please note that using Dagster-provided executors is considered stable, common usage.
 
@@ -25,10 +27,8 @@ APIs for constructing custom executors. This is considered advanced usage. Pleas
 
 .. autoclass:: Executor
 
-----
-
-File Manager
-------------
+File manager
+============
 
 .. currentmodule:: dagster._core.storage.file_manager
 
@@ -45,11 +45,8 @@ File Manager
 
 .. autoclass:: LocalFileHandle
 
-----
-
-
 Instance
---------
+========
 
 .. currentmodule:: dagster
 
@@ -74,19 +71,16 @@ Instance
 .. autoclass:: LocalArtifactStorage
    :members:
 
-----
 
 Storage
--------
+=======
 
 .. currentmodule:: dagster._core.storage.base_storage
 
 .. autoclass:: DagsterStorage
 
-----
-
 Run storage
------------
+===========
 
 .. currentmodule:: dagster
 
@@ -114,10 +108,8 @@ Run storage
 
 See also: :py:class:`dagster_postgres.PostgresRunStorage` and :py:class:`dagster_mysql.MySQLRunStorage`.
 
-----
-
 Event log storage
------------------
+=================
 
 .. currentmodule:: dagster
 
@@ -143,10 +135,9 @@ Event log storage
 
 See also: :py:class:`dagster_postgres.PostgresEventLogStorage` and :py:class:`dagster_mysql.MySQLEventLogStorage`.
 
-----
 
 Compute log manager
--------------------
+===================
 
 .. currentmodule:: dagster._core.storage.compute_log_manager
 
@@ -162,20 +153,17 @@ Compute log manager
 
 See also: :py:class:`dagster_aws.S3ComputeLogManager`.
 
-----
-
 Run launcher
-------------
+============
+
 .. currentmodule:: dagster._core.launcher
 
 .. autoclass:: RunLauncher
 
 .. autoclass:: DefaultRunLauncher
 
-----
-
 Run coordinator
----------------
+===============
 
 .. currentmodule:: dagster._core.run_coordinator
 
@@ -184,10 +172,8 @@ Run coordinator
 .. autoconfigurable:: QueuedRunCoordinator
   :annotation: RunCoordinator
 
-----
-
 Scheduling
-----------
+==========
 
 .. currentmodule:: dagster._core.scheduler
 
@@ -201,21 +187,17 @@ Scheduling
 
 .. autoclass:: SqliteScheduleStorage
 
-see also: :py:class:`dagster_postgres.PostgresScheduleStorage` and :py:class:`dagster_mysql.MySQLScheduleStorage`.
-
-----
+See also: :py:class:`dagster_postgres.PostgresScheduleStorage` and :py:class:`dagster_mysql.MySQLScheduleStorage`.
 
 Exception handling
-------------------
+==================
 
 .. currentmodule:: dagster._core.errors
 
 .. autofunction:: user_code_error_boundary
 
-----
-
 Step Launchers (Superseded)
----------------------------
+===========================
 
 Learn how to migrate from Step Launchers to Dagster Pipes in the `migration guide <https://docs.dagster.io/integrations/external-pipelines/migrating-from-step-launchers-to-pipes>`_.
 

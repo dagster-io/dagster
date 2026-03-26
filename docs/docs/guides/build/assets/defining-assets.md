@@ -21,13 +21,6 @@ An asset definition includes the following:
 * A set of upstream asset keys, which refer to assets that the contents of the asset definition are derived from.
 * A Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
 
-<details>
-  <summary>Prerequisites</summary>
-
-To run the code in this article, you'll need to install Dagster. For more information, see the [Installation guide](/getting-started/installation).
-
-</details>
-
 ## Asset decorators
 
 Dagster has four types of asset decorators:

@@ -81,7 +81,7 @@ Dagster's [built-in loggers](/api/dagster/loggers#built-in-loggers):
 - Can be configured to capture only specified levels, such as `ERROR`
 - Can include manually-defined messages produced inside certain Dagster definitions like assets, ops, and sensors
 
-For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](/guides/log-debug/logging/custom-logging)".
+For more information on customizing loggers, see [Customizing Dagster's built-in loggers](/guides/log-debug/logging/custom-logging).
 
 ## Integrating external loggers
 

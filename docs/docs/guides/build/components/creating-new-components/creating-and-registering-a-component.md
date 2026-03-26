@@ -19,7 +19,7 @@ Before creating and registering custom components, you will need to [create a co
 For this example, we'll create a `ShellCommand` component that executes a shell command.
 
 
-### 1. Scaffold the new component file
+### Step 1: Scaffold the new component file
 
 First, scaffold the `ShellCommand` component. You can scaffold a component with either a YAML or Pythonic interface.
 
@@ -67,7 +67,7 @@ First, scaffold the `ShellCommand` component. You can scaffold a component with 
 </Tabs>
 
 
-### 2. Define the component schema
+### Step 2: Define the component schema
 
 The next step is to define the information the component will need when it is used. The `ShellCommand` component will need the following information:
 
@@ -116,7 +116,7 @@ The full list of models is:
 
 For more information, see the [Components Core Models API documentation](/api/dagster/components#core-models).
 
-### 3. (Optional) Add metadata to your component
+### Step 3: Add metadata to your component (Optional)
 
 You can optionally include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
 
@@ -137,7 +137,7 @@ You can optionally include metadata for your component by overriding the `get_sp
   </TabItem>
 </Tabs>
 
-### 4. Update the `build_defs` method
+### Step 4: Update the `build_defs` method
 
 Finally, you'll need to define how to turn the component parameters into a `Definitions` object.
 
