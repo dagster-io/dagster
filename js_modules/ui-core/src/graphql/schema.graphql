@@ -554,6 +554,7 @@ type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent
   partition: String
   tags: [EventTag!]!
   assetLineage: [AssetLineageInfo!]!
+  assetLevelMetadataKeys: [String!]
 }
 
 type EventTag {

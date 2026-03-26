@@ -1014,6 +1014,8 @@ def test_partitioned_asset_metadata():
             "output_name_specified": dg.TextMetadataValue("yay"),
             "partition_key_a": dg.TextMetadataValue("yay"),
         }
+        assert a_mat.asset_level_metadata_keys == ["asset_unpartitioned", "asset_key_specified"]
+
         assert b_mat.metadata == {
             "asset_unpartitioned": dg.TextMetadataValue("yay"),
             "output_unpartitioned": dg.TextMetadataValue("yay"),
@@ -1021,6 +1023,7 @@ def test_partitioned_asset_metadata():
             "output_name_specified": dg.TextMetadataValue("yay"),
             "partition_key_b": dg.TextMetadataValue("yay"),
         }
+        assert b_mat.asset_level_metadata_keys == ["asset_unpartitioned", "asset_key_specified"]
 
         output_log = instance.event_log_storage.get_event_records(
             event_records_filter=dg.EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT)

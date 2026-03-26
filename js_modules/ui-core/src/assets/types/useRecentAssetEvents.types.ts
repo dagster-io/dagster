@@ -359,6 +359,7 @@ export type AssetSuccessfulMaterializationFragment = {
     partitions: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }>;
+  assetLevelMetadataKeys?: Array<string> | null;
 };
 
 export type AssetObservationFragment = {
@@ -1483,10 +1484,14 @@ export type LatestAssetPartitionsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const RecentAssetEventsQueryVersion = '431b8b4e066097ef470ca323f252fe96bc33e60876bc221dfa82ddcc33824f09';
+export const RecentAssetEventsQueryVersion =
+  '431b8b4e066097ef470ca323f252fe96bc33e60876bc221dfa82ddcc33824f09';
 
-export const RecentAssetEventsForCatalogViewQueryVersion = '6801960ef79fc4f7c4a33bf258fe9fcb7fd9bbafed9ac7d55b731675f3a19900';
+export const RecentAssetEventsForCatalogViewQueryVersion =
+  '6801960ef79fc4f7c4a33bf258fe9fcb7fd9bbafed9ac7d55b731675f3a19900';
 
-export const AssetPartitionEventsQueryVersion = '859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646';
+export const AssetPartitionEventsQueryVersion =
+  '859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646';
 
-export const LatestAssetPartitionsQueryVersion = '2568dc5d6ad01d1695e9b6028a69e20785b90e152b15e84efe76b7c2595707da';
+export const LatestAssetPartitionsQueryVersion =
+  '2568dc5d6ad01d1695e9b6028a69e20785b90e152b15e84efe76b7c2595707da';

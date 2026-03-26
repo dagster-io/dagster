@@ -388,6 +388,7 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
         name = "MaterializationEvent"
 
     assetLineage = non_null_list(GrapheneAssetLineageInfo)
+    assetLevelMetadataKeys = graphene.List(graphene.NonNull(graphene.String))
 
     def __init__(self, event: EventLogEntry, assetLineage=None):
         self._asset_lineage = check.opt_list_param(assetLineage, "assetLineage", AssetLineageInfo)
@@ -409,6 +410,9 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
             )
             for lineage_info in self._asset_lineage
         ]
+
+    def resolve_assetLevelMetadataKeys(self, _graphene_info: ResolveInfo):
+        return self._metadata.asset_level_metadata_keys
 
 
 GrapheneAssetMaterializationFailureType = graphene.Enum.from_enum(

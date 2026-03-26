@@ -454,6 +454,9 @@ class AssetMaterializationSerializer(NamedTupleSerializer):
         # cover both the case where "asset_key" is not present at all and where it is None
         if unpacked_dict.get("asset_key") is None:
             unpacked_dict["asset_key"] = AssetKey(UNDEFINED_ASSET_KEY_PATH)
+        # asset_level_metadata_keys was added in a later version; default to None for old events
+        if "asset_level_metadata_keys" not in unpacked_dict:
+            unpacked_dict["asset_level_metadata_keys"] = None
         return unpacked_dict
 
 
@@ -473,6 +476,7 @@ class AssetMaterialization(
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("partition", PublicAttr[str | None]),
             ("tags", Mapping[str, str] | None),
+            ("asset_level_metadata_keys", Sequence[str] | None),
         ],
     ),
     EventWithMetadata,
@@ -499,6 +503,10 @@ class AssetMaterialization(
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        asset_level_metadata_keys (Optional[Sequence[str]]): A sequence of metadata keys that are
+            considered asset-level (not partition-specific). When set, the Dagster UI displays these
+            keys in the asset overview separately from partition-specific metadata. Only relevant for
+            partitioned assets; ``None`` means no scope distinction is made.
     """
 
     def __new__(
@@ -508,6 +516,7 @@ class AssetMaterialization(
         metadata: Mapping[str, RawMetadataValue] | None = None,
         partition: str | None = None,
         tags: Mapping[str, str] | None = None,
+        asset_level_metadata_keys: Sequence[str] | None = None,
     ):
         from dagster._core.definitions.partitions.utils import MultiPartitionKey
 
@@ -545,6 +554,9 @@ class AssetMaterialization(
             metadata=normed_metadata,
             tags=tags,
             partition=partition,
+            asset_level_metadata_keys=list(asset_level_metadata_keys)
+            if asset_level_metadata_keys is not None
+            else None,
         )
 
     @property
