@@ -641,7 +641,6 @@ def _get_output_asset_events(
 
     if execution_type == AssetExecutionType.MATERIALIZATION:
         event_class = AssetMaterialization
-        event_class = AssetMaterialization
     elif execution_type == AssetExecutionType.OBSERVATION:
         event_class = AssetObservation
     else:
@@ -656,8 +655,10 @@ def _get_output_asset_events(
         # Track which metadata keys are asset-level (not partition-specific) so the UI can
         # display them separately from partition-scoped metadata. Asset-level keys are those
         # added via add_asset_metadata() without a partition_key.
-        asset_level_keys = (
-            list(unpartitioned_asset_metadata.keys()) if unpartitioned_asset_metadata else []
+        # When no asset-level metadata was explicitly added, use None to indicate legacy behavior
+        # (UI will not split into sections). An empty list [] means "all metadata is partition-level".
+        asset_level_keys: list[str] | None = (
+            list(unpartitioned_asset_metadata.keys()) if unpartitioned_asset_metadata else None
         )
         for partition in asset_partitions:
             with disable_dagster_warnings():
