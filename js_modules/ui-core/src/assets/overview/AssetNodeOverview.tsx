@@ -16,7 +16,7 @@ import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/Wor
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
 import {AutomationDetailsSection} from './AutomationDetailsSection';
-import {AttributeAndValue, NoValue, SectionEmptyState} from './Common';
+import {AttributeAndValue, SectionEmptyState} from './Common';
 import {ComputeDetailsSection} from './ComputeDetailsSection';
 import {DefinitionSection} from './DefinitionSection';
 import {FreshnessPolicyStatus} from './FreshnessPolicyStatus';
@@ -149,7 +149,7 @@ export const AssetNodeOverview = ({
                 assetNode={assetNode ?? cachedAssetNode!}
               />
             ) : (
-              <NoValue />
+              <Skeleton $height={24} $width={240} />
             )}
             {assetNode && assetNode.freshnessPolicy && (
               <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
