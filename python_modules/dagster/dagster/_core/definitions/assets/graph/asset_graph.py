@@ -362,13 +362,13 @@ def executable_in_same_run(
         if child_handle != parent_handle:
             return False
 
-    # partitions definitions must match
+    # assets where either side is unpartitioned can always execute together
+    if child_node.partitions_def is None or parent_node.partitions_def is None:
+        return True
+
+    # both are partitioned — definitions must match
     if child_node.partitions_def != parent_node.partitions_def:
         return False
-
-    # unpartitioned assets can always execute together
-    if child_node.partitions_def is None:
-        return True
 
     return isinstance(
         asset_graph.get_partition_mapping(child_node.key, parent_node.key),

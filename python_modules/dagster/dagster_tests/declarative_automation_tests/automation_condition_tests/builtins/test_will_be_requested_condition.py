@@ -57,7 +57,8 @@ async def test_will_be_requested_static_partitioned() -> None:
 
 
 @pytest.mark.asyncio
-async def test_will_be_requested_different_partitions() -> None:
+async def test_will_be_requested_partitioned_parent_unpartitioned_child() -> None:
+    """A partitioned parent and unpartitioned child can execute in the same run."""
     condition = AutomationCondition.any_deps_match(AutomationCondition.will_be_requested())
     state = AutomationConditionScenarioState(
         two_assets_in_sequence, automation_condition=condition
@@ -67,17 +68,38 @@ async def test_will_be_requested_different_partitions() -> None:
     state, result = await state.evaluate("B")
     assert result.true_subset.size == 0
 
-    # one requested parent, but can't execute in same run
+    # one requested parent — can execute in same run since child is unpartitioned
     state = state.with_requested_asset_partitions([AssetKeyPartitionKey(dg.AssetKey("A"), "1")])
     state, result = await state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_subset.size == 1
 
-    # two requested parents, but can't execute in same run
+    # two requested parents — still can execute together
     state = state.with_requested_asset_partitions(
         [AssetKeyPartitionKey(dg.AssetKey("A"), "1"), AssetKeyPartitionKey(dg.AssetKey("A"), "2")]
     )
     state, result = await state.evaluate("B")
+    assert result.true_subset.size == 1
+
+
+@pytest.mark.asyncio
+async def test_will_be_requested_unpartitioned_parent_partitioned_child() -> None:
+    """An unpartitioned parent and partitioned child can execute in the same run.
+
+    Non-regression test for https://github.com/dagster-io/dagster/issues/32935
+    """
+    condition = AutomationCondition.any_deps_match(AutomationCondition.will_be_requested())
+    state = AutomationConditionScenarioState(
+        two_assets_in_sequence, automation_condition=condition
+    ).with_asset_properties("B", partitions_def=two_partitions_def)
+
+    # no requested parents
+    state, result = await state.evaluate("B")
     assert result.true_subset.size == 0
+
+    # unpartitioned parent is requested — partitioned child should detect it
+    state = state.with_requested_asset_partitions([AssetKeyPartitionKey(dg.AssetKey("A"))])
+    state, result = await state.evaluate("B")
+    assert result.true_subset.size == 2
 
 
 def test_with_observable_source() -> None:
