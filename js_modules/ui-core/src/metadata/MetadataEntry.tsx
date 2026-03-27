@@ -15,6 +15,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {StyledTableWithHeader} from './SharedTableStyles';
 import {TableSchema} from './TableSchema';
 import {
   MetadataEntryFragment,
@@ -70,34 +71,7 @@ const MetadataEntryValueCell = styled.div`
   overflow-x: auto;
 `;
 
-const StyledTableWithHeader = styled.table`
-  /** -2 accounts for the left and right border, which are not taken into account
-  * and cause a tiny amount of horizontal scrolling at all times. */
-  width: calc(100% - 2px);
-  border-spacing: 0;
-  border-collapse: collapse;
 
-  & > thead > tr > td {
-    color: ${Colors.textLighter()};
-    font-size: 12px;
-    line-height: 16px;
-  }
-
-  & > tbody > tr > td,
-  & > thead > tr > td {
-    border: 1px solid ${Colors.keylineDefault()};
-    padding: 8px 12px;
-    font-size: 14px;
-    line-height: 20px;
-    vertical-align: top;
-
-    &:first-child {
-      max-width: 300px;
-      word-wrap: break-word;
-      width: 25%;
-    }
-  }
-`;
 
 export const LogRowStructuredContentTable = ({
   rows,
@@ -107,7 +81,7 @@ export const LogRowStructuredContentTable = ({
   styles?: React.CSSProperties;
 }) => (
   <div style={{paddingBottom: 10, ...(styles || {})}}>
-    <StructuredContentTable cellPadding="0" cellSpacing="0">
+    <FixedLayoutContentTable cellPadding="0" cellSpacing="0">
       <tbody>
         {rows.map(({label, item}, idx) => (
           <tr key={idx} style={{display: 'flex'}}>
@@ -127,7 +101,7 @@ export const LogRowStructuredContentTable = ({
           </tr>
         ))}
       </tbody>
-    </StructuredContentTable>
+    </FixedLayoutContentTable>
   </div>
 );
 
@@ -510,7 +484,6 @@ export const MetadataEntryLink = styled(Link)`
 
 export const StructuredContentTable = styled.table`
   width: 100%;
-  table-layout: fixed;
   padding: 0;
   margin-top: 4px;
   border-top: 1px solid ${Colors.keylineDefault()};
@@ -528,4 +501,8 @@ export const StructuredContentTable = styled.table`
     vertical-align: top;
     box-shadow: none !important;
   }
+`;
+
+const FixedLayoutContentTable = styled(StructuredContentTable)`
+  table-layout: fixed;
 `;

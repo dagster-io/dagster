@@ -15,7 +15,7 @@ import {createContext, useContext, useState} from 'react';
 import {MetadataEntryLabelOnly} from './MetadataEntry';
 import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
-import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
+import {StyledTableWithHeader} from './SharedTableStyles';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {
   AssetKeyInput,
