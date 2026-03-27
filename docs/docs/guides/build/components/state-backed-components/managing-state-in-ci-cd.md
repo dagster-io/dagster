@@ -155,6 +155,8 @@ This command automatically handles both storage types:
 - **Local Filesystem**: State is written to `.local_defs_state`, which is later copied into your deployment artifact
 - **Versioned State Storage**: The deployment environment has credentials to write state to Dagster+ managed state storage
 
+Additionally, environment variables configured in your Dagster+ deployment are automatically fetched and injected into the state refresh process. This means your components have access to the same credentials (database passwords, API keys, etc.) during code loading in CI as they do at runtime, without needing to duplicate them as CI secrets. The appropriate scope is selected automatically: full deployment secrets for production deploys, and branch deployment secrets for branch deploys.
+
 #### Example: GitHub Actions workflow
 
 ```yaml
