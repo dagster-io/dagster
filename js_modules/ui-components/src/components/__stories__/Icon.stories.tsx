@@ -1,6 +1,5 @@
 import {useState} from 'react';
 
-import {CoreColors} from '../../palettes/CoreColors';
 import {Box} from '../Box';
 import {Colors} from '../Color';
 import {Icon, IconName, IconNames as _iconNames} from '../Icon';
@@ -101,17 +100,11 @@ export const Size24 = () => {
 };
 
 export const IconColors = () => {
-  const colorKeys = Object.keys(CoreColors);
-  const numColors = colorKeys.length;
+  const colorFns = Object.values(Colors).filter((v): v is () => string => typeof v === 'function');
+  const numColors = colorFns.length;
   const colorAtIndex = (index: number) => {
-    const colorKey = colorKeys[index % numColors];
-    if (colorKey) {
-      const colorAtKey = CoreColors[colorKey as keyof typeof CoreColors];
-      if (colorAtKey) {
-        return colorAtKey;
-      }
-    }
-    return Colors.accentWhite();
+    const fn = colorFns[index % numColors];
+    return fn ? fn() : Colors.accentWhite();
   };
 
   return (
