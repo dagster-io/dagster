@@ -231,6 +231,92 @@ def derive_model_type(
     return _DERIVED_MODEL_REGISTRY[target_type]
 
 
+def _is_config_resolvable(annotation) -> bool:
+    """Returns True if annotation is a Config or ConfigurableResource subclass
+    that should have template resolution applied to its fields.
+    """
+    from dagster._config.pythonic_config.config import Config
+
+    return safe_is_subclass(annotation, Config)
+
+
+def _get_config_annotations(config_cls: type) -> dict[str, "AnnotationInfo"]:
+    """Extract user-defined (non-internal) fields from a Config/ConfigurableResource class."""
+    from dagster._config.pythonic_config.config import _is_field_internal
+
+    annotations: dict[str, AnnotationInfo] = {}
+    for name, field_info in config_cls.model_fields.items():
+        if _is_field_internal(name):
+            continue
+        has_default = not field_info.is_required()
+        annotations[name] = AnnotationInfo(
+            type=field_info.rebuild_annotation(),
+            default=field_info.default,
+            has_default=has_default,
+            field_info=field_info,
+        )
+    return annotations
+
+
+def _derive_config_model_type(config_cls: type) -> type[BaseModel]:
+    """Derive a Pydantic model for a Config/ConfigurableResource where all fields are injectable."""
+    if config_cls in _DERIVED_MODEL_REGISTRY:
+        return _DERIVED_MODEL_REGISTRY[config_cls]
+
+    model_fields: dict[str, Any] = {}
+    for name, annotation_info in _get_config_annotations(config_cls).items():
+        field_resolver = _get_resolver(annotation_info.type, name)
+        field_name = field_resolver.model_field_name or name
+        field_type = field_resolver.model_field_type or annotation_info.type
+
+        field_infos = []
+        if annotation_info.field_info:
+            field_infos.append(
+                FieldInfo.merge_field_infos(annotation_info.field_info, default_factory=None)
+            )
+        if annotation_info.has_default:
+            default_value = (
+                annotation_info.default
+                if type(annotation_info.default) in {int, float, str, bool, type(None)}
+                else _Unset
+            )
+            field_infos.append(Field(default=default_value))
+
+        if field_type != str:
+            field_type = field_type | str
+
+        model_fields[field_name] = (field_type, FieldInfo.merge_field_infos(*field_infos))
+
+    try:
+        _DERIVED_MODEL_REGISTRY[config_cls] = create_model(
+            f"{config_cls.__name__}Model",
+            __base__=Model,
+            **model_fields,
+        )
+    except PydanticSchemaGenerationError as e:
+        raise ResolutionException(f"Unable to derive Model for {config_cls}") from e
+
+    return _DERIVED_MODEL_REGISTRY[config_cls]
+
+
+def _resolve_config_from_model(
+    config_cls: type, context: "ResolutionContext", model: BaseModel
+) -> Any:
+    """Resolve template fields and instantiate a Config/ConfigurableResource."""
+    resolved: dict[str, Any] = {}
+    for field_name, annotation_info in _get_config_annotations(config_cls).items():
+        resolver = _get_resolver(annotation_info.type, field_name)
+        model_field_name = resolver.model_field_name or field_name
+        if (
+            model_field_name in model.model_dump(exclude_unset=True)
+            and getattr(model, model_field_name) != _Unset
+        ):
+            resolved[field_name] = resolver.execute(
+                context=context, model=model, field_name=field_name
+            )
+    return config_cls(**resolved)
+
+
 def _is_implicitly_resolved_type(annotation):
     if annotation in (int, float, str, bool, Any, type(None), list, dict):
         return True
@@ -241,6 +327,10 @@ def _is_implicitly_resolved_type(annotation):
     if safe_is_subclass(annotation, Resolvable):
         # ensure valid Resolvable subclass
         annotation.model()
+        return False
+
+    # Config/ConfigurableResource subclasses need template resolution on their fields
+    if _is_config_resolvable(annotation):
         return False
 
     if safe_is_subclass(annotation, BaseModel):
@@ -445,6 +535,16 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Resolver | 
                 resolver=annotation.resolve_from_model,
             ),
             model_field_type=_wrap(annotation.model(), path),
+        )
+
+    if _is_config_resolvable(annotation):
+        return Resolver(
+            partial(
+                _resolve_at_path,
+                container_path=path,
+                resolver=partial(_resolve_config_from_model, annotation),
+            ),
+            model_field_type=_wrap(_derive_config_model_type(annotation), path),
         )
 
     if origin is Annotated:
