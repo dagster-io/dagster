@@ -160,18 +160,9 @@ def get_changes_info(
 
         # Add a hint about the nature of changes
         if use_smart_summary and smart_summary:
-            # Use smart summary categorization
-            category = smart_summary.change_category.value
-            if category == "tests":
-                diff_summary += " (test changes)"
-            elif category == "documentation":
-                diff_summary += " (documentation changes)"
-            elif category == "new_feature":
-                diff_summary += " (new feature)"
-            elif category == "bug_fix":
-                diff_summary += " (bug fix)"
-            elif "refactor" in category:
-                diff_summary += " (refactoring)"
+            # Use smart summary structural info to categorize
+            if smart_summary.functions or smart_summary.classes:
+                diff_summary += " (code changes)"
         else:
             # Fallback to content analysis
             if diff_detail is not None:
