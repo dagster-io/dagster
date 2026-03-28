@@ -182,8 +182,23 @@ class TestOpCustomization:
                 {"backfill_policy": {"type": "single_run"}},
                 lambda op: op.backfill_policy.max_partitions_per_run is None,
             ),
+            (
+                {
+                    "retry_policy": {
+                        "max_retries": 2,
+                        "delay": 10,
+                        "jitter": "PLUS_MINUS",
+                        "backoff": "LINEAR",
+                    }
+                },
+                lambda op: op.retry_policy is not None
+                and op.retry_policy.max_retries == 2
+                and op.retry_policy.delay == 10
+                and op.retry_policy.jitter.name == "PLUS_MINUS"
+                and op.retry_policy.backoff.name == "LINEAR",
+            ),
         ],
-        ids=["name", "tags", "backfill_policy"],
+        ids=["name", "tags", "backfill_policy", "retry_policy"],
     )
     def translation_test_case(self, request):
         return request.param
