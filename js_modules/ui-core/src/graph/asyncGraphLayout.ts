@@ -71,7 +71,7 @@ const _assetLayoutCacheKey = weakMapMemoize(
     // IMPORTANT: hashObject internally uses weakmapMemoize to avoid re-calculating
     // the hash for the same object twice. Hashing individual objects and joining the
     // strings allows this Weakmap to re-use `graphData` hashes.
-    return hashObject(graphData) + hashObject(opts) + 'version:6';
+    return hashObject(graphData) + hashObject(opts) + 'version:7';
   },
 );
 
@@ -83,6 +83,7 @@ const EMPTY_LAYOUT: AssetGraphLayout = {
   nodes: {},
   edges: [],
   groups: {},
+  linkNodeIds: [],
 };
 
 export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
