@@ -16,7 +16,7 @@ def enriched_products(
     context.add_output_metadata(llm.runtime_metadata())
     rows: list[dict[str, object]] = []
     for row in catalog_prompt_inputs.itertuples(index=False):
-        response = llm.generate(row.prompt)
+        response = llm.generate(str(row.prompt))
         rows.append(
             {
                 "product_id": row.product_id,

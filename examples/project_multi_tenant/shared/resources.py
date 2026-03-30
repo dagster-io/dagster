@@ -15,9 +15,11 @@ import dagster as dg
 class SupportsGenerate(Protocol):
     def generate(self, prompt: str) -> str:
         """Generate a text response for the provided prompt."""
+        ...
 
     def runtime_metadata(self) -> dict[str, object]:
         """Return metadata describing the active model runtime."""
+        ...
 
 
 class BaseLLMResource(dg.ConfigurableResource):

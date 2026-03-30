@@ -58,11 +58,10 @@ def _build_success_context(
 def _get_run_success_event(
     result: dg.ExecuteInProcessResult,
 ) -> dg.DagsterEvent:
-    if hasattr(result, "get_run_success_event"):
-        return result.get_run_success_event()
-
-    if hasattr(result, "get_job_success_event"):
-        return result.get_job_success_event()
+    for method_name in ("get_run_success_event", "get_job_success_event"):
+        getter = getattr(result, method_name, None)
+        if getter is not None:
+            return getter()
 
     for event in reversed(result.all_events):
         if getattr(event, "event_type_value", "") == "PIPELINE_SUCCESS":
@@ -113,6 +112,7 @@ def test_beacon_sensor_waits_for_missing_upstream_job() -> None:
     response = beacon_after_upstream_success_sensor(_build_success_context(instance, harbor_result))
 
     assert isinstance(response, dg.SkipReason)
+    assert response.skip_message is not None
     assert "summit_risk_scoring_job" in response.skip_message
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import dagster as dg
@@ -53,7 +54,7 @@ class DuckDBPandasIOManager(dg.ConfigurableIOManager):
         with duckdb.connect(self.database) as connection:
             return connection.execute(f"select * from {self.db_schema}.{table_name}").fetch_df()
 
-    def _with_retry(self, fn: callable, *, action: str):
+    def _with_retry(self, fn: Callable, *, action: str):
         last_error: Exception | None = None
         for attempt in range(1, self.retry_attempts + 1):
             try:
