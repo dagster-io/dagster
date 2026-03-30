@@ -921,7 +921,6 @@ def separate_resource_params(cls: type[BaseModel], data: dict[str, Any]) -> Sepa
     return out
 
 
-
 def _call_resource_fn_with_default(
     stack: contextlib.ExitStack, obj: ResourceDefinition, context: InitResourceContext
 ) -> Any:
@@ -1093,3 +1092,4 @@ def get_resource_type_name(resource: ResourceDefinition) -> str:
     else:
         resource_type = _get_class_name(type(resource))
     return resource_type
+

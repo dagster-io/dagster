@@ -234,5 +234,4 @@ class TypecheckAllowPartialResourceInitParams:
         # resource class.
         if obj is not None:
             object.__setattr__(obj, self._assigned_name, value)
-        else:
-            setattr(obj, self._assigned_name, value)
+

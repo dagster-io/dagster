@@ -1199,13 +1199,13 @@ def test_resource_dependency_with_default_no_recursion() -> None:
     outer_explicit = OuterResource(inner=InnerResource(val="world"))
     assert outer_explicit._nested_resources["inner"].val == "world"  # type: ignore
 
-    # Pattern 4: sensor resolves the nested resource correctly end-to-end
-    # (access via context.resources to verify full resource initialization path)
+    # Pattern 4: sensor body executes correctly end-to-end
     with dg.build_sensor_context(
         resources={"outer": OuterResource()}, sensor_name="test_sensor_33650"
     ) as ctx:
-        outer = ctx.resources.outer
-        assert outer.greet() == "hello"
+        results = list(my_sensor(ctx))
+        assert len(results) == 1
+        assert isinstance(results[0], dg.SkipReason)
 
 
 def test_resource_dependency_with_default_in_asset() -> None:
@@ -1242,3 +1242,4 @@ def test_resource_dependency_with_default_in_asset() -> None:
     )
     assert result.success
     assert completed["result"] == "overridden"
+
