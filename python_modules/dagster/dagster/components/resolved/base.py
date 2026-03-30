@@ -280,7 +280,20 @@ def _derive_config_model_type(config_cls: type) -> type[BaseModel]:
                 if type(annotation_info.default) in {int, float, str, bool, type(None)}
                 else _Unset
             )
-            field_infos.append(Field(default=default_value))
+            field_infos.append(
+                Field(
+                    default=default_value,
+                    description=field_resolver.description,
+                    examples=field_resolver.examples,
+                ),
+            )
+        elif field_resolver.description or field_resolver.examples:
+            field_infos.append(
+                Field(
+                    description=field_resolver.description,
+                    examples=field_resolver.examples,
+                )
+            )
 
         if field_type != str:
             field_type = field_type | str
@@ -304,11 +317,12 @@ def _resolve_config_from_model(
 ) -> Any:
     """Resolve template fields and instantiate a Config/ConfigurableResource."""
     resolved: dict[str, Any] = {}
+    model_dump = model.model_dump(exclude_unset=True)
     for field_name, annotation_info in _get_config_annotations(config_cls).items():
         resolver = _get_resolver(annotation_info.type, field_name)
         model_field_name = resolver.model_field_name or field_name
         if (
-            model_field_name in model.model_dump(exclude_unset=True)
+            model_field_name in model_dump
             and getattr(model, model_field_name) != _Unset
         ):
             resolved[field_name] = resolver.execute(
