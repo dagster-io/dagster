@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 import dagster._check as check
-from dagster import DagsterInvariantViolationError, PipesClient
+from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
 from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     )
 
 AWS_SERVICE_NAME = "EMR Serverless"
+DASHBOARD_URL_REFRESH_INTERVAL = 30 * 60  # 30 minutes
 
 
 @public
@@ -112,11 +113,12 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             start_job_run_params = self._enrich_start_params(context, session, start_job_run_params)
             start_response = self._start(context, start_job_run_params)
             try:
-                completion_response = self._wait_for_completion(context, start_response)
+                completion_response, dashboard_url = self._wait_for_completion(context, start_response)
                 context.log.info(f"[pipes] {self.AWS_SERVICE_NAME} workload is complete!")
                 self._read_messages(context, session, completion_response)
                 return PipesClientCompletedInvocation(
-                    session, metadata=self._extract_dagster_metadata(completion_response)
+                    session,
+                    metadata=self._extract_dagster_metadata(completion_response, dashboard_url),
                 )
 
             except DagsterExecutionInterruptedError:
@@ -177,12 +179,12 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self,
         context: OpExecutionContext | AssetExecutionContext,
         start_response: "StartJobRunResponseTypeDef",
-    ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
+    ) -> tuple["GetJobRunResponseTypeDef", str | None]:  # pyright: ignore[reportReturnType]
         job_run_id = start_response["jobRunId"]
         application_id = start_response["applicationId"]
 
-        running_dashboard_url = None
-        completed_dashboard_url = None
+        last_dashboard_url_refresh_time = None
+        current_dashboard_url = None
 
         while response := self.client.get_job_run(
             applicationId=start_response["applicationId"],
@@ -190,21 +192,32 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         ):
             state: JobRunStateType = response["jobRun"]["state"]
 
-            # get dashboard url when it's ready (but only once)
-            if state == "RUNNING" and running_dashboard_url is None:
-                running_dashboard_url = self.client.get_dashboard_for_job_run(
-                    applicationId=application_id, jobRunId=job_run_id
-                )
-                context.log.info(
-                    f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {running_dashboard_url}"
-                )
+            # get dashboard url when it's ready and refresh it periodically
+            if state == "RUNNING":
+                now = time.time()
+                if (
+                    current_dashboard_url is None
+                    or last_dashboard_url_refresh_time is None
+                    or (now - last_dashboard_url_refresh_time) > DASHBOARD_URL_REFRESH_INTERVAL
+                ):
+                    current_dashboard_url = self.client.get_dashboard_for_job_run(
+                        applicationId=application_id, jobRunId=job_run_id
+                    )
+                    last_dashboard_url_refresh_time = now
+                    context.log.info(
+                        f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {current_dashboard_url}"
+                    )
+                    context.add_output_metadata(
+                        {"EMR Serverless Dashboard URL": MetadataValue.url(current_dashboard_url)}
+                    )
+
             # completed jobs have a different dashboard url
-            elif state in ["SUCCEEDED", "FAILED", "CANCELLED"] and completed_dashboard_url is None:
-                completed_dashboard_url = self.client.get_dashboard_for_job_run(
+            elif state in ["SUCCESS", "FAILED", "CANCELLED"] and current_dashboard_url is None:
+                current_dashboard_url = self.client.get_dashboard_for_job_run(
                     applicationId=application_id, jobRunId=job_run_id
                 )
                 context.log.info(
-                    f"[pipes] {self.AWS_SERVICE_NAME} job is completed. Dashboard URL: {completed_dashboard_url}"
+                    f"[pipes] {self.AWS_SERVICE_NAME} job is completed. Dashboard URL: {current_dashboard_url}"
                 )
 
             # check if the job is in a terminal state
@@ -219,7 +232,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                 context.log.info(
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} completed with state: {state}"
                 )
-                return response
+                return response, current_dashboard_url
             elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING", "QUEUED"]:
                 time.sleep(self.poll_interval)
                 continue
@@ -344,13 +357,18 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     ),
                 )
 
-    def _extract_dagster_metadata(self, response: "GetJobRunResponseTypeDef") -> RawMetadataMapping:
+    def _extract_dagster_metadata(
+        self, response: "GetJobRunResponseTypeDef", dashboard_url: str | None = None
+    ) -> RawMetadataMapping:
         metadata: RawMetadataMapping = {}
 
         job_run = response["jobRun"]
 
         metadata["AWS EMR Serverless Application ID"] = job_run["applicationId"]
         metadata["AWS EMR Serverless Job Run ID"] = job_run["jobRunId"]
+
+        if dashboard_url:
+            metadata["EMR Serverless Dashboard URL"] = MetadataValue.url(dashboard_url)
 
         # TODO: it would be great to add a url to EMR Studio page for this run
         # such urls look like: https://es-638xhdetxum2td9nc3a45evmn.emrstudio-prod.eu-north-1.amazonaws.com/#/serverless-applications/00fm4oe0607u5a1d
