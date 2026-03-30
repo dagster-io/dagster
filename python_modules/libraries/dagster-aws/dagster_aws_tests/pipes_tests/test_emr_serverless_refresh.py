@@ -21,7 +21,7 @@ def test_emr_serverless_url_refresh():
     mock_client.get_dashboard_for_job_run.side_effect = [
         {"url": "https://spark-ui-1.com", "ResponseMetadata": {}},
         {"url": "https://spark-ui-2.com", "ResponseMetadata": {}},
-        {"url": "https://spark-ui-completed.com", "ResponseMetadata": {}}
+        {"url": "https://spark-ui-completed.com", "ResponseMetadata": {}},
     ]
 
     # Set refresh interval to 0.1 seconds for testing
