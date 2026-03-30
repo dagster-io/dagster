@@ -42,12 +42,8 @@ interface Props2025 {
   onChangeAssetSelection?: (selection: string) => void;
 }
 
-const getCustomBackgroundForAsset = (
-  tags?: {key: string; value: string}[],
-): string | undefined => {
-  const uiColorTag = tags?.find(
-    (t) => t.key === 'dagster/ui_color',
-  );
+const getCustomBackgroundForAsset = (tags?: {key: string; value: string}[]): string | undefined => {
+  const uiColorTag = tags?.find((t) => t.key === 'dagster/ui_color');
   if (!uiColorTag) {
     return undefined;
   }
@@ -483,7 +479,10 @@ export const AssetNameRow = ({
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
-    <AssetName $isMaterializable={definition.isMaterializable} $customBackground={$customBackground}>
+    <AssetName
+      $isMaterializable={definition.isMaterializable}
+      $customBackground={$customBackground}
+    >
       <span style={{marginTop: 1}}>
         <Icon name={definition.isMaterializable ? 'asset' : 'source_asset'} />
       </span>
@@ -572,6 +571,8 @@ export const AssetNodeMinimalWithHealth = ({
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
   }, [health, isMaterializing]);
 
+  const customBackground = getCustomBackgroundForAsset(definition.tags);
+
   // old design
   let paddingTop = height / 2 - 52;
   let nodeHeight = 86;
@@ -598,7 +599,7 @@ export const AssetNodeMinimalWithHealth = ({
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
-          $background={backgroundColor}
+          $background={customBackground ?? backgroundColor}
           $border={borderColor}
           $inProgress={!!inProgressRuns}
           $isQueued={!!queuedRuns}
@@ -627,6 +628,7 @@ export const AssetNodeMinimalWithoutHealth = ({
   const {liveData} = useAssetLiveData(assetKey);
 
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
+  const customBackground = getCustomBackgroundForAsset(definition.tags);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
@@ -662,7 +664,7 @@ export const AssetNodeMinimalWithoutHealth = ({
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
-          $background={background}
+          $background={customBackground ?? background}
           $border={border}
           $inProgress={!!inProgressRuns}
           $isQueued={!!queuedRuns}
@@ -800,7 +802,8 @@ const AssetName = styled.div<{$isMaterializable: boolean; $customBackground?: st
   display: flex;
   gap: 4px;
   background: ${(p) =>
-    p.$customBackground || (p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight())};
+    p.$customBackground ||
+    (p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight())};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
