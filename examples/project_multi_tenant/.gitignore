@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.dagster_home/
+.code_locations/
+.env
+*.pyc
+data/
+*.egg-info/
+tmp*/

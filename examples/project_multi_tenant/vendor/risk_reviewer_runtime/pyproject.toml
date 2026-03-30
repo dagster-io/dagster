@@ -1,0 +1,8 @@
+[project]
+name = "risk_reviewer_runtime"
+version = "2.2.0"
+requires-python = ">=3.11"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
