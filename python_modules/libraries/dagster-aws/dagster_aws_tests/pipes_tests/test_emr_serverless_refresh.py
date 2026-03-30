@@ -17,11 +17,11 @@ def test_emr_serverless_url_refresh():
         {"jobRun": {"state": "SUCCESS", "applicationId": "app-1", "jobRunId": "job-1"}}
     ]
     
-    # Mock get_dashboard_for_job_run to return different URLs
+    # Mock get_dashboard_for_job_run to return different URLs in dict shape
     mock_client.get_dashboard_for_job_run.side_effect = [
-        "https://spark-ui-1.com",
-        "https://spark-ui-2.com",
-        "https://spark-ui-completed.com"
+        {"url": "https://spark-ui-1.com", "ResponseMetadata": {}},
+        {"url": "https://spark-ui-2.com", "ResponseMetadata": {}},
+        {"url": "https://spark-ui-completed.com", "ResponseMetadata": {}}
     ]
 
     # Set refresh interval to 0.1 seconds for testing
@@ -68,8 +68,8 @@ def test_emr_serverless_terminal_refresh():
         {"jobRun": {"state": "SUCCESS", "applicationId": "app-1", "jobRunId": "job-1"}}
     ]
     
-    # Mock get_dashboard_for_job_run
-    mock_client.get_dashboard_for_job_run.return_value = "https://spark-ui-completed.com"
+    # Mock get_dashboard_for_job_run in dict shape
+    mock_client.get_dashboard_for_job_run.return_value = {"url": "https://spark-ui-completed.com", "ResponseMetadata": {}}
 
     client = PipesEMRServerlessClient(client=mock_client)
     context = build_op_context()

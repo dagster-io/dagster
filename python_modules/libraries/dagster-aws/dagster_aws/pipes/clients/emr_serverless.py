@@ -200,25 +200,41 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     or last_dashboard_url_refresh_time is None
                     or (now - last_dashboard_url_refresh_time) > DASHBOARD_URL_REFRESH_INTERVAL
                 ):
-                    current_dashboard_url = self.client.get_dashboard_for_job_run(
-                        applicationId=application_id, jobRunId=job_run_id
-                    )
+                    try:
+                        dashboard_response = self.client.get_dashboard_for_job_run(
+                            applicationId=application_id, jobRunId=job_run_id
+                        )
+                        current_dashboard_url = dashboard_response.get("url")
+                    except Exception as e:
+                        context.log.warning(
+                            f"[pipes] Failed to refresh EMR Serverless dashboard URL: {e}"
+                        )
+
                     last_dashboard_url_refresh_time = now
-                    context.log.info(
-                        f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {current_dashboard_url}"
-                    )
-                    context.add_output_metadata(
-                        {"EMR Serverless Dashboard URL": MetadataValue.url(current_dashboard_url)}
-                    )
+                    if current_dashboard_url:
+                        context.log.info(
+                            f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {current_dashboard_url}"
+                        )
+                        context.add_output_metadata(
+                            {"EMR Serverless Dashboard URL": MetadataValue.url(current_dashboard_url)}
+                        )
 
             # completed jobs have a different dashboard url
             elif state in ["SUCCESS", "FAILED", "CANCELLED"] and current_dashboard_url is None:
-                current_dashboard_url = self.client.get_dashboard_for_job_run(
-                    applicationId=application_id, jobRunId=job_run_id
-                )
-                context.log.info(
-                    f"[pipes] {self.AWS_SERVICE_NAME} job is completed. Dashboard URL: {current_dashboard_url}"
-                )
+                try:
+                    dashboard_response = self.client.get_dashboard_for_job_run(
+                        applicationId=application_id, jobRunId=job_run_id
+                    )
+                    current_dashboard_url = dashboard_response.get("url")
+                except Exception as e:
+                    context.log.warning(
+                        f"[pipes] Failed to fetch final EMR Serverless dashboard URL: {e}"
+                    )
+
+                if current_dashboard_url:
+                    context.log.info(
+                        f"[pipes] {self.AWS_SERVICE_NAME} job is completed. Dashboard URL: {current_dashboard_url}"
+                    )
 
             # check if the job is in a terminal state
             if state in ["FAILED", "CANCELLED", "CANCELLING"]:
