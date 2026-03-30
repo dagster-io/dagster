@@ -1,0 +1,11 @@
+{
+  "assetNodeOrError": {
+    "__typename": "AssetNode",
+    "partitionStats": {
+      "numMaterialized": 85,
+      "numPartitions": 100,
+      "numFailed": 3,
+      "numMaterializing": 2
+    }
+  }
+}

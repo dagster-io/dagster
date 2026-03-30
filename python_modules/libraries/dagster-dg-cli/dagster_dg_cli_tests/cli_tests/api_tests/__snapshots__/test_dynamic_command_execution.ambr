@@ -329,6 +329,121 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_empty_checks_json]
+  dict({
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_empty_checks_text_text]
+  '''
+  No asset checks found.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_empty_executions_json]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_empty_executions_text_text]
+  '''
+  No check executions found.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_get_check_executions_json]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'freshness_check',
+        'id': 'exec-001',
+        'partition': None,
+        'run_id': 'run-abc-123',
+        'status': 'SUCCEEDED',
+        'step_key': 'my_asset_freshness_check',
+        'timestamp': 1706745600.0,
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'freshness_check',
+        'id': 'exec-002',
+        'partition': None,
+        'run_id': 'run-def-456',
+        'status': 'FAILED',
+        'step_key': 'my_asset_freshness_check',
+        'timestamp': 1706659200.0,
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'freshness_check',
+        'id': 'exec-003',
+        'partition': None,
+        'run_id': 'run-ghi-789',
+        'status': 'SUCCEEDED',
+        'step_key': 'my_asset_freshness_check',
+        'timestamp': 1706572800.0,
+      }),
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_get_check_executions_text_text]
+  '''
+  STATUS     RUN_ID       TIMESTAMP                PARTITION
+  SUCCEEDED  run-abc-123  2024-02-01 00:00:00 UTC  
+  FAILED     run-def-456  2024-01-31 00:00:00 UTC  
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_list_asset_checks_json]
+  dict({
+    'items': list([
+      dict({
+        'asset_key': 'my/asset',
+        'blocking': True,
+        'can_execute_individually': 'CAN_EXECUTE',
+        'description': 'Checks that the asset is materialized within the last 24 hours',
+        'job_names': list([
+          '__ASSET_JOB_0',
+        ]),
+        'name': 'freshness_check',
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'blocking': False,
+        'can_execute_individually': 'CAN_EXECUTE',
+        'description': 'Validates minimum row count',
+        'job_names': list([
+          '__ASSET_JOB_0',
+        ]),
+        'name': 'row_count_check',
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'blocking': False,
+        'can_execute_individually': 'REQUIRES_MATERIALIZATION',
+        'description': None,
+        'job_names': list([
+        ]),
+        'name': 'schema_check',
+      }),
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_check_success_list_asset_checks_text_text]
+  '''
+  NAME             BLOCKING  DESCRIPTION
+  freshness_check  Yes       Checks that the asset is materialized within the last 24 ...
+  row_count_check  No        Validates minimum row count
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_health_not_found_json]
   '''
   {"error": "Asset not found: nonexistent-asset"}
@@ -347,6 +462,20 @@
   '''
   {"error": "Asset not found: ''"}
   Error: dg api asset get: Asset not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_error_partition_status_not_found_json]
+  '''
+  {"error": "Asset not found: nonexistent/asset"}
+  Error: dg api asset get-partition-status: Asset not found: nonexistent/asset
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_error_partition_status_unpartitioned_json]
+  '''
+  {"error": "Asset does not have partitions"}
+  Error: dg api asset get-partition-status: Asset does not have partitions
   
   '''
 # ---
@@ -647,6 +776,23 @@
     'items': list([
     ]),
   })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_partition_status_json]
+  dict({
+    'num_failed': 3,
+    'num_materialized': 85,
+    'num_materializing': 2,
+    'num_partitions': 100,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_partition_status_text_text]
+  '''
+  Materialized: 85
+  Failed:       3
+  In Progress:  2
+  Total:        100
+  
+  '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_json]
   dict({

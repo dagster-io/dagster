@@ -19,6 +19,7 @@ from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiEvaluationRecordList,
     DgApiPartitionDefinition,
     DgApiPartitionMapping,
+    DgApiPartitionStats,
 )
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
@@ -786,3 +787,55 @@ def get_asset_evaluations_via_graphql(
         )
 
     return DgApiEvaluationRecordList(items=evaluations)
+
+
+# ---------------------------------------------------------------------------
+# Partition status
+# ---------------------------------------------------------------------------
+
+ASSET_PARTITION_STATUS_QUERY = """
+query AssetPartitionStatusQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+        __typename
+        ... on AssetNode {
+            partitionStats {
+                numMaterialized
+                numPartitions
+                numFailed
+                numMaterializing
+            }
+        }
+        ... on AssetNotFoundError {
+            message
+        }
+    }
+}
+"""
+
+
+def get_asset_partition_status_via_graphql(
+    client: IGraphQLClient, asset_key_parts: list[str]
+) -> DgApiPartitionStats:
+    """Fetch partition materialization stats for an asset."""
+    variables = {"assetKey": {"path": asset_key_parts}}
+    result = client.execute(ASSET_PARTITION_STATUS_QUERY, variables)
+
+    asset_node = result.get("assetNodeOrError")
+    if not asset_node:
+        raise Exception("No asset data in GraphQL response")
+
+    typename = asset_node.get("__typename")
+    if typename != "AssetNode":
+        error_msg = asset_node.get("message", f"GraphQL error: {typename}")
+        raise Exception(error_msg)
+
+    partition_stats = asset_node.get("partitionStats")
+    if not partition_stats:
+        raise Exception("Asset does not have partitions")
+
+    return DgApiPartitionStats(
+        num_materialized=partition_stats["numMaterialized"],
+        num_failed=partition_stats["numFailed"],
+        num_materializing=partition_stats["numMaterializing"],
+        num_partitions=partition_stats["numPartitions"],
+    )

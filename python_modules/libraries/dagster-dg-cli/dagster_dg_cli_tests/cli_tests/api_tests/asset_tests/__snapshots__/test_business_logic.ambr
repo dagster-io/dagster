@@ -624,3 +624,43 @@
   Deps: None
   '''
 # ---
+# name: TestFormatPartitionStatus.test_format_partition_status_all_materialized_text[0]
+  '''
+  Materialized: 50
+  Failed:       0
+  In Progress:  0
+  Total:        50
+  '''
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_empty_json[0]
+  dict({
+    'num_failed': 0,
+    'num_materialized': 0,
+    'num_materializing': 0,
+    'num_partitions': 100,
+  })
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_empty_text[0]
+  '''
+  Materialized: 0
+  Failed:       0
+  In Progress:  0
+  Total:        100
+  '''
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_json_output[0]
+  dict({
+    'num_failed': 3,
+    'num_materialized': 85,
+    'num_materializing': 2,
+    'num_partitions': 100,
+  })
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_text_output[0]
+  '''
+  Materialized: 85
+  Failed:       3
+  In Progress:  2
+  Total:        100
+  '''
+# ---

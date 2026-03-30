@@ -20,6 +20,11 @@ if TYPE_CHECKING:
         DgApiAssetList,
         DgApiAssetStatus,
         DgApiEvaluationRecordList,
+        DgApiPartitionStats,
+    )
+    from dagster_dg_cli.api_layer.schemas.asset_check import (
+        DgApiAssetCheckExecutionList,
+        DgApiAssetCheckList,
     )
     from dagster_dg_cli.api_layer.schemas.code_location import (
         DgApiAddCodeLocationResult,
@@ -432,6 +437,76 @@ def format_asset_evaluations(evaluations: "DgApiEvaluationRecordList", as_json: 
         return "\n".join(result_lines)
 
     return lines[0]
+
+
+# ---------------------------------------------------------------------------
+# Asset check formatters
+# ---------------------------------------------------------------------------
+
+
+def format_asset_checks(checks: "DgApiAssetCheckList", as_json: bool) -> str:
+    """Format asset check list for output."""
+    if as_json:
+        return checks.model_dump_json(indent=2)
+
+    if not checks.items:
+        return "No asset checks found."
+
+    headers = ["NAME", "BLOCKING", "DESCRIPTION"]
+    rows = []
+    for check in checks.items:
+        rows.append(
+            [
+                check.name,
+                "Yes" if check.blocking else "No",
+                check.description or "",
+            ]
+        )
+
+    return format_table(headers, rows)
+
+
+def format_asset_check_executions(executions: "DgApiAssetCheckExecutionList", as_json: bool) -> str:
+    """Format asset check execution list for output."""
+    if as_json:
+        return executions.model_dump_json(indent=2)
+
+    if not executions.items:
+        return "No check executions found."
+
+    headers = ["STATUS", "RUN_ID", "TIMESTAMP", "PARTITION"]
+    rows = []
+    for execution in executions.items:
+        rows.append(
+            [
+                execution.status.value,
+                execution.run_id,
+                _format_timestamp(execution.timestamp, "seconds"),
+                execution.partition or "",
+            ]
+        )
+
+    return format_table(headers, rows)
+
+
+# ---------------------------------------------------------------------------
+# Partition status formatters
+# ---------------------------------------------------------------------------
+
+
+def format_partition_status(stats: "DgApiPartitionStats", as_json: bool) -> str:
+    """Format partition materialization stats for output."""
+    if as_json:
+        return stats.model_dump_json(indent=2)
+
+    return format_detail(
+        [
+            ("Materialized", str(stats.num_materialized)),
+            ("Failed", str(stats.num_failed)),
+            ("In Progress", str(stats.num_materializing)),
+            ("Total", str(stats.num_partitions)),
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
