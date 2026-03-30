@@ -983,6 +983,120 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[job_error_job_not_found_json]
+  '''
+  {"error": "Job not found: nonexistent_job"}
+  Error: dg api job get: Job not found: nonexistent_job
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[job_success_empty_jobs_json]
+  dict({
+    'items': list([
+    ]),
+    'total': 0,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[job_success_empty_jobs_text_text]
+  '''
+  
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[job_success_get_job_json]
+  dict({
+    'description': 'Runs daily analytics pipeline',
+    'is_asset_job': True,
+    'name': 'analytics_daily_job',
+    'schedules': list([
+      dict({
+        'cron_schedule': '0 6 * * *',
+        'name': 'analytics_daily_schedule',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'sensors': list([
+    ]),
+    'tags': list([
+      dict({
+        'key': 'dagster/priority',
+        'value': 'high',
+      }),
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[job_success_get_job_text_text]
+  '''
+  Name:        analytics_daily_job
+  Description: Runs daily analytics pipeline
+  Asset Job:   Yes
+  Tags:        dagster/priority=high
+  Schedule:    analytics_daily_schedule (0 6 * * *) [RUNNING]
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[job_success_list_jobs_json]
+  dict({
+    'items': list([
+      dict({
+        'description': 'Runs daily analytics pipeline',
+        'is_asset_job': True,
+        'name': 'analytics_daily_job',
+        'schedules': list([
+          dict({
+            'cron_schedule': '0 6 * * *',
+            'name': 'analytics_daily_schedule',
+            'status': 'RUNNING',
+          }),
+        ]),
+        'sensors': list([
+        ]),
+        'tags': list([
+          dict({
+            'key': 'dagster/priority',
+            'value': 'high',
+          }),
+        ]),
+      }),
+      dict({
+        'description': 'Ingests data from external sources',
+        'is_asset_job': False,
+        'name': 'etl_ingestion_job',
+        'schedules': list([
+        ]),
+        'sensors': list([
+          dict({
+            'name': 'new_files_sensor',
+            'status': 'RUNNING',
+          }),
+        ]),
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'description': None,
+        'is_asset_job': True,
+        'name': '__ASSET_JOB_0',
+        'schedules': list([
+        ]),
+        'sensors': list([
+        ]),
+        'tags': list([
+        ]),
+      }),
+    ]),
+    'total': 3,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[job_success_list_jobs_text_text]
+  '''
+  NAME                 DESCRIPTION                         SCHEDULES  SENSORS  ASSET JOB
+  analytics_daily_job  Runs daily analytics pipeline       1          0        Yes
+  etl_ingestion_job    Ingests data from external sources  0          1        No
+  __ASSET_JOB_0                                            0          0        Yes
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[organization_success_get_settings_json]
   dict({
     'settings': dict({

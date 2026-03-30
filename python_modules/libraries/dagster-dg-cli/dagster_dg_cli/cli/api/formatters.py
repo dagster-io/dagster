@@ -42,6 +42,7 @@ if TYPE_CHECKING:
         DeploymentSettings,
     )
     from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
+    from dagster_dg_cli.api_layer.schemas.job import DgApiJob, DgApiJobList
     from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
     from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
     from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
@@ -1080,3 +1081,62 @@ def format_delete_code_location_result(
         return result.model_dump_json(indent=2)
 
     return f"Deleted code location '{result.location_name}'."
+
+
+# ---------------------------------------------------------------------------
+# Job formatters
+# ---------------------------------------------------------------------------
+
+
+def format_jobs(jobs: "DgApiJobList", as_json: bool) -> str:
+    """Format job list for output."""
+    if as_json:
+        jobs_dict = jobs.model_dump()
+        for job in jobs_dict["items"]:
+            job.pop("repository_origin", None)
+            job.pop("id", None)
+        return json.dumps(jobs_dict, indent=2)
+
+    headers = ["NAME", "DESCRIPTION", "SCHEDULES", "SENSORS", "ASSET JOB"]
+    rows = []
+    for job in jobs.items:
+        rows.append(
+            [
+                job.name,
+                (job.description or "")[:50],
+                str(len(job.schedules)),
+                str(len(job.sensors)),
+                "Yes" if job.is_asset_job else "No",
+            ]
+        )
+
+    return format_table(headers, rows)
+
+
+def format_job(job: "DgApiJob", as_json: bool) -> str:
+    """Format single job for output."""
+    if as_json:
+        job_dict = job.model_dump()
+        job_dict.pop("repository_origin", None)
+        job_dict.pop("id", None)
+        return json.dumps(job_dict, indent=2)
+
+    fields: list[tuple[str, str]] = [
+        ("Name", job.name),
+        ("Description", job.description or "None"),
+        ("Asset Job", "Yes" if job.is_asset_job else "No"),
+    ]
+
+    if job.tags:
+        tags_str = ", ".join(f"{t.key}={t.value}" for t in job.tags)
+        fields.append(("Tags", tags_str))
+
+    if job.schedules:
+        for s in job.schedules:
+            fields.append(("Schedule", f"{s.name} ({s.cron_schedule}) [{s.status}]"))
+
+    if job.sensors:
+        for s in job.sensors:
+            fields.append(("Sensor", f"{s.name} [{s.status}]"))
+
+    return format_detail(fields)
