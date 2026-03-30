@@ -26,7 +26,9 @@ def validated_accounts(
 ) -> pd.DataFrame:
     accounts = raw_accounts.copy()
     allowed_tiers = {"low", "medium", "high"}
-    assert set(accounts["risk_tier"]).issubset(allowed_tiers)
+    invalid_tiers = set(accounts["risk_tier"]) - allowed_tiers
+    if invalid_tiers:
+        raise ValueError(f"Unexpected risk_tier values found: {invalid_tiers}")
     return add_dataframe_preview_metadata(context, accounts)
 
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import errno
-import fcntl
 import json
 from importlib import metadata as importlib_metadata
 import os
@@ -38,6 +36,7 @@ class BaseLLMResource(dg.ConfigurableResource):
 
     @property
     def backend_name(self) -> str:
+        """Subclasses must override this to identify their LLM backend."""
         raise NotImplementedError
 
 
@@ -129,6 +128,9 @@ class OllamaLLMResource(BaseLLMResource):
         return parsed
 
     def _generate_with_lock(self, prompt: str) -> dict[str, Any]:
+        import errno
+        import fcntl
+
         lock_file = Path(self.lock_path)
         lock_file.parent.mkdir(parents=True, exist_ok=True)
         deadline = time.monotonic() + self.lock_timeout_seconds

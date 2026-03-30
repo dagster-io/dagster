@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import dagster as dg
 
@@ -50,14 +50,16 @@ def beacon_after_upstream_success_sensor(
     if not orchestration_date:
         return dg.SkipReason("Could not determine an orchestration date for the upstream run.")
 
+    lookback = datetime.now(tz=timezone.utc) - timedelta(hours=48)
     missing_jobs: list[str] = []
     for job_name in sorted(UPSTREAM_JOB_NAMES):
         records = context.instance.get_run_records(
             filters=dg.RunsFilter(
                 job_name=job_name,
                 statuses=[dg.DagsterRunStatus.SUCCESS],
+                created_after=lookback,
             ),
-            limit=25,
+            limit=100,
         )
         matching_records = [
             record

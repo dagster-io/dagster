@@ -12,6 +12,9 @@ from shared.resources import SupportsGenerate
     deps=[dg.AssetKey(["harbor_outfitters", "sales_summary"])],
 )
 def consolidated_revenue(context) -> pd.DataFrame:
+    # deps= establishes cross-location lineage for the asset graph. The data is
+    # hard-coded here because Dagster IO managers cannot read across code locations;
+    # a production deployment would query the upstream database directly.
     return add_dataframe_preview_metadata(
         context,
         pd.DataFrame(
@@ -32,6 +35,7 @@ def consolidated_revenue(context) -> pd.DataFrame:
     deps=[dg.AssetKey(["summit_financial", "account_summary"])],
 )
 def risk_overview(context) -> pd.DataFrame:
+    # See consolidated_revenue above for why this returns static data.
     return add_dataframe_preview_metadata(
         context,
         pd.DataFrame(
