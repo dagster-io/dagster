@@ -11,4 +11,5 @@ examples/assets_smoke_test
 examples/docs_projects
 examples/docs_snippets
 examples/project_analytics
+examples/project_multi_tenant
 helm
