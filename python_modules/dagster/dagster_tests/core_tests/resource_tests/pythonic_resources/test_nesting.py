@@ -1199,13 +1199,12 @@ def test_resource_dependency_with_default_no_recursion() -> None:
     outer_explicit = OuterResource(inner=InnerResource(val="world"))
     assert outer_explicit._nested_resources["inner"].val == "world"  # type: ignore
 
-    # Pattern 4: sensor body executes correctly end-to-end
+    # Pattern 4: sensor body executes correctly end-to-end via evaluate_tick
     with dg.build_sensor_context(
         resources={"outer": OuterResource()}, sensor_name="test_sensor_33650"
     ) as ctx:
-        results = list(my_sensor(ctx))
-        assert len(results) == 1
-        assert isinstance(results[0], dg.SkipReason)
+        result = my_sensor.evaluate_tick(ctx)
+        assert result.skip_message == "done"
 
 
 def test_resource_dependency_with_default_in_asset() -> None:
