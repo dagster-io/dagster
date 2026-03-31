@@ -9,3 +9,4 @@ __pycache__/
 data/
 *.egg-info/
 tmp*/
+.tmp*/
