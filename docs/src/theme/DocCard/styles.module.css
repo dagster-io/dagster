@@ -203,3 +203,10 @@
 .cardTitleWrapper .cardTags {
   margin-left: 8px;
 }
+
+/* Announcement Bar */
+
+.theme-announcement-bar {
+  font-weight: bold !important;
+  color: red !important;
+}

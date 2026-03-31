@@ -51,9 +51,9 @@ const config: Config = {
     announcementBar: {
       id: 'announcementBar',
       content:
-        '<div style="font-size: large;"><strong>Developing with AI? Check out our new <a href="https://github.com/dagster-io/skills">AI skills</a>!</strong></div>',
-      backgroundColor: '#82e0b3',
-      textColor: '#091E42',
+        '<b>Developing with AI? Check out our new <a target="_blank" rel="noopener noreferrer" href="https://github.com/dagster-io/skills">AI skills</a>!</b>',
+      backgroundColor: 'var(--theme-color-background-blue)',
+      textColor: 'var(--theme-color-text-default)',
       isCloseable: true,
     },
     ...(process.env.ALGOLIA_APP_ID &&
