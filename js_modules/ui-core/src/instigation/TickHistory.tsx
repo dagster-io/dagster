@@ -22,7 +22,6 @@ import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import {useState} from 'react';
-import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
@@ -51,6 +50,7 @@ import {TickResultType, TickStatusTag} from '../ticks/TickStatusTag';
 import {CopyIconButton} from '../ui/CopyButton';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/TickHistory.module.css';
 
 Chart.register(zoomPlugin);
 
@@ -205,7 +205,7 @@ export const TicksTable = ({
         </Box>
       </Box>
       {ticks.length ? (
-        <TableWrapper>
+        <Table className={styles.tableWrapper}>
           <thead>
             <tr>
               <th style={{width: 120}}>Timestamp</th>
@@ -231,7 +231,7 @@ export const TicksTable = ({
               />
             ))}
           </tbody>
-        </TableWrapper>
+        </Table>
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />
@@ -577,11 +577,4 @@ const TICK_HISTORY_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${HISTORY_TICK_FRAGMENT}
-`;
-
-const TableWrapper = styled(Table)`
-  th,
-  td {
-    vertical-align: middle !important;
-  }
 `;

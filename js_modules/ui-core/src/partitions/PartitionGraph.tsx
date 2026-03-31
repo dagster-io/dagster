@@ -2,11 +2,11 @@ import {Box, Button, Colors, FontFamily, NonIdealState} from '@dagster-io/ui-com
 import {CategoryScale, ChartEvent, Chart as ChartJS, LinearScale} from 'chart.js';
 import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Line} from 'react-chartjs-2';
-import styled from 'styled-components';
 
 import {colorHash} from '../app/Util';
 import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 import {numberFormatter} from '../ui/formatters';
+import styles from './css/PartitionGraph.module.css';
 
 ChartJS.register(LinearScale, CategoryScale);
 
@@ -225,9 +225,9 @@ export const PartitionGraph = React.memo(
       // unlikely to save a render and is time consuming given the size of the data structure.
       // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
       return (
-        <PartitionGraphContainer>
+        <div className={styles.partitionGraphContainer}>
           <Line data={graphData} height={300} options={defaultOptions} ref={chart} />
-        </PartitionGraphContainer>
+        </div>
       );
     }
     return (
@@ -266,10 +266,3 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
     y: (pointData as any)[partitionName],
   }));
 };
-
-const PartitionGraphContainer = styled.div`
-  display: flex;
-  color: ${Colors.textLight()};
-  padding: 24px 12px;
-  text-decoration: none;
-`;

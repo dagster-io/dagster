@@ -1,0 +1,24 @@
+.sortButton {
+  border: 0;
+  cursor: pointer;
+  padding: 4px;
+  margin: 3px 3px 0 0;
+  background-color: var(--color-background-lighter);
+  border-radius: 4px;
+  transition: background-color 100ms;
+
+  &:focus {
+    background-color: var(--color-background-lighter-hover);
+    outline: none;
+  }
+  &:hover {
+    background-color: var(--color-background-light);
+  }
+}
+
+.pickerContainer {
+  display: flex;
+  justify: space-between;
+  align-items: center;
+  gap: 6px;
+}

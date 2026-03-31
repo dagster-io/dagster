@@ -1,0 +1,9 @@
+.container {
+  .bp5-popover-target {
+    max-width: 100%;
+
+    &:focus {
+      outline: none;
+    }
+  }
+}

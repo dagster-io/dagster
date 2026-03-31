@@ -1,13 +1,11 @@
-import {Colors} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import clsx from 'clsx';
+import * as React from 'react';
 
-export const SessionSettingsBar = styled.div`
-  color: ${Colors.accentReversed()};
-  display: flex;
-  position: relative;
-  border-bottom: 1px solid ${Colors.borderDefault()};
-  background: ${Colors.backgroundDefault()};
-  align-items: center;
-  height: 47px;
-  padding: 8px 10px;
-`;
+import styles from './css/SessionSettingsBar.module.css';
+
+export const SessionSettingsBar = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'>
+>((props, ref) => {
+  return <div {...props} ref={ref} className={clsx(styles.sessionSettingsBar, props.className)} />;
+});

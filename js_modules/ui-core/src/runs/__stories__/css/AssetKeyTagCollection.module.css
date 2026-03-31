@@ -1,0 +1,11 @@
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  min-height: 30px;
+  margin-bottom: 24px;
+  height: 100%;
+
+  & > div {
+    min-width: 0;
+  }
+}

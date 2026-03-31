@@ -1,0 +1,28 @@
+.container {
+  & table {
+    border: none;
+    font-family: var(--font-family-monospace);
+    font-size: 14px;
+  }
+
+  & table tr th {
+    box-shadow: none !important;
+    color: var(--color-text-light);
+    font-family: var(--font-family-default);
+    font-size: 12px;
+    font-weight: normal;
+    padding: 2px 8px;
+    text-align: left;
+  }
+
+  & table tr td {
+    box-shadow: none !important;
+    padding: 2px 8px;
+    font-variant-ligatures: none;
+  }
+
+  & table tr th:last-child,
+  & table tr td:last-child {
+    padding-right: 0;
+  }
+}

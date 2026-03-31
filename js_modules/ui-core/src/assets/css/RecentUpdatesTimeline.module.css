@@ -84,11 +84,11 @@
   bottom: -6px;
   top: -6px;
   background: repeating-linear-gradient(
-    to right,
-    var(--color-keyline-default) 0,
-    var(--color-keyline-default) 2px,
-    transparent 2px,
-    transparent 5%
+  to right,
+  var(--color-keyline-default) 0,
+  var(--color-keyline-default) 2px,
+  transparent 2px,
+  transparent 5%
   );
 }
 

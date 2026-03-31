@@ -1,4 +1,5 @@
-import styled from 'styled-components';
+import clsx from 'clsx';
+import * as React from 'react';
 
 import {OP_CARD_SOLID_DEFINITION_FRAGMENT, OpCard} from './OpCard';
 import {gql, useQuery} from '../apollo-client';
@@ -11,6 +12,7 @@ import {SidebarOpInvocationInfo} from '../pipelines/SidebarOpHelpers';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/OpDetailsRoot.module.css';
 
 interface UsedSolidDetailsProps {
   name: string;
@@ -88,7 +90,11 @@ const USED_SOLID_DETAILS_QUERY = gql`
   ${SIDEBAR_OP_DEFINITION_FRAGMENT}
 `;
 
-export const OpDetailScrollContainer = styled.div`
-  overflow-y: scroll;
-  flex: 1;
-`;
+export const OpDetailScrollContainer = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'>
+>((props, ref) => {
+  return (
+    <div {...props} ref={ref} className={clsx(styles.opDetailScrollContainer, props.className)} />
+  );
+});

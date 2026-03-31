@@ -1,6 +1,7 @@
 import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
+
+import styles from './css/TruncatedTextWithFullTextOnHover.module.css';
 
 export const LabelTooltipStyles = JSON.stringify({
   background: Colors.backgroundLight(),
@@ -14,13 +15,6 @@ export const LabelTooltipStyles = JSON.stringify({
   transform: 'translate(-10px,-5px)',
 } as React.CSSProperties);
 
-const TruncatingName = styled.div`
-  flex-shrink: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
 export const TruncatedTextWithFullTextOnHover = React.forwardRef(
   (
     {
@@ -33,13 +27,14 @@ export const TruncatedTextWithFullTextOnHover = React.forwardRef(
       | {text: React.ReactNode; tooltipStyle?: string; tooltipText: string},
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => (
-    <TruncatingName
+    <div
+      className={styles.truncatingName}
       data-tooltip={tooltipText ?? text}
       data-tooltip-style={tooltipStyle ?? LabelTooltipStyles}
       ref={ref}
       {...rest}
     >
       {text}
-    </TruncatingName>
+    </div>
   ),
 );

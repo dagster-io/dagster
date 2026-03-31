@@ -1,7 +1,6 @@
 import {Box, Code, MetadataTableWIP, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
 import {ScheduleAlertDetails} from '@shared/schedules/ScheduleAlertDetails';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
 import {ScheduleResetButton} from './ScheduleResetButton';
@@ -18,6 +17,7 @@ import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {EvaluateTickButtonSchedule} from '../ticks/EvaluateTickButtonSchedule';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/ScheduleDetails.module.css';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
@@ -109,14 +109,14 @@ export const ScheduleDetails = (props: {
           {schedule.pipelineName || assetSelection ? (
             <tr>
               <td>Target</td>
-              <TargetCell>
+              <td className={styles.targetCell}>
                 <AutomationTargetList
                   targets={schedule.pipelineName ? [{pipelineName: schedule.pipelineName}] : null}
                   repoAddress={repoAddress}
                   assetSelection={assetSelection || null}
                   automationType="schedule"
                 />
-              </TargetCell>
+              </td>
             </tr>
           ) : null}
           <tr>
@@ -176,9 +176,3 @@ export const ScheduleDetails = (props: {
     </>
   );
 };
-
-const TargetCell = styled.td`
-  button {
-    line-height: 20px;
-  }
-`;

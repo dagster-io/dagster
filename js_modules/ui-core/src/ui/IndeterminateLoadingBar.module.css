@@ -19,7 +19,7 @@
 .loading {
   &::after {
     position: absolute;
-    top: calc(var(--height) * -1); 
+    top: calc(var(--height) * -1);
     content: ' ';
     display: block;
     height: var(--height);

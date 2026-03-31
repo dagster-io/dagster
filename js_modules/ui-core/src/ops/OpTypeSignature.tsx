@@ -1,10 +1,10 @@
 import {Code} from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {gql} from '../apollo-client';
 import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import styles from './css/OpTypeSignature.module.css';
 
 interface IOpTypeSignature {
   definition: OpTypeSignatureFragment;
@@ -26,9 +26,9 @@ export const OpTypeSignature = (props: IOpTypeSignature) => {
     </span>
   ));
   return (
-    <TypeSignature>
+    <Code className={styles.typeSignature}>
       ({inputSide}) ⇒ ({outputSide})
-    </TypeSignature>
+    </Code>
   );
 };
 
@@ -49,11 +49,4 @@ export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
   }
 
   ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-`;
-
-const TypeSignature = styled(Code)`
-  padding: 4px;
-  box-shadow: none;
-  font-size: 12px;
-  line-height: 20px;
 `;
