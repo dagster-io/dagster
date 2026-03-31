@@ -26,10 +26,10 @@ def _create_cross_folder_resource_project(
     post_processing_target: str = "*",
     use_tagged_assets: bool = False,
 ) -> tuple[Path, str]:
-    """Creates a minimal project with:
+    """Creates a minimal project with the following default.
+
     - A parent-level resources.py defining a shared resource
-    - A subfolder with defs.yaml using post-processing and assets that
-      depend on the shared resource
+    - A subfolder with defs.yaml using post-processing and assets that depend on the shared resource
     """
     project_name = f"test_proj_{random.randint(0, 2**32 - 1)}"
     project_root = tmp_path / project_name
@@ -137,9 +137,7 @@ def test_cross_folder_resources_with_wildcard_post_processing(tmp_path: Path) ->
         ensure_loadable_path(project_root),
     ):
         module = importlib.import_module(f"{project_name}.defs")
-        tree = ComponentTree.from_module(
-            defs_module=module, project_root=project_root
-        )
+        tree = ComponentTree.from_module(defs_module=module, project_root=project_root)
 
         # Build defs - this should NOT raise DagsterInvalidDefinitionError
         defs = tree.build_defs()
@@ -174,9 +172,7 @@ def test_cross_folder_resources_with_targeted_post_processing(tmp_path: Path) ->
         ensure_loadable_path(project_root),
     ):
         module = importlib.import_module(f"{project_name}.defs")
-        tree = ComponentTree.from_module(
-            defs_module=module, project_root=project_root
-        )
+        tree = ComponentTree.from_module(defs_module=module, project_root=project_root)
 
         # Build defs - this should NOT raise DagsterInvalidDefinitionError
         defs = tree.build_defs()
