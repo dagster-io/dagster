@@ -1,0 +1,49 @@
+[project]
+name = "project_multi_tenant"
+version = "1!0+dev"
+description = "Dagster multi-tenant workspace example with isolated code locations"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "dagster",
+    "duckdb>=1.5.0",
+    "pandas>=2.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "dagster-dg-cli",
+    "dagster-webserver",
+    "pytest",
+    "ruff",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = [
+    "shared",
+    "shared.*",
+    "harbor_outfitters",
+    "harbor_outfitters.*",
+    "summit_financial",
+    "summit_financial.*",
+    "beacon_hq",
+    "beacon_hq.*",
+    "tests",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.dg]
+directory_type = "workspace"
+
+[tool.dg.workspace]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100

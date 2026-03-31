@@ -507,6 +507,12 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
+            oss_path("examples/project_multi_tenant"),
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_10,  # requires-python >= 3.11
+            ],
+        ),
+        PackageSpec(
             oss_path("examples/with_great_expectations"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # great_expectations incompatible
