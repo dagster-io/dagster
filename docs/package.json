@@ -15,6 +15,7 @@
     "ts": "tsc -p . --noEmit",
     "vale": "vale ./docs --ext=.md,.mdx",
     "lint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx --ignore-pattern 'node_modules/*' --ignore-pattern 'versioned_docs/*' --ignore-pattern 'versioned_sidebars/*' --fix",
+    "lint-check": "eslint . --ext=.tsx,.ts,.js,.md,.mdx --ignore-pattern 'node_modules/*' --ignore-pattern 'versioned_docs/*' --ignore-pattern 'versioned_sidebars/*'",
     "lint-and-vale": "yarn run lint && yarn run vale",
     "generate-code-imports": "node scripts/generate-code-imports.js",
     "build-kinds-tags": "./scripts/build-kinds-tags.sh",
