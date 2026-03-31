@@ -142,16 +142,17 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     def requires_cursor(self) -> bool:
         return False
 
-    def get_node_unique_id(
+    def get_backcompat_node_unique_ids(
         self,
         *,
-        parent_unique_id: str | None,
-        index: int | None,
-        target_key: EntityKey | None,
-    ) -> str:
-        """Ignore allow_selection / ignore_selection for the cursor hash."""
-        parts = [str(parent_unique_id), str(index), self.base_name]
-        return non_secure_md5_hash_str("".join(parts).encode())
+        parent_unique_id: str | None = None,
+        index: int | None = None,
+        target_key: EntityKey | None = None,
+    ) -> Sequence[str]:
+        """Backcompat for previous cursors where allow/ignore selections were ignored."""
+        return [
+            non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.base_name}".encode())
+        ]
 
     @public
     def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
