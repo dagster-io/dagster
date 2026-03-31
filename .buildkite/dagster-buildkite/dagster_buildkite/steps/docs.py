@@ -33,6 +33,7 @@ def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
             f'pip install -U "{UV_PIN}"',
             "yarn install",
             "yarn test",
+            "yarn lint",
             "yarn build-api-docs",
             "yarn build",
         )
