@@ -69,6 +69,7 @@ interface Props {
   hideEntriesShownOnOverview?: boolean;
   displayedByDefault?: number;
   emptyState?: React.ReactNode;
+  renderMetadataKeyExtra?: (label: string) => React.ReactNode | null;
 }
 
 /**
@@ -90,6 +91,7 @@ export const AssetEventMetadataEntriesTable = ({
   displayedByDefault = 100,
   emptyState,
   repoAddress,
+  renderMetadataKeyExtra,
 }: Props) => {
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
@@ -223,7 +225,10 @@ export const AssetEventMetadataEntriesTable = ({
                 .map(({entry, timestamp, runId, icon, tooltip}) => (
                   <tr key={`metadata-${timestamp}-${entry.label}`}>
                     <td>
-                      <Mono>{entry.label}</Mono>
+                      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                        <Mono>{entry.label}</Mono>
+                        {renderMetadataKeyExtra?.(entry.label)}
+                      </Box>
                     </td>
                     {showTimestamps && (
                       <td>

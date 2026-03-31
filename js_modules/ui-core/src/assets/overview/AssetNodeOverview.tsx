@@ -8,12 +8,12 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {AssetAlertsSection} from '@shared/assets/AssetAlertsSection';
+import {AssetEventMetadataEntriesTable} from '@shared/assets/AssetEventMetadataEntriesTable';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {FreshnessPolicySection} from './FreshnessPolicySection';
 import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
-import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
 import {AutomationDetailsSection} from './AutomationDetailsSection';
 import {AttributeAndValue, SectionEmptyState} from './Common';
