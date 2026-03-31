@@ -39,6 +39,7 @@ import {gql, useLazyQuery} from '../apollo-client';
 import {DagsterTag} from './RunTag';
 import {AppContext} from '../app/AppContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ReexecutionStrategy} from '../graphql/types';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -160,7 +161,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 onClick={() => setVisibleDialog('tags')}
               />
 
-              {run.pipelineSnapshotId ? (
+              {run.pipelineSnapshotId && !isHiddenAssetGroupJob(run.pipelineName) ? (
                 <Link
                   className={styles.linkNoUnderline}
                   to={getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)}
