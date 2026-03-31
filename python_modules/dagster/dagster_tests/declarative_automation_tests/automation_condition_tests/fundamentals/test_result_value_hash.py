@@ -210,3 +210,27 @@ def test_newly_true_condition_cursor_backcompat() -> None:
     ) == cond_b.get_backcompat_node_unique_ids(
         parent_unique_id="parent", index=0, target_key=None
     )
+
+
+def test_node_unique_ids_deduplicate_noop_backcompat_ids() -> None:
+    condition = AC.any_deps_match(AC.missing())
+
+    unique_ids = condition.get_node_unique_ids(
+        parent_unique_ids=[None], child_indices=[None], target_key=None
+    )
+
+    assert len(unique_ids) == 1
+
+
+def test_nested_dep_conditions_do_not_expand_duplicate_unique_ids() -> None:
+    condition = AC.any_deps_match(AC.any_deps_match(AC.missing()))
+
+    root_unique_ids = condition.get_node_unique_ids(
+        parent_unique_ids=[None], child_indices=[None], target_key=None
+    )
+    child_unique_ids = condition.children[0].get_node_unique_ids(
+        parent_unique_ids=root_unique_ids, child_indices=[None, 0], target_key=None
+    )
+
+    assert len(root_unique_ids) == 1
+    assert len(child_unique_ids) == 2

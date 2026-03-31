@@ -182,22 +182,24 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         target_key: EntityKey | None,
     ) -> Sequence[str]:
         unique_ids = []
+        seen_unique_ids = set()
         for parent_unique_id in parent_unique_ids:
             for child_index in child_indices:
-                unique_ids.extend(
-                    [
-                        self.get_node_unique_id(
-                            parent_unique_id=parent_unique_id,
-                            index=child_index,
-                            target_key=target_key,
-                        ),
-                        *self.get_backcompat_node_unique_ids(
-                            parent_unique_id=parent_unique_id,
-                            index=child_index,
-                            target_key=target_key,
-                        ),
-                    ]
-                )
+                for unique_id in [
+                    self.get_node_unique_id(
+                        parent_unique_id=parent_unique_id,
+                        index=child_index,
+                        target_key=target_key,
+                    ),
+                    *self.get_backcompat_node_unique_ids(
+                        parent_unique_id=parent_unique_id,
+                        index=child_index,
+                        target_key=target_key,
+                    ),
+                ]:
+                    if unique_id not in seen_unique_ids:
+                        seen_unique_ids.add(unique_id)
+                        unique_ids.append(unique_id)
         return unique_ids
 
     def get_unique_id(
