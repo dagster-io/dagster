@@ -11,6 +11,7 @@ def _schedule_tags(context: dg.ScheduleEvaluationContext) -> dict[str, str]:
     scheduled_time = context.scheduled_execution_time or datetime.now()
     orchestration_date = scheduled_time.date().isoformat()
     return {
+        # Beacon's cross-location sensor uses this tag to correlate same-day upstream runs.
         "orchestration_date": orchestration_date,
         "tenant": "harbor_outfitters",
         "pipeline_stage": "publish",

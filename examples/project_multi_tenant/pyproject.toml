@@ -22,6 +22,19 @@ dev = [
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = [
+    "shared",
+    "shared.*",
+    "harbor_outfitters",
+    "harbor_outfitters.*",
+    "summit_financial",
+    "summit_financial.*",
+    "beacon_hq",
+    "beacon_hq.*",
+    "tests",
+]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

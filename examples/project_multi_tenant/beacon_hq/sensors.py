@@ -16,6 +16,7 @@ def _orchestration_date_for_run(
     instance: dg.DagsterInstance,
     dagster_run: dg.DagsterRun,
 ) -> str | None:
+    """Resolve orchestration_date from tags, then fall back to run timestamps."""
     tagged_date = dagster_run.tags.get("orchestration_date")
     if tagged_date:
         return tagged_date
@@ -26,6 +27,11 @@ def _orchestration_date_for_run(
 
     event_time = record.start_time or record.create_timestamp.timestamp()
     return datetime.fromtimestamp(event_time, tz=timezone.utc).date().isoformat()
+
+
+def _orchestration_date_for_context(context: dg.RunStatusSensorContext) -> str | None:
+    """Convenience wrapper for extracting the orchestration date from the triggering run."""
+    return _orchestration_date_for_run(context.instance, context.dagster_run)
 
 
 @dg.run_status_sensor(
@@ -46,13 +52,14 @@ def beacon_after_upstream_success_sensor(
     if dagster_run.job_name not in UPSTREAM_JOB_NAMES:
         return dg.SkipReason("Ignoring non-upstream job success event.")
 
-    orchestration_date = _orchestration_date_for_run(context.instance, dagster_run)
+    orchestration_date = _orchestration_date_for_context(context)
     if not orchestration_date:
         return dg.SkipReason("Could not determine an orchestration date for the upstream run.")
 
     lookback = datetime.now(tz=timezone.utc) - timedelta(hours=48)
+    other_upstream_jobs = UPSTREAM_JOB_NAMES - {dagster_run.job_name}
     missing_jobs: list[str] = []
-    for job_name in sorted(UPSTREAM_JOB_NAMES):
+    for job_name in sorted(other_upstream_jobs):
         records = context.instance.get_run_records(
             filters=dg.RunsFilter(
                 job_name=job_name,
