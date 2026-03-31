@@ -5,7 +5,7 @@ from dagster_dbt.utils import _select_unique_ids_from_cli
 
 
 def _mock_invocation(mocker):
-    mock_dbt_cli_resource_class = mocker.patch("dagster_dbt.utils.DbtCliResource")
+    mock_dbt_cli_resource_class = mocker.patch("dagster_dbt.core.resource.DbtCliResource")
     mock_dbt_cli_resource = mock_dbt_cli_resource_class.return_value
     mock_invocation = mock_dbt_cli_resource.cli.return_value
     return mock_dbt_cli_resource, mock_invocation
