@@ -1,0 +1,22 @@
+[
+  {
+    "source": "/getting-started/getting-help",
+    "destination": "/about/community",
+    "permanent": true
+  },
+  {
+    "source": "/community",
+    "destination": "/about/community",
+    "permanent": true
+  },
+  {
+    "source": "/community/contributing/",
+    "destination": "/about/contributing",
+    "permanent": true
+  },
+  {
+    "source": "/changelog",
+    "destination": "/about/changelog",
+    "permanent": true
+  }
+]

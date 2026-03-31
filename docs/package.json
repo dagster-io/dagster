@@ -34,6 +34,7 @@
     "@docusaurus/preset-classic": "^3.9.2",
     "@docusaurus/theme-mermaid": "^3.9.2",
     "@mdx-js/react": "^3.0.1",
+    "@vercel/config": "^0.1.0",
     "clsx": "^2.1.1",
     "docusaurus-lunr-search": "3.6.0",
     "docusaurus-plugin-image-zoom": "^2.0.0",

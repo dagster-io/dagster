@@ -1,0 +1,147 @@
+[
+  {
+    "source": "/guides/build/ml-pipelines",
+    "destination": "/examples/ml",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/ml-pipeline",
+    "destination": "/examples/ml",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/managing-ml",
+    "destination": "/examples/ml",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial",
+    "destination": "/examples/full-pipelines/etl-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/extract-data",
+    "destination": "/examples/full-pipelines/etl-pipeline/extract-data",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/transform-data",
+    "destination": "/examples/full-pipelines/etl-pipeline/transform-data",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/add-a-resource",
+    "destination": "/examples/full-pipelines/etl-pipeline/add-a-resource",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/data-quality",
+    "destination": "/examples/full-pipelines/etl-pipeline/data-quality",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/partition-asset",
+    "destination": "/examples/full-pipelines/etl-pipeline/partition-asset",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/automate-your-pipeline",
+    "destination": "/examples/full-pipelines/etl-pipeline/automate-your-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/visualize-data",
+    "destination": "/examples/full-pipelines/etl-pipeline/visualize-data",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/create-a-sensor",
+    "destination": "/examples/full-pipelines/etl-pipeline/create-a-sensor",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/create-a-sensor-asset",
+    "destination": "/examples/full-pipelines/etl-pipeline/create-a-sensor",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/create-and-materialize-a-downstream-asset",
+    "destination": "/examples/full-pipelines/etl-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/create-and-materialize-partitioned-asset",
+    "destination": "/examples/full-pipelines/etl-pipeline/partition-asset",
+    "permanent": true
+  },
+  {
+    "source": "/etl-pipeline-tutorial/ensure-data-quality-with-asset-checks",
+    "destination": "/examples/full-pipelines/etl-pipeline/data-quality",
+    "permanent": true
+  },
+  {
+    "source": "/examples/bluesky",
+    "destination": "/examples/full-pipelines/bluesky",
+    "permanent": true
+  },
+  {
+    "source": "/examples/dbt",
+    "destination": "/examples/full-pipelines/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/examples/etl-pipeline",
+    "destination": "/examples/full-pipelines/etl-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/examples/llm-fine-tuning",
+    "destination": "/examples/full-pipelines/llm-fine-tuning",
+    "permanent": true
+  },
+  {
+    "source": "/examples/modal",
+    "destination": "/examples/full-pipelines/modal",
+    "permanent": true
+  },
+  {
+    "source": "/examples/prompt-engineering",
+    "destination": "/examples/full-pipelines/prompt-engineering",
+    "permanent": true
+  },
+  {
+    "source": "/examples/rag",
+    "destination": "/examples/full-pipelines/rag",
+    "permanent": true
+  },
+  {
+    "source": "/examples/resource-caching",
+    "destination": "/examples/mini-examples/resource-caching",
+    "permanent": true
+  },
+  {
+    "source": "/examples/shared-module",
+    "destination": "/examples/mini-examples/shared-module",
+    "permanent": true
+  },
+  {
+    "source": "/examples/reference-architectures",
+    "destination": "/examples",
+    "permanent": true
+  },
+  {
+    "source": "/examples/mini-examples",
+    "destination": "/examples/best-practices",
+    "permanent": true
+  },
+  {
+    "source": "/examples/mini-examples/:path*",
+    "destination": "/examples/best-practices/:path*",
+    "permanent": true
+  },
+  {
+    "source": "/tutorials/",
+    "destination": "/examples",
+    "permanent": true
+  }
+]
