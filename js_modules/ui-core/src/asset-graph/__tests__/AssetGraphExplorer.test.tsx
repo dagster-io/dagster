@@ -106,27 +106,6 @@ jest.mock('../useFindAssetLocation', () => ({
   useFindAssetLocation: () => jest.fn(),
 }));
 
-jest.mock('../useNodeDrag', () => ({
-  useNodeDrag: () => ({
-    onNodeMouseDown: jest.fn(),
-    onGroupMouseDown: jest.fn(),
-    draggingNodeId: null,
-    draggedNodePositions: {},
-  }),
-}));
-
-jest.mock('../usePositionOverrides', () => ({
-  usePositionOverrides: () => ({
-    overrides: {},
-    updateNodePosition: jest.fn(),
-    updateMultiplePositions: jest.fn(),
-    resetNodePosition: jest.fn(),
-    resetMultiplePositions: jest.fn(),
-    resetAllOverrides: jest.fn(),
-    hasOverrides: false,
-  }),
-}));
-
 jest.mock('../../app/AppTopNav/AppTopNavContext', () => ({
   useFullScreenAllowedView: jest.fn(),
   useFullScreen: () => ({
