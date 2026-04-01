@@ -48,6 +48,7 @@ import {assetKeyTokensInRange} from './assetKeyTokensInRange';
 import {getGroupBoundsForRender} from './groupRenderUtils';
 import {AssetGraphLayout, GroupLayout, computeEdgeEndpoints} from './layout';
 import {getGroupManualPositionState} from './manualPositionState';
+import {getPositionOverrideKey} from './positionOverrideKey';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetGraphQueryItem} from './types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
@@ -235,18 +236,25 @@ const AssetGraphExplorerWithData = ({
 
   const viewportEl = React.useRef<SVGViewportRef>();
 
+  const positionOverrideKey = useMemo(
+    () =>
+      getPositionOverrideKey({
+        viewType,
+        explorerPath,
+        fetchOptions,
+      }),
+    [explorerPath, fetchOptions, viewType],
+  );
+
   const {
     overrides,
     updateNodePosition,
     updateMultiplePositions,
     resetNodePosition,
+    resetMultiplePositions,
     resetAllOverrides,
     hasOverrides,
-  } = usePositionOverrides(
-    `asset-graph-position-overrides-${viewType}-${explorerPath.pipelineName}`,
-    assetGraphData,
-    fullAssetGraphData,
-  );
+  } = usePositionOverrides(positionOverrideKey, assetGraphData, fullAssetGraphData);
 
   // Throttled variant for Shift+Arrow keyboard nudging. Key repeat fires at 30-50 events/sec;
   // throttling to ~10 writes/sec avoids serializing the full overrides map on every frame
@@ -696,9 +704,14 @@ const AssetGraphExplorerWithData = ({
                 draggedNodePositions,
                 nodes: effectiveLayout.nodes,
               });
-              const groupManualPosition = getGroupManualPositionState(overrides, group.id);
+              const groupManualPosition = getGroupManualPositionState(
+                overrides,
+                group.id,
+                childIds,
+                group.expanded,
+              );
               const onResetGroupPosition = groupManualPosition.isManuallyPositioned
-                ? () => resetNodePosition(group.id)
+                ? () => resetMultiplePositions(groupManualPosition.resetIds)
                 : undefined;
 
               return group.expanded ? (

@@ -1,4 +1,4 @@
-import {Colors, Tooltip} from '@dagster-io/ui-components';
+import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
@@ -23,12 +23,17 @@ const placementStyles = {
   `,
 };
 
-const HandleButton = styled.button<{
-  $isDragging: boolean;
-  $isManuallyPositioned: boolean;
+const HandleContainer = styled.div<{
   $placement: 'header' | 'edge';
 }>`
   ${(p) => placementStyles[p.$placement]}
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+`;
+
+const ControlButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -38,12 +43,23 @@ const HandleButton = styled.button<{
   border: 0;
   border-radius: 6px;
   background: transparent;
+  color: ${Colors.textLight()};
+
+  &:hover {
+    background: ${Colors.backgroundLightHover()};
+    color: ${Colors.textDefault()};
+  }
+`;
+
+const HandleButton = styled(ControlButton)<{
+  $isDragging: boolean;
+  $isManuallyPositioned: boolean;
+}>`
   color: ${(p) =>
     p.$isDragging || p.$isManuallyPositioned ? Colors.accentBlue() : Colors.textLight()};
   cursor: ${(p) => (p.$isDragging ? 'grabbing' : 'grab')};
 
   &:hover {
-    background: ${Colors.backgroundLightHover()};
     color: ${(p) => (p.$isManuallyPositioned ? Colors.accentBlue() : Colors.textDefault())};
   }
 
@@ -70,32 +86,41 @@ export const ManualPositionHandle = ({
   placement = 'header',
 }: ManualPositionHandleProps) => {
   const isResettable = isManuallyPositioned && !!onReset;
-  const tooltipContent = isResettable
-    ? 'Drag to reposition. Double-click to reset position.'
-    : 'Drag to reposition';
 
   return (
-    <Tooltip content={tooltipContent}>
-      <HandleButton
-        type="button"
-        aria-label={isResettable ? 'Reset position' : 'Drag to reposition'}
-        $isDragging={isDragging}
-        $isManuallyPositioned={isManuallyPositioned}
-        $placement={placement}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          onDragStart(e);
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          if (isResettable) {
-            onReset();
-          }
-        }}
-      />
-    </Tooltip>
+    <HandleContainer $placement={placement}>
+      <Tooltip content="Drag to reposition">
+        <HandleButton
+          type="button"
+          aria-label="Drag to reposition"
+          $isDragging={isDragging}
+          $isManuallyPositioned={isManuallyPositioned}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            onDragStart(e);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        />
+      </Tooltip>
+      {isResettable ? (
+        <Tooltip content="Reset to auto-layout">
+          <ControlButton
+            type="button"
+            aria-label="Reset to auto-layout"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReset();
+            }}
+          >
+            <Icon name="refresh" />
+          </ControlButton>
+        </Tooltip>
+      ) : null}
+    </HandleContainer>
   );
 };

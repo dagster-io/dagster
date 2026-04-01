@@ -30,19 +30,37 @@ describe('ManualPositionHandle', () => {
     expect(onParentClick).not.toHaveBeenCalled();
   });
 
-  it('resets on double click when a reset handler is provided', () => {
+  it('renders a separate reset action when a reset handler is provided', () => {
+    const onDragStart = jest.fn();
     const onReset = jest.fn();
-    const onParentDoubleClick = jest.fn();
 
     render(
-      <div onDoubleClick={onParentDoubleClick}>
-        <ManualPositionHandle onDragStart={() => {}} onReset={onReset} isManuallyPositioned />
+      <ManualPositionHandle
+        onDragStart={onDragStart}
+        onReset={onReset}
+        isManuallyPositioned
+      />,
+    );
+
+    expect(screen.getByLabelText('Drag to reposition')).toBeVisible();
+    expect(screen.getByLabelText('Reset to auto-layout')).toBeVisible();
+  });
+
+  it('resets on click without triggering drag or parent click handlers', () => {
+    const onReset = jest.fn();
+    const onDragStart = jest.fn();
+    const onParentClick = jest.fn();
+
+    render(
+      <div onClick={onParentClick}>
+        <ManualPositionHandle onDragStart={onDragStart} onReset={onReset} isManuallyPositioned />
       </div>,
     );
 
-    fireEvent.doubleClick(screen.getByLabelText('Reset position'));
+    fireEvent.click(screen.getByLabelText('Reset to auto-layout'));
 
     expect(onReset).toHaveBeenCalledTimes(1);
-    expect(onParentDoubleClick).not.toHaveBeenCalled();
+    expect(onDragStart).not.toHaveBeenCalled();
+    expect(onParentClick).not.toHaveBeenCalled();
   });
 });
