@@ -602,6 +602,7 @@ const AssetGraphExplorerWithData = ({
   const [showSidebar, setShowSidebar] = React.useState(
     viewType === 'global' || viewType === 'catalog',
   );
+  const [rightPanelHidden, setRightPanelHidden] = React.useState(false);
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     const filters: string[] = [`group:"${group.groupName}"`];
@@ -894,6 +895,39 @@ const AssetGraphExplorerWithData = ({
     );
   }, [toggleFullScreen, isFullScreen]);
 
+  const rightPanel = useMemo(() => {
+    if (selectedGraphNodes.length === 1 && selectedGraphNodes[0]) {
+      return (
+        <RightInfoPanel>
+          <RightInfoPanelContent>
+            <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
+              <SidebarAssetInfo
+                graphNode={selectedGraphNodes[0]}
+                onToggleCollapse={() => {
+                  setRightPanelHidden(true);
+                }}
+              />
+            </ErrorBoundary>
+          </RightInfoPanelContent>
+        </RightInfoPanel>
+      );
+    }
+
+    if (fetchOptions.pipelineSelector) {
+      return (
+        <RightInfoPanel>
+          <RightInfoPanelContent>
+            <ErrorBoundary region="asset job sidebar">
+              <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
+            </ErrorBoundary>
+          </RightInfoPanelContent>
+        </RightInfoPanel>
+      );
+    }
+
+    return null;
+  }, [fetchOptions.pipelineSelector, selectedGraphNodes]);
+
   const renderNotice = () => {
     if (graphQueryItems.length === 0) {
       return <EmptyDAGNotice nodeType="asset" isGraph />;
@@ -1042,6 +1076,20 @@ const AssetGraphExplorerWithData = ({
                 )}
               </Box>
             </TopbarWrapper>
+            {rightPanel && rightPanelHidden ? (
+              <RightPanelRevealButton>
+                <Tooltip content="Show details panel">
+                  <Button
+                    icon={<Icon name="panel_show_right" />}
+                    title="Show details panel"
+                    aria-label="Show details panel"
+                    onClick={() => {
+                      setRightPanelHidden(false);
+                    }}
+                  />
+                </Tooltip>
+              </RightPanelRevealButton>
+            ) : null}
           </ErrorBoundary>
         )
       }
@@ -1053,33 +1101,10 @@ const AssetGraphExplorerWithData = ({
           // to fail because the viewport size is still the full width.
           return selectedTokens.length === 1 ? <div /> : null;
         }
-        if (selectedGraphNodes.length === 1 && selectedGraphNodes[0]) {
-          return (
-            <RightInfoPanel>
-              <RightInfoPanelContent>
-                <ErrorBoundary
-                  region="asset sidebar"
-                  resetErrorOnChange={[selectedGraphNodes[0].id]}
-                >
-                  <SidebarAssetInfo graphNode={selectedGraphNodes[0]} />
-                </ErrorBoundary>
-              </RightInfoPanelContent>
-            </RightInfoPanel>
-          );
+        if (rightPanelHidden) {
+          return null;
         }
-
-        if (fetchOptions.pipelineSelector) {
-          return (
-            <RightInfoPanel>
-              <RightInfoPanelContent>
-                <ErrorBoundary region="asset job sidebar">
-                  <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
-                </ErrorBoundary>
-              </RightInfoPanelContent>
-            </RightInfoPanel>
-          );
-        }
-        return null;
+        return rightPanel;
       })()}
     />
   );
@@ -1148,6 +1173,19 @@ const TopbarWrapper = styled.div<{$isFullScreen?: boolean; $viewType: AssetGraph
   }}
   gap: 12px;
   align-items: center;
+`;
+
+const RightPanelRevealButton = styled.div`
+  position: absolute;
+  top: 88px;
+  right: 0;
+  z-index: 2;
+
+  button {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: none;
+  }
 `;
 
 const GraphQueryInputFlexWrap = styled.div`
