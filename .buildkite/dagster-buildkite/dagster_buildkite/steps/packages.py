@@ -842,12 +842,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ),
         ),
         PackageSpec(
-            oss_path("python_modules/libraries/dagster-dg-cli"),
-            name="dagster-dg-cli-mcp",
-            pytest_tox_factors=[ToxFactor("mcp")],
-            force_run_fn=BuildkiteContext.has_dg_or_component_integration_changes,
-        ),
-        PackageSpec(
             oss_path("python_modules/libraries/dagster-aws"),
             env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         ),
