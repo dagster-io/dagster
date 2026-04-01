@@ -66,6 +66,7 @@ export const config: VercelConfig = {
       '/dagster-plus/deployment/deployment-types/hybrid/:path*',
       '/deployment/dagster-plus/hybrid/:path*',
     ),
+    routes.redirect('/deployment/dagster-plus/serverless/run-isolation', '/deployment/dagster-plus/run-isolation'),
 
     // MIGRATION
     routes.redirect('/guides/migrate/:path*', '/migration/:path*'),

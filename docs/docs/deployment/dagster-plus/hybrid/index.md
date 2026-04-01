@@ -35,6 +35,10 @@ If you are migrating from from Dagster+ Serverless, see the [Dagster+ Serverless
 
 :::
 
+## Run isolation
+
+Dagster+ Hybrid deployments support both isolated and non-isolated runs. Isolated runs execute in their own container with dedicated resources, while non-isolated runs use a shared container for faster iteration during development. For details, see [Run isolation](/deployment/dagster-plus/run-isolation).
+
 ## Best practices
 
 ### Recommended compute resources

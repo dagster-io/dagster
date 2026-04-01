@@ -1,23 +1,26 @@
 ---
-description: Dagster+ Serverless run isolation offers isolated runs for production with dedicated resources, and non-isolated runs in a standing, shared container for faster development.
+description: Dagster+ run isolation offers isolated runs for production with dedicated resources, and non-isolated runs in a standing, shared container for faster development.
 sidebar_label: Run isolation
-sidebar_position: 2000
-title: Serverless run isolation
+sidebar_position: 450
+title: Run isolation
 tags: [dagster-plus-feature]
 ---
 
-Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated.
+Dagster+ offers two settings for run isolation: isolated and non-isolated. These settings are available for both [Serverless](/deployment/dagster-plus/serverless) and [Hybrid](/deployment/dagster-plus/hybrid) deployments.
 
 - [**Isolated runs**](#isolated-runs-default) execute in their own container. They're the default and are intended for production and compute-heavy use cases.
-- [**Non-isolated runs**](#non-isolated-runs) trade off isolation for speed. They must be launched manually and are intended for fast iteration during development.
+- [**Non-isolated runs**](#non-isolated-runs) trade off isolation for speed. They are intended for fast iteration during development or for time-sensitive jobs that do not require extensive compute within Dagster.
 
 ## Isolated runs (default)
 
-Isolated runs each take place in their own container with their own compute resources: 4 vCPUs and 16GB of RAM.
+Isolated runs each take place in their own container with their own compute resources.
 
-These runs may take up to 3 minutes to start while these resources are provisioned.
+- **Serverless**: 4 vCPUs and 16GB of RAM
+- **Hybrid**: Resources are determined by your infrastructure configuration
 
-When launching runs manually, select `Isolate run environment` in the Launchpad to launch an isolated runs.
+These runs may take up to 3 minutes to start while resources are provisioned.
+
+When launching runs manually, select `Isolate run environment` in the Launchpad to launch an isolated run.
 
 :::note
 
@@ -28,7 +31,7 @@ If non-isolated runs are disabled (see the section below), the toggle won't appe
 
 Non-isolated runs provide a faster start time by using a standing, shared container for each code location.
 
-They have fewer compute resources: 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes running within a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
+They have fewer compute resources than isolated runs. For Serverless deployments, non-isolated runs receive 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes running within a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
 
 To be able to use non-isolated runs, the `non_isolated_runs` setting must first be enabled in [Full deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference#non-isolated-runs):
 
