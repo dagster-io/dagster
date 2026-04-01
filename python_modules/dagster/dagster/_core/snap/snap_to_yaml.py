@@ -35,7 +35,11 @@ def _filter_empty_dicts(
 
     filtered_dict = {}
     for k, v in to_filter.items():
-        field = type_snap.get_field(k) if type_snap and k in type_snap.field_names else None
+        field = (
+            type_snap.get_field(k)
+            if type_snap and type_snap.fields is not None and k in type_snap.field_names
+            else None
+        )
         field_snap = (
             snapshot.get_config_snap(field.type_key)
             if field and snapshot and snapshot.has_config_snap(field.type_key)
