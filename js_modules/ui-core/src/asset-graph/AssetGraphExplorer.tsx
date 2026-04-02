@@ -19,7 +19,7 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import {ParsedQs} from 'qs';
 import * as React from 'react';
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -373,11 +373,14 @@ const AssetGraphExplorerWithData = ({
     lastRenderedLayout.current = layout;
   }, [lastSelectedNode, layout, viewportEl, zoomToGroup]);
 
-  const onClickBackground = () =>
+  const onClickBackground = () => {
+    setRightPanelHidden(false);
+    setRightPanelCollapsed(false);
     onChangeExplorerPath(
       {...explorerPath, pipelineName: explorerPath.pipelineName, opNames: []},
       'replace',
     );
+  };
 
   const onArrowKeyDown = (e: React.KeyboardEvent<any>, dir: 'left' | 'right' | 'up' | 'down') => {
     if (!layout || !lastSelectedNode) {
@@ -461,6 +464,18 @@ const AssetGraphExplorerWithData = ({
     viewType === 'global' || viewType === 'catalog',
   );
   const [rightPanelHidden, setRightPanelHidden] = React.useState(false);
+  // Tracks the actual null/non-null state of the second slot. Trails rightPanelHidden
+  // by 150ms on hide so the content can fade out before the graph canvas expands.
+  const [rightPanelCollapsed, setRightPanelCollapsed] = React.useState(false);
+
+  useEffect(() => {
+    if (!rightPanelHidden) {
+      setRightPanelCollapsed(false);
+      return;
+    }
+    const timer = setTimeout(() => setRightPanelCollapsed(true), 150);
+    return () => clearTimeout(timer);
+  }, [rightPanelHidden]);
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     const filters: string[] = [`group:"${group.groupName}"`];
@@ -853,6 +868,18 @@ const AssetGraphExplorerWithData = ({
                       <AssetLiveDataRefreshButton />
                     </>
                   )}
+                  {rightPanelHidden &&
+                  (selectedGraphNodes.length === 1 || !!fetchOptions.pipelineSelector) ? (
+                    <Tooltip content="Show details panel">
+                      <Button
+                        icon={<Icon name="panel_show_right" />}
+                        aria-label="Show details panel"
+                        onClick={() => {
+                          setRightPanelHidden(false);
+                        }}
+                      />
+                    </Tooltip>
+                  ) : null}
                   {isIframe() ? null : (
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
@@ -880,20 +907,6 @@ const AssetGraphExplorerWithData = ({
                 )}
               </Box>
             </TopbarWrapper>
-            {rightPanel && rightPanelHidden ? (
-              <RightPanelRevealButton>
-                <Tooltip content="Show details panel">
-                  <Button
-                    icon={<Icon name="panel_show_right" />}
-                    title="Show details panel"
-                    aria-label="Show details panel"
-                    onClick={() => {
-                      setRightPanelHidden(false);
-                    }}
-                  />
-                </Tooltip>
-              </RightPanelRevealButton>
-            ) : null}
           </ErrorBoundary>
         )
       }
@@ -905,10 +918,27 @@ const AssetGraphExplorerWithData = ({
           // to fail because the viewport size is still the full width.
           return selectedTokens.length === 1 ? <div /> : null;
         }
-        if (rightPanelHidden) {
+        // Only suppress the asset info sidebar — the job sidebar should not be
+        // hidden by the user dismissing the asset panel in a different context.
+        // rightPanelCollapsed trails rightPanelHidden by 150ms so the opacity
+        // fade-out completes before the graph canvas expands.
+        if (rightPanelCollapsed && selectedGraphNodes.length === 1) {
           return null;
         }
-        return rightPanel;
+        return (
+          <div
+            style={{
+              opacity: rightPanelHidden && selectedGraphNodes.length === 1 ? 0 : 1,
+              transition: 'opacity 150ms ease-out',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              minHeight: 0,
+            }}
+          >
+            {rightPanel}
+          </div>
+        );
       })()}
     />
   );
@@ -977,19 +1007,6 @@ const TopbarWrapper = styled.div<{$isFullScreen?: boolean; $viewType: AssetGraph
   }}
   gap: 12px;
   align-items: center;
-`;
-
-const RightPanelRevealButton = styled.div`
-  position: absolute;
-  top: 88px;
-  right: 0;
-  z-index: 2;
-
-  button {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    box-shadow: none;
-  }
 `;
 
 const GraphQueryInputFlexWrap = styled.div`

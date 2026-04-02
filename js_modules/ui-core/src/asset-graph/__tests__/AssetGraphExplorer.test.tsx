@@ -1,4 +1,4 @@
-import {render, screen, within} from '@testing-library/react';
+import {act, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -316,15 +316,27 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+// Helper to advance past the 150ms fade-out before the panel DOM is removed.
+const advancePanelFade = () => act(() => jest.advanceTimersByTime(200));
+
 describe('AssetGraphExplorer', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('lets users hide the details panel without clearing selection and reopen it later', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     renderExplorer();
 
     const sidebar = screen.getByTestId('asset-sidebar-info');
     expect(sidebar).toHaveTextContent('asset_one');
     expect(screen.queryByRole('button', {name: 'Show details panel'})).not.toBeInTheDocument();
     await user.click(within(sidebar).getByRole('button', {name: 'Hide details panel'}));
+    await advancePanelFade();
     expect(screen.queryByTestId('asset-sidebar-info')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', {name: 'asset_two'}));
@@ -334,8 +346,26 @@ describe('AssetGraphExplorer', () => {
     expect(screen.getByTestId('asset-sidebar-info')).toHaveTextContent('asset_two');
   });
 
+  it('reopens the details panel when a new asset is selected after the background is clicked', async () => {
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
+    renderExplorer();
+
+    const sidebar = screen.getByTestId('asset-sidebar-info');
+    await user.click(within(sidebar).getByRole('button', {name: 'Hide details panel'}));
+    await advancePanelFade();
+    expect(screen.queryByTestId('asset-sidebar-info')).not.toBeInTheDocument();
+
+    // Clicking the background resets the hidden state
+    await user.click(screen.getByRole('button', {name: 'graph background'}));
+    expect(screen.queryByRole('button', {name: 'Show details panel'})).not.toBeInTheDocument();
+
+    // Selecting a new asset should open the panel automatically (no reveal needed)
+    await user.click(screen.getByRole('button', {name: 'asset_two'}));
+    expect(screen.getByTestId('asset-sidebar-info')).toHaveTextContent('asset_two');
+  });
+
   it('clears selection and removes the details panel when the graph background is clicked', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     renderExplorer();
 
     expect(screen.getByTestId('asset-sidebar-info')).toHaveTextContent('asset_one');
