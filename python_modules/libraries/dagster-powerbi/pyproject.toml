@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster_powerbi"
-version = "1!0+dev"
+version = "0.28.22"
 description = "Build assets representing Power BI dashboards and reports."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -18,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.12.22",
 ]
 
 [project.urls]
@@ -29,6 +33,6 @@ dagster_powerbi = "dagster_powerbi"
 
 [project.optional-dependencies]
 test = [
-    "dagster-dg-core[test]==1!0+dev",
-    "dagster-dg-cli==1!0+dev",
+    "dagster-dg-core[test]==1.12.22",
+    "dagster-dg-cli==1.12.22",
 ]
