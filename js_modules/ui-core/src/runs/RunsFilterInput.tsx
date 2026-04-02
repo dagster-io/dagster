@@ -157,7 +157,9 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
-      const [key, value = ''] = item.value.split('=');
+      const eqIndex = item.value.indexOf('=');
+      const key = eqIndex === -1 ? item.value : item.value.slice(0, eqIndex);
+      const value = eqIndex === -1 ? '' : item.value.slice(eqIndex + 1);
       if (obj.tags) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         obj.tags.push({key: key!, value});
@@ -777,12 +779,14 @@ function tagToFilterValue(key: string, value: string) {
 }
 
 // Memoize this object because the static set filter component checks for object equality (set.has)
-export const tagValueToFilterObject = memoize((value: string) => ({
-  key: value,
-  type: value.split('=')[0] as DagsterTag,
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  value: value.split('=')[1]!,
-}));
+export const tagValueToFilterObject = memoize((value: string) => {
+  const eqIndex = value.indexOf('=');
+  return {
+    key: value,
+    type: (eqIndex === -1 ? value : value.slice(0, eqIndex)) as DagsterTag,
+    value: eqIndex === -1 ? '' : value.slice(eqIndex + 1),
+  };
+});
 
 export const tagSuggestionValueObject = memoize(
   (key: string, value: string) => ({
