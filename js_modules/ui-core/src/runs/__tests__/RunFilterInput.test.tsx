@@ -21,6 +21,7 @@ import {
   RunFilterToken,
   RunsFilterInputProps,
   runsFilterForSearchTokens,
+  splitTagString,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   useRunsFilterInput,
@@ -113,6 +114,31 @@ describe('useTagDataFilterValues', () => {
         },
       ]);
     });
+  });
+});
+
+describe('splitTagString', () => {
+  it('should split on the first = only', () => {
+    expect(splitTagString('foo=bar')).toEqual(['foo', 'bar']);
+  });
+
+  it('should preserve = signs in the value', () => {
+    expect(splitTagString('dagster/partition=foo=bar/baz=qux')).toEqual([
+      'dagster/partition',
+      'foo=bar/baz=qux',
+    ]);
+  });
+
+  it('should return empty value when no = is present', () => {
+    expect(splitTagString('just-a-key')).toEqual(['just-a-key', '']);
+  });
+
+  it('should handle = as the last character', () => {
+    expect(splitTagString('key=')).toEqual(['key', '']);
+  });
+
+  it('should handle = as the first character', () => {
+    expect(splitTagString('=value')).toEqual(['', 'value']);
   });
 });
 
