@@ -1,6 +1,5 @@
 import {Box, Button, Dialog, DialogFooter, Icon, Subheading} from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
-import styled from 'styled-components';
 
 import {RunTags, tagsAsYamlString} from './RunTags';
 import {RunTagsFragment} from './types/RunTagsFragment.types';
@@ -10,6 +9,7 @@ import {RunRequestFragment} from '../ticks/types/RunRequestFragment.types';
 import {CopyButton} from '../ui/CopyButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import styles from './css/RunConfigDialog.module.css';
 
 interface Props {
   isOpen: boolean;
@@ -62,12 +62,12 @@ export const RunConfigDialog = (props: Props) => {
                 <Subheading>Config</Subheading>
               </Box>
             ) : null}
-            <CodeMirrorContainer>
+            <div className={styles.codeMirrorContainer}>
               <StyledRawCodeMirror
                 value={runConfigYaml}
                 options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
               />
-            </CodeMirrorContainer>
+            </div>
           </Box>
         </Box>
         <DialogFooter
@@ -143,12 +143,3 @@ function OpenInLaunchpadButton({
     </Button>
   );
 }
-
-const CodeMirrorContainer = styled.div`
-  flex: 1;
-  overflow: hidden;
-
-  .CodeMirror {
-    height: 100%;
-  }
-`;

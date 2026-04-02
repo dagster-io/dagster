@@ -1,0 +1,1 @@
+"""Tenant Gamma asset modules."""

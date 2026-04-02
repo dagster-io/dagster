@@ -128,6 +128,40 @@ Refer to the following guides for more info about environment variables:
 - [Dagster+ environment variables and secrets](/deployment/dagster-plus/management/environment-variables)
 - [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets)
 
+## Op isolation
+
+By default, each Dagster job will run in its own ECS task, with each op running in its own subprocess within the task.
+
+You can also configure your Dagster deployment with the <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.ecs_executor" /> to run each op in its own ECS task. This allows you to allocate different CPU, memory, and ephemeral storage for each step. For example:
+
+```python
+import dagster as dg
+from dagster_aws.ecs import ecs_executor
+
+
+@dg.asset(op_tags={"ecs/cpu": "256", "ecs/memory": "512"})
+def light_asset():
+    ...
+
+
+@dg.asset(
+    deps=[light_asset],
+    op_tags={"ecs/cpu": "4096", "ecs/memory": "16384"},
+)
+def heavy_asset():
+    ...
+
+
+@dg.definitions
+def defs() -> dg.Definitions:
+    return dg.Definitions(
+        assets=[light_asset, heavy_asset],
+        executor=ecs_executor,
+    )
+```
+
+For more details on configuration options and supported tags, see [Launching steps as ECS tasks](/deployment/oss/deployment-options/aws#launching-steps-as-ecs-tasks).
+
 ## Per-job configuration: Resource limits
 
 You can use job tags to customize the CPU and memory of every run for that job:

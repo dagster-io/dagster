@@ -1,7 +1,7 @@
-import {BaseIcon, Box, Colors, FontFamily} from '@dagster-io/ui-components';
+import {BaseIcon, Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/OpTags.module.css';
 import csv from './kindtag-images/csv.svg';
 import dag from './kindtag-images/dag.svg';
 import dashboard from './kindtag-images/dashboard.svg';
@@ -1485,7 +1485,7 @@ export const extractIconSrc = (knownTag: KnownTag | undefined) => {
 
 export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTagsProps) => {
   return (
-    <OpTagsContainer style={style}>
+    <div className={styles.opTagsContainer} style={style}>
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as KnownTagType];
         const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
@@ -1515,7 +1515,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
           </Box>
         );
       })}
-    </OpTagsContainer>
+    </div>
   );
 });
 
@@ -1535,20 +1535,3 @@ export const TagIcon = React.memo(({label}: {label: string}) => {
     />
   );
 });
-
-const OpTagsContainer = styled.div`
-  gap: 6px;
-  position: absolute;
-  display: flex;
-  margin-right: 14px;
-
-  & > div {
-    padding: 0 8px;
-    min-height: 24px;
-    display: flex;
-    align-items: center;
-    font-family: ${FontFamily.default};
-    font-size: 12px;
-    border-radius: 8px;
-  }
-`;

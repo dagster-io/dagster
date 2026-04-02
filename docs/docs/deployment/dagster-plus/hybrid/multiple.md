@@ -163,6 +163,16 @@ locations:
     agent_queue: special-queue
 ```
 
+For `dg`-based projects, you can alternatively set the agent queue in [`pyproject.toml`](/deployment/dagster-plus/management/build-yaml#agent-queue-pyproject):
+
+```toml
+# pyproject.toml
+
+[tool.dg.project]
+root_module = "quickstart_etl"
+agent_queue = "special-queue"
+```
+
 ### Step 2: Configure an agent to handle the agent queue
 
 Next, configure an agent to handle your agent queue.

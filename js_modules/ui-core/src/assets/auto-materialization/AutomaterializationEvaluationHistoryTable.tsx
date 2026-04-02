@@ -11,8 +11,8 @@ import {
   Spinner,
   Table,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
+import styles from './css/AutomaterializationEvaluationHistoryTable.module.css';
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 import {Timestamp} from '../../app/time/Timestamp';
 import {InstigationTickStatus} from '../../graphql/types';
@@ -52,7 +52,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
         </Box>
         <StatusFilter status={tickStatus} onChange={setTickStatus} />
       </Box>
-      <TableWrapper>
+      <Table className={styles.tableWrapper}>
         <thead>
           <tr>
             <th style={{width: 120}}>Timestamp</th>
@@ -110,7 +110,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
             );
           })}
         </tbody>
-      </TableWrapper>
+      </Table>
       <div style={{paddingBottom: '16px'}}>
         <CursorHistoryControls {...paginationProps} />
       </div>
@@ -175,10 +175,3 @@ const StatusFilter = ({
     </Select>
   );
 };
-
-const TableWrapper = styled(Table)`
-  th,
-  td {
-    vertical-align: middle !important;
-  }
-`;

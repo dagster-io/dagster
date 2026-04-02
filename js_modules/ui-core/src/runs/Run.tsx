@@ -12,7 +12,6 @@ import {
 import * as React from 'react';
 import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
@@ -33,6 +32,7 @@ import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
+import styles from './css/Run.module.css';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {
   matchingComputeLogKeyFromStepKey,
@@ -396,7 +396,7 @@ const RunWithData = ({
         secondMinSize={56}
         second={
           <ErrorBoundary region="logs">
-            <LogsContainer>
+            <div className={styles.logsContainer}>
               <LogsToolbar
                 logType={logType}
                 onSetLogType={setLogType}
@@ -412,19 +412,13 @@ const RunWithData = ({
                 toggleExpanded={isBottomExpanded ? resetPanels : expandBottomPanel}
               />
               {logContent()}
-            </LogsContainer>
+            </div>
           </ErrorBoundary>
         }
       />
     </>
   );
 };
-
-const LogsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-`;
 
 const NoStepSelectionState = ({type}: {type: LogType}) => {
   return (

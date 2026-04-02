@@ -1,0 +1,25 @@
+.clearButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin: 0 -2px 0 0;
+  padding: 2px;
+
+  .iconGlobal {
+    background-color: var(--color-accent-gray);
+    transition: background-color 100ms linear;
+  }
+
+  &:hover .iconGlobal,
+  &:focus .iconGlobal {
+    background-color: var(--color-accent-gray-hover);
+  }
+
+  &:active .iconGlobal {
+    background-color: var(--color-text-default);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}

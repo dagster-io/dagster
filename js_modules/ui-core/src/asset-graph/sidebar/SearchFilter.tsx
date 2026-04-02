@@ -1,7 +1,7 @@
 import {MenuItem, Suggest, useViewport} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/SearchFilter.module.css';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 
 export const SearchFilter = <T,>({
@@ -25,7 +25,8 @@ export const SearchFilter = <T,>({
       // Exclude metakey to not interfere with shortcut for opening/closing devtools
       shortcutFilter={(e) => !e.metaKey && e.altKey && e.code === 'KeyJ'}
     >
-      <SuggestWrapper
+      <div
+        className={styles.suggestWrapper}
         {...containerProps}
         ref={(div) => {
           if (div) {
@@ -56,13 +57,7 @@ export const SearchFilter = <T,>({
           onItemSelect={(item, e) => onSelectValue(e as any, item.value)}
           selectedItem={null}
         />
-      </SuggestWrapper>
+      </div>
     </ShortcutHandler>
   );
 };
-
-const SuggestWrapper = styled.div`
-  .bp5-input-group.dagster-suggest-input {
-    width: 100%;
-  }
-`;

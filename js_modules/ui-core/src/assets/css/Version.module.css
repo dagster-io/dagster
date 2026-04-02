@@ -1,0 +1,6 @@
+.version {
+  font-family: var(--font-family-monospace);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,7 @@
+locations:
+  - location_name: hybrid-location
+    code_source:
+      package_name: hybrid_location.definitions
+    working_directory: ./src/
+    build:
+      registry: ghcr.io/my-org/my-repo/hybrid-location

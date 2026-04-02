@@ -11,13 +11,13 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import styled from 'styled-components';
 
 import {DEFAULT_MAX_AUTOCENTER_ZOOM, DEFAULT_MIN_ZOOM, DEFAULT_ZOOM} from './SVGConsts';
 import {SVGExporter} from './SVGExporter';
 import {SVGViewportProvider, useSVGViewport} from './SVGViewportContext';
 import {IBounds} from './common';
 import {testId} from '../testing/testId';
+import styles from './css/SVGViewport.module.css';
 
 export interface SVGViewportProps {
   graphWidth: number;
@@ -91,32 +91,6 @@ export interface SVGViewportRef {
 }
 
 const BUTTON_INCREMENT = 0.05;
-
-const IconButton = styled.button`
-  background: ${Colors.backgroundDefault()};
-  border: 1px solid ${Colors.borderDefault()};
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  border-radius: 8px;
-  transition: background 200ms ease-in-out;
-}
-  :hover {
-    background-color: ${Colors.backgroundLightHover()};
-  }
-
-  :focus {
-    outline: none;
-  }
-
-  :active {
-    background-color: ${Colors.backgroundLight()};
-  }
-`;
 
 export const SVGViewport = forwardRef<SVGViewportRef, SVGViewportProps>((props, ref) => (
   <SVGViewportProvider>
@@ -606,7 +580,8 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
             />
           )}
         </div>
-        <ZoomSliderContainer
+        <div
+          className={styles.zoomSliderContainer}
           id="zoom-slider-container"
           data-testid={testId('zoom-slider-container')}
           onClick={(e: ReactMouseEvent) => {
@@ -620,7 +595,8 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
         >
           <Box flex={{direction: 'column', alignItems: 'center'}}>
             <Tooltip content="Zoom in">
-              <IconButton
+              <button
+                className={styles.iconButton}
                 style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
                 onClick={() => {
                   const el = element.current;
@@ -636,7 +612,7 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
                 data-testid={testId('zoom-in-button')}
               >
                 <Icon name="zoom_in" />
-              </IconButton>
+              </button>
             </Tooltip>
             <Box
               style={{width: 32, height: 140}}
@@ -665,7 +641,8 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
               />
             </Box>
             <Tooltip content="Zoom out">
-              <IconButton
+              <button
+                className={styles.iconButton}
                 style={{borderTopLeftRadius: 0, borderTopRightRadius: 0}}
                 onClick={() => {
                   const el = element.current;
@@ -680,20 +657,24 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
                 data-testid={testId('zoom-out-button')}
               >
                 <Icon name="zoom_out" />
-              </IconButton>
+              </button>
             </Tooltip>
           </Box>
           <Box flex={{direction: 'column', alignItems: 'center', gap: 8}} margin={{top: 8}}>
             {additionalToolbarElements}
             <Box>
               <Tooltip content="Download as SVG">
-                <IconButton onClick={onExportToSVG} data-testid={testId('export-svg-button')}>
+                <button
+                  className={styles.iconButton}
+                  onClick={onExportToSVG}
+                  data-testid={testId('export-svg-button')}
+                >
                   <Icon name="download_for_offline" />
-                </IconButton>
+                </button>
               </Tooltip>
             </Box>
           </Box>
-        </ZoomSliderContainer>
+        </div>
       </div>
     );
   },
@@ -711,10 +692,3 @@ const SVGViewportStyles: React.CSSProperties = {
   outline: 'none',
   background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='rgba(103, 116, 138, 0.20)' cx='5' cy='5' r='5' /></svg>") repeat`,
 };
-
-const ZoomSliderContainer = styled.div`
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 30px;
-`;

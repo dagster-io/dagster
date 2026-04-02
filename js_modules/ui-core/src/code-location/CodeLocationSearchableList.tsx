@@ -10,9 +10,9 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {ChangeEvent, ReactNode, useCallback, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {Container, HeaderCell, HeaderRow, Inner, Row} from '../ui/VirtualizedTable';
+import styles from './css/CodeLocationSearchableList.module.css';
 
 const ROW_HEIGHT = 44;
 
@@ -107,21 +107,14 @@ export const SearchableListRow = ({iconName, label, path}: SearchableListRowProp
       flex={{direction: 'column', justifyContent: 'center', alignItems: 'flex-start'}}
       style={{height: ROW_HEIGHT, overflow: 'hidden'}}
     >
-      <ListLink to={path} style={{width: '100%', overflow: 'hidden'}}>
+      <Link className={styles.listLink} to={path} style={{width: '100%', overflow: 'hidden'}}>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Icon name={iconName} color={Colors.linkDefault()} />
           <div style={{flex: 1, overflow: 'hidden'}}>
             <MiddleTruncate text={label} />
           </div>
         </Box>
-      </ListLink>
+      </Link>
     </Box>
   );
 };
-
-const ListLink = styled(Link)`
-  :active,
-  :focus {
-    outline: none;
-  }
-`;

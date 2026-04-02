@@ -1,0 +1,1187 @@
+[
+  {
+    "source": "/troubleshooting/schedules",
+    "destination": "/guides/automate/schedules/troubleshooting-schedules",
+    "permanent": true
+  },
+  {
+    "source": "/examples/materializations",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/examples/conditional_execution",
+    "destination": "/guides/build/jobs/asset-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/examples/config_mapping",
+    "destination": "/guides/operate/configuration/run-configuration",
+    "permanent": true
+  },
+  {
+    "source": "/examples/dep_dsl",
+    "destination": "/guides/build/jobs/asset-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/examples/fan_in_pipeline",
+    "destination": "/guides/build/jobs/asset-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/examples/hooks",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/examples/multi_location",
+    "destination": "/guides/build/projects/workspaces",
+    "permanent": true
+  },
+  {
+    "source": "/examples/nothing",
+    "destination": "/guides/build/jobs/asset-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/examples/pipeline_tags",
+    "destination": "/guides/build/assets/metadata-and-tags/tags",
+    "permanent": true
+  },
+  {
+    "source": "/examples/dynamic_graph",
+    "destination": "/guides/build/jobs/asset-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/executors",
+    "destination": "/guides/operate/run-executors",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/resources-legacy",
+    "destination": "/guides/build/external-resources",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/solids",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/pipelines",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/jobs-graphs",
+    "destination": "/guides/build/ops/graphs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/pipeline-execution",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/composite-solids",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/solid-events",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/solids-pipelines/solid-hooks",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/modes-resources",
+    "destination": "/guides/build/external-resources",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/assets",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/ops-jobs/connecting-ops",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/ops-jobs/single-op-job",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/ops-jobs/testable",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/scheduling-assets",
+    "destination": "/guides/automate",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/non-argument-deps",
+    "destination": "/guides/build/assets/defining-assets-with-asset-dependencies",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/managing-your-own-io",
+    "destination": "/guides/build/io-managers",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-materializations",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/metadata-tags",
+    "destination": "/guides/build/assets/metadata-and-tags",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/setting-up-alerts",
+    "destination": "/guides/observe/alerts",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/developing-testing/code-locations",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started/create-new-project",
+    "destination": "/guides/build/projects/creating-projects",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-auto-execution",
+    "destination": "/guides/automate/declarative-automation",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/software-defined-assets",
+    "destination": "/guides/build/assets/defining-assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/graph-backed-assets",
+    "destination": "/guides/build/assets/defining-assets#graph-asset",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/multi-assets",
+    "destination": "/guides/build/assets/defining-assets#multi-asset",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-jobs",
+    "destination": "/guides/build/jobs/asset-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/assets/asset-jobs",
+    "destination": "/guides/build/jobs/asset-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-observations",
+    "destination": "/guides/build/assets/metadata-and-tags/asset-observations",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-selection-syntax",
+    "destination": "/guides/build/assets/asset-selection-syntax",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-checks",
+    "destination": "/guides/test/asset-checks",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-checks/define-execute-asset-checks",
+    "destination": "/guides/test/asset-checks",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-checks/subsetting-asset-checks",
+    "destination": "/guides/test/running-a-subset-of-asset-checks",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/asset-checks/checking-for-data-freshness",
+    "destination": "/guides/test/data-freshness-testing",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/assets/external-assets",
+    "destination": "/guides/build/assets/external-assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation",
+    "destination": "/guides/automate",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules",
+    "destination": "/guides/automate/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules/automating-assets-schedules-jobs",
+    "destination": "/guides/automate/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules/automating-ops-schedules-jobs",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules/examples",
+    "destination": "/guides/automate/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules/partitioned-schedules",
+    "destination": "/guides/automate/schedules/constructing-schedules-for-partitioned-assets-and-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules/customizing-executing-timezones",
+    "destination": "/guides/automate/schedules/customizing-execution-timezone",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules/testing",
+    "destination": "/guides/automate/schedules/testing-schedules",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/schedules/troubleshooting",
+    "destination": "/guides/automate/schedules/troubleshooting-schedules",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/sensors",
+    "destination": "/guides/automate/sensors",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/schedules",
+    "destination": "/guides/automate/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/declarative-automation",
+    "destination": "/guides/automate/declarative-automation",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/declarative-automation/customizing-automation-conditions",
+    "destination": "/guides/automate/declarative-automation/customizing-automation-conditions",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/automation/declarative-automation/automation-condition-operands-and-operators",
+    "destination": "/guides/automate/declarative-automation/automation-condition-reference",
+    "permanent": true
+  },
+  {
+    "source": "/guides/automate/declarative-automation/customizing-automation-conditions/automation-condition-operands-and-operators",
+    "destination": "/guides/automate/declarative-automation/automation-condition-reference",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/asset-sensors",
+    "destination": "/guides/automate/asset-sensors",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/partitions",
+    "destination": "/guides/build/partitions-and-backfills",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/partitioning-assets",
+    "destination": "/guides/build/partitions-and-backfills/partitioning-assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/partitioning-ops",
+    "destination": "/guides/build/partitions-and-backfills/partitioning-assets",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/testing-partitions",
+    "destination": "/guides/test/testing-partitioned-config-and-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/partitions-schedules-sensors/backfills",
+    "destination": "/guides/build/partitions-and-backfills/backfilling-data",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/resources",
+    "destination": "/guides/build/external-resources",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/configuration/config-schema",
+    "destination": "/guides/operate/configuration/run-configuration",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/configuration/config-schema-legacy",
+    "destination": "/guides/operate/configuration/run-configuration",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/configuration/configured",
+    "destination": "/guides/operate/configuration/run-configuration",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/configuration/advanced-config-types",
+    "destination": "/guides/operate/configuration/advanced-config-types",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/code-locations",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/code-locations/workspace-files",
+    "destination": "/guides/build/projects/workspaces/dg-toml",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/webserver/ui",
+    "destination": "/guides/operate/webserver",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/webserver/ui-user-settings",
+    "destination": "/guides/operate/ui-user-settings",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/logging",
+    "destination": "/guides/log-debug/logging",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/logging/loggers",
+    "destination": "/guides/log-debug/logging",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/logging/python-logging",
+    "destination": "/guides/log-debug/logging/python-logging",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/testing",
+    "destination": "/guides/test",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/ops",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/op-events",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/op-hooks",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/op-retries",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/graphs",
+    "destination": "/guides/build/ops/graphs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/nesting-graphs",
+    "destination": "/guides/build/ops/nesting-graphs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/dynamic-graphs",
+    "destination": "/guides/build/ops/dynamic-graphs",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/graphs",
+    "destination": "/guides/build/ops/graphs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/jobs",
+    "destination": "/guides/build/jobs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/op-jobs",
+    "destination": "/guides/build/jobs/op-jobs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/job-execution",
+    "destination": "/guides/build/jobs/job-execution",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/metadata-tags",
+    "destination": "/guides/build/assets/metadata-and-tags",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/metadata-tags/asset-metadata",
+    "destination": "/guides/build/assets/metadata-and-tags",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/metadata-tags/asset-metadata/column-level-lineage",
+    "destination": "/guides/build/assets/metadata-and-tags",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/metadata-tags/kind-tags",
+    "destination": "/guides/build/assets/metadata-and-tags/kind-tags",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/metadata-tags/op-job-metadata",
+    "destination": "/guides/build/assets/metadata-and-tags",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/metadata-tags/tags",
+    "destination": "/guides/build/assets/metadata-and-tags/tags",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/metadata-tags/asset-metadata/table-metadata",
+    "destination": "/guides/build/assets/metadata-and-tags/table-metadata",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/io-management/io-managers-legacy",
+    "destination": "/guides/build/io-managers",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/io-management/io-managers",
+    "destination": "/guides/build/io-managers",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/io-management/unconnected-inputs",
+    "destination": "/guides/build/io-managers",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/logging/custom-loggers",
+    "destination": "/guides/monitor/logging/custom-logging",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/alerts",
+    "destination": "/guides/observe/alerts",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui",
+    "destination": "/guides/observe/alerts/creating-alerts",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-cli",
+    "destination": "/guides/observe/alerts/creating-alerts",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/alerts/email",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/alerts/microsoft-teams",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/alerts/slack",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/alerts/pagerduty",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/managing-deployments/code-locations",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights/asset-metadata",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights/integrating-external-metrics",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights/integrating-bigquery",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights/integrating-bigquery-and-dbt",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights/integrating-snowflake",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights/integrating-snowflake-and-dbt",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/insights/exporting-insights-metrics",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/executors",
+    "destination": "/guides/operate/run-executors",
+    "permanent": true
+  },
+  {
+    "source": "/guides/understanding-dagster-project-files",
+    "destination": "/guides/build/projects/dagster-project-file-reference",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/using-environment-variables-and-secrets",
+    "destination": "/guides/operate/configuration/using-environment-variables-and-secrets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/transitioning-data-pipelines-from-development-to-production",
+    "destination": "/guides/operate/dev-to-prod",
+    "permanent": true
+  },
+  {
+    "source": "/guides/integrations/writing-a-multi-asset-decorator-integration",
+    "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/how-assets-relate-to-ops-and-graphs",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/enriching-with-software-defined-assets",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/software-defined-assets",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/testing-assets",
+    "destination": "/guides/test/unit-testing-assets-and-ops",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/migrating-to-pythonic-resources-and-config",
+    "destination": "/guides/operate/configuration/run-configuration",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/intro-to-ops-jobs",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/intro-to-ops-jobs/single-op-job",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/intro-to-ops-jobs/testable",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/intro-to-ops-jobs/connecting-ops",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/0.15.7/guides/dagster/graph_job/op",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/re-execution",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/recommended-project-structure",
+    "destination": "/guides/build/projects/structuring-your-dagster-project",
+    "permanent": true
+  },
+  {
+    "source": "/guides/limiting-concurrency-in-data-pipelines",
+    "destination": "/guides/operate/managing-concurrency",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/dagster_type_factories",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/asset-versioning-and-caching",
+    "destination": "/guides/build/assets/asset-versioning-and-caching",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/code-references",
+    "destination": "/guides/build/assets/metadata-and-tags",
+    "permanent": true
+  },
+  {
+    "source": "/next/guides/build/components",
+    "destination": "/guides/build/components",
+    "permanent": true
+  },
+  {
+    "source": "/next/guides/build/components/",
+    "destination": "/guides/build/components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/scaffolding-a-project",
+    "destination": "/guides/build/projects/creating-projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
+    "destination": "/guides/build/components/building-pipelines-with-components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-a-component",
+    "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types/customizing-components",
+    "destination": "/guides/build/components/creating-new-components/subclassing-components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/existing-code-location",
+    "destination": "/guides/build/projects/migrating-project",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/migrating-definitions",
+    "destination": "/guides/build/projects/moving-to-components/migrating-definitions",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/setting-up-a-deployment",
+    "destination": "/guides/build/projects/multiple-projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/using-a-component",
+    "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/using-a-component-python",
+    "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/building-pipelines-with-components/adding-components-python",
+    "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions",
+    "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/incrementally-adopting-components/existing-code-location",
+    "destination": "/guides/build/components/incrementally-adopting-components/existing-project",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/managing-multiple-code-locations",
+    "destination": "/guides/build/projects/workspaces",
+    "permanent": true
+  },
+  {
+    "source": "/guides/preview/",
+    "destination": "/guides/labs",
+    "permanent": true
+  },
+  {
+    "source": "/guides/preview",
+    "destination": "/guides/labs",
+    "permanent": true
+  },
+  {
+    "source": "/guides/preview/components/",
+    "destination": "/guides/build/components",
+    "permanent": true
+  },
+  {
+    "source": "/overview/schedules-sensors/sensors",
+    "destination": "/guides/automate/sensors",
+    "permanent": true
+  },
+  {
+    "source": "/overview/schedules-sensors/schedules",
+    "destination": "/guides/automate/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/master/guides/dagster/intro-to-ops-jobs",
+    "destination": "/guides/build/ops",
+    "permanent": true
+  },
+  {
+    "source": "/master/concepts/resources",
+    "destination": "/guides/build/external-resources",
+    "permanent": true
+  },
+  {
+    "source": "/master/concepts/partitions-schedules-sensors/sensors",
+    "destination": "/guides/automate/sensors",
+    "permanent": true
+  },
+  {
+    "source": "/master/concepts/partitions-schedules-sensors/schedules",
+    "destination": "/guides/automate/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/master/concepts/partitions-schedules-sensors/partitions",
+    "destination": "/guides/build/partitions-and-backfills/partitioning-assets",
+    "permanent": true
+  },
+  {
+    "source": "/master/concepts/logging/loggers",
+    "destination": "/guides/monitor/logging",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/pythonic-resources",
+    "destination": "/guides/operate/configuration/run-configuration#defining-and-accessing-pythonic-configuration-for-a-resource",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/pythonic-config",
+    "destination": "/guides/operate/configuration/run-configuration",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/automating-pipelines",
+    "destination": "/guides/automate",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started/project-file-reference",
+    "destination": "/guides/build/projects/dagster-project-file-reference",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/insights",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/alerts/microsoft-teams",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/alerts/pagerduty",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/alerts/email",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/alerts/slack",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
+    "destination": "/guides/observe/alerts/configuring-an-alert-notification-service",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli",
+    "destination": "/guides/observe/alerts/creating-alerts",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/alerts",
+    "destination": "/guides/observe/alerts",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui",
+    "destination": "/guides/observe/alerts/creating-alerts",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/code-locations/workspaces",
+    "destination": "/guides/build/projects/workspaces",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/asset-checks",
+    "destination": "/guides/test/asset-checks",
+    "permanent": true
+  },
+  {
+    "source": "/overview/pipeline-runs/limiting-run-concurrency",
+    "destination": "/guides/operate/managing-concurrency",
+    "permanent": true
+  },
+  {
+    "source": "/overview/io-managers/io-managers",
+    "destination": "/guides/build/io-managers",
+    "permanent": true
+  },
+  {
+    "source": "/master/guides/dagster/run-attribution",
+    "destination": "/guides/build/assets/metadata-and-tags/tags#run-tags",
+    "permanent": true
+  },
+  {
+    "source": "/guides/deploy/dev-to-prod",
+    "destination": "/guides/operate/dev-to-prod",
+    "permanent": true
+  },
+  {
+    "source": "/guides/deploy/using-environment-variables-and-secrets",
+    "destination": "/guides/operate/configuration/using-environment-variables-and-secrets",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/features/insights",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/features/alerts",
+    "destination": "/guides/observe/alerts",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/features/asset-catalog",
+    "destination": "/guides/observe/asset-catalog",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/features/asset-catalog/views",
+    "destination": "/guides/observe/asset-catalog/dashboards",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/deployment/code-locations",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-plus/deployment/code-locations/code-location-history",
+    "destination": "/guides/build/projects/dagster-plus-project-history",
+    "permanent": true
+  },
+  {
+    "source": "/guides/deploy/code-locations",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/deploy/code-locations/workspace-yaml",
+    "destination": "/guides/build/projects/workspaces/workspace-yaml",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types",
+    "destination": "/guides/build/components/creating-new-components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types/testing-your-component-type",
+    "destination": "/guides/build/components/creating-new-components/testing-your-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type",
+    "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types/subclassing-component-types",
+    "destination": "/guides/build/components/creating-new-components/subclassing-components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types/component-type-customization",
+    "destination": "/guides/build/components/creating-new-components/component-customization",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-components/dg-plugin",
+    "destination": "/guides/build/components/creating-new-components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/creating-new-components/creating-dg-plugin",
+    "destination": "/guides/build/components/creating-new-components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/creating-a-project",
+    "destination": "/guides/build/projects/creating-projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/using-resources",
+    "destination": "/guides/build/external-resources/using-resources",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/multiple-projects",
+    "destination": "/guides/build/projects/multiple-projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/incrementally-adopting-dg",
+    "destination": "/guides/build/projects/moving-to-components/migrating-project",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/incrementally-adopting-dg/migrating-definitions",
+    "destination": "/guides/build/projects/moving-to-components/migrating-definitions",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/incrementally-adopting-dg/migrating-project",
+    "destination": "/guides/build/projects/moving-to-components/migrating-project",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/freshness",
+    "destination": "/guides/observe/asset-freshness-policies",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/building-pipelines-with-components/adding-attributes-to-assets",
+    "destination": "/guides/build/assets/metadata-and-tags/adding-attributes-to-assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/building-pipelines-with-components/adding-attributes-to-assets",
+    "destination": "/guides/build/assets/metadata-and-tags/adding-attributes-to-assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/building-pipelines-with-components/adding-components",
+    "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
+    "destination": "/guides/build/projects/creating-projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types/creating-dg-plugin",
+    "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/components/creating-new-component-types/subclassing-components",
+    "destination": "/guides/build/components/creating-new-components/subclassing-components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg/python-environment-management-and-uv-integration",
+    "destination": "/guides/build/components",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/observability-update",
+    "destination": "/guides/observe",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/observability-update/asset-health",
+    "destination": "/guides/observe/asset-health-status",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/observability-update/insights",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/observability-update/asset-catalog",
+    "destination": "/guides/observe/asset-catalog",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/observability-update/freshness",
+    "destination": "/guides/observe/asset-freshness-policies",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/observability-update/alerts",
+    "destination": "/guides/observe/alerts",
+    "permanent": true
+  },
+  {
+    "source": "/guides/monitor/insights",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/guides/monitor/alerts",
+    "destination": "/guides/observe/alerts",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/assets/asset-catalog",
+    "destination": "/guides/observe/asset-catalog",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/assets/asset-catalog/catalog-views",
+    "destination": "/guides/observe/asset-catalog/catalog-views",
+    "permanent": true
+  },
+  {
+    "source": "/guides/monitor/debugging",
+    "destination": "/guides/log-debug/debugging",
+    "permanent": true
+  },
+  {
+    "source": "/guides/monitor/debugging/debugging-pdb",
+    "destination": "/guides/log-debug/debugging/debugging-pdb",
+    "permanent": true
+  },
+  {
+    "source": "/guides/monitor/logging",
+    "destination": "/guides/log-debug/logging",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/code-locations",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/code-locations/code-location-history",
+    "destination": "/guides/build/projects/dagster-plus-project-history",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/code-locations/dg-toml",
+    "destination": "/guides/build/projects/workspaces/dg-toml",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/code-locations/managing-code-locations",
+    "destination": "/guides/build/projects",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/code-locations/workspace-yaml",
+    "destination": "/guides/build/projects/workspaces/workspace-yaml",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/projects/creating-a-new-project",
+    "destination": "/guides/build/projects/creating-projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/projects/structuring-your-dagster-project",
+    "destination": "/guides/build/projects/project-structure/organizing-dagster-projects",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/projects/multiple-projects",
+    "destination": "/guides/build/projects/workspaces/creating-workspaces",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/asset-factories-to-components",
+    "destination": "/guides/build/assets/creating-asset-factories",
+    "permanent": true
+  }
+]

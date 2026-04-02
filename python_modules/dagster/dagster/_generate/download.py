@@ -42,6 +42,7 @@ AVAILABLE_EXAMPLES = [
     "oss-metadata-to-plus",
     "project_analytics",
     "project_fully_featured",
+    "project_multi_tenant",
     "quickstart_etl",
     "snowflake_cortex",
     "tutorial_notebook_assets",

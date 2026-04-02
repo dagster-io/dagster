@@ -3,11 +3,11 @@ import qs from 'qs';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import {atom, useRecoilValue} from 'recoil';
-import styled from 'styled-components';
 
 import {DefinitionsSource, RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {CodeLocationRowStatusType} from '../workspace/CodeLocationRowStatusType';
+import styles from './css/useCodeLocationsStatus.module.css';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {
   CodeLocationStatusQuery,
@@ -329,9 +329,9 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 };
 
 const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
-  return <ViewButton onClick={onClick}>View</ViewButton>;
+  return (
+    <ButtonLink className={styles.viewButton} onClick={onClick}>
+      View
+    </ButtonLink>
+  );
 };
-
-const ViewButton = styled(ButtonLink)`
-  white-space: nowrap;
-`;

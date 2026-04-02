@@ -1,0 +1,1 @@
+"""Tenant Beta asset modules."""

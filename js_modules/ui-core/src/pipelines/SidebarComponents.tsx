@@ -1,6 +1,5 @@
-// eslint-disable-next-line no-restricted-imports
-import {Collapse} from '@blueprintjs/core';
 import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import * as Collapsible from '@radix-ui/react-collapsible';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -18,24 +17,22 @@ export const SidebarSection = (props: ISidebarSectionProps) => {
     storedValue === true || storedValue === false ? storedValue : !collapsedByDefault,
   );
 
-  const onToggle = React.useCallback(() => {
-    setOpen((o) => !o);
-  }, [setOpen]);
-
   return (
-    <>
-      <CollapsingHeaderBar onClick={onToggle}>
-        <SidebarTitleTextWrap>{title}</SidebarTitleTextWrap>
-        <Icon
-          size={24}
-          name="arrow_drop_down"
-          style={{transform: open ? 'rotate(0)' : 'rotate(-90deg)'}}
-        />
-      </CollapsingHeaderBar>
-      <Collapse isOpen={open}>
+    <Collapsible.Root open={open} onOpenChange={setOpen}>
+      <Collapsible.Trigger asChild>
+        <CollapsingHeaderBar>
+          <SidebarTitleTextWrap>{title}</SidebarTitleTextWrap>
+          <Icon
+            size={24}
+            name="arrow_drop_down"
+            style={{transform: open ? 'rotate(0)' : 'rotate(-90deg)'}}
+          />
+        </CollapsingHeaderBar>
+      </Collapsible.Trigger>
+      <Collapsible.Content style={{overflowX: 'auto'}}>
         <div>{children}</div>
-      </Collapse>
-    </>
+      </Collapsible.Content>
+    </Collapsible.Root>
   );
 };
 

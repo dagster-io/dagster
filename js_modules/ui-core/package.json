@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@koale/useworker": "^4.1.2",
+    "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-virtual": "^3.0.1",
     "@testing-library/react-hooks": "^7.0.2",

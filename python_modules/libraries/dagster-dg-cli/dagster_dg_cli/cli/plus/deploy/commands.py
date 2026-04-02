@@ -33,9 +33,12 @@ from dagster_dg_cli.cli.plus.deploy.deploy_session import (
 )
 from dagster_dg_cli.cli.plus.deploy.validation import _extract_dagster_env_from_url
 from dagster_dg_cli.utils.plus.build import get_agent_type
+from dagster_dg_cli.utils.plus.gql import SECRETS_QUERY
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
+    from dagster_cloud_cli.commands.ci.state import LocationState
     from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-state")
@@ -519,6 +522,37 @@ def _instance_with_defs_state_storage(
             yield instance
 
 
+def _fetch_secrets_for_location(
+    location_state: "LocationState",
+    api_token: str,
+    organization: str,
+    location_name: str,
+) -> dict[str, str]:
+    """Fetch Dagster Plus env vars for injection into refresh-defs-state subprocess.
+
+    Selects the appropriate secret scope based on whether this is a branch or full deployment.
+    """
+    client = DagsterPlusGraphQLClient.from_location_state(location_state, api_token, organization)
+
+    # Select scope based on deployment type
+    if location_state.is_branch_deployment:
+        scopes = {"allBranchDeploymentsScope": True}
+    else:
+        scopes = {"fullDeploymentScope": True}
+
+    result = client.execute(
+        SECRETS_QUERY,
+        variables={"onlyViewable": True, "scopes": scopes},
+    )
+
+    secrets: dict[str, str] = {}
+    for secret in result["secretsOrError"]["secrets"]:
+        # Include if global (no location filter) or matches this location
+        if len(secret["locationNames"]) == 0 or location_name in secret["locationNames"]:
+            secrets[secret["secretName"]] = secret["secretValue"]
+    return secrets
+
+
 def refresh_defs_state_impl(
     ctx: click.Context,
     statedir: str,
@@ -527,6 +561,7 @@ def refresh_defs_state_impl(
     management_types: set["DefsStateManagementType"],
 ):
     from dagster_cloud_cli.commands.ci import state
+    from dagster_cloud_cli.config_utils import get_organization, get_user_token
 
     state_store = state.FileStore(statedir=statedir)
     locations = state_store.list_selected_locations()
@@ -534,6 +569,9 @@ def refresh_defs_state_impl(
     if not locations:
         click.echo("No locations to refresh.")
         return
+
+    api_token = check.not_none(get_user_token(ctx))
+    organization_name = check.not_none(get_organization(ctx))
 
     # Determine which projects/locations to process
     if dg_context.is_project:
@@ -577,6 +615,30 @@ def refresh_defs_state_impl(
             for mt in management_types:
                 cmd.extend(["--management-type", mt.value])
 
+            # Fetch and inject env vars from Dagster Plus into subprocess
+            subprocess_env = None
+            try:
+                secrets = _fetch_secrets_for_location(
+                    location_state,
+                    api_token,
+                    organization_name,
+                    location_state.location_name,
+                )
+                if secrets:
+                    subprocess_env = {**os.environ, **secrets}
+                    click.echo(
+                        f"Injecting {len(secrets)} environment variable(s) from Dagster Plus "
+                        f"for location: {location_state.location_name}"
+                    )
+            except Exception as e:
+                click.echo(
+                    click.style(
+                        f"Warning: Failed to fetch environment variables from Dagster Plus "
+                        f"for {location_state.location_name}: {e}",
+                        fg="yellow",
+                    )
+                )
+
             click.echo(
                 f"Refreshing defs state for location: {location_state.location_name} with command: {cmd}"
             )
@@ -584,7 +646,7 @@ def refresh_defs_state_impl(
             try:
                 # activate the venv for the subprocess to ensure CLIs are available
                 with activate_venv(project_context.root_path / ".venv"):
-                    subprocess.run(cmd, check=True, capture_output=False)
+                    subprocess.run(cmd, check=True, capture_output=False, env=subprocess_env)
             except subprocess.CalledProcessError as e:
                 click.echo(
                     click.style(
@@ -628,6 +690,10 @@ def refresh_defs_state_command(
 ):
     """[Experimental] If using StateBackedComponents, this command will execute the `refresh_state` on each of them,
     and set the defs_state_info for each location.
+
+    Environment variables from Dagster Plus are automatically fetched and injected into the
+    subprocess environment during state refresh. Uses fullDeploymentScope for production deploys
+    and allBranchDeploymentsScope for branch deploys.
     """
     from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 

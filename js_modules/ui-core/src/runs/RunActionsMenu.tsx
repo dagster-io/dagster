@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -21,7 +20,6 @@ import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
@@ -41,6 +39,7 @@ import {gql, useLazyQuery} from '../apollo-client';
 import {DagsterTag} from './RunTag';
 import {AppContext} from '../app/AppContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ReexecutionStrategy} from '../graphql/types';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -49,6 +48,7 @@ import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
+import styles from './css/RunActionsMenu.module.css';
 import {RunActionsMenuRunFragment} from './types/RunActionsMenuRunFragment.types';
 
 interface Props {
@@ -153,7 +153,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                       }}
                       padding={{horizontal: 8}}
                     >
-                      <SlashShortcut>t</SlashShortcut>
+                      <div className={styles.slashShortcut}>t</div>
                     </Box>
                   </div>
                 }
@@ -161,8 +161,9 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 onClick={() => setVisibleDialog('tags')}
               />
 
-              {run.pipelineSnapshotId ? (
-                <LinkNoUnderline
+              {run.pipelineSnapshotId && !isHiddenAssetGroupJob(run.pipelineName) ? (
+                <Link
+                  className={styles.linkNoUnderline}
                   to={getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)}
                 >
                   <MenuItem
@@ -170,7 +171,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                     text="View snapshot"
                     onClick={() => setVisibleDialog('tags')}
                   />
-                </LinkNoUnderline>
+                </Link>
               ) : null}
               <MenuDivider />
               <>
@@ -497,15 +498,4 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
       }
     }
   }
-`;
-
-const SlashShortcut = styled.div`
-  border-radius: 4px;
-  padding: 0px 6px;
-  background: ${Colors.backgroundLight()};
-  color: ${Colors.textLight()};
-`;
-
-const LinkNoUnderline = styled(Link)`
-  text-decoration: none !important;
 `;

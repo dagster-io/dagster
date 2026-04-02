@@ -1,0 +1,26 @@
+# Success scenarios for asset-check list
+success_list_asset_checks:
+  command: "dg api asset-check list --asset-key my/asset --json"
+
+success_list_asset_checks_text:
+  command: "dg api asset-check list --asset-key my/asset"
+
+# Success scenarios for asset-check get-executions
+success_get_check_executions:
+  command: "dg api asset-check get-executions --asset-key my/asset --check-name freshness_check --json"
+
+success_get_check_executions_text:
+  command: "dg api asset-check get-executions --asset-key my/asset --check-name freshness_check"
+
+# Empty result scenarios
+success_empty_checks:
+  command: "dg api asset-check list --asset-key empty/asset --json"
+
+success_empty_checks_text:
+  command: "dg api asset-check list --asset-key empty/asset"
+
+success_empty_executions:
+  command: "dg api asset-check get-executions --asset-key my/asset --check-name no_runs_check --json"
+
+success_empty_executions_text:
+  command: "dg api asset-check get-executions --asset-key my/asset --check-name no_runs_check"

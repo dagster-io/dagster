@@ -1,0 +1,37 @@
+{
+  "assetChecksOrError": {
+    "__typename": "AssetChecks",
+    "checks": [
+      {
+        "name": "freshness_check",
+        "description": "Checks that the asset is materialized within the last 24 hours",
+        "blocking": true,
+        "jobNames": ["__ASSET_JOB_0"],
+        "canExecuteIndividually": "CAN_EXECUTE",
+        "assetKey": {
+          "path": ["my", "asset"]
+        }
+      },
+      {
+        "name": "row_count_check",
+        "description": "Validates minimum row count",
+        "blocking": false,
+        "jobNames": ["__ASSET_JOB_0"],
+        "canExecuteIndividually": "CAN_EXECUTE",
+        "assetKey": {
+          "path": ["my", "asset"]
+        }
+      },
+      {
+        "name": "schema_check",
+        "description": null,
+        "blocking": false,
+        "jobNames": [],
+        "canExecuteIndividually": "REQUIRES_MATERIALIZATION",
+        "assetKey": {
+          "path": ["my", "asset"]
+        }
+      }
+    ]
+  }
+}

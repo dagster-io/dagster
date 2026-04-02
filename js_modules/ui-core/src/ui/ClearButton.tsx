@@ -1,28 +1,11 @@
-import {Colors} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import clsx from 'clsx';
+import * as React from 'react';
 
-export const ClearButton = styled.button`
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  margin: 0 -2px 0 0;
-  padding: 2px;
+import styles from './css/ClearButton.module.css';
 
-  .iconGlobal {
-    background-color: ${Colors.accentGray()};
-    transition: background-color 100ms linear;
-  }
-
-  :hover .iconGlobal,
-  :focus .iconGlobal {
-    background-color: ${Colors.accentGrayHover()};
-  }
-
-  :active .iconGlobal {
-    background-color: ${Colors.textDefault()};
-  }
-
-  :focus {
-    outline: none;
-  }
-`;
+export const ClearButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentPropsWithoutRef<'button'>
+>((props, ref) => {
+  return <button {...props} ref={ref} className={clsx(styles.clearButton, props.className)} />;
+});

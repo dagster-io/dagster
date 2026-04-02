@@ -1,9 +1,9 @@
-import {Box, Colors} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import {Box} from '@dagster-io/ui-components';
 
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {LiveDuration} from './LiveDuration';
 import {TargetPartitionsDisplay} from './TargetPartitionsDisplay';
+import styles from './css/BackfillOverviewDetails.module.css';
 import {Timestamp} from '../../app/time/Timestamp';
 import {testId} from '../../testing/testId';
 
@@ -51,13 +51,7 @@ export const BackfillOverviewDetails = ({backfill}: {backfill: any}) => (
 
 const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Element | string}) => (
   <Box flex={{direction: 'column', gap: 4}} style={{minWidth: '280px'}}>
-    <Label>{label}</Label>
+    <div className={styles.label}>{label}</div>
     <div>{detail}</div>
   </Box>
 );
-
-const Label = styled.div`
-  color: ${Colors.textLight()};
-  font-size: 12px;
-  line-height: 16px;
-`;

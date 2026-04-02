@@ -1,0 +1,17 @@
+[
+  {
+    "source": "/getting-started/install",
+    "destination": "/getting-started/installation",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg",
+    "destination": "/getting-started/installation",
+    "permanent": true
+  },
+  {
+    "source": "/concepts",
+    "destination": "/getting-started/concepts",
+    "permanent": true
+  }
+]

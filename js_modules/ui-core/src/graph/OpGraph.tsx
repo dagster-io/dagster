@@ -1,6 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {OpEdges} from './OpEdges';
 import {OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT, OpNode} from './OpNode';
@@ -19,6 +18,7 @@ import {
 import {gql} from '../apollo-client';
 import {OpGraphOpFragment} from './types/OpGraph.types';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
+import styles from './css/OpGraph.module.css';
 
 const NoOp = () => {};
 
@@ -207,7 +207,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
         onArrowKeyDown={this.onArrowKeyDown}
       >
         {({scale}, viewportRect) => (
-          <SVGContainer width={layout.width} height={layout.height + 200}>
+          <svg className={styles.sVGContainer} width={layout.width} height={layout.height + 200}>
             <OpGraphContents
               {...this.props}
               layout={layout}
@@ -215,7 +215,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
               onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
               viewportRect={viewportRect}
             />
-          </SVGContainer>
+          </svg>
         )}
       </SVGViewport>
     );
@@ -234,9 +234,4 @@ export const OP_GRAPH_OP_FRAGMENT = gql`
 
   ${OP_NODE_INVOCATION_FRAGMENT}
   ${OP_NODE_DEFINITION_FRAGMENT}
-`;
-
-const SVGContainer = styled.svg`
-  overflow: visible;
-  border-radius: 0;
 `;
