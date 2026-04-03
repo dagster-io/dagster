@@ -60,11 +60,14 @@ class CodeVersionOutdatedCondition(SubsetAutomationCondition[AssetKey]):
             return context.get_empty_subset()
 
         if not context.candidate_subset.is_partitioned:
-            record = (
-                context.asset_graph_view._queryer.get_latest_materialization_or_observation_record(  # noqa: SLF001
-                    AssetKeyPartitionKey(context.key)
-                )
+        mat_record = (
+            context.asset_graph_view._queryer.get_latest_materialization_or_observation_record(  # noqa: SLF001
+                AssetKeyPartitionKey(context.key)
             )
+        )
+        provenance = (
+            extract_data_provenance_from_entry(mat_record.event_log_entry) if mat_record else None
+        )
             provenance = (
                 extract_data_provenance_from_entry(record.event_log_entry) if record else None
             )
