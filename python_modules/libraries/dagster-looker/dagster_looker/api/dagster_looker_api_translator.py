@@ -8,7 +8,7 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
-from dagster._annotations import deprecated, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
@@ -261,11 +261,3 @@ class DagsterLookerApiTranslator:
             return self.get_dashboard_asset_spec(looker_structure)
         else:
             check.assert_never(looker_structure.structure_type)
-
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
-    )
-    @public
-    def get_asset_key(self, looker_structure: LookerApiTranslatorStructureData) -> AssetKey:
-        return self.get_asset_spec(looker_structure).key
