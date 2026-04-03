@@ -4,6 +4,7 @@ import os
 import random
 import string
 import sys
+import time
 from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
@@ -73,7 +74,9 @@ class PipesS3LogReader(PipesChunkedLogReader):
         self.log_position = 0
 
         super().__init__(
-            interval=interval, target_stream=target_stream or sys.stdout, debug_info=debug_info
+            interval=interval,
+            target_stream=target_stream or sys.stdout,
+            debug_info=debug_info,
         )
 
     @property
@@ -238,18 +241,25 @@ def tail_cloudwatch_events(
     log_group: str,
     log_stream: str,
     start_time: int | None = None,
+    polling_wait_time: int = 5,
+    logs_lines_per_call: int = 10,
     max_retries: int | None = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
 ) -> Generator[list["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
     params: dict[str, Any] = {
         "logGroupName": log_group,
         "logStreamName": log_stream,
+        "limit": logs_lines_per_call,
     }
 
     if start_time is not None:
         params["startTime"] = start_time
+        params["startFromHead"] = True  # Required when using startTime to read forward
 
     response = get_log_events(client=client, max_retries=max_retries, **params)
+    # Remove startTime after first call to avoid conflicts with nextToken
+    params.pop("startTime", None)
+    params["startFromHead"] = True  # Required when using nextToken
 
     while True:
         events = response.get("events")
@@ -257,7 +267,13 @@ def tail_cloudwatch_events(
         if events:
             yield events
 
-        params["nextToken"] = response["nextForwardToken"]
+        next_token = response["nextForwardToken"]
+
+        # Always wait before polling again to avoid excessive API calls
+        time.sleep(polling_wait_time)
+
+        # Update to the new token (or same token if no new events)
+        params["nextToken"] = next_token
 
         response = get_log_events(client=client, max_retries=max_retries, **params)
 
@@ -308,13 +324,18 @@ class PipesCloudWatchLogReader(PipesLogReader):
             return False
 
     def start(self, params: PipesParams, is_session_closed: Event) -> None:
+        # Guard against multiple starts
+        if self.thread is not None:
+            return
+
         if not self.target_is_readable(params):
             raise DagsterInvariantViolationError(
                 "log_group and log_stream must be set either in the constructor or in Pipes params."
             )
 
         self.thread = Thread(
-            target=self._start, kwargs={"params": params, "is_session_closed": is_session_closed}
+            target=self._start,
+            kwargs={"params": params, "is_session_closed": is_session_closed},
         )
         self.thread.start()
 
@@ -324,7 +345,11 @@ class PipesCloudWatchLogReader(PipesLogReader):
         start_time = cast("int", self.start_time or params.get("start_time"))
 
         for events in tail_cloudwatch_events(
-            self.client, log_group, log_stream, start_time=start_time, max_retries=self.max_retries
+            self.client,
+            log_group,
+            log_stream,
+            start_time=start_time,
+            max_retries=self.max_retries,
         ):
             for event in events:
                 for line in event.get("message", "").splitlines():
