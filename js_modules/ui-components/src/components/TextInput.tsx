@@ -24,17 +24,21 @@ export const TextInput = React.forwardRef(
       rightElement,
       type = 'text',
       allowPasswordManagers = false,
+      style,
       ...rest
     } = props;
 
     const containerStyle = fill ? {width: '100%', flex: 1} : undefined;
 
-    const inputStyle = strokeColor
-      ? ({
-          '--text-input-stroke-color': strokeColor,
-          '--text-input-stroke-color-hover': strokeColor,
-        } as React.CSSProperties)
-      : {};
+    const inputStyle: React.CSSProperties = {
+      ...style,
+      ...(strokeColor
+        ? {
+            '--text-input-stroke-color': strokeColor,
+            '--text-input-stroke-color-hover': strokeColor,
+          }
+        : {}),
+    } as React.CSSProperties;
 
     const passwordManagerProps = allowPasswordManagers
       ? {}

@@ -1,0 +1,8 @@
+.codeMirrorContainer {
+  flex: 1;
+  overflow: hidden;
+
+  .CodeMirror {
+    height: 100%;
+  }
+}

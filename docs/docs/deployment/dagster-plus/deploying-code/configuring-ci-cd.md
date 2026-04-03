@@ -86,6 +86,12 @@ Pushing changes to the `main` branch of that project repository will automatical
 
 During the deployment, the agent will attempt to load your code and update the metadata in Dagster+. When that has finished, you should see the GitHub Action complete successfully, and also be able to see the code location under the **Deployment** tag in Dagster+.
 
+:::note Environment variables in CI
+
+During the deployment process, environment variables configured in your Dagster+ deployment are automatically fetched and made available during code loading. This means components that require credentials (such as database passwords or API keys) will have access to them in CI without needing to duplicate them as GitHub Secrets. The appropriate scope is selected automatically based on deployment type (full deployment or branch deployment).
+
+:::
+
 <UpdateGitHubActionVersion />
 
 ## GitLab

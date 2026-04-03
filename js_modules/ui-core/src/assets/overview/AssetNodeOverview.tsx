@@ -8,15 +8,15 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {AssetAlertsSection} from '@shared/assets/AssetAlertsSection';
+import {AssetEventMetadataEntriesTable} from '@shared/assets/AssetEventMetadataEntriesTable';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {FreshnessPolicySection} from './FreshnessPolicySection';
 import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
-import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
 import {AutomationDetailsSection} from './AutomationDetailsSection';
-import {AttributeAndValue, NoValue, SectionEmptyState} from './Common';
+import {AttributeAndValue, SectionEmptyState} from './Common';
 import {ComputeDetailsSection} from './ComputeDetailsSection';
 import {DefinitionSection} from './DefinitionSection';
 import {FreshnessPolicyStatus} from './FreshnessPolicyStatus';
@@ -149,7 +149,7 @@ export const AssetNodeOverview = ({
                 assetNode={assetNode ?? cachedAssetNode!}
               />
             ) : (
-              <NoValue />
+              <Skeleton $height={24} $width={240} />
             )}
             {assetNode && assetNode.freshnessPolicy && (
               <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />

@@ -1,0 +1,9 @@
+.capturedLogDataTable {
+  & tr td:first-child {
+    white-space: nowrap;
+  }
+}
+
+.clickToCopyButton {
+  white-space: normal;
+}

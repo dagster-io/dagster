@@ -358,6 +358,8 @@ class DgProjectConfig:
     code_location_target_module: str | None = None
     code_location_name: str | None = None
     registry_modules: list[str] = field(default_factory=list)
+    agent_queue: str | None = None
+    image: str | None = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
@@ -372,6 +374,8 @@ class DgProjectConfig:
             registry_modules=raw.get(
                 "registry_modules", cls.__dataclass_fields__["registry_modules"].default_factory()
             ),
+            agent_queue=raw.get("agent_queue", DgProjectConfig.agent_queue),
+            image=raw.get("image", DgProjectConfig.image),
         )
 
 
@@ -381,6 +385,8 @@ class DgRawProjectConfig(TypedDict):
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
     registry_modules: NotRequired[list[str]]
+    agent_queue: NotRequired[str]
+    image: NotRequired[str]
 
 
 # ########################

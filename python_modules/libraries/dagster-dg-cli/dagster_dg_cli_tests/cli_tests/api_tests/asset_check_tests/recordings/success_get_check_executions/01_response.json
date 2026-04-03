@@ -1,0 +1,43 @@
+{
+  "assetCheckExecutions": [
+    {
+      "id": "exec-001",
+      "runId": "run-abc-123",
+      "status": "SUCCEEDED",
+      "timestamp": "1706745600",
+      "stepKey": "my_asset_freshness_check",
+      "evaluation": {
+        "severity": "ERROR",
+        "timestamp": 1706745600,
+        "targetMaterialization": {
+          "runId": "run-xyz-000",
+          "timestamp": 1706742000
+        },
+        "metadataEntries": [
+          {"label": "freshness_minutes"}
+        ]
+      }
+    },
+    {
+      "id": "exec-002",
+      "runId": "run-def-456",
+      "status": "FAILED",
+      "timestamp": "1706659200",
+      "stepKey": "my_asset_freshness_check",
+      "evaluation": {
+        "severity": "ERROR",
+        "timestamp": 1706659200,
+        "targetMaterialization": null,
+        "metadataEntries": []
+      }
+    },
+    {
+      "id": "exec-003",
+      "runId": "run-ghi-789",
+      "status": "SUCCEEDED",
+      "timestamp": "1706572800",
+      "stepKey": "my_asset_freshness_check",
+      "evaluation": null
+    }
+  ]
+}

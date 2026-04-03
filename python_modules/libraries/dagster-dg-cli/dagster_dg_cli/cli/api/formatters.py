@@ -20,6 +20,11 @@ if TYPE_CHECKING:
         DgApiAssetList,
         DgApiAssetStatus,
         DgApiEvaluationRecordList,
+        DgApiPartitionStats,
+    )
+    from dagster_dg_cli.api_layer.schemas.asset_check import (
+        DgApiAssetCheckExecutionList,
+        DgApiAssetCheckList,
     )
     from dagster_dg_cli.api_layer.schemas.code_location import (
         DgApiAddCodeLocationResult,
@@ -37,6 +42,7 @@ if TYPE_CHECKING:
         DeploymentSettings,
     )
     from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
+    from dagster_dg_cli.api_layer.schemas.job import DgApiJob, DgApiJobList
     from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
     from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
     from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
@@ -432,6 +438,76 @@ def format_asset_evaluations(evaluations: "DgApiEvaluationRecordList", as_json: 
         return "\n".join(result_lines)
 
     return lines[0]
+
+
+# ---------------------------------------------------------------------------
+# Asset check formatters
+# ---------------------------------------------------------------------------
+
+
+def format_asset_checks(checks: "DgApiAssetCheckList", as_json: bool) -> str:
+    """Format asset check list for output."""
+    if as_json:
+        return checks.model_dump_json(indent=2)
+
+    if not checks.items:
+        return "No asset checks found."
+
+    headers = ["NAME", "BLOCKING", "DESCRIPTION"]
+    rows = []
+    for check in checks.items:
+        rows.append(
+            [
+                check.name,
+                "Yes" if check.blocking else "No",
+                check.description or "",
+            ]
+        )
+
+    return format_table(headers, rows)
+
+
+def format_asset_check_executions(executions: "DgApiAssetCheckExecutionList", as_json: bool) -> str:
+    """Format asset check execution list for output."""
+    if as_json:
+        return executions.model_dump_json(indent=2)
+
+    if not executions.items:
+        return "No check executions found."
+
+    headers = ["STATUS", "RUN_ID", "TIMESTAMP", "PARTITION"]
+    rows = []
+    for execution in executions.items:
+        rows.append(
+            [
+                execution.status.value,
+                execution.run_id,
+                _format_timestamp(execution.timestamp, "seconds"),
+                execution.partition or "",
+            ]
+        )
+
+    return format_table(headers, rows)
+
+
+# ---------------------------------------------------------------------------
+# Partition status formatters
+# ---------------------------------------------------------------------------
+
+
+def format_partition_status(stats: "DgApiPartitionStats", as_json: bool) -> str:
+    """Format partition materialization stats for output."""
+    if as_json:
+        return stats.model_dump_json(indent=2)
+
+    return format_detail(
+        [
+            ("Materialized", str(stats.num_materialized)),
+            ("Failed", str(stats.num_failed)),
+            ("In Progress", str(stats.num_materializing)),
+            ("Total", str(stats.num_partitions)),
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1005,3 +1081,62 @@ def format_delete_code_location_result(
         return result.model_dump_json(indent=2)
 
     return f"Deleted code location '{result.location_name}'."
+
+
+# ---------------------------------------------------------------------------
+# Job formatters
+# ---------------------------------------------------------------------------
+
+
+def format_jobs(jobs: "DgApiJobList", as_json: bool) -> str:
+    """Format job list for output."""
+    if as_json:
+        jobs_dict = jobs.model_dump()
+        for job in jobs_dict["items"]:
+            job.pop("repository_origin", None)
+            job.pop("id", None)
+        return json.dumps(jobs_dict, indent=2)
+
+    headers = ["NAME", "DESCRIPTION", "SCHEDULES", "SENSORS", "ASSET JOB"]
+    rows = []
+    for job in jobs.items:
+        rows.append(
+            [
+                job.name,
+                (job.description or "")[:50],
+                str(len(job.schedules)),
+                str(len(job.sensors)),
+                "Yes" if job.is_asset_job else "No",
+            ]
+        )
+
+    return format_table(headers, rows)
+
+
+def format_job(job: "DgApiJob", as_json: bool) -> str:
+    """Format single job for output."""
+    if as_json:
+        job_dict = job.model_dump()
+        job_dict.pop("repository_origin", None)
+        job_dict.pop("id", None)
+        return json.dumps(job_dict, indent=2)
+
+    fields: list[tuple[str, str]] = [
+        ("Name", job.name),
+        ("Description", job.description or "None"),
+        ("Asset Job", "Yes" if job.is_asset_job else "No"),
+    ]
+
+    if job.tags:
+        tags_str = ", ".join(f"{t.key}={t.value}" for t in job.tags)
+        fields.append(("Tags", tags_str))
+
+    if job.schedules:
+        for s in job.schedules:
+            fields.append(("Schedule", f"{s.name} ({s.cron_schedule}) [{s.status}]"))
+
+    if job.sensors:
+        for s in job.sensors:
+            fields.append(("Sensor", f"{s.name} [{s.status}]"))
+
+    return format_detail(fields)

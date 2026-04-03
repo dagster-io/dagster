@@ -40,6 +40,7 @@ from dagster._core.execution.asset_backfill import (
     _check_asset_backfill_data_validity,
     backfill_is_complete,
     execute_asset_backfill_iteration_inner,
+    get_asset_backfill_iteration_materialized_subset,
     get_canceling_asset_backfill_iteration_data,
 )
 from dagster._core.instance.types import DynamicPartitionsStore
@@ -2188,7 +2189,7 @@ def test_asset_backfill_cancellation():
         backfill_start_timestamp=backfill_start_datetime.timestamp(),
     )
 
-    _single_backfill_iteration(
+    asset_backfill_data = _single_backfill_iteration(
         backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
     )
 
@@ -2221,6 +2222,80 @@ def test_asset_backfill_cancellation():
         downstream_daily_partitioned_asset.key
         not in canceling_backfill_data.materialized_subset.asset_keys
     )
+
+
+def test_asset_backfill_cancellation_before_any_runs():
+    """When a backfill is canceled before any runs execute (latest_storage_id is None),
+    get_asset_backfill_iteration_materialized_subset should return early without
+    calling fetch_materializations.
+    """
+    instance = DagsterInstance.ephemeral()
+
+    @dg.asset(partitions_def=dg.HourlyPartitionsDefinition("2023-01-01-00:00"))
+    def upstream_hourly_partitioned_asset():
+        return 1
+
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2023-01-01"))
+    def downstream_daily_partitioned_asset(
+        upstream_hourly_partitioned_asset,
+    ):
+        return upstream_hourly_partitioned_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            upstream_hourly_partitioned_asset,
+            downstream_daily_partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_id = "dummy_backfill_id"
+    backfill_start_datetime = create_datetime(2023, 1, 9, 1, 0, 0)
+    asset_selection = [
+        upstream_hourly_partitioned_asset.key,
+        downstream_daily_partitioned_asset.key,
+    ]
+    targeted_partitions = ["2023-01-09-00:00"]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=targeted_partitions,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=backfill_start_datetime.timestamp(),
+    )
+
+    # Confirm latest_storage_id is None (no runs have executed)
+    assert asset_backfill_data.latest_storage_id is None
+
+    # Cancel without running any backfill iterations
+    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(
+        backfill_id,
+        asset_backfill_data,
+        _get_asset_graph_view(
+            instance,
+            asset_graph,
+            backfill_start_datetime,
+        ),
+        backfill_start_datetime.timestamp(),
+    )
+
+    assert isinstance(canceling_backfill_data, AssetBackfillData)
+    assert canceling_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
+
+    # No materializations should exist since no runs executed
+    assert canceling_backfill_data.materialized_subset == AssetGraphSubset()
+
+    # Verify the early return: fetch_materializations should not be called
+    asset_graph_view = _get_asset_graph_view(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
+    with patch.object(instance_queryer.instance, "fetch_materializations") as mock_fetch:
+        result = get_asset_backfill_iteration_materialized_subset(
+            backfill_id, asset_backfill_data, asset_graph, instance_queryer
+        )
+        mock_fetch.assert_not_called()
+        assert result == asset_backfill_data.materialized_subset
 
 
 def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partitions():
@@ -3034,8 +3109,8 @@ def test_backfill_fails_on_partitioned_asset_with_unpartitioned_materialization(
     assert partitioned_asset.key in backfill_data.target_subset.partitions_subsets_by_asset_key
     assert partitioned_asset.key not in backfill_data.target_subset.non_partitioned_asset_keys
 
-    # Update backfill data with the latest storage ID to pick up the new materialization
-    backfill_data = backfill_data.with_latest_storage_id(None)
+    # Update backfill data with storage ID 0 to pick up the new materialization
+    backfill_data = backfill_data.with_latest_storage_id(0)
 
     # Try to execute another iteration - this should raise an error
     with pytest.raises(DagsterBackfillFailedError) as exc_info:
@@ -3100,8 +3175,8 @@ def test_backfill_fails_on_unpartitioned_asset_with_partitioned_materialization(
     # Execute the job with the backfill tag
     report_mat_job.execute_in_process(instance=instance, tags={BACKFILL_ID_TAG: "test_backfill_2"})
 
-    # Update backfill data with the latest storage ID to pick up the new materialization
-    backfill_data = backfill_data.with_latest_storage_id(None)
+    # Update backfill data with storage ID 0 to pick up the new materialization
+    backfill_data = backfill_data.with_latest_storage_id(0)
 
     # Try to execute another iteration - this should raise an error
     with pytest.raises(DagsterBackfillFailedError) as exc_info:

@@ -1302,6 +1302,9 @@ def get_asset_backfill_iteration_materialized_subset(
     This function is a generator so we can return control to the daemon and let it heartbeat
     during expensive operations.
     """
+    if asset_backfill_data.latest_storage_id is None:
+        return asset_backfill_data.materialized_subset
+
     recently_materialized_asset_partitions = AssetGraphSubset()
     for asset_key in asset_backfill_data.target_subset.asset_keys:
         cursor = None
@@ -1671,7 +1674,7 @@ def _execute_asset_backfill_iteration_inner(
 
     updated_asset_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
-        latest_storage_id=next_latest_storage_id or asset_backfill_data.latest_storage_id,
+        latest_storage_id=next_latest_storage_id,
         requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots
         or request_roots,
         materialized_subset=updated_materialized_subset,

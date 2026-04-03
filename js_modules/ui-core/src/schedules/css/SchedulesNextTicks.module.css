@@ -1,0 +1,9 @@
+.runRequestBody {
+  font-size: 13px;
+}
+
+.skipWrapper {
+  background-color: var(--color-background-yellow);
+  border: 1px solid var(--color-accent-yellow);
+  border-radius: 3px;
+}

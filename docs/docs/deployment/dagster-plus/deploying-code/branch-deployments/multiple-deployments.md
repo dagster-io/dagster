@@ -95,6 +95,16 @@ locations:
     agent_queue: <queue name>
 ```
 
+For `dg`-based projects, you can alternatively set the agent queue in `pyproject.toml`:
+
+```toml
+# pyproject.toml
+
+[tool.dg.project]
+root_module = "my_project"
+agent_queue = "<queue name>"
+```
+
 For more information about agent queue routing or code location configuration, see:
 
 - [Agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents)

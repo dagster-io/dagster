@@ -11,7 +11,6 @@ import {
 import {useMemo, useState} from 'react';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {DefaultLogLevels} from './LogLevel';
@@ -23,6 +22,7 @@ import {titleForRun} from './RunUtils';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 import {DagsterEventType} from '../graphql/types';
 import {flattenOneLevel} from '../util/flattenOneLevel';
+import styles from './css/StepLogsDialog.module.css';
 
 export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: string[]}) {
   const [showingLogs, setShowingLogs] = React.useState<{runId: string; stepKeys: string[]} | null>(
@@ -139,7 +139,7 @@ export const StepLogsDialogContent = ({
     });
 
   return (
-    <LogsContainer>
+    <div className={styles.logsContainer}>
       <LogsToolbar
         metadata={metadata}
         logType={logType}
@@ -179,13 +179,6 @@ export const StepLogsDialogContent = ({
           metadata={metadata}
         />
       )}
-    </LogsContainer>
+    </div>
   );
 };
-
-const LogsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 65vh;
-`;

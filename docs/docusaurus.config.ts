@@ -1,6 +1,7 @@
 import DagsterVersions from './dagsterVersions.json';
 import type * as Preset from '@docusaurus/preset-classic';
 import type {Config} from '@docusaurus/types';
+import AnnouncementBar from '@theme/AnnouncementBar';
 import {themes as prismThemes} from 'prism-react-renderer';
 
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
@@ -47,6 +48,14 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    announcementBar: {
+      id: 'announcementBar',
+      content:
+        '<b>Developing with AI? Check out our new <a target="_blank" rel="noopener noreferrer" href="https://github.com/dagster-io/skills">AI skills</a>!</b>',
+      backgroundColor: 'var(--theme-color-background-blue)',
+      textColor: 'var(--theme-color-text-default)',
+      isCloseable: true,
+    },
     ...(process.env.ALGOLIA_APP_ID &&
       process.env.ALGOLIA_API_KEY &&
       process.env.ALGOLIA_INDEX_NAME &&

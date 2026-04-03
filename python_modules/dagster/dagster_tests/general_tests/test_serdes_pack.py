@@ -1,6 +1,8 @@
 """Tests for compressed columnar packing (dagster_shared.serdes.pack)."""
 
 import json
+import os
+import unittest.mock
 
 import dagster as dg
 from dagster import DagsterInstance
@@ -225,6 +227,197 @@ def test_schema_evolution_removed_field():
     assert result.b == 2
 
 
+def test_columnar_classes_limits_which_classes_are_packed():
+    """Only classes in columnar_classes get packed into tables; others are inline."""
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Leaf:
+        x: int
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Middle:
+        leaf: Leaf
+        y: str
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Root:
+        middle: Middle
+
+    obj = Root(middle=Middle(leaf=Leaf(x=42), y="hello"))
+
+    # Only pack Leaf into columnar tables
+    packed_json = serialize_deduped(
+        obj, whitelist_map=test_map, columnar_classes=frozenset({"Leaf"})
+    )
+    parsed = json.loads(packed_json)
+
+    # Only Leaf should appear in tables
+    table_classes = {t["c"] for t in parsed["tables"]}
+    assert table_classes == {"Leaf"}
+
+    # Root and Middle should be inline dicts with __class__ keys
+    value = parsed["value"]
+    assert value["__class__"] == "Root"
+    assert value["middle"]["__class__"] == "Middle"
+    # But Leaf should be an __oid__ ref
+    assert "__oid__" in value["middle"]["leaf"]
+
+    # Round-trip still works
+    result = deserialize_deduped(packed_json, whitelist_map=test_map, as_type=Root)
+    assert result == obj
+
+
+def test_columnar_classes_empty_frozenset_packs_nothing():
+    """An empty frozenset means no classes are columnar-packed — all inline."""
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Item:
+        val: int
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Wrapper:
+        items: list[Item]
+
+    obj = Wrapper(items=[Item(val=1), Item(val=2)])
+    packed_json = serialize_deduped(obj, whitelist_map=test_map, columnar_classes=frozenset())
+    parsed = json.loads(packed_json)
+
+    # No tables should be populated
+    assert parsed["tables"] == []
+
+    # Everything should be inline
+    value = parsed["value"]
+    assert value["__class__"] == "Wrapper"
+    for item in value["items"]:
+        assert item["__class__"] == "Item"
+        assert "__oid__" not in item
+
+    # Round-trip still works
+    result = deserialize_deduped(packed_json, whitelist_map=test_map, as_type=Wrapper)
+    assert result == obj
+
+
+def test_columnar_classes_none_packs_everything():
+    """columnar_classes=None (default) packs all classes into tables."""
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Alpha:
+        a: int
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Beta:
+        alpha: Alpha
+        b: str
+
+    obj = Beta(alpha=Alpha(a=1), b="hi")
+    packed_json = serialize_deduped(obj, whitelist_map=test_map, columnar_classes=None)
+    parsed = json.loads(packed_json)
+
+    # Both classes should be in tables
+    table_classes = {t["c"] for t in parsed["tables"]}
+    assert table_classes == {"Alpha", "Beta"}
+
+    # Top-level value should be an __oid__ ref, not inline
+    assert "__oid__" in parsed["value"]
+
+    result = deserialize_deduped(packed_json, whitelist_map=test_map, as_type=Beta)
+    assert result == obj
+
+
+def test_columnar_classes_dedup_still_works_for_packed_classes():
+    """Deduplication works for classes in the columnar set; inline classes are not deduped."""
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Tag:
+        name: str
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Entry:
+        tag: Tag
+        value: int
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Collection:
+        entries: list[Entry]
+
+    shared_tag = Tag(name="shared")
+    obj = Collection(
+        entries=[
+            Entry(tag=shared_tag, value=1),
+            Entry(tag=Tag(name="shared"), value=2),  # same content, different instance
+            Entry(tag=Tag(name="unique"), value=3),
+        ]
+    )
+
+    # Only pack Tag into tables; Entry and Collection stay inline
+    packed_json = serialize_deduped(
+        obj, whitelist_map=test_map, columnar_classes=frozenset({"Tag"})
+    )
+    parsed = json.loads(packed_json)
+
+    # Tag table should have 2 unique rows ("shared" and "unique")
+    tag_table = next(t for t in parsed["tables"] if t["c"] == "Tag")
+    assert len(tag_table["r"]) == 2
+
+    # Entry should NOT be in tables
+    assert not any(t["c"] == "Entry" for t in parsed["tables"])
+
+    # The two "shared" tags should reference the same oid
+    entries = parsed["value"]["entries"]
+    assert entries[0]["tag"] == entries[1]["tag"]  # same __oid__ ref
+    assert entries[0]["tag"] != entries[2]["tag"]  # different tag
+
+    result = deserialize_deduped(packed_json, whitelist_map=test_map, as_type=Collection)
+    assert result == obj
+
+
+def test_columnar_classes_with_nested_packed_inside_inline():
+    """A packed class nested inside an inline class is still packed correctly."""
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Deep:
+        z: int
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @record
+    class Shallow:
+        deep: Deep
+        label: str
+
+    obj = Shallow(deep=Deep(z=99), label="test")
+
+    # Only Deep is columnar-packed; Shallow is inline
+    packed_json = serialize_deduped(
+        obj, whitelist_map=test_map, columnar_classes=frozenset({"Deep"})
+    )
+    parsed = json.loads(packed_json)
+
+    # Shallow is inline
+    assert parsed["value"]["__class__"] == "Shallow"
+    assert parsed["value"]["label"] == "test"
+    # Deep is an oid ref inside the inline Shallow
+    assert "__oid__" in parsed["value"]["deep"]
+
+    result = deserialize_deduped(packed_json, whitelist_map=test_map, as_type=Shallow)
+    assert result == obj
+
+
 def _make_cursor(num_upstream: int = 20) -> AssetDaemonCursor:
     """Create a realistic cursor with many assets sharing the same partition def."""
     daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
@@ -259,3 +452,31 @@ def test_cursor_round_trip():
     packed_json = serialize_deduped(cursor)
     result = deserialize_deduped(packed_json, as_type=AssetDaemonCursor)
     assert result == cursor
+
+
+def test_instigator_cursor_reads_both_versions():
+    """The reader handles both v0 (plain serdes) and v1 (columnar-packed) cursors."""
+    from dagster._daemon.asset_daemon import (
+        asset_daemon_cursor_from_instigator_serialized_cursor,
+        asset_daemon_cursor_to_instigator_serialized_cursor,
+    )
+
+    cursor = _make_cursor(num_upstream=10)
+
+    # Default writer produces version "0"
+    v0_stored = asset_daemon_cursor_to_instigator_serialized_cursor(cursor)
+    assert v0_stored.startswith("0")
+
+    # With env var set, writer produces version "1"
+    with unittest.mock.patch.dict(
+        os.environ, {"DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR": "1"}
+    ):
+        v1_stored = asset_daemon_cursor_to_instigator_serialized_cursor(cursor)
+    assert v1_stored.startswith("1")
+
+    # Both should deserialize to the same cursor
+    from_v0 = asset_daemon_cursor_from_instigator_serialized_cursor(v0_stored, None)
+    from_v1 = asset_daemon_cursor_from_instigator_serialized_cursor(v1_stored, None)
+
+    assert from_v0 == cursor
+    assert from_v1 == cursor

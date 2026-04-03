@@ -1,0 +1,13 @@
+type: dagster.TemplatedSqlComponent
+
+attributes:
+  sql_template:
+    path: product_revenue.sql
+
+  connection: "{{ load_component_at_path('../duckdb_connection') }}"
+
+  assets:
+    - key: product_revenue
+      deps: [orders, products]
+      group_name: transforms
+      kinds: [duckdb]

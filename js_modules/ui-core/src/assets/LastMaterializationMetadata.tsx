@@ -1,6 +1,5 @@
 import {Box, Colors, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {ChangedReasonsTag} from './ChangedReasons';
@@ -23,6 +22,7 @@ import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import styles from './css/LastMaterializationMetadata.module.css';
 
 export const LatestMaterializationMetadata = ({
   assetKey,
@@ -59,7 +59,7 @@ export const LatestMaterializationMetadata = ({
     <>
       {stepLogs.dialog}
       {latestEvent ? (
-        <MetadataTable>
+        <Table className={styles.metadataTable}>
           <tbody>
             {!isRunlessEvent(latestEvent) ? (
               <tr>
@@ -175,7 +175,7 @@ export const LatestMaterializationMetadata = ({
                 </tr>
               ))}
           </tbody>
-        </MetadataTable>
+        </Table>
       ) : (
         <Box padding={{top: 16, bottom: 32}}>
           <NonIdealState
@@ -188,14 +188,3 @@ export const LatestMaterializationMetadata = ({
     </>
   );
 };
-
-const MetadataTable = styled(Table)`
-  td:first-child {
-    white-space: nowrap;
-    width: 1px;
-    max-width: 400px;
-    word-break: break-word;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-`;

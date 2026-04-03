@@ -1,9 +1,10 @@
 import os
 import sys
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dagster as dg
+import pydantic
 import pytest
 from dagster import DagsterInstance
 from dagster._config.field import resolve_to_config_type
@@ -218,3 +219,54 @@ def test_print_root_with_secret_fields(instance) -> None:
     # Verify that actual secret values are not in the output
     assert "secret123" not in yaml_output
     assert "key_456" not in yaml_output
+
+
+class AuthToken(dg.Config):
+    auth_type: Literal["token"] = "token"
+    token: str
+
+
+class AuthDefault(dg.Config):
+    auth_type: Literal["default"] = "default"
+    extra: dict[str, Any] = {}
+
+
+class MyConnectionResource(dg.ConfigurableResource):
+    host: str
+    auth: AuthToken | AuthDefault = pydantic.Field(discriminator="auth_type")
+
+
+def job_def_with_discriminated_union_resource():
+    @dg.asset
+    def my_asset(conn: MyConnectionResource):
+        pass
+
+    return dg.Definitions(
+        assets=[my_asset],
+        resources={
+            "conn": MyConnectionResource(
+                host="localhost",
+                auth=AuthDefault(extra={}),
+            )
+        },
+    )
+
+
+def test_discriminated_union_empty_dict_default_preserved(instance) -> None:
+    """Empty dict defaults inside discriminated unions must survive the
+    empty-dict filtering pass. Without type-aware filtering, _filter_empty_dicts
+    would recursively collapse: extra: {} -> removed -> default: {} -> removed
+    -> auth: {} -> removed, causing Launchpad to report missing required config.
+    """
+    repo = _remote_repository_for_function(instance, job_def_with_discriminated_union_resource)
+    remote_job = repo.get_full_job("__ASSET_JOB")
+    root_config_key = remote_job.root_config_key
+    assert root_config_key
+    root_type = remote_job.config_schema_snapshot.get_config_snap(root_config_key)
+    yaml_output = default_values_yaml_from_type_snap(remote_job.config_schema_snapshot, root_type)
+
+    # Discriminated unions use the discriminator value as a selector key,
+    # so it appears as "default:" not "auth_type: ..."
+    assert "auth:" in yaml_output
+    assert "default:" in yaml_output
+    assert "extra: {}" in yaml_output

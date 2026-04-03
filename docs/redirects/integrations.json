@@ -1,0 +1,1627 @@
+[
+  {
+    "source": "/_apidocs/libraries/dagster-pipes",
+    "destination": "/integrations/libraries/pipes",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-airbyte",
+    "destination": "/integrations/libraries/airbyte/dagster-airbyte",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-airlift",
+    "destination": "/integrations/libraries/airlift/dagster-airlift",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-aws",
+    "destination": "/integrations/libraries/aws/dagster-aws",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-azure",
+    "destination": "/integrations/libraries/azure/dagster-azure",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-celery-docker",
+    "destination": "/integrations/libraries/celery/dagster-celery-docker",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-celery-k8s",
+    "destination": "/integrations/libraries/celery/dagster-celery-k8s",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-celery",
+    "destination": "/integrations/libraries/celery/dagster-celery",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-census",
+    "destination": "/integrations/libraries/census/dagster-census",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-dask",
+    "destination": "/integrations/libraries/dask/dagster-dask",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-databricks",
+    "destination": "/integrations/libraries/databricks/dagster-databricks",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-datadog",
+    "destination": "/integrations/libraries/datadog/dagster-datadog",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-datahub",
+    "destination": "/integrations/libraries/datahub/dagster-datahub",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-dbt",
+    "destination": "/integrations/libraries/dbt/dagster-dbt",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-deltalake-polars",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake-polars",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-deltalake",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-deltalake-pandas",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-dlt",
+    "destination": "/integrations/libraries/dlt/dagster-dlt",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-docker",
+    "destination": "/integrations/libraries/docker/dagster-docker",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-duckdb",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-duckdb-polars",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-duckdb-pandas",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-duckdb-pyspark",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-fivetran",
+    "destination": "/integrations/libraries/fivetran/dagster-fivetran",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-gcp",
+    "destination": "/integrations/libraries/gcp/dagster-gcp",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-gcp-pandas",
+    "destination": "/integrations/libraries/gcp/dagster-gcp-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-gcp-pyspark",
+    "destination": "/integrations/libraries/gcp/dagster-gcp-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-github",
+    "destination": "/integrations/libraries/github/dagster-github",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-ge",
+    "destination": "/integrations/libraries/great-expectations/dagster-ge",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagstermill",
+    "destination": "/integrations/libraries/jupyter/dagstermill",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-looker",
+    "destination": "/integrations/libraries/looker/dagster-looker",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-omni",
+    "destination": "/integrations/libraries/omni/dagster-omni",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-openai",
+    "destination": "/integrations/libraries/openai/dagster-openai",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-pagerduty",
+    "destination": "/integrations/libraries/pagerduty/dagster-pagerduty",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-pandera",
+    "destination": "/integrations/libraries/pandera/dagster-pandera",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-papertrail",
+    "destination": "/integrations/libraries/papertrail/dagster-papertrail",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-polars",
+    "destination": "/integrations/libraries/polars/dagster-polars",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-prometheus",
+    "destination": "/integrations/libraries/prometheus/dagster-prometheus",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-sigma",
+    "destination": "/integrations/libraries/sigma/dagster-sigma",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-sling",
+    "destination": "/integrations/libraries/sling/dagster-sling",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-spark",
+    "destination": "/integrations/libraries/spark/dagster-spark",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-tableau",
+    "destination": "/integrations/libraries/tableau/dagster-tableau",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-twilio",
+    "destination": "/integrations/libraries/twilio/dagster-twilio",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-ssh",
+    "destination": "/integrations/libraries/ssh/dagster-ssh",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-wandb",
+    "destination": "/integrations/libraries/wandb/dagster-wandb",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-pipes",
+    "destination": "/integrations/libraries/pipes",
+    "permanent": true
+  },
+  {
+    "source": "/examples/dbt_example",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/pyspark",
+    "destination": "/integrations/libraries/spark",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-one",
+    "destination": "/integrations/libraries/dbt/transform-dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-two",
+    "destination": "/integrations/libraries/dbt/transform-dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-three",
+    "destination": "/integrations/libraries/dbt/transform-dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-four",
+    "destination": "/integrations/libraries/dbt/transform-dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/great-expectations",
+    "destination": "/integrations/libraries",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/airbyte-ingestion-as-code",
+    "destination": "/integrations/libraries/airbyte",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/databricks",
+    "destination": "/integrations/libraries/databricks",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/subprocess",
+    "destination": "/integrations/external-pipelines/using-dagster-pipes",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/subprocess/create-subprocess-asset",
+    "destination": "/integrations/external-pipelines/using-dagster-pipes/create-subprocess-asset",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/subprocess/modify-external-code",
+    "destination": "/integrations/external-pipelines/using-dagster-pipes/modify-external-code",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/subprocess/reference",
+    "destination": "/integrations/external-pipelines/using-dagster-pipes/reference",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/aws-ecs",
+    "destination": "/integrations/external-pipelines/aws/aws-ecs-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/aws-glue",
+    "destination": "/integrations/external-pipelines/aws/aws-glue-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/aws-emr-containers",
+    "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/external-pipelines/aws-emr-pipeline",
+    "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/external-pipelines/aws-emr-containers-pipeline",
+    "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/aws-emr-serverless",
+    "destination": "/integrations/external-pipelines/aws/aws-emr-serverless-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/aws-lambda",
+    "destination": "/integrations/external-pipelines/aws/aws-lambda-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/external-pipelines/aws-ecs-pipeline",
+    "destination": "/integrations/external-pipelines/aws/aws-ecs-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/aws-emr",
+    "destination": "/integrations/external-pipelines/aws/aws-emr-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/external-pipelines/aws-glue-pipeline",
+    "destination": "/integrations/external-pipelines/aws/aws-glue-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",
+    "destination": "/integrations/external-pipelines/aws/aws-emr-serverless-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/external-pipelines/aws-lambda-pipeline",
+    "destination": "/integrations/external-pipelines/aws/aws-lambda-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/kubernetes",
+    "destination": "/integrations/external-pipelines/kubernetes-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/dagster-pipes-details-and-customization",
+    "destination": "/integrations/external-pipelines/dagster-pipes-details-and-customization",
+    "permanent": true
+  },
+  {
+    "source": "/guides/migrations/from-step-launchers-to-pipes",
+    "destination": "/integrations/external-pipelines/migrating-from-step-launchers-to-pipes",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/external-pipelines",
+    "destination": "/integrations/external-pipelines",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/airbyte",
+    "destination": "/integrations/libraries/airbyte",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/airbyte-cloud",
+    "destination": "/integrations/libraries/airbyte/airbyte-cloud",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/airflow",
+    "destination": "/integrations/libraries/airlift",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/databricks",
+    "destination": "/integrations/external-pipelines/databricks-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/quickstart",
+    "destination": "/integrations/libraries/dbt/quickstart",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/dbt/using-dbt-with-dagster",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/upstream-assets",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster-plus",
+    "destination": "/integrations/libraries/dbt/using-dbt-with-dagster-plus",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt/reference",
+    "destination": "/integrations/libraries/dbt/reference",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt-cloud",
+    "destination": "/integrations/libraries/dbt/dbt-cloud",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/dbt/transform-dbt",
+    "destination": "/integrations/libraries/dbt/quickstart",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/deltalake",
+    "destination": "/integrations/libraries/deltalake",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/deltalake/using-deltalake-with-dagster",
+    "destination": "/integrations/libraries/deltalake/using-deltalake-with-dagster",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/deltalake/reference",
+    "destination": "/integrations/libraries/deltalake/reference",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/duckdb",
+    "destination": "/integrations/libraries/duckdb",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/duckdb/using-duckdb-with-dagster",
+    "destination": "/integrations/libraries/duckdb/using-duckdb-with-dagster",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/duckdb/reference",
+    "destination": "/integrations/libraries/duckdb/reference",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/embedded-elt",
+    "destination": "/integrations/libraries/embedded-elt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/embedded-elt/dlt",
+    "destination": "/integrations/libraries/dlt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/embedded-elt/sling",
+    "destination": "/integrations/libraries/sling",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/fivetran",
+    "destination": "/integrations/libraries/fivetran",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/fivetran/fivetran",
+    "destination": "/integrations/libraries/fivetran",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/fivetran/fivetran-legacy",
+    "destination": "/integrations/libraries/fivetran",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/bigquery",
+    "destination": "/integrations/libraries/gcp/bigquery",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/bigquery/using-bigquery-with-dagster",
+    "destination": "/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/bigquery/reference",
+    "destination": "/integrations/libraries/gcp/bigquery/reference",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dagstermill",
+    "destination": "/integrations/libraries/jupyter",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dagstermill/using-notebooks-with-dagster",
+    "destination": "/integrations/libraries/jupyter/using-notebooks-with-dagster",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dagstermill/reference",
+    "destination": "/integrations/libraries/jupyter/reference",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/looker",
+    "destination": "/integrations/libraries/looker",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/openai",
+    "destination": "/integrations/libraries/openai",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/pandas",
+    "destination": "/integrations/libraries/pandas",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/pandera",
+    "destination": "/integrations/libraries/pandera",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/powerbi",
+    "destination": "/integrations/libraries/powerbi",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/sigma",
+    "destination": "/integrations/libraries/sigma",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/spark",
+    "destination": "/integrations/libraries/spark",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/snowflake",
+    "destination": "/integrations/libraries/snowflake",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/tableau",
+    "destination": "/integrations/libraries/tableau",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes",
+    "destination": "/integrations/external-pipelines",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/airlift",
+    "destination": "/integrations/libraries/airlift",
+    "permanent": true
+  },
+  {
+    "source": "/dagster-pipes/pyspark",
+    "destination": "/integrations/external-pipelines/pyspark-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations/dlt-component-tutorial",
+    "destination": "/integrations/libraries/dlt",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations/sling-component-tutorial",
+    "destination": "/integrations/libraries/sling",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations/fivetran-component-tutorial",
+    "destination": "/integrations/libraries/fivetran",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations/airbyte-cloud-component-tutorial",
+    "destination": "/integrations/libraries/airbyte/airbyte-cloud-component",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/airbyte/airbyte-cloud-component",
+    "destination": "/integrations/libraries/airbyte/airbyte-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations/powerbi-component-tutorial",
+    "destination": "/integrations/libraries/powerbi",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations/snowflake-sql-component-tutorial",
+    "destination": "/integrations/libraries/snowflake/snowflake-sql-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations/dbt-component-tutorial",
+    "destination": "/integrations/libraries/dbt/dbt-component",
+    "permanent": true
+  },
+  {
+    "source": "/guides/build/components/integrations",
+    "destination": "/integrations/libraries",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_airbyte/asset_defs",
+    "destination": "/integrations/libraries/airbyte/dagster-airbyte",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-airbyte",
+    "destination": "/integrations/libraries/airbyte/dagster-airbyte",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_airbyte/resources",
+    "destination": "/integrations/libraries/airbyte/dagster-airbyte",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-airlift",
+    "destination": "/integrations/libraries/airlift/dagster-airlift",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_airlift/core/airflow_instance",
+    "destination": "/integrations/libraries/airlift/dagster-airlift#core-dagster_airliftcore",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_airlift/in_airflow/base_asset_operator",
+    "destination": "/integrations/libraries/airlift/dagster-airlift#in-airflow-dagster_airliftin_airflow",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-aws",
+    "destination": "/integrations/libraries/aws/dagster-aws",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/ecs/executor",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.ecs.ecs_executor",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/ecs/launcher",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.ecs.EcsRunLauncher",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/pipes/clients/ecs",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.pipes.PipesECSClient",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/pipes/context_injectors",
+    "destination": "/integrations/libraries/aws/dagster-aws#context-injectors",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/redshift/resources",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.redshift.RedshiftClientResource",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/s3/compute_log_manager",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.s3.S3ComputeLogManager",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/s3/file_manager",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.s3.S3FileHandle",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/s3/io_manager",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.s3.S3PickleIOManager",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/s3/resources",
+    "destination": "/integrations/libraries/aws/dagster-aws#s3",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_aws/secretsmanager/resources",
+    "destination": "/integrations/libraries/aws/dagster-aws#dagster_aws.secretsmanager.SecretsManagerResource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-azure",
+    "destination": "/integrations/libraries/azure/dagster-azure",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/azure-adls2",
+    "destination": "/integrations/libraries/azure/dagster-azure",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_azure/adls2/io_manager",
+    "destination": "/integrations/libraries/azure/dagster-azure#io-manager",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_azure/adls2/resources",
+    "destination": "/integrations/libraries/azure/dagster-azure#resources",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_azure/blob/compute_log_manager",
+    "destination": "/integrations/libraries/azure/dagster-azure#dagster_azure.blob.AzureBlobComputeLogManager",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-celery-docker",
+    "destination": "/integrations/libraries/celery/dagster-celery-docker",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_celery_docker/executor",
+    "destination": "/integrations/libraries/celery/dagster-celery-docker#dagster_celery_docker.celery_docker_executor",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-celery-k8s",
+    "destination": "/integrations/libraries/celery/dagster-celery-k8s",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_celery_k8s/executor",
+    "destination": "/integrations/libraries/celery/dagster-celery-k8s#dagster_celery_k8s.celery_k8s_job_executor",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_celery_k8s/launcher",
+    "destination": "/integrations/libraries/celery/dagster-celery-k8s#dagster_celery_k8s.CeleryK8sRunLauncher",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-celery",
+    "destination": "/integrations/libraries/celery/dagster-celery",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_celery/executor",
+    "destination": "/integrations/libraries/celery/dagster-celery#dagster_celery.celery_executor",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-databricks",
+    "destination": "/integrations/libraries/databricks/dagster-databricks",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_databricks/databricks",
+    "destination": "/integrations/libraries/databricks/dagster-databricks",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_databricks/databricks_pyspark_step_launcher",
+    "destination": "/integrations/libraries/databricks/dagster-databricks#step-launcher",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_databricks/pipes",
+    "destination": "/integrations/libraries/databricks/dagster-databricks#pipes",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_databricks/resources",
+    "destination": "/integrations/libraries/databricks/dagster-databricks#resources",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-datahub",
+    "destination": "/integrations/libraries/datahub/dagster-datahub",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_datahub/resources",
+    "destination": "/integrations/libraries/datahub/dagster-datahub",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-dbt",
+    "destination": "/integrations/libraries/dbt/dagster-dbt",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/asset_decorator",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#assets-dbt-core",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/asset_utils",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#utils",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/cloud/asset_defs",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#assets-dbt-cloud",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/cloud/resources",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#resources-dbt-cloud",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/core/dbt_cli_event",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#cli-resource",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/core/dbt_cli_invocation",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster_dbt.DbtCliInvocation",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/core/dbt_event_iterator",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster_dbt.core.dbt_cli_invocation.DbtEventIterator",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/core/resource",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster_dbt.DbtCliResource",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/dagster_dbt_translator",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster_dbt.DagsterDbtTranslator",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/dbt_manifest_asset_selection",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster_dbt.DbtManifestAssetSelection",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/dbt_project",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster-dbt-project",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/errors",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster_dbt.DagsterDbtError",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_dbt/freshness_builder",
+    "destination": "/integrations/libraries/dbt/dagster-dbt#dagster_dbt.build_freshness_checks_from_dbt_assets",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-deltalake",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_deltalake/io_manager",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake#dagster_deltalake.DeltaLakeIOManager",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-docker",
+    "destination": "/integrations/libraries/docker/dagster-docker",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_docker/docker_executor",
+    "destination": "/integrations/libraries/docker/dagster-docker#dagster_docker.docker_executor",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_docker/docker_run_launcher",
+    "destination": "/integrations/libraries/docker/dagster-docker#dagster_docker.DockerRunLauncher",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_docker/ops/docker_container_op",
+    "destination": "/integrations/libraries/docker/dagster-docker#dagster_docker.docker_container_op",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_docker/pipes",
+    "destination": "/integrations/libraries/docker/dagster-docker#dagster_docker.PipesDockerClient",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-duckdb",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-duckdb-pandas",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-duckdb-polars",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_duckdb_pandas/duckdb_pandas_type_handler",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas#dagster_duckdb_pandas.DuckDBPandasTypeHandler",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-duckdb-pyspark",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_duckdb_pyspark/duckdb_pyspark_type_handler",
+    "destination": "/integrations/libraries/duckdb/duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_duckdb/io_manager",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb#dagster_duckdb.DuckDBIOManager",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_duckdb/resource",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb#dagster_duckdb.DuckDBResource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-dlt",
+    "destination": "/integrations/libraries/dlt/dagster-dlt#dagster_dlt.dlt_assets",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_embedded_elt/dlt/asset_decorator",
+    "destination": "/integrations/libraries/dlt/dagster-dlt#dagster_dlt.dlt_assets",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_embedded_elt/dlt/resource",
+    "destination": "/integrations/libraries/dlt/dagster-dlt#dagster_dlt.DagsterDltResource",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_embedded_elt/dlt/translator",
+    "destination": "/integrations/libraries/dlt/dagster-dlt#dagster_dlt.DagsterDltTranslator",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-sling",
+    "destination": "/integrations/libraries/sling/dagster-sling",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_embedded_elt/sling/asset_decorator",
+    "destination": "/integrations/libraries/sling/dagster-sling#dagster_sling.sling_assets",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_embedded_elt/sling/dagster_sling_translator",
+    "destination": "/integrations/libraries/sling/dagster-sling#dagster_sling.DagsterSlingTranslator",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_embedded_elt/sling/resources",
+    "destination": "/integrations/libraries/sling/dagster-sling#dagster_sling.SlingResource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-fivetran",
+    "destination": "/integrations/libraries/fivetran/dagster-fivetran",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_fivetran/asset_defs",
+    "destination": "/integrations/libraries/fivetran/dagster-fivetran#assets-fivetran-api",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_fivetran/resources",
+    "destination": "/integrations/libraries/fivetran/dagster-fivetran#dagster_fivetran.fivetran_resource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-gcp",
+    "destination": "/integrations/libraries/gcp/dagster-gcp",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_gcp/bigquery/io_manager",
+    "destination": "/integrations/libraries/gcp/dagster-gcp#dagster_gcp.BigQueryIOManager",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_gcp/gcs/io_manager",
+    "destination": "/integrations/libraries/gcp/dagster-gcp#dagster_gcp.GCSPickleIOManager",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_gcp/gcs/resources",
+    "destination": "/integrations/libraries/gcp/dagster-gcp#dagster_gcp.GCSResource",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_gcp/gcs/sensor",
+    "destination": "/integrations/libraries/gcp/dagster-gcp#dagster_gcp.gcs.sensor.get_gcs_keys",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-github",
+    "destination": "/integrations/libraries/github/dagster-github",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_github/resources",
+    "destination": "/integrations/libraries/github/dagster-github#dagster_github.resources.GithubResource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-k8s",
+    "destination": "/integrations/libraries/k8s/dagster-k8s",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/kubernetes",
+    "destination": "/integrations/libraries/k8s",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_k8s/executor",
+    "destination": "/integrations/libraries/k8s/dagster-k8s#dagster_k8s.k8s_job_executor",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_k8s/launcher",
+    "destination": "/integrations/libraries/k8s/dagster-k8s#dagster_k8s.K8sRunLauncher",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_k8s/ops/k8s_job_op",
+    "destination": "/integrations/libraries/k8s/dagster-k8s#dagster_k8s.k8s_job_op",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_k8s/pipes",
+    "destination": "/integrations/libraries/k8s/dagster-k8s#dagster_k8s.PipesK8sClient",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-mlflow",
+    "destination": "/integrations/libraries/mlflow/dagster-mlflow",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_mlflow/resources",
+    "destination": "/integrations/libraries/mlflow/dagster-mlflow",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-msteams",
+    "destination": "/integrations/libraries/fivetran/dagster-msteams",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_msteams/hooks",
+    "destination": "/integrations/libraries/msteams/dagster-msteams#sensors",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_msteams/resources",
+    "destination": "/integrations/libraries/msteams/dagster-msteams#dagster_msteams.MSTeamsResource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-mysql",
+    "destination": "/integrations/libraries/mysql/dagster-mysql",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_mysql/event_log/event_log",
+    "destination": "/integrations/libraries/mysql/dagster-mysql#dagster_mysql.MySQLEventLogStorage",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_mysql/run_storage/run_storage",
+    "destination": "/integrations/libraries/mysql/dagster-mysql#dagster_mysql.MySQLRunStorage",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_mysql/schedule_storage/schedule_storage",
+    "destination": "/integrations/libraries/mysql/dagster-mysql#dagster_mysql.MySQLScheduleStorage",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-pandas",
+    "destination": "/integrations/libraries/pandas/dagster-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_pandas/data_frame",
+    "destination": "/integrations/libraries/pandas/dagster-pandas#dagster_pandas.create_dagster_pandas_dataframe_type",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-postgres",
+    "destination": "/integrations/libraries/postgres/dagster-postgres",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_postgres/event_log/event_log",
+    "destination": "/integrations/libraries/postgres/dagster-postgres#dagster_postgres.PostgresEventLogStorage",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_postgres/run_storage/run_storage",
+    "destination": "/integrations/libraries/postgres/dagster-postgres#dagster_postgres.PostgresRunStorage",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_postgres/schedule_storage/schedule_storage",
+    "destination": "/integrations/libraries/postgres/dagster-postgres#dagster_postgres.PostgresScheduleStorage",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-powerbi",
+    "destination": "/integrations/libraries/powerbi/dagster-powerbi",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_powerbi/assets",
+    "destination": "/integrations/libraries/powerbi/dagster-powerbi#assets-powerbi",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-pyspark",
+    "destination": "/integrations/libraries/pyspark/dagster-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_pyspark/resources",
+    "destination": "/integrations/libraries/pyspark/dagster-pyspark#dagster_pyspark.PySparkResource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-slack",
+    "destination": "/integrations/libraries/slack/dagster-slack",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_slack/hooks",
+    "destination": "/integrations/libraries/slack/dagster-slack",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_slack/resources",
+    "destination": "/integrations/libraries/slack/dagster-slack",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_slack/sensors",
+    "destination": "/integrations/libraries/slack/dagster-slack",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-snowflake",
+    "destination": "/integrations/libraries/snowflake/dagster-snowflake",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_snowflake/resources",
+    "destination": "/integrations/libraries/snowflake/dagster-snowflake#dagster_snowflake.SnowflakeResource",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_snowflake/snowflake_io_manager",
+    "destination": "/integrations/libraries/snowflake/dagster-snowflake#dagster_snowflake.SnowflakeIOManager",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-ssh",
+    "destination": "/integrations/libraries/ssh/dagster-ssh",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster_ssh/resources",
+    "destination": "/integrations/libraries/ssh/dagster-ssh#dagster_ssh.ssh_resource",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-census",
+    "destination": "/integrations/libraries/census/dagster-census",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-dask",
+    "destination": "/integrations/libraries/dask/dagster-dask",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-datadog",
+    "destination": "/integrations/libraries/fivetran/dagster-datadog",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-ge",
+    "destination": "/integrations/libraries/great-expectations/dagster-ge",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-iceberg",
+    "destination": "/integrations/libraries/iceberg/dagster-iceberg",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagstermill",
+    "destination": "/integrations/libraries/jupyter/dagstermill",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-looker",
+    "destination": "/integrations/libraries/looker/dagster-looker",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-omni",
+    "destination": "/integrations/libraries/omni/dagster-omni",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-openai",
+    "destination": "/integrations/libraries/openai/dagster-openai",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-pagerduty",
+    "destination": "/integrations/libraries/pagerduty/dagster-pagerduty",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-pandera",
+    "destination": "/integrations/libraries/pandera/dagster-pandera",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-papertrail",
+    "destination": "/integrations/libraries/papertrail/dagster-papertrail",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-polars",
+    "destination": "/integrations/libraries/polars/dagster-polars",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-prometheus",
+    "destination": "/integrations/libraries/prometheus/dagster-prometheus",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-sigma",
+    "destination": "/integrations/libraries/sigma/dagster-sigma",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-spark",
+    "destination": "/integrations/libraries/spark/dagster-spark",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-tableau",
+    "destination": "/integrations/libraries/tableau/dagster-tableau",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-twilio",
+    "destination": "/integrations/libraries/twilio/dagster-twilio",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-wandb",
+    "destination": "/integrations/libraries/wandb/dagster-wandb",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries",
+    "destination": "/integrations/libraries",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagstermill/context",
+    "destination": "/integrations/libraries/dagstermill#dagstermill.DagstermillExecutionContext",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagstermill/factory",
+    "destination": "/integrations/libraries/dagstermill",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagstermill/io_managers",
+    "destination": "/integrations/libraries/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager",
+    "permanent": true
+  },
+  {
+    "source": "/master/integrations/databricks",
+    "destination": "/integrations/libraries/databricks",
+    "permanent": true
+  },
+  {
+    "source": "/master/integrations/bigquery/using-bigquery-with-dagster",
+    "destination": "/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster",
+    "permanent": true
+  },
+  {
+    "source": "/master/integrations/bigquery/reference",
+    "destination": "/integrations/libraries/gcp/bigquery/reference",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-airbyte",
+    "destination": "/integrations/libraries/airbyte/dagster-airbyte",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-airlift",
+    "destination": "/integrations/libraries/airlift/dagster-airlift",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-aws",
+    "destination": "/integrations/libraries/aws/dagster-aws",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-azure",
+    "destination": "/integrations/libraries/azure/dagster-azure",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-celery-docker",
+    "destination": "/integrations/libraries/celery/dagster-celery-docker",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-celery-k8s",
+    "destination": "/integrations/libraries/celery/dagster-celery-k8s",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-celery",
+    "destination": "/integrations/libraries/celery/dagster-celery",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-census",
+    "destination": "/integrations/libraries/census/dagster-census",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-dask",
+    "destination": "/integrations/libraries/dask/dagster-dask",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-databricks",
+    "destination": "/integrations/libraries/databricks/dagster-databricks",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-datadog",
+    "destination": "/integrations/libraries/datadog/dagster-datadog",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-datahub",
+    "destination": "/integrations/libraries/datahub/dagster-datahub",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-dbt",
+    "destination": "/integrations/libraries/dbt/dagster-dbt",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-deltalake-polars",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake-polars",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-deltalake",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-dlt",
+    "destination": "/integrations/libraries/dlt/dagster-dlt",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-docker",
+    "destination": "/integrations/libraries/docker/dagster-docker",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-duckdb",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-duckdb-polars",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-duckdb-pandas",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-duckdb-pyspark",
+    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-fivetran",
+    "destination": "/integrations/libraries/duckdb/dagster-fivetran",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-deltalake-pandas",
+    "destination": "/integrations/libraries/deltalake/dagster-deltalake-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-gcp",
+    "destination": "/integrations/libraries/gcp/dagster-gcp",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-gcp-pandas",
+    "destination": "/integrations/libraries/gcp/dagster-gcp-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-gcp-pyspark",
+    "destination": "/integrations/libraries/gcp/dagster-gcp-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-github",
+    "destination": "/integrations/libraries/github/dagster-github",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-ge",
+    "destination": "/integrations/libraries/great-expectations/dagster-ge",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagstermill",
+    "destination": "/integrations/libraries/jupyter/dagstermill",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-looker",
+    "destination": "/integrations/libraries/looker/dagster-looker",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-omni",
+    "destination": "/integrations/libraries/omni/dagster-omni",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-openai",
+    "destination": "/integrations/libraries/openai/dagster-openai",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-pagerduty",
+    "destination": "/integrations/libraries/pagerduty/dagster-pagerduty",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-pandera",
+    "destination": "/integrations/libraries/pandera/dagster-pandera",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-papertrail",
+    "destination": "/integrations/libraries/papertrail/dagster-papertrail",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-polars",
+    "destination": "/integrations/libraries/polars/dagster-polars",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-prometheus",
+    "destination": "/integrations/libraries/prometheus/dagster-prometheus",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-sigma",
+    "destination": "/integrations/libraries/sigma/dagster-sigma",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-sling",
+    "destination": "/integrations/libraries/sling/dagster-sling",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-spark",
+    "destination": "/integrations/libraries/spark/dagster-spark",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-tableau",
+    "destination": "/integrations/libraries/tableau/dagster-tableau",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-twilio",
+    "destination": "/integrations/libraries/twilio/dagster-twilio",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-ssh",
+    "destination": "/integrations/libraries/ssh/dagster-ssh",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-wandb",
+    "destination": "/integrations/libraries/wandb/dagster-wandb",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/dbt/quickstart",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/dbt/dbt-component",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/index",
+    "destination": "/integrations/libraries/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/examples/emr_pyspark",
+    "destination": "/integrations/libraries/spark",
+    "permanent": true
+  },
+  {
+    "source": "/examples/basic_pyspark",
+    "destination": "/integrations/libraries/spark",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/dbt_cloud",
+    "destination": "/integrations/libraries/dbt/dbt-cloud",
+    "permanent": true
+  },
+  {
+    "source": "/guides/integrations/approaches-to-writing-integrations",
+    "destination": "/integrations/guides/integration-approaches",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/dagster-pipes/pyspark",
+    "destination": "/integrations/external-pipelines/pyspark-pipeline",
+    "permanent": true
+  }
+]

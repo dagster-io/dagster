@@ -12,7 +12,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
-import styled from 'styled-components';
 
 import {gql, useMutation} from '../apollo-client';
 import {
@@ -25,6 +24,7 @@ import {invalidatePartitions} from '../assets/PartitionSubscribers';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/CreatePartitionDialog.module.css';
 
 // Keep in sync with the backend which currently has 2 definitions:
 // INVALID_PARTITION_SUBSTRINGS and INVALID_STATIC_PARTITIONS_KEY_CHARACTERS
@@ -190,7 +190,7 @@ export const CreatePartitionDialog = ({
       <DialogBody>
         <Box flex={{direction: 'column', gap: 6}}>
           <div>Partition name</div>
-          <PartitionBox>
+          <div className={styles.partitionBox}>
             <TextInput
               data-testid={testId('partition-input')}
               rightElement={error ?? (isSaving ? <Spinner purpose="body-text" /> : undefined)}
@@ -210,7 +210,7 @@ export const CreatePartitionDialog = ({
                 }
               }, [])}
             />
-          </PartitionBox>
+          </div>
         </Box>
       </DialogBody>
       <DialogFooter>
@@ -251,15 +251,5 @@ export const CREATE_PARTITION_MUTATION = gql`
         message
       }
     }
-  }
-`;
-
-const PartitionBox = styled.div`
-  display: flex;
-  flex-direction: row;
-  gap: 8;
-  align-items: center;
-  > *:first-child {
-    flex-grow: 1;
   }
 `;

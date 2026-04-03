@@ -1,0 +1,7 @@
+.popoverErrorWrap {
+  padding: 4px 8px;
+  border-radius: 2px;
+  border: 1px solid var(--color-accent-red);
+  background: var(--color-background-red);
+  color: var(--color-text-red);
+}
