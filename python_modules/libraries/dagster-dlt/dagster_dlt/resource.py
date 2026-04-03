@@ -88,6 +88,45 @@ class DagsterDltResource(ConfigurableResource):
             table_schema = TableSchema(columns=[])
         return table_schema
 
+    def _resolve_root_table_names(self, resource: DltResource, schema: Schema) -> list[str]:
+        root_table_names = [
+            table_name
+            for table in schema.data_tables()
+            if table.get("resource") == resource.name
+            and (table_name := table.get("name")) is not None
+        ]
+        if root_table_names:
+            return root_table_names
+
+        table_name = resource.table_name
+        if callable(table_name):
+            table_name = resource.name
+
+        return [schema.naming.normalize_table_identifier(str(table_name))]
+
+    def _resolve_child_table_names(self, root_table_names: list[str], schema: Schema) -> list[str]:
+        child_names_by_parent: dict[str, list[str]] = {}
+        for table in schema.data_tables():
+            parent_name = table.get("parent")
+            table_name = table.get("name")
+            if parent_name and table_name:
+                child_names_by_parent.setdefault(parent_name, []).append(table_name)
+
+        child_table_names: list[str] = []
+        visited = set(root_table_names)
+        pending_parents = list(root_table_names)
+
+        while pending_parents:
+            parent_name = pending_parents.pop(0)
+            for child_name in child_names_by_parent.get(parent_name, []):
+                if child_name in visited:
+                    continue
+                visited.add(child_name)
+                child_table_names.append(child_name)
+                pending_parents.append(child_name)
+
+        return child_table_names
+
     def extract_resource_metadata(
         self,
         context: OpExecutionContext | AssetExecutionContext,
@@ -121,18 +160,18 @@ class DagsterDltResource(ConfigurableResource):
         # shared metadata that is displayed for all assets
         base_metadata = {k: v for k, v in load_info_dict.items() if k in dlt_base_metadata_types}
         default_schema = dlt_pipeline.default_schema
-        normalized_table_name = default_schema.naming.normalize_table_identifier(
-            str(resource.table_name)
-        )
+        root_table_names = self._resolve_root_table_names(resource, default_schema)
+        primary_table_name = root_table_names[0] if len(root_table_names) == 1 else None
         # job metadata for specific target `normalized_table_name`
         base_metadata["jobs"] = [
             job
             for load_package in load_info_dict.get("load_packages", [])
             for job in load_package.get("jobs", [])
-            if job.get("table_name") == normalized_table_name
+            if job.get("table_name") in root_table_names
         ]
-        rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
-            normalized_table_name
+        rows_loaded = sum(
+            dlt_pipeline.last_trace.last_normalize_info.row_counts.get(root_table_name, 0)
+            for root_table_name in root_table_names
         )
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
@@ -140,7 +179,7 @@ class DagsterDltResource(ConfigurableResource):
         schema: str | None = None
         for load_package in load_info_dict.get("load_packages", []):
             for table in load_package.get("tables", []):
-                if table.get("name") == normalized_table_name:
+                if table.get("name") == primary_table_name:
                     schema = table.get("schema_name")
                     break
             if schema:
@@ -148,22 +187,26 @@ class DagsterDltResource(ConfigurableResource):
 
         destination_name: str | None = base_metadata.get("destination_name")
         table_name = None
-        if destination_name and schema:
-            table_name = ".".join([destination_name, schema, normalized_table_name])
+        if destination_name and schema and primary_table_name:
+            table_name = ".".join([destination_name, schema, primary_table_name])
 
-        child_table_names = [
-            name
-            for name in default_schema.data_table_names()
-            if name.startswith(f"{normalized_table_name}__")
-        ]
-        child_table_schemas = {
+        child_table_names = self._resolve_child_table_names(root_table_names, default_schema)
+        supplemental_table_names = child_table_names
+        if len(root_table_names) > 1:
+            supplemental_table_names = [*root_table_names, *child_table_names]
+
+        additional_table_schemas = {
             table_name: self._extract_table_schema_metadata(table_name, default_schema)
-            for table_name in child_table_names
+            for table_name in supplemental_table_names
         }
-        table_schema = self._extract_table_schema_metadata(normalized_table_name, default_schema)
+        table_schema = (
+            self._extract_table_schema_metadata(primary_table_name, default_schema)
+            if primary_table_name
+            else None
+        )
 
         base_metadata = {
-            **child_table_schemas,
+            **additional_table_schemas,
             **base_metadata,
             **TableMetadataSet(
                 column_schema=table_schema,
