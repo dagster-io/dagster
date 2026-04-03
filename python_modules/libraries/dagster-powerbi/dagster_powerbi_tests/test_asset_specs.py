@@ -111,32 +111,6 @@ def test_translator_custom_metadata(workspace_data_api_mocks: None, workspace_id
     assert "dagster/kind/powerbi" in asset_spec.tags
 
 
-def test_translator_custom_metadata_legacy(
-    workspace_data_api_mocks: None, workspace_id: str
-) -> None:
-    fake_token = uuid.uuid4().hex
-    resource = PowerBIWorkspace(
-        credentials=PowerBIToken(api_token=fake_token),
-        workspace_id=workspace_id,
-    )
-    with pytest.warns(
-        DeprecationWarning,
-        match=r"Support of `dagster_powerbi_translator` as a Type\[DagsterPowerBITranslator\]",
-    ):
-        # Pass the translator type
-        all_asset_specs = load_powerbi_asset_specs(
-            workspace=resource,
-            dagster_powerbi_translator=MyCustomTranslator,
-            use_workspace_scan=False,
-        )
-    asset_spec = next(spec for spec in all_asset_specs)
-
-    assert "custom" in asset_spec.metadata
-    assert asset_spec.metadata["custom"] == "metadata"
-    assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
-    assert "dagster/kind/powerbi" in asset_spec.tags
-
-
 @definitions
 def state_derived_defs_two_workspaces() -> Definitions:
     resource = PowerBIWorkspace(
@@ -230,56 +204,6 @@ def test_refreshable_semantic_model(
     result = materialize(
         [semantic_model_asset], raise_on_error=False, resources={"powerbi": resource}
     )
-    assert result.success is success
-
-
-@pytest.mark.parametrize("success", [True, False])
-def test_refreshable_semantic_model_legacy(
-    workspace_data_api_mocks: responses.RequestsMock, workspace_id: str, success: bool
-) -> None:
-    fake_token = uuid.uuid4().hex
-    resource = PowerBIWorkspace(
-        credentials=PowerBIToken(api_token=fake_token),
-        workspace_id=workspace_id,
-        refresh_poll_interval=0,
-    )
-
-    defs = resource.build_defs(enable_refresh_semantic_models=True)
-
-    semantic_model_asset = next(
-        asset
-        for asset in defs.resolve_asset_graph().assets_defs
-        if asset.is_executable and asset.key.path[0] == "semantic_model"
-    )
-
-    assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
-    assert isinstance(semantic_model_asset, AssetsDefinition) and semantic_model_asset.is_executable
-
-    # materialize the semantic model
-
-    workspace_data_api_mocks.add(
-        method=responses.POST,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
-        json={"notifyOption": "NoNotification"},
-        status=202,
-    )
-
-    workspace_data_api_mocks.add(
-        method=responses.GET,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
-        json={"value": [{"status": "Unknown"}]},
-        status=200,
-    )
-    workspace_data_api_mocks.add(
-        method=responses.GET,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
-        json={
-            "value": [{"status": "Completed" if success else "Failed", "serviceExceptionJson": {}}]
-        },
-        status=200,
-    )
-
-    result = materialize([semantic_model_asset], raise_on_error=False)
     assert result.success is success
 
 
