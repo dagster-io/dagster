@@ -33,7 +33,7 @@ from dagster_dbt.asset_utils import (
     get_asset_check_key_for_test,
     get_checks_on_sources_upstream_of_selected_assets,
 )
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeType
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
@@ -43,6 +43,23 @@ logger = get_dagster_logger()
 # depending on the specific dbt version, any of these values
 # may be used to indicate an empty value in a log message
 _EMPTY_VALUES = {"", "None", None}
+_STATUS_PASS = "pass"
+_STATUS_SKIPPED = "skipped"
+_STATUS_SUCCESS = "success"
+_STATUS_WARN = "warn"
+
+
+def _normalize_status(status: Any) -> str:
+    while hasattr(status, "value"):
+        next_status = status.value
+        if next_status is status:
+            break
+        status = next_status
+
+    if isinstance(status, str):
+        return status.strip().lower()
+
+    return str(status).strip().lower()
 
 
 class EventHistoryMetadata(NamedTuple):
@@ -269,14 +286,14 @@ class DbtCliEventMessage(ABC):
         return (
             resource_props["resource_type"] in REFABLE_NODE_TYPES
             and materialized_type != "ephemeral"
-            and self._get_node_status() == NodeStatus.Success
+            and self._get_node_status() == _STATUS_SUCCESS
         )
 
     def _is_test_execution_event(self, manifest: Mapping[str, Any]) -> bool:
         resource_props = self._get_resource_props(self._unique_id, manifest)
         return (
             resource_props["resource_type"] == NodeType.Test
-            and self._get_node_status() != NodeStatus.Skipped
+            and self._get_node_status() != _STATUS_SKIPPED
         )
 
     def _get_resource_props(self, unique_id: str, manifest: Mapping[str, Any]) -> dict[str, Any]:
@@ -331,11 +348,12 @@ class DbtCliEventMessage(ABC):
         # if model materialization is incremental microbatch, node_status
         # property is "None", hence fall back to status
         raw_node_status = self._raw_node_info.get("node_status")
-        return (
+        status = (
             raw_node_status
             if raw_node_status and raw_node_status not in _EMPTY_VALUES
-            else self._raw_data["status"].lower()
+            else self._raw_data["status"]
         )
+        return _normalize_status(status)
 
     def _get_lineage_metadata(
         self,
@@ -591,13 +609,11 @@ class DbtCoreCliEventMessage(DbtCliEventMessage):
         ) and not unique_id.startswith("unit_test")
 
     def _get_check_passed(self) -> bool:
-        return self._get_node_status() == TestStatus.Pass
+        return self._get_node_status() == _STATUS_PASS
 
     def _get_check_severity(self) -> AssetCheckSeverity:
         node_status = self._get_node_status()
-        return (
-            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
-        )
+        return AssetCheckSeverity.WARN if node_status == _STATUS_WARN else AssetCheckSeverity.ERROR
 
 
 class DbtFusionCliEventMessage(DbtCliEventMessage):
@@ -608,11 +624,8 @@ class DbtFusionCliEventMessage(DbtCliEventMessage):
         return self.raw_event["info"]["name"] == "NodeFinished"
 
     def _get_check_passed(self) -> bool:
-        node_status = self._get_node_status()
-        return node_status == NodeStatus.Success or node_status == TestStatus.Pass
+        return self._get_node_status() in (_STATUS_SUCCESS, _STATUS_PASS)
 
     def _get_check_severity(self) -> AssetCheckSeverity:
         node_status = self._get_node_status()
-        return (
-            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
-        )
+        return AssetCheckSeverity.WARN if node_status == _STATUS_WARN else AssetCheckSeverity.ERROR
