@@ -2272,13 +2272,14 @@ class SqlEventLogStorage(EventLogStorage):
                     self._allocate_concurrency_slots(conn, concurrency_key, 0)
                 else:
                     try:
-                        conn.execute(
-                            ConcurrencyLimitsTable.insert().values(
-                                concurrency_key=concurrency_key,
-                                limit=default_limit,
-                                using_default_limit=True,
+                        with conn.begin_nested():
+                            conn.execute(
+                                ConcurrencyLimitsTable.insert().values(
+                                    concurrency_key=concurrency_key,
+                                    limit=default_limit,
+                                    using_default_limit=True,
+                                )
                             )
-                        )
                     except db_exc.IntegrityError:
                         conn.execute(
                             ConcurrencyLimitsTable.update()
@@ -2298,11 +2299,12 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.index_transaction() as conn:
             try:
-                conn.execute(
-                    ConcurrencyLimitsTable.insert().values(
-                        concurrency_key=concurrency_key, limit=default_limit
+                with conn.begin_nested():
+                    conn.execute(
+                        ConcurrencyLimitsTable.insert().values(
+                            concurrency_key=concurrency_key, limit=default_limit
+                        )
                     )
-                )
             except db_exc.IntegrityError:
                 pass
 
