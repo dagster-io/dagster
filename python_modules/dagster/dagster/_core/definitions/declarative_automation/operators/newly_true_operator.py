@@ -50,6 +50,15 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
         # subset
         return self._get_stable_unique_id(target_key)
 
+    def get_backcompat_node_unique_ids(
+        self,
+        *,
+        parent_unique_id: str | None = None,
+        index: int | None = None,
+        target_key: EntityKey | None = None,
+    ) -> Sequence[str]:
+        return self._get_backcompat_stable_unique_ids(target_key)
+
     async def evaluate(self, context: AutomationContext) -> AutomationResult:  # pyright: ignore[reportIncompatibleMethodOverride]
         # evaluate child condition
         child_result = await context.for_child_condition(
