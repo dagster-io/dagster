@@ -131,8 +131,12 @@ class DagsterDltResource(ConfigurableResource):
             for job in load_package.get("jobs", [])
             if job.get("table_name") == normalized_table_name
         ]
-        rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
-            normalized_table_name
+        last_trace = dlt_pipeline.last_trace
+        normalize_info = last_trace.last_normalize_info if last_trace is not None else None
+        rows_loaded = (
+            normalize_info.row_counts.get(normalized_table_name)
+            if normalize_info is not None
+            else None
         )
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
