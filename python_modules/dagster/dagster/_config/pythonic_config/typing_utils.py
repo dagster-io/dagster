@@ -205,7 +205,16 @@ class TypecheckAllowPartialResourceInitParams:
 
     def __get__(self: Self, obj: Any, owner: Any) -> Self:
         # no-op implementation (only used to affect type signature)
-        return cast("Self", getattr(obj, self._assigned_name))
+        # When obj is None this is a class-level access; return the descriptor itself.
+        if obj is None:
+            return self  # type: ignore
+        # Read directly from the instance __dict__ to avoid triggering the descriptor
+        # protocol again (which would cause infinite recursion when a ConfigurableResource
+        # subclass instance is stored as a class-level default on another resource).
+        try:
+            return cast("Self", obj.__dict__[self._assigned_name])
+        except KeyError:
+            raise AttributeError(self._assigned_name)
 
     # The annotation her has been temporarily changed from:
     #     value: Union[Self, "PartialResource[Self]"]
@@ -220,4 +229,9 @@ class TypecheckAllowPartialResourceInitParams:
     # errors for mypy users is found.
     def __set__(self, obj: object | None, value: Union[Any, "PartialResource[Any]"]) -> None:
         # no-op implementation (only used to affect type signature)
-        setattr(obj, self._assigned_name, value)
+        # Use object.__setattr__ to bypass the descriptor protocol and avoid recursion
+        # when this class (or a subclass) is stored as a class-level default on another
+        # resource class.
+        if obj is not None:
+            object.__setattr__(obj, self._assigned_name, value)
+
