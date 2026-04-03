@@ -826,11 +826,13 @@ def notify_command(project_dir: str, **global_options: object) -> None:
     source = metrics.get_source()
     if source == CliEventTags.source.github:
         event = github_context.get_github_event(project_dir)
-        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud."
+        deployment_name = location_states[0].deployment_name if location_states else None
+        deployment_label = f" (`{deployment_name}`)" if deployment_name else ""
+        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud{deployment_label}."
         event.update_pr_comment(
             msg + "\n\n" + report.markdown_report(location_states),
             orig_author="github-actions[bot]",
-            orig_text="Dagster Cloud",
+            orig_text=f"Dagster Cloud{deployment_label}",
         )
     else:
         raise click.UsageError("'dg plus deploy notify' is only available within Github actions.")
