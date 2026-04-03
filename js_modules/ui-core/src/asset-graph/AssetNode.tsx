@@ -42,29 +42,40 @@ interface Props2025 {
   onChangeAssetSelection?: (selection: string) => void;
 }
 
-const getCustomBackgroundForAsset = (tags?: {key: string; value: string}[]): string | undefined => {
+type CustomBackgrounds = {body: string; header: string};
+
+const getCustomBackgroundsForAsset = (
+  tags?: {key: string; value: string}[],
+): CustomBackgrounds | undefined => {
   const uiColorTag = tags?.find((t) => t.key === 'dagster/ui_color');
   if (!uiColorTag) {
     return undefined;
   }
   switch (uiColorTag.value.toLowerCase()) {
     case 'red':
-      return Colors.backgroundRed();
+      return {body: Colors.backgroundRed(), header: Colors.backgroundRedHover()};
     case 'yellow':
-      return Colors.backgroundYellow();
+      return {body: Colors.backgroundYellow(), header: Colors.backgroundYellowHover()};
     case 'green':
-      return Colors.backgroundGreen();
+      return {body: Colors.backgroundGreen(), header: Colors.backgroundGreenHover()};
     case 'blue':
-      return Colors.backgroundBlue();
+      return {body: Colors.backgroundBlue(), header: Colors.backgroundBlueHover()};
     case 'olive':
-      return Colors.backgroundOlive();
+      return {body: Colors.backgroundOlive(), header: Colors.backgroundOliverHover()};
     case 'cyan':
-      return Colors.backgroundCyan();
+      return {body: Colors.backgroundCyan(), header: Colors.backgroundCyanHover()};
     case 'lime':
-      return Colors.backgroundLime();
+      return {body: Colors.backgroundLime(), header: Colors.backgroundLimeHover()};
     case 'gray':
-      return Colors.backgroundGray();
+      return {body: Colors.backgroundGray(), header: Colors.backgroundGrayHover()};
     default:
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[dagster/ui_color] Unrecognized color value "${uiColorTag.value}". ` +
+            `Supported values: red, yellow, green, blue, olive, cyan, lime, gray.`,
+        );
+      }
       return undefined;
   }
 };
@@ -94,6 +105,8 @@ export const AssetNodeWithLiveData = ({
   automationData?: AssetAutomationFragment | undefined;
   assetHealthEnabled: boolean;
 }) => {
+  const customBackgrounds = getCustomBackgroundsForAsset(definition.tags);
+
   return (
     <AssetNodeContainer $selected={selected}>
       {facets.has(AssetNodeFacet.UnsyncedTag) ? (
@@ -115,12 +128,9 @@ export const AssetNodeWithLiveData = ({
       <AssetNodeBox
         $selected={selected}
         $isMaterializable={definition.isMaterializable}
-        $customBackground={getCustomBackgroundForAsset(definition.tags)}
+        $customBackground={customBackgrounds?.body}
       >
-        <AssetNameRow
-          definition={definition}
-          $customBackground={getCustomBackgroundForAsset(definition.tags)}
-        />
+        <AssetNameRow definition={definition} $customBackground={customBackgrounds?.header} />
         {facets.has(AssetNodeFacet.Description) && (
           <AssetNodeRow label={null}>
             {definition.description ? (
@@ -571,7 +581,7 @@ export const AssetNodeMinimalWithHealth = ({
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
   }, [health, isMaterializing]);
 
-  const customBackground = getCustomBackgroundForAsset(definition.tags);
+  const customBackground = getCustomBackgroundsForAsset(definition.tags)?.body;
 
   // old design
   let paddingTop = height / 2 - 52;
@@ -628,7 +638,7 @@ export const AssetNodeMinimalWithoutHealth = ({
   const {liveData} = useAssetLiveData(assetKey);
 
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
-  const customBackground = getCustomBackgroundForAsset(definition.tags);
+  const customBackground = getCustomBackgroundsForAsset(definition.tags)?.body;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
