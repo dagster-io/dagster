@@ -70587,6 +70587,56 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
+        "Shape.03a341824ac2d0f7e86f14643e1439cc0d126b2c": {
+          "__class__": "ConfigTypeSnap",
+          "description": "This run config schema was automatically populated with default values from `default_config`.",
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"config\": {\"retries\": {\"enabled\": {}}}}",
+              "description": "Configure how steps are executed within a run.",
+              "is_required": false,
+              "name": "execution",
+              "type_key": "Shape.f07ed19fc888e3245c2ca562556397f72651e11e"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": "Configure how loggers emit messages within a run.",
+              "is_required": false,
+              "name": "loggers",
+              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"op_with_config\": {\"config\": {\"one\": \"hullo\"}}}",
+              "description": "Configure runtime parameters for ops or assets.",
+              "is_required": false,
+              "name": "ops",
+              "type_key": "Shape.d91ca88a4c221bb1adbf4db99044844c6ec6bb81"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"io_manager\": {}}",
+              "description": "Configure how shared resources are implemented within a run.",
+              "is_required": false,
+              "name": "resources",
+              "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.03a341824ac2d0f7e86f14643e1439cc0d126b2c",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
         "Shape.081354663b9d4b8fbfd1cb8e358763912953913f": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -70665,29 +70715,6 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
-        "Shape.2826887148df509057b8bdd850d72268525729fe": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": false,
-              "default_value_as_json_str": null,
-              "description": null,
-              "is_required": true,
-              "name": "op_with_config",
-              "type_key": "Shape.3984261e8838dd039e5c0d108ad1c0ac6110ace1"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.2826887148df509057b8bdd850d72268525729fe",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
         "Shape.3984261e8838dd039e5c0d108ad1c0ac6110ace1": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -70757,56 +70784,6 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
-        "Shape.962f1d845caf6cc2ef77e0ebc07367eed4491c01": {
-          "__class__": "ConfigTypeSnap",
-          "description": "This run config schema was automatically populated with default values from `default_config`.",
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"config\": {\"retries\": {\"enabled\": {}}}}",
-              "description": "Configure how steps are executed within a run.",
-              "is_required": false,
-              "name": "execution",
-              "type_key": "Shape.f07ed19fc888e3245c2ca562556397f72651e11e"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{}",
-              "description": "Configure how loggers emit messages within a run.",
-              "is_required": false,
-              "name": "loggers",
-              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"op_with_config\": {\"config\": {\"one\": \"hullo\"}}}",
-              "description": "Configure runtime parameters for ops or assets.",
-              "is_required": false,
-              "name": "ops",
-              "type_key": "Shape.2826887148df509057b8bdd850d72268525729fe"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"io_manager\": {}}",
-              "description": "Configure how shared resources are implemented within a run.",
-              "is_required": false,
-              "name": "resources",
-              "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.962f1d845caf6cc2ef77e0ebc07367eed4491c01",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
         "Shape.bc52b1c43d99d0004be108b5869dde9f4a119518": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -70847,6 +70824,29 @@
           ],
           "given_name": null,
           "key": "Shape.c1b51cfcee4bafa04a39110cb65b6e600e4d98d3",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
+        "Shape.d91ca88a4c221bb1adbf4db99044844c6ec6bb81": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"config\": {\"one\": \"hullo\"}}",
+              "description": null,
+              "is_required": false,
+              "name": "op_with_config",
+              "type_key": "Shape.3984261e8838dd039e5c0d108ad1c0ac6110ace1"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.d91ca88a4c221bb1adbf4db99044844c6ec6bb81",
           "kind": {
             "__enum__": "ConfigTypeKind.STRICT_SHAPE"
           },
@@ -71071,7 +71071,7 @@
             "name": "io_manager"
           }
         ],
-        "root_config_key": "Shape.962f1d845caf6cc2ef77e0ebc07367eed4491c01"
+        "root_config_key": "Shape.03a341824ac2d0f7e86f14643e1439cc0d126b2c"
       }
     ],
     "name": "job_with_default_config",
@@ -71113,7 +71113,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[69]
-  'ed35672b6699fe67124125a34ac2d732ddd116df'
+  '3a3868e190ab0ead9b2fdd419908b2c9de22272c'
 # ---
 # name: test_all_snapshot_ids[6]
   '''
