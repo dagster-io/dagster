@@ -70,7 +70,7 @@ dagster-sigma snapshot --python-module my_dagster_package --output-path snapshot
 
 ## Customize asset definition metadata for Sigma assets
 
-By default, Dagster will generate asset specs for each Sigma asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Sigma asset type.
+By default, Dagster will generate asset specs for each Sigma asset based on its type, and populate default metadata. You can further customize asset properties by passing an instance of a custom <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Sigma asset type.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/sigma/customize-sigma-asset-defs.py" />
 
