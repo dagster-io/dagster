@@ -499,6 +499,34 @@ class AssetSelection(ABC):
 
         return self.resolve_inner(asset_graph, allow_missing=allow_missing)
 
+    def resolve_ordered(
+        self,
+        all_assets: Iterable[AssetsDefinition | SourceAsset] | BaseAssetGraph,
+        allow_missing: bool = False,
+    ) -> Sequence[AssetKey] | None:
+        """Returns the sequence of asset keys in the given graph that match this selection,
+        preserving the order in which they were specified in the selection if possible.
+        If no specific order was specified, returns None.
+
+        Args:
+            all_assets (Union[Iterable[Union[AssetsDefinition, SourceAsset]], AssetGraph]): The
+                assets to select from.
+            allow_missing (bool): Whether to ignore asset keys in the selection that are not
+                present in the asset graph. Defaults to False.
+        """
+        if isinstance(all_assets, BaseAssetGraph):
+            asset_graph = all_assets
+        else:
+            check.iterable_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
+            asset_graph = AssetGraph.from_assets(all_assets)
+
+        return self.resolve_ordered_inner(asset_graph, allow_missing=allow_missing)
+
+    def resolve_ordered_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> Sequence[AssetKey] | None:
+        return None
+
     @abstractmethod
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -771,6 +799,17 @@ class AndAssetSelection(OperandListAssetSelection):
             ),
         )
 
+    def resolve_ordered_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> Sequence[AssetKey] | None:
+        resolved = self.resolve_inner(asset_graph, allow_missing)
+        # Intersection - take order from the first operand that has it
+        for operand in self.operands:
+            ordered = operand.resolve_ordered_inner(asset_graph, allow_missing)
+            if ordered is not None:
+                return [key for key in ordered if key in resolved]
+        return None
+
     def to_selection_str(self) -> str:
         return " and ".join(f"{operand.operand_to_selection_str()}" for operand in self.operands)
 
@@ -787,6 +826,32 @@ class OrAssetSelection(OperandListAssetSelection):
                 for selection in self.operands
             ),
         )
+
+    def resolve_ordered_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> Sequence[AssetKey] | None:
+        ordered_keys = []
+        seen = set()
+        any_ordered = False
+        for operand in self.operands:
+            operand_ordered = operand.resolve_ordered_inner(asset_graph, allow_missing)
+            if operand_ordered is not None:
+                any_ordered = True
+                for key in operand_ordered:
+                    if key not in seen:
+                        ordered_keys.append(key)
+                        seen.add(key)
+            else:
+                # If one operand is NOT ordered (e.g. AssetSelection.all() | AssetSelection.assets("a")),
+                # then we fall back to sorted for that part, but still mark as ordered if others were?
+                # Actually, if any part is ordered, we should probably treat the whole union as ordered.
+                operand_resolved = sorted(list(operand.resolve_inner(asset_graph, allow_missing)))
+                for key in operand_resolved:
+                    if key not in seen:
+                        ordered_keys.append(key)
+                        seen.add(key)
+
+        return ordered_keys if any_ordered else None
 
     def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
@@ -823,6 +888,15 @@ class SubtractAssetSelection(AssetSelection):
             asset_graph, allow_missing=allow_missing
         ) - self.right.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
 
+    def resolve_ordered_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> Sequence[AssetKey] | None:
+        resolved = self.resolve_inner(asset_graph, allow_missing)
+        left_ordered = self.left.resolve_ordered_inner(asset_graph, allow_missing)
+        if left_ordered is None:
+            return None
+        return [key for key in left_ordered if key in resolved]
+
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return copy(
             self,
@@ -849,6 +923,24 @@ class ChainedAssetSelection(AssetSelection):
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return copy(self, child=self.child.to_serializable_asset_selection(asset_graph))
+
+    def resolve_ordered_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> Sequence[AssetKey] | None:
+        child_ordered = self.child.resolve_ordered_inner(asset_graph, allow_missing)
+        if child_ordered is None:
+            return None
+
+        full_resolved = self.resolve_inner(asset_graph, allow_missing)
+        returned = []
+        seen = set()
+        for key in child_ordered:
+            if key in full_resolved:
+                returned.append(key)
+                seen.add(key)
+
+        remaining = sorted([key for key in full_resolved if key not in seen])
+        return returned + remaining
 
 
 @whitelist_for_serdes
@@ -949,6 +1041,26 @@ class GroupsAssetSelection(AssetSelection):
                 group, require_materializable=not self.include_sources
             )
         }
+
+    def resolve_ordered_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> Sequence[AssetKey] | None:
+        ordered_keys = []
+        seen = set()
+        for group in self.selected_groups:
+            # maintain alphabetical order within a group for stability, but preserve group order
+            group_keys = sorted(
+                list(
+                    asset_graph.asset_keys_for_group(
+                        group, require_materializable=not self.include_sources
+                    )
+                )
+            )
+            for key in group_keys:
+                if key not in seen:
+                    ordered_keys.append(key)
+                    seen.add(key)
+        return ordered_keys
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
@@ -1232,6 +1344,12 @@ class KeysAssetSelection(AssetSelection):
                 )
 
         return specified_keys - missing_keys
+
+    def resolve_ordered_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> Sequence[AssetKey] | None:
+        resolved = self.resolve_inner(asset_graph, allow_missing)
+        return [key for key in self.selected_keys if key in resolved]
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
