@@ -2262,6 +2262,7 @@ class SqlEventLogStorage(EventLogStorage):
         has_default_pool_limit_col = self.has_default_pool_limit_col
 
         if has_default_pool_limit_col:
+            keys_to_assign: list[str] = []
             with self.index_transaction() as conn:
                 if default_limit is None:
                     conn.execute(
@@ -2269,44 +2270,66 @@ class SqlEventLogStorage(EventLogStorage):
                             ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
                         )
                     )
-                    self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                    keys_to_assign = self._allocate_concurrency_slots(conn, concurrency_key, 0)
                 else:
+                    # Use a savepoint so that a caught IntegrityError (key already exists) rolls
+                    # back only the INSERT and leaves the outer transaction valid. Without this,
+                    # Postgres marks the outer READ COMMITTED transaction as aborted after the
+                    # IntegrityError, causing all subsequent statements to fail with
+                    # InFailedSqlTransaction.
                     try:
-                        conn.execute(
-                            ConcurrencyLimitsTable.insert().values(
-                                concurrency_key=concurrency_key,
-                                limit=default_limit,
-                                using_default_limit=True,
-                            )
-                        )
-                    except db_exc.IntegrityError:
-                        conn.execute(
-                            ConcurrencyLimitsTable.update()
-                            .values(limit=default_limit)
-                            .where(
-                                db.and_(
-                                    ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
-                                    ConcurrencyLimitsTable.c.limit != default_limit,
+                        with conn.begin_nested():
+                            conn.execute(
+                                ConcurrencyLimitsTable.insert().values(
+                                    concurrency_key=concurrency_key,
+                                    limit=default_limit,
+                                    using_default_limit=True,
                                 )
                             )
-                        )
-                    self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+                    except db_exc.IntegrityError:
+                        # Wrap the UPDATE in a savepoint as well: if the UPDATE fails for any
+                        # reason, only the savepoint is rolled back, leaving the outer transaction
+                        # valid for the subsequent _allocate_concurrency_slots call.
+                        with conn.begin_nested():
+                            conn.execute(
+                                ConcurrencyLimitsTable.update()
+                                .values(limit=default_limit)
+                                .where(
+                                    db.and_(
+                                        ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
+                                        ConcurrencyLimitsTable.c.limit != default_limit,
+                                    )
+                                )
+                            )
+                    keys_to_assign = self._allocate_concurrency_slots(
+                        conn, concurrency_key, default_limit
+                    )
+            if keys_to_assign:
+                self.assign_pending_steps(keys_to_assign)
             return True
 
         if default_limit is None:
             return False
 
+        # Legacy path: schema predates the using_default_limit column (migration 048, 2025-01-13).
+        # Users on this path should run `dagster instance migrate` to use the modern branch above.
+        # Same savepoint pattern as the modern path: wrapping the INSERT in begin_nested() ensures
+        # a caught IntegrityError (key already exists) rolls back only the savepoint and leaves the
+        # outer READ COMMITTED transaction valid for the subsequent _allocate_concurrency_slots call.
         with self.index_transaction() as conn:
             try:
-                conn.execute(
-                    ConcurrencyLimitsTable.insert().values(
-                        concurrency_key=concurrency_key, limit=default_limit
+                with conn.begin_nested():
+                    conn.execute(
+                        ConcurrencyLimitsTable.insert().values(
+                            concurrency_key=concurrency_key, limit=default_limit
+                        )
                     )
-                )
             except db_exc.IntegrityError:
-                pass
-
-        self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+                pass  # key already exists; SAVEPOINT rolled back, outer transaction still valid
+            # Runs whether INSERT succeeded or IntegrityError was caught — always allocate slots.
+            keys_to_assign = self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+        if keys_to_assign:
+            self.assign_pending_steps(keys_to_assign)
         return True
 
     def _upsert_and_lock_limit_row(
