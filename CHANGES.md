@@ -104,6 +104,7 @@
 
 ### Bugfixes
 
+- Dagster now raises a `DagsterInvariantViolationError` before calling user code when a resource injected into an op or asset parameter does not match the declared type annotation. Previously, a type mismatch was silently ignored and only surfaced as an `AttributeError` inside user code.
 - Fixed an issue where auto-run reexecution would attempt to rerun jobs belonging to already-completed or cancelled backfills.
 - Fixed an issue where backfill errors that were subsequently retried would remain incorrectly associated with the backfill.
 - `dg plus pull env` now merges pulled secrets into the existing `.env` file instead of replacing it, preserving any locally-set variables not present in Dagster Plus.
