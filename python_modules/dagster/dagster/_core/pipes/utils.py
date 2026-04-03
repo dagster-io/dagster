@@ -384,6 +384,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
         handler: "PipesMessageHandler",
         params: PipesParams,
         is_session_closed: Event,
+        task_closed_event: Event | None = None,
     ) -> None:
         try:
             start_or_last_download = datetime.datetime.now()
@@ -399,9 +400,16 @@ class PipesThreadedMessageReader(PipesMessageReader):
             # - download a chunk of messages and process them
             # - if is_session_closed is set, we exit the loop after waiting for WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL
             while True:
-                # if we have the closed message, we can exit
-                # since the message reader has been started and the external process has completed
-                if handler.received_closed_message:
+                # Single-threaded readers exit on the shared handler closed signal. Multi-task
+                # readers can pass a task-local event so each path drains until its own close.
+                if task_closed_event is not None:
+                    if task_closed_event.is_set():
+                        # Safe to exit immediately without the post-close drain window: chunk
+                        # files are strictly sequential (1.json, 2.json, …) and "closed" is
+                        # always the final message a task emits. Once the chunk containing
+                        # "closed" has been processed, no further chunks can exist.
+                        return
+                elif handler.received_closed_message:
                     return
 
                 if not can_read_messages:  # this branch will be executed until we can read messages
@@ -423,6 +431,11 @@ class PipesThreadedMessageReader(PipesMessageReader):
                                     message = json.loads(line)
                                     if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
                                         handler.handle_message(message)
+                                        if (
+                                            task_closed_event is not None
+                                            and message.get("method") == "closed"
+                                        ):
+                                            task_closed_event.set()
                                 except json.JSONDecodeError:
                                     pass
 
@@ -727,6 +740,7 @@ def open_pipes_session(
     context_injector: PipesContextInjector,
     message_reader: PipesMessageReader,
     extras: PipesExtras | None = None,
+    expected_closed_messages: int = 1,
 ) -> Iterator[PipesSession]:
     """Context manager that opens and closes a pipes session.
 
@@ -747,6 +761,9 @@ def open_pipes_session(
         context_injector (PipesContextInjector): The context injector to use to inject context into the external process.
         message_reader (PipesMessageReader): The message reader to use to read messages from the external process.
         extras (Optional[PipesExtras]): Optional extras to pass to the external process via the injected context.
+        expected_closed_messages (int): Number of `"closed"` messages that must be received before
+            the session is considered complete. Multi-task integrations can set this to the number
+            of external task writers sharing the session.
 
     Yields:
         PipesSession: Interface for interacting with the external process.
@@ -780,7 +797,9 @@ def open_pipes_session(
         context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
 
     context_data = build_external_execution_context_data(context, extras)
-    message_handler = PipesMessageHandler(context, message_reader)
+    message_handler = PipesMessageHandler(
+        context, message_reader, expected_closed_messages=expected_closed_messages
+    )
     try:
         with (
             context_injector.inject_context(context_data) as ci_params,

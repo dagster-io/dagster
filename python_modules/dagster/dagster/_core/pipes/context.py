@@ -1,4 +1,5 @@
 import sys
+import threading
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -85,6 +86,7 @@ class PipesMessageHandler:
         self,
         context: OpExecutionContext | AssetExecutionContext,
         message_reader: "PipesMessageReader",
+        expected_closed_messages: int = 1,
     ) -> None:
         self._context = context
         self._message_reader = message_reader
@@ -96,6 +98,11 @@ class PipesMessageHandler:
         self._messages_include_stdio_logs = False
         self._received_closed_msg = False
         self._opened_payload: PipesOpenedData | None = None
+        # Multi-task support: track how many "closed" messages are expected (one per task).
+        # Protected by _closed_lock because _handle_closed may be called from N reader threads.
+        self._expected_closed_message_count: int = expected_closed_messages
+        self._received_closed_count: int = 0
+        self._closed_lock: threading.Lock = threading.Lock()
 
     @contextmanager
     def handle_messages(self) -> Iterator[PipesParams]:
@@ -152,7 +159,10 @@ class PipesMessageHandler:
         self._message_reader.on_opened(opened_payload)
 
     def _handle_closed(self, params: Mapping[str, Any] | None) -> None:
-        self._received_closed_msg = True
+        # Emit the engine event outside the lock: engine_event writes to run storage (I/O)
+        # and does not depend on any state protected by _closed_lock. Holding the lock across
+        # this call serializes concurrent close handlers in multi-task runs for the full
+        # duration of the storage write, which is unnecessary.
         if params and "exception" in params:
             err_info = _ser_err_from_pipes_exc(params["exception"])
             # report as an engine event to provide structured exception data
@@ -161,6 +171,10 @@ class PipesMessageHandler:
                 "[pipes] external process pipes closed with exception",
                 EngineEventData(error=err_info),
             )
+        with self._closed_lock:
+            self._received_closed_count += 1
+            if self._received_closed_count >= self._expected_closed_message_count:
+                self._received_closed_msg = True
 
     def _handle_report_asset_materialization(
         self,
