@@ -216,12 +216,23 @@ def test_dependencies_manifest_fixture() -> dict[str, Any]:
 def test_dependencies_manifest_windows_fixture(
     test_dependencies_manifest: dict[str, Any],
 ) -> dict[str, Any]:
+    def _to_windows_path(path_str: str | None) -> str | None:
+        return path_str.replace("/", "\\") if path_str else path_str
+
+    def _to_windows_patch_path(patch_path: str | None) -> str | None:
+        if not patch_path or "://" not in patch_path:
+            return patch_path
+
+        scheme, relative_path = patch_path.split("://", 1)
+        return f"{scheme}://{_to_windows_path(relative_path)}"
+
     return {
         **test_dependencies_manifest,
         "nodes": {
             node: {
                 **node_details,
-                "original_file_path": node_details.get("original_file_path").replace("/", "\\"),
+                "original_file_path": _to_windows_path(node_details.get("original_file_path")),
+                "patch_path": _to_windows_patch_path(node_details.get("patch_path")),
             }
             for node, node_details in test_dependencies_manifest["nodes"].items()
         },
