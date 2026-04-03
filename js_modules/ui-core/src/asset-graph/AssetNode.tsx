@@ -42,6 +42,44 @@ interface Props2025 {
   onChangeAssetSelection?: (selection: string) => void;
 }
 
+type CustomBackgrounds = {body: string; header: string};
+
+const getCustomBackgroundsForAsset = (
+  tags?: {key: string; value: string}[],
+): CustomBackgrounds | undefined => {
+  const uiColorTag = tags?.find((t) => t.key === 'dagster/ui_color');
+  if (!uiColorTag) {
+    return undefined;
+  }
+  switch (uiColorTag.value.toLowerCase()) {
+    case 'red':
+      return {body: Colors.backgroundRed(), header: Colors.backgroundRedHover()};
+    case 'yellow':
+      return {body: Colors.backgroundYellow(), header: Colors.backgroundYellowHover()};
+    case 'green':
+      return {body: Colors.backgroundGreen(), header: Colors.backgroundGreenHover()};
+    case 'blue':
+      return {body: Colors.backgroundBlue(), header: Colors.backgroundBlueHover()};
+    case 'olive':
+      return {body: Colors.backgroundOlive(), header: Colors.backgroundOliverHover()};
+    case 'cyan':
+      return {body: Colors.backgroundCyan(), header: Colors.backgroundCyanHover()};
+    case 'lime':
+      return {body: Colors.backgroundLime(), header: Colors.backgroundLimeHover()};
+    case 'gray':
+      return {body: Colors.backgroundGray(), header: Colors.backgroundGrayHover()};
+    default:
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[dagster/ui_color] Unrecognized color value "${uiColorTag.value}". ` +
+            `Supported values: red, yellow, green, blue, olive, cyan, lime, gray.`,
+        );
+      }
+      return undefined;
+  }
+};
+
 export const ASSET_NODE_HOVER_EXPAND_HEIGHT = 3;
 
 export const AssetNode = React.memo((props: Props2025) => {
@@ -67,6 +105,8 @@ export const AssetNodeWithLiveData = ({
   automationData?: AssetAutomationFragment | undefined;
   assetHealthEnabled: boolean;
 }) => {
+  const customBackgrounds = getCustomBackgroundsForAsset(definition.tags);
+
   return (
     <AssetNodeContainer $selected={selected}>
       {facets.has(AssetNodeFacet.UnsyncedTag) ? (
@@ -85,8 +125,12 @@ export const AssetNodeWithLiveData = ({
       ) : (
         <div style={{minHeight: ASSET_NODE_HOVER_EXPAND_HEIGHT}} />
       )}
-      <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
-        <AssetNameRow definition={definition} />
+      <AssetNodeBox
+        $selected={selected}
+        $isMaterializable={definition.isMaterializable}
+        $customBackground={customBackgrounds?.body}
+      >
+        <AssetNameRow definition={definition} $customBackground={customBackgrounds?.header} />
         {facets.has(AssetNodeFacet.Description) && (
           <AssetNodeRow label={null}>
             {definition.description ? (
@@ -434,12 +478,21 @@ export const AutomationConditionEvaluationLink = ({
   );
 };
 
-export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+export const AssetNameRow = ({
+  definition,
+  $customBackground,
+}: {
+  definition: AssetNodeFragment;
+  $customBackground?: string;
+}) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
-    <AssetName $isMaterializable={definition.isMaterializable}>
+    <AssetName
+      $isMaterializable={definition.isMaterializable}
+      $customBackground={$customBackground}
+    >
       <span style={{marginTop: 1}}>
         <Icon name={definition.isMaterializable ? 'asset' : 'source_asset'} />
       </span>
@@ -528,6 +581,8 @@ export const AssetNodeMinimalWithHealth = ({
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
   }, [health, isMaterializing]);
 
+  const customBackground = getCustomBackgroundsForAsset(definition.tags)?.body;
+
   // old design
   let paddingTop = height / 2 - 52;
   let nodeHeight = 86;
@@ -554,7 +609,7 @@ export const AssetNodeMinimalWithHealth = ({
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
-          $background={backgroundColor}
+          $background={customBackground ?? backgroundColor}
           $border={borderColor}
           $inProgress={!!inProgressRuns}
           $isQueued={!!queuedRuns}
@@ -583,6 +638,7 @@ export const AssetNodeMinimalWithoutHealth = ({
   const {liveData} = useAssetLiveData(assetKey);
 
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
+  const customBackground = getCustomBackgroundsForAsset(definition.tags)?.body;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
@@ -618,7 +674,7 @@ export const AssetNodeMinimalWithoutHealth = ({
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
-          $background={background}
+          $background={customBackground ?? background}
           $border={border}
           $inProgress={!!inProgressRuns}
           $isQueued={!!queuedRuns}
@@ -698,6 +754,7 @@ export const AssetNodeBox = styled.div<{
   $isMaterializable: boolean;
   $selected: boolean;
   $noScale?: boolean;
+  $customBackground?: string;
 }>`
   ${(p) =>
     !p.$isMaterializable
@@ -707,7 +764,7 @@ export const AssetNodeBox = styled.div<{
         }`};
   ${(p) => p.$selected && `outline: 2px solid ${Colors.lineageNodeBorderSelected()}`};
 
-  background: ${Colors.backgroundDefault()};
+  background: ${(p) => p.$customBackground || Colors.backgroundDefault()};
   border-radius: 10px;
   position: relative;
   margin: ${ASSET_NODE_VERTICAL_MARGIN}px 0;
@@ -750,12 +807,13 @@ const NameTooltipStyleSource = JSON.stringify({
   border: `none`,
 });
 
-const AssetName = styled.div<{$isMaterializable: boolean}>`
+const AssetName = styled.div<{$isMaterializable: boolean; $customBackground?: string}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
   background: ${(p) =>
-    p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight()};
+    p.$customBackground ||
+    (p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight())};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
