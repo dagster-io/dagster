@@ -215,15 +215,6 @@ class DagsterLookerApiTranslator:
         else:
             check.assert_never(lookml_explore)
 
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
-    )
-    def get_dashboard_asset_key(
-        self, looker_structure: LookerApiTranslatorStructureData
-    ) -> AssetKey:
-        return self.get_asset_spec(looker_structure).key
-
     def get_dashboard_asset_spec(
         self, looker_structure: LookerApiTranslatorStructureData
     ) -> AssetSpec:
