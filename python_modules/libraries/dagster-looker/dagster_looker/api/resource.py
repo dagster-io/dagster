@@ -13,7 +13,6 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
-from dagster._utils.warnings import deprecation_warning
 from looker_sdk import init40
 from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
 from looker_sdk.sdk.api40.methods import Looker40SDK
@@ -83,32 +82,20 @@ class LookerResource(ConfigurableResource):
 @beta
 def load_looker_asset_specs(
     looker_resource: LookerResource,
-    dagster_looker_translator: DagsterLookerApiTranslator
-    | type[DagsterLookerApiTranslator]
-    | None = None,
+    dagster_looker_translator: DagsterLookerApiTranslator | None = None,
     looker_filter: LookerFilter | None = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Looker structures.
 
     Args:
         looker_resource (LookerResource): The Looker resource to fetch assets from.
-        dagster_looker_translator (Optional[Union[DagsterLookerApiTranslator, Type[DagsterLookerApiTranslator]]]):
+        dagster_looker_translator (Optional[DagsterLookerApiTranslator]):
             The translator to use to convert Looker structures into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterLookerApiTranslator`.
 
     Returns:
         List[AssetSpec]: The set of AssetSpecs representing the Looker structures.
     """
-    if isinstance(dagster_looker_translator, type):
-        deprecation_warning(
-            subject="Support of `dagster_looker_translator` as a Type[DagsterLookerApiTranslator]",
-            breaking_version="1.10",
-            additional_warn_text=(
-                "Pass an instance of DagsterLookerApiTranslator or subclass to `dagster_looker_translator` instead."
-            ),
-        )
-        dagster_looker_translator = dagster_looker_translator()
-
     return check.is_list(
         LookerApiDefsLoader(
             looker_resource=looker_resource,
