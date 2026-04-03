@@ -1,4 +1,5 @@
 import datetime
+import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
@@ -844,6 +845,84 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         assert self.get_run_ids(instance.run_launcher.queue()) == [good_run_id]
         assert instance.get_run_by_id(BAD_RUN_ID_UUID).status == DagsterRunStatus.FAILURE
         assert instance.get_run_by_id(BAD_USER_CODE_RUN_ID_UUID).status == DagsterRunStatus.FAILURE
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            dict(max_concurrent_runs=10, dequeue_use_threads=True, dequeue_num_workers=2),
+        ],
+    )
+    def test_threaded_dequeue_carries_stalled_launches_across_iterations(
+        self, instance, workspace_context, job_handle, monkeypatch, caplog
+    ):
+        blocked_run_id, unblocked_run_id = [make_new_run_id() for _ in range(2)]
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=blocked_run_id,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+
+        blocked_launch_started = threading.Event()
+        blocked_launch_finished = threading.Event()
+        release_blocked_launch = threading.Event()
+        original_launch_run = instance.run_launcher.launch_run
+
+        def blocking_launch_run(context):
+            if context.dagster_run.run_id == blocked_run_id:
+                blocked_launch_started.set()
+                release_blocked_launch.wait()
+                blocked_launch_finished.set()
+
+            return original_launch_run(context)
+
+        def run_iteration_with_timeout(daemon_to_run: QueuedRunCoordinatorDaemon) -> None:
+            errors = []
+            finished = threading.Event()
+
+            def _run_iteration() -> None:
+                try:
+                    list(daemon_to_run.run_iteration(workspace_context))
+                except Exception as error:
+                    errors.append(error)
+                finally:
+                    finished.set()
+
+            thread = threading.Thread(target=_run_iteration, daemon=True)
+            thread.start()
+            assert finished.wait(timeout=1)
+            assert not errors
+
+        monkeypatch.setattr(instance.run_launcher, "launch_run", blocking_launch_run)
+        daemon = QueuedRunCoordinatorDaemon(
+            interval_seconds=1,
+            page_size=1,
+            dequeue_wait_poll_interval=0.01,
+            dequeue_wait_max_seconds=0.05,
+        )
+
+        try:
+            run_iteration_with_timeout(daemon)
+            assert blocked_launch_started.wait(timeout=1)
+            assert instance.run_launcher.queue() == []
+            assert instance.get_run_by_id(blocked_run_id).status == DagsterRunStatus.STARTING
+
+            self.create_queued_run(
+                instance,
+                job_handle,
+                run_id=unblocked_run_id,
+                asset_graph=workspace_context.create_request_context().asset_graph,
+            )
+            assert instance.get_run_by_id(unblocked_run_id).status == DagsterRunStatus.QUEUED
+
+            run_iteration_with_timeout(daemon)
+            assert self.get_run_ids(instance.run_launcher.queue()) == [unblocked_run_id]
+            assert "Keeping those launches in flight" in caplog.text
+        finally:
+            release_blocked_launch.set()
+            if blocked_launch_started.is_set():
+                assert blocked_launch_finished.wait(timeout=1)
+            daemon.__exit__(None, None, None)
 
     @pytest.mark.parametrize(
         "run_coordinator_config",
