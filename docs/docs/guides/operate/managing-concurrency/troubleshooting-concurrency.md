@@ -42,3 +42,30 @@ If the daemon is running, runs may intentionally be left in the queue due to con
 
   </TabItem>
 </Tabs>
+
+## Runs blocked by op concurrency limits from cancelled runs
+
+If runs are stuck in `QUEUED` status and the daemon logs show messages like:
+
+```
+Run <id> is blocked by global concurrency limits:
+{"my_pool": {"pending_step_count": 1, "pending_step_run_ids": ["<cancelled_run_id>"]}}
+```
+
+where the blocking run is in `CANCELED` or `FAILURE` status, this means a cancelled or failed run left stale concurrency slot claims that were never cleaned up. With a pool limit of 1 (common for single-writer databases like DuckDB), a single stale claim will permanently block all future runs for that concurrency key.
+
+**Cause:** By default, Dagster does not automatically free op concurrency slots when a run is cancelled or fails. The cleanup mechanism exists but must be explicitly enabled.
+
+**Fix:** Add `free_slots_after_run_end_seconds` to your [run monitoring configuration](/deployment/execution/run-monitoring#freeing-concurrency-slots-after-run-completion):
+
+```yaml
+run_monitoring:
+  enabled: true
+  free_slots_after_run_end_seconds: 300
+```
+
+This tells the daemon to automatically free concurrency slots held by finished runs after the specified number of seconds.
+
+**Immediate recovery:** If you are currently deadlocked, you can free stale slots immediately using the Dagster UI. Navigate to **Deployment > Concurrency** and manually release the slots held by the cancelled run. Alternatively, you can use the `dagster` CLI:
+
+dagster instance concurrency set <pool_name> <limit>
