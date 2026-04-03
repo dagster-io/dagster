@@ -704,6 +704,9 @@ export function expandAutocompletionContextAtCursor(editor: any) {
     start = token.start;
   }
 
+  // Extract the path from the parents array
+  const path = token.state.parents.map((p: any) => p.key).filter((k: string) => k);
+
   // Takes the schema and the YAML tokenizer state and returns the
   // type in scope and available (yet-to-be-used) fields
   // if it is a composite type.
@@ -713,6 +716,7 @@ export function expandAutocompletionContextAtCursor(editor: any) {
     searchString,
     token,
     prevToken,
+    path,
     context: findAutocompletionContext(schema, token.state.parents, start),
   };
 }
