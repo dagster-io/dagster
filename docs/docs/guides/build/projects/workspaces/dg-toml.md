@@ -22,6 +22,20 @@ To create Dagster projects that can be loaded by Dagster, see [Creating Dagster 
 
 :::
 
+:::note
+
+`dg.toml` workspaces load local `dg` projects listed under `[[workspace.projects]]`. There isn't an equivalent `grpc_server` entry in `dg.toml`.
+
+If you need to connect to an already-running gRPC code server, configure it in a `workspace.yaml` file and start Dagster with:
+
+```bash
+dg dev -w path/to/workspace.yaml
+```
+
+See the [`workspace.yaml` reference](/guides/build/projects/workspaces/workspace-yaml#grpc-server) for the `grpc_server` configuration options.
+
+:::
+
 ## Location of the `dg.toml` file
 
 Dagster command line tools (like [`dg`](/api/clis/dg-cli/dg-cli-reference)) look for the `dg.toml` file in the current directory when invoked. This allows you to launch the Dagster webserver/UI and load your projects from the current directory without command line arguments:
