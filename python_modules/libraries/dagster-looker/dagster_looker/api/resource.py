@@ -8,7 +8,7 @@ from dagster import (
     Definitions,
     _check as check,
 )
-from dagster._annotations import beta, deprecated, public
+from dagster._annotations import beta
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -25,7 +25,6 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
-    RequestStartPdtBuild,
 )
 
 if TYPE_CHECKING:
@@ -79,47 +78,6 @@ class LookerResource(ConfigurableResource):
                 }
 
         return init40(config_settings=DagsterLookerApiSettings())
-
-    @public
-    @deprecated(
-        breaking_version="1.9.0",
-        additional_warn_text="Use dagster_looker.load_looker_asset_specs instead",
-    )
-    def build_defs(
-        self,
-        *,
-        request_start_pdt_builds: Sequence[RequestStartPdtBuild] | None = None,
-        dagster_looker_translator: DagsterLookerApiTranslator | None = None,
-        looker_filter: LookerFilter | None = None,
-    ) -> Definitions:
-        """Returns a Definitions object which will load structures from the Looker instance
-        and translate it into assets, using the provided translator.
-
-        Args:
-            request_start_pdt_builds (Optional[Sequence[RequestStartPdtBuild]]): A list of
-                requests to start PDT builds. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
-                for documentation on all available fields.
-            dagster_looker_translator (Optional[DagsterLookerApiTranslator]): The translator to
-                use to convert Looker structures into assets. Defaults to DagsterLookerApiTranslator.
-
-        Returns:
-            Definitions: A Definitions object which will contain return the Looker structures as assets.
-        """
-        from dagster_looker.api.assets import build_looker_pdt_assets_definitions
-
-        resource_key = "looker"
-        translator = dagster_looker_translator or DagsterLookerApiTranslator()
-
-        pdts = build_looker_pdt_assets_definitions(
-            resource_key=resource_key,
-            request_start_pdt_builds=request_start_pdt_builds or [],
-            dagster_looker_translator=translator,
-        )
-
-        return Definitions(
-            assets=[*pdts, *load_looker_asset_specs(self, translator, looker_filter)],
-            resources={resource_key: self},
-        )
 
 
 @beta
