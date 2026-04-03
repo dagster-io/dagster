@@ -642,6 +642,18 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
+    def code_version_outdated() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the latest materialization was produced
+        by a different code version than the current asset definition.
+        """
+        from dagster._core.definitions.declarative_automation.operands.operands import (
+            CodeVersionOutdatedCondition,
+        )
+
+        return CodeVersionOutdatedCondition()
+
+    @public
+    @staticmethod
     def data_version_changed() -> "BuiltinAutomationCondition[AssetKey]":
         """Returns an AutomationCondition that is true if the target's data version has been changed
         since the previous tick.
