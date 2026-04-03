@@ -159,16 +159,20 @@ class PipesMessageHandler:
         self._message_reader.on_opened(opened_payload)
 
     def _handle_closed(self, params: Mapping[str, Any] | None) -> None:
+        # Emit the engine event outside the lock: engine_event writes to run storage (I/O)
+        # and does not depend on any state protected by _closed_lock. Holding the lock across
+        # this call serializes concurrent close handlers in multi-task runs for the full
+        # duration of the storage write, which is unnecessary.
+        if params and "exception" in params:
+            err_info = _ser_err_from_pipes_exc(params["exception"])
+            # report as an engine event to provide structured exception data
+            DagsterEvent.engine_event(
+                self._context.get_step_execution_context(),
+                "[pipes] external process pipes closed with exception",
+                EngineEventData(error=err_info),
+            )
         with self._closed_lock:
             self._received_closed_count += 1
-            if params and "exception" in params:
-                err_info = _ser_err_from_pipes_exc(params["exception"])
-                # report as an engine event to provide structured exception data
-                DagsterEvent.engine_event(
-                    self._context.get_step_execution_context(),
-                    "[pipes] external process pipes closed with exception",
-                    EngineEventData(error=err_info),
-                )
             if self._received_closed_count >= self._expected_closed_message_count:
                 self._received_closed_msg = True
 

@@ -805,8 +805,10 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         # Only the Unity Catalog volumes reader is multi-task-aware. Arbitrary custom readers may
         # emit a single "closed" message and hang a multi-task session that expects one close per
         # task.
-        if len(tasks) > 1 and self.message_reader is not None and not isinstance(
-            self.message_reader, PipesUnityCatalogVolumesMessageReader
+        if (
+            len(tasks) > 1
+            and self.message_reader is not None
+            and not isinstance(self.message_reader, PipesUnityCatalogVolumesMessageReader)
         ):
             raise ValueError(
                 "A custom message_reader is not supported for multi-task runs. "
@@ -815,44 +817,61 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         context_injector = self.context_injector or PipesUnityCatalogVolumesContextInjector(
             client=self.client, volume_path=self.volume_path
         )
-        message_reader = self.message_reader or PipesUnityCatalogVolumesMessageReader(
-            client=self.client,
-            volume_path=self.volume_path,
-            num_tasks=len(tasks),
-        )
-        if isinstance(message_reader, PipesUnityCatalogVolumesMessageReader):
-            message_reader.num_tasks = len(tasks)
-        with open_pipes_session(
-            context=context,
-            extras=extras,
-            context_injector=context_injector,
-            message_reader=message_reader,
-            expected_closed_messages=len(tasks),
-        ) as pipes_session:
-            enriched_tasks = []
-            for i, task in enumerate(tasks):
-                submit_task_dict = task.as_dict()
-                submit_task_dict = self._enrich_submit_task_dict(
-                    context=context,
-                    session=pipes_session,
-                    submit_task_dict=submit_task_dict,
-                    task_index=i,
-                )
-                enriched_tasks.append(jobs.SubmitTask.from_dict(submit_task_dict))
+        if self.message_reader is not None:
+            message_reader = self.message_reader
+            # Save and restore num_tasks so that a reused reader instance is not left in
+            # multi-task mode after this call, which would break subsequent single-task runs.
+            orig_num_tasks = (
+                message_reader.num_tasks
+                if isinstance(message_reader, PipesUnityCatalogVolumesMessageReader)
+                else None
+            )
+            if isinstance(message_reader, PipesUnityCatalogVolumesMessageReader):
+                message_reader.num_tasks = len(tasks)
+        else:
+            message_reader = PipesUnityCatalogVolumesMessageReader(
+                client=self.client,
+                volume_path=self.volume_path,
+                num_tasks=len(tasks),
+            )
+            orig_num_tasks = None
+        try:
+            with open_pipes_session(
+                context=context,
+                extras=extras,
+                context_injector=context_injector,
+                message_reader=message_reader,
+                expected_closed_messages=len(tasks),
+            ) as pipes_session:
+                enriched_tasks = []
+                for i, task in enumerate(tasks):
+                    submit_task_dict = task.as_dict()
+                    submit_task_dict = self._enrich_submit_task_dict(
+                        context=context,
+                        session=pipes_session,
+                        submit_task_dict=submit_task_dict,
+                        task_index=i,
+                    )
+                    enriched_tasks.append(jobs.SubmitTask.from_dict(submit_task_dict))
 
-            run_id = self.client.jobs.submit(
-                tasks=enriched_tasks,
-                **(submit_args or {}),
-            ).bind()["run_id"]
+                run_id = self.client.jobs.submit(
+                    tasks=enriched_tasks,
+                    **(submit_args or {}),
+                ).bind()["run_id"]
 
-            try:
-                self._poll_til_success(context, run_id)
-            except DagsterExecutionInterruptedError as e:
-                if self.forward_termination:
-                    context.log.info("[pipes] execution interrupted, canceling Databricks job.")
-                    self.client.jobs.cancel_run(run_id)
-                    self._poll_til_terminating(run_id)
-                raise e
+                try:
+                    self._poll_til_success(context, run_id)
+                except DagsterExecutionInterruptedError as e:
+                    if self.forward_termination:
+                        context.log.info("[pipes] execution interrupted, canceling Databricks job.")
+                        self.client.jobs.cancel_run(run_id)
+                        self._poll_til_terminating(run_id)
+                    raise e
+        finally:
+            if orig_num_tasks is not None and isinstance(
+                message_reader, PipesUnityCatalogVolumesMessageReader
+            ):
+                message_reader.num_tasks = orig_num_tasks
 
         return PipesClientCompletedInvocation(
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
@@ -1057,12 +1076,17 @@ class PipesUnityCatalogVolumesMessageReader(PipesBlobStoreMessageReader):
                 yield params
             return
 
-        # Multi-task: spawn one message thread + one log thread per task directory so each
-        # task's numbered chunks are read independently without counter collisions.
+        # Multi-task: spawn one message thread per task directory so each task's numbered
+        # chunks are read independently without counter collisions.
+        # A single shared log thread is used for all tasks — log readers are job-level, not
+        # per-task. Spawning one log thread per task would cause a race where multiple threads
+        # concurrently iterate and mutate the shared self.log_readers dict, potentially
+        # double-starting or skipping readers.
         with self.get_params() as params:
             is_session_closed = Event()
             threads: list[tuple[str, Thread]] = []
             try:
+                last_msg_thread = None
                 for task_path in params["task_paths"]:
                     task_params = {**params, "path": task_path}
                     task_closed = Event()
@@ -1073,15 +1097,19 @@ class PipesUnityCatalogVolumesMessageReader(PipesBlobStoreMessageReader):
                     )
                     msg_thread.start()
                     threads.append(("messages", msg_thread))
+                    last_msg_thread = msg_thread
 
-                    if self.log_readers:
-                        log_thread = Thread(
-                            target=self._logs_thread,
-                            args=(handler, task_params, is_session_closed, msg_thread),
-                            daemon=True,
-                        )
-                        log_thread.start()
-                        threads.append(("logs", log_thread))
+                # One log thread for the entire multi-task run, mirroring the base class
+                # behavior of always starting a log thread (which exits quickly when there
+                # are no readers). Using last_msg_thread as the join target so the log
+                # thread waits until the final task's messages have been consumed.
+                log_thread = Thread(
+                    target=self._logs_thread,
+                    args=(handler, params, is_session_closed, last_msg_thread),
+                    daemon=True,
+                )
+                log_thread.start()
+                threads.append(("logs", log_thread))
 
                 yield params
             finally:

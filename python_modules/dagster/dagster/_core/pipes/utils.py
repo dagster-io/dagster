@@ -404,6 +404,10 @@ class PipesThreadedMessageReader(PipesMessageReader):
                 # readers can pass a task-local event so each path drains until its own close.
                 if task_closed_event is not None:
                     if task_closed_event.is_set():
+                        # Safe to exit immediately without the post-close drain window: chunk
+                        # files are strictly sequential (1.json, 2.json, …) and "closed" is
+                        # always the final message a task emits. Once the chunk containing
+                        # "closed" has been processed, no further chunks can exist.
                         return
                 elif handler.received_closed_message:
                     return
