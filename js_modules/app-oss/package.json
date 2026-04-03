@@ -17,7 +17,7 @@
     "@types/styled-components": "^5.1.26",
     "eslint-config-next": "^15.3.3",
     "graphql": "^16.8.1",
-    "next": "^15.5.14",
+    "next": "^16.2.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-is": "^18.3.1",
