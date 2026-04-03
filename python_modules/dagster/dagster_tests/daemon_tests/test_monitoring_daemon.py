@@ -84,11 +84,13 @@ class MockRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, _run):  # pyright: ignore[reportIncompatibleMethodOverride]
-        return (
-            CheckRunHealthResult(WorkerStatus.RUNNING, "")
-            if os.environ.get("DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT") == "healthy"
-            else CheckRunHealthResult(WorkerStatus.NOT_FOUND, "")
-        )
+        health_check_env = os.environ.get("DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT")
+        if health_check_env == "healthy":
+            return CheckRunHealthResult(WorkerStatus.RUNNING, "")
+        elif health_check_env == "unknown":
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "Cannot reach broker")
+        else:
+            return CheckRunHealthResult(WorkerStatus.NOT_FOUND, "")
 
 
 @pytest.fixture
@@ -423,7 +425,7 @@ def test_long_running_termination(
             assert len(run_failure_events) == 1
             event = run_failure_events[0].dagster_event
             assert event
-            assert event.message == "Exceeded maximum runtime of 500 seconds."
+            assert "forcibly marked as failed" in event.message
 
             monitor_started_run(instance, workspace, too_long_other_tag_value_record, logger)
             run = instance.get_run_by_id(too_long_other_tag_value_record.dagster_run.run_id)
@@ -440,7 +442,7 @@ def test_long_running_termination(
             assert len(run_failure_events) == 1
             event = run_failure_events[0].dagster_event
             assert event
-            assert event.message == "Exceeded maximum runtime of 500 seconds."
+            assert "forcibly marked as failed" in event.message
 
         # Wait long enough for the instance default to kick in
         eval_time = started_time + datetime.timedelta(seconds=751)
@@ -562,3 +564,111 @@ def test_invalid_max_runtime_tag_value(
 
             # Verify warning was logged
             assert "Invalid max runtime value: invalid" in caplog.text
+
+
+def test_monitor_started_unknown_below_threshold(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    """UNKNOWN health check below threshold should NOT trigger resume — just log and wait."""
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
+    run_record = instance.get_run_record_by_id(run_id)
+    assert run_record is not None
+    workspace = workspace_context.create_request_context()
+    run_launcher = cast("MockRunLauncher", instance.run_launcher)
+
+    # First UNKNOWN check — below threshold of 3
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "unknown"}):
+        monitor_started_run(instance, workspace, run_record, logger)
+
+    run = instance.get_run_by_id(run_id)
+    assert run
+    assert run.status == DagsterRunStatus.STARTED
+    assert run_launcher.resume_run_calls == 0
+
+    # Verify UNKNOWN engine event was logged
+    engine_events = instance.all_logs(run_id, of_type=DagsterEventType.ENGINE_EVENT)
+    unknown_events = [e for e in engine_events if "UNKNOWN" in (e.message or "")]
+    assert len(unknown_events) == 1
+
+
+def test_monitor_started_unknown_at_threshold(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    """After reaching the UNKNOWN threshold (3), resume should be triggered."""
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
+    workspace = workspace_context.create_request_context()
+    run_launcher = cast("MockRunLauncher", instance.run_launcher)
+
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "unknown"}):
+        # Checks 1, 2 — below threshold, no action
+        for _ in range(2):
+            run_record = instance.get_run_record_by_id(run_id)
+            assert run_record is not None
+            monitor_started_run(instance, workspace, run_record, logger)
+
+        assert run_launcher.resume_run_calls == 0
+
+        # Check 3 — at threshold, should trigger resume
+        run_record = instance.get_run_record_by_id(run_id)
+        assert run_record is not None
+        monitor_started_run(instance, workspace, run_record, logger)
+
+    assert run_launcher.resume_run_calls == 1
+    run = instance.get_run_by_id(run_id)
+    assert run
+    assert run.status == DagsterRunStatus.STARTED
+
+
+def test_monitor_started_unknown_then_healthy_resets(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    """UNKNOWN followed by healthy check should reset the counter."""
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
+    workspace = workspace_context.create_request_context()
+    run_launcher = cast("MockRunLauncher", instance.run_launcher)
+
+    # Two UNKNOWN checks
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "unknown"}):
+        for _ in range(2):
+            run_record = instance.get_run_record_by_id(run_id)
+            assert run_record is not None
+            monitor_started_run(instance, workspace, run_record, logger)
+
+    assert run_launcher.resume_run_calls == 0
+
+    # Healthy check — should not trigger resume and resets are implicit
+    # (next UNKNOWN streak starts from 0)
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
+        run_record = instance.get_run_record_by_id(run_id)
+        assert run_record is not None
+        monitor_started_run(instance, workspace, run_record, logger)
+
+    assert run_launcher.resume_run_calls == 0
+
+    # Two more UNKNOWN checks — should NOT trigger resume (reset happened)
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "unknown"}):
+        for _ in range(2):
+            run_record = instance.get_run_record_by_id(run_id)
+            assert run_record is not None
+            monitor_started_run(instance, workspace, run_record, logger)
+
+    assert run_launcher.resume_run_calls == 0
+
+
+def test_monitor_started_failed_still_immediate(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    """FAILED/NOT_FOUND status should still trigger immediate resume (no threshold)."""
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
+    run_record = instance.get_run_record_by_id(run_id)
+    assert run_record is not None
+    workspace = workspace_context.create_request_context()
+    run_launcher = cast("MockRunLauncher", instance.run_launcher)
+
+    # NOT_FOUND triggers immediate resume on first check
+    monitor_started_run(instance, workspace, run_record, logger)
+
+    assert run_launcher.resume_run_calls == 1
+    run = instance.get_run_by_id(run_id)
+    assert run
+    assert run.status == DagsterRunStatus.STARTED
