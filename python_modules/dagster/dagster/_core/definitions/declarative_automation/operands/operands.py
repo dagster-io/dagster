@@ -8,6 +8,10 @@ from dagster_shared.serdes.utils import SerializableTimeDelta
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
+from dagster._core.definitions.data_version import (
+    extract_data_provenance_from_entry,
+    is_code_version_outdated,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
     BuiltinAutomationCondition,
@@ -17,6 +21,7 @@ from dagster._core.definitions.declarative_automation.operands.subset_automation
     SubsetAutomationCondition,
     TimedSubsetAutomationCondition,
 )
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
@@ -40,6 +45,53 @@ class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
             true_subset = context.candidate_subset
 
         return AutomationResult(context, true_subset, cursor=current_code_version)
+
+
+@whitelist_for_serdes
+@record
+class CodeVersionOutdatedCondition(SubsetAutomationCondition[AssetKey]):
+    @property
+    def name(self) -> str:
+        return "code_version_outdated"
+
+    def compute_subset(self, context: AutomationContext[AssetKey]) -> EntitySubset[AssetKey]:
+        current_code_version = context.asset_graph.get(context.key).code_version
+        if current_code_version is None:
+            return context.get_empty_subset()
+
+        if not context.candidate_subset.is_partitioned:
+            record = (
+                context.asset_graph_view._queryer.get_latest_materialization_or_observation_record(  # noqa: SLF001
+                    AssetKeyPartitionKey(context.key)
+                )
+            )
+            provenance = (
+                extract_data_provenance_from_entry(record.event_log_entry) if record else None
+            )
+            return (
+                context.candidate_subset
+                if is_code_version_outdated(current_code_version, provenance)
+                else context.get_empty_subset()
+            )
+
+        outdated_partitions = {
+            asset_partition
+            for asset_partition in context.candidate_subset.expensively_compute_asset_partitions()
+            if is_code_version_outdated(
+                current_code_version,
+                extract_data_provenance_from_entry(record.event_log_entry)
+                if (
+                    record
+                    := context.asset_graph_view._queryer.get_latest_materialization_or_observation_record(  # noqa: SLF001
+                        asset_partition
+                    )
+                )
+                else None,
+            )
+        }
+        return context.asset_graph_view.get_asset_subset_from_asset_partitions(
+            context.key, outdated_partitions
+        )
 
 
 @whitelist_for_serdes
