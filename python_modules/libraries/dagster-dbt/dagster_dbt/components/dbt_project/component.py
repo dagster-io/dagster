@@ -310,7 +310,10 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        return self._base_translator.get_asset_spec(manifest, unique_id, project)
+        # Call through the translation-aware default implementation so subclasses that
+        # call `super().get_asset_spec(...)` get the same spec shape as the default
+        # component path, including YAML-based translation.
+        return self.translator._get_default_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(
         self,
@@ -464,16 +467,29 @@ class DbtProjectComponentTranslator(
         self._component = component
         super().__init__(settings)
 
-    def get_asset_spec(
+    def _get_default_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
     ) -> dg.AssetSpec:
-        base_spec = super().get_asset_spec(manifest, unique_id, project)
+        base_spec = DagsterDbtTranslator.get_asset_spec(self, manifest, unique_id, project)
         if self.component.translation is None:
             spec = base_spec
         else:
             dbt_props = get_node(manifest, unique_id)
             spec = self.component.translation(base_spec, dbt_props)
         return spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
+
+    def get_asset_spec(
+        self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
+    ) -> dg.AssetSpec:
+        # Intentionally shadows _GeneratedComponentTranslator.get_asset_spec so that
+        # the non-override path routes to _get_default_asset_spec (translation-aware)
+        # rather than super().get_asset_spec (which would skip YAML translation).
+        component_base_method = DbtProjectComponent.get_asset_spec
+        component_instance_method = getattr(self.component.__class__, "get_asset_spec")
+        if component_base_method is component_instance_method:
+            return self._get_default_asset_spec(manifest, unique_id, project)
+
+        return component_instance_method(self.component, manifest, unique_id, project)
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
