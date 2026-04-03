@@ -17,6 +17,7 @@ import styled from 'styled-components';
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {StatusCase} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {ManualPositionHandle} from './ManualPositionHandle';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
@@ -85,6 +86,10 @@ export const CollapsedGroupNode = ({
   toggleSelectAllNodes,
   preferredJobName,
   onFilterToGroup,
+  isManuallyPositioned,
+  isDragging,
+  onDragStart,
+  onResetPosition,
 }: {
   minimal: boolean;
   onExpand: () => void;
@@ -92,6 +97,10 @@ export const CollapsedGroupNode = ({
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
   preferredJobName: string;
   onFilterToGroup: () => void;
+  isManuallyPositioned?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onResetPosition?: () => void;
 }) => {
   const {menu, dialog} = useGroupNodeContextMenu({
     onFilterToGroup,
@@ -113,6 +122,14 @@ export const CollapsedGroupNode = ({
         <CollapsedGroupNodeBox $minimal={minimal}>
           <Box padding={{top: 8, bottom: 4, left: 12, right: 8}} flex={{}}>
             <GroupNodeNameAndRepo group={group} minimal={minimal} />
+            {onDragStart ? (
+              <ManualPositionHandle
+                isDragging={!!isDragging}
+                isManuallyPositioned={!!isManuallyPositioned}
+                onDragStart={onDragStart}
+                onReset={onResetPosition}
+              />
+            ) : null}
             <Box padding={{vertical: 4}}>
               <Icon name="unfold_more" />
             </Box>
