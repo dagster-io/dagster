@@ -94,9 +94,6 @@ export const config: VercelConfig = {
     routes.redirect('/master/_apidocs/:path*', '/api'),
     routes.redirect('_apidocs/:path*', '/api/dagster/:path*'),
 
-    // ABOUT
-    routes.redirect('/getting-started/:path*', '/about/:path*'),
-
     // MISC
     routes.redirect('/next/:path*', '/:path*'),
     routes.redirect('/next/:path*/', '/:path*'),
