@@ -42,7 +42,13 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.event_api import RunStatusChangeEventType, RunStatusChangeRecordsFilter
-from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
+from dagster._core.events import (
+    PIPELINE_RUN_STATUS_TO_EVENT_TYPE,
+    DagsterEvent,
+    DagsterEventType,
+)
+
+_EVENT_TYPE_TO_DAGSTER_RUN_STATUS = {v: k for k, v in PIPELINE_RUN_STATUS_TO_EVENT_TYPE.items()}
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import serialize_value, whitelist_for_serdes
@@ -578,8 +584,8 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
-        run_status (DagsterRunStatus): The status of a run which will be
-            monitored by the sensor.
+        run_status (Union[DagsterRunStatus, Sequence[DagsterRunStatus]]): The status (or statuses)
+            of a run which will be monitored by the sensor.
         run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, DagsterRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -606,7 +612,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
     def __init__(
         self,
         name: str,
-        run_status: DagsterRunStatus,
+        run_status: Union[DagsterRunStatus, Sequence[DagsterRunStatus]],
         run_status_sensor_fn: RunStatusSensorEvaluationFunction,
         minimum_interval_seconds: int | None = None,
         description: str | None = None,
@@ -636,7 +642,18 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
         )
 
         check.str_param(name, "name")
-        check.inst_param(run_status, "run_status", DagsterRunStatus)
+        if isinstance(run_status, DagsterRunStatus):
+            run_statuses = [run_status]
+        else:
+            run_statuses = list(
+                dict.fromkeys(  # deduplicate while preserving order
+                    check.sequence_param(run_status, "run_status", of_type=DagsterRunStatus)
+                )
+            )
+        if not run_statuses:
+            raise DagsterInvalidDefinitionError(
+                f"Sensor '{name}': run_status must not be an empty sequence."
+            )
         check.callable_param(run_status_sensor_fn, "run_status_sensor_fn")
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
         check.opt_str_param(description, "description")
@@ -673,11 +690,11 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
-        self._run_status = run_status
+        self._run_statuses = run_statuses
         self._monitored_jobs = monitored_jobs
         self._monitor_all_code_locations = monitor_all_code_locations
         self._raw_required_resource_keys = combined_required_resource_keys
-        event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[run_status]
+        event_types = [PIPELINE_RUN_STATUS_TO_EVENT_TYPE[s] for s in run_statuses]
 
         # split monitored_jobs into external repos, external jobs, and jobs in the current repo
         other_repos = (
@@ -703,19 +720,20 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
             if context.cursor is None or not RunStatusSensorCursor.is_valid(context.cursor):
-                most_recent_event_records = context.instance.fetch_run_status_changes(
-                    records_filter=event_type, limit=1
-                ).records
-                most_recent_event_id = (
-                    most_recent_event_records[0].storage_id
-                    if len(most_recent_event_records) == 1
-                    else -1
-                )
-                record_timestamp = (
-                    datetime_from_timestamp(most_recent_event_records[0].timestamp).isoformat()
-                    if len(most_recent_event_records) == 1
-                    else None
-                )
+                most_recent_event_id = -1
+                record_timestamp = None
+                for event_type in event_types:
+                    most_recent_event_records = context.instance.fetch_run_status_changes(
+                        records_filter=event_type, limit=1
+                    ).records
+                    if (
+                        len(most_recent_event_records) == 1
+                        and most_recent_event_records[0].storage_id > most_recent_event_id
+                    ):
+                        most_recent_event_id = most_recent_event_records[0].storage_id
+                        record_timestamp = datetime_from_timestamp(
+                            most_recent_event_records[0].timestamp
+                        ).isoformat()
 
                 new_cursor = RunStatusSensorCursor(
                     record_id=most_recent_event_id, record_timestamp=record_timestamp
@@ -731,6 +749,10 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
             fetch_limit = _get_run_status_sensor_fetch_limit(
                 monitor_all_code_locations=cast("bool", monitor_all_code_locations)
             )
+            # When querying multiple event types, fetch up to fetch_limit per type so that after
+            # merging and sorting by storage_id we have enough events to fill fetch_limit slots.
+            # Without this, a type with many events could crowd out another type's events entirely.
+            per_type_fetch_limit = fetch_limit * len(event_types)
 
             # Fetch events after the cursor id
             # * we move the cursor forward to the latest visited event's id to avoid revisits
@@ -742,16 +764,21 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                 # record id (which is reindexed relative to some run sharded query).  When we update
                 # the cursor, we should omit the timestamp, since this API only queries the global
                 # index shard instead of the run shard.
-                event_records = context.instance.fetch_run_status_changes(
-                    records_filter=RunStatusChangeRecordsFilter(
-                        event_type=cast("RunStatusChangeEventType", event_type),
-                        after_timestamp=cast(
-                            "datetime", parse_time_string(sensor_cursor.update_timestamp)
-                        ).timestamp(),
-                    ),
-                    ascending=True,
-                    limit=fetch_limit,
-                ).records
+                all_event_records = []
+                for event_type in event_types:
+                    all_event_records.extend(
+                        context.instance.fetch_run_status_changes(
+                            records_filter=RunStatusChangeRecordsFilter(
+                                event_type=cast("RunStatusChangeEventType", event_type),
+                                after_timestamp=cast(
+                                    "datetime", parse_time_string(sensor_cursor.update_timestamp)
+                                ).timestamp(),
+                            ),
+                            ascending=True,
+                            limit=per_type_fetch_limit,
+                        ).records
+                    )
+                event_records = sorted(all_event_records, key=lambda r: r.storage_id)[:fetch_limit]
             elif (
                 context.instance.event_log_storage.supports_run_status_change_job_name_filter
                 and monitored_jobs
@@ -772,28 +799,38 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                         monitored_jobs,
                     )
                 )
-                event_records = context.instance.fetch_run_status_changes(
-                    records_filter=RunStatusChangeRecordsFilter(
-                        event_type=cast("RunStatusChangeEventType", event_type),
-                        after_storage_id=sensor_cursor.record_id,
-                        job_names=job_names,
-                    ),
-                    ascending=True,
-                    limit=fetch_limit,
-                ).records
+                all_event_records = []
+                for event_type in event_types:
+                    all_event_records.extend(
+                        context.instance.fetch_run_status_changes(
+                            records_filter=RunStatusChangeRecordsFilter(
+                                event_type=cast("RunStatusChangeEventType", event_type),
+                                after_storage_id=sensor_cursor.record_id,
+                                job_names=job_names,
+                            ),
+                            ascending=True,
+                            limit=per_type_fetch_limit,
+                        ).records
+                    )
+                event_records = sorted(all_event_records, key=lambda r: r.storage_id)[:fetch_limit]
             else:
                 # the cursor storage id is globally unique, either because the event log storage is
                 # not run sharded or because the cursor was set from an event returned from the
                 # index shard. When we update the cursor, we should omit the timestamp, since this
                 # API only queries the global index shard instead of the run shard.
-                event_records = context.instance.fetch_run_status_changes(
-                    records_filter=RunStatusChangeRecordsFilter(
-                        event_type=cast("RunStatusChangeEventType", event_type),
-                        after_storage_id=sensor_cursor.record_id,
-                    ),
-                    ascending=True,
-                    limit=fetch_limit,
-                ).records
+                all_event_records = []
+                for event_type in event_types:
+                    all_event_records.extend(
+                        context.instance.fetch_run_status_changes(
+                            records_filter=RunStatusChangeRecordsFilter(
+                                event_type=cast("RunStatusChangeEventType", event_type),
+                                after_storage_id=sensor_cursor.record_id,
+                            ),
+                            ascending=True,
+                            limit=per_type_fetch_limit,
+                        ).records
+                    )
+                event_records = sorted(all_event_records, key=lambda r: r.storage_id)[:fetch_limit]
 
             run_ids_to_fetch = list(
                 set(event_record.event_log_entry.run_id for event_record in event_records)
@@ -976,9 +1013,12 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                 # The sensor machinery would
                 # * report back to the original run if success
                 # * update cursor and job state
+                triggered_status = _EVENT_TYPE_TO_DAGSTER_RUN_STATUS.get(
+                    event_log_entry.dagster_event.event_type  # type: ignore[union-attr]
+                )
                 yield DagsterRunReaction(
                     dagster_run=dagster_run,
-                    run_status=run_status,
+                    run_status=triggered_status,
                     error=serializable_error,
                 )
 
@@ -1020,7 +1060,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
     def dagster_internal_init(  # type: ignore
         *,
         name: str,
-        run_status: DagsterRunStatus,
+        run_status: Union[DagsterRunStatus, Sequence[DagsterRunStatus]],
         run_status_sensor_fn: RunStatusSensorEvaluationFunction,
         minimum_interval_seconds: int | None,
         description: str | None,
@@ -1073,7 +1113,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
         # For now, we'll need to access the stored attributes
         return RunStatusSensorDefinition.dagster_internal_init(
             name=self.name,
-            run_status=self._run_status,
+            run_status=self._run_statuses,
             run_status_sensor_fn=self._run_status_sensor_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
@@ -1100,7 +1140,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
     additional_warn_text="Use `monitor_all_code_locations` instead.",
 )
 def run_status_sensor(
-    run_status: DagsterRunStatus,
+    run_status: Union[DagsterRunStatus, Sequence[DagsterRunStatus]],
     name: str | None = None,
     minimum_interval_seconds: int | None = None,
     description: str | None = None,
@@ -1143,8 +1183,8 @@ def run_status_sensor(
     Takes a :py:class:`~dagster.RunStatusSensorContext`.
 
     Args:
-        run_status (DagsterRunStatus): The status of run execution which will be
-            monitored by the sensor.
+        run_status (Union[DagsterRunStatus, Sequence[DagsterRunStatus]]): The status (or statuses)
+            of run execution which will be monitored by the sensor.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
