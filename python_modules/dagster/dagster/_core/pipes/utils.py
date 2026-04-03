@@ -727,6 +727,7 @@ def open_pipes_session(
     context_injector: PipesContextInjector,
     message_reader: PipesMessageReader,
     extras: PipesExtras | None = None,
+    expected_closed_messages: int = 1,
 ) -> Iterator[PipesSession]:
     """Context manager that opens and closes a pipes session.
 
@@ -780,7 +781,9 @@ def open_pipes_session(
         context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
 
     context_data = build_external_execution_context_data(context, extras)
-    message_handler = PipesMessageHandler(context, message_reader)
+    message_handler = PipesMessageHandler(
+        context, message_reader, expected_closed_messages=expected_closed_messages
+    )
     try:
         with (
             context_injector.inject_context(context_data) as ci_params,
