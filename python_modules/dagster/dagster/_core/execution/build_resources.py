@@ -11,8 +11,9 @@ from dagster._core.definitions.resource_definition import (
     Resources,
     ScopedResourcesBuilder,
 )
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.definitions.run_config import define_resource_dictionary_cls
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._core.execution.api import ephemeral_instance_if_missing
 from dagster._core.execution.context_creation_job import initialize_console_manager
 from dagster._core.execution.resources_init import resource_initialization_manager
@@ -122,14 +123,23 @@ def build_resources(
 def wrap_resources_for_execution(
     resources: Mapping[str, Any] | None = None,
 ) -> dict[str, ResourceDefinition]:
-    return (
-        {
-            resource_key: wrap_resource_for_execution(resource)
-            for resource_key, resource in resources.items()
-        }
-        if resources
-        else {}
-    )
+    if not resources:
+        return {}
+
+    resource_defs: dict[str, ResourceDefinition] = {}
+    for resource_key, resource in resources.items():
+        if resource is None:
+            if resource_key == DEFAULT_IO_MANAGER_KEY:
+                raise DagsterInvalidDefinitionError(
+                    "Resource 'io_manager' was set to None. Remove this key to use the default IO"
+                    " manager, or provide an IOManager/IOManagerDefinition."
+                )
+            raise DagsterInvalidDefinitionError(
+                f"Resource '{resource_key}' was set to None. Provide a resource definition or"
+                " instance, or remove this key if it is unused."
+            )
+        resource_defs[resource_key] = wrap_resource_for_execution(resource)
+    return resource_defs
 
 
 def wrap_resource_for_execution(resource: Any) -> ResourceDefinition:

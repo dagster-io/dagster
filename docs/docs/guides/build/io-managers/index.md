@@ -18,7 +18,7 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 ## Before you begin
 
-**I/O managers aren't required to use Dagster, nor are they the best option in all scenarios.** If you find yourself writing the same code at the start and end of each asset to load and store data, an I/O manager may be useful. For example:
+**I/O managers aren't required in your asset code, nor are they the best option in all scenarios.** Dagster still requires an I/O manager resource to be configured for asset outputs; if you don't provide one, the default filesystem I/O manager is used. If you find yourself writing the same code at the start and end of each asset to load and store data, an I/O manager may be useful. For example:
 
 - You have assets that are stored in the same location and follow a consistent set of rules to determine the storage path
 - You have assets that are stored differently in local, staging, and production environments
