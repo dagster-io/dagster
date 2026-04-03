@@ -23,6 +23,7 @@ In the following example, our external code is in a Python script that we invoke
   path="docs_snippets/docs_snippets/guides/external-systems/pipes/external_code_opaque.py"
   language="python"
   title="/usr/bin/external_code.py"
+  trimMain={false}
 />
 <CodeExample
   path="docs_snippets/docs_snippets/guides/external-systems/pipes/asset_wrapper.py"
@@ -40,6 +41,7 @@ Dagster Pipes also establishes a protocol for external code to optionally send b
   path="docs_snippets/docs_snippets/guides/external-systems/pipes/external_code_data_passing.py"
   language="python"
   title="/usr/bin/external_code.py"
+  trimMain={false}
 />
 
 The logs sent back using the `PipesContext` will be visible in the structured logs of that asset materialization's run, and the materialization metadata will be reflected in the asset history.
