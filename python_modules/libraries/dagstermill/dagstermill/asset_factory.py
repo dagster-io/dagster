@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import Any, cast
 
 import dagster._check as check
+import nbformat
 from dagster import (
     AssetIn,
     AssetKey,
@@ -25,13 +26,22 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.tags import normalize_tags
 
-from dagstermill.factory import _clean_path_for_windows, execute_notebook
+from dagstermill.factory import (
+    SERIALIZED_ARTIFACT_HTML,
+    SERIALIZED_ARTIFACT_NOTEBOOK,
+    SERIALIZED_ARTIFACT_TYPE_METADATA_KEY,
+    _clean_path_for_windows,
+    execute_notebook,
+    serialize_notebook_artifact,
+)
 
 
 def _make_dagstermill_asset_compute_fn(
     name: str,
     notebook_path: str,
     save_notebook_on_failure: bool,
+    output_notebook_format: str,
+    output_notebook_html_no_input: bool,
 ) -> Callable:
     def _t_fn(context: OpExecutionContext, **inputs) -> Iterable:
         check.param_invariant(
@@ -50,8 +60,18 @@ def _make_dagstermill_asset_compute_fn(
                 output_notebook_dir=output_notebook_dir,
             )
 
-            with open(executed_notebook_path, "rb") as fd:
-                yield Output(fd.read())
+            yield Output(
+                serialize_notebook_artifact(
+                    executed_notebook_path,
+                    output_notebook_format,
+                    html_no_input=output_notebook_html_no_input,
+                ),
+                metadata={SERIALIZED_ARTIFACT_TYPE_METADATA_KEY: output_notebook_format},
+            )
+
+            output_nb_node = nbformat.read(executed_notebook_path, as_version=4)
+            if "scrapbook" not in output_nb_node.metadata:
+                return
 
             # deferred import for perf
             import scrapbook
@@ -89,6 +109,8 @@ def define_dagstermill_asset(
     io_manager_key: str | None = None,
     retry_policy: RetryPolicy | None = None,
     save_notebook_on_failure: bool = False,
+    output_notebook_format: str = SERIALIZED_ARTIFACT_NOTEBOOK,
+    output_notebook_html_no_input: bool = False,
     non_argument_deps: set[AssetKey] | set[str] | None = None,
     asset_tags: Mapping[str, Any] | None = None,
 ) -> AssetsDefinition:
@@ -129,6 +151,10 @@ def define_dagstermill_asset(
         save_notebook_on_failure (bool): If True and the notebook fails during execution, the failed notebook will be
             written to the Dagster storage directory. The location of the file will be printed in the Dagster logs.
             Defaults to False.
+        output_notebook_format (str): Format to persist for the executed notebook artifact. Supported
+            values are "ipynb" and "html". Defaults to "ipynb".
+        output_notebook_html_no_input (bool): If True and output_notebook_format is "html", the
+            rendered HTML will exclude code cell inputs. Defaults to False.
         asset_tags (Optional[Dict[str, Any]]): A dictionary of tags to apply to the asset.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead. Set of asset keys that are
             upstream dependencies, but do not pass an input to the asset.
@@ -161,6 +187,16 @@ def define_dagstermill_asset(
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
     check.bool_param(save_notebook_on_failure, "save_notebook_on_failure")
+    output_notebook_format = check.str_param(output_notebook_format, "output_notebook_format")
+    check.bool_param(output_notebook_html_no_input, "output_notebook_html_no_input")
+    check.invariant(
+        output_notebook_format in {SERIALIZED_ARTIFACT_NOTEBOOK, SERIALIZED_ARTIFACT_HTML},
+        "output_notebook_format must be either 'ipynb' or 'html'.",
+    )
+    check.invariant(
+        not output_notebook_html_no_input or output_notebook_format == SERIALIZED_ARTIFACT_HTML,
+        "output_notebook_html_no_input can only be set when output_notebook_format is 'html'.",
+    )
 
     required_resource_keys = set(
         check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
@@ -223,5 +259,7 @@ def define_dagstermill_asset(
             name=name,
             notebook_path=notebook_path,
             save_notebook_on_failure=save_notebook_on_failure,
+            output_notebook_format=output_notebook_format,
+            output_notebook_html_no_input=output_notebook_html_no_input,
         )
     )

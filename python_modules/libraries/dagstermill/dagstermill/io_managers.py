@@ -19,7 +19,21 @@ from dagster._core.storage.io_manager import dagster_maintained_io_manager, io_m
 from dagster._utils import mkdir_p
 from pydantic import Field
 
-from dagstermill.factory import _clean_path_for_windows
+from dagstermill.factory import (
+    SERIALIZED_ARTIFACT_HTML,
+    SERIALIZED_ARTIFACT_NOTEBOOK,
+    SERIALIZED_ARTIFACT_TYPE_METADATA_KEY,
+    _clean_path_for_windows,
+)
+
+_SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE = {
+    SERIALIZED_ARTIFACT_NOTEBOOK: ".ipynb",
+    SERIALIZED_ARTIFACT_HTML: ".html",
+}
+_SERIALIZED_ARTIFACT_METADATA_LABEL_BY_TYPE = {
+    SERIALIZED_ARTIFACT_NOTEBOOK: "Executed notebook",
+    SERIALIZED_ARTIFACT_HTML: "Rendered notebook",
+}
 
 
 class OutputNotebookIOManager(IOManager):
@@ -40,29 +54,49 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         self.write_mode = "wb"
         self.read_mode = "rb"
 
-    def _get_path(self, context: OutputContext) -> str:
+    def _get_path(self, context: OutputContext, extension: str = ".ipynb") -> str:
         """Automatically construct filepath."""
         if context.has_asset_key:
             keys = context.get_asset_identifier()
         else:
             keys = context.get_run_scoped_output_identifier()
-        return str(Path(self.base_dir, *keys).with_suffix(".ipynb"))
+        return str(Path(self.base_dir, *keys).with_suffix(extension))
+
+    def _get_serialized_artifact_type(self, context: OutputContext) -> str:
+        serialized_artifact_type = context.output_metadata.get(
+            SERIALIZED_ARTIFACT_TYPE_METADATA_KEY, SERIALIZED_ARTIFACT_NOTEBOOK
+        )
+        if isinstance(serialized_artifact_type, MetadataValue):
+            serialized_artifact_type = serialized_artifact_type.value
+        check.invariant(
+            isinstance(serialized_artifact_type, str)
+            and serialized_artifact_type in _SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE,
+            f"Unexpected dagstermill artifact type '{serialized_artifact_type}'.",
+        )
+        return serialized_artifact_type
+
+    def _get_metadata(self, path: str, serialized_artifact_type: str) -> dict[str, MetadataValue]:
+        normalized_path = _clean_path_for_windows(path)
+        label = _SERIALIZED_ARTIFACT_METADATA_LABEL_BY_TYPE[serialized_artifact_type]
+        if serialized_artifact_type == SERIALIZED_ARTIFACT_NOTEBOOK:
+            return {label: MetadataValue.notebook(normalized_path)}
+
+        return {label: MetadataValue.path(normalized_path)}
 
     def handle_output(self, context: OutputContext, obj: bytes):
         """obj: bytes."""
         check.inst_param(context, "context", OutputContext)
 
         # the output notebook itself is stored at output_file_path
-        output_notebook_path = self._get_path(context)
+        serialized_artifact_type = self._get_serialized_artifact_type(context)
+        output_notebook_path = self._get_path(
+            context, _SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE[serialized_artifact_type]
+        )
         mkdir_p(os.path.dirname(output_notebook_path))
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
 
-        metadata = {
-            "Executed notebook": MetadataValue.notebook(
-                _clean_path_for_windows(output_notebook_path)
-            )
-        }
+        metadata = self._get_metadata(output_notebook_path, serialized_artifact_type)
 
         if context.has_asset_key:
             context.add_output_metadata(metadata)
@@ -80,6 +114,12 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         check.inst_param(context, "context", InputContext)
         # pass output notebook to downstream ops as File Object
         output_context = check.not_none(context.upstream_output)
+        for extension in _SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE.values():
+            candidate_path = self._get_path(output_context, extension)
+            if os.path.exists(candidate_path):
+                with open(candidate_path, self.read_mode) as file_obj:
+                    return file_obj.read()
+
         with open(self._get_path(output_context), self.read_mode) as file_obj:
             return file_obj.read()
 

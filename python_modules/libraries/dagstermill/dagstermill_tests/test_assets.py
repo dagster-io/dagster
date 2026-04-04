@@ -2,13 +2,16 @@ import os
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, cast
 
+import dagstermill
 import pytest
 from dagster import AssetKey, DagsterEventType
+from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.test_utils import instance_for_test
+from dagster._utils import file_relative_path
 from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_asset
 
@@ -114,6 +117,39 @@ def test_hello_world_resource_asset():
 
 
 @pytest.mark.notebook_test
+def test_html_output_asset():
+    with exec_for_test("hello_world_html_asset_job") as result:
+        assert result.success
+
+        materializations = [
+            x for x in result.all_events if x.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 1
+
+        output_path = get_path(materializations[0])
+        assert output_path
+        assert output_path.endswith(".html")
+        assert os.path.exists(output_path)
+
+        with open(output_path, encoding="utf8") as html_file:
+            html = html_file.read()
+
+        assert "hello" in html
+        assert 'print("hello")' not in html
+
+
+def test_html_no_input_requires_html_output():
+    with pytest.raises(CheckError, match="output_notebook_html_no_input"):
+        dagstermill.define_dagstermill_asset(
+            name="invalid_html_asset",
+            notebook_path=file_relative_path(
+                __file__, "../dagstermill/examples/notebooks/hello_world.ipynb"
+            ),
+            output_notebook_html_no_input=True,
+        )
+
+
+@pytest.mark.notebook_test
 def test_asset_tags() -> None:
     key = cast("AssetsDefinition", custom_io_mgr_key_asset).key
     assert cast("AssetsDefinition", custom_io_mgr_key_asset).tags_by_key[key] == {"foo": "bar"}
@@ -144,6 +180,37 @@ def test_error_notebook_saved_asset():
                 storage_dir = instance.storage_directory()
                 files = os.listdir(storage_dir)
                 notebook_found = (False,)
+                for f in files:
+                    if "-out.ipynb" in f:
+                        notebook_found = True
+                outer_result = result
+
+                assert notebook_found
+
+        finally:
+            if outer_result:
+                cleanup_result_notebook(outer_result)
+
+
+@pytest.mark.notebook_test
+def test_error_notebook_saved_html_asset():
+    result = None
+    recon_job = ReconstructableJob.for_module(
+        "dagstermill.examples.repository", "error_notebook_html_asset_job"
+    )
+
+    with instance_for_test() as instance:
+        outer_result = None
+        try:
+            with execute_job(
+                recon_job,
+                run_config={},
+                instance=instance,
+                raise_on_error=False,
+            ) as result:
+                storage_dir = instance.storage_directory()
+                files = os.listdir(storage_dir)
+                notebook_found = False
                 for f in files:
                     if "-out.ipynb" in f:
                         notebook_found = True
