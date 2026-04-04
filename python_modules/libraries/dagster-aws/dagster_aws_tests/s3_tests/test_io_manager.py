@@ -26,7 +26,11 @@ from dagster._core.definitions.partitions.definition import StaticPartitionsDefi
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
-from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
+from dagster_aws.s3.io_manager import (
+    PickledObjectS3IOManager,
+    S3PickleIOManager,
+    s3_pickle_io_manager,
+)
 from dagster_aws.s3.utils import construct_s3_client
 
 
@@ -112,6 +116,40 @@ def define_multiple_output_job():
         return_two_outputs()
 
     return output_prefix_execution_plan
+
+
+@pytest.mark.parametrize("s3_prefix", [None, ""])
+def test_pickled_object_s3_io_manager_none_and_empty_prefix(mock_s3_bucket, s3_prefix):
+    """Regression test for https://github.com/dagster-io/dagster/issues/33490.
+
+    PickledObjectS3IOManager accepts s3_prefix=None in its signature but previously passed None
+    directly to boto3's list_objects(Prefix=None), which raises ParamValidationError.
+
+    Both None and "" should result in no prefix being applied (base_path=None).
+    """
+    import boto3
+
+    s3_client = boto3.client("s3", region_name="us-east-1")
+    # Should not raise botocore.exceptions.ParamValidationError
+    io_manager = PickledObjectS3IOManager(
+        s3_bucket=mock_s3_bucket.name,
+        s3_session=s3_client,
+        s3_prefix=s3_prefix,
+    )
+    assert io_manager.bucket == mock_s3_bucket.name
+
+
+def test_pickled_object_s3_io_manager_with_valid_prefix(mock_s3_bucket):
+    """Verify PickledObjectS3IOManager correctly stores a valid prefix."""
+    import boto3
+
+    s3_client = boto3.client("s3", region_name="us-east-1")
+    io_manager = PickledObjectS3IOManager(
+        s3_bucket=mock_s3_bucket.name,
+        s3_session=s3_client,
+        s3_prefix="my-prefix",
+    )
+    assert io_manager.bucket == mock_s3_bucket.name
 
 
 def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
