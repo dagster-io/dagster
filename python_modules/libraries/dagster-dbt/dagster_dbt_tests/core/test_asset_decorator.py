@@ -1185,7 +1185,7 @@ def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: dict[str, Any], selec
     DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.11.0"),
     reason="dbt udf support is only available in `dbt-core>=1.11.0`",
 )
-@pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
+@pytest.mark.parametrize("select", ["fqn:*", "tag:test", "resource_type:function"])
 def test_dbt_with_functions(test_dbt_functions_manifest: dict[str, Any], select: str) -> None:
     @dbt_assets(
         manifest=test_dbt_functions_manifest,
