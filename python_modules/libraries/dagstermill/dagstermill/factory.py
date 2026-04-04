@@ -41,6 +41,10 @@ from dagstermill.engine import DagstermillEngine
 from dagstermill.errors import DagstermillError
 from dagstermill.translator import DagsterTranslator
 
+SERIALIZED_ARTIFACT_TYPE_METADATA_KEY = "dagstermill/serialized_artifact_type"
+SERIALIZED_ARTIFACT_NOTEBOOK = "ipynb"
+SERIALIZED_ARTIFACT_HTML = "html"
+
 
 def _clean_path_for_windows(notebook_path: str) -> str:
     """In windows, the notebook can't render in the Dagster UI unless the C: prefix is removed.
@@ -162,6 +166,37 @@ def get_papermill_parameters(
     parameters["__dm_input_names"] = list(inputs.keys())
 
     return parameters
+
+
+@beta
+def serialize_notebook_artifact(
+    executed_notebook_path: str,
+    serialized_artifact_type: str,
+    html_no_input: bool = False,
+    notebook_node: "nbformat.NotebookNode | None" = None,
+) -> bytes:
+    serialized_artifact_type = check.str_param(serialized_artifact_type, "serialized_artifact_type")
+    check.bool_param(html_no_input, "html_no_input")
+    check.invariant(
+        serialized_artifact_type in {SERIALIZED_ARTIFACT_NOTEBOOK, SERIALIZED_ARTIFACT_HTML},
+        f"Unexpected serialized artifact type '{serialized_artifact_type}'.",
+    )
+
+    if serialized_artifact_type == SERIALIZED_ARTIFACT_NOTEBOOK:
+        with open(executed_notebook_path, "rb") as notebook_file:
+            return notebook_file.read()
+
+    from nbconvert import HTMLExporter
+
+    if notebook_node is None:
+        notebook_node = nbformat.read(executed_notebook_path, as_version=4)
+    html_exporter = HTMLExporter()
+    if html_no_input:
+        html_exporter.exclude_input = True
+        html_exporter.exclude_input_prompt = True
+
+    html, _resources = html_exporter.from_notebook_node(notebook_node)
+    return html.encode("utf8")
 
 
 @beta
