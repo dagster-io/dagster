@@ -120,8 +120,10 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
                 with open(candidate_path, self.read_mode) as file_obj:
                     return file_obj.read()
 
-        with open(self._get_path(output_context), self.read_mode) as file_obj:
-            return file_obj.read()
+        raise FileNotFoundError(
+            f"No output notebook artifact found for context {output_context}. "
+            f"Checked extensions: {list(_SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE.values())}"
+        )
 
 
 @beta
