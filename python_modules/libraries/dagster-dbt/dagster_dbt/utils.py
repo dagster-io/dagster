@@ -43,8 +43,8 @@ def select_unique_ids(
     if manifest_version.major >= 2 and project is not None:
         return _select_unique_ids_from_cli(select, exclude, selector, project)
     else:
-        # in theory, as long as dbt-core is a dependency of dagster-dbt, this can't happen, but adding
-        # this for now to be safe
+        # dbt-core is optional in dagster-dbt. dbt Cloud users without an adapter package
+        # (which would pull dbt-core transitively) must install dagster-dbt[core] explicitly.
         check.failed(
             "dbt-core is not installed and no `project` was passed to `select_unique_ids`. "
             "This can happen if you are using the dbt Cloud integration without the dbt-core package installed."
