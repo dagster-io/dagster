@@ -25,6 +25,7 @@ from dagster._core.definitions.partitions.utils import (
     TimeWindow,
     has_one_dimension_time_window_partitioning,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
@@ -182,7 +183,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         resources_dict: Mapping[str, Any],
         resources_config: Mapping[str, Any],
         instance: DagsterInstance | None,
-        partition_key: str | None,
+        partition_key: str | MultiPartitionKey | None,
         partition_key_range: PartitionKeyRange | None,
         mapping_key: str | None,
         run_tags: Mapping[str, str],
@@ -512,7 +513,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         return self._partition_key is not None
 
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         if self._partition_key:
             return self._partition_key
         check.failed("Tried to access partition_key for a non-partitioned run")
@@ -547,7 +548,9 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         else:
             check.failed("Tried to access partition_key range for a non-partitioned run")
 
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+    def asset_partition_key_for_output(
+        self, output_name: str = "result"
+    ) -> str | MultiPartitionKey:
         return self.partition_key
 
     def has_tag(self, key: str) -> bool:
@@ -942,7 +945,7 @@ def build_op_context(
     resources_config: Mapping[str, Any] | None = None,
     instance: DagsterInstance | None = None,
     config: Any = None,
-    partition_key: str | None = None,
+    partition_key: str | MultiPartitionKey | None = None,
     partition_key_range: PartitionKeyRange | None = None,
     mapping_key: str | None = None,
     run_tags: Mapping[str, str] | None = None,
@@ -964,7 +967,8 @@ def build_op_context(
             Defaults to DagsterInstance.ephemeral().
         mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic
             output. Can be accessed using ``context.get_mapping_key()``.
-        partition_key (Optional[str]): String value representing partition key to execute with.
+        partition_key (str | MultiPartitionKey | None): String value representing
+            partition key to execute with.
         partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
         run_tags: Optional[Mapping[str, str]]: The tags for the executing run.
         event_loop: Optional[AbstractEventLoop]: An event loop for handling resources
@@ -993,7 +997,9 @@ def build_op_context(
         ),
         op_config=op_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
-        partition_key=check.opt_str_param(partition_key, "partition_key"),
+        partition_key=check.opt_inst_param(
+            partition_key, "partition_key", (str, MultiPartitionKey)
+        ),
         partition_key_range=check.opt_inst_param(
             partition_key_range, "partition_key_range", PartitionKeyRange
         ),
@@ -1042,7 +1048,7 @@ def build_asset_context(
     resources_config: Mapping[str, Any] | None = None,
     asset_config: Mapping[str, Any] | None = None,
     instance: DagsterInstance | None = None,
-    partition_key: str | None = None,
+    partition_key: str | MultiPartitionKey | None = None,
     partition_key_range: PartitionKeyRange | None = None,
     run_tags: Mapping[str, str] | None = None,
     event_loop: AbstractEventLoop | None = None,
@@ -1061,7 +1067,8 @@ def build_asset_context(
         asset_config (Optional[Mapping[str, Any]]): The config to provide to the asset.
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
-        partition_key (Optional[str]): String value representing partition key to execute with.
+        partition_key (str | MultiPartitionKey | None): String value representing
+            partition key to execute with.
         partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
         run_tags: Optional[Mapping[str, str]]: The tags for the executing run.
         event_loop: Optional[AbstractEventLoop]: An event loop for handling resources

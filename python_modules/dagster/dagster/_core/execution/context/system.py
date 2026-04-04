@@ -33,6 +33,7 @@ from dagster._core.definitions.partitions.utils import (
     has_one_dimension_time_window_partitioning,
     infer_partition_mapping,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -70,7 +71,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
-    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -977,7 +977,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return None
 
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         from dagster._core.definitions.partitions.utils import get_multipartition_key_from_tags
 
         if not self.has_partitions:
@@ -1008,8 +1008,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def multi_partition_key(self) -> "MultiPartitionKey":
-        from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
-
         partition_key = self.partition_key
         if not isinstance(partition_key, MultiPartitionKey):
             raise DagsterInvariantViolationError(

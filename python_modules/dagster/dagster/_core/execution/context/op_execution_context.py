@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Any, cast  # noqa: UP035
+from typing import AbstractSet, Any, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
@@ -26,6 +26,7 @@ from dagster._core.definitions.partitions.context import partition_loading_conte
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.utils import TimeWindow
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -37,9 +38,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 
 
 class AbstractComputeExecutionContext(ABC):
@@ -274,7 +272,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> str | MultiPartitionKey:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run. Or if the current run is operating
@@ -311,22 +309,18 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         Examples:
             .. code-block:: python
 
-                partitions_def = MultiPartitionsDefinition(
-                    {
-                        "date": DailyPartitionsDefinition("2023-08-20"),
-                        "color": StaticPartitionsDefinition(["red", "blue"]),
-                    }
-                )
 
-                @asset(partitions_def=partitions_def)
+                @asset(partitions_def=MultiPartitionsDefinition(...))
                 def my_asset(context: AssetExecutionContext):
-                    key = context.multi_partition_key
-                    context.log.info(key.keys_by_dimension)
-
-                # materializing the 2023-08-21|red partition of this asset will log:
-                #   {"date": "2023-08-21", "color": "red"}
+                    context.log.info(context.multi_partition_key.keys_by_dimension)
         """
-        return self._step_execution_context.multi_partition_key
+        partition_key = self.partition_key
+        if not isinstance(partition_key, MultiPartitionKey):
+            raise DagsterInvariantViolationError(
+                "Cannot access multi_partition_key for a run that is not partitioned with a"
+                " MultiPartitionsDefinition."
+            )
+        return partition_key
 
     @public
     @property
@@ -675,7 +669,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key` instead.")
     @public
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+    def asset_partition_key_for_output(
+        self, output_name: str = "result"
+    ) -> str | MultiPartitionKey:
         """Returns the asset partition key for the given output.
 
         Args:
