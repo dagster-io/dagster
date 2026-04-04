@@ -114,16 +114,10 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         check.inst_param(context, "context", InputContext)
         # pass output notebook to downstream ops as File Object
         output_context = check.not_none(context.upstream_output)
-        for extension in _SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE.values():
-            candidate_path = self._get_path(output_context, extension)
-            if os.path.exists(candidate_path):
-                with open(candidate_path, self.read_mode) as file_obj:
-                    return file_obj.read()
-
-        raise FileNotFoundError(
-            f"No output notebook artifact found for context {output_context}. "
-            f"Checked extensions: {list(_SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE.values())}"
-        )
+        serialized_artifact_type = self._get_serialized_artifact_type(output_context)
+        extension = _SERIALIZED_ARTIFACT_EXTENSION_BY_TYPE[serialized_artifact_type]
+        with open(self._get_path(output_context, extension), self.read_mode) as file_obj:
+            return file_obj.read()
 
 
 @beta

@@ -60,16 +60,18 @@ def _make_dagstermill_asset_compute_fn(
                 output_notebook_dir=output_notebook_dir,
             )
 
+            output_nb_node = nbformat.read(executed_notebook_path, as_version=4)
+
             yield Output(
                 serialize_notebook_artifact(
                     executed_notebook_path,
                     output_notebook_format,
                     html_no_input=output_notebook_html_no_input,
+                    notebook_node=output_nb_node,
                 ),
                 metadata={SERIALIZED_ARTIFACT_TYPE_METADATA_KEY: output_notebook_format},
             )
 
-            output_nb_node = nbformat.read(executed_notebook_path, as_version=4)
             if "scrapbook" not in output_nb_node.metadata:
                 return
 

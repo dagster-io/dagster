@@ -173,6 +173,7 @@ def serialize_notebook_artifact(
     executed_notebook_path: str,
     serialized_artifact_type: str,
     html_no_input: bool = False,
+    notebook_node: "nbformat.NotebookNode | None" = None,
 ) -> bytes:
     serialized_artifact_type = check.str_param(serialized_artifact_type, "serialized_artifact_type")
     check.bool_param(html_no_input, "html_no_input")
@@ -187,13 +188,14 @@ def serialize_notebook_artifact(
 
     from nbconvert import HTMLExporter
 
-    notebook = nbformat.read(executed_notebook_path, as_version=4)
+    if notebook_node is None:
+        notebook_node = nbformat.read(executed_notebook_path, as_version=4)
     html_exporter = HTMLExporter()
     if html_no_input:
         html_exporter.exclude_input = True
         html_exporter.exclude_input_prompt = True
 
-    html, _resources = html_exporter.from_notebook_node(notebook)
+    html, _resources = html_exporter.from_notebook_node(notebook_node)
     return html.encode("utf8")
 
 
