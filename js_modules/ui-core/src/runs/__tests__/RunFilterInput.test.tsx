@@ -20,6 +20,8 @@ import {
   RUN_TAG_KEYS_QUERY,
   RunFilterToken,
   RunsFilterInputProps,
+  runsFilterForSearchTokens,
+  splitTagString,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   useRunsFilterInput,
@@ -115,6 +117,31 @@ describe('useTagDataFilterValues', () => {
   });
 });
 
+describe('splitTagString', () => {
+  it('should split on the first = only', () => {
+    expect(splitTagString('foo=bar')).toEqual(['foo', 'bar']);
+  });
+
+  it('should preserve = signs in the value', () => {
+    expect(splitTagString('dagster/partition=foo=bar/baz=qux')).toEqual([
+      'dagster/partition',
+      'foo=bar/baz=qux',
+    ]);
+  });
+
+  it('should return empty value when no = is present', () => {
+    expect(splitTagString('just-a-key')).toEqual(['just-a-key', '']);
+  });
+
+  it('should handle = as the last character', () => {
+    expect(splitTagString('key=')).toEqual(['key', '']);
+  });
+
+  it('should handle = as the first character', () => {
+    expect(splitTagString('=value')).toEqual(['', 'value']);
+  });
+});
+
 describe('tagValueToFilterObject', () => {
   it('should return an object with the correct properties', () => {
     const result = tagValueToFilterObject('tag1=value1');
@@ -123,6 +150,66 @@ describe('tagValueToFilterObject', () => {
       type: 'tag1',
       value: 'value1',
     });
+  });
+
+  it('should handle tag values containing = signs', () => {
+    const tagStr = 'dagster/partition=foo=bar/baz=qux';
+    const result = tagValueToFilterObject(tagStr);
+    expect(result).toEqual({
+      key: tagStr,
+      type: DagsterTag.Partition,
+      value: 'foo=bar/baz=qux',
+    });
+  });
+});
+
+describe('runsFilterForSearchTokens', () => {
+  it('should correctly parse tag values containing = signs', () => {
+    const tokens = [
+      {
+        token: 'tag' as const,
+        value: 'dagster/partition=foo=bar/baz=qux',
+      },
+    ];
+    const result = runsFilterForSearchTokens(tokens);
+    expect(result.tags).toEqual([
+      {
+        key: DagsterTag.Partition,
+        value: 'foo=bar/baz=qux',
+      },
+    ]);
+  });
+
+  it('should correctly parse multiple tags with = signs in their values', () => {
+    const tokens = [
+      {
+        token: 'tag' as const,
+        value: 'dagster/partition=foo=bar/baz=qux',
+      },
+      {
+        token: 'tag' as const,
+        value: 'alpha=bravo=charlie',
+      },
+      {
+        token: 'tag' as const,
+        value: 'simple_tag=simple_value',
+      },
+    ];
+    const result = runsFilterForSearchTokens(tokens);
+    expect(result.tags).toEqual([
+      {
+        key: DagsterTag.Partition,
+        value: 'foo=bar/baz=qux',
+      },
+      {
+        key: 'alpha',
+        value: 'bravo=charlie',
+      },
+      {
+        key: 'simple_tag',
+        value: 'simple_value',
+      },
+    ]);
   });
 });
 
