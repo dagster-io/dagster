@@ -71,7 +71,7 @@
   },
   {
     "source": "/_apidocs/external-assets-rest",
-    "destination": "/api/rest-apis/external-assets-rest-api",
+    "destination": "/api/rest-api",
     "permanent": true
   },
   {
@@ -81,7 +81,7 @@
   },
   {
     "source": "/apidocs/external-assets-rest",
-    "destination": "/api/rest-apis/external-assets-rest-api",
+    "destination": "/api/rest-api",
     "permanent": true
   },
   {
@@ -756,7 +756,12 @@
   },
   {
     "source": "/api/python-api/external-assets-rest-api",
-    "destination": "/api/rest-apis/external-assets-rest-api",
+    "destination": "/api/rest-api",
+    "permanent": true
+  },
+  {
+    "source": "/api/rest-apis/external-assets-rest-api",
+    "destination": "/api/rest-api",
     "permanent": true
   },
   {
@@ -845,8 +850,8 @@
     "permanent": true
   },
   {
-    "source": "/api/api-lifecycle",
-    "destination": "/api/api-lifecycle/api-lifecycle-stages",
+    "source": "/api/api-lifecycle/api-lifecycle-stages",
+    "destination": "/api/api-lifecycle",
     "permanent": true
   },
   {

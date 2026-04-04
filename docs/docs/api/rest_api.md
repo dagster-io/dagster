@@ -1,6 +1,8 @@
 ---
 description: "Dagster's external assets REST API allows you to report updates for external assets back to Dagster."
-title: External assets REST API
+title: External assets REST API reference
+sidebar_label: External assets REST API
+sidebar_position: 40
 ---
 
 # External assets REST API reference

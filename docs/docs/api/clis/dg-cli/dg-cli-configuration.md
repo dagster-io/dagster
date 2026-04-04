@@ -1,6 +1,7 @@
 ---
 description: Install the dg CLI and configure it from both configuration files and the command line.
 title: Installing and configuring the dg CLI
+sidebar_position: 4000
 ---
 
 ## Installation

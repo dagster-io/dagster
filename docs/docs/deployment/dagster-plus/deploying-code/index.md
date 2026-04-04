@@ -1,6 +1,6 @@
 ---
 title: Deploying code to Dagster+
-sidebar_position: 600
+sidebar_position: 700
 description: When deploying code to Dagster+, you can create persistent, fully-featured full deployments, set up CI/CD to continuously deploy from a Git repo, and configure branch deployments to create ephemeral preview deployments of your Dagster code in Git branches.
 tags: [dagster-plus-feature]
 canonicalUrl: '/deployment/dagster-plus/deploying-code'
