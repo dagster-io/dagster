@@ -1,14 +1,6 @@
 import pytest
 import responses
-from dagster import (
-    AssetKey,
-    AutoMaterializePolicy,
-    LegacyFreshnessPolicy,
-    TableColumn,
-    TableSchema,
-    asset,
-    build_init_resource_context,
-)
+from dagster import AssetKey, TableColumn, TableSchema, asset, build_init_resource_context
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
@@ -20,8 +12,7 @@ from dagster_airbyte_tests.utils import get_sample_connection_json, get_sample_j
 
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
-@pytest.mark.parametrize("auto_materialize_policy", [None, AutoMaterializePolicy.lazy()])
-def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
+def test_assets(schema_prefix, monkeypatch):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -39,16 +30,11 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
         connection_id=connection_id,
         destination_tables=destination_tables,
         asset_key_prefix=["some", "prefix"],
-        auto_materialize_policy=auto_materialize_policy,
     )
     ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
     assert len(ab_assets[0].op.output_defs) == 2
-
-    assert all(
-        spec.auto_materialize_policy == auto_materialize_policy for spec in ab_assets[0].specs
-    )
 
     responses.add(
         method=responses.POST,
@@ -108,13 +94,7 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
 @pytest.mark.parametrize("source_asset", [None, "my_source_asset_key"])
-@pytest.mark.parametrize(
-    "legacy_freshness_policy", [None, LegacyFreshnessPolicy(maximum_lag_minutes=60)]
-)
-@pytest.mark.parametrize("auto_materialize_policy", [None, AutoMaterializePolicy.lazy()])
-def test_assets_with_normalization(
-    schema_prefix, source_asset, legacy_freshness_policy, auto_materialize_policy
-):
+def test_assets_with_normalization(schema_prefix, source_asset):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -136,23 +116,13 @@ def test_assets_with_normalization(
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
         deps=[AssetKey(source_asset)] if source_asset else None,
-        legacy_freshness_policy=legacy_freshness_policy,
-        auto_materialize_policy=auto_materialize_policy,
     )
     ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
-
-    assert all(
-        spec.legacy_freshness_policy == legacy_freshness_policy for spec in ab_assets[0].specs
-    )
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables} | {
         AssetKey(["some", "prefix", t]) for t in bar_normalization_tables
     }
     assert len(ab_assets[0].op.output_defs) == 4
-
-    assert all(
-        spec.auto_materialize_policy == auto_materialize_policy for spec in ab_assets[0].specs
-    )
 
     responses.add(
         method=responses.POST,

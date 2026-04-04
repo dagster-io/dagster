@@ -55,7 +55,7 @@ If you encounter issues with the scanner APIs, you may disable them using `load_
 
 ## Customize asset definition metadata for Power BI assets
 
-By default, Dagster will generate asset specs for each Power BI asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="DagsterPowerBITranslator" /> subclass to the <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Power BI asset type.
+By default, Dagster will generate asset specs for each Power BI asset based on its type, and populate default metadata. You can further customize asset properties by passing an instance of a custom <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="DagsterPowerBITranslator" /> subclass to the <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Power BI asset type.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/power-bi/customize-power-bi-asset-defs.py" />
 

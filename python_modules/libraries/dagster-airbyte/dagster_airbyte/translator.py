@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from dagster._annotations import beta, deprecated
+from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
@@ -22,17 +22,6 @@ class AirbyteJobStatusType(str, Enum):
     FAILED = "failed"
     ERROR = "error"
     INCOMPLETE = "incomplete"
-
-
-@deprecated(breaking_version="1.10", additional_warn_text="Use `AirbyteJobStatusType` instead.")
-class AirbyteState:
-    RUNNING = AirbyteJobStatusType.RUNNING
-    SUCCEEDED = AirbyteJobStatusType.SUCCEEDED
-    CANCELLED = AirbyteJobStatusType.CANCELLED
-    PENDING = AirbyteJobStatusType.PENDING
-    FAILED = AirbyteJobStatusType.FAILED
-    ERROR = AirbyteJobStatusType.ERROR
-    INCOMPLETE = AirbyteJobStatusType.INCOMPLETE
 
 
 @record

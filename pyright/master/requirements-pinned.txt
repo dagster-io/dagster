@@ -1,10 +1,10 @@
-acryl-datahub==1.4.0.9
+acryl-datahub==1.5.0.2
 adbc-driver-manager==1.10.0
 adbc-driver-snowflake==1.10.0
 agate==1.9.1
 aiofile==3.9.0
 aiohappyeyeballs==2.6.1
-aiohttp==3.13.3
+aiohttp==3.13.5
 aiohttp-jinja2==1.6
 aiohttp-retry==2.9.1
 aioresponses==0.7.8
@@ -16,25 +16,26 @@ altair==4.2.2
 amqp==5.3.1
 annotated-doc==0.0.4
 annotated-types==0.7.0
-anthropic==0.86.0
+anthropic==0.87.0
 antlr4-python3-runtime==4.13.2
 anyio==4.13.0
 apache-airflow==2.11.2
-apache-airflow-providers-common-compat==1.14.1
-apache-airflow-providers-common-io==1.7.1
-apache-airflow-providers-common-sql==1.33.0
+apache-airflow-providers-common-compat==1.14.2
+apache-airflow-providers-common-io==1.7.2
+apache-airflow-providers-common-sql==1.34.0
 apache-airflow-providers-fab==1.5.4
-apache-airflow-providers-ftp==3.14.1
-apache-airflow-providers-http==6.0.0
-apache-airflow-providers-imap==3.11.0
-apache-airflow-providers-smtp==2.4.3
-apache-airflow-providers-sqlite==4.3.0
+apache-airflow-providers-ftp==3.14.2
+apache-airflow-providers-http==6.0.1
+apache-airflow-providers-imap==3.11.1
+apache-airflow-providers-smtp==2.4.4
+apache-airflow-providers-sqlite==4.3.1
 apeye==1.4.1
 apeye-core==1.1.5
 apispec==6.10.0
 appdirs==1.4.4
 appnope==0.1.4
 argcomplete==3.6.3
+argh==0.31.3
 argon2-cffi==25.1.0
 argon2-cffi-bindings==25.1.0
 arro3-core==0.8.0
@@ -45,9 +46,11 @@ asn1crypto==1.5.1
 -e examples/assets_pandas_pyspark
 asttokens==3.0.1
 async-lru==2.3.0
+asyncer==0.0.8
+atproto==0.0.65
 attrs==26.1.0
 authlib==1.6.9
-autodocsumm==0.2.6
+autodocsumm==0.2.15
 autoflake==2.3.3
 -e python_modules/automation
 avro==1.12.1
@@ -73,11 +76,12 @@ billiard==4.2.4
 bleach==6.3.0
 blinker==1.9.0
 bokeh==3.9.0
-boto3==1.42.74
-boto3-stubs-lite==1.42.74
-botocore==1.42.74
+boto3==1.42.80
+boto3-stubs-lite==1.42.80
+botocore==1.42.80
 botocore-stubs==1.42.41
-build==1.4.0
+bs4==0.0.2
+build==1.4.2
 cachecontrol==0.14.4
 cached-property==2.0.1
 cachelib==0.13.0
@@ -85,7 +89,8 @@ cachetools==7.0.5
 caio==0.9.25
 callee==0.3.1
 cattrs==23.1.2
-celery==5.6.2
+cbor2==5.9.0
+celery==5.6.3
 certifi==2025.1.31
 cffi==1.17.1
 cfn-lint==1.41.0
@@ -115,6 +120,7 @@ coverage==7.13.5
 cron-descriptor==2.0.8
 croniter==6.2.2
 cryptography==46.0.0
+cssselect==1.4.0
 cssutils==2.11.1
 cycler==0.12.1
 daff==1.4.2
@@ -150,6 +156,7 @@ dagster-chroma==0.0.4
 -e python_modules/libraries/dagster-duckdb-polars
 -e python_modules/libraries/dagster-duckdb-pyspark
 -e python_modules/libraries/dagster-embedded-elt
+dagster-evidence==0.2.0
 -e python_modules/libraries/dagster-fivetran
 -e python_modules/libraries/dagster-gcp
 -e python_modules/libraries/dagster-gcp-pandas
@@ -164,6 +171,7 @@ dagster-gemini==0.0.4
 -e python_modules/libraries/dagster-looker
 -e python_modules/libraries/dagster-managed-elements
 -e python_modules/libraries/dagster-mlflow
+dagster-modal==0.0.4
 -e python_modules/libraries/dagster-msteams
 -e python_modules/libraries/dagster-mysql
 -e python_modules/libraries/dagster-openai
@@ -206,7 +214,7 @@ databricks-sdk==0.60.0
 dataclasses-json==0.6.7
 datadog==0.52.1
 dataproperty==1.1.0
-db-dtypes==1.5.0
+db-dtypes==1.5.1
 dbt-adapters==1.16.3
 dbt-common==1.27.1
 dbt-core==1.10.8
@@ -219,7 +227,7 @@ debugpy==1.8.20
 decopatch==1.4.10
 decorator==5.2.1
 deepdiff==7.0.1
-deepeval==3.9.2
+deepeval==3.9.5
 defusedxml==0.7.1
 deltalake==1.5.0
 deprecated==1.3.1
@@ -227,6 +235,7 @@ deprecation==2.1.0
 -e examples/development_to_production
 dict2css==0.3.0.post1
 dill==0.4.1
+diskcache==5.6.3
 distlib==0.4.0
 distributed==2026.3.0
 distro==1.9.0
@@ -238,18 +247,23 @@ docker-image-py==0.1.13
 docstring-parser==0.17.0
 docutils==0.22.4
 domdf-python-tools==3.10.0
+dspy==3.1.3
 duckdb==1.5.1
 durationpy==0.10
 email-validator==2.3.0
 entrypoints==0.4
+-e examples/docs_projects/project_etl_tutorial
 execnet==2.1.2
 executing==2.2.1
 expandvars==1.1.2
 faiss-cpu==1.8.0
-fastapi==0.135.2
+fastapi==0.135.3
 fastavro==1.12.1
 fastjsonschema==2.21.2
+fastuuid==0.14.0
 -e examples/feature_graph_backed_assets
+feedparser==6.0.12
+ffmpeg-python==0.2.0
 filelock==3.25.2
 flaky==3.8.1
 flask==2.3.3
@@ -270,40 +284,43 @@ freezegun==1.5.5
 frozenlist==1.8.0
 fs==2.4.16
 fsspec==2024.3.0
+future==1.0.0
 gcp-storage-emulator==2024.8.3
+gepa==0.0.26
 gitdb==4.0.12
 github3-py==4.0.1
 gitpython==3.1.46
 giturlparse==0.14.0
 google-ai-generativelanguage==0.6.15
-google-api-core==2.30.0
+google-api-core==2.30.1
 google-api-python-client==2.193.0
 google-auth==2.49.1
-google-auth-httplib2==0.3.0
-google-auth-oauthlib==1.3.0
-google-cloud-bigquery==3.40.1
-google-cloud-core==2.5.0
-google-cloud-dataproc==5.25.0
+google-auth-httplib2==0.3.1
+google-auth-oauthlib==1.3.1
+google-cloud-bigquery==3.41.0
+google-cloud-core==2.5.1
+google-cloud-dataproc==5.26.0
 google-cloud-storage==3.10.1
 google-crc32c==1.8.0
 google-generativeai==0.8.6
 google-re2==1.1.20251105
-google-resumable-media==2.8.0
-googleapis-common-protos==1.73.0
+google-resumable-media==2.8.2
+googleapis-common-protos==1.73.1
 gql==4.0.0
 graphene==3.4.3
 graphql-core==3.2.8
 graphql-relay==3.2.0
 great-expectations==0.18.8
-grpc-google-iam-v1==0.14.3
-grpcio==1.78.0
+grpc-google-iam-v1==0.14.4
+grpcio==1.80.0
 grpcio-health-checking==1.71.2
 grpcio-status==1.71.2
 grpcio-tools==1.71.2
-gunicorn==25.1.0
+grpclib==0.4.9
+gunicorn==25.3.0
 h11==0.16.0
 h2==4.3.0
-hf-xet==1.4.2
+hf-xet==1.4.3
 hpack==4.1.0
 html5lib==1.1
 httpcore==1.0.9
@@ -312,7 +329,7 @@ httptools==0.7.1
 httpx==0.28.1
 httpx-sse==0.4.3
 huey==2.6.0
-huggingface-hub==1.7.2
+huggingface-hub==1.8.0
 humanfriendly==10.0
 humanize==4.15.0
 hyperframe==6.1.0
@@ -344,7 +361,8 @@ jiter==0.13.0
 jmespath==1.1.0
 joblib==1.5.3
 joserfc==1.6.3
-json5==0.13.0
+json-repair==0.58.7
+json5==0.14.0
 jsonpatch==1.33
 jsonpath-ng==1.7.0
 jsonpointer==3.1.1
@@ -362,27 +380,32 @@ jupyterlab==4.5.6
 jupyterlab-pygments==0.3.0
 jupyterlab-server==2.28.0
 jupyterlab-widgets==3.0.16
+kafka-python==2.3.0
 keyring==25.7.0
 -e python_modules/libraries/dagster-airlift/kitchen-sink
 kiwisolver==1.5.0
 kombu==5.6.2
-kopf==1.44.4
+kopf==1.44.5
 kubernetes==35.0.0
 kubernetes-asyncio==35.0.1
 langchain==0.3.28
+langchain-chroma==0.2.6
 langchain-community==0.3.31
 langchain-core==0.3.83
 langchain-openai==0.3.35
 langchain-text-splitters==0.3.11
-langsmith==0.7.22
+langsmith==0.7.23
 lazy-object-proxy==1.12.0
 leather==0.4.1
+libipld==3.3.2
 limits==5.8.0
 linkify-it-py==2.1.0
+litellm==1.83.0
 lkml==1.3.7
 locket==1.0.0
 lockfile==0.12.2
 looker-sdk==24.16.2
+lxml==6.0.2
 makefun==1.16.0
 mako==1.3.10
 markdown==3.10.2
@@ -405,6 +428,7 @@ mlflow==3.10.1
 mlflow-skinny==3.10.1
 mlflow-tracing==3.10.1
 mmh3==5.2.1
+modal==1.4.1
 more-itertools==10.8.0
 morefs==0.2.2
 moto==5.1.22
@@ -415,13 +439,13 @@ msgpack==1.1.2
 msgspec==0.20.0
 msrest==0.7.1
 multidict==6.7.1
-mypy-boto3-ecs==1.42.69
-mypy-boto3-emr==1.42.70
+mypy-boto3-ecs==1.42.79
+mypy-boto3-emr==1.42.77
 mypy-boto3-emr-containers==1.42.3
 mypy-boto3-emr-serverless==1.42.23
 mypy-boto3-glue==1.42.70
-mypy-boto3-logs==1.42.60
-mypy-boto3-s3==1.42.67
+mypy-boto3-logs==1.42.79
+mypy-boto3-s3==1.42.80
 mypy-extensions==1.1.0
 mypy-protobuf==5.0.0
 mysql-connector-python==9.6.0
@@ -432,19 +456,20 @@ nbconvert==7.17.0
 nbformat==5.10.4
 nest-asyncio==1.6.0
 networkx==3.6.1
-nh3==0.3.3
+nh3==0.3.4
 nodeenv==1.10.0
 notebook==7.5.5
 notebook-shim==0.2.4
-numpy==2.4.3
+numpy==2.4.4
 oauth2client==4.1.3
 oauthlib==3.3.1
 objgraph==3.6.2
 onnx==1.17.0
 onnxruntime==1.24.4
-openai==2.29.0
+openai==2.30.0
 openapi-schema-validator==0.8.1
 openapi-spec-validator==0.8.4
+opencv-python==4.13.0.92
 opentelemetry-api==1.40.0
 opentelemetry-exporter-otlp==1.40.0
 opentelemetry-exporter-otlp-proto-common==1.40.0
@@ -467,12 +492,13 @@ opentelemetry-resource-detector-azure==0.1.5
 opentelemetry-sdk==1.40.0
 opentelemetry-semantic-conventions==0.61b0
 opentelemetry-util-http==0.61b0
+optuna==4.8.0
 ordered-set==4.1.0
-orjson==3.11.7
+orjson==3.11.8
 overrides==7.7.0
 packaging==25.0
 pandas==2.3.3
-pandas-gbq==0.34.0
+pandas-gbq==0.34.1
 pandas-stubs==3.0.0.260204
 pandera==0.30.1
 pandocfilters==1.5.1
@@ -485,11 +511,15 @@ path==16.16.0
 pathable==0.5.0
 pathspec==0.12.1
 pathvalidate==3.3.1
+pdf2image==1.17.0
 pendulum==3.2.0
 -e python_modules/libraries/dagster-airlift/perf-harness
 pex==2.59.5
 pexpect==4.9.0
-pillow==12.1.1
+pillow==12.2.0
+pinecone==8.1.0
+pinecone-plugin-assistant==3.0.3
+pinecone-plugin-interface==0.0.7
 pip==26.0.1
 platformdirs==4.9.4
 plotly==6.6.0
@@ -500,13 +530,25 @@ polars-runtime-32==1.39.3
 polytomic==1.16.1
 portalocker==3.2.0
 posthog==5.4.0
+premailer==3.10.0
 prettytable==3.17.0
 prison==0.2.1
 progressbar2==4.5.0
+-e examples/docs_projects/project_ask_ai_dagster
+-e examples/docs_projects/project_atproto_dashboard
+-e examples/docs_projects/project_components_pdf_extraction
+-e examples/docs_projects/project_dagster_modal_pipes
+-e examples/docs_projects/project_dbt
+-e examples/docs_projects/project_dspy
+-e examples/docs_projects/project_elt_pipeline
+-e examples/docs_projects/project_llm_fine_tune
+-e examples/docs_projects/project_ml
+-e examples/docs_projects/project_multi_workspace_databricks
+-e examples/docs_projects/project_prompt_eng
 prometheus-client==0.24.1
 prompt-toolkit==3.0.52
 propcache==0.4.1
-proto-plus==1.27.1
+proto-plus==1.27.2
 protobuf==5.29.6
 psutil==7.2.2
 psycopg2-binary==2.9.11
@@ -524,11 +566,13 @@ pydantic-core==2.41.5
 pydantic-settings==2.13.1
 pydash==8.0.6
 pydata-google-auth==1.9.1
+pydeck==0.9.1
+pydispatcher==2.0.7
 pyfiglet==1.0.4
 pyflakes==3.4.0
-pygments==2.19.2
+pygments==2.20.0
 pyjwt==2.12.1
-pymdown-extensions==10.21
+pymdown-extensions==10.21.2
 pynacl==1.6.0
 pyopenssl==25.3.0
 pyparsing==3.3.2
@@ -539,6 +583,7 @@ pyproject-hooks==1.2.0
 pyright==1.1.389
 pyspark==3.5.8
 pytablereader==0.31.4
+pytesseract==0.3.13
 pytest==9.0.2
 pytest-asyncio==1.3.0
 pytest-cases==3.10.1
@@ -551,10 +596,10 @@ pytest-timeout==2.4.0
 pytest-xdist==3.6.1
 python-daemon==3.1.2
 python-dateutil==2.9.0.post0
-python-discovery==1.2.0
+python-discovery==1.2.1
 python-dotenv==1.2.2
 python-frontmatter==1.1.0
-python-json-logger==4.0.0
+python-json-logger==4.1.0
 python-liquid==1.13.0
 python-multipart==0.0.22
 python-nvd3==0.16.0
@@ -569,8 +614,8 @@ questionary==2.1.1
 rapidfuzz==3.14.3
 readme-renderer==44.0
 referencing==0.37.0
-regex==2026.2.28
-requests==2.32.5
+regex==2026.3.32
+requests==2.33.1
 requests-file==3.0.1
 requests-mock==1.12.1
 requests-oauthlib==2.0.0
@@ -596,9 +641,10 @@ scrapbook==0.5.0
 seaborn==0.13.2
 semver==3.0.4
 send2trash==2.1.0
-sentry-sdk==2.56.0
+sentry-sdk==2.57.0
 setproctitle==1.3.7
 setuptools==70.3.0
+sgmllib3k==1.0.0
 shellingham==1.5.4
 simplejson==3.20.2
 six==1.17.0
@@ -613,7 +659,7 @@ sniffio==1.3.1
 snowballstemmer==3.0.1
 snowflake-connector-python==3.18.0
 snowflake-core==1.12.0
-snowflake-snowpark-python==1.48.0
+snowflake-snowpark-python==1.48.1
 snowflake-sqlalchemy==1.9.0
 snowplow-tracker==1.1.0
 sortedcontainers==2.4.0
@@ -636,14 +682,16 @@ sqlalchemy-utils==0.42.1
 sqlglot==28.0.0
 sqlglotrs==0.7.3
 sqlparse==0.5.5
-sse-starlette==3.3.3
+sse-starlette==3.3.4
 sshtunnel==0.4.0
 stack-data==0.6.3
 starlette==1.0.0
 -e examples/starlift-demo
+streamlit==1.56.0
 strictyaml==1.7.3
 structlog==25.5.0
 sympy==1.14.0
+synchronicity==0.12.1
 syrupy==5.1.0
 tableauserverclient==0.40
 tabledata==1.3.4
@@ -658,8 +706,9 @@ tiktoken==0.12.0
 tinycss2==1.4.0
 tokenizers==0.22.2
 toml==0.10.2
-tomli==2.4.0
+tomli==2.4.1
 tomlkit==0.13.2
+tool==0.8.0
 toolz==1.1.0
 toposort==1.10
 torch==2.11.0
@@ -688,7 +737,7 @@ types-pyopenssl==24.1.0.20240722
 types-python-dateutil==2.9.0.20260323
 types-pytz==2026.1.1.20260304
 types-pyyaml==6.0.12.20250915
-types-requests==2.32.4.20260324
+types-requests==2.33.0.20260327
 types-s3transfer==0.16.0
 types-setuptools==80.9.0.20250822
 types-simplejson==3.20.0.20250822
@@ -718,11 +767,11 @@ wandb==0.25.1
 watchdog==6.0.0
 watchfiles==1.1.1
 wcwidth==0.6.0
-weaviate-client==4.20.4
+weaviate-client==4.16.2
 webcolors==25.10.0
 webencodings==0.5.1
 websocket-client==1.9.0
-websockets==16.0
+websockets==15.0.1
 werkzeug==3.1.7
 wheel==0.46.3
 widgetsnbextension==4.0.15
@@ -737,7 +786,8 @@ wtforms==3.2.1
 xgboost==3.2.0
 xmltodict==1.0.4
 xxhash==3.6.0
-xyzservices==2025.11.0
+xyzservices==2026.3.0
+yagmail==0.15.293
 yarl==1.23.0
 yaspin==3.4.0
 zict==3.0.0

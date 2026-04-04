@@ -197,6 +197,70 @@ def test_default_config():
     assert result.output_for_node("do_stuff") == "i am here on 6/3"
 
 
+def test_default_config_partial_resource_override():
+    """When partial resource config is provided at execution time,
+    missing resources should use job-level defaults, not definitions-level defaults.
+    Resources not set in the job config should still fall back to definitions-level defaults.
+    """
+
+    class CredentialsResource(dg.ConfigurableResource):
+        username: str
+
+    class BucketResource(dg.ConfigurableResource):
+        region: str
+
+    class ExtraResource(dg.ConfigurableResource):
+        value: str
+
+    @dg.asset
+    def my_asset(
+        credentials: CredentialsResource,
+        bucket: BucketResource,
+        extra: ExtraResource,
+    ):
+        return f"{credentials.username}|{bucket.region}|{extra.value}"
+
+    my_job = dg.define_asset_job(
+        name="my_job",
+        selection=[my_asset],
+        config=dg.RunConfig(
+            resources={
+                "credentials": CredentialsResource(username="job_user"),
+                "bucket": BucketResource(region="job-region"),
+                # "extra" is NOT in job config - should fall back to definitions-level
+            },
+        ),
+    )
+
+    defs = dg.Definitions(
+        assets=[my_asset],
+        jobs=[my_job],
+        resources={
+            "credentials": CredentialsResource(username="defs_user"),
+            "bucket": BucketResource(region="defs-region"),
+            "extra": ExtraResource(value="defs_extra"),
+        },
+    )
+
+    resolved_job = defs.resolve_job_def("my_job")
+
+    # No override: uses full job-level default, extra falls back to definitions-level
+    result = resolved_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("my_asset") == "job_user|job-region|defs_extra"
+
+    # Partial override: credentials from run_config, bucket from job default, extra from defs
+    result = resolved_job.execute_in_process(
+        run_config={
+            "resources": {
+                "credentials": {"config": {"username": "supplied_user"}},
+            },
+        },
+    )
+    assert result.success
+    assert result.output_for_node("my_asset") == "supplied_user|job-region|defs_extra"
+
+
 def test_suffix():
     emit_one, add = get_ops()
 
@@ -820,12 +884,10 @@ def test_top_level_graph_outer_config_failure():
     def my_graph():
         my_op()
 
-    with pytest.raises(
-        dg.DagsterInvalidConfigError, match="Invalid scalar at path root:ops:config"
-    ):
+    with pytest.raises(dg.DagsterInvalidConfigError, match="Invalid scalar"):
         my_graph.to_job().execute_in_process(run_config={"ops": {"config": {"bad_type": "foo"}}})
 
-    with pytest.raises(dg.DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
+    with pytest.raises(dg.DagsterInvalidConfigError, match="Invalid scalar"):
         my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}}).execute_in_process()
 
 
