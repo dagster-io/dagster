@@ -379,6 +379,7 @@ from unittest import mock
 
 from dagster._core.launcher.base import WorkerStatus
 from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster_docker.docker_run_launcher import _pull_image_with_retry
 
 
 def test_check_run_health():
@@ -530,3 +531,120 @@ def _test_launch(
 
                 # termination is a no-op once run is finished
                 assert not launcher.terminate(run.run_id)
+
+
+# Unit tests for _pull_image_with_retry and auth_config handling (no Docker required)
+
+
+def test_pull_with_auth_config_on_image_not_found():
+    """When ImageNotFound is raised, images.pull is called with the registry auth_config."""
+    with (
+        instance_for_test(
+            {
+                "run_launcher": {
+                    "class": "DockerRunLauncher",
+                    "module": "dagster_docker",
+                    "config": {
+                        "registry": {
+                            "url": "ghcr.io",
+                            "username": "testuser",
+                            "password": "testtoken",
+                        }
+                    },
+                },
+            }
+        ) as instance,
+        mock.patch("docker.client.from_env") as mock_from_env,
+    ):
+        mock_client = mock.MagicMock()
+        mock_from_env.return_value = mock_client
+
+        mock_container = mock.MagicMock()
+        mock_container.id = "container123"
+        mock_client.containers.create.side_effect = [
+            docker.errors.ImageNotFound("not found"),
+            mock_container,
+        ]
+
+        run_launcher = instance.run_launcher
+
+        run = create_run_for_test(instance, "test_job")
+        run_launcher._launch_container_with_command(  # noqa: SLF001
+            run,
+            "ghcr.io/myorg/myimage:sha-abc123",
+            ["dagster", "api", "execute_run"],
+        )
+
+        mock_client.images.pull.assert_called_once_with(
+            "ghcr.io/myorg/myimage:sha-abc123",
+            auth_config={"username": "testuser", "password": "testtoken"},
+        )
+
+
+def test_pull_retries_on_api_error():
+    """_pull_image_with_retry retries up to max_attempts on APIError."""
+    mock_client = mock.MagicMock()
+    mock_client.images.pull.side_effect = [
+        docker.errors.APIError("server error"),
+        docker.errors.APIError("server error"),
+        None,  # succeeds on 3rd attempt
+    ]
+
+    with mock.patch("time.sleep"):
+        _pull_image_with_retry(mock_client, "myimage:latest", auth_config=None, max_attempts=3)
+
+    assert mock_client.images.pull.call_count == 3
+
+
+def test_pull_raises_after_max_retries():
+    """_pull_image_with_retry raises after exhausting all retry attempts."""
+    mock_client = mock.MagicMock()
+    mock_client.images.pull.side_effect = docker.errors.APIError("server error")
+
+    with mock.patch("time.sleep"), pytest.raises(docker.errors.APIError):
+        _pull_image_with_retry(mock_client, "myimage:latest", auth_config=None, max_attempts=3)
+
+    assert mock_client.images.pull.call_count == 3
+
+
+def test_pull_without_registry_uses_no_auth_config():
+    """When no registry is configured, images.pull is called with auth_config=None."""
+    mock_client = mock.MagicMock()
+    mock_client.images.pull.return_value = None
+
+    with mock.patch("time.sleep"):
+        _pull_image_with_retry(mock_client, "myimage:latest", auth_config=None)
+
+    mock_client.images.pull.assert_called_once_with("myimage:latest", auth_config=None)
+
+
+def test_no_pull_when_image_exists_locally():
+    """When containers.create() succeeds immediately, images.pull is never called."""
+    with (
+        instance_for_test(
+            {
+                "run_launcher": {
+                    "class": "DockerRunLauncher",
+                    "module": "dagster_docker",
+                    "config": {},
+                },
+            }
+        ) as instance,
+        mock.patch("docker.client.from_env") as mock_from_env,
+    ):
+        mock_client = mock.MagicMock()
+        mock_from_env.return_value = mock_client
+
+        mock_container = mock.MagicMock()
+        mock_container.id = "container456"
+        mock_client.containers.create.return_value = mock_container
+
+        run_launcher = instance.run_launcher
+        run = create_run_for_test(instance, "test_job")
+        run_launcher._launch_container_with_command(  # noqa: SLF001
+            run,
+            "localimage:latest",
+            ["dagster", "api", "execute_run"],
+        )
+
+        mock_client.images.pull.assert_not_called()
