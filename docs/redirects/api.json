@@ -845,8 +845,8 @@
     "permanent": true
   },
   {
-    "source": "/api/api-lifecycle",
-    "destination": "/api/api-lifecycle/api-lifecycle-stages",
+    "source": "/api/api-lifecycle/api-lifecycle-stages",
+    "destination": "/api/api-lifecycle",
     "permanent": true
   },
   {
