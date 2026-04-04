@@ -420,11 +420,25 @@ class UPathIOManager(IOManager):
         # TODO: this might not be the case if the serialization format is already operating with directories
         # e.g. DeltaLake, zarr
         if path.exists() and path.is_file():
-            context.log.warn(
+            context.log.warning(
                 f"Found file at {path} believed to correspond with previously non-partitioned version"
                 f" of {context.asset_key}. Removing {path} and replacing with directory for partitioned data files."
             )
             path.unlink(missing_ok=True)
+
+    def _handle_transition_from_partitioned_asset(self, context: OutputContext, path: "UPath"):
+        # if the asset was previously partitioned, path will be a directory, when it should
+        # be a file for the non-partitioned asset. Delete the directory so that it can be
+        # replaced with a file.
+
+        # TODO: this might not be the case if the serialization format is already operating with directories
+        # e.g. DeltaLake, zarr
+        if path.exists() and path.is_dir():
+            context.log.warning(
+                f"Found directory at {path} believed to correspond with previously partitioned version"
+                f" of {context.asset_key}. Removing {path} and replacing with file for non-partitioned data."
+            )
+            path.fs.rm(str(path), recursive=True)
 
     def handle_output(self, context: OutputContext, obj: Any):
         if context.has_asset_partitions:
@@ -443,6 +457,7 @@ class UPathIOManager(IOManager):
             self._handle_transition_to_partitioned_asset(context, path.parent)
         else:
             path = self._get_path(context)
+            self._handle_transition_from_partitioned_asset(context, path)
         self.make_directory(path.parent)
         context.log.debug(self.get_writing_output_log_message(path))
         self.dump_to_path(context=context, obj=obj, path=path)
