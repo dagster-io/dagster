@@ -351,7 +351,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
     ):
         blob_key = self._blob_key(log_key, io_type, partial=partial)
         blob = self._container_client.get_blob_client(blob_key)
-        blob.upload_blob(data, **{"overwrite": partial})  # type: ignore
+        blob.upload_blob(data, overwrite=True)  # type: ignore
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
