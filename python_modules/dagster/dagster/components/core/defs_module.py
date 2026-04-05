@@ -147,6 +147,18 @@ class CompositeYamlComponent(Component):
                 )
             )
 
+        # Load sibling .py files co-located with the component's defs.yaml. This allows
+        # users to place additional definitions (e.g. downstream assets) alongside their
+        # component directory without needing to move them to a separate defs folder.
+        for subpath in sorted(context.path.iterdir()):
+            if subpath.suffix != ".py":
+                continue
+            relative = subpath.relative_to(context.path)
+            if any(relative.match(p) for p in EXPLICITLY_IGNORED_GLOB_PATTERNS):
+                continue
+            module = context.load_defs_relative_python_module(subpath)
+            defs_list.append(load_definitions_from_module(module))
+
         return Definitions.merge(*defs_list)
 
 

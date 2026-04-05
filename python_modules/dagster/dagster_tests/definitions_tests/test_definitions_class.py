@@ -953,6 +953,48 @@ def test_executor_conflict_on_merge_same_value():
     assert Definitions.merge(defs1, defs2).executor == dg.in_process_executor
 
 
+def test_asset_key_conflict_on_merge():
+    @dg.asset(key="shared_asset")
+    def asset_a(): ...
+
+    @dg.asset(key="shared_asset")
+    def asset_b(): ...
+
+    defs1 = dg.Definitions(assets=[asset_a])
+    defs2 = dg.Definitions(assets=[asset_b])
+
+    with pytest.raises(
+        dg.DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both define asset key",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_asset_key_no_conflict_on_merge():
+    @dg.asset
+    def asset1(): ...
+
+    @dg.asset
+    def asset2(): ...
+
+    merged = Definitions.merge(dg.Definitions(assets=[asset1]), dg.Definitions(assets=[asset2]))
+    assert len(list(merged.assets)) == 2
+
+
+def test_asset_spec_key_conflict_on_merge():
+    spec1 = dg.AssetSpec("spec_asset")
+    spec2 = dg.AssetSpec("spec_asset")
+
+    defs1 = dg.Definitions(assets=[spec1])
+    defs2 = dg.Definitions(assets=[spec2])
+
+    with pytest.raises(
+        dg.DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both define asset key",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
 def test_get_all_asset_specs():
     @dg.asset(tags={"foo": "fooval"})
     def asset1(): ...

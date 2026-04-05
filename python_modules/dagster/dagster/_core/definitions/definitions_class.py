@@ -784,8 +784,24 @@ class Definitions(IHaveNew):
         logger_key_indexes: dict[str, int] = {}
         executor = None
         executor_index: int | None = None
+        asset_key_indexes: dict[AssetKey, int] = {}
 
         for i, def_set in enumerate(def_sets):
+            for asset_def in def_set.assets or []:
+                if isinstance(asset_def, AssetsDefinition):
+                    candidate_keys: Iterable[AssetKey] = asset_def.keys
+                elif isinstance(asset_def, (AssetSpec, SourceAsset)):
+                    candidate_keys = [asset_def.key]
+                else:
+                    # CacheableAssetsDefinition — keys not resolvable at merge time
+                    continue
+                for key in candidate_keys:
+                    if key in asset_key_indexes:
+                        raise DagsterInvariantViolationError(
+                            f"Definitions objects {asset_key_indexes[key]} and {i} both define "
+                            f"asset key '{key}'. Rename one of the conflicting definitions."
+                        )
+                    asset_key_indexes[key] = i
             assets.extend(def_set.assets or [])
             asset_checks.extend(def_set.asset_checks or [])
             schedules.extend(def_set.schedules or [])
