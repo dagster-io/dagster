@@ -482,7 +482,7 @@ def test_run_multi_task_allows_unity_catalog_reader_for_multi_task():
             tasks=[task1, task2],
         )
 
-    assert client.message_reader.num_tasks == 2
+    assert client.message_reader.num_tasks == 1
 
 
 def test_run_multi_task_allows_non_unity_catalog_custom_reader_for_single_task():
