@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import tempfile
@@ -110,6 +111,34 @@ def test_compute_log_manager(
             stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
+
+
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_compute_log_manager_rerun(mock_create_blob_client, storage_account, container, credential):
+    """Regression test: uploading to the same blob key twice must not raise ResourceExistsError.
+
+    Previously, the final (non-partial) upload used overwrite=False.  On re-runs
+    the blob already exists and the real Azure SDK raises ResourceExistsError.
+    FakeBlobClient now mirrors that behavior, so this test would have failed with
+    the old overwrite=partial code.
+    """
+    fake_client = FakeBlobServiceClient(storage_account)
+    mock_create_blob_client.return_value = fake_client
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = AzureBlobComputeLogManager(
+            storage_account=storage_account,
+            container=container,
+            prefix="my_prefix",
+            local_dir=temp_dir,
+            secret_credential=credential,
+        )
+        log_key = ["fixed", "run_id", "step"]
+
+        # First upload — creates the blob
+        manager._upload_file_obj(io.BytesIO(b"hello"), log_key, ComputeIOType.STDOUT)  # noqa: SLF001
+        # Second upload to the same key — must not raise (regression guard)
+        manager._upload_file_obj(io.BytesIO(b"hello again"), log_key, ComputeIOType.STDOUT)  # noqa: SLF001
 
 
 def test_compute_log_manager_from_config(storage_account, container, credential):
