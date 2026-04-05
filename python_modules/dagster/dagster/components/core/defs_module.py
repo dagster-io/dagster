@@ -150,8 +150,12 @@ class CompositeYamlComponent(Component):
         # Load sibling .py files co-located with the component's defs.yaml. This allows
         # users to place additional definitions (e.g. downstream assets) alongside their
         # component directory without needing to move them to a separate defs folder.
+        # Files starting with '_' (e.g. _utils.py, __init__.py) are skipped — use this
+        # convention to opt out of auto-loading for a specific file.
         for subpath in sorted(context.path.iterdir()):
             if subpath.suffix != ".py":
+                continue
+            if subpath.name.startswith("_"):
                 continue
             relative = subpath.relative_to(context.path)
             if any(relative.match(p) for p in EXPLICITLY_IGNORED_GLOB_PATTERNS):

@@ -965,9 +965,22 @@ def test_asset_key_conflict_on_merge():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both define asset key",
+        match=r"both define asset key 'shared_asset'",
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_asset_key_same_object_no_conflict_on_merge():
+    # Same AssetsDefinition instance in two Definitions should not raise,
+    # mirroring the identity-check behavior for resources/loggers.
+    @dg.asset(key="shared_asset")
+    def asset_a(): ...
+
+    defs1 = dg.Definitions(assets=[asset_a])
+    defs2 = dg.Definitions(assets=[asset_a])
+
+    merged = Definitions.merge(defs1, defs2)
+    assert len(list(merged.assets)) == 2  # both Definitions contribute the object
 
 
 def test_asset_key_no_conflict_on_merge():
@@ -990,7 +1003,7 @@ def test_asset_spec_key_conflict_on_merge():
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both define asset key",
+        match=r"both define asset key 'spec_asset'",
     ):
         Definitions.merge(defs1, defs2)
 

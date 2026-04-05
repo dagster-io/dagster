@@ -106,3 +106,30 @@ def test_sibling_py_file_asset_key_conflict_raises():
         ):
             with sandbox.load_component_and_build_defs(defs_path=defs_path):
                 ...
+
+
+def test_underscore_prefixed_py_file_is_not_loaded():
+    """Files starting with '_' next to defs.yaml should be skipped (opt-out convention)."""
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            SimpleComponent,
+            defs_yaml_contents={
+                "type": _COMPONENT_TYPE,
+                "attributes": {"asset_name": "component_asset"},
+            },
+        )
+
+        # Write a private helper file that defines an asset — should not be auto-loaded
+        (defs_path / "_private.py").write_text(
+            textwrap.dedent("""\
+                import dagster as dg
+
+                @dg.asset
+                def private_asset(): ...
+            """)
+        )
+
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (_component, defs):
+            asset_keys = {spec.key for spec in defs.get_all_asset_specs()}
+            assert dg.AssetKey("component_asset") in asset_keys
+            assert dg.AssetKey("private_asset") not in asset_keys
