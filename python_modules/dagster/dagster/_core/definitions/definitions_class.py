@@ -823,6 +823,7 @@ class Definitions(IHaveNew):
                                 )
                             warnings.warn(
                                 msg,
+                                DeprecationWarning,
                                 stacklevel=2,
                             )
                             # Update so subsequent conflicts reference the most recent entry,
