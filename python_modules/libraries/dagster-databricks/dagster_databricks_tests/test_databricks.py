@@ -346,3 +346,38 @@ class TestDatabricksClientHasCredentials:
         assert client.azure_credentials.azure_tenant_id == "test-tenant-id"  # pyright: ignore[reportOptionalMemberAccess]
         assert client.token is None
         assert client.oauth_credentials is None
+
+    def test_given_credentials_strategy_instantiates_correctly(self):
+        from unittest.mock import MagicMock
+
+        from databricks.sdk.core import CredentialsStrategy
+
+        mock_strategy = MagicMock(spec=CredentialsStrategy)
+        client = DatabricksClientResource(
+            host="https://some.host",
+            credentials_strategy=mock_strategy,
+        )
+        assert client._credentials_strategy is mock_strategy  # noqa: SLF001
+        assert client.token is None
+        assert client.oauth_credentials is None
+        assert client.azure_credentials is None
+
+    def test_given_credentials_strategy_and_token_raises_at_get_client(self):
+        from unittest.mock import MagicMock
+
+        from databricks.sdk.core import CredentialsStrategy
+
+        mock_strategy = MagicMock(spec=CredentialsStrategy)
+        # Instantiation succeeds — Pydantic cannot see credentials_strategy as a field.
+        # Mutual exclusion is enforced downstream in WorkspaceClientFactory.
+        client = DatabricksClientResource(
+            host="https://some.host",
+            token="something",
+            credentials_strategy=mock_strategy,
+        )
+        with pytest.raises(ValueError, match="Can only provide one of"):
+            client.get_client()
+
+    def test_given_no_credentials_raises_ValueError(self):
+        with pytest.raises(ValueError):
+            DatabricksClientResource(host="https://some.host")

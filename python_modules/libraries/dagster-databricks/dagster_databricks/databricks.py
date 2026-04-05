@@ -15,6 +15,7 @@ from dagster._annotations import public
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import (
     Config,
+    CredentialsStrategy,
     DefaultCredentials,
     azure_service_principal,
     oauth_service_principal,
@@ -38,6 +39,7 @@ class AuthTypeEnum(Enum):
     OAUTH_M2M = "oauth-m2m"
     PAT = "pat"
     AZURE_CLIENT_SECRET = "azure-client-secret"
+    CUSTOM = "custom"
     DEFAULT = "default"
 
 
@@ -51,6 +53,7 @@ class WorkspaceClientFactory:
         azure_client_id: str | None,
         azure_client_secret: str | None,
         azure_tenant_id: str | None,
+        credentials_strategy: CredentialsStrategy | None = None,
     ):
         """Initialize the Databricks Workspace client. Users may provide explicit credentials for a PAT, databricks
         service principal oauth credentials, or azure service principal credentials. If no credentials are provided,
@@ -66,6 +69,7 @@ class WorkspaceClientFactory:
             azure_client_id=azure_client_id,
             azure_client_secret=azure_client_secret,
             azure_tenant_id=azure_tenant_id,
+            credentials_strategy=credentials_strategy,
         )
         self._assert_valid_credentials_combos(
             oauth_client_id=oauth_client_id,
@@ -81,6 +85,7 @@ class WorkspaceClientFactory:
             azure_client_id,
             azure_client_secret,
             azure_tenant_id,
+            credentials_strategy,
         )
         product_info = {"product": "dagster-databricks", "product_version": __version__}
 
@@ -88,7 +93,14 @@ class WorkspaceClientFactory:
         # provided, then fallback to the default credentials provider, which will attempt to read credentials from
         # the environment or from a `~/.databrickscfg` file, if it exists.
 
-        if auth_type == AuthTypeEnum.OAUTH_M2M:
+        if auth_type == AuthTypeEnum.CUSTOM:
+            host = self._resolve_host(host)
+            c = Config(
+                host=host,
+                credentials_strategy=credentials_strategy,
+                **product_info,  # pyright: ignore[reportArgumentType]
+            )
+        elif auth_type == AuthTypeEnum.OAUTH_M2M:
             host = self._resolve_host(host)
             c = Config(
                 host=host,
@@ -146,6 +158,7 @@ class WorkspaceClientFactory:
         azure_client_id: str | None = None,
         azure_client_secret: str | None = None,
         azure_tenant_id: str | None = None,
+        credentials_strategy: CredentialsStrategy | None = None,
     ):
         more_than_one_auth_type_provided = (
             sum(
@@ -155,6 +168,7 @@ class WorkspaceClientFactory:
                         token,
                         (oauth_client_id and oauth_client_secret),
                         (azure_client_id and azure_client_secret and azure_tenant_id),
+                        credentials_strategy,
                     ]
                     if _
                 ]
@@ -163,7 +177,7 @@ class WorkspaceClientFactory:
         )
         if more_than_one_auth_type_provided:
             raise ValueError(
-                "Can only provide one of token, oauth credentials, or azure credentials"
+                "Can only provide one of token, oauth credentials, azure credentials, or credentials_strategy"
             )
 
     @staticmethod
@@ -174,9 +188,12 @@ class WorkspaceClientFactory:
         azure_client_id: str | None,
         azure_client_secret: str | None,
         azure_tenant_id: str | None,
+        credentials_strategy: CredentialsStrategy | None = None,
     ) -> AuthTypeEnum:
         """Get the type of authentication used to initialize the WorkspaceClient."""
-        if oauth_client_id and oauth_client_secret:
+        if credentials_strategy is not None:
+            auth_type = AuthTypeEnum.CUSTOM
+        elif oauth_client_id and oauth_client_secret:
             auth_type = AuthTypeEnum.OAUTH_M2M
         elif token:
             auth_type = AuthTypeEnum.PAT
@@ -239,6 +256,7 @@ class DatabricksClient:
         azure_client_secret: str | None = None,
         azure_tenant_id: str | None = None,
         workspace_id: str | None = None,
+        credentials_strategy: CredentialsStrategy | None = None,
     ):
         self.host = host
         self.workspace_id = workspace_id
@@ -251,6 +269,7 @@ class DatabricksClient:
             azure_tenant_id=azure_tenant_id,
             token=token,
             host=host,
+            credentials_strategy=credentials_strategy,
         )
         self._workspace_client = workspace_client_factory.get_workspace_client()
 
