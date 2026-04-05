@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import tempfile
@@ -112,74 +113,32 @@ def test_compute_log_manager(
                 assert expected in stderr
 
 
-@mock.patch("dagster_azure.blob.compute_log_manager.generate_blob_sas")
 @mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
-def test_compute_log_manager_rerun(
-    mock_create_blob_client, mock_generate_blob_sas, storage_account, container, credential
-):
-    """Regression test: re-running an op must not fail with BlobAlreadyExists.
+def test_compute_log_manager_rerun(mock_create_blob_client, storage_account, container, credential):
+    """Regression test: uploading to the same blob key twice must not raise ResourceExistsError.
 
-    Previously, the final (non-partial) upload used overwrite=False, which caused
-    BlobAlreadyExists on any re-run that reuses the same blob key.
+    Previously, the final (non-partial) upload used overwrite=False.  On re-runs
+    the blob already exists and the real Azure SDK raises ResourceExistsError.
+    FakeBlobClient now mirrors that behavior, so this test would have failed with
+    the old overwrite=partial code.
     """
-    mock_generate_blob_sas.return_value = "fake-url"
     fake_client = FakeBlobServiceClient(storage_account)
     mock_create_blob_client.return_value = fake_client
 
-    @graph
-    def simple():
-        @op
-        def easy(context):
-            context.log.info("easy")
-            print(HELLO_WORLD)  # noqa: T201
-            return "easy"
-
-        easy()
-
     with tempfile.TemporaryDirectory() as temp_dir:
-        with environ({"DAGSTER_HOME": temp_dir}):
-            run_store = SqliteRunStorage.from_local(temp_dir)
-            event_store = SqliteEventLogStorage(temp_dir)
-            manager = AzureBlobComputeLogManager(
-                storage_account=storage_account,
-                container=container,
-                prefix="my_prefix",
-                local_dir=temp_dir,
-                secret_credential=credential,
-            )
-            instance = DagsterInstance(
-                instance_type=InstanceType.PERSISTENT,
-                local_artifact_storage=LocalArtifactStorage(temp_dir),
-                run_storage=run_store,
-                event_storage=event_store,
-                compute_log_manager=manager,
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=SyncInMemoryRunLauncher(),
-                ref=InstanceRef.from_dir(temp_dir),
-                settings={"telemetry": {"enabled": False}},
-            )
+        manager = AzureBlobComputeLogManager(
+            storage_account=storage_account,
+            container=container,
+            prefix="my_prefix",
+            local_dir=temp_dir,
+            secret_credential=credential,
+        )
+        log_key = ["fixed", "run_id", "step"]
 
-            # First run
-            result1 = simple.execute_in_process(instance=instance)
-            assert result1.success
-
-            # Re-run using the same log key prefix — previously raised BlobAlreadyExists
-            result2 = simple.execute_in_process(instance=instance)
-            assert result2.success
-
-            capture_events = [
-                event
-                for event in result2.all_events
-                if event.event_type == DagsterEventType.LOGS_CAPTURED
-            ]
-            assert len(capture_events) == 1
-            event = capture_events[0]
-            file_key = event.logs_captured_data.file_key
-            log_key = manager.build_log_key_for_run(result2.run_id, file_key)
-
-            log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
-            assert stdout == HELLO_WORLD + SEPARATOR
+        # First upload — creates the blob
+        manager._upload_file_obj(io.BytesIO(b"hello"), log_key, ComputeIOType.STDOUT)  # noqa: SLF001
+        # Second upload to the same key — must not raise (regression guard)
+        manager._upload_file_obj(io.BytesIO(b"hello again"), log_key, ComputeIOType.STDOUT)  # noqa: SLF001
 
 
 def test_compute_log_manager_from_config(storage_account, container, credential):
