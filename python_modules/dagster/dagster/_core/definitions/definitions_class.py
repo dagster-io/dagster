@@ -756,7 +756,12 @@ class Definitions(IHaveNew):
         Definitions objects.
 
         Raises an error if the Definitions objects to be merged contain conflicting values for the
-        same resource key or logger key, or if they have different executors defined.
+        same resource key, logger key, or executor. Emits a warning if two different Definitions
+        objects define the same asset key (``AssetsDefinition``, ``AssetSpec``, or
+        ``SourceAsset``); this will become an error in a future release. The same object instance
+        appearing in multiple Definitions objects is permitted. ``CacheableAssetsDefinition``
+        objects are excluded from asset key conflict detection because their keys are not
+        resolvable at merge time.
 
         Examples:
             .. code-block:: python
@@ -784,8 +789,47 @@ class Definitions(IHaveNew):
         logger_key_indexes: dict[str, int] = {}
         executor = None
         executor_index: int | None = None
+        # Maps each AssetKey to (def_set_index, source_object). Same object instance
+        # appearing in multiple Definitions is allowed (mirrors resource/logger behavior);
+        # only different objects claiming the same key raise.
+        asset_key_sources: dict[AssetKey, tuple[int, object]] = {}
 
         for i, def_set in enumerate(def_sets):
+            for asset_def in def_set.assets or []:
+                if isinstance(asset_def, AssetsDefinition):
+                    candidate_keys: Iterable[AssetKey] = asset_def.keys
+                elif isinstance(asset_def, (AssetSpec, SourceAsset)):
+                    candidate_keys = [asset_def.key]
+                else:
+                    # CacheableAssetsDefinition — keys not resolvable at merge time
+                    continue
+                for key in candidate_keys:
+                    if key in asset_key_sources:
+                        prev_i, prev_obj = asset_key_sources[key]
+                        if prev_obj is not asset_def:
+                            if prev_i == i:
+                                msg = (
+                                    f"Definitions object {i} defines "
+                                    f"asset key '{key.to_user_string()}' more than once. "
+                                    "Rename one of the conflicting definitions. "
+                                    "This will raise an error in a future release."
+                                )
+                            else:
+                                msg = (
+                                    f"Definitions objects {prev_i} and {i} both define "
+                                    f"asset key '{key.to_user_string()}'. "
+                                    "Rename one of the conflicting definitions. "
+                                    "This will raise an error in a future release."
+                                )
+                            warnings.warn(
+                                msg,
+                                stacklevel=2,
+                            )
+                            # Update so subsequent conflicts reference the most recent entry,
+                            # giving accurate pairwise indices in 3+-conflict scenarios.
+                            asset_key_sources[key] = (i, asset_def)
+                    else:
+                        asset_key_sources[key] = (i, asset_def)
             assets.extend(def_set.assets or [])
             asset_checks.extend(def_set.asset_checks or [])
             schedules.extend(def_set.schedules or [])

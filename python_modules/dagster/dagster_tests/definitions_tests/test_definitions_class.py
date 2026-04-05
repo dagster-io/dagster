@@ -953,6 +953,128 @@ def test_executor_conflict_on_merge_same_value():
     assert Definitions.merge(defs1, defs2).executor == dg.in_process_executor
 
 
+def test_asset_key_conflict_on_merge():
+    @dg.asset(key="shared_asset")
+    def asset_a(): ...
+
+    @dg.asset(key="shared_asset")
+    def asset_b(): ...
+
+    defs1 = dg.Definitions(assets=[asset_a])
+    defs2 = dg.Definitions(assets=[asset_b])
+
+    with pytest.warns(DeprecationWarning, match=r"both define asset key 'shared_asset'"):
+        Definitions.merge(defs1, defs2)
+
+
+def test_asset_key_same_object_no_conflict_on_merge():
+    # Same AssetsDefinition instance in two Definitions should not raise,
+    # mirroring the identity-check behavior for resources/loggers.
+    @dg.asset(key="shared_asset")
+    def asset_a(): ...
+
+    defs1 = dg.Definitions(assets=[asset_a])
+    defs2 = dg.Definitions(assets=[asset_a])
+
+    merged = Definitions.merge(defs1, defs2)
+    assert len(list(merged.assets)) == 2  # both Definitions contribute the object
+
+
+def test_asset_key_no_conflict_on_merge():
+    @dg.asset
+    def asset1(): ...
+
+    @dg.asset
+    def asset2(): ...
+
+    merged = Definitions.merge(dg.Definitions(assets=[asset1]), dg.Definitions(assets=[asset2]))
+    assert len(list(merged.assets)) == 2
+
+
+def test_asset_spec_key_conflict_on_merge():
+    spec1 = dg.AssetSpec("spec_asset")
+    spec2 = dg.AssetSpec("spec_asset")
+
+    defs1 = dg.Definitions(assets=[spec1])
+    defs2 = dg.Definitions(assets=[spec2])
+
+    with pytest.warns(DeprecationWarning, match=r"both define asset key 'spec_asset'"):
+        Definitions.merge(defs1, defs2)
+
+
+def test_source_asset_key_conflict_on_merge():
+    source1 = dg.SourceAsset("shared_source")
+    source2 = dg.SourceAsset("shared_source")
+
+    defs1 = dg.Definitions(assets=[source1])
+    defs2 = dg.Definitions(assets=[source2])
+
+    with pytest.warns(DeprecationWarning, match=r"both define asset key 'shared_source'"):
+        Definitions.merge(defs1, defs2)
+
+
+def test_multi_key_assets_definition_conflict_on_merge():
+    """An AssetsDefinition producing multiple keys should detect per-key conflicts."""
+
+    @dg.multi_asset(specs=[dg.AssetSpec("key_a"), dg.AssetSpec("key_b")])
+    def multi1(): ...
+
+    @dg.asset(key="key_b")
+    def single_b(): ...
+
+    defs1 = dg.Definitions(assets=[multi1])
+    defs2 = dg.Definitions(assets=[single_b])
+
+    with pytest.warns(DeprecationWarning, match=r"both define asset key 'key_b'"):
+        Definitions.merge(defs1, defs2)
+
+
+def test_asset_key_conflict_same_index_on_merge():
+    """Two distinct assets defining the same key within a single Definitions object should
+    produce a message referencing the single index, not 'objects X and X'.
+    """
+
+    @dg.asset(key="dup_asset")
+    def asset_a(): ...
+
+    @dg.asset(key="dup_asset")
+    def asset_b(): ...
+
+    defs = dg.Definitions(assets=[asset_a, asset_b])
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Definitions object 0 defines asset key 'dup_asset' more than once",
+    ):
+        Definitions.merge(defs)
+
+
+def test_asset_key_conflict_three_way_on_merge():
+    """Three Definitions each defining the same key should emit two warnings,
+    referencing consecutive index pairs (0-and-1, then 1-and-2).
+    """
+
+    @dg.asset(key="foo")
+    def asset_a(): ...
+
+    @dg.asset(key="foo")
+    def asset_b(): ...
+
+    @dg.asset(key="foo")
+    def asset_c(): ...
+
+    defs1 = dg.Definitions(assets=[asset_a])
+    defs2 = dg.Definitions(assets=[asset_b])
+    defs3 = dg.Definitions(assets=[asset_c])
+
+    with pytest.warns(DeprecationWarning) as record:
+        Definitions.merge(defs1, defs2, defs3)
+
+    messages = [str(w.message) for w in record]
+    assert any("0 and 1" in m for m in messages), messages
+    assert any("1 and 2" in m for m in messages), messages
+
+
 def test_get_all_asset_specs():
     @dg.asset(tags={"foo": "fooval"})
     def asset1(): ...

@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import logging
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -144,6 +145,33 @@ class CompositeYamlComponent(Component):
                         )
                     ),
                     list(asset_post_processors),
+                )
+            )
+
+        # Load sibling .py files co-located with the component's defs.yaml. This allows
+        # users to place additional definitions (e.g. downstream assets) alongside their
+        # component directory without needing to move them to a separate defs folder.
+        # Files starting with '_' (e.g. _utils.py, __init__.py) are skipped — use this
+        # convention to opt out of auto-loading for a specific file.
+        _sibling_logger = logging.getLogger("dagster")
+        for subpath in sorted(context.path.iterdir()):
+            if subpath.suffix != ".py":
+                continue
+            if subpath.name.startswith("_"):
+                continue
+            _sibling_logger.info(
+                "Auto-loading sibling file '%s' alongside component at %s",
+                subpath.name,
+                context.path,
+            )
+            module = context.load_defs_relative_python_module(subpath)
+            sibling_defs = load_definitions_from_module(module)
+            defs_list.append(
+                sibling_defs.with_definition_metadata_update(
+                    lambda metadata: _add_defs_py_metadata(
+                        component=self,
+                        metadata=metadata,
+                    )
                 )
             )
 
