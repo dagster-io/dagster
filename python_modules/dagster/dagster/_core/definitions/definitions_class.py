@@ -784,8 +784,30 @@ class Definitions(IHaveNew):
         logger_key_indexes: dict[str, int] = {}
         executor = None
         executor_index: int | None = None
+        # Maps each AssetKey to (def_set_index, source_object). Same object instance
+        # appearing in multiple Definitions is allowed (mirrors resource/logger behavior);
+        # only different objects claiming the same key raise.
+        asset_key_sources: dict[AssetKey, tuple[int, object]] = {}
 
         for i, def_set in enumerate(def_sets):
+            for asset_def in def_set.assets or []:
+                if isinstance(asset_def, AssetsDefinition):
+                    candidate_keys: Iterable[AssetKey] = asset_def.keys
+                elif isinstance(asset_def, (AssetSpec, SourceAsset)):
+                    candidate_keys = [asset_def.key]
+                else:
+                    # CacheableAssetsDefinition — keys not resolvable at merge time
+                    continue
+                for key in candidate_keys:
+                    if key in asset_key_sources:
+                        prev_i, prev_obj = asset_key_sources[key]
+                        if prev_obj is not asset_def:
+                            raise DagsterInvariantViolationError(
+                                f"Definitions objects {prev_i} and {i} both define "
+                                f"asset key '{key.to_user_string()}'. Rename one of the conflicting definitions."
+                            )
+                    else:
+                        asset_key_sources[key] = (i, asset_def)
             assets.extend(def_set.assets or [])
             asset_checks.extend(def_set.asset_checks or [])
             schedules.extend(def_set.schedules or [])
