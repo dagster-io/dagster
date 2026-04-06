@@ -2,6 +2,7 @@ from dagster._core.definitions.declarative_automation.operands.operands import (
     BackfillInProgressAutomationCondition as BackfillInProgressAutomationCondition,
     CheckResultCondition as CheckResultCondition,
     CodeVersionChangedCondition as CodeVersionChangedCondition,
+    CodeVersionOutdatedCondition as CodeVersionOutdatedCondition,
     CronTickPassedCondition as CronTickPassedCondition,
     ExecutionFailedAutomationCondition as ExecutionFailedAutomationCondition,
     FreshnessResultCondition as FreshnessResultCondition,

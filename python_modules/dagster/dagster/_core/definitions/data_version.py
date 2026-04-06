@@ -265,6 +265,16 @@ def extract_data_provenance_from_entry(
     return DataProvenance.from_tags(tags)
 
 
+def is_code_version_outdated(
+    current_code_version: str | None, provenance: DataProvenance | None
+) -> bool:
+    return (
+        current_code_version is not None
+        and provenance is not None
+        and current_code_version != provenance.code_version
+    )
+
+
 # ########################
 # ##### STALENESS OPERATIONS
 # ########################
@@ -540,7 +550,7 @@ class CachingStaleStatusResolver:
         materialization_time = materialization.timestamp
 
         if provenance:
-            if code_version and code_version != provenance.code_version:
+            if is_code_version_outdated(code_version, provenance):
                 yield StaleCause(key, StaleCauseCategory.CODE, "has a new code version")
 
             removed_deps = set(provenance.input_data_versions.keys()) - set(asset_deps)
