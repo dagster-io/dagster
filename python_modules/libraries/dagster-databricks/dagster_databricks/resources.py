@@ -129,10 +129,6 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             or self.oauth_credentials is not None
             or self.azure_credentials is not None
         )
-        if credentials_strategy is not None and has_serializable:
-            raise ValueError(
-                "Cannot combine credentials_strategy with token, oauth_credentials, or azure_credentials"
-            )
         if not (has_serializable or credentials_strategy is not None):
             raise ValueError(
                 "Must provide one of token, oauth_credentials, azure_credentials, or"
