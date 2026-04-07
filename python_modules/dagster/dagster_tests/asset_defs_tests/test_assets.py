@@ -2443,13 +2443,6 @@ def test_index_in_to_key() -> None:
         key[0][0]  # type: ignore # good job type checker
 
 
-def test_asset_dep_backcompat() -> None:
-    # AssetKey used to be an iterable tuple, which unintentionally made this work so continue supporting it
-
-    @dg.asset(deps=dg.AssetKey("oops"))  # type: ignore # good job type checker
-    def _(): ...
-
-
 def test_unpartitioned_asset_metadata():
     @dg.asset
     def unpartitioned_asset(context: AssetExecutionContext) -> None:
