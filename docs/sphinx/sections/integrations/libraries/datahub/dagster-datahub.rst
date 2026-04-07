@@ -1,5 +1,6 @@
+#######################
 dagster-datahub library
------------------------
+#######################
 
 This library provides an integration with `Datahub <https://datahub.com/>`_ to support pushing metadata to Datahub from
 within Dagster ops.
@@ -20,9 +21,9 @@ first need to start up a Datahub Instance. For more information, see the `Datahu
 .. autoconfigurable:: DatahubKafkaEmitterResource
   :annotation: ResourceDefinition
 
-
+******
 Legacy
-======
+******
 
 .. autoconfigurable:: datahub_rest_emitter
   :annotation: ResourceDefinition

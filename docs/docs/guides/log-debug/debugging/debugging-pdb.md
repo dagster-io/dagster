@@ -14,7 +14,7 @@ To follow the steps in this guide, you'll need to [create a Dagster project](/gu
 
 :::
 
-## 1. Set a `pdb` breakpoint in your asset
+## Step 1: Set a `pdb` breakpoint in your asset
 
 First, add the `context` parameter to your asset definition, and add `context.pdb.set_trace()` to the asset code where you want to add a breakpoint. You should insert your breakpoint after the variables you are interested in have been initialized but before any mutations. With `pdb` you will be able to proceed to the next statement of the asset but will not be able to reverse the state of a variable so it is better to set the break point early.
 
@@ -24,13 +24,13 @@ First, add the `context` parameter to your asset definition, and add `context.pd
   title="src/<project_name>/defs/assets.py"
 />
 
-## 2. Launch the webserver and materialize your asset
+## Step 2: Launch the webserver and materialize your asset
 
 Next, launch the Dagster webserver from your terminal with `dagster dev`, then, in the UI, materialize the asset. The asset will remain in a "Materializing" state while the interactive debugger is running.
 
 ![pdb Asset Running](/images/guides/log-debug/debugging/pdb-asset-running.png)
 
-## 3. Debug your asset in the `pdb` debugger
+## Step 3: Debug your asset in the `pdb` debugger
 
 In the terminal where `dagster dev` is running, you should now see a `pdb` debugger:
 
@@ -84,7 +84,7 @@ While these `pdb` commands occur in the terminal, they will also be recorded in 
 
 ![pdb stdout](/images/guides/log-debug/debugging/stdout.png)
 
-## 4. End debugging and finish materializing your asset
+## Step 4: End debugging and finish materializing your asset
 
 The asset will remain in the "Materializing" state until you have navigated through all the statements of the asset with `next` or until you execute `continue` within `pdb`. The asset will then finish materializing and close `pdb` in the terminal:
 

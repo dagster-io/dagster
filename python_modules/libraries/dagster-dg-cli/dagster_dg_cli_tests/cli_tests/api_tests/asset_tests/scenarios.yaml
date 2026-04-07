@@ -28,3 +28,16 @@ error_asset_health_not_found:
 
 error_malformed_asset_key:
   command: "dg api asset get '' --json"
+
+# Partition status subcommand scenarios
+success_partition_status:
+  command: "dg api asset get-partition-status analytics/daily_metrics --json"
+
+success_partition_status_text:
+  command: "dg api asset get-partition-status analytics/daily_metrics"
+
+error_partition_status_not_found:
+  command: "dg api asset get-partition-status nonexistent/asset --json"
+
+error_partition_status_unpartitioned:
+  command: "dg api asset get-partition-status unpartitioned/asset --json"

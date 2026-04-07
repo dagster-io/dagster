@@ -1,5 +1,6 @@
+######################
 dagster-twilio library
-----------------------
+######################
 
 This library provides an integration with Twilio.
 
@@ -8,8 +9,9 @@ This library provides an integration with Twilio.
 .. autoconfigurable:: TwilioResource
   :annotation: ResourceDefinition
 
+******
 Legacy
-======
+******
 
 .. autoconfigurable:: twilio_resource
   :annotation: ResourceDefinition

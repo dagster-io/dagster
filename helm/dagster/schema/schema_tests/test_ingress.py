@@ -26,22 +26,7 @@ def helm_template_function():
 # Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
 # This parametrization can be removed in 2.0.
 @pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
-@pytest.mark.parametrize(
-    argnames=["output", "model", "api_version"],
-    argvalues=[
-        (
-            "templates/ingress-v1beta1.yaml",
-            models.ExtensionsV1beta1Ingress,
-            "extensions/v1beta1/Ingress",
-        ),
-        (
-            "templates/ingress.yaml",
-            models.V1Ingress,
-            "networking.k8s.io/v1/Ingress",
-        ),
-    ],
-)
-def test_ingress(template_function, webserver_field, output, model, api_version):
+def test_ingress(template_function, webserver_field):
     webserver_kwargs = {
         webserver_field: WebserverIngressConfiguration.construct(
             host="foobar.com",
@@ -58,11 +43,11 @@ def test_ingress(template_function, webserver_field, output, model, api_version)
         )
     }
 
-    template = template_function(output, model)
+    template = template_function("templates/ingress.yaml", models.V1Ingress)
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True,
-            apiVersion=api_version,
+            apiVersion="networking.k8s.io/v1/Ingress",
             **webserver_kwargs,  # type: ignore
         )
     )
@@ -80,27 +65,12 @@ def test_ingress(template_function, webserver_field, output, model, api_version)
 # Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
 # This parametrization can be removed in 2.0.
 @pytest.mark.parametrize("readonly_webserver_field", ["readOnlyDagsterWebserver", "readOnlyDagit"])
-@pytest.mark.parametrize(
-    argnames=["output", "model", "api_version"],
-    argvalues=[
-        (
-            "templates/ingress-v1beta1.yaml",
-            models.ExtensionsV1beta1Ingress,
-            "extensions/v1beta1/Ingress",
-        ),
-        (
-            "templates/ingress.yaml",
-            models.V1Ingress,
-            "networking.k8s.io/v1/Ingress",
-        ),
-    ],
-)
-def test_ingress_read_only(template_function, readonly_webserver_field, output, model, api_version):
-    template = template_function(output, model)
+def test_ingress_read_only(template_function, readonly_webserver_field):
+    template = template_function("templates/ingress.yaml", models.V1Ingress)
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True,
-            apiVersion=api_version,
+            apiVersion="networking.k8s.io/v1/Ingress",
             dagsterWebserver=WebserverIngressConfiguration.construct(
                 host="foobar.com",
                 path="bing",
@@ -139,23 +109,8 @@ def test_ingress_read_only(template_function, readonly_webserver_field, output, 
     assert [rule.host for rule in ingress.spec.rules] == ["foobar.com", "dagster.io"]
 
 
-@pytest.mark.parametrize(
-    argnames=["output", "model", "api_version"],
-    argvalues=[
-        (
-            "templates/ingress-v1beta1.yaml",
-            models.ExtensionsV1beta1Ingress,
-            "extensions/v1beta1/Ingress",
-        ),
-        (
-            "templates/ingress.yaml",
-            models.V1Ingress,
-            "networking.k8s.io/v1/Ingress",
-        ),
-    ],
-)
-def test_ingress_tls(template_function, output, model, api_version):
-    template = template_function(output, model)
+def test_ingress_tls(template_function):
+    template = template_function("templates/ingress.yaml", models.V1Ingress)
     webserver_host = "webserver.com"
     webserver_readonly_host = "webserver-readonly.com"
     flower_host = "flower.com"
@@ -167,7 +122,7 @@ def test_ingress_tls(template_function, output, model, api_version):
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True,
-            apiVersion=api_version,
+            apiVersion="networking.k8s.io/v1/Ingress",
             dagsterWebserver=WebserverIngressConfiguration.construct(
                 host=webserver_host,
                 pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
@@ -209,27 +164,12 @@ def test_ingress_tls(template_function, output, model, api_version):
     assert flower_tls.secret_name == flower_tls_secret_name
 
 
-@pytest.mark.parametrize(
-    argnames=["output", "model", "api_version"],
-    argvalues=[
-        (
-            "templates/ingress-v1beta1.yaml",
-            models.ExtensionsV1beta1Ingress,
-            "extensions/v1beta1/Ingress",
-        ),
-        (
-            "templates/ingress.yaml",
-            models.V1Ingress,
-            "networking.k8s.io/v1/Ingress",
-        ),
-    ],
-)
-def test_ingress_labels(template_function, output, model, api_version):
-    template = template_function(output, model)
+def test_ingress_labels(template_function):
+    template = template_function("templates/ingress.yaml", models.V1Ingress)
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True,
-            apiVersion=api_version,
+            apiVersion="networking.k8s.io/v1/Ingress",
             dagsterWebserver=WebserverIngressConfiguration.construct(
                 host="foobar.com",
                 path="bing",

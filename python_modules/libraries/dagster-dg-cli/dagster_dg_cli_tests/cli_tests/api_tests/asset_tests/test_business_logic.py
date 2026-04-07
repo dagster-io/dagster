@@ -23,6 +23,7 @@ from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiEvaluationRecordList,
     DgApiPartitionDefinition,
     DgApiPartitionMapping,
+    DgApiPartitionStats,
 )
 from dagster_dg_cli.cli.api.formatters import (
     format_asset,
@@ -30,6 +31,7 @@ from dagster_dg_cli.cli.api.formatters import (
     format_asset_events,
     format_asset_health,
     format_assets,
+    format_partition_status,
 )
 
 
@@ -683,5 +685,68 @@ class TestFormatAssetHealth:
         """Test formatting empty asset health as JSON."""
         status = self._create_empty_status()
         result = format_asset_health(status, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+
+class TestFormatPartitionStatus:
+    """Test the partition status formatting functions."""
+
+    def _create_sample_stats(self) -> DgApiPartitionStats:
+        """Create sample partition stats with mixed states."""
+        return DgApiPartitionStats(
+            num_materialized=85,
+            num_failed=3,
+            num_materializing=2,
+            num_partitions=100,
+        )
+
+    def _create_all_materialized_stats(self) -> DgApiPartitionStats:
+        """Create partition stats where all partitions are materialized."""
+        return DgApiPartitionStats(
+            num_materialized=50,
+            num_failed=0,
+            num_materializing=0,
+            num_partitions=50,
+        )
+
+    def _create_empty_stats(self) -> DgApiPartitionStats:
+        """Create partition stats with no materializations."""
+        return DgApiPartitionStats(
+            num_materialized=0,
+            num_failed=0,
+            num_materializing=0,
+            num_partitions=100,
+        )
+
+    def test_format_partition_status_text_output(self, snapshot):
+        """Test formatting partition stats as text."""
+        stats = self._create_sample_stats()
+        result = format_partition_status(stats, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_partition_status_json_output(self, snapshot):
+        """Test formatting partition stats as JSON."""
+        stats = self._create_sample_stats()
+        result = format_partition_status(stats, as_json=True)
+        parsed = json.loads(result)
+        snapshot.assert_match(parsed)
+
+    def test_format_partition_status_all_materialized_text(self, snapshot):
+        """Test formatting when all partitions are materialized."""
+        stats = self._create_all_materialized_stats()
+        result = format_partition_status(stats, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_partition_status_empty_text(self, snapshot):
+        """Test formatting when no partitions are materialized."""
+        stats = self._create_empty_stats()
+        result = format_partition_status(stats, as_json=False)
+        snapshot.assert_match(result)
+
+    def test_format_partition_status_empty_json(self, snapshot):
+        """Test formatting empty partition stats as JSON."""
+        stats = self._create_empty_stats()
+        result = format_partition_status(stats, as_json=True)
         parsed = json.loads(result)
         snapshot.assert_match(parsed)

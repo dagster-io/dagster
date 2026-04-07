@@ -283,11 +283,11 @@ def test_nested_not_resolvable():
 
 def test_post_process():
     @dataclass
-    class Test(dg.Resolvable):
+    class MockClass(dg.Resolvable):
         post_process: AssetPostProcessor
 
     with pytest.raises(Exception, match="junk_extra_input"):
-        Test.resolve_from_yaml(
+        MockClass.resolve_from_yaml(
             """
 post_process:
   target: '*'

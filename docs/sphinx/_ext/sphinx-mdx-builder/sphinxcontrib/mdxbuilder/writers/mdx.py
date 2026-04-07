@@ -1229,8 +1229,8 @@ class MdxTranslator(SphinxTranslator):
         level = self._flag_to_level(flag_type)
 
         self.new_state()
-        self.add_text(f":::{level}[{flag_type}]\n")
-        self.add_text(f"{message}\n")
+        self.add_text(f":::{level} {flag_type}\n\n")
+        self.add_text(f"{message}")
 
     def depart_flag(self, node: Element) -> None:
         self.add_text("\n:::\n")

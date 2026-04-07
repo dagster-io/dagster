@@ -6,6 +6,10 @@ canonicalUrl: '/api/clis/dagster-cloud-cli'
 slug: '/api/clis/dagster-cloud-cli'
 ---
 
+import SupersededDagsterCloudCLI from '@site/docs/partials/_SupersededDagsterCloudCLI.md';
+
+<SupersededDagsterCloudCLI />
+
 The dagster-cloud CLI is a command-line toolkit designed to work with Dagster+.
 
 import DocCardList from '@theme/DocCardList';

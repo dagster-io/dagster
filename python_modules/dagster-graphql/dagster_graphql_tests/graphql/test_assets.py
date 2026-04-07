@@ -1886,6 +1886,27 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert asset_node["latestMaterializationByPartition"][1] is None
 
+    def test_latest_materialization_per_partition_no_materializations(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        """Test that latestMaterializationByPartition returns early with all Nones when
+        no materializations exist (i.e. latest_storage_ids is empty).
+        """
+        selector = infer_job_selector(graphql_context, "partition_materialization_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_MATERIALIZATION_PER_PARTITION,
+            variables={"pipelineSelector": selector, "partitions": ["a", "b"]},
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
+        assert len(asset_node["latestMaterializationByPartition"]) == 2
+        assert asset_node["latestMaterializationByPartition"][0] is None
+        assert asset_node["latestMaterializationByPartition"][1] is None
+
     def test_latest_run_for_partition(self, graphql_context: WorkspaceRequestContext):
         run_id = _create_partitioned_run(
             graphql_context, "partition_materialization_job", partition_key="a"

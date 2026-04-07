@@ -275,9 +275,9 @@ class AssetRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
-        after_storage_id (Optional[float]): Filter parameter such that only event records for
+        after_storage_id (Optional[int]): Filter parameter such that only event records for
             events with storage_id greater than the provided value are returned.
-        before_storage_id (Optional[float]): Filter parameter such that only event records for
+        before_storage_id (Optional[int]): Filter parameter such that only event records for
             events with storage_id less than the provided value are returned.
         storage_ids (Optional[Sequence[int]]): Filter parameter such that only event records for
             the given storage ids are returned.
@@ -375,9 +375,9 @@ class RunStatusChangeRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
-        after_storage_id (Optional[float]): Filter parameter such that only event records for
+        after_storage_id (Optional[int]): Filter parameter such that only event records for
             events with storage_id greater than the provided value are returned.
-        before_storage_id (Optional[float]): Filter parameter such that only event records for
+        before_storage_id (Optional[int]): Filter parameter such that only event records for
             events with storage_id less than the provided value are returned.
         storage_ids (Optional[Sequence[int]]): Filter parameter such that only event records for
             the given storage ids are returned.

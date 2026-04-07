@@ -317,28 +317,28 @@ const LineNumberContainer = styled.div`
 `;
 
 const SolarizedColors = createGlobalStyle`
-  .ansi-black {
+  .ansi-black-fg {
     color: ${Colors.accentOlive()};
   }
-  .ansi-red {
+  .ansi-red-fg {
     color: ${Colors.accentRed()};
   }
-  .ansi-green {
+  .ansi-green-fg {
     color: ${Colors.accentGreen()};
   }
-  .ansi-yellow {
+  .ansi-yellow-fg {
     color: ${Colors.accentYellow()};
   }
-  .ansi-blue {
+  .ansi-blue-fg {
     color: ${Colors.accentBlue()};
   }
-  .ansi-magenta {
+  .ansi-magenta-fg {
     color: ${Colors.textBlue()};
   }
-  .ansi-cyan {
+  .ansi-cyan-fg {
     color: ${Colors.accentCyan()};
   }
-  .ansi-white {
+  .ansi-white-fg {
     color: ${Colors.accentGray()};
   }
 `;

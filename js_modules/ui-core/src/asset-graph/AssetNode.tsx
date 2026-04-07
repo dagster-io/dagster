@@ -646,6 +646,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     id
     graphName
     hasMaterializePermission
+    hasWipePermission
     jobNames
     changedReasons
     opNames

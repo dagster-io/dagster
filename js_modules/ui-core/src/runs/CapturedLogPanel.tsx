@@ -9,7 +9,6 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
-import styled from 'styled-components';
 
 import {RawLogContent} from './RawLogContent';
 import {ILogCaptureInfo} from './RunMetadataProvider';
@@ -26,6 +25,7 @@ import {
 import {AppContext} from '../app/AppContext';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {useCopyToClipboard} from '../app/browser';
+import styles from './css/CapturedLogPanel.module.css';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -36,16 +36,6 @@ interface CapturedLogProps {
 interface CapturedOrExternalLogPanelProps extends CapturedLogProps {
   logCaptureInfo?: ILogCaptureInfo;
 }
-
-const CapturedLogDataTable = styled(Table)`
-  & tr td:first-child {
-    white-space: nowrap;
-  }
-`;
-
-const ClickToCopyButton = styled(UnstyledButton)`
-  white-space: normal;
-`;
 
 export const CapturedOrExternalLogPanel = React.memo(
   ({logCaptureInfo, ...props}: CapturedOrExternalLogPanelProps) => {
@@ -78,7 +68,7 @@ export const CapturedOrExternalLogPanel = React.memo(
 
     if (externalUrl || shellCmd) {
       return (
-        <CapturedLogDataTable>
+        <Table className={styles.capturedLogDataTable}>
           <tbody>
             {externalUrl ? (
               <tr>
@@ -99,15 +89,15 @@ export const CapturedOrExternalLogPanel = React.memo(
                 <td>Shell command</td>
                 <td>
                   <Tooltip content="Click to copy this shell command" placement="top">
-                    <ClickToCopyButton onClick={onClickShellCmd}>
+                    <UnstyledButton className={styles.clickToCopyButton} onClick={onClickShellCmd}>
                       <Mono>{shellCommand}</Mono>
-                    </ClickToCopyButton>
+                    </UnstyledButton>
                   </Tooltip>
                 </td>
               </tr>
             ) : undefined}
           </tbody>
-        </CapturedLogDataTable>
+        </Table>
       );
     }
     return props.logKey.length ? <CapturedLogPanel {...props} /> : null;

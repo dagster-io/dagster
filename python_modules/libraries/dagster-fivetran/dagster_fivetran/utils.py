@@ -26,9 +26,8 @@ clean_name = clean_name_lower
 
 
 def get_fivetran_connector_url(connector_details: Mapping[str, Any]) -> str:
-    service = connector_details["service"]
-    schema = connector_details["schema"]
-    return f"https://fivetran.com/dashboard/connectors/{service}/{schema}"
+    connector_id = connector_details["id"]
+    return f"https://fivetran.com/dashboard/connections/{connector_id}"
 
 
 def get_fivetran_logs_url(connector_details: Mapping[str, Any]) -> str:

@@ -16,6 +16,7 @@ export type RepoAssetTableFragment = {
   hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   pools: Array<string>;
@@ -96,6 +97,7 @@ export type WorkspaceAssetsQuery = {
           hasAssetChecks: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
+          hasWipePermission: boolean;
           hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
           pools: Array<string>;
@@ -145,4 +147,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = '8e60e278ee64dbc08867486462047b5db1852bbcb23777cd6fbae587703e7ebe';
+export const WorkspaceAssetsQueryVersion = 'c184ee477258056f68ccb6817e75ea5b4a8af7ac0fc4e3b200bce77ea9d63c9f';

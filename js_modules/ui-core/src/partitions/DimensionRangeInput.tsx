@@ -17,12 +17,14 @@ export const DimensionRangeInput = ({
   partitionKeys,
   isTimeseries,
   disabled,
+  emptyPlaceholder,
 }: {
   value: string[];
   onChange: (partitionNames: string[]) => void;
   partitionKeys: string[];
   isTimeseries: boolean;
   disabled?: boolean;
+  emptyPlaceholder?: string;
 }) => {
   const [valueString, setValueString] = React.useState('');
 
@@ -39,10 +41,13 @@ export const DimensionRangeInput = ({
   }, [valueJSON, partitionNameJSON, isTimeseries]);
 
   const placeholder = React.useMemo(() => {
+    if (emptyPlaceholder && value.length === 0) {
+      return emptyPlaceholder;
+    }
     return partitionKeys.length === 0
       ? 'Loading partition keys...'
       : placeholderForPartitions(partitionKeys, isTimeseries);
-  }, [partitionKeys, isTimeseries]);
+  }, [partitionKeys, isTimeseries, emptyPlaceholder, value.length]);
 
   const tryCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
     const selections = spanTextToSelectionsOrError(partitionKeys, valueString);

@@ -93,7 +93,7 @@ Note how `PipesCliArgsParamsLoader` is used to load the CLI arguments passed by 
 
 Because the Dagster code has `include_stdio_in_messages=True`, the message writer will collect logs from the driver and send them to Dagster via Pipes messages.
 
-## Step 3: Running the pipeline with Docker
+## Step 3: Run the pipeline with Docker
 
 1. Place the PySpark code for `script.py` and the Dagster orchestration code for `dagster_code.py` in the same directory.
 

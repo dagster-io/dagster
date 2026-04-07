@@ -8,16 +8,6 @@ slug: '/guides/automate/schedules'
 
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more complex patterns defined using cron expressions.
 
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- Familiarity with [assets](/guides/build/assets)
-- Familiarity with [jobs](/guides/build/jobs)
-
-</details>
-
 ## Basic schedule
 
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
@@ -41,7 +31,7 @@ daily_schedule = dg.ScheduleDefinition(
 )
 ```
 
-For more information, see "[Customizing a schedule's execution timezone](/guides/automate/schedules/customizing-execution-timezone)".
+For more information, see [Customizing a schedule's execution timezone](/guides/automate/schedules/customizing-execution-timezone).
 
 ## Create schedules from partitions
 
@@ -71,11 +61,3 @@ If you have a partitioned op job:
 
 </TabItem>
 </Tabs>
-
-## Next steps
-
-By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints:
-
-- Learn more about schedules in [Understanding automation](/guides/automate)
-- React to events with [sensors](/guides/automate/sensors)
-- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to schedules

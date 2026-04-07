@@ -81,6 +81,7 @@ class AssetValueLoader:
         *,
         python_type: type[object] | None = None,
         partition_key: str | None = None,
+        partition_key_range: PartitionKeyRange | None = None,
         input_definition_metadata: dict[str, Any] | None = None,
         resource_config: Mapping[str, Any] | None = None,
         # deprecated
@@ -95,6 +96,8 @@ class AssetValueLoader:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            partition_key_range (Optional[PartitionKeyRange]): A range of partition keys to load.
+                Mutually exclusive with ``partition_key``.
             input_definition_metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
                 (is equivalent to setting the metadata argument in `In` or `AssetIn`).
             resource_config (Optional[Any]): A dictionary of resource configurations to be passed
@@ -103,6 +106,10 @@ class AssetValueLoader:
         Returns:
             The contents of an asset as a Python object.
         """
+        check.invariant(
+            not (partition_key is not None and partition_key_range is not None),
+            "Cannot specify both partition_key and partition_key_range",
+        )
         asset_key = AssetKey.from_coercible(asset_key)
         resource_config = resource_config or {}
         output_definition_metadata = {}
@@ -144,6 +151,13 @@ class AssetValueLoader:
             {io_manager_key: io_manager_def}, io_resource_config
         )
 
+        if partition_key_range is not None:
+            resolved_partition_key_range = partition_key_range
+        elif partition_key is not None:
+            resolved_partition_key_range = PartitionKeyRange(partition_key, partition_key)
+        else:
+            resolved_partition_key_range = None
+
         input_context = build_input_context(
             name=None,
             asset_key=asset_key,
@@ -158,11 +172,7 @@ class AssetValueLoader:
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
             partition_key=partition_key,
-            asset_partition_key_range=(
-                PartitionKeyRange(partition_key, partition_key)
-                if partition_key is not None
-                else None
-            ),
+            asset_partition_key_range=resolved_partition_key_range,
             asset_partitions_def=asset_partitions_def,
             instance=self._instance,
             definition_metadata=normalize_renamed_param(

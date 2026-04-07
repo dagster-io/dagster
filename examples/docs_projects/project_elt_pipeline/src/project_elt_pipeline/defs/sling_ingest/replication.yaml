@@ -1,0 +1,37 @@
+source: POSTGRES_SOURCE
+target: DUCKDB_TARGET
+
+defaults:
+  mode: full-refresh
+  object: "{stream_schema}_{stream_table}"
+
+streams:
+  public.users:
+    mode: incremental
+    primary_key: id
+    update_key: updated_at
+    object: users
+
+  public.orders:
+    mode: incremental
+    primary_key: id
+    update_key: updated_at
+    object: orders
+
+  public.products:
+    mode: full-refresh
+    object: products
+
+env:
+  POSTGRES_SOURCE: |
+    type: postgres
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT:-5432}
+    database: ${POSTGRES_DATABASE}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    sslmode: ${POSTGRES_SSLMODE:-prefer}
+
+  DUCKDB_TARGET: |
+    type: duckdb
+    instance: ${DEST_DUCKDB_PATH:-./data.duckdb}

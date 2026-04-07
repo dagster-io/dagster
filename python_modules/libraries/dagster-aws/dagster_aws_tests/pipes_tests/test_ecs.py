@@ -188,6 +188,39 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
         assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
 
 
+class FailToStartECSMockClient(LocalECSMockClient):
+    """Mock client that simulates a task failing to start (e.g. image pull failure)."""
+
+    FAIL_REASON = (
+        "TaskFailedToStart: CannotPullContainerError: pull image manifest has been retried"
+        " 1 time(s): failed to resolve ref docker.io/amazon/aws-for-fluent-bit:stable"
+    )
+
+    def run_task(self, **kwargs):
+        response = super().run_task(**kwargs)
+        task_arn = response["tasks"][0]["taskArn"]
+        self.simulate_task_failed_to_start(task_arn, self.FAIL_REASON)
+        return response
+
+
+def test_ecs_pipes_task_failed_to_start(
+    ecs_client, cloudwatch_client, ecs_cluster, ecs_task_definition
+):
+    """Test that a task which fails to start (e.g. image pull failure, missing IAM permissions)
+    raises an error instead of producing a successful materialization.
+    """
+    mock_client = FailToStartECSMockClient(
+        ecs_client=ecs_client, cloudwatch_client=cloudwatch_client
+    )
+    pipes = PipesECSClient(
+        client=mock_client,  # type: ignore
+        message_reader=PipesCloudWatchMessageReader(client=cloudwatch_client),
+    )
+    with instance_for_test() as instance:
+        with pytest.raises(RuntimeError, match="ECS task failed to start"):
+            materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes})
+
+
 def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
     with instance_for_test() as instance:
         """

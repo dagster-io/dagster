@@ -82,7 +82,7 @@ helm --namespace dagster-cloud upgrade agent \
 </TabItem>
 </Tabs>
 
-## Troubleshooting tips
+## Troubleshooting
 
 You can see basic health information about your agent in the Dagster+ UI:
 

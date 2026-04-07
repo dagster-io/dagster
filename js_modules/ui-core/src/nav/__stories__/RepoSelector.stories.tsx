@@ -1,7 +1,8 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import faker from 'faker';
 import {useCallback, useState} from 'react';
 
+import {MockedProvider} from '../../apollo-client/testing';
 import {RepoAddress} from '../../workspace/types';
 import {RepoSelector, RepoSelectorOption} from '../RepoSelector';
 
@@ -144,8 +145,15 @@ export const ManyRepos = () => {
   );
 
   return (
-    <Box background={Colors.accentPrimary()} padding={16}>
-      <RepoSelector options={OPTIONS} onBrowse={() => {}} onToggle={onToggle} selected={selected} />
-    </Box>
+    <MockedProvider mocks={[]}>
+      <Box padding={16}>
+        <RepoSelector
+          options={OPTIONS}
+          onBrowse={() => {}}
+          onToggle={onToggle}
+          selected={selected}
+        />
+      </Box>
+    </MockedProvider>
   );
 };

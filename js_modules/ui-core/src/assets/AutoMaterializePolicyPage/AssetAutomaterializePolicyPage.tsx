@@ -1,6 +1,5 @@
 import {Box, Colors, Spinner} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import styled from 'styled-components';
 
 import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
@@ -13,6 +12,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {AssetKey} from '../types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+import styles from './css/AssetAutomaterializePolicyPage.module.css';
 
 export const AssetAutomaterializePolicyPage = ({
   assetKey,
@@ -63,7 +63,8 @@ export const AssetAutomaterializePolicyPage = ({
   }
 
   return (
-    <AutomaterializePage
+    <Box
+      className={styles.automaterializePage}
       style={{flex: 1, minHeight: 0, color: Colors.textLight(), overflow: 'hidden'}}
       flex={{direction: 'column'}}
     >
@@ -94,12 +95,6 @@ export const AssetAutomaterializePolicyPage = ({
           </Box>
         </Box>
       </Box>
-    </AutomaterializePage>
+    </Box>
   );
 };
-
-const AutomaterializePage = styled(Box)`
-  a span {
-    white-space: normal;
-  }
-`;

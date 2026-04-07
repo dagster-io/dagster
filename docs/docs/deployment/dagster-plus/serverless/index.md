@@ -34,6 +34,10 @@ Serverless is subject to the following limitations:
 
 Dagster+ Pro customers may request a quota increase by [contacting Sales](https://dagster.io/contact).
 
+## Run isolation
+
+Dagster+ Serverless supports both isolated and non-isolated runs. Isolated runs execute in their own container with dedicated resources, while non-isolated runs use a shared container for faster iteration during development. For details, see [Run isolation](/deployment/dagster-plus/run-isolation).
+
 ## Next steps
 
 <Tabs>

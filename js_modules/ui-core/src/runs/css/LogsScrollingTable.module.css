@@ -1,0 +1,7 @@
+.listEmptyState {
+  background-color: var(--color-background-default);
+  z-index: 100;
+  position: absolute;
+  width: 100%;
+  height: calc(100% - 50px);
+}

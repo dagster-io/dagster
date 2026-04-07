@@ -1,0 +1,5 @@
+.automaterializePage {
+  a span {
+    white-space: normal;
+  }
+}

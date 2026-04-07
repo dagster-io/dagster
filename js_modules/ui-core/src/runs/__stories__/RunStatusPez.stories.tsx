@@ -14,18 +14,9 @@ export default {
   component: RunStatusPez,
 };
 
-const mocks = {
-  RunStatsSnapshot: () => ({
-    stepsSucceeded: () => 10,
-    stepsFailed: () => 10,
-    expectations: () => 10,
-    materializations: () => 10,
-  }),
-};
-
 export const Colors = () => {
   return (
-    <StorybookProvider apolloProps={{mocks}}>
+    <StorybookProvider>
       <MetadataTable
         rows={Object.values(RunStatus).map((value: RunStatus) => ({
           key: value,
@@ -58,7 +49,7 @@ export const List = () => {
   const fakeRepo = 'a_repo.py';
   const fakeId = useCallback(() => faker.datatype.uuid(), []);
   return (
-    <StorybookProvider apolloProps={{mocks}}>
+    <StorybookProvider>
       <Box flex={{direction: 'column', gap: 8}}>
         <RunStatusPezList
           jobName={fakeRepo}

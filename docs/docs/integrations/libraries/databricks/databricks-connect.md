@@ -21,7 +21,7 @@ It's not suitable for:
 - Long-running workloads that would block the Dagster process
 - Scenarios where network connectivity to Databricks is unreliable
 
-## Step 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 1. To begin, you'll need a Dagster project. You can use an [existing project](/guides/build/projects/moving-to-components/migrating-project) or [create a new one](/guides/build/projects/creating-projects).
 

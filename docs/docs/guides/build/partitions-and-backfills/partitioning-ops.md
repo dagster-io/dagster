@@ -5,7 +5,7 @@ description: Partitioned ops enable launching backfills, where each partition pr
 
 :::note
 
-This page is specific to ops. To learn about partitioning assets, see "[Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets)".
+This page is specific to ops. To learn about partitioning assets, see [Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets).
 
 :::
 

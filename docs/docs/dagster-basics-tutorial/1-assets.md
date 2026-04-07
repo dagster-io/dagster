@@ -10,7 +10,7 @@ All Dagster objects, such as assets, are added to the `Definitions` object that 
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/assets.png)
 
-## 1. Scaffold an assets file
+## Step 1: Scaffold an assets file
 
 When building assets, the first step is to scaffold an assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold):
 
@@ -20,7 +20,7 @@ This adds a file called `assets.py` to the `dagster-tutorial` module, which will
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/assets.txt" />
 
-## 2. Define the assets
+## Step 2: Define the assets
 
 Now that you have an assets file, you can define your asset code. You define an asset using the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator. Any function with this decorator will be treated as an asset and included in the Dagster asset graph.
 
@@ -40,7 +40,7 @@ You will create one asset for each of the three source files used in this tutori
 
 For now, these assets will simply represent the underlying files. Next, we will discuss how Dagster knows to load them.
 
-## 3. Check definitions
+## Step 3: Check definitions
 
 In Dagster, all defined objects (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When you first created your project with `uvx create-dagster project`, a `definitions.py` file was also created:
 
@@ -58,7 +58,7 @@ You can use the [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check) co
 
 This confirms there are no issues with any of the assets you have defined. As you develop your Dagster project, it is a good habit to run `dg check` to ensure everything works as expected.
 
-## 4. Materialize the assets
+## Step 4: Materialize the assets
 
 Now that your assets are configured and you have verified that the top-level `Definitions` object is valid, you can view the asset catalog in the Dagster UI and reload the definitions:
 

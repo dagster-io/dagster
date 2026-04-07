@@ -63,9 +63,9 @@ async def test_value_hash(
 
     state, _ = await state.evaluate("downstream")
     if materialize_A:
-        state = state.with_runs(run_request("A"))
+        state = state.with_current_time("2024-01-01T01:01").with_runs(run_request("A"))
 
-    state, result = await state.with_current_time("2024-01-01T01:00").evaluate("downstream")
+    state, result = await state.with_current_time("2024-01-01T01:02").evaluate("downstream")
     assert result.value_hash == expected_value_hash
 
 

@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from typing import Any, Callable, ContextManager  # noqa: UP035
 
 import boto3
-import moto
 import pytest
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.instance import DagsterInstance
@@ -15,6 +14,7 @@ from dagster._core.test_utils import in_process_test_workspace, instance_for_tes
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils.warnings import disable_dagster_warnings
+from moto import mock_aws
 
 from dagster_aws_tests.ecs_tests.launcher_tests import repo
 
@@ -29,7 +29,7 @@ def ignore_dagster_warnings() -> Iterator[None]:
 
 @pytest.fixture
 def cloudwatch_client(region: str):
-    with moto.mock_logs():
+    with mock_aws():
         yield boto3.client("logs", region_name=region)
 
 

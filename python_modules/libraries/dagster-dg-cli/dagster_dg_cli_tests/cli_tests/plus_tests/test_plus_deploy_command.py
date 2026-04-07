@@ -19,6 +19,7 @@ from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
+    modify_dg_toml_config_as_dict,
 )
 
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
@@ -1099,3 +1100,77 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
                     "directory": str(workspace.resolve() / "foo-bar"),  # from build.yaml
                     "registry": "...",
                 }
+
+
+def _set_project_toml_field(project_path: Path, key: str, value: str) -> str | None:
+    """Set a field in the project section of pyproject.toml and return the old value."""
+    old_value = None
+    with modify_dg_toml_config_as_dict(project_path / "pyproject.toml") as config:
+        old_value = config.get("project", {}).get(key)
+        config["project"][key] = value
+    return old_value
+
+
+def _remove_project_toml_field(project_path: Path, key: str) -> None:
+    """Remove a field from the project section of pyproject.toml."""
+    with modify_dg_toml_config_as_dict(project_path / "pyproject.toml") as config:
+        if key in config.get("project", {}):
+            del config["project"][key]
+
+
+def test_plus_deploy_hybrid_with_agent_queue_in_pyproject(
+    logged_in_dg_cli_config,
+    project,
+    runner,
+    mocker,
+    build_yaml_file,
+):
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+    _set_project_toml_field(project, "agent_queue", "my-queue")
+    try:
+        with mock_external_dagster_cloud_cli_command():
+            with patch(
+                "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
+            ):
+                result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+                assert not result.exit_code, result.output
+
+                dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+                with open(dagster_cloud_yaml_path) as f:
+                    file = yaml.safe_load(f)
+                    assert file["locations"][0]["agent_queue"] == "my-queue"
+    finally:
+        _remove_project_toml_field(project, "agent_queue")
+
+
+def test_plus_deploy_hybrid_with_image_in_pyproject(
+    logged_in_dg_cli_config,
+    project,
+    runner,
+    mocker,
+):
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+    _set_project_toml_field(project, "image", "my-repo/my-image:latest")
+    try:
+        with mock_external_dagster_cloud_cli_command():
+            with patch(
+                "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
+            ):
+                result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+                assert not result.exit_code, result.output
+
+                dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+                with open(dagster_cloud_yaml_path) as f:
+                    file = yaml.safe_load(f)
+                    assert file["locations"][0]["image"] == "my-repo/my-image:latest"
+                    assert "build" not in file["locations"][0]
+    finally:
+        _remove_project_toml_field(project, "image")

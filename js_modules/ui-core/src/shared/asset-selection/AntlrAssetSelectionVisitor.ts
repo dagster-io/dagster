@@ -18,6 +18,7 @@ import {
   OrExpressionContext,
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
+  PartitionsAttributeExprContext,
   StartContext,
   StatusAttributeExprContext,
   TagAttributeExprContext,
@@ -35,6 +36,7 @@ import {
   getValue,
   isNullValue,
 } from '../../asset-selection/util';
+import {PartitionDefinitionType} from '../../graphql/types';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
 export class AntlrAssetSelectionVisitor
@@ -280,6 +282,36 @@ export class AntlrAssetSelectionVisitor
       matchingAssetKeys
         .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key)))
         .filter((item): item is AssetGraphQueryItem => item !== undefined),
+    );
+  }
+
+  visitPartitionsAttributeExpr(ctx: PartitionsAttributeExprContext) {
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    const isNull = valueCtx ? isNullValue(valueCtx) : false;
+    return new Set(
+      [...this.all_assets].filter((i) => {
+        const partitionDef = i.node.partitionDefinition;
+        if (value === 'none' || isNull) {
+          return partitionDef === null;
+        }
+        if (!partitionDef) {
+          return false;
+        }
+        const dims = partitionDef.dimensionTypes;
+        switch (value) {
+          case 'static':
+            return dims.length === 1 && dims[0]?.type === PartitionDefinitionType.STATIC;
+          case 'dynamic':
+            return dims.length === 1 && dims[0]?.type === PartitionDefinitionType.DYNAMIC;
+          case 'time':
+            return dims.length === 1 && dims[0]?.type === PartitionDefinitionType.TIME_WINDOW;
+          case 'multipartitions':
+            return dims.length > 1;
+          default:
+            return false;
+        }
+      }),
     );
   }
 }

@@ -25,7 +25,7 @@ In the following example, at the start of each hour, the above check will start 
 - If at least one upstream partition of _all_ upstream assets has been updated since the previous cron schedule tick, and the downstream check has not yet been requested or executed, it will be requested.
 - If all upstream assets **do not** update within the given cron tick, the check will not be requested.
 
-If you would like to customize aspects of this behavior, refer to the [customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition) guide.
+To customize aspects of this behavior, see [Customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition).
 
 </TabItem>
 
@@ -42,7 +42,7 @@ In the following example, the asset check will be automatically requested whenev
 
 **Behavior**
 
-If you would like to customize aspects of this behavior, refer to the [customizing eager](customizing-automation-conditions/customizing-eager-condition) guide.
+To customize aspects of this behavior, see [Customizing eager](customizing-automation-conditions/customizing-eager-condition).
 
 - If _any_ upstream partitions have not been materialized, the downstream check will not be requested.
 - If _any_ upstream partitions are currently part of an in-progress run, the downstream check will wait for those runs to complete before being requested.

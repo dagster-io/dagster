@@ -21,7 +21,7 @@ The [`dagster-fivetran` library](/integrations/libraries/fivetran/dagster-fivetr
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -37,7 +37,7 @@ Finally, add the `dagster-fivetran` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/2-add-fivetran.txt" />
 
-## 2. Scaffold a Fivetran component definition
+## Step 2: Scaffold a Fivetran component definition
 
 Now that you have a Dagster project, you can scaffold a Fivetran component definition. You'll need to provide your Fivetran account ID and API credentials, which you can set as environment variables on the command line:
 
@@ -57,7 +57,7 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
   language="yaml"
 />
 
-## 3. Check the component configuration
+## Step 3: Check the component configuration
 
 You can check the configuration of your component with `dg list defs`:
 
@@ -65,7 +65,7 @@ You can check the configuration of your component with `dg list defs`:
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/6-list-defs.txt" />
 </WideContent>
 
-## 4. Select specific connectors
+## Step 4: Select specific connectors
 
 You can select specific Fivetran connectors to include in your component using the `connector_selector` key. This allows you to filter which connectors are represented as assets:
 
@@ -79,7 +79,7 @@ You can select specific Fivetran connectors to include in your component using t
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/8-list-defs.txt" />
 </WideContent>
 
-## 5. Customize Fivetran assets
+## Step 5: Customize Fivetran assets
 
 Properties of the assets emitted by each connector can be customized in the `defs.yaml` file using the `translation` key:
 

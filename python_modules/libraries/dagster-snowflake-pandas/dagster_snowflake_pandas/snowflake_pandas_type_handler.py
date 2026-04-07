@@ -104,7 +104,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         from snowflake import connector
 
         connector.paramstyle = "pyformat"
-        with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
+        with_uppercase_cols = obj.rename(columns=str.upper)
         column_types = _get_table_column_types(table_slice, connection)
         if context.resource_config and context.resource_config.get(
             "store_timestamps_as_strings", False

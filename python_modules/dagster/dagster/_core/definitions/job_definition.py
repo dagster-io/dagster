@@ -1284,6 +1284,37 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
     return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
+def _shape_with_child_defaults(
+    config_type: ConfigType,
+    default_value: Any,
+) -> ConfigType:
+    """Apply default values from a dict to the immediate child fields of a Shape config type.
+
+    When a job has a config preset (e.g. resources with specific values), and a user provides
+    partial config at execution time (e.g. only some resources), the missing child fields should
+    get their defaults from the job-level preset, not from the definitions-level schema defaults.
+    """
+    if not isinstance(default_value, Mapping) or not isinstance(config_type, Shape):
+        return config_type
+
+    updated_fields = {}
+    for child_name, child_field in config_type.fields.items():
+        if child_name in default_value:
+            updated_fields[child_name] = Field(
+                config=child_field.config_type,
+                default_value=default_value[child_name],
+                description=child_field.description,
+            )
+        else:
+            updated_fields[child_name] = child_field
+
+    return Shape(
+        fields=updated_fields,
+        description=config_type.description,
+        field_aliases=config_type.field_aliases,
+    )
+
+
 def _config_mapping_with_default_value(
     inner_schema: ConfigType,
     default_config: Mapping[str, Any],
@@ -1300,13 +1331,15 @@ def _config_mapping_with_default_value(
     for name, field in inner_schema.fields.items():
         if name in default_config:
             updated_fields[name] = Field(
-                config=field.config_type,
+                config=_shape_with_child_defaults(field.config_type, default_config[name]),
                 default_value=default_config[name],
                 description=field.description,
             )
         elif name in field_aliases and field_aliases[name] in default_config:
             updated_fields[name] = Field(
-                config=field.config_type,
+                config=_shape_with_child_defaults(
+                    field.config_type, default_config[field_aliases[name]]
+                ),
                 default_value=default_config[field_aliases[name]],
                 description=field.description,
             )

@@ -25,7 +25,7 @@ The [dagster-tableau](/integrations/libraries/tableau) library provides a `Table
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -41,7 +41,7 @@ Finally, add the `dagster-tableau` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/tableau-component/2-add-tableau.txt" />
 
-## 2. Scaffold a Tableau component definition
+## Step 2: Scaffold a Tableau component definition
 
 Now that you have a Dagster project, you can scaffold a Tableau component definition:
 
@@ -51,7 +51,7 @@ The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/tableau-component/4-tree.txt" />
 
-## 3. Configure your Tableau workspace
+## Step 3: Configure your Tableau workspace
 
 Update the `defs.yaml` file with your Tableau workspace connection details. You'll need to provide your connected app credentials and site information. For more information on creating a connected app, see the [Tableau documentation](https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_concepts_auth.htm#connected-app).
 
@@ -94,7 +94,7 @@ attributes:
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/tableau-component/7-list-defs.txt" />
 </WideContent>
 
-## 4. Enable data source refresh
+## Step 4. Enable data source refresh
 
 You can enable refreshing data sources by adding the `enable_published_datasource_refresh` or `enable_embedded_datasource_refresh` keys. To enable refresh for all data sources of a given type, set the value to `True`:
 

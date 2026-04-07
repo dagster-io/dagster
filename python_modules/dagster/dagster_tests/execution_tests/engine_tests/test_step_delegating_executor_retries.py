@@ -19,7 +19,7 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.merger import merge_dicts
 
 
-class TestStepHandler(StepHandler):
+class MockStepHandler(StepHandler):
     launched_first_attempt = False
     launched_second_attempt = False
     processes = []
@@ -37,18 +37,18 @@ class TestStepHandler(StepHandler):
         known_state = check.not_none(step_handler_context.execute_step_args.known_state)
         attempt_count = known_state.get_retry_state().get_attempt_count(self.retry_step_name)
         if attempt_count == 0:
-            assert TestStepHandler.launched_first_attempt is False
-            assert TestStepHandler.launched_second_attempt is False
-            TestStepHandler.launched_first_attempt = True
+            assert MockStepHandler.launched_first_attempt is False
+            assert MockStepHandler.launched_second_attempt is False
+            MockStepHandler.launched_first_attempt = True
         elif attempt_count == 1:
-            assert TestStepHandler.launched_first_attempt is True
-            assert TestStepHandler.launched_second_attempt is False
-            TestStepHandler.launched_second_attempt = True
+            assert MockStepHandler.launched_first_attempt is True
+            assert MockStepHandler.launched_second_attempt is False
+            MockStepHandler.launched_second_attempt = True
         else:
             raise Exception("Unexpected attempt count")
 
         print("TestStepHandler Launching Step!")  # noqa: T201
-        TestStepHandler.processes.append(
+        MockStepHandler.processes.append(
             subprocess.Popen(step_handler_context.execute_step_args.get_command_args())
         )
         return iter(())
@@ -59,11 +59,11 @@ class TestStepHandler(StepHandler):
         known_state = check.not_none(step_handler_context.execute_step_args.known_state)
         attempt_count = known_state.get_retry_state().get_attempt_count(self.retry_step_name)
         if attempt_count == 0:
-            assert TestStepHandler.launched_first_attempt is True
-            assert TestStepHandler.launched_second_attempt is False
+            assert MockStepHandler.launched_first_attempt is True
+            assert MockStepHandler.launched_second_attempt is False
         elif attempt_count == 1:
-            assert TestStepHandler.launched_first_attempt is True
-            assert TestStepHandler.launched_second_attempt, (
+            assert MockStepHandler.launched_first_attempt is True
+            assert MockStepHandler.launched_second_attempt, (
                 "Second attempt not launched, shouldn't be checking on it"
             )
 
@@ -90,7 +90,7 @@ class TestStepHandler(StepHandler):
 )
 def retry_assertion_executor(exc_init):
     return StepDelegatingExecutor(
-        TestStepHandler(),
+        MockStepHandler(),
         **(merge_dicts({"retries": RetryMode.ENABLED}, exc_init.executor_config)),
         check_step_health_interval_seconds=0,
     )
@@ -109,7 +109,7 @@ def retry_job():
 
 
 def test_retries_no_check_step_health_during_wait():
-    TestStepHandler.reset()
+    MockStepHandler.reset()
     with dg.instance_for_test() as instance:
         with dg.execute_job(
             dg.reconstructable(retry_job),
@@ -119,12 +119,12 @@ def test_retries_no_check_step_health_during_wait():
                 "ops": {"retry_op": {"config": {"fails_before_pass": 1}}},
             },
         ) as result:
-            TestStepHandler.wait_for_processes()
+            MockStepHandler.wait_for_processes()
             assert result.success
 
 
 def test_retries_exhausted():
-    TestStepHandler.reset()
+    MockStepHandler.reset()
     with dg.instance_for_test() as instance:
         with dg.execute_job(
             dg.reconstructable(retry_job),
@@ -134,7 +134,7 @@ def test_retries_exhausted():
                 "ops": {"retry_op": {"config": {"fails_before_pass": 2}}},
             },
         ) as result:
-            TestStepHandler.wait_for_processes()
+            MockStepHandler.wait_for_processes()
             assert not result.success
             assert not [
                 e
@@ -166,7 +166,7 @@ def resource_op(my_resource: FailOnceResource):
 )
 def retry_resource_executor(exc_init):
     return StepDelegatingExecutor(
-        TestStepHandler("resource_op"),
+        MockStepHandler("resource_op"),
         **(merge_dicts({"retries": RetryMode.ENABLED}, exc_init.executor_config)),
         check_step_health_interval_seconds=0,
     )
@@ -181,7 +181,7 @@ def resource_fail_once_job():
 
 
 def test_resource_retries():
-    TestStepHandler.reset()
+    MockStepHandler.reset()
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test() as instance:
             with execute_job(
@@ -189,7 +189,7 @@ def test_resource_retries():
                 instance=instance,
                 run_config={"resources": {"my_resource": {"config": {"parent_dir": tempdir}}}},
             ) as result:
-                TestStepHandler.wait_for_processes()
+                MockStepHandler.wait_for_processes()
                 assert result.success
                 step_events = result.events_for_node("resource_op")
                 assert len([event for event in step_events if event.is_step_up_for_retry]) == 1

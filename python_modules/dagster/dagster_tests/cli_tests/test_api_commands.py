@@ -98,7 +98,7 @@ def test_execute_run_with_secrets_loader(capfd):
                 "secrets": {
                     "custom": {
                         "module": "dagster._core.test_utils",
-                        "class": "TestSecretsLoader",
+                        "class": "MockSecretsLoader",
                         "config": {"env_vars": {"FOO": "BAR"}},
                     }
                 },
@@ -390,7 +390,7 @@ def test_execute_step_with_secrets_loader():
                 "secrets": {
                     "custom": {
                         "module": "dagster._core.test_utils",
-                        "class": "TestSecretsLoader",
+                        "class": "MockSecretsLoader",
                         "config": {
                             "env_vars": {
                                 "FOO": "BAR",

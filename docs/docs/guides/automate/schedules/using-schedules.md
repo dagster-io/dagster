@@ -4,12 +4,6 @@ sidebar_position: 250
 description: Using schedules in Dagster dg projects for entities such as assets and jobs.
 ---
 
-:::note Prerequisites
-
-Before following this guide, you will need to [create a project](/guides/build/projects/creating-projects) with the [`create-dagster` CLI](/api/clis/create-dagster).
-
-:::
-
 [Assets](/guides/build/assets) and [jobs](/guides/build/jobs) frequently use schedules that are instantiated elsewhere in the project.
 
 For example, if you have created a new Dagster project with `dg` called `my_project`, you can define the schedules at `src/my_project/defs/schedules.py`:
@@ -24,6 +18,12 @@ src
         │   └── asset_one.py # contains def asset_one():
         └── schedules.py # contains dg.schedule
 ```
+
+:::note Prerequisites
+
+Before scaffolding schedules, you will need to [create a project](/guides/build/projects/creating-projects) with the [`create-dagster` CLI](/api/clis/create-dagster).
+
+:::
 
 ## Scaffolding schedules
 

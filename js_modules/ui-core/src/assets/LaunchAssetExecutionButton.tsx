@@ -100,6 +100,7 @@ type Asset =
   | {
       assetKey: AssetKey;
       hasMaterializePermission?: boolean;
+      hasWipePermission?: boolean;
       partitionDefinition?: {__typename: string} | null;
       isExecutable?: boolean;
       isObservable?: boolean;
@@ -107,6 +108,7 @@ type Asset =
   | {
       assetKey: AssetKey;
       hasMaterializePermission?: boolean;
+      hasWipePermission?: boolean;
       isPartitioned?: boolean;
       isExecutable?: boolean;
       isObservable?: boolean;
@@ -257,7 +259,14 @@ export const LaunchAssetExecutionButton = ({
         : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
 
   const {menuItem: wipeMenuItem, dialog: wipeDialog} = useWipeMaterializations({
-    selected: useMemo(() => assets.map((asset) => ({key: asset.assetKey})), [assets]),
+    selected: useMemo(
+      () =>
+        assets.map((asset) => ({
+          key: asset.assetKey,
+          definitionHasWipePermission: !!asset.hasWipePermission,
+        })),
+      [assets],
+    ),
   });
 
   if (!canSeeMaterializeAction) {

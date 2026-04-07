@@ -141,11 +141,6 @@ module.exports = [
               message: 'Please import from `@apollo/client`.',
             },
             {
-              name: 'graphql.macro',
-              importNames: ['gql'],
-              message: 'Please import from `@apollo/client`.',
-            },
-            {
               name: 'lodash',
               message: 'Please import specific lodash modules, e.g. `lodash/throttle`.',
             },

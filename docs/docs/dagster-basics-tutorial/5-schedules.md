@@ -10,7 +10,7 @@ Similar to resources, schedules exist within the `Definitions` layer.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/schedules.png)
 
-## 1. Scaffold a schedule definition
+## Step 1: Scaffold a schedule definition
 
 Cron-based schedules are common in data orchestration. They use time-based expressions to automatically trigger tasks at specified intervals, making them ideal for ETL pipelines that need to run consistently—such as hourly, daily, or monthly—to process and update data on a regular cadence. For the tutorial pipeline, you can assume that updated CSVs are uploaded at a specific time every day.
 
@@ -30,7 +30,7 @@ There is very little you need to change about the schedule that has been scaffol
   title="src/dagster_tutorial/defs/schedules.py"
 />
 
-## 2. Enable automation
+## Step 2: Enable automation
 
 To enable automation:
 

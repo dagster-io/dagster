@@ -1,7 +1,8 @@
-import {Box, Colors, NonIdealState, Row, SpinnerWithText} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Row, SpinnerWithText} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
+import * as React from 'react';
 import {useEffect, useRef} from 'react';
-import styled from 'styled-components';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {Structured, Unstructured} from './LogsRow';
@@ -9,6 +10,7 @@ import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {filterLogs} from './filterLogs';
 import {Container, Inner} from '../ui/VirtualizedTable';
+import styles from './css/LogsScrollingTable.module.css';
 
 const BOTTOM_SCROLL_THRESHOLD_PX = 60;
 
@@ -139,10 +141,9 @@ export const LogsScrollingTable = (props: Props) => {
   );
 };
 
-export const ListEmptyState = styled.div`
-  background-color: ${Colors.backgroundDefault()};
-  z-index: 100;
-  position: absolute;
-  width: 100%;
-  height: calc(100% - 50px);
-`;
+export const ListEmptyState = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'>
+>((props, ref) => {
+  return <div {...props} ref={ref} className={clsx(styles.listEmptyState, props.className)} />;
+});

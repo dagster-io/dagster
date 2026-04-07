@@ -1,18 +1,20 @@
 .. currentmodule:: dagster
 
+#########
 Execution
-=========
+#########
 
-
-Materializing Assets
---------------------
+********************
+Materializing assets
+********************
 
 .. autofunction:: materialize
 
 .. autofunction:: materialize_to_memory
 
-Executing Jobs
---------------
+**************
+Executing jobs
+**************
 
 .. autoclass:: JobDefinition
   :noindex:
@@ -25,15 +27,17 @@ Executing Jobs
 
 .. autofunction:: instance_for_test
 
-Executing Graphs
-----------------
+****************
+Executing graphs
+****************
 
 .. autoclass:: GraphDefinition
   :noindex:
   :members: execute_in_process
 
+*****************
 Execution results
------------------
+*****************
 .. currentmodule:: dagster
 
 .. autoclass:: ExecuteInProcessResult
@@ -46,16 +50,17 @@ Execution results
 
 .. autoclass:: DagsterEventType
 
-
+********************
 Reconstructable jobs
---------------------
+********************
+
 .. currentmodule:: dagster
 
 .. autoclass:: reconstructable
 
-
+*********
 Executors
----------
+*********
 .. autodata:: multi_or_in_process_executor
   :annotation: ExecutorDefinition
 
@@ -66,8 +71,9 @@ Executors
   :annotation: ExecutorDefinition
 
 
+*********
 Contexts
---------
+*********
 .. autoclass:: AssetExecutionContext
   :members:
   :inherited-members:
@@ -90,14 +96,15 @@ Contexts
   :members:
   :inherited-members:
 
+*****************
 Job configuration
------------------
+*****************
 
 .. autofunction:: validate_run_config
 .. _config_schema:
 
-Run Config Schema
-^^^^^^^^^^^^^^^^^^^^^^^
+Run config schema
+=================
   The ``run_config`` used for jobs has the following schema:
 
   ::

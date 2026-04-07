@@ -13,7 +13,6 @@ import {
   TagSelectorWithSearch,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {PartitionStatusHealthSource} from './PartitionStatus';
 import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
@@ -21,6 +20,7 @@ import {partitionStatusAtIndex} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {testId} from '../testing/testId';
+import styles from './css/OrdinalPartitionSelector.module.css';
 
 export const OrdinalPartitionSelector = ({
   allPartitions,
@@ -146,7 +146,7 @@ export const OrdinalPartitionSelector = ({
                       <MenuItem
                         text={
                           <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-                            <StyledIcon name="add" size={24} />
+                            <Icon className={styles.styledIcon} name="add" size={24} />
                             <span>Add partition</span>
                           </Box>
                         }
@@ -203,10 +203,6 @@ export const OrdinalPartitionSelector = ({
     />
   );
 };
-
-const StyledIcon = styled(Icon)`
-  font-weight: 500;
-`;
 
 const DropdownItemTooltipStyle = JSON.stringify({
   background: Colors.backgroundLight(),

@@ -3,6 +3,9 @@ import warnings
 
 import pytest
 
+# We have to define these warnings filters here instead of in
+# static config because the dagster package is not guaranteed to be installed
+# in all test suites that use this conftest.py.
 try:
     from dagster import BetaWarning, PreviewWarning, SupersessionWarning
 
@@ -25,11 +28,6 @@ def pytest_configure(config):
     # https://docs.pytest.org/en/7.1.x/reference/reference.html?highlight=pytest_configure#pytest.hookspec.pytest_configure
     if os.getenv("BUILDKITE"):
         print("+++ Running :pytest: PyTest")  # noqa
-
-    # https://docs.pytest.org/en/7.1.x/example/markers.html#custom-marker-and-command-line-option-to-control-test-runs
-    config.addinivalue_line(
-        "markers", "integration: mark test to skip if DISABLE_INTEGRATION_TESTS is set."
-    )
 
 
 def pytest_runtest_setup(item):

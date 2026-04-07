@@ -1,6 +1,7 @@
 import {Colors} from '@dagster-io/ui-components';
+import clsx from 'clsx';
+import * as React from 'react';
 import {Fragment} from 'react';
-import styled from 'styled-components';
 
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
@@ -11,6 +12,7 @@ import {Edge} from './common';
 import {OpGraphOpFragment} from './types/OpGraph.types';
 import {titleOfIO} from '../app/titleOfIO';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
+import styles from './css/ParentOpNode.module.css';
 
 interface ParentOpNodeProps {
   layout: OpGraphLayout;
@@ -237,10 +239,8 @@ const SVGLabeledRect = ({
   </g>
 );
 
-export const SVGLabeledParentRect = styled(SVGLabeledRect)`
-  transition:
-    x 250ms ease-out,
-    y 250ms ease-out,
-    width 250ms ease-out,
-    height 250ms ease-out;
-`;
+export function SVGLabeledParentRect(props: React.ComponentProps<typeof SVGLabeledRect>) {
+  return (
+    <SVGLabeledRect {...props} className={clsx(styles.sVGLabeledParentRect, props.className)} />
+  );
+}

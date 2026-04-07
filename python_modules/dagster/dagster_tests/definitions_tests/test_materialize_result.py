@@ -426,7 +426,7 @@ def test_materialize_result_no_output_typing_does_not_call_io():
     Output. In this case we do not call the IO manager.
     """
 
-    class TestingIOManager(dg.IOManager):
+    class MockIOManager(dg.IOManager):
         def __init__(self):
             self.handle_output_calls = 0
             self.handle_input_calls = 0
@@ -441,7 +441,7 @@ def test_materialize_result_no_output_typing_does_not_call_io():
             self.handle_output_calls = 0
             self.handle_inputs_calls = 0
 
-    io_mgr = TestingIOManager()
+    io_mgr = MockIOManager()
 
     @dg.asset
     def asset_without_type_annotation():

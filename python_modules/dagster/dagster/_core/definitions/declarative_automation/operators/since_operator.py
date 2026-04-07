@@ -111,19 +111,6 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         # must evaluate child condition over the entire subset to avoid missing state transitions
         child_candidate_subset = context.asset_graph_view.get_full_subset(key=context.key)
 
-        from dagster._core.definitions.declarative_automation.operands import (
-            CronTickPassedCondition,
-            NewlyUpdatedCondition,
-        )
-
-        # Bit of a hack to ensure that all_deps_updated_since_cron doesn't drop new updates that
-        # happen in the same tick as the evaluation where the cron tick passes.
-
-        reset_newly_true = not (
-            isinstance(self.reset_condition, CronTickPassedCondition)
-            and isinstance(self.trigger_condition, NewlyUpdatedCondition)
-        )
-
         # compute result for trigger and reset conditions
         trigger_result, reset_result = await asyncio.gather(
             *[
@@ -143,17 +130,22 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         # take the previous subset that this was true for
         true_subset = context.previous_true_subset or context.get_empty_subset()
 
-        if reset_newly_true:
-            # add in any newly true trigger asset partitions
-            true_subset = true_subset.compute_union(trigger_result.true_subset)
-            # remove any newly true reset asset partitions
-            true_subset = true_subset.compute_difference(reset_result.true_subset)
-        else:
-            # remove any newly true reset asset partitions
-            true_subset = true_subset.compute_difference(reset_result.true_subset)
+        trigger_timing = trigger_result.timing_metadata
+        reset_timing = reset_result.timing_metadata
 
-            # add in any newly true trigger asset partitions
-            true_subset = true_subset.compute_union(trigger_result.true_subset)
+        # Step 1: Add all newly-true trigger partitions
+        true_subset = true_subset.compute_union(trigger_result.true_subset)
+
+        # Step 2: Remove all newly-true reset partitions
+        true_subset = true_subset.compute_difference(reset_result.true_subset)
+
+        # Step 3: Use TimingMetadata to re-add partitions where trigger fired after reset
+        both = trigger_result.true_subset.compute_intersection(reset_result.true_subset)
+        if not both.is_empty and trigger_timing and reset_timing:
+            trigger_wins = trigger_timing.subset_with_later_timestamps_than(
+                reset_timing, empty=context.get_empty_subset()
+            ).compute_intersection(both)
+            true_subset = true_subset.compute_union(trigger_wins)
 
         # if anything changed since the previous evaluation, update the metadata
         condition_data = SinceConditionData.from_metadata(context.previous_metadata).update(
@@ -167,6 +159,7 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
             context=context,
             true_subset=true_subset,
             child_results=[trigger_result, reset_result],
+            timing_metadata=trigger_timing,
             metadata=condition_data.to_metadata(),
         )
 

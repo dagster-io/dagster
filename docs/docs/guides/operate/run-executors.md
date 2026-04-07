@@ -61,6 +61,7 @@ Executing a job via <PyObject section="jobs" module="dagster" object="JobDefinit
 | <PyObject section="libraries" integration="docker" module="dagster_docker" object="docker_executor" />               | Executes each step within an ephemeral Kubernetes pod.                                                                 |
 | <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="k8s_job_executor" />                    | Executes each step within an ephemeral Kubernetes pod.                                                                 |
 | <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="celery_k8s_job_executor" />   | Executes each step within an ephemeral Kubernetes pod, using Celery as a control plane for prioritization and queuing. |
+| <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.ecs_executor" />                    | Executes each step within an ephemeral ECS task.                                                                       |
 | <PyObject section="libraries" integration="celery" module="dagster_celery_docker" object="celery_docker_executor" /> | Executes each step within a Docker container, using Celery as a control plane for prioritization and queueing.         |
 
 ## Custom executors

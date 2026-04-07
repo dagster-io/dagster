@@ -5382,10 +5382,37 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vercel/config@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "@vercel/config@npm:0.1.0"
+  dependencies:
+    "@vercel/routing-utils": "npm:6.1.1"
+    pretty-cache-header: "npm:^1.0.0"
+    zod: "npm:^3.22.0"
+  bin:
+    config: dist/cli.js
+  checksum: 10c0/563dec93dbf5d74b39259be085df6b4cc59913c097ee9d5b8b8f747f6b792aa9135cced94f4bd57a81a0d01b3a2ec8c1647d2364c3e13da3a115708072f12a70
+  languageName: node
+  linkType: hard
+
 "@vercel/oidc@npm:^3.0.1":
   version: 3.0.1
   resolution: "@vercel/oidc@npm:3.0.1"
   checksum: 10c0/c21b1492fa87b7d2b08ff9a0ea83fe079cfc8b2ecd7bcb54d6ed98d2e3ef2553a189fa20c64433536ac1ccc8431d51fbe2f72671a6ae0f8357c05fed9b446721
+  languageName: node
+  linkType: hard
+
+"@vercel/routing-utils@npm:6.1.1":
+  version: 6.1.1
+  resolution: "@vercel/routing-utils@npm:6.1.1"
+  dependencies:
+    ajv: "npm:^6.12.3"
+    path-to-regexp: "npm:6.1.0"
+    path-to-regexp-updated: "npm:path-to-regexp@6.3.0"
+  dependenciesMeta:
+    ajv:
+      optional: true
+  checksum: 10c0/dc2aa5664881e4c3373514766ac0388e8960f2906f7120112816302e27cf80feeb9c8f3df7bc6f1bc0f504e45ff0d1dedc13e56cc78d600c2800bfab12223c21
   languageName: node
   linkType: hard
 
@@ -5783,7 +5810,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:^6.12.4, ajv@npm:^6.12.5":
+"ajv@npm:^6.12.3, ajv@npm:^6.12.4, ajv@npm:^6.12.5":
   version: 6.14.0
   resolution: "ajv@npm:6.14.0"
   dependencies:
@@ -6399,12 +6426,12 @@ __metadata:
   linkType: hard
 
 "brace-expansion@npm:^1.1.7":
-  version: 1.1.12
-  resolution: "brace-expansion@npm:1.1.12"
+  version: 1.1.13
+  resolution: "brace-expansion@npm:1.1.13"
   dependencies:
     balanced-match: "npm:^1.0.0"
     concat-map: "npm:0.0.1"
-  checksum: 10c0/975fecac2bb7758c062c20d0b3b6288c7cc895219ee25f0a64a9de662dbac981ff0b6e89909c3897c1f84fa353113a721923afdec5f8b2350255b097f12b1f73
+  checksum: 10c0/384c61bb329b6adfdcc0cbbdd108dc19fb5f3e84ae15a02a74f94c6c791b5a9b035aae73b2a51929a8a478e2f0f212a771eb6a8b5b514cccfb8d0c9f2ce8cbd8
   languageName: node
   linkType: hard
 
@@ -7991,6 +8018,7 @@ __metadata:
     "@types/node": "npm:^22.5.4"
     "@types/react": "npm:^18.3.5"
     "@typescript-eslint/parser": "npm:^8.44.0"
+    "@vercel/config": "npm:^0.1.0"
     clsx: "npm:^2.1.1"
     docusaurus-lunr-search: "npm:3.6.0"
     docusaurus-plugin-image-zoom: "npm:^2.0.0"
@@ -8510,14 +8538,14 @@ __metadata:
   linkType: hard
 
 "dompurify@npm:^3.2.5":
-  version: 3.2.6
-  resolution: "dompurify@npm:3.2.6"
+  version: 3.3.3
+  resolution: "dompurify@npm:3.3.3"
   dependencies:
     "@types/trusted-types": "npm:^2.0.7"
   dependenciesMeta:
     "@types/trusted-types":
       optional: true
-  checksum: 10c0/c8f8e5b0879a0d93c84a2e5e78649a47d0c057ed0f7850ca3d573d2cca64b84fb1ff85bd4b20980ade69c4e5b80ae73011340f1c2ff375c7ef98bb8268e1d13a
+  checksum: 10c0/097c14a21a3f6cb95beded9ecd255f7c3512c42767b048390c747b0fe35736f6a71e02320fc50a9ac2be645834b463e4760915d595d502a56452daf339d0ea9c
   languageName: node
   linkType: hard
 
@@ -9751,9 +9779,9 @@ __metadata:
   linkType: hard
 
 "flatted@npm:^3.2.9":
-  version: 3.3.3
-  resolution: "flatted@npm:3.3.3"
-  checksum: 10c0/e957a1c6b0254aa15b8cce8533e24165abd98fadc98575db082b786b5da1b7d72062b81bfdcd1da2f4d46b6ed93bec2434e62333e9b4261d79ef2e75a10dd538
+  version: 3.4.2
+  resolution: "flatted@npm:3.4.2"
+  checksum: 10c0/a65b67aae7172d6cdf63691be7de6c5cd5adbdfdfe2e9da1a09b617c9512ed794037741ee53d93114276bff3f93cd3b0d97d54f9b316e1e4885dde6e9ffdf7ed
   languageName: node
   linkType: hard
 
@@ -14194,6 +14222,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"path-to-regexp-updated@npm:path-to-regexp@6.3.0":
+  version: 6.3.0
+  resolution: "path-to-regexp@npm:6.3.0"
+  checksum: 10c0/73b67f4638b41cde56254e6354e46ae3a2ebc08279583f6af3d96fe4664fc75788f74ed0d18ca44fa4a98491b69434f9eee73b97bb5314bd1b5adb700f5c18d6
+  languageName: node
+  linkType: hard
+
 "path-to-regexp@npm:0.1.12":
   version: 0.1.12
   resolution: "path-to-regexp@npm:0.1.12"
@@ -14205,6 +14240,13 @@ __metadata:
   version: 3.3.0
   resolution: "path-to-regexp@npm:3.3.0"
   checksum: 10c0/ffa0ebe7088d38d435a8d08b0fe6e8c93ceb2a81a65d4dd1d9a538f52e09d5e3474ed5f553cb3b180d894b0caa10698a68737ab599fd1e56b4663d1a64c9f77b
+  languageName: node
+  linkType: hard
+
+"path-to-regexp@npm:6.1.0":
+  version: 6.1.0
+  resolution: "path-to-regexp@npm:6.1.0"
+  checksum: 10c0/0c22bce52528452ee5717d71c2dc2b273d065a633de25c959d684980d1ff0891225a3dc94095421fe508aaa76f8b26a173954a3aef3c841a2a824bd6bf849963
   languageName: node
   linkType: hard
 
@@ -15215,6 +15257,15 @@ __metadata:
   bin:
     prettier: bin/prettier.cjs
   checksum: 10c0/3880cb90b9dc0635819ab52ff571518c35bd7f15a6e80a2054c05dbc8a3aa6e74f135519e91197de63705bcb38388ded7e7230e2178432a1468005406238b877
+  languageName: node
+  linkType: hard
+
+"pretty-cache-header@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "pretty-cache-header@npm:1.0.0"
+  dependencies:
+    timestring: "npm:^6.0.0"
+  checksum: 10c0/e9129e6a6cd6bee308ac1cc347f6fc536d4f2fa4b2b7048af0ef2ac22880cbfda0834b6c32946437a75dc1004f95c1ebf4c583e4c69fa819958c92c59370673e
   languageName: node
   linkType: hard
 
@@ -17623,6 +17674,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"timestring@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "timestring@npm:6.0.0"
+  checksum: 10c0/753688c0f6ebdec5af6a77a01ad85b5fd868d04d2d1e7510bb23b2554236ea400f008b0b358a54f148c2aa0cf517494e786f20b61d8a7477d7fa4438f33bf84e
+  languageName: node
+  linkType: hard
+
 "tiny-invariant@npm:^1.0.2":
   version: 1.3.3
   resolution: "tiny-invariant@npm:1.3.3"
@@ -19399,6 +19457,13 @@ __metadata:
   version: 1.2.0
   resolution: "yocto-queue@npm:1.2.0"
   checksum: 10c0/9fb3adeba76b69cc7c916831c092bb69ac1aa685c692ae6eb819a9599cbe0c4ecfd5269c145691a15b86d0a25b27d854d6116bbc0851a3373c0a86edb96f1602
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.22.0":
+  version: 3.25.76
+  resolution: "zod@npm:3.25.76"
+  checksum: 10c0/5718ec35e3c40b600316c5b4c5e4976f7fee68151bc8f8d90ec18a469be9571f072e1bbaace10f1e85cf8892ea12d90821b200e980ab46916a6166a4260a983c
   languageName: node
   linkType: hard
 

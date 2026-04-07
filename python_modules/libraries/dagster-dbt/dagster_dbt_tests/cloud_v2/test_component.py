@@ -1,8 +1,11 @@
-from unittest.mock import MagicMock
+import os
+from unittest.mock import MagicMock, patch
 
 import pytest
-from dagster import AssetsDefinition
+from dagster import AssetsDefinition, SensorDefinition
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.resolved.context import ResolutionContext
+from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.utils.defs_state import DefsStateConfigArgs
 from dagster_dbt.cloud_v2.component.dbt_cloud_component import DbtCloudComponent
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
@@ -63,7 +66,13 @@ def mock_workspace(mock_workspace_data):
     """Mock the DbtCloudWorkspace resource."""
     workspace = MagicMock(spec=DbtCloudWorkspace)
     workspace.unique_id = "123-456"
+    workspace.account_name = "test_account"
+    workspace.project_name = "test_project"
+    workspace.environment_name = "test_environment"
+    workspace.project_id = 123
+    workspace.environment_id = 456
     workspace.fetch_workspace_data.return_value = mock_workspace_data
+    workspace.get_or_fetch_workspace_data.return_value = mock_workspace_data
 
     mock_invocation = MagicMock()
     mock_invocation.wait.return_value = []
@@ -114,3 +123,135 @@ def test_dbt_cloud_component_execution(mock_workspace):
     mock_workspace.cli.assert_called_once()
     call_args = mock_workspace.cli.call_args[1]
     assert call_args["args"] == ["build", "--select", "tag:staging"]
+
+
+BASIC_DBT_CLOUD_COMPONENT_BODY = {
+    "type": "dagster_dbt.DbtCloudComponent",
+    "attributes": {
+        "workspace": {
+            "account_id": 123456,
+            "token": "test-token",
+            "access_url": "https://cloud.getdbt.com",
+            "project_id": 11111,
+            "environment_id": 22222,
+        },
+        "select": "tag:dagster",
+    },
+}
+
+
+def test_dbt_cloud_component_from_yaml(mock_workspace_data):
+    """Test that DbtCloudComponent can be loaded from YAML configuration."""
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=BASIC_DBT_CLOUD_COMPONENT_BODY,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert isinstance(component.workspace, DbtCloudWorkspace)
+            assert component.workspace.credentials.account_id == 123456
+            assert component.workspace.credentials.token == "test-token"
+            assert component.workspace.credentials.access_url == "https://cloud.getdbt.com"
+            assert component.workspace.project_id == 11111
+            assert component.workspace.environment_id == 22222
+            assert component.select == "tag:dagster"
+
+
+def test_dbt_cloud_component_from_yaml_with_env_vars(mock_workspace_data):
+    """Test that DbtCloudComponent resolves Jinja env var templates from YAML."""
+    body = {
+        "type": "dagster_dbt.DbtCloudComponent",
+        "attributes": {
+            "workspace": {
+                "account_id": 123456,
+                "token": "{{ env.DBT_CLOUD_TOKEN }}",
+                "project_id": 11111,
+                "environment_id": 22222,
+            },
+        },
+    }
+    with (
+        patch.dict(os.environ, {"DBT_CLOUD_TOKEN": "my-secret-token"}),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert component.workspace.credentials.token == "my-secret-token"
+
+
+def test_dbt_cloud_component_create_sensor(tmp_path, mock_workspace, mock_workspace_data):
+    """Test that create_sensor=True includes a SensorDefinition in the built defs."""
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+        create_sensor=True,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    mock_load_context = MagicMock()
+    defs = component.build_defs_from_state(mock_load_context, state_path)
+
+    assets = list(defs.assets) if defs.assets else []
+    assert len(assets) == 1
+    assert isinstance(assets[0], AssetsDefinition)
+
+    sensors = list(defs.sensors) if defs.sensors else []
+    assert len(sensors) == 1
+    assert isinstance(sensors[0], SensorDefinition)
+
+
+def test_dbt_cloud_component_sensor_included_by_default(
+    tmp_path, mock_workspace, mock_workspace_data
+):
+    """Test that create_sensor defaults to True and a sensor is included."""
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+
+    assert component.create_sensor is True
+
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    mock_load_context = MagicMock()
+    defs = component.build_defs_from_state(mock_load_context, state_path)
+
+    sensors = list(defs.sensors) if defs.sensors else []
+    assert len(sensors) == 1
+    assert isinstance(sensors[0], SensorDefinition)
+
+
+def test_dbt_cloud_component_from_yaml_with_sensor(mock_workspace_data):
+    """Test that create_sensor can be set via YAML configuration."""
+    body = {
+        **BASIC_DBT_CLOUD_COMPONENT_BODY,
+        "attributes": {
+            **BASIC_DBT_CLOUD_COMPONENT_BODY["attributes"],
+            "create_sensor": True,
+        },
+    }
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert component.create_sensor is True

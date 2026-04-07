@@ -1,3 +1,6 @@
+from collections.abc import Sequence
+from typing import Self
+
 from typing_extensions import Required, TypedDict
 
 
@@ -17,11 +20,13 @@ class WaitStepBuilder:
         if key is not None:
             self._step["key"] = key
 
-    def depends_on(self, dependencies) -> "WaitStepBuilder":
-        self._step["depends_on"] = dependencies
+    def depends_on(self, dependencies: str | Sequence[str]) -> Self:
+        self._step["depends_on"] = (
+            [dependencies] if isinstance(dependencies, str) else list(dependencies)
+        )
         return self
 
-    def continue_on_failure(self) -> "WaitStepBuilder":
+    def continue_on_failure(self) -> Self:
         self._step["continue_on_failure"] = True
         return self
 

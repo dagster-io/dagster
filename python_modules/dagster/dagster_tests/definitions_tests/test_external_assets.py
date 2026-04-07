@@ -255,19 +255,13 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
 
 def test_observable_source_asset_decorator() -> None:
-    freshness_policy = dg.LegacyFreshnessPolicy(maximum_lag_minutes=30)
-
-    @dg.observable_source_asset(legacy_freshness_policy=freshness_policy)
+    @dg.observable_source_asset
     def an_observable_source_asset() -> dg.DataVersion:
         return dg.DataVersion("foo")
 
     assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
     assert assets_def.is_executable
     assert assets_def.is_observable
-    assert (
-        assets_def.legacy_freshness_policies_by_key[an_observable_source_asset.key]
-        == freshness_policy
-    )
     defs = dg.Definitions(assets=[assets_def])
 
     instance = DagsterInstance.ephemeral()

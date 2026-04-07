@@ -39,7 +39,6 @@ import {isHealthGroupBy, useAssetCatalogGroupAndSortBy} from './useAssetCatalogG
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {currentPageAtom, useTrackEvent} from '../../app/analytics';
-import {useFeatureFlags} from '../../app/useFeatureFlags';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
@@ -326,7 +325,6 @@ const Table = React.memo(
     ITEMS_BY_KEY,
   }: TableProps<T, TAsset>) => {
     const splitContainerRef = useRef<SplitPanelContainerHandle>(null);
-    const {flagAssetCatalogSidebar} = useFeatureFlags();
 
     const scope = useMemo(() => {
       const selected = (assets ?? []).filter((a) =>
@@ -354,17 +352,15 @@ const Table = React.memo(
           border="bottom"
         >
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-            {flagAssetCatalogSidebar ? (
-              <Tooltip content={sidebarExpanded ? 'Hide sidebar' : 'Show sidebar'}>
-                <Button
-                  icon={<Icon name={sidebarExpanded ? 'panel_show_right' : 'panel_hide_right'} />}
-                  onClick={() => {
-                    splitContainerRef.current?.changeSize(sidebarExpanded ? 0 : 25);
-                    setSidebarExpanded(!sidebarExpanded);
-                  }}
-                />
-              </Tooltip>
-            ) : null}
+            <Tooltip content={sidebarExpanded ? 'Hide sidebar' : 'Show sidebar'}>
+              <Button
+                icon={<Icon name={sidebarExpanded ? 'panel_show_right' : 'panel_hide_right'} />}
+                onClick={() => {
+                  splitContainerRef.current?.changeSize(sidebarExpanded ? 0 : 25);
+                  setSidebarExpanded(!sidebarExpanded);
+                }}
+              />
+            </Tooltip>
             <Body>
               {loading ? (
                 <Skeleton $width={200} $height={21} />
@@ -481,19 +477,6 @@ const Table = React.memo(
       <div />
     );
 
-    if (!flagAssetCatalogSidebar) {
-      return (
-        <>
-          <IndeterminateLoadingBar
-            $loading={
-              loading || (healthDataLoading && isHealthGroupBy(groupBy)) || selectionLoading
-            }
-          />
-          {tabs}
-          {table}
-        </>
-      );
-    }
     return (
       <>
         <IndeterminateLoadingBar

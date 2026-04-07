@@ -12,7 +12,7 @@ import botocore
 
 @dataclass
 class SimulatedTaskRun:
-    popen: Popen
+    popen: Popen | None
     cluster: str
     task_arn: str
     log_group: str
@@ -20,6 +20,7 @@ class SimulatedTaskRun:
     created_at: datetime
     runtime_id: str
     stopped_reason: str | None = None
+    stop_code: str | None = None
     stopped: bool = False
     logs_uploaded: bool = False
 
@@ -164,6 +165,12 @@ class LocalECSMockClient:
             if task["taskArn"] in self._task_runs:
                 simulated_task = self._task_runs[task["taskArn"]]
 
+                if simulated_task.stop_code == "TaskFailedToStart":
+                    task["lastStatus"] = "STOPPED"
+                    task["stopCode"] = "TaskFailedToStart"
+                    task["stoppedReason"] = simulated_task.stopped_reason
+                    return response
+
                 if simulated_task.stopped:
                     task["lastStatus"] = "STOPPED"
                     task["stoppedReason"] = simulated_task.stopped_reason
@@ -171,6 +178,7 @@ class LocalECSMockClient:
                     self._upload_logs_to_cloudwatch(task["taskArn"])
                     return response
 
+                assert simulated_task.popen is not None
                 if simulated_task.popen.poll() is not None:
                     simulated_task.popen.wait()
                     # check status code
@@ -189,8 +197,18 @@ class LocalECSMockClient:
 
         return response
 
+    def simulate_task_failed_to_start(self, task_arn: str, reason: str):
+        """Simulate a task that failed to start (e.g. image pull failure, missing IAM permissions)."""
+        if simulated_task := self._task_runs.get(task_arn):
+            simulated_task.stop_code = "TaskFailedToStart"
+            simulated_task.stopped_reason = reason
+            simulated_task.stopped = True
+            if simulated_task.popen is not None:
+                simulated_task.popen.terminate()
+
     def stop_task(self, cluster: str, task: str, reason: str | None = None):
         if simulated_task := self._task_runs.get(task):
+            assert simulated_task.popen is not None
             simulated_task.popen.terminate()
             simulated_task.stopped = True
             simulated_task.stopped_reason = reason
@@ -225,10 +243,14 @@ class LocalECSMockClient:
         if simulated_task.logs_uploaded:
             return
 
+        if simulated_task.popen is None:
+            simulated_task.logs_uploaded = True
+            return
+
         log_group = simulated_task.log_group
         log_stream = simulated_task.log_stream
 
-        stdout, stderr = self._task_runs[task].popen.communicate()
+        stdout, stderr = simulated_task.popen.communicate()
 
         for out in [stderr, stdout]:
             for line in out.decode().split("\n"):

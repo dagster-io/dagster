@@ -15,6 +15,7 @@ from dagster_dg_cli.cli.api.formatters import (
     format_asset_events,
     format_asset_health,
     format_assets,
+    format_partition_status,
 )
 from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.response_schema import dg_response_schema
@@ -290,6 +291,44 @@ def get_evaluations_asset_command(
         click.echo(output)
 
 
+@click.command(name="get-partition-status", cls=DgClickCommand)
+@click.argument("asset_key", type=str)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output in JSON format for machine readability",
+)
+@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiPartitionStats")
+@dg_api_options(deployment_scoped=True)
+@cli_telemetry_wrapper
+@click.pass_context
+def get_partition_status_command(
+    ctx: click.Context,
+    asset_key: str,
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
+    view_graphql: bool,
+) -> None:
+    """Get partition materialization stats for an asset."""
+    config = DagsterPlusCliConfig.create_for_deployment(
+        deployment=deployment,
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
+    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+
+    api = DgApiAssetApi(client)
+
+    with handle_api_errors(ctx, output_json):
+        stats = api.get_partition_status(asset_key)
+        output = format_partition_status(stats, as_json=output_json)
+        click.echo(output)
+
+
 @click.group(
     name="asset",
     cls=DgClickGroup,
@@ -299,6 +338,7 @@ def get_evaluations_asset_command(
         "get-health": get_health_asset_command,
         "get-events": get_events_asset_command,
         "get-evaluations": get_evaluations_asset_command,
+        "get-partition-status": get_partition_status_command,
     },
 )
 def asset_group():

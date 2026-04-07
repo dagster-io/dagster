@@ -5,6 +5,8 @@ from typing import Any
 import pytest
 from dagster import (
     ConfigurableResource,
+    DynamicOut,
+    DynamicOutput,
     GraphIn,
     GraphOut,
     IAttachDifferentObjectToOpContext,
@@ -221,3 +223,48 @@ def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
             "/".join(["dagster", "storage", result2.run_id, "graph_asset.first_op", "result"]),
         ),
     }
+
+
+def define_dynamic_job(s3_resource, s3_io_manager_builder):
+
+    @op(out=DynamicOut())
+    def dynamic_values():
+        for key in ["foo", "bar"]:
+            yield DynamicOutput(value=key, mapping_key=key)
+
+    @op
+    def return_value(value):
+        return value
+
+    @job(
+        resource_defs={
+            "io_manager": s3_io_manager_builder(s3_resource),
+            "s3": s3_resource,
+        }
+    )
+    def dynamic_job():
+        dynamic_values().map(return_value)
+
+    return dynamic_job
+
+
+def test_s3_pickle_io_manager_dynamic_output(mock_s3_bucket, s3_and_io_manager):
+    s3_resource, s3_io_manager_builder = s3_and_io_manager
+    dynamic_job = define_dynamic_job(s3_resource, s3_io_manager_builder)
+
+    run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
+
+    result = dynamic_job.execute_in_process(run_config)
+
+    assert result.success
+
+    outputs = result.output_for_node("return_value")
+    assert outputs == {"foo": "foo", "bar": "bar"}
+
+    keys = [o.key for o in mock_s3_bucket.objects.all()]
+    for key in keys:
+        assert "[" not in key, f"S3 key contains '[': {key}"
+        assert "]" not in key, f"S3 key contains ']': {key}"
+
+    assert any("return_value--foo" in key for key in keys)
+    assert any("return_value--bar" in key for key in keys)

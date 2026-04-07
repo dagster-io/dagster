@@ -32,6 +32,7 @@ export * from './components/Popover';
 export * from './components/ProductTour';
 export * from './components/ProgressBar';
 export * from './components/Radio';
+export * from './components/RadioTags';
 export * from './components/RefreshableCountdown';
 export * from './components/Select';
 export * from './components/Skeleton';
@@ -59,14 +60,7 @@ export * from './components/useViewport';
 export * from './components/VirtualizedTable';
 export * from './components/styles';
 
-export * from './theme/GlobalThemeStyle';
 export * from './theme/theme';
 
 export * from './palettes/colorNameToVar';
 export * as Colors from './palettes/Color';
-
-// Global font styles, exported as styled-component components to render in
-// your app tree root. E.g. <GlobalGeist />
-export * from './fonts/GlobalInter';
-export * from './fonts/GlobalGeist';
-export * from './fonts/GlobalGeistMono';

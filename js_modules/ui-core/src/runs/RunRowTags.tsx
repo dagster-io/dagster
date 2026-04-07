@@ -8,7 +8,6 @@ import {
   DialogFooter,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags, tagsAsYamlString} from './RunTags';
@@ -18,6 +17,7 @@ import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {CopyButton} from '../ui/CopyButton';
+import styles from './css/RunRowTags.module.css';
 
 export const RunRowTags = ({
   run,
@@ -73,11 +73,11 @@ export const RunRowTags = ({
 
   return (
     <>
-      <RunTagsWrapper>
+      <div className={styles.runTagsWrapper}>
         {tagsToShow.length ? (
           <RunTags tags={tagsToShow} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
         ) : null}
-      </RunTagsWrapper>
+      </div>
       {allTagsWithPinned.length > tagsToShow.length ? (
         <Caption>
           <ButtonLink
@@ -127,10 +127,3 @@ export const RunRowTags = ({
     </>
   );
 };
-
-const RunTagsWrapper = styled.div`
-  display: contents;
-  > * {
-    display: contents;
-  }
-`;

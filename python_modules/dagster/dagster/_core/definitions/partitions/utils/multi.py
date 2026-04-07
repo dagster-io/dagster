@@ -16,12 +16,15 @@ from dagster._core.storage.tags import (
 from dagster._record import record
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
     from dagster._core.definitions.partitions.definition.partitions_definition import (
         PartitionsDefinition,
     )
     from dagster._core.definitions.partitions.definition.time_window import (
         TimeWindowPartitionsDefinition,
     )
+    from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+    from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
@@ -48,6 +51,23 @@ def has_one_dimension_time_window_partitioning(
             return True
 
     return False
+
+
+def time_window_for_partition_key_range(
+    partitions_def: "PartitionsDefinition",
+    key_range: "PartitionKeyRange",
+) -> "TimeWindow":
+    """Compute the TimeWindow spanning a PartitionKeyRange for a time-partitioned definition.
+
+    The partitions_def must satisfy has_one_dimension_time_window_partitioning.
+    """
+    from dagster._core.definitions.partitions.utils.time_window import TimeWindow
+
+    typed_def = cast("TimeWindowPartitionsDefinition | MultiPartitionsDefinition", partitions_def)
+    return TimeWindow(
+        typed_def.time_window_for_partition_key(key_range.start).start,
+        typed_def.time_window_for_partition_key(key_range.end).end,
+    )
 
 
 def get_time_partitions_def(

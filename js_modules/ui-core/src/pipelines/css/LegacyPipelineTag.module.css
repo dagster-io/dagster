@@ -1,0 +1,13 @@
+.legacyTag {
+  background: var(--color-background-light);
+  color: var(--color-text-light);
+  font-family: var(--font-family-default);
+  font-size: 14px;
+  border-radius: 7px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding: 5px;
+  user-select: none;
+  margin: -3px 0;
+  font-size: 11px;
+}

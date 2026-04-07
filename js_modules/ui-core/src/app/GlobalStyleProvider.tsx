@@ -1,84 +1,9 @@
-import {
-  Colors,
-  FontFamily,
-  GlobalDialogStyle,
-  GlobalGeist,
-  GlobalGeistMono,
-  GlobalPopoverStyle,
-  GlobalSuggestStyle,
-  GlobalThemeStyle,
-  Toaster,
-  themeToClassName,
-} from '@dagster-io/ui-components';
+import {themeToClassName} from '@dagster-io/ui-components';
 import {useLayoutEffect} from 'react';
-import {createGlobalStyle} from 'styled-components';
 
 import {useThemeState} from './useThemeState';
-
-const GlobalStyle = createGlobalStyle`
-  * {
-    box-sizing: border-box;
-  }
-
-  html, body, #root {
-    color-scheme: ${Colors.browserColorScheme()};
-    background-color: ${Colors.backgroundDefault()};
-    color: ${Colors.textDefault()};
-    scrollbar-color: ${Colors.accentGrayHover()} ${Colors.backgroundDefault()};
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex: 1 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  a,
-  a:hover,
-  a:active {
-    color: ${Colors.linkDefault()};
-  }
-
-  #root {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
-  body, input, select, textarea {
-    font-family: ${FontFamily.default};
-  }
-
-  button {
-    color: ${Colors.textDefault()};
-    font-family: inherit;
-  }
-
-  code, pre {
-    font-family: ${FontFamily.monospace};
-    font-size: 14px;
-    font-variant-ligatures: none;
-  }
-
-  :focus-visible {
-    outline: ${Colors.focusRing()} auto 1px;
-  }
-
-  :focus:not(:focus-visible) {
-    outline: none;
-  }
-
-  :not(a):focus,
-  :not(a):focus-visible {
-    outline-offset: 1px;
-  }
-`;
+import '@dagster-io/ui-components/src/css/theme.css';
+import './GlobalStyle.css';
 
 export const GlobalStyleProvider = () => {
   const {theme} = useThemeState();
@@ -95,16 +20,5 @@ export const GlobalStyleProvider = () => {
     });
   }, [theme]);
 
-  return (
-    <>
-      <GlobalGeist />
-      <GlobalGeistMono />
-      <GlobalStyle />
-      <GlobalThemeStyle />
-      <GlobalPopoverStyle />
-      <GlobalDialogStyle />
-      <GlobalSuggestStyle />
-      <Toaster richColors />
-    </>
-  );
+  return null;
 };

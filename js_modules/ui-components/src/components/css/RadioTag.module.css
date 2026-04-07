@@ -1,0 +1,15 @@
+.wrapper {
+  display: inline-flex;
+}
+
+.wrapper > * {
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  transition:
+    background-color 100ms linear,
+    box-shadow 100ms linear;
+  background-color: transparent;
+}
+
+.selected > * {
+  box-shadow: var(--color-accent-blue) inset 0px 0px 0px 1px;
+}

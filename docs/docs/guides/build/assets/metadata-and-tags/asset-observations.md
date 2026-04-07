@@ -24,7 +24,7 @@ Asset observations do not count toward your Dagster+ credit usage. We recommend 
 <PyObject section="assets" module="dagster" object="AssetObservation" /> events are used to record metadata in Dagster
 about a given asset. Asset observation events can be logged at runtime within ops and assets. An asset must be defined using the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator or have existing materializations in order for its observations to be displayed.
 
-## Logging an AssetObservation from an op
+## Logging an `AssetObservation` from an op
 
 To make Dagster aware that we have recorded metadata about an asset, we can log an <PyObject section="assets" module="dagster" object="AssetObservation" /> event from within an op. To do this, we use the method <PyObject section="execution" module="dagster" object="OpExecutionContext.log_event" /> on the context:
 
@@ -34,7 +34,7 @@ We should now see an observation event in the event log when we execute this ass
 
 ![asset observation](/images/guides/build/assets/asset-observations/observation.png)
 
-### Attaching Metadata to an AssetObservation
+### Attaching metadata to an `AssetObservation`
 
 There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the **Asset Details** page. Check our API docs for <PyObject section="metadata" module="dagster" object="MetadataValue" /> for more details on the types of event metadata available.
 
@@ -44,7 +44,7 @@ In the **Asset Details** page, we can see observations in the Asset Activity tab
 
 ![asset activity observation](/images/guides/build/assets/asset-observations/asset-activity-observation.png)
 
-### Specifying a partition for an AssetObservation
+### Specifying a partition for an `AssetObservation`
 
 If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
@@ -79,6 +79,6 @@ Source asset observations can also be run as part of an asset job. This allows y
 
 :::note
 
-Currently, source asset observations cannot be run as part of a standard asset job that materializes assets. The `selection` argument to <PyObject section="assets" module="dagster" object="define_asset_job" /> must target only observable source assets-- an error will be thrown if a mix of regular assets and observable source assets is selected.
+Currently, source asset observations cannot be run as part of a standard asset job that materializes assets. The `selection` argument to <PyObject section="assets" module="dagster" object="define_asset_job" /> must target only observable source assets -- an error will be thrown if a mix of regular assets and observable source assets is selected.
 
 :::

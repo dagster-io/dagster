@@ -1,6 +1,7 @@
 import {
   extractKeyPrefixFromSelection,
   selectionReplacingKeyPrefix,
+  selectionWithoutKeyPrefix,
 } from '../AssetCatalogTableSidebar';
 
 describe('AssetCatalogTableSidebar', () => {
@@ -94,6 +95,26 @@ describe('AssetCatalogTableSidebar', () => {
     it('handles case-insensitive OR detection', () => {
       const result = selectionReplacingKeyPrefix('tag:"env" or tag:"prod"', 'aws/staging');
       expect(result).toBe('(tag:"env" or tag:"prod") AND key:"aws/staging/*"');
+    });
+  });
+
+  describe('selectionWithoutKeyPrefix', () => {
+    it('removes key prefix from simple selection', () => {
+      expect(selectionWithoutKeyPrefix('key:"aws/prod/*"')).toBe('');
+    });
+
+    it('removes key prefix from selection with AND', () => {
+      expect(selectionWithoutKeyPrefix('code_location:"dagster" AND key:"aws/prod/*"')).toBe(
+        'code_location:"dagster"',
+      );
+    });
+
+    it('returns empty string for empty selection', () => {
+      expect(selectionWithoutKeyPrefix('')).toBe('');
+    });
+
+    it('returns selection unchanged if no key prefix present', () => {
+      expect(selectionWithoutKeyPrefix('code_location:"dagster"')).toBe('code_location:"dagster"');
     });
   });
 });

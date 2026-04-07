@@ -1,8 +1,8 @@
 import time
 
 import boto3
-import moto
 import pytest
+from moto import mock_aws
 
 from dagster_aws.s3.sensor import get_objects, get_s3_keys
 
@@ -18,7 +18,7 @@ def _put_object(client, bucket_name, prefix, key, body, delay=0) -> None:
 
 
 def test_get_s3_keys():
-    with moto.mock_s3():
+    with mock_aws():
         s3_client = boto3.client("s3", region_name="us-east-1")
         response = s3_client.create_bucket(Bucket=BUCKET_NAME)
         if not response:
@@ -96,7 +96,7 @@ def test_get_s3_keys():
 
 
 def test_get_s3_keys_missing_key_raises_exception():
-    with moto.mock_s3():
+    with mock_aws():
         s3_client = boto3.client("s3", region_name="us-east-1")
         response = s3_client.create_bucket(Bucket=BUCKET_NAME)
         if not response:
@@ -128,7 +128,7 @@ def test_get_s3_keys_missing_key_raises_exception():
 
 
 def test_get_s3_since_key_with_modified_files():
-    with moto.mock_s3():
+    with mock_aws():
         s3_client = boto3.client("s3", region_name="us-east-1")
         s3_client.create_bucket(Bucket=BUCKET_NAME)
 
@@ -179,7 +179,7 @@ def test_get_s3_since_key_with_modified_files():
 
 
 def test_get_objects():
-    with moto.mock_s3():
+    with mock_aws():
         s3_client = boto3.client("s3", region_name="us-east-1")
         s3_client.create_bucket(Bucket=BUCKET_NAME)
 
@@ -225,7 +225,7 @@ def test_get_objects():
 
 
 def test_get_objects_with_modified():
-    with moto.mock_s3():
+    with mock_aws():
         s3_client = boto3.client("s3", region_name="us-east-1")
         s3_client.create_bucket(Bucket=BUCKET_NAME)
 

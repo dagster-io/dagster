@@ -123,6 +123,12 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     ):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#PartitionsAttributeExpr.
+    def visitPartitionsAttributeExpr(
+        self, ctx: AssetSelectionParser.PartitionsAttributeExprContext
+    ):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#value.
     def visitValue(self, ctx: AssetSelectionParser.ValueContext):
         return self.visitChildren(ctx)

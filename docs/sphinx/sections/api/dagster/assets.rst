@@ -1,12 +1,14 @@
 .. currentmodule:: dagster
 
+######
 Assets
-=======================
+######
 
 An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. An asset definition is a description, in code, of an asset that should exist and how to produce and update that asset.
 
+*****************
 Asset definitions
------------------
+*****************
 
 Refer to the `Asset definitions <https://docs.dagster.io/guides/build/assets/defining-assets>`_ documentation for more information.
 
@@ -22,8 +24,9 @@ Refer to the `Asset definitions <https://docs.dagster.io/guides/build/assets/def
 
 .. autofunction:: map_asset_specs
 
+******************************
 Graph-backed asset definitions
-------------------------------
+******************************
 
 Refer to the `Graph-backed asset <https://docs.dagster.io/guides/build/assets/defining-assets#graph-asset>`_ documentation for more information.
 
@@ -31,8 +34,9 @@ Refer to the `Graph-backed asset <https://docs.dagster.io/guides/build/assets/de
 
 .. autodecorator:: graph_multi_asset
 
+***********************
 Multi-asset definitions
------------------------
+***********************
 
 Refer to the `Multi-asset <https://docs.dagster.io/guides/build/assets/defining-assets#multi-asset>`_ documentation for more information.
 
@@ -42,8 +46,9 @@ Refer to the `Multi-asset <https://docs.dagster.io/guides/build/assets/defining-
 
 .. autoclass:: AssetOut
 
+**************
 Source assets
--------------
+**************
 
 Refer to the `External asset dependencies <https://docs.dagster.io/guides/build/assets/external-assets>`_ documentation for more information.
 
@@ -53,15 +58,17 @@ Refer to the `External asset dependencies <https://docs.dagster.io/guides/build/
 
 .. autoclass:: ObserveResult
 
+************
 Dependencies
-------------
+************
 
 .. autoclass:: AssetDep
 
 .. autoclass:: AssetIn
 
+**********
 Asset jobs
-----------
+**********
 
 `Asset jobs <https://docs.dagster.io/guides/build/jobs/asset-jobs>`_ enable the automation of asset materializations.  Dagster's `asset selection syntax <https://docs.dagster.io/guides/build/assets/asset-selection-syntax>`_ can be used to select assets and assign them to a job.
 
@@ -69,8 +76,9 @@ Asset jobs
 
 .. autoclass:: AssetSelection
 
+**************
 Code locations
---------------
+**************
 
 Loading assets and asset jobs into a code location makes them available to Dagster tools like the UI, CLI, and GraphQL API.
 A code location is automatically created when you `create a Dagster project <https://docs.dagster.io/guides/build/projects/creating-projects>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_.
@@ -83,15 +91,17 @@ A code location is automatically created when you `create a Dagster project <htt
 
 .. autofunction:: load_assets_from_package_name
 
+************
 Observations
-------------
+************
 
 Refer to the `Asset observation <https://docs.dagster.io/guides/build/assets/metadata-and-tags/asset-observations>`_ documentation for more information.
 
 .. autoclass:: AssetObservation
 
+******************
 Freshness policies
-------------------
+******************
 
 Freshness policies allow you to define freshness expectations for your assets and track their freshness state over time.
 
@@ -101,8 +111,9 @@ Freshness policies allow you to define freshness expectations for your assets an
 
 .. automethod:: FreshnessPolicy.cron
 
+**********************
 Declarative Automation
----------------------------------------
+**********************
 
 Refer to the `Declarative Automation <https://docs.dagster.io/guides/automate/declarative-automation>`_ documentation for more information.
 
@@ -112,7 +123,8 @@ Refer to the `Declarative Automation <https://docs.dagster.io/guides/automate/de
 
 .. autoclass:: AutomationConditionSensorDefinition
 
+************
 Asset values
-------------
+************
 
 .. autoclass:: AssetValueLoader

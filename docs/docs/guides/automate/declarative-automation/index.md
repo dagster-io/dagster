@@ -41,7 +41,7 @@ In the example below, the asset will start waiting for each of its dependencies 
 
 **Behavior**
 
-If you would like to customize aspects of this behavior, refer to the [customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition) guide.
+To customize aspects of this behavior, see [Customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition).
 
 - If at least one upstream partition of _all_ upstream assets has been updated since the previous cron schedule tick, and the downstream asset has not yet been requested or updated, the downstream asset will be requested.
 - If all upstream assets **do not** update within the given cron tick, the downstream asset will not be requested.

@@ -45,7 +45,7 @@ def scaffold(notebook_name=None, kernel=None):
         raise res.exception
     assert res.exit_code == 0
 
-    yield os.path.abspath(notebook_name)  # pyright: ignore[reportArgumentType]
+    yield os.path.abspath(notebook_name)  # pyright: ignore[reportCallIssue,reportArgumentType]
 
     if os.path.exists(notebook_name):  # pyright: ignore[reportArgumentType]
         os.unlink(notebook_name)  # pyright: ignore[reportArgumentType]

@@ -747,33 +747,34 @@ class AssetGraphView(LoadingContext):
             value = await self._compute_execution_failed_unpartitioned(key)
             return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    async def compute_materialized_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+        """Returns the subset of the given asset that has been materialized."""
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def:
+            cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
+            return (
+                cache_value.get_materialized_subset(self, key, partitions_def)
+                if cache_value
+                else self.get_empty_subset(key=key)
+            )
+        else:
+            value = self._queryer.get_materialized_asset_subset(asset_key=key).value
+            return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
     async def _compute_missing_asset_subset(
         self, key: AssetKey, from_subset: EntitySubset
     ) -> EntitySubset[AssetKey]:
         """Returns a subset which is the subset of the input subset that has never been materialized
         (if it is a materializable asset) or observered (if it is an observable asset).
         """
-        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-
         # TODO: this logic should be simplified once we have a unified way of detecting both
         # materializations and observations through the parittion status cache. at that point, the
         # definition will slightly change to search for materializations and observations regardless
         # of the materializability of the asset
         if self.asset_graph.get(key).is_materializable:
-            # cheap call which takes advantage of the partition status cache
-            partitions_def = self._get_partitions_def(key)
-            if partitions_def:
-                cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
-                materialized_subset = (
-                    cache_value.get_materialized_subset(self, key, partitions_def)
-                    if cache_value
-                    else self.get_empty_subset(key=key)
-                )
-            else:
-                value = self._queryer.get_materialized_asset_subset(asset_key=key).value
-                materialized_subset = EntitySubset(
-                    self, key=key, value=_ValidatedEntitySubsetValue(value)
-                )
+            materialized_subset = await self.compute_materialized_asset_subset(key)
             return from_subset.compute_difference(materialized_subset)
         else:
             # more expensive call
@@ -922,6 +923,56 @@ class AssetGraphView(LoadingContext):
             require_data_version_update=require_data_version_update,
         ).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def compute_subsets_by_latest_materialization_timestamp(
+        self, subset: EntitySubset[AssetKey]
+    ) -> dict[float, EntitySubset[AssetKey]]:
+        """Returns a mapping from materialization event timestamps to entity subsets.
+
+        For unpartitioned assets, uses the cached asset record. For partitioned assets,
+        fetches storage IDs per partition and groups by timestamp.
+        """
+        from dagster._core.event_api import AssetRecordsFilter
+
+        key = check.inst(subset.key, AssetKey)
+
+        # Fast path for unpartitioned assets — use cached asset record
+        if not subset.is_partitioned:
+            asset_record = self._queryer.get_asset_record(key)
+            record = asset_record.asset_entry.last_materialization_record if asset_record else None
+            if record is not None:
+                return {record.timestamp: subset}
+            return {}
+
+        # Partitioned: use caching queryer to get storage IDs per partition
+        asset_partitions = subset.expensively_compute_asset_partitions()
+        valid_storage_ids = {}
+        for ap in asset_partitions:
+            sid = self._queryer.get_latest_materialization_or_observation_storage_id(ap)
+            if sid is not None:
+                valid_storage_ids[ap] = sid
+        if not valid_storage_ids:
+            return {}
+
+        result = self._queryer.instance.fetch_materializations(
+            AssetRecordsFilter(
+                asset_key=key,
+                storage_ids=list(valid_storage_ids.values()),
+            ),
+            limit=len(valid_storage_ids),
+        )
+        storage_id_to_ts = {r.storage_id: r.timestamp for r in result.records}
+
+        # Group partitions by timestamp
+        by_timestamp: dict[float, set[AssetKeyPartitionKey]] = {}
+        for ap, sid in valid_storage_ids.items():
+            if sid in storage_id_to_ts:
+                by_timestamp.setdefault(storage_id_to_ts[sid], set()).add(ap)
+
+        return {
+            ts: self.get_asset_subset_from_asset_partitions(key, akpks)
+            for ts, akpks in by_timestamp.items()
+        }
 
     async def _compute_updated_since_time_subset(
         self, key: AssetCheckKey, time: datetime

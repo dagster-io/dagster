@@ -81,21 +81,49 @@ executionEnvironments = [
 
 [tool.pytest.ini_options]
 
+# Append these options to all pytest invocations.
+addopts = [
+    # Treat unregistered markers as errors to avoid silent typos and ensure all markers are declared in the config. 
+    "--strict-markers",  
+
+    # Show short summary of all non-passing tests (failed, errored, skipped,
+    # etc.) at the end of output.
+    "-ra"
+]
+
+# Don't print any of these warnings during test runs.
 filterwarnings = [
   "ignore::DeprecationWarning",
   "ignore::UserWarning",
   "ignore::pytest.PytestCollectionWarning",
 ]
 
+# Custom markers for categorizing tests. These should be used in test code as
+# `@pytest.mark.<marker_name>`. They can be used to select or deselect tests
+# when running pytest, e.g. `pytest -m "not slow"` to run all tests except
+# those marked as slow.
 markers = [
-  "unit: Fast unit tests with no external dependencies",
   "integration: Tests requiring real git operations or other I/O",
-  "e2e: End-to-end tests requiring GitHub authentication",
   "slow: Tests that take more than 1 second",
 ]
 
-timeout = 240
-addopts = "-ra"
+### pytest-asyncio configuration
+
+# Auto mode: async def test_* functions are automatically treated as async tests without
+# needing @pytest.mark.asyncio on each one. Same for async fixtures.
+asyncio_mode = "auto"
+
+# Use a single event loop for the entire test session, shared across all async fixtures
+# (unless a fixture explicitly declares a different scope).
+asyncio_default_fixture_loop_scope = "session"
+
+### pytest-timeout configuration
+
+# Timeout for individual tests, in seconds. This value is intentionally large
+# as it should not be the default way we catch tests that timeout. The tests
+# themselves should be written such that they fail if something is taking too
+# long. This is just a fallback to ensure our test suite does not hang forever.
+timeout = "240"
 
 # ########################
 # ##### RUFF

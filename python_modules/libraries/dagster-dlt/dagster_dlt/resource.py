@@ -282,6 +282,18 @@ class DagsterDltResource(ConfigurableResource):
                 ]
             )
 
+        # Dlt keeps some local state that interferes with next runs.
+        # This is annoying when an asset fails and running a different one on the same pipeline
+        # would just pick up the failing job and fail again.
+        # When restore_from_destination is enabled (default), we can safely drop all local state
+        # because it will be restored from the destination.
+        # When restore_from_destination is disabled, we only drop pending packages to avoid
+        # wiping incremental loading cursors that can't be recovered from the destination.
+        if dlt_pipeline.config.restore_from_destination:
+            dlt_pipeline.drop()
+        else:
+            dlt_pipeline.drop_pending_packages()
+
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 
         load_info.raise_on_failed_jobs()

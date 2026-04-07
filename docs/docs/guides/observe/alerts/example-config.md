@@ -13,9 +13,22 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 If you prefer to manage your alerts through configuration files instead of the UI, you can create a YAML file using the following snippets and adjust as needed. To sync the file to your Dagster+ deployment, run:
 
+<Tabs>
+  <TabItem value="dg" label="dg CLI" default>
+
+```bash
+dg api alert-policy sync /path/to/alert_policies.yaml
+```
+
+  </TabItem>
+  <TabItem value="dagster-cloud" label="dagster-cloud CLI">
+
 ```bash
 dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 ```
+
+  </TabItem>
+</Tabs>
 
 ## Asset alert
 

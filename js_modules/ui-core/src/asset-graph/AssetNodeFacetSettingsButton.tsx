@@ -68,6 +68,7 @@ const ExampleAssetNode: AssetNodeFragment = {
   description: 'This is a test asset description',
   graphName: null,
   hasMaterializePermission: true,
+  hasWipePermission: true,
   isAutoCreatedStub: false,
   id: '["asset1"]',
   isObservable: false,

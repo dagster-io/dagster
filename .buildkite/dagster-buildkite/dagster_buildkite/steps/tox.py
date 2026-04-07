@@ -2,6 +2,7 @@ import os
 import re
 import shlex
 from dataclasses import dataclass
+from pathlib import Path
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
@@ -10,7 +11,6 @@ from buildkite_shared.step_builders.command_step_builder import (
     CommandStepConfiguration,
 )
 from buildkite_shared.uv import UV_PIN
-from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import make_buildkite_section_header
 
 
@@ -40,7 +40,7 @@ _COMMAND_TYPE_TO_EMOJI_MAP = {
 
 
 def build_tox_step(
-    root_dir: str,
+    root_dir: str | Path,
     tox_env: str,
     base_label: str | None = None,
     command_type: str = "miscellaneous",
@@ -89,7 +89,8 @@ def build_tox_step(
     ]
 
     step_builder = (
-        add_test_image(CommandStepBuilder(label), python_version, env_vars or [])
+        CommandStepBuilder(label)
+        .on_test_image(python_version.value, env=env_vars or [])
         .run(*commands)
         .with_timeout(timeout_in_minutes)
         .with_retry(retries)

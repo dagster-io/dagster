@@ -248,6 +248,14 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     response, cluster=cluster, waiter_config=waiter_config
                 )
 
+                # check for tasks that failed to start (e.g. image pull failures,
+                # missing IAM permissions for secrets, etc.)
+                for task in response["tasks"]:
+                    stop_code = task.get("stopCode")
+                    if stop_code == "TaskFailedToStart":
+                        stopped_reason = task.get("stoppedReason", "Unknown reason")
+                        raise RuntimeError(f"ECS task failed to start: {stopped_reason}")
+
                 # check for failed containers
                 failed_containers = {}
 

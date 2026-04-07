@@ -5,26 +5,21 @@ title: OneLogin SSO
 tags: [dagster-plus-feature]
 ---
 
-import EuRegionUrlNote from '@site/docs/partials/\_EuRegionUrlNote.md';
 import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 In this guide, you'll configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
 - **The following in OneLogin:**
   - An existing OneLogin account
   - Admin permissions
-- **To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)**
+- **To install the [`dg` CLI](/api/clis/dg-cli/dg-cli-configuration#installation)**
 - **The following in Dagster+:**
   - A Pro plan
-  - [Access to a user token](/deployment/dagster-plus/management/tokens/user-tokens)
   - [Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in your organization
-
-</details>
 
 ## Step 1: Add the Dagster+ app in OneLogin \{#dagster-app}
 
@@ -53,15 +48,17 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 1. In OneLogin, open the Dagster+ application.
 2. Navigate to **More Actions > SAML Metadata**.
 3. When prompted, save the file to your computer.
-4. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
+4. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dg` CLI:
+
+   :::note
+
+   Before running this command, you must first log in by running `dg plus login`.
+
+   :::
 
    ```shell
-   dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
-     --api-token=<user_token> \
-     --url https://<organization_name>.dagster.cloud
+   dg api organization saml upload <path/to/metadata>
    ```
-
-<EuRegionUrlNote />
 
 ## Step 4: Grant access to users \{#grant-access}
 

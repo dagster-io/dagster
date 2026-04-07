@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
-from typing import AbstractSet, Any, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
@@ -37,6 +37,9 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 
 
 class AbstractComputeExecutionContext(ABC):
@@ -292,6 +295,38 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   "2023-08-21"
         """
         return self._step_execution_context.partition_key
+
+    @public
+    @property
+    def multi_partition_key(self) -> "MultiPartitionKey":
+        """The partition key for the current run, typed as a :py:class:`~dagster.MultiPartitionKey`.
+
+        Raises an error if the current run is not a partitioned run, or if the partitions definition
+        is not a :py:class:`~dagster.MultiPartitionsDefinition`.
+
+        The returned ``MultiPartitionKey`` provides a
+        :py:attr:`~dagster.MultiPartitionKey.keys_by_dimension` property for accessing individual
+        dimension values.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = MultiPartitionsDefinition(
+                    {
+                        "date": DailyPartitionsDefinition("2023-08-20"),
+                        "color": StaticPartitionsDefinition(["red", "blue"]),
+                    }
+                )
+
+                @asset(partitions_def=partitions_def)
+                def my_asset(context: AssetExecutionContext):
+                    key = context.multi_partition_key
+                    context.log.info(key.keys_by_dimension)
+
+                # materializing the 2023-08-21|red partition of this asset will log:
+                #   {"date": "2023-08-21", "color": "red"}
+        """
+        return self._step_execution_context.multi_partition_key
 
     @public
     @property

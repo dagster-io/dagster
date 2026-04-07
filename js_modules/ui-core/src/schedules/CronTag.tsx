@@ -1,7 +1,7 @@
 import {CaptionMono, MetadataTable, Tag, Tooltip} from '@dagster-io/ui-components';
 import {useContext} from 'react';
-import styled from 'styled-components';
 
+import styles from './css/CronTag.module.css';
 import {hourOffsetFromUTC} from './hourOffsetFromUTC';
 import {humanCronString} from './humanCronString';
 import {TimeContext} from '../app/time/TimeContext';
@@ -28,11 +28,11 @@ export const CronTag = (props: Props) => {
   );
 
   return (
-    <Container>
+    <div className={styles.container}>
       <Tooltip content={tooltipContent} placement="top">
         <Tag icon="schedule">{withExecutionTimezone}</Tag>
       </Tooltip>
-    </Container>
+    </div>
   );
 };
 
@@ -67,13 +67,3 @@ export const useCronInformation = (
     withExecutionTimezone: humanStringWithExecutionTimezone,
   };
 };
-
-const Container = styled.div`
-  .bp5-popover-target {
-    max-width: 100%;
-
-    :focus {
-      outline: none;
-    }
-  }
-`;

@@ -110,7 +110,7 @@ class TestPolytomicTranslation(TestTranslation):
         with setup_polytomic_component(defs_yaml_contents=body) as (_, defs):
             specs = [
                 spec
-                for spec in defs.get_all_asset_specs()
+                for spec in defs.resolve_all_asset_specs()
                 if "dagster/auto_created_stub_asset" not in spec.metadata
             ]
             assert len(specs) == 1
@@ -144,7 +144,7 @@ def test_per_object_type_translation() -> None:
     with setup_polytomic_component(defs_yaml_contents=body) as (_, defs):
         specs = [
             spec
-            for spec in defs.get_all_asset_specs()
+            for spec in defs.resolve_all_asset_specs()
             if "dagster/auto_created_stub_asset" not in spec.metadata
         ]
         assert len(specs) == 1

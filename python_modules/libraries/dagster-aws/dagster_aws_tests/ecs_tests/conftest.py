@@ -1,6 +1,6 @@
 import boto3
-import moto
 import pytest
+from moto import mock_aws
 
 from dagster_aws_tests.ecs_tests.stubbed_ecs import ThreadsafeStubbedEcs
 
@@ -17,7 +17,7 @@ def ecs(region):
 
 @pytest.fixture
 def ec2(region):
-    with moto.mock_ec2():
+    with mock_aws():
         yield boto3.resource("ec2", region_name=region)
 
 
@@ -38,5 +38,5 @@ def security_group(vpc):
 
 @pytest.fixture
 def secrets_manager(region):
-    with moto.mock_secretsmanager():
+    with mock_aws():
         yield boto3.client("secretsmanager", region_name=region)

@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_selection import (
     ColumnAssetSelection,
     ColumnTagAssetSelection,
     KeyWildCardAssetSelection,
+    PartitionsAssetSelection,
     StatusAssetSelection,
     TableNameAssetSelection,
 )
@@ -180,6 +181,12 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     ):
         branch = self.visit(ctx.value())
         return ChangedInBranchAssetSelection(selected_changed_in_branch=branch)
+
+    def visitPartitionsAttributeExpr(
+        self, ctx: AssetSelectionParser.PartitionsAttributeExprContext
+    ):
+        partitions = self.visit(ctx.value())
+        return PartitionsAssetSelection(selected_partitions=partitions)
 
 
 class AntlrAssetSelectionParser:

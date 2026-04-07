@@ -282,12 +282,6 @@ const sidebars: SidebarsConfig = {
         },
       ],
     },
-    {
-      type: 'category',
-      label: 'Guides',
-      collapsed: true,
-      items: ['integrations/guides/multi-asset-integration'],
-    },
   ],
   api: [
     {
@@ -318,6 +312,7 @@ const sidebars: SidebarsConfig = {
             'api/clis/dg-cli/dg-plus',
             'api/clis/dg-cli/dg-api',
             'api/clis/dg-cli/dg-cli-configuration',
+            'api/clis/dg-cli/configuring-dagster-plus',
           ],
         },
         'api/clis/cli',

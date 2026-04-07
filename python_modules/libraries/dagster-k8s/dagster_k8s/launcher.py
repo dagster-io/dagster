@@ -53,6 +53,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_secrets=None,
         load_incluster_config=True,
         kubeconfig_file=None,
+        k8s_api_ssl_ca_cert_file=None,
         inst_data: ConfigurableClassData | None = None,
         job_namespace="default",
         env_config_maps=None,
@@ -85,6 +86,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         else:
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
+
+        # Override the SSL CA cert if a custom CA bundle is provided
+        if k8s_api_ssl_ca_cert_file:
+            config = kubernetes.client.Configuration.get_default_copy()
+            config.ssl_ca_cert = k8s_api_ssl_ca_cert_file
+            kubernetes.client.Configuration.set_default(config)
 
         self._api_client = DagsterKubernetesClient.production_client(
             core_api_override=k8s_client_core_api,

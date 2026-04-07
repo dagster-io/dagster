@@ -78,7 +78,7 @@ def test_remote_dbt_project_dev_mode_calls_fetch(dbt_project_dir: Path) -> None:
             assert isinstance(component.project, RemoteGitDbtProjectManager)
 
             # In dev mode, should automatically fetch and have assets
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # Verify we have the expected assets from jaffle_shop
@@ -125,7 +125,7 @@ def test_remote_dbt_project_reconstruction_mode_no_fetch(dbt_project_dir: Path) 
             scoped_definitions_load_context() as first_load_context,
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # Should have been called once during dev mode load
@@ -154,7 +154,7 @@ def test_remote_dbt_project_reconstruction_mode_no_fetch(dbt_project_dir: Path) 
             assert isinstance(component.project, RemoteGitDbtProjectManager)
 
             # Should still have assets from the state
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # Verify we have the expected assets
@@ -206,7 +206,7 @@ def test_remote_dbt_project_with_profile_and_repo_relative_path(
             assert component.project.repo_relative_path == "."
 
             # Should have assets
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # fetch should have been called in dev mode
@@ -250,7 +250,7 @@ def test_remote_dbt_project_with_token(dbt_project_dir: Path) -> None:
             assert component.project.token == "fake_token_12345"
 
             # Should have assets in dev mode
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # fetch should have been called

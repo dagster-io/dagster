@@ -67,7 +67,13 @@ import {TimeElapsed} from '../runs/TimeElapsed';
 const DEFAULT_MIN_VALUE = 0;
 const DEFAULT_MAX_VALUE = 1000;
 
-export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: string}) => {
+export const InstanceConcurrencyKeyInfo = ({
+  concurrencyKey,
+  readOnly,
+}: {
+  concurrencyKey: string;
+  readOnly: boolean;
+}) => {
   useTrackPageView();
   useDocumentTitle(`Pool: ${concurrencyKey}`);
   const [showEdit, setShowEdit] = React.useState<boolean>();
@@ -110,21 +116,23 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
               </Heading>
               <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                 <QueryRefreshCountdown refreshState={refreshState} />
-                <Popover
-                  position="bottom-right"
-                  content={
-                    <Menu>
-                      <MenuItem
-                        icon="delete"
-                        text="Delete"
-                        intent="danger"
-                        onClick={() => setShowDelete(true)}
-                      />
-                    </Menu>
-                  }
-                >
-                  <Button icon={<Icon name="expand_more" />} />
-                </Popover>
+                {!readOnly && (
+                  <Popover
+                    position="bottom-right"
+                    content={
+                      <Menu>
+                        <MenuItem
+                          icon="delete"
+                          text="Delete"
+                          intent="danger"
+                          onClick={() => setShowDelete(true)}
+                        />
+                      </Menu>
+                    }
+                  >
+                    <Button icon={<Icon name="expand_more" />} />
+                  </Popover>
+                )}
               </Box>
             </Box>
             <Box padding={{vertical: 16, horizontal: 24}}>
@@ -179,9 +187,11 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                             <Caption color={Colors.textLighter()}>(default)</Caption>
                           ) : null}
                         </Box>
-                        <Button icon={<Icon name="edit" />} onClick={() => setShowEdit(true)}>
-                          Edit limit
-                        </Button>
+                        {!readOnly && (
+                          <Button icon={<Icon name="edit" />} onClick={() => setShowEdit(true)}>
+                            Edit limit
+                          </Button>
+                        )}
                       </Box>
                     </td>
                   </tr>
@@ -197,7 +207,11 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                   <Subheading>In progress steps</Subheading>
                 </Box>
                 <Box style={{marginLeft: -1}}>
-                  <PendingStepsTable keyInfo={concurrencyLimit} refresh={refetch} />
+                  <PendingStepsTable
+                    keyInfo={concurrencyLimit}
+                    refresh={refetch}
+                    readOnly={readOnly}
+                  />
                 </Box>
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
@@ -486,9 +500,11 @@ const PoolRunsTable = ({pool, runStatuses}: {pool: string; runStatuses: Set<RunS
 const PendingStepsTable = ({
   keyInfo,
   refresh,
+  readOnly,
 }: {
   keyInfo: ConcurrencyLimitFragment;
   refresh: () => void;
+  readOnly: boolean;
 }) => {
   const runIds = [...new Set(keyInfo.pendingSteps.map((step) => step.runId))];
   const queryResult = useQuery<RunsForConcurrencyKeyQuery, RunsForConcurrencyKeyQueryVariables>(
@@ -537,7 +553,7 @@ const PendingStepsTable = ({
             </Tooltip>
           </Box>
         </th>
-        <th></th>
+        {!readOnly && <th></th>}
       </tr>
     </thead>
   );
@@ -559,6 +575,7 @@ const PendingStepsTable = ({
             step={step}
             statusByRunId={statusByRunId}
             onUpdate={refresh}
+            readOnly={readOnly}
           />
         ))}
       </tbody>
@@ -569,6 +586,7 @@ const PendingStepsTable = ({
             step={step}
             statusByRunId={statusByRunId}
             onUpdate={refresh}
+            readOnly={readOnly}
           />
         ))}
       </tbody>
@@ -580,10 +598,12 @@ const PendingStepRow = ({
   step,
   statusByRunId,
   onUpdate,
+  readOnly,
 }: {
   step: ConcurrencyStepFragment;
   statusByRunId: {[id: string]: RunStatus};
   onUpdate: () => void;
+  readOnly: boolean;
 }) => {
   const runStatus = statusByRunId[step.runId];
   return (
@@ -626,9 +646,11 @@ const PendingStepRow = ({
         )}
       </td>
       <td>{step.priority}</td>
-      <td>
-        <ConcurrencyActionMenu pendingStep={step} onUpdate={onUpdate} />
-      </td>
+      {!readOnly && (
+        <td>
+          <ConcurrencyActionMenu pendingStep={step} onUpdate={onUpdate} />
+        </td>
+      )}
     </tr>
   );
 };

@@ -6,12 +6,6 @@ sidebar_position: 400
 
 In this article, we'll cover a few ways to test your partitioned config and jobs.
 
-:::note
-
-This article assumes familiarity with [partitioned assets](/guides/build/partitions-and-backfills/partitioning-assets).
-
-:::
-
 ## Testing partitioned config
 
 Invoking a <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> object directly invokes the decorated function.

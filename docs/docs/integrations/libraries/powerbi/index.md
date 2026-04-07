@@ -21,7 +21,7 @@ The [dagster-powerbi](/integrations/libraries/powerbi) library provides a `Power
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -37,7 +37,7 @@ Finally, add the `dagster-powerbi` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/2-add-powerbi.txt" />
 
-## 2. Scaffold a Power BI component definition
+## Step 2: Scaffold a Power BI component definition
 
 Now that you have a Dagster project, you can scaffold a Power BI component definition:
 
@@ -47,7 +47,7 @@ The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/4-tree.txt" />
 
-## 3. Configure your Power BI workspace
+## Step 3: Configure your Power BI workspace
 
 Update the `defs.yaml` file with your workspace ID. You will also need to provide either an API access token or service principal credentials. For more information on how to create a service principal, see [Embed Power BI content with service principal and an application secret](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-service-principal) in the Power BI documentation.
 
@@ -61,7 +61,7 @@ Update the `defs.yaml` file with your workspace ID. You will also need to provid
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/7-list-defs.txt" />
 </WideContent>
 
-## 4. Enable semantic model refresh
+## Step 4: Enable semantic model refresh
 
 You can enable refreshing semantic models by adding the `enable_semantic_model_refresh` key. To enable refresh for all semantic models, set the value to `True`.
 
@@ -87,7 +87,7 @@ To enable refreshing specific semantic models, set the value to a list of semant
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/11-list-defs.txt" />
 </WideContent>
 
-## 5. Customize Power BI asset metadata
+## Step 5: Customize Power BI asset metadata
 
 You can customize the metadata and grouping of Power BI assets using the `translation` key:
 

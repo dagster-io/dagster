@@ -1,0 +1,20 @@
+success_list_jobs:
+  command: "dg api job list --json"
+
+success_list_jobs_text:
+  command: "dg api job list"
+
+success_get_job:
+  command: "dg api job get analytics_daily_job --json"
+
+success_get_job_text:
+  command: "dg api job get analytics_daily_job"
+
+success_empty_jobs:
+  command: "dg api job list --json"
+
+success_empty_jobs_text:
+  command: "dg api job list"
+
+error_job_not_found:
+  command: "dg api job get nonexistent_job --json"

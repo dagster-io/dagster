@@ -1018,9 +1018,6 @@ def graph_asset_no_defaults(
         group_name=group_name,
         metadata_by_output_name={"result": metadata} if metadata else None,
         tags_by_output_name={"result": tags_with_kinds} if tags_with_kinds else None,
-        legacy_freshness_policies_by_output_name=(
-            {"result": legacy_freshness_policy} if legacy_freshness_policy else None
-        ),
         automation_conditions_by_output_name=(
             {"result": automation_condition} if automation_condition else None
         ),
@@ -1122,13 +1119,6 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.metadata is not None
         }
 
-        # source freshness policies from the AssetOuts (if any)
-        legacy_freshness_policies_by_output_name = {
-            output_name: out.legacy_freshness_policy
-            for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.legacy_freshness_policy is not None
-        }
-
         # source auto materialize policies from the AssetOuts (if any)
         automation_conditions_by_output_name = {
             output_name: out.automation_condition
@@ -1173,7 +1163,6 @@ def graph_multi_asset(
             group_name=group_name,
             can_subset=can_subset,
             metadata_by_output_name=metadata_by_output_name,
-            legacy_freshness_policies_by_output_name=legacy_freshness_policies_by_output_name,
             automation_conditions_by_output_name=automation_conditions_by_output_name,
             backfill_policy=backfill_policy,
             descriptions_by_output_name=descriptions_by_output_name,

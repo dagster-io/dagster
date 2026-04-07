@@ -1,88 +1,69 @@
 import logging
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from buildkite_shared.context import BuildkiteContext
-from buildkite_shared.python_packages import changed_filetypes, parse_requirements
+from buildkite_shared.utils import oss_path
 
 
-def requirements(name: str, directory: str, *, ctx: BuildkiteContext):
-    # First try to infer requirements from the python package
-    package = ctx.python_packages.get(name)
-    if package:
-        # Return raw requirements — filtering to in-repo packages happens
-        # in walk_dependencies via ctx.python_packages.get().
-        all_reqs = set(parse_requirements(package.dependencies))
-        for extra_reqs in package.optional_dependencies.values():
-            all_reqs.update(parse_requirements(extra_reqs))
-        return all_reqs
-
-    # If we don't have a distribution (like many of our integration test suites)
-    # we can use a buildkite_deps.txt file to capture requirements
-    buildkite_deps_txt = Path(directory) / "buildkite_deps.txt"
-    if buildkite_deps_txt.exists():
-        parsed = parse_requirements(buildkite_deps_txt.read_text().splitlines())
-        return list(parsed)
-
-    # Otherwise return nothing
-    return []
-
-
-def skip_reason(
-    directory: str,
+def get_python_package_step_skip_reason(
+    directory: str | Path,
     name: str | None = None,
-    always_run_if: Callable[[], bool] | None = None,
-    skip_if: Callable[[], str | None] | None = None,
-    is_oss: bool = False,
+    force_run_fn: Callable[[BuildkiteContext], bool] | None = None,
+    skip_run_fn: Callable[[BuildkiteContext], str | None] | None = None,
     *,
     ctx: BuildkiteContext,
 ) -> str | None:
-    """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
-    We actually use this to determine whether or not to run the package.
+    """Provides a message if this package's steps should be skipped on this run,
+    and no message if the package's steps should be run.
     """
     if name is None:
         name = os.path.basename(directory)
 
-    # If the result is not cached, check for NO_SKIP signifier first, so that it always
-    # takes precedent.
     if ctx.config.no_skip:
         logging.info(f"Building {name} because NO_SKIP set")
         return None
-    if always_run_if and always_run_if():
+    if force_run_fn and force_run_fn(ctx):
         return None
-    if skip_if and skip_if():
-        return skip_if()
+    if skip_run_fn and skip_run_fn(ctx):
+        return skip_run_fn(ctx)
 
-    # Take account of feature_branch changes _after_ skip_if so that skip_if
+    # Take account of feature_branch changes _after_ skip_run_fn so that skip_run_fn
     # takes precedent. This way, integration tests can run on branch but won't be
     # forced to run on every master commit.
     if not ctx.is_feature_branch:
         logging.info(f"Building {name} we're not on a feature branch")
         return None
 
-    # OSS directory paths are always relative to the OSS root, so we need to
-    # compare against changes relative to OSS root.
-    changeset = ctx.all_changed_oss_files if is_oss else ctx.changed_files
-    for change in changeset:
-        if (
-            # Our change is in this package's directory
-            Path(directory) in change.parents
-            # The file can alter behavior - exclude things like README changes
-            # which we tend to include in .md files
-            and change.suffix in changed_filetypes
-        ):
-            logging.info(f"Building {name} because it has changed")
-            return None
+    # Check if this package itself has changed (including test-only changes).
+    if ctx.has_package_test_changes(name):
+        logging.info(f"Building {name} because it has changed")
+        return None
 
-    # Consider anything required by install or an extra to be in scope.
-    # We might one day narrow this down to specific extras.
-    for requirement in requirements(name, directory, ctx=ctx):
-        in_scope_changes = ctx.python_packages.with_changes.intersection(
-            ctx.python_packages.walk_dependencies(requirement)
-        )
-        if in_scope_changes:
-            logging.info(f"Building {name} because of changes to {in_scope_changes}")
-            return None
+    # Check if any of this package's in-repo dependencies have changed
+    # (non-test changes only — a test-only change in a dependency shouldn't
+    # force downstream packages to re-test).
+    if ctx.has_package_dependency_changes(name):
+        logging.info(f"Building {name} because a dependency has changed")
+        return None
 
     return "Package unaffected by these changes"
+
+
+def get_general_python_step_skip_reason(
+    ctx: BuildkiteContext, other_paths: Sequence[str] | None = None
+) -> str | None:
+    if ctx.config.no_skip:
+        return None
+    elif not ctx.is_feature_branch:
+        return None
+    elif ctx.has_python_changes():
+        return None
+    elif other_paths and any(
+        oss_path(path) in changed_path.parents
+        for path in other_paths
+        for changed_path in ctx.changed_files
+    ):
+        return None
+    return "No python changes"

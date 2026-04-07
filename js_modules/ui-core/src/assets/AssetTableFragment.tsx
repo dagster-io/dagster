@@ -15,6 +15,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     hasAssetChecks
     computeKind
     hasMaterializePermission
+    hasWipePermission
     hasReportRunlessAssetEventPermission
     assetKey {
       path

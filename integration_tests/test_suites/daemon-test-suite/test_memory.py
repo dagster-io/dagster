@@ -91,7 +91,7 @@ def test_no_memory_leaks():
 
                 growth = objgraph.growth(
                     limit=10,
-                    filter=lambda obj: (
+                    filter=lambda obj: bool(
                         inspect.getmodule(obj) and "dagster" in inspect.getmodule(obj).__name__  # pyright: ignore[reportOptionalMemberAccess]
                     ),
                 )
@@ -103,7 +103,7 @@ def test_no_memory_leaks():
 
                     growth = objgraph.growth(
                         limit=10,
-                        filter=lambda obj: (
+                        filter=lambda obj: bool(
                             inspect.getmodule(obj) and "dagster" in inspect.getmodule(obj).__name__  # pyright: ignore[reportOptionalMemberAccess]
                         ),
                     )

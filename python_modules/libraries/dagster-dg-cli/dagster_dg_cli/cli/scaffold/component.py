@@ -57,7 +57,7 @@ def scaffold_component_command(
     """Scaffold of a custom Dagster component type.
 
     This command must be run inside a Dagster project directory. The component type scaffold
-    will be placed in submodule `<project_name>.lib.<name>`.
+    will be placed in submodule `<project_name>.components.<name>`.
     """
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(target_path, cli_config)

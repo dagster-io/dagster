@@ -49,7 +49,7 @@ By default, Compass chats appear in a panel docked to the right edge of the page
 
 ![Compass dialog display mode](/images/guides/labs/compass-dialog-open.png)
 
-## Limitations during early access
+## Limitations during Early Access
 
 Compass is under active development, and has several known limitations that will be addressed before this feature becomes generally available.
 

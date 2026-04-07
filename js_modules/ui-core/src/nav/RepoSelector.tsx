@@ -10,7 +10,6 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {
   NO_RELOAD_PERMISSION_TEXT,
@@ -20,6 +19,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import styles from './css/RepoSelector.module.css';
 
 export interface RepoSelectorOption {
   repositoryLocation: {name: string};
@@ -86,9 +86,9 @@ export const RepoSelector = (props: Props) => {
                   />
                 </td>
                 <td>
-                  <RepoLabel htmlFor={`switch-${addressString}`}>
+                  <label className={styles.repoLabel} htmlFor={`switch-${addressString}`}>
                     <Box flex={{direction: 'column', gap: 4}}>
-                      <RepoLocation>{addressString}</RepoLocation>
+                      <div className={styles.repoLocation}>{addressString}</div>
                       <Box flex={{direction: 'column', gap: 2}}>
                         {option.repository.displayMetadata.map(({key, value}) => (
                           <Caption
@@ -98,7 +98,7 @@ export const RepoSelector = (props: Props) => {
                         ))}
                       </Box>
                     </Box>
-                  </RepoLabel>
+                  </label>
                 </td>
                 <td>
                   <Link to={workspacePathFromAddress(repoAddress)} onClick={() => onBrowse()}>
@@ -116,31 +116,6 @@ export const RepoSelector = (props: Props) => {
     </div>
   );
 };
-
-const RepoLabel = styled.label`
-  cursor: pointer;
-  display: block;
-  font-weight: 500;
-  overflow: hidden;
-  position: relative;
-  top: 1px;
-  transition: filter 50ms linear;
-  user-select: none;
-  white-space: nowrap;
-
-  :focus,
-  :active {
-    outline: none;
-  }
-
-  :hover {
-    filter: opacity(0.8);
-  }
-`;
-
-const RepoLocation = styled.div`
-  color: ${Colors.textLight()};
-`;
 
 const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
   return (
@@ -162,7 +137,11 @@ const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
         return (
           <Tooltip placement="right" content={tooltipContent()}>
-            <ReloadButtonInner disabled={!hasReloadPermission} onClick={tryReload}>
+            <button
+              className={styles.reloadButtonInner}
+              disabled={!hasReloadPermission}
+              onClick={tryReload}
+            >
               {reloading ? (
                 <Spinner purpose="body-text" />
               ) : (
@@ -171,41 +150,10 @@ const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
                   color={hasReloadPermission ? Colors.accentGray() : Colors.accentGrayHover()}
                 />
               )}
-            </ReloadButtonInner>
+            </button>
           </Tooltip>
         );
       }}
     />
   );
 };
-
-const ReloadButtonInner = styled.button`
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  padding: 8px;
-  margin: -6px;
-  outline: none;
-
-  :disabled {
-    cursor: default;
-  }
-
-  :disabled .iconGlobal {
-    background-color: ${Colors.textDisabled()};
-    transition: background-color 100ms;
-  }
-
-  .iconGlobal {
-    background-color: ${Colors.textLight()};
-    transition: background-color 100ms;
-  }
-
-  :hover:not(:disabled) .iconGlobal {
-    background-color: ${Colors.textLighter()};
-  }
-
-  :focus .iconGlobal {
-    background-color: ${Colors.linkDefault()};
-  }
-`;

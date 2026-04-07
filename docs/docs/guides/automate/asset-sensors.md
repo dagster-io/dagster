@@ -132,7 +132,3 @@ The following example uses a `@multi_asset_sensor` to monitor two assets that tr
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
-
-## Next steps
-
-- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to asset sensors

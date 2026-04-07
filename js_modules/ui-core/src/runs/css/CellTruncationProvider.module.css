@@ -1,0 +1,20 @@
+.overflowFade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.overflowButtonContainer {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+}

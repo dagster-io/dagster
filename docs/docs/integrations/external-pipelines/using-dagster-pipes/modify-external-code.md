@@ -61,7 +61,7 @@ Then, the log messages will show up in the **Run details** page of the Dagster U
 
 Sometimes, you may want to log information from your external code as structured metadata shown in the Dagster UI. Dagster Pipes context also comes with the ability to log structured metadata back to Dagster.
 
-### Report asset materialization
+### Reporting asset materialization
 
 Similar to [reporting materialization metadata within the Dagster process](/guides/build/assets/metadata-and-tags), you can also report asset materialization back to Dagster from the external process.
 
@@ -80,7 +80,7 @@ This metadata will also be displayed on the **Events** tab of the **Asset Detail
 
 ![View materialization events in asset details page](/images/guides/build/external-pipelines/subprocess/part-2-step-3-asset-details.png)
 
-### Report asset checks
+### Reporting asset checks
 
 Dagster allows you to define and execute data quality checks on assets. Refer to the [Asset Checks](/guides/test/asset-checks) documentation for more information.
 
@@ -135,11 +135,11 @@ At this point, your two files should look like the following:
 </TabItem>
 </Tabs>
 
-## What's next?
+## Next steps
 
 In this tutorial, you learned how to get access to Dagster Pipes context, report log messages events from the external process, and send structured events back to Dagster.
 
-What's next? From here, you can:
+From here, you can:
 
 - Learn about other capabilities of executing external code in subprocess via Dagster Pipes in the [Subprocess reference](/integrations/external-pipelines/using-dagster-pipes/reference)
 - Learn how to [customize your own Dagster Pipes protocols](/integrations/external-pipelines/dagster-pipes-details-and-customization)

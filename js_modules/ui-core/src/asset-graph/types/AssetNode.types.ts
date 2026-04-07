@@ -7,6 +7,7 @@ export type AssetNodeFragment = {
   id: string;
   graphName: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   jobNames: Array<string>;
   changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;

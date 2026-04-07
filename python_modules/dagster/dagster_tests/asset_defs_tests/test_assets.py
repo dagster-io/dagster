@@ -161,10 +161,6 @@ def test_retain_freshness_policy():
 
 
 def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
-    fpa = dg.LegacyFreshnessPolicy(maximum_lag_minutes=24.5)
-    fpb = dg.LegacyFreshnessPolicy(
-        maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
-    )
     ampa = AutoMaterializePolicy.eager()
     ampb = AutoMaterializePolicy.lazy()
 
@@ -183,7 +179,6 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
 
     my_graph_asset = AssetsDefinition.from_graph(
         my_graph,
-        legacy_freshness_policies_by_output_name={"a": fpa, "b": fpb},
         auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
     )
 
@@ -195,9 +190,6 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
         }
     )
     specs_by_key = replaced.specs_by_key
-    assert specs_by_key[dg.AssetKey("aa")].legacy_freshness_policy == fpa
-    assert specs_by_key[dg.AssetKey("bb")].legacy_freshness_policy == fpb
-    assert specs_by_key[dg.AssetKey("cc")].legacy_freshness_policy is None
 
     assert specs_by_key[dg.AssetKey("aa")].auto_materialize_policy == ampa
     assert specs_by_key[dg.AssetKey("bb")].auto_materialize_policy == ampb
@@ -923,7 +915,6 @@ def test_from_graph_w_key_prefix():
     def silly_graph():
         return bar(foo())
 
-    freshness_policy = dg.LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -932,7 +923,6 @@ def test_from_graph_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": dg.AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        legacy_freshness_policies_by_output_name={"result": freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -951,7 +941,6 @@ def test_from_graph_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 
@@ -974,7 +963,6 @@ def test_from_op_w_key_prefix():
     def foo():
         return 1
 
-    legacy_freshness_policy = dg.LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -983,7 +971,6 @@ def test_from_op_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": dg.AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        legacy_freshness_policies_by_output_name={"result": legacy_freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -1003,7 +990,6 @@ def test_from_op_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == legacy_freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 

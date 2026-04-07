@@ -28,17 +28,11 @@ If you are just getting started with the Sigma integration, we recommend using t
 - How to represent Sigma assets in the Dagster asset graph, including lineage to other Dagster assets.
 - How to customize asset definition metadata for these Sigma assets.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster-sigma` library installed in your environment
-- Familiarity with asset definitions and the Dagster asset graph
-- Familiarity with Dagster resources
-- Familiarity with Sigma concepts, like datasets and workbooks
 - A Sigma organization
 - A Sigma client ID and client secret. For more information, see [Generate API client credentials](https://help.sigmacomputing.com/reference/generate-client-credentials#generate-api-client-credentials) in the Sigma documentation.
-
-</details>
 
 ## Set up your environment
 
@@ -76,7 +70,7 @@ dagster-sigma snapshot --python-module my_dagster_package --output-path snapshot
 
 ## Customize asset definition metadata for Sigma assets
 
-By default, Dagster will generate asset specs for each Sigma asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Sigma asset type.
+By default, Dagster will generate asset specs for each Sigma asset based on its type, and populate default metadata. You can further customize asset properties by passing an instance of a custom <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Sigma asset type.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/sigma/customize-sigma-asset-defs.py" />
 

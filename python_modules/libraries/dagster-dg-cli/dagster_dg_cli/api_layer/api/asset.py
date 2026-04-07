@@ -8,6 +8,7 @@ from dagster_dg_cli.api_layer.graphql_adapter.asset import (
     get_asset_evaluations_via_graphql,
     get_asset_events_via_graphql,
     get_asset_health_via_graphql,
+    get_asset_partition_status_via_graphql,
     get_dg_plus_api_asset_via_graphql,
     list_dg_plus_api_assets_via_graphql,
 )
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
         DgApiAssetList,
         DgApiAssetStatus,
         DgApiEvaluationRecordList,
+        DgApiPartitionStats,
     )
 
 
@@ -116,3 +118,8 @@ class DgApiAssetApi:
             cursor=cursor,
             include_nodes=include_nodes,
         )
+
+    def get_partition_status(self, asset_key: str) -> "DgApiPartitionStats":
+        """Get partition materialization stats for an asset by slash-separated key."""
+        asset_key_parts = asset_key.split("/")
+        return get_asset_partition_status_via_graphql(self.client, asset_key_parts)

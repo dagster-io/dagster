@@ -16,6 +16,7 @@ export type AssetTableDefinitionFragment = {
   hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   pools: Array<string>;
@@ -79,6 +80,7 @@ export type AssetTableFragment = {
     hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
     pools: Array<string>;

@@ -356,6 +356,7 @@ export type WorkspaceAssetFragment = {
   hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   pools: Array<string>;
@@ -423,6 +424,7 @@ export type WorkspaceRepositoryAssetsFragment = {
     hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
     pools: Array<string>;
@@ -498,6 +500,7 @@ export type WorkspaceLocationAssetsFragment = {
       hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
+      hasWipePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
       description: string | null;
       pools: Array<string>;
@@ -644,6 +647,7 @@ export type WorkspaceLocationFragment = {
       hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
+      hasWipePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
       description: string | null;
       pools: Array<string>;
@@ -738,6 +742,7 @@ export type WorkspaceLocationAssetsEntryFragment = {
             hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
+            hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
             pools: Array<string>;
@@ -1000,6 +1005,7 @@ export type LocationWorkspaceAssetsQuery = {
                   hasAssetChecks: boolean;
                   computeKind: string | null;
                   hasMaterializePermission: boolean;
+                  hasWipePermission: boolean;
                   hasReportRunlessAssetEventPermission: boolean;
                   description: string | null;
                   pools: Array<string>;
@@ -1167,6 +1173,7 @@ export type WorkspaceLocationNodeFragment = {
             hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
+            hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
             pools: Array<string>;
@@ -1318,6 +1325,7 @@ export type WorkspaceRepositoryLocationFragment = {
       hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
+      hasWipePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
       description: string | null;
       pools: Array<string>;
@@ -1460,6 +1468,7 @@ export type WorkspaceRepositoryFragment = {
     hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
     pools: Array<string>;
@@ -1515,4 +1524,4 @@ export const LocationWorkspaceQueryVersion = '13d0e674c559c7506419e36c9f30ecc793
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
-export const LocationWorkspaceAssetsQueryVersion = '61195fc88cb53d325132085b835ac95f0315c431e9a80a86dddd51815ef4c77f';
+export const LocationWorkspaceAssetsQueryVersion = '509f48f34fd4594f163f9196f43afd28a2aca4f1805dbcef1873e8759e54cf64';

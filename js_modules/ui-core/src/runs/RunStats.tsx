@@ -1,11 +1,11 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
 import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import styles from './css/RunStats.module.css';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
@@ -14,11 +14,11 @@ export const RunStats = ({runId}: {runId: string}) => {
 
   if (stats.loading || !stats.data) {
     return (
-      <RunStatsDetailsContainer>
+      <div className={styles.runStatsDetailsContainer}>
         <Box padding={24} flex={{justifyContent: 'center'}}>
           <Spinner purpose="section" />
         </Box>
-      </RunStatsDetailsContainer>
+      </div>
     );
   }
 
@@ -33,7 +33,7 @@ export const RunStats = ({runId}: {runId: string}) => {
 
   const runPath = `/runs/${runId}`;
   return (
-    <RunStatsDetailsContainer>
+    <div className={styles.runStatsDetailsContainer}>
       <Link
         to={`${runPath}?logs=type:STEP_SUCCESS`}
       >{`${result.stats.stepsSucceeded} steps succeeded`}</Link>
@@ -46,7 +46,7 @@ export const RunStats = ({runId}: {runId: string}) => {
       <Link
         to={`${runPath}?logs=type:STEP_EXPECTATION_RESULT`}
       >{`${result.stats.expectations} expectations evaluated`}</Link>
-    </RunStatsDetailsContainer>
+    </div>
   );
 };
 
@@ -75,13 +75,4 @@ const RUN_STATS_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const RunStatsDetailsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 200px;
-  padding: 12px;
-  font-size: 12px;
 `;

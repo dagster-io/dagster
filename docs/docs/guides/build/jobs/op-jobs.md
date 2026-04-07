@@ -32,7 +32,7 @@ Op jobs can be created:
 - [Using the `@job` decorator](#using-the-job-decorator)
 - [From a graph](#from-a-graph)
 
-### Using the @job decorator
+### Using the `@job` decorator
 
 The simplest way to create an op job is to use the <PyObject section="jobs" module="dagster" object="job" decorator />decorator.
 
@@ -111,4 +111,4 @@ You can run an op job in a variety of ways:
 - Via the GraphQL API
 - In [the UI](/guides/operate/webserver#dagster-ui-reference). The UI centers on jobs, making it a one-stop shop - you can manually kick off runs for an op job and view all historical runs.
 
-Refer to the [Job execution guide](/guides/build/jobs/job-execution) for more info and examples.
+For more information and examples, see the [job execution guide](/guides/build/jobs/job-execution).

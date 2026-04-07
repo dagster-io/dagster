@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import boto3
 import pytest
-from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
+from moto.server import ThreadedMotoServer  # type: ignore  # (no type stubs)
 
 from dagster_aws_tests.pipes_tests.utils import (
     _MOTO_SERVER_PORT,

@@ -253,8 +253,8 @@ def test_complex_config_schema() -> None:
     )
     assert executed["yes"]
 
-    a_struct_config_op(AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))  # type: ignore
-    a_struct_config_op(config=AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))  # type: ignore
+    a_struct_config_op(AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
+    a_struct_config_op(config=AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
     a_struct_config_op({"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
     a_struct_config_op(config={"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
 

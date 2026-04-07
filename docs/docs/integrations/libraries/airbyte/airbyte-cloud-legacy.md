@@ -30,17 +30,11 @@ This guide provides instructions for using Dagster with Airbyte Cloud using the 
 - How to materialize Airbyte Cloud connection tables from Dagster.
 - How to customize how Airbyte Cloud connection tables are materialized.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster` and `dagster-airbyte` libraries installed in your environment
-- Familiarity with asset definitions and the Dagster asset graph
-- Familiarity with Dagster resources
-- Familiarity with Airbyte Cloud concepts, like connections and connection tables
 - An Airbyte Cloud workspace
 - An Airbyte Cloud client ID and client secret. For more information, see [Configuring API Access](https://docs.airbyte.com/using-airbyte/configuring-api-access) in the Airbyte Cloud REST API documentation.
-
-</details>
 
 ## Set up your environment
 

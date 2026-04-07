@@ -1068,10 +1068,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
             ).values()
         )
-        events_for_partitions = get_asset_materializations(
-            graphene_info,
-            asset_key=self._asset_node_snap.asset_key,
-            storage_ids=latest_storage_ids,
+        events_for_partitions = (
+            get_asset_materializations(
+                graphene_info,
+                asset_key=self._asset_node_snap.asset_key,
+                storage_ids=latest_storage_ids,
+            )
+            if latest_storage_ids
+            else []
         )
         latest_materialization_by_partition = {
             event.dagster_event.step_materialization_data.materialization.partition: event

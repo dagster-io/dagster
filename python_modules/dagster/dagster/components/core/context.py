@@ -10,7 +10,7 @@ from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
-from dagster._annotations import PublicAttr, deprecated, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
@@ -183,31 +183,6 @@ class ComponentDeclLoadContext:
         )
         return self.component_tree.load_component(resolved_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
 
-    @overload
-    def load_component_at_path(self, defs_path: "ResolvableToComponentPath") -> "Component": ...
-    @overload
-    def load_component_at_path(
-        self, defs_path: "ResolvableToComponentPath", expected_type: type[T]
-    ) -> T: ...
-
-    @deprecated(
-        breaking_version="1.13.0",
-        additional_warn_text="Use load_component instead.",
-    )
-    def load_component_at_path(
-        self, defs_path: "ResolvableToComponentPath", expected_type: type[T] | None = None
-    ) -> Any:
-        """Loads a component from the given path.
-
-        Args:
-            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
-
-        Returns:
-            Component: The component loaded from the given path.
-
-        """
-        return self.load_component(defs_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
-
     def load_structural_component_at_path(
         self, defs_path: "ResolvableToComponentPath"
     ) -> "Component":
@@ -319,23 +294,6 @@ class ComponentLoadContext(ComponentDeclLoadContext):
             from_path=self.component_path, to_path=resolved_path
         )
         return self.component_tree.build_defs(resolved_path)
-
-    @deprecated(
-        breaking_version="1.13.0",
-        additional_warn_text="Use build_defs instead.",
-    )
-    def build_defs_at_path(self, defs_path: Union[Path, "ComponentPath"]) -> Definitions:
-        """Builds definitions from the given defs subdirectory. Currently
-        does not incorporate postprocessing from parent defs modules.
-
-        Args:
-            defs_path: Path to the defs module to load. If relative, resolves relative to the defs root.
-
-        Returns:
-            Definitions: The definitions loaded from the given path.
-
-        """
-        return self.build_defs(defs_path)
 
     def for_path(self, path: Path) -> "Self":
         """Creates a new context for the given path.

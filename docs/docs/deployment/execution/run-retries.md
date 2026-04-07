@@ -37,7 +37,7 @@ The maximum retry limit in this case applies to each individual asset in the job
 
 :::
 
-### Retry Strategy
+### Retry strategy
 
 The `dagster/retry_strategy` tag controls which ops the retry will run.
 

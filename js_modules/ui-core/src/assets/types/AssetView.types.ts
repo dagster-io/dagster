@@ -28,6 +28,7 @@ export type AssetViewDefinitionQuery = {
           hasReportRunlessAssetEventPermission: boolean;
           graphName: string | null;
           hasMaterializePermission: boolean;
+          hasWipePermission: boolean;
           jobNames: Array<string>;
           changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
@@ -16509,6 +16510,7 @@ export type AssetViewDefinitionNodeFragment = {
   hasReportRunlessAssetEventPermission: boolean;
   graphName: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   jobNames: Array<string>;
   changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
@@ -32762,4 +32764,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '085912b81c1d063190109b0133df9a51f8f3c98952df345ebf1871676d983d10';
+export const AssetViewDefinitionQueryVersion = '9f5a93da2fbdbe56f7ac56ce9a30a3b440d873c920d367ad9a4ca77f0e0feb04';

@@ -102,12 +102,19 @@ export const AssetPageHeader = ({
                 // items have the correct href values since we can't control the overflow
                 // rendering. Here, however, we can do what we want, and we render with
                 // react-router Link components that don't need the basePath.
-                const pathWithoutBase = href ? href.replace(basePath, '') : '';
+                if (href) {
+                  return (
+                    <TruncatedHeading key={href}>
+                      <BreadcrumbLink to={href.replace(basePath, '') || '#'}>
+                        {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                      </BreadcrumbLink>
+                    </TruncatedHeading>
+                  );
+                }
+
                 return (
                   <TruncatedHeading key={href}>
-                    <BreadcrumbLink to={pathWithoutBase || '#'}>
-                      {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                    </BreadcrumbLink>
+                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
                   </TruncatedHeading>
                 );
               }}

@@ -1,0 +1,49 @@
+type: project_datastage.components.data_stage_job_component.DataStageJobComponent
+
+attributes:
+  demo_mode: true
+  job_name: customer_data_replication
+  cpdctl_profile: cp4d-profile
+  datastage_project_name: PROD_PROJECT
+  source_connection:
+    type: db2
+    host: mainframe.corp.example.com
+    port: "50000"
+    database: PROD_DB
+  target_connection:
+    type: snowflake
+    account: acme.snowflakecomputing.com
+    database: RAW_ZONE
+    warehouse: ETL_WH
+  tables:
+    - name: customers
+      source_schema: LEGACY
+      target_schema: RAW
+    - name: orders
+      source_schema: LEGACY
+      target_schema: RAW
+    - name: order_line_items
+      source_schema: LEGACY
+      target_schema: RAW
+    - name: products
+      source_schema: LEGACY
+      target_schema: RAW
+    - name: shipments
+      source_schema: LEGACY
+      target_schema: RAW
+
+---
+type: project_datastage.components.scheduled_job_component.ScheduledJobComponent
+
+attributes:
+  job_name: daily_datastage_replication
+  cron_schedule: "0 6 * * *"
+  asset_selection: "tag:schedule=daily"
+
+---
+type: project_datastage.components.scheduled_job_component.ScheduledJobComponent
+
+attributes:
+  job_name: weekly_datastage_data_quality
+  cron_schedule: "0 8 * * 1"
+  asset_selection: "group:datastage_replication"

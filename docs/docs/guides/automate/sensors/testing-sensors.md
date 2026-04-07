@@ -1,13 +1,11 @@
 ---
-description: Test sensors via the Dagster UI, CLI, or Python.
+description: Test sensors in the Dagster UI, CLI, or Python.
 sidebar_position: 300
 title: Testing sensors
 ---
 
 <Tabs>
-<TabItem value="Via the Dagster UI">
-
-**Via the Dagster UI**
+<TabItem value="In the Dagster UI">
 
 :::note
 
@@ -42,9 +40,7 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
    ![Runs page after launching all runs in the Dagster UI](/images/guides/automate/sensors/launch-all-page.png)
 
 </TabItem>
-<TabItem value="Via the CLI">
-
-**Via the CLI**
+<TabItem value="With the CLI">
 
 To quickly preview what an existing sensor will generate when evaluated, run the following::
 
@@ -53,9 +49,7 @@ dagster sensor preview my_sensor_name
 ```
 
 </TabItem>
-<TabItem value="Via Python">
-
-**Via Python**
+<TabItem value="In Python">
 
 To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor. The config obtained from the returned run requests can be validated using the <PyObject section="execution" module="dagster" object="validate_run_config" /> function:
 
@@ -86,9 +80,9 @@ This sensor uses the `context` argument. To invoke it, we need to provide one:
 
 **Testing sensors with resources**
 
-For sensors which utilize [resources](/guides/build/external-resources), you can provide the necessary resources when invoking the sensor function.
+For sensors that utilize [resources](/guides/build/external-resources), you can provide the necessary resources when invoking the sensor function.
 
-Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](/guides/automate/sensors/using-resources-in-sensors)", which uses the `users_api` resource.
+Below is a test for the `process_new_users_sensor` that we defined in [Using resources in sensors](/guides/automate/sensors/using-resources-in-sensors), which uses the `users_api` resource.
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"

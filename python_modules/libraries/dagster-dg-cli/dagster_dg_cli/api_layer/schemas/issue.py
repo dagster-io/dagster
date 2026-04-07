@@ -10,6 +10,7 @@ class DgApiIssueStatus(str, Enum):
 
     OPEN = "OPEN"
     CLOSED = "CLOSED"
+    TRIAGE = "TRIAGE"
 
 
 class DgApiIssue(BaseModel):

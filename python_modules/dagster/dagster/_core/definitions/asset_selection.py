@@ -1292,6 +1292,62 @@ class KeySubstringAssetSelection(AssetSelection):
 
 @whitelist_for_serdes
 @record
+class PartitionsAssetSelection(AssetSelection):
+    """Selects assets based on their partition definition type.
+
+    Valid values for ``selected_partitions``:
+    - ``"none"`` - selects unpartitioned assets
+    - ``"static"`` - selects assets with a ``StaticPartitionsDefinition``
+    - ``"dynamic"`` - selects assets with a ``DynamicPartitionsDefinition``
+    - ``"time"`` - selects assets with a ``TimeWindowPartitionsDefinition`` (including hourly, daily,
+      weekly, and monthly subclasses)
+    - ``"multipartitions"`` - selects assets with a ``MultiPartitionsDefinition``
+    """
+
+    selected_partitions: str | None
+
+    def resolve_inner(
+        self,
+        asset_graph: BaseAssetGraph,
+        allow_missing: bool,
+    ) -> AbstractSet[AssetKey]:
+        from dagster._core.definitions.partitions.definition.dynamic import (
+            DynamicPartitionsDefinition,
+        )
+        from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
+        from dagster._core.definitions.partitions.definition.static import (
+            StaticPartitionsDefinition,
+        )
+        from dagster._core.definitions.partitions.definition.time_window import (
+            TimeWindowPartitionsDefinition,
+        )
+
+        partition_type = self.selected_partitions
+
+        def _matches(node) -> bool:
+            partitions_def = node.partitions_def
+            if partition_type == "none" or partition_type is None:
+                return partitions_def is None
+            elif partition_type == "static":
+                return isinstance(partitions_def, StaticPartitionsDefinition)
+            elif partition_type == "dynamic":
+                return isinstance(partitions_def, DynamicPartitionsDefinition)
+            elif partition_type == "time":
+                return isinstance(partitions_def, TimeWindowPartitionsDefinition)
+            elif partition_type == "multipartitions":
+                return isinstance(partitions_def, MultiPartitionsDefinition)
+            return False
+
+        return {node.key for node in asset_graph.asset_nodes if _matches(node)}
+
+    def to_selection_str(self) -> str:
+        if self.selected_partitions is None:
+            return "partitions:<null>"
+        return f'partitions:"{self.selected_partitions}"'
+
+
+@whitelist_for_serdes
+@record
 class KeyWildCardAssetSelection(AssetSelection):
     selected_key_wildcard: str
 

@@ -16,13 +16,13 @@ import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
+import styles from './css/Stale.module.css';
 
 type StaleDataForNode = {
   staleCauses: AssetStaleDataFragment['staleCauses'];
@@ -284,28 +284,7 @@ export const MinimalNodeStaleDot = ({
 }) => {
   return (
     <StaleCausesPopover liveData={liveData} assetKey={assetKey}>
-      <MinimalNodeStaleDotElement />
+      <div className={styles.minimalNodeStaleDotElement} />
     </StaleCausesPopover>
   );
 };
-
-const MinimalNodeStaleDotElement = styled.div`
-  position: absolute;
-  left: 6px;
-  top: 6px;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background-color: ${Colors.backgroundYellow()};
-  &:after {
-    display: block;
-    position: absolute;
-    content: ' ';
-    left: 5px;
-    top: 5px;
-    height: 10px;
-    width: 10px;
-    border-radius: 50%;
-    background-color: ${Colors.accentYellow()};
-  }
-`;

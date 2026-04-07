@@ -395,9 +395,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         else:
             return False
 
-    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, cursor: str | None, params: PipesParams
-    ) -> tuple[str, str] | None:
+    def download_messages(self, cursor: str | None, params: PipesParams) -> tuple[str, str] | None:
         params = {
             "logGroupName": self.log_group,
             "logStreamName": self.log_stream,

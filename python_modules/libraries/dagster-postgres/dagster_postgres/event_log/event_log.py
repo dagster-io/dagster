@@ -29,7 +29,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.sqlalchemy_compat import db_result, db_select
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
 from sqlalchemy import event
 from sqlalchemy.engine import Connection
@@ -370,12 +370,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._event_watcher.watch_run(run_id, cursor, callback)
 
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
-        with self._engine.connect() as conn:
-            cursor_res = conn.execute(
+        with (
+            self._engine.connect() as conn,
+            db_result(
+                conn,
                 db_select([SqlEventLogStorageTable.c.event]).where(
                     SqlEventLogStorageTable.c.id == cursor
                 ),
-            )
+            ) as cursor_res,
+        ):
             return deserialize_value(cursor_res.scalar(), EventLogEntry)  # type: ignore
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:

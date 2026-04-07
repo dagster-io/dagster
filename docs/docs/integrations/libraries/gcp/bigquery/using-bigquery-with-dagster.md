@@ -175,7 +175,7 @@ With this configuration, if you materialized an asset called `iris_data`, the Bi
 
 Finally, in the <PyObject section="definitions" module="dagster" object="Definitions" /> object, we assign the <PyObject section="libraries" integration="gcp" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject section="libraries" integration="gcp" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> API documentation.
+For more information about each of the configuration values, see the <PyObject section="libraries" integration="gcp" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> API documentation.
 
 ### Step 2: Create tables in BigQuery \{#option-2-step-2}
 
@@ -234,7 +234,7 @@ When finished, your code should look like the following:
 
 ## Related
 
-For more BigQuery features, refer to the [BigQuery reference](/integrations/libraries/gcp/bigquery/reference).
+For more BigQuery features, see the [BigQuery reference](/integrations/libraries/gcp/bigquery/reference).
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets).
 

@@ -25,7 +25,7 @@ full = [
     "duckdb",
     "flaky",
     "matplotlib",
-    "moto[s3]<5.0",
+    "moto[s3]>=5.0",
     "numpy",
     "pandas",
     "pandera",

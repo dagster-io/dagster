@@ -45,7 +45,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ):
         """Stores the pandas DataFrame in BigQuery."""
-        with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
+        with_uppercase_cols = obj.rename(columns=str.upper)
 
         job = connection.load_table_from_dataframe(
             dataframe=with_uppercase_cols,
