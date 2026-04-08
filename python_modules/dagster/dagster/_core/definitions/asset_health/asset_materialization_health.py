@@ -373,6 +373,10 @@ class AssetHealthMaterializationHealthyPartitionedMeta:
 class AssetHealthMaterializationDegradedNotPartitionedMeta:
     failed_run_id: str | None
 
+    @property
+    def latest_failed_to_materialize_run_id(self) -> str | None:
+        return self.failed_run_id
+
 
 AssetHealthMaterializationMetadata: TypeAlias = (
     AssetHealthMaterializationDegradedPartitionedMeta

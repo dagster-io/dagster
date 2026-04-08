@@ -1,0 +1,165 @@
+# serializer version: 1
+# name: TestFormatJob.test_format_job_json_output[0]
+  dict({
+    'description': 'Runs daily analytics pipeline',
+    'is_asset_job': True,
+    'name': 'analytics_daily_job',
+    'schedules': list([
+      dict({
+        'cron_schedule': '0 6 * * *',
+        'name': 'analytics_daily_schedule',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'sensors': list([
+      dict({
+        'name': 'data_freshness_sensor',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'tags': list([
+      dict({
+        'key': 'dagster/priority',
+        'value': 'high',
+      }),
+      dict({
+        'key': 'team',
+        'value': 'data-platform',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatJob.test_format_job_text_output[0]
+  '''
+  Name:        analytics_daily_job
+  Description: Runs daily analytics pipeline
+  Asset Job:   Yes
+  Tags:        dagster/priority=high, team=data-platform
+  Schedule:    analytics_daily_schedule (0 6 * * *) [RUNNING]
+  Sensor:      data_freshness_sensor [RUNNING]
+  '''
+# ---
+# name: TestFormatJob.test_format_minimal_job_json_output[0]
+  dict({
+    'description': None,
+    'is_asset_job': False,
+    'name': 'simple_job',
+    'schedules': list([
+    ]),
+    'sensors': list([
+    ]),
+    'tags': list([
+    ]),
+  })
+# ---
+# name: TestFormatJob.test_format_minimal_job_text_output[0]
+  '''
+  Name:        simple_job
+  Description: None
+  Asset Job:   No
+  '''
+# ---
+# name: TestFormatJobs.test_format_empty_jobs_json_output[0]
+  dict({
+    'items': list([
+    ]),
+    'total': 0,
+  })
+# ---
+# name: TestFormatJobs.test_format_empty_jobs_text_output[0]
+  ''
+# ---
+# name: TestFormatJobs.test_format_jobs_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'description': 'Runs daily analytics pipeline',
+        'is_asset_job': True,
+        'name': 'analytics_daily_job',
+        'schedules': list([
+          dict({
+            'cron_schedule': '0 6 * * *',
+            'name': 'analytics_daily_schedule',
+            'status': 'RUNNING',
+          }),
+        ]),
+        'sensors': list([
+        ]),
+        'tags': list([
+          dict({
+            'key': 'dagster/priority',
+            'value': 'high',
+          }),
+        ]),
+      }),
+      dict({
+        'description': 'Ingests data from external sources',
+        'is_asset_job': False,
+        'name': 'etl_ingestion_job',
+        'schedules': list([
+        ]),
+        'sensors': list([
+          dict({
+            'name': 'new_files_sensor',
+            'status': 'RUNNING',
+          }),
+        ]),
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'description': None,
+        'is_asset_job': True,
+        'name': '__ASSET_JOB_0',
+        'schedules': list([
+        ]),
+        'sensors': list([
+        ]),
+        'tags': list([
+        ]),
+      }),
+    ]),
+    'total': 3,
+  })
+# ---
+# name: TestFormatJobs.test_format_jobs_text_output[0]
+  '''
+  NAME                 DESCRIPTION                         SCHEDULES  SENSORS  ASSET JOB
+  analytics_daily_job  Runs daily analytics pipeline       1          0        Yes
+  etl_ingestion_job    Ingests data from external sources  0          1        No
+  __ASSET_JOB_0                                            0          0        Yes
+  '''
+# ---
+# name: TestJobDataProcessing.test_job_list_serialization[0]
+  dict({
+    'items': list([
+      dict({
+        'description': 'First job',
+        'id': 'job-a',
+        'is_asset_job': True,
+        'name': 'job_a',
+        'repository_origin': None,
+        'schedules': list([
+        ]),
+        'sensors': list([
+        ]),
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'description': None,
+        'id': 'job-b',
+        'is_asset_job': False,
+        'name': 'job_b',
+        'repository_origin': None,
+        'schedules': list([
+        ]),
+        'sensors': list([
+        ]),
+        'tags': list([
+        ]),
+      }),
+    ]),
+    'total': 2,
+  })
+# ---

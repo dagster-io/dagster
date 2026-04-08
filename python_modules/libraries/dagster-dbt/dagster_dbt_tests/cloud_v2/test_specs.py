@@ -1,4 +1,7 @@
+from collections.abc import Mapping
+
 import responses
+from dagster import AutomationCondition, Definitions
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY,
     DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY,
@@ -9,6 +12,7 @@ from dagster_dbt.cloud_v2.resources import (
     load_dbt_cloud_asset_specs,
     load_dbt_cloud_check_specs,
 )
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_ACCOUNT_ID,
@@ -53,6 +57,29 @@ def test_load_asset_specs(
     assert first_spec.metadata[DAGSTER_DBT_CLOUD_ACCOUNT_ID_METADATA_KEY] == TEST_ACCOUNT_ID
     assert first_spec.metadata[DAGSTER_DBT_CLOUD_PROJECT_ID_METADATA_KEY] == TEST_PROJECT_ID
     assert first_spec.metadata[DAGSTER_DBT_CLOUD_ENVIRONMENT_ID_METADATA_KEY] == TEST_ENVIRONMENT_ID
+
+
+def test_load_asset_specs_preserve_translator_attributes(
+    workspace: DbtCloudWorkspace,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    class Translator(DagsterDbtTranslator):
+        def get_code_version(self, dbt_resource_props: Mapping[str, object]) -> str | None:
+            return "v1"
+
+        def get_automation_condition(
+            self, dbt_resource_props: Mapping[str, object]
+        ) -> AutomationCondition | None:
+            return AutomationCondition.eager()
+
+    all_assets = load_dbt_cloud_asset_specs(
+        workspace=workspace,
+        dagster_dbt_translator=Translator(),
+    )
+
+    assert Definitions(assets=all_assets)
+    assert all(asset.code_version == "v1" for asset in all_assets)
+    assert all(asset.automation_condition == AutomationCondition.eager() for asset in all_assets)
 
 
 def test_load_asset_specs_select(

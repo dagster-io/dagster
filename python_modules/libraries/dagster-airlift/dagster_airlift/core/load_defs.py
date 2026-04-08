@@ -8,7 +8,6 @@ from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import map_asset_specs
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
-from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -236,18 +235,12 @@ def build_defs_from_airflow_instance(
         *mapped_assets,
         *construct_dataset_specs(serialized_airflow_data),
     ]
-    mapped_and_constructed_assets = [
+    mapped_and_constructed_assets: Sequence[MappedAsset] = [
         *_apply_airflow_data_to_specs(assets_to_apply_airflow_data, serialized_airflow_data),
         *construct_dag_assets_defs(serialized_airflow_data),
     ]
-    fully_resolved_assets_definitions = [
-        external_asset_from_spec(asset)
-        if isinstance(asset, AssetSpec)
-        else cast("AssetsDefinition", asset)
-        for asset in mapped_and_constructed_assets
-    ]
     defs_with_airflow_assets = replace_assets_in_defs(
-        defs=defs, assets=fully_resolved_assets_definitions
+        defs=defs, assets=mapped_and_constructed_assets
     )
 
     return Definitions.merge_unbound_defs(
@@ -327,7 +320,7 @@ def load_airflow_dag_asset_specs(
         source_code_retrieval_enabled=source_code_retrieval_enabled,
         retrieval_filter=retrieval_filter or AirflowFilter(),
     ).get_or_fetch_state()
-    return list(spec_iterator(construct_dag_assets_defs(serialized_data)))
+    return list(construct_dag_assets_defs(serialized_data))
 
 
 def uri_to_asset_key(uri: str) -> AssetKey:

@@ -1,7 +1,7 @@
 import {useRef, useState} from 'react';
-import {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
+import './css/CodeMirrorInDialogStyle.css';
 import {ConfigEditorHandle, ConfigSchema, NewConfigEditor} from './NewConfigEditor';
 import {Spinner} from './Spinner';
 import {SplitPanelContainer, SplitPanelContainerHandle} from './SplitPanelContainer';
@@ -17,14 +17,6 @@ interface Props {
   identifier: string;
 }
 
-// Force code editor hints to appear above the dialog modal
-export const CodeMirrorInDialogStyle = createGlobalStyle`
-  .CodeMirror-hints,
-  .CodeMirror-hints.dagster {
-    z-index: 100;
-  }
-`;
-
 export const ConfigEditorWithSchema = ({
   isLoading,
   identifier,
@@ -38,7 +30,6 @@ export const ConfigEditorWithSchema = ({
 
   return (
     <>
-      <CodeMirrorInDialogStyle />
       <SplitPanelContainer
         ref={editorSplitPanelContainer}
         axis="horizontal"

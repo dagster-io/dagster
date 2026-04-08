@@ -54,10 +54,6 @@ export default [
     input: {
       index: './src/index.ts',
 
-      // Our core fonts, usable as global style components, e.g. `<GlobalGeist />`.
-      'fonts/GlobalGeistMono': './src/fonts/GlobalGeistMono.tsx',
-      'fonts/GlobalGeist': './src/fonts/GlobalGeist.tsx',
-
       // Components are listed here individually so that they may be imported
       // without pulling in the entire library.
       'components/Box': './src/components/Box.tsx',

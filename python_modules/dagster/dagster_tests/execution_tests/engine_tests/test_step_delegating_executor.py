@@ -528,7 +528,7 @@ def test_blocked_concurrency_limits():
             temp_dir=temp_dir,
             overrides={
                 "event_log_storage": {
-                    "module": "dagster.utils.test",
+                    "module": "dagster._utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
@@ -569,7 +569,7 @@ def test_blocked_concurrency_limits_legacy_keys():
             temp_dir=temp_dir,
             overrides={
                 "event_log_storage": {
-                    "module": "dagster.utils.test",
+                    "module": "dagster._utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },

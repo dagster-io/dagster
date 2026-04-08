@@ -152,7 +152,7 @@ def test_thread_die_daemon(monkeypatch):
 def test_transient_heartbeat_failure(mocker, caplog):
     with instance_for_test() as instance:
         mocker.patch(
-            "dagster.daemon.controller.get_daemon_statuses",
+            "dagster._daemon.controller.get_daemon_statuses",
             side_effect=Exception("Transient heartbeat failure"),
         )
 

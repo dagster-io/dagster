@@ -272,6 +272,7 @@ const buildExternalAssetQueryItem = (asset: {
     changedReasons: [],
     kinds: [],
     hasMaterializePermission: false,
+    hasWipePermission: false,
     graphName: '',
     opVersion: null,
     hasAssetChecks: false,

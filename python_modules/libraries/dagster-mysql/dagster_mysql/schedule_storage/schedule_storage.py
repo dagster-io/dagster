@@ -23,6 +23,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_result
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from dagster._time import get_current_datetime
 from sqlalchemy.engine import Connection
@@ -144,8 +145,8 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
     def get_server_version(self) -> str | None:
-        with self.connect() as conn:
-            row = conn.execute(db.text("select version()")).fetchone()
+        with self.connect() as conn, db_result(conn, db.text("select version()")) as result:
+            row = result.fetchone()
 
         if not row:
             return None

@@ -1,0 +1,99 @@
+# serializer version: 1
+# name: TestFormatComputeLogLinks.test_format_links_json[0]
+  dict({
+    'items': list([
+      dict({
+        'file_key': 'my_step',
+        'stderr_download_url': 'https://storage.example.com/stderr/my_step',
+        'stdout_download_url': 'https://storage.example.com/stdout/my_step',
+        'step_keys': list([
+          'my_step',
+        ]),
+      }),
+      dict({
+        'file_key': 'other_step',
+        'stderr_download_url': None,
+        'stdout_download_url': None,
+        'step_keys': list([
+          'other_step',
+        ]),
+      }),
+    ]),
+    'run_id': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+    'total': 2,
+  })
+# ---
+# name: TestFormatComputeLogLinks.test_format_links_table[0]
+  '''
+  FILE KEY    STEP KEY(S)  STDOUT URL                                  STDERR URL
+  my_step     my_step      https://storage.example.com/stdout/my_step  https://storage.example.com/stderr/my_step
+  other_step  other_step   (none)                                      (none)
+  '''
+# ---
+# name: TestFormatComputeLogs.test_format_compute_logs_json[0]
+  dict({
+    'items': list([
+      dict({
+        'cursor': None,
+        'file_key': 'my_step',
+        'stderr': '''
+          WARNING: deprecated API used
+  
+        ''',
+        'stdout': '''
+          Processing 100 records...
+          Done.
+  
+        ''',
+        'step_keys': list([
+          'my_step',
+        ]),
+      }),
+      dict({
+        'cursor': None,
+        'file_key': 'other_step',
+        'stderr': None,
+        'stdout': '''
+          Step completed successfully.
+  
+        ''',
+        'step_keys': list([
+          'other_step',
+        ]),
+      }),
+    ]),
+    'run_id': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+    'total': 2,
+  })
+# ---
+# name: TestFormatComputeLogs.test_format_compute_logs_no_output[0]
+  '''
+  Compute logs for run b45fff8a-7def-43b8-805d-1cf5f435c997:
+  
+  --- empty_step [empty_step] ---
+  (no output)
+  
+  Total steps with logs: 1
+  '''
+# ---
+# name: TestFormatComputeLogs.test_format_compute_logs_table[0]
+  '''
+  Compute logs for run b45fff8a-7def-43b8-805d-1cf5f435c997:
+  
+  --- my_step [my_step] ---
+  STDOUT:
+  Processing 100 records...
+  Done.
+  
+  STDERR:
+  WARNING: deprecated API used
+  
+  
+  --- other_step [other_step] ---
+  STDOUT:
+  Step completed successfully.
+  
+  
+  Total steps with logs: 2
+  '''
+# ---

@@ -41,11 +41,6 @@ dependencies = [
     "python-dotenv",
     "pytz",
     "requests",
-    # setuptools <82 to provide pkg_resources for third-party deps that still
-    # import it at runtime (e.g. aws-msk-iam-sasl-signer, pyfilesystem2, flatdict).
-    # setuptools 82 removed pkg_resources entirely. Can be removed once all
-    # transitive deps have migrated away from pkg_resources.
-    "setuptools<82",
     "six",
     "tabulate",
     "tomli<3",
@@ -80,8 +75,8 @@ Blog = "https://dagster.io/blog"
 Newsletter = "https://dagster.io/newsletter-signup"
 
 [project.scripts]
-dagster = "dagster.cli:main"
-dagster-daemon = "dagster.daemon.cli:main"
+dagster = "dagster._cli:main"
+dagster-daemon = "dagster._daemon.cli:main"
 
 [project.entry-points."dagster_dg_cli.registry_modules"]
 dagster = "dagster"

@@ -9,12 +9,7 @@ This guide provides instructions for deploying Dagster using Docker Compose. Thi
 
 The [full example is available on GitHub](https://github.com/dagster-io/dagster/blob/master/examples/deploy_docker).
 
-<details>
-  <summary>Prerequisites</summary>- Familiarity with Docker and Docker Compose - Familiarity with `dagster.yaml`
-  instance configuration - Familiarity with `workspace.yaml` code location configuration
-</details>
-
-## Define a Docker image for the Dagster webserver and daemon
+## Step 1: Define a Docker image for the Dagster webserver and daemon
 
 The Dagster webserver and daemon are the two _host processes_ in a Dagster deployment. They typically each run in their own container, using the same Docker image. This image contains Dagster packages and configuration, but no user code.
 
@@ -45,7 +40,7 @@ Additionally, the following files should be in the same directory as the Docker 
 - A `workspace.yaml` to tell the webserver and daemon the location of the code servers
 - A `dagster.yaml` to configure the Dagster instance
 
-## Define a Docker image for each code location
+## Step 2: Define a Docker image for each code location
 
 Each code location typically has its own Docker image, and that image is also used for runs launched for that code location.
 
@@ -72,7 +67,7 @@ HEALTHCHECK --timeout=1s --start-period=3s --interval=3s --retries=20 CMD ["dags
 CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-f", "definitions.py"]
 ```
 
-## Write a Docker Compose file
+## Step 3: Write a Docker Compose file
 
 The following `docker-compose.yaml` defines how to run the webserver container, daemon container, code location containers, and database container:
 
@@ -186,7 +181,7 @@ networks:
     name: docker_example_network
 ```
 
-## Start your deployment
+## Step 4: Start your deployment
 
 To start the deployment, run:
 

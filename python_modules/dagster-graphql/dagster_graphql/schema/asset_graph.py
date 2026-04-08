@@ -277,6 +277,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     isObservable = graphene.NonNull(graphene.Boolean)
     isMaterializable = graphene.NonNull(graphene.Boolean)
     isPartitioned = graphene.NonNull(graphene.Boolean)
+    isVirtual = graphene.NonNull(graphene.Boolean)
     isAutoCreatedStub = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
@@ -1054,6 +1055,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_isExecutable(self, _graphene_info: ResolveInfo) -> bool:
         return self._asset_node_snap.is_executable
 
+    def resolve_isVirtual(self, _graphene_info: ResolveInfo) -> bool:
+        return self._asset_node_snap.is_virtual
+
     def resolve_latestMaterializationByPartition(
         self,
         graphene_info: ResolveInfo,
@@ -1068,10 +1072,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
             ).values()
         )
-        events_for_partitions = get_asset_materializations(
-            graphene_info,
-            asset_key=self._asset_node_snap.asset_key,
-            storage_ids=latest_storage_ids,
+        events_for_partitions = (
+            get_asset_materializations(
+                graphene_info,
+                asset_key=self._asset_node_snap.asset_key,
+                storage_ids=latest_storage_ids,
+            )
+            if latest_storage_ids
+            else []
         )
         latest_materialization_by_partition = {
             event.dagster_event.step_materialization_data.materialization.partition: event

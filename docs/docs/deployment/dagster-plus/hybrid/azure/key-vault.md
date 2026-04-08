@@ -54,7 +54,7 @@ Add yourself with the role to manage the keys in the secret vault:
 az role assignment create --role 'Key Vault Administrator' --assignee '<your identity>' --scope '/subscriptions/<subscription_id>/resourceGroups/<resource_group>'
 ```
 
-## Step 3: Store the Dagster Cloud Agent Token in the Key Vault
+## Step 3: Store the Dagster+ agent token in the Key Vault
 
 Grant the AKS cluster access to the Key Vault:
 
@@ -66,9 +66,9 @@ az role assignment create --role "Key Vault Secrets User" --assignee $CLIENT_ID 
 
 See the [Azure built-in roles for Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/rbac-guide?tabs=azure-cli#azure-built-in-roles-for-key-vault-data-plane-operations).
 
-## Step 4: Create and access the Dagster Cloud Agent Token from your Key Vault
+## Step 4: Create and access the Dagster+ agent token from your Key Vault
 
-Create a secret in the Azure Key Vault to store the Dagster Cloud Agent Token:
+Create a secret in the Azure Key Vault to store the Dagster+ agent token:
 
 ```bash
 az keyvault secret set --name dagsterAgentToken --vault-name <vault-name> --value <dagster-token>
@@ -176,7 +176,7 @@ kubectl delete pod test-akv-secret-mount
 
 Modify the following sections of your `values.yaml` file.
 
-a) update the `dagsterCloud` section:
+1. Update the `dagsterCloud` section:
 
 This will ensure the agent token is provided and expected as the environment variable `dagsterAgentToken`.
 
@@ -188,7 +188,7 @@ dagsterCloud:
   # ...
 ```
 
-b) add these entries to the `dagsterCloudAgent` section:
+2. Add these entries to the `dagsterCloudAgent` section:
 
 Required for the csi driver to mount the secret into the agent pod.
 
@@ -208,7 +208,7 @@ dagsterCloudAgent:
           secretProviderClass: 'azure-kv-dagster-agent-token'
 ```
 
-c) add these entries to the `workspace`:
+3. Add these entries to the `workspace`:
 
 This ensures the secret is also made available to the pods the agent will create to run your code.
 
@@ -230,7 +230,7 @@ volumes:
         secretProviderClass: 'azure-kv-dagster-agent-token'
 ```
 
-d) optionally, you could manage the secret provider within your helm values file by providing it as an extra manifest, instead of provisioning it separately:
+4. Optionally, you could manage the secret provider within your helm values file by providing it as an extra manifest, instead of provisioning it separately:
 
 ```yaml
 # values.yaml

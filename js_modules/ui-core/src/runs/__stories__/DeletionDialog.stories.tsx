@@ -9,8 +9,8 @@ export default {
   component: DeletionDialog,
 };
 
-const Template = ({mocks, ...props}: DeletionDialogProps & {mocks?: any}) => (
-  <StorybookProvider apolloProps={{mocks}}>
+const Template = (props: DeletionDialogProps) => (
+  <StorybookProvider>
     <DeletionDialog {...props} />
   </StorybookProvider>
 );
@@ -22,7 +22,7 @@ const ids = [
 ];
 
 export const Success = {
-  render: (args: DeletionDialogProps & {mocks?: any}) => <Template {...args} />,
+  render: (args: DeletionDialogProps) => <Template {...args} />,
   args: {
     isOpen: true,
     onClose: () => {
@@ -35,18 +35,11 @@ export const Success = {
       console.log('Terminate instead!');
     },
     selectedRuns: ids.reduce((accum, id) => ({...accum, [id]: true}), {}),
-    mocks: {
-      Mutation: () => ({
-        deletePipelineRun: () => ({
-          __typename: 'DeletePipelineRunSuccess',
-        }),
-      }),
-    },
   },
 };
 
 export const WithError = {
-  render: (args: DeletionDialogProps & {mocks?: any}) => <Template {...args} />,
+  render: (args: DeletionDialogProps) => <Template {...args} />,
   args: {
     isOpen: true,
     onClose: () => {
@@ -59,21 +52,5 @@ export const WithError = {
       console.log('Terminate instead!');
     },
     selectedRuns: ids.reduce((accum, id) => ({...accum, [id]: true}), {}),
-    mocks: {
-      Mutation: () => ({
-        deletePipelineRun: (args: {runId: string}) => {
-          // Fail the last run
-          if (args.runId === ids[2]) {
-            return {
-              __typename: 'PythonError',
-              message: 'Oh no!',
-            };
-          }
-          return {
-            __typename: 'DeletePipelineRunSuccess',
-          };
-        },
-      }),
-    },
   },
 };

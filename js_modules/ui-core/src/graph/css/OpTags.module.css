@@ -1,0 +1,16 @@
+.opTagsContainer {
+  gap: 6px;
+  position: absolute;
+  display: flex;
+  margin-right: 14px;
+
+  & > div {
+    padding: 0 8px;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    font-family: var(--font-family-default);
+    font-size: 12px;
+    border-radius: 8px;
+  }
+}

@@ -253,7 +253,7 @@ def test_map_asset_specs_fails() -> None:
 
 
 def test_get_directly_asset_specs_succeeds() -> None:
-    assert dg.Definitions(assets=[dg.AssetSpec("asset1")]).get_all_asset_specs()[
+    assert dg.Definitions(assets=[dg.AssetSpec("asset1")]).resolve_all_asset_specs()[
         0
     ].key == dg.AssetKey("asset1")
 
@@ -261,20 +261,12 @@ def test_get_directly_asset_specs_succeeds() -> None:
     def asset1(): ...
 
     defs = dg.Definitions(assets=[asset1])
-    assert defs.get_all_asset_specs()[0].key == dg.AssetKey("asset1")
+    assert defs.resolve_all_asset_specs()[0].key == dg.AssetKey("asset1")
     assert defs.has_resolved_repository_def()
 
     defs_with_asset_checks = dg.Definitions(asset_checks=[asset1])
-    assert defs_with_asset_checks.get_all_asset_specs()[0].key == dg.AssetKey("asset1")
+    assert defs_with_asset_checks.resolve_all_asset_specs()[0].key == dg.AssetKey("asset1")
     assert defs_with_asset_checks.has_resolved_repository_def()
-
-
-def test_get_all_asset_specs_warns() -> None:
-    warnings.resetwarnings()
-    with warnings.catch_warnings(record=True) as w:
-        dg.Definitions(assets=[dg.AssetSpec("asset1")]).get_all_asset_specs()
-        assert len(w) == 1
-        assert "get_all_asset_specs" in str(w[0].message)
 
 
 def test_resolve_all_asset_specs_succeeds() -> None:

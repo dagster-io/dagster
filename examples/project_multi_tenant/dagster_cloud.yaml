@@ -1,0 +1,10 @@
+locations:
+  - location_name: harbor_outfitters
+    code_source:
+      package_name: harbor_outfitters
+  - location_name: summit_financial
+    code_source:
+      package_name: summit_financial
+  - location_name: beacon_hq
+    code_source:
+      package_name: beacon_hq

@@ -1,6 +1,7 @@
 ---
 title: 'Dagster GraphQL Python client'
 description: Dagster provides a Python client to interact with its GraphQL API
+sidebar_position: 2000
 ---
 
 Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL API](/api/graphql/graphql-client) from Python.
@@ -25,7 +26,7 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
 - <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClient" method="submit_job_execution" />
   [submit_job_execution](#submitting-a-job-run)
 - <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClient" method="get_run_status" />
-  [get_run_status](#getting-a-job-runs-status)
+  [get_run_status](#getting-the-status-of-a-job-run)
 - <PyObject
     section="graphql"
     module="dagster_graphql"
@@ -41,7 +42,7 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
   />
   [shutdown_repository_location](#shutting-down-a-repository-location-server)
 
-## Using the GraphQL Client
+## Using the GraphQL client
 
 The snippet below shows example instantiation of the client:
 
@@ -61,7 +62,7 @@ If you are using Dagster+, you can configure your client against the Dagster+ AP
 
 ## Examples
 
-### Getting a job run's status
+### Getting the status of a job run
 
 You can use the client to get the status of a job run as follows:
 

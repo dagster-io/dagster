@@ -1,5 +1,4 @@
 import {Dialog, DialogHeader} from '@dagster-io/ui-components';
-import {CodeMirrorInDialogStyle} from '@dagster-io/ui-components/editor';
 import {useMemo} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
@@ -47,7 +46,6 @@ export const AssetLaunchpad = ({
       onClose={() => setOpen(false)}
     >
       <DialogHeader icon="layers" label={title} />
-      <CodeMirrorInDialogStyle />
       <LaunchpadAllowedRoot
         launchpadType="asset"
         pipelinePath={assetJobName}
@@ -127,7 +125,6 @@ export const BackfillLaunchpad = ({
       onClose={() => setOpen(false)}
     >
       <DialogHeader icon="layers" label={title} />
-      <CodeMirrorInDialogStyle />
       <LaunchpadTransientSessionContainer
         launchpadType="asset"
         pipeline={pipelineOrError}

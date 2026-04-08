@@ -111,6 +111,7 @@ class UserDefinedDagsterK8sConfig(
             ("job_spec_config", Mapping[str, Any]),
             ("deployment_metadata", Mapping[str, Any]),
             ("service_metadata", Mapping[str, Any]),
+            ("service_spec_config", Mapping[str, Any]),
             ("merge_behavior", K8sConfigMergeBehavior),
         ],
     )
@@ -126,6 +127,7 @@ class UserDefinedDagsterK8sConfig(
         job_spec_config: Mapping[str, Any] | None = None,
         deployment_metadata: Mapping[str, Any] | None = None,
         service_metadata: Mapping[str, Any] | None = None,
+        service_spec_config: Mapping[str, Any] | None = None,
         merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
     ):
         container_config = check.opt_mapping_param(
@@ -144,6 +146,9 @@ class UserDefinedDagsterK8sConfig(
         )
         service_metadata = check.opt_mapping_param(
             service_metadata, "service_metadata", key_type=str
+        )
+        service_spec_config = check.opt_mapping_param(
+            service_spec_config, "service_spec_config", key_type=str
         )
 
         if container_config:
@@ -174,6 +179,11 @@ class UserDefinedDagsterK8sConfig(
         if service_metadata:
             service_metadata = k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, service_metadata)
 
+        if service_spec_config:
+            service_spec_config = k8s_snake_case_dict(
+                kubernetes.client.V1ServiceSpec, service_spec_config
+            )
+
         return super().__new__(
             cls,
             container_config=container_config,
@@ -184,6 +194,7 @@ class UserDefinedDagsterK8sConfig(
             job_spec_config=job_spec_config,
             deployment_metadata=deployment_metadata,
             service_metadata=service_metadata,
+            service_spec_config=service_spec_config,
             merge_behavior=check.inst_param(
                 merge_behavior, "merge_behavior", K8sConfigMergeBehavior
             ),
@@ -199,6 +210,7 @@ class UserDefinedDagsterK8sConfig(
             "job_spec_config": self.job_spec_config,
             "deployment_metadata": self.deployment_metadata,
             "service_metadata": self.service_metadata,
+            "service_spec_config": self.service_spec_config,
             "merge_behavior": self.merge_behavior.value,
         }
 
@@ -213,6 +225,7 @@ class UserDefinedDagsterK8sConfig(
             job_spec_config=config_dict.get("job_spec_config"),
             deployment_metadata=config_dict.get("deployment_metadata"),
             service_metadata=config_dict.get("service_metadata"),
+            service_spec_config=config_dict.get("service_spec_config"),
             merge_behavior=K8sConfigMergeBehavior(
                 config_dict.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
             ),
@@ -275,6 +288,7 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
         job_spec_config=user_defined_k8s_config.get("job_spec_config"),
         deployment_metadata=user_defined_k8s_config.get("deployment_metadata"),
         service_metadata=user_defined_k8s_config.get("service_metadata"),
+        service_spec_config=user_defined_k8s_config.get("service_spec_config"),
         merge_behavior=K8sConfigMergeBehavior(
             user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.DEEP.value)
         ),
@@ -717,6 +731,7 @@ class DagsterK8sJobConfig(
                             ),
                             "deployment_metadata": Permissive(),
                             "service_metadata": Permissive(),
+                            "service_spec_config": Permissive(),
                         }
                     ),
                     is_required=False,

@@ -15,7 +15,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     T_AutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
+from dagster._core.definitions.declarative_automation.operators.utils import (
+    has_allow_ignore,
+    has_resolve_through_virtual,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
 from dagster._record import copy, record
 
@@ -134,6 +137,21 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
             ],
         )
 
+    def resolve_through_virtual(self, value: bool = True) -> "AndAutomationCondition":
+        """Applies the ``.resolve_through_virtual()`` method across all sub-conditions.
+
+        This impacts any dep-related sub-conditions.
+        """
+        return copy(
+            self,
+            operands=[
+                child.resolve_through_virtual(value)
+                if has_resolve_through_virtual(child)
+                else child
+                for child in self.operands
+            ],
+        )
+
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")
 @record
@@ -241,6 +259,21 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
             ],
         )
 
+    def resolve_through_virtual(self, value: bool = True) -> "OrAutomationCondition":
+        """Applies the ``.resolve_through_virtual()`` method across all sub-conditions.
+
+        This impacts any dep-related sub-conditions.
+        """
+        return copy(
+            self,
+            operands=[
+                child.resolve_through_virtual(value)
+                if has_resolve_through_virtual(child)
+                else child
+                for child in self.operands
+            ],
+        )
+
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
 @record
@@ -331,5 +364,17 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
             self,
             operand=self.operand.ignore(selection)
             if has_allow_ignore(self.operand)
+            else self.operand,
+        )
+
+    def resolve_through_virtual(self, value: bool = True) -> "NotAutomationCondition":
+        """Applies the ``.resolve_through_virtual()`` method across all sub-conditions.
+
+        This impacts any dep-related sub-conditions.
+        """
+        return copy(
+            self,
+            operand=self.operand.resolve_through_virtual(value)
+            if has_resolve_through_virtual(self.operand)
             else self.operand,
         )

@@ -532,6 +532,56 @@ def test_subclass_override_get_asset_spec(dbt_path: Path) -> None:
     assert asset_spec_orders.tags["model_name"] == "stg_orders"
 
 
+def test_subclass_override_get_asset_spec_translator_metadata(dbt_path: Path) -> None:
+    """Regression test: when get_asset_spec is overridden to change asset keys, the
+    DAGSTER_DBT_TRANSLATOR_METADATA_KEY embedded in specs must point to
+    DbtProjectComponentTranslator, not _base_translator. If it points to _base_translator,
+    execution yields outputs with unprefixed names that don't match the prefixed spec keys.
+    """
+    from dagster_dbt.asset_utils import DAGSTER_DBT_TRANSLATOR_METADATA_KEY
+    from dagster_dbt.components.dbt_project.component import DbtProjectComponentTranslator
+
+    @dataclass
+    class PrefixedKeyComponent(DbtProjectComponent):
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
+        ) -> dg.AssetSpec:
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+            new_key = dg.AssetKey(["my_db", "my_schema"] + list(base_spec.key.path))
+            return base_spec.replace_attributes(key=new_key)
+
+    defs = build_component_defs_for_test(PrefixedKeyComponent, {"project": str(dbt_path)})
+
+    prefixed_key = dg.AssetKey(["my_db", "my_schema", "stg_customers"])
+    assets_def = defs.resolve_assets_def(prefixed_key)
+    spec = assets_def.get_asset_spec(prefixed_key)
+
+    translator = spec.metadata.get(DAGSTER_DBT_TRANSLATOR_METADATA_KEY)
+    assert isinstance(translator, DbtProjectComponentTranslator), (
+        f"Expected DbtProjectComponentTranslator in spec metadata, got {type(translator)}. "
+        "This means execution will derive output names using the base translator, causing a "
+        "mismatch with the prefixed keys registered at definition time."
+    )
+
+    # Also verify via YAML translation path
+    defs_yaml = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "project": str(dbt_path),
+            "translation": {"key": "my_db/my_schema/{{ node.name }}"},
+        },
+    )
+
+    yaml_prefixed_key = dg.AssetKey(["my_db", "my_schema", "stg_customers"])
+    yaml_assets_def = defs_yaml.resolve_assets_def(yaml_prefixed_key)
+    yaml_spec = yaml_assets_def.get_asset_spec(yaml_prefixed_key)
+
+    yaml_translator = yaml_spec.metadata.get(DAGSTER_DBT_TRANSLATOR_METADATA_KEY)
+    assert isinstance(yaml_translator, DbtProjectComponentTranslator), (
+        f"Expected DbtProjectComponentTranslator in spec metadata (YAML path), got {type(yaml_translator)}."
+    )
+
+
 def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
     with (
         instance_for_test(),
@@ -556,7 +606,7 @@ def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
             assert isinstance(component, DbtProjectComponent)
 
             # make sure assets are still loaded even though original project dir is gone
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # Verify we have the expected assets from jaffle_shop
@@ -606,7 +656,7 @@ def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
             assert isinstance(component, DbtProjectComponent)
 
             # make sure assets are still loaded even though original project dir is gone
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # Verify we have the expected assets from jaffle_shop
@@ -764,7 +814,7 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     )
 
     # Get all asset specs from the definitions
-    all_specs = list(defs.get_all_asset_specs())
+    all_specs = list(defs.resolve_all_asset_specs())
     specs_by_key = {spec.key: spec for spec in all_specs}
 
     # The source has a custom asset key configured via meta.dagster.asset_key: ["raw_source_customers"]
@@ -786,7 +836,7 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     )
     defs_combined = dg.Definitions.merge(defs, dg.Definitions(assets=[upstream_spec]))
 
-    all_specs_combined = list(defs_combined.get_all_asset_specs())
+    all_specs_combined = list(defs_combined.resolve_all_asset_specs())
     specs_by_key_combined = {spec.key: spec for spec in all_specs_combined}
 
     # should have been remapped, so shouldn't show up here

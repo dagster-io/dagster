@@ -317,7 +317,7 @@ class InstanceRef(
                 yaml.dump({}),
             ),
             "run_coordinator": ConfigurableClassData(
-                "dagster.core.run_coordinator",
+                "dagster._core.run_coordinator",
                 "QueuedRunCoordinator",
                 yaml.dump({}),
             ),
@@ -438,7 +438,7 @@ class InstanceRef(
         if config_value.get("run_queue"):
             run_coordinator_data = configurable_class_data(
                 {
-                    "module": "dagster.core.run_coordinator",
+                    "module": "dagster._core.run_coordinator",
                     "class": "QueuedRunCoordinator",
                     "config": config_value["run_queue"],
                 }

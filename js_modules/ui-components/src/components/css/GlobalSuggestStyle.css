@@ -1,0 +1,69 @@
+.dagster-suggest-input.bp5-input-group {
+  /* Inline TextInputContainerStyles */
+  align-items: center;
+  color: var(--color-text-light);
+  display: inline-flex;
+  flex-direction: row;
+  flex: 1;
+  flex-grow: 0;
+  font-family: var(--font-default);
+  font-size: 14px;
+  font-weight: 400;
+  position: relative;
+}
+
+.dagster-suggest-input.bp5-input-group:disabled .iconGlobal:first-child {
+  background-color: var(--color-accent-gray);
+}
+
+.dagster-suggest-input.bp5-input-group .bp5-input {
+  /* Inline TextInputStyles */
+  background-color: var(--color-background-default);
+  border: none;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  outline: none;
+  border-radius: 8px;
+  color: var(--color-text-default);
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 6px 6px 6px 12px;
+  margin: 0;
+  transition: box-shadow 150ms;
+  height: auto;
+}
+
+.dagster-suggest-input.bp5-input-group .bp5-input::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.dagster-suggest-input.bp5-input-group .bp5-input:disabled {
+  box-shadow: var(--color-keyline-default) inset 0px 0px 0px 1px;
+  background-color: var(--color-background-light);
+  color: var(--color-text-disabled);
+}
+
+.dagster-suggest-input.bp5-input-group .bp5-input:disabled::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.dagster-suggest-input.bp5-input-group .bp5-input:focus {
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
+    var(--color-keyline-default) inset 2px 2px 1.5px,
+    var(--color-focus-ring) 0 0 0 2px;
+  outline: none;
+}
+
+.dagster-suggest-input.bp5-input-group .bp5-input-action {
+  height: auto;
+  top: 1px;
+  right: 2px;
+}
+
+.bp5-select-popover.dagster-popover .bp5-popover-content li,
+.bp5-suggest-popover.dagster-popover .bp5-popover-content li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

@@ -109,6 +109,7 @@ class K8sContainerContext(
             top_level_k8s_config._replace(  # remove k8s service/deployment fields
                 deployment_metadata={},
                 service_metadata={},
+                service_spec_config={},
             ),
             run_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
         )
@@ -297,6 +298,8 @@ class K8sContainerContext(
                 model_class = kubernetes.client.V1PodSpec
             elif key == "job_spec_config":
                 model_class = kubernetes.client.V1JobSpec
+            elif key == "service_spec_config":
+                model_class = kubernetes.client.V1ServiceSpec
             else:
                 raise Exception(f"Unexpected key in allowlist {key}")
             result[key] = k8s_snake_case_keys(

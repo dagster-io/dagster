@@ -81,8 +81,6 @@ If using the CloudFormation template provided by Dagster, the number of replicas
 </TabItem>
 </Tabs>
 
----
-
 ## Running multiple agents in different environments
 
 To run multiple agents in an environment where each agent can not access the others' resources (for example, multiple Kubernetes namespaces or different clusters), enable the `isolated_agents` option. This is supported for all agent types.
@@ -137,7 +135,6 @@ The `isolated_agents` option can be set as per-deployment configuration on the `
 
 </TabItem>
 </Tabs>
----
 
 ## Routing requests to specific agents
 
@@ -164,6 +161,16 @@ locations:
       package_name: quickstart_etl
     executable_path: venvs/path/to/dataengineering_spark_team/bin/python
     agent_queue: special-queue
+```
+
+For `dg`-based projects, you can alternatively set the agent queue in [`pyproject.toml`](/deployment/dagster-plus/management/build-yaml#agent-queue-pyproject):
+
+```toml
+# pyproject.toml
+
+[tool.dg.project]
+root_module = "quickstart_etl"
+agent_queue = "special-queue"
 ```
 
 ### Step 2: Configure an agent to handle the agent queue

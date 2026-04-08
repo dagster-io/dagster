@@ -27,9 +27,14 @@ To use these features, you will need:
   - For more information, see the [BigQuery Documentation](https://cloud.google.com/bigquery/docs/information-schema-jobs)
 - The following packages installed:
 
-```bash
-pip install dagster dagster-cloud
-```
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    ```bash uv add dagster dagster-cloud ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    ```bash pip install dagster dagster-cloud ```
+  </TabItem>
+</Tabs>
 
 ## Limitations
 

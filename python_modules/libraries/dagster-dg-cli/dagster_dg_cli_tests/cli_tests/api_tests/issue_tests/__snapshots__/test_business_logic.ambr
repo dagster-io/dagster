@@ -151,6 +151,16 @@
         'status': 'CLOSED',
         'title': 'Issue with status CLOSED',
       }),
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'test@example.com',
+        'description': 'Test issue for status TRIAGE.',
+        'id': 'issue-triage-uuid',
+        'run_id': None,
+        'status': 'TRIAGE',
+        'title': 'Issue with status TRIAGE',
+      }),
     ]),
   })
 # ---

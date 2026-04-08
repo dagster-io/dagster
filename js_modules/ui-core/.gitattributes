@@ -1,0 +1,3 @@
+src/graphql/* linguist-generated=true
+src/**/types/* linguist-generated=true
+client.json linguist-generated=true

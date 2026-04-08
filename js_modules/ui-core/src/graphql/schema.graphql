@@ -723,6 +723,7 @@ type AssetNode {
   isObservable: Boolean!
   isMaterializable: Boolean!
   isPartitioned: Boolean!
+  isVirtual: Boolean!
   isAutoCreatedStub: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!

@@ -36,7 +36,7 @@ cd my-dagster-project
 pip install -e .
 ```
 
-## Part one: Local development
+## Step 1: Local development
 
 In this section we will:
 
@@ -72,7 +72,7 @@ We can materialize the assets in the UI and ensure that the data appears in Snow
 
 While we define our assets as Pandas DataFrames, the Snowflake I/O manager automatically translates the data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
 
-## Part two: Deployment
+## Step 2: Deployment
 
 In this section we will:
 

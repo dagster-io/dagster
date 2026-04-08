@@ -16,12 +16,6 @@ In many Dagster pipelines, assets can be broken down as the following steps:
 
 For assets that follow this pattern, an I/O manager can streamline the code that handles reading and writing data to and from a source.
 
-:::note
-
-This article assumes familiarity with: [assets](/guides/build/assets) and [resources](/guides/build/external-resources)
-
-:::
-
 ## Before you begin
 
 **I/O managers aren't required to use Dagster, nor are they the best option in all scenarios.** If you find yourself writing the same code at the start and end of each asset to load and store data, an I/O manager may be useful. For example:

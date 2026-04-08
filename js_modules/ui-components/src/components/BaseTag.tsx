@@ -1,7 +1,9 @@
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
+import {CSSProperties} from 'react';
 
 import {Colors} from './Color';
+import styles from './css/BaseTag.module.css';
 
 export interface BaseTagProps {
   fillColor?: string;
@@ -11,6 +13,8 @@ export interface BaseTagProps {
   rightIcon?: React.ReactNode;
   label?: React.ReactNode;
   tooltipText?: string;
+  children?: React.ReactNode;
+  className?: string;
 }
 
 const BaseTagTooltipStyle: React.CSSProperties = {
@@ -35,74 +39,38 @@ export const BaseTag = (props: BaseTagProps) => {
     rightIcon,
     label,
     tooltipText,
+    children,
+    className,
   } = props;
+
+  const tagStyle: CSSProperties = {
+    '--tag-fill-color': fillColor,
+    '--tag-text-color': textColor,
+  } as CSSProperties;
+
   return (
-    <StyledTag
-      className="StyledTag"
-      $fillColor={fillColor}
-      $interactive={interactive}
-      $textColor={textColor}
+    <div
+      className={clsx('BaseTag', styles.baseTag, interactive && styles.interactive, className)}
+      style={tagStyle}
     >
-      {icon || null}
-      {label !== undefined && label !== null ? (
-        <span
-          data-tooltip={typeof label === 'string' ? label : tooltipText}
-          data-tooltip-style={JSON.stringify({
-            ...BaseTagTooltipStyle,
-            backgroundColor: Colors.tooltipBackground(),
-            color: Colors.tooltipText(),
-          })}
-        >
-          {label}
-        </span>
-      ) : null}
-      {rightIcon || null}
-    </StyledTag>
+      {children ?? (
+        <>
+          {icon || null}
+          {label !== undefined && label !== null ? (
+            <span
+              data-tooltip={typeof label === 'string' ? label : tooltipText}
+              data-tooltip-style={JSON.stringify({
+                ...BaseTagTooltipStyle,
+                backgroundColor: Colors.tooltipBackground(),
+                color: Colors.tooltipText(),
+              })}
+            >
+              {label}
+            </span>
+          ) : null}
+          {rightIcon || null}
+        </>
+      )}
+    </div>
   );
 };
-
-interface StyledTagProps {
-  $fillColor: string;
-  $interactive: boolean;
-  $textColor: string;
-}
-
-export const StyledTag = styled.div<StyledTagProps>`
-  background-color: ${({$fillColor}) => $fillColor};
-  border-radius: 8px;
-  color: ${({$textColor}) => $textColor};
-  cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'inherit')};
-  display: inline-flex;
-  flex-direction: row;
-  font-size: 12px;
-  line-height: 16px;
-  align-items: center;
-  padding: 4px 8px;
-  user-select: none;
-  transition: filter 100ms linear;
-  max-width: 100%;
-
-  & > span {
-    max-width: 400px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  > .iconGlobal:first-child,
-  > .spinnerGlobal:first-child {
-    margin-right: 4px;
-    margin-left: -4px;
-  }
-
-  > .iconGlobal:last-child,
-  > .spinnerGlobal:last-child {
-    margin-left: 4px;
-    margin-right: -4px;
-  }
-
-  > .iconGlobal:first-child:last-child,
-  > .spinnerGlobal:first-child:last-child {
-    margin: 0 -4px;
-  }
-`;

@@ -39,7 +39,12 @@ from dagster._core.storage.schedules.schema import (
     SecondaryIndexMigrationTable,
 )
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
+from dagster._core.storage.sqlalchemy_compat import (
+    db_fetch_mappings,
+    db_result,
+    db_select,
+    db_subquery,
+)
 from dagster._serdes import serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster._utils import PrintFn
@@ -402,8 +407,8 @@ class SqlScheduleStorage(ScheduleStorage):
         with self.connect() as conn:
             try:
                 tick_insert = JobTickTable.insert().values(**values)
-                result = conn.execute(tick_insert)
-                tick_id = result.inserted_primary_key[0]
+                with db_result(conn, tick_insert) as result:
+                    tick_id = result.inserted_primary_key[0]
                 return InstigatorTick(tick_id, tick_data)
             except db_exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
@@ -587,8 +592,8 @@ class SqlScheduleStorage(ScheduleStorage):
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
-        with self.connect() as conn:
-            results = conn.execute(query).fetchall()
+        with self.connect() as conn, db_result(conn, query) as result:
+            results = result.fetchall()
 
         return len(results) > 0
 

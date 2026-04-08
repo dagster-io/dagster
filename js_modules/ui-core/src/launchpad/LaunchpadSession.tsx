@@ -22,7 +22,6 @@ import {
 import {LaunchRootExecutionButton} from '@shared/launchpad/LaunchRootExecutionButton';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
-import styled from 'styled-components';
 import * as yaml from 'yaml';
 
 import {ConfigEditorConfigPicker} from './ConfigEditorConfigPicker';
@@ -74,6 +73,7 @@ import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/LaunchpadSession.module.css';
 
 // Define the type for the config object passed to onSaveConfig
 export interface LaunchpadConfig {
@@ -629,7 +629,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             repoAddress={repoAddress}
             assetSelection={currentSession.assetSelection}
           />
-          <SessionSettingsSpacer />
+          <div className={styles.sessionSettingsSpacer} />
           {launchpadType === 'asset' ? (
             <Box flex={{gap: 16, alignItems: 'center'}}>
               <TextInput
@@ -693,7 +693,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
           {!isJob && (
             <>
-              <SessionSettingsSpacer />
+              <div className={styles.sessionSettingsSpacer} />
               <ConfigEditorModePicker
                 modes={pipeline.modes}
                 onModeChange={onModeChange}
@@ -791,7 +791,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             <SessionSettingsBar>
               {sessionSettingsItems()}
 
-              <SessionSettingsSpacer />
+              <div className={styles.sessionSettingsSpacer} />
               <LaunchpadConfigExpansionButton
                 axis="horizontal"
                 firstInitialPercent={75}
@@ -939,10 +939,6 @@ const PREVIEW_CONFIG_QUERY = gql`
 
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
   ${RUN_PREVIEW_VALIDATION_FRAGMENT}
-`;
-
-const SessionSettingsSpacer = styled.div`
-  width: 5px;
 `;
 
 function isMissingPartition(base: SessionBase | null) {

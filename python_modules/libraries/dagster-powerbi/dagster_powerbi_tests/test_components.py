@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from dagster import AssetKey
+from dagster import AssetKey, AutomationCondition
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
@@ -143,7 +143,7 @@ def test_basic_component_load(
         ),
         (
             {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
+            lambda asset_spec: asset_spec.automation_condition == AutomationCondition.eager(),
             False,
         ),
         (

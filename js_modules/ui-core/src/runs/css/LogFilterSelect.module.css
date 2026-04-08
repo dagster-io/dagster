@@ -1,0 +1,10 @@
+.filterButton {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.menuCheckbox {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}

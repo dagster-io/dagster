@@ -152,7 +152,6 @@ const CodeLocationConfig = ({
     <StyledRawCodeMirror
       value={yamlString}
       options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
-      theme={['config-editor']}
     />
   );
 };

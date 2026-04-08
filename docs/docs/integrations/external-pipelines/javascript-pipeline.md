@@ -57,7 +57,7 @@ In Dagster, create an asset that:
 
 When the asset is materialized, the stdout and stderr will be captured automatically and shown in the asset logs. If the command passed to Pipes returns a successful exit code, Dagster will produce an asset materialization result.
 
-## Step 3: Define a Definitions object
+## Step 3: Define a `Definitions` object
 
 import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
@@ -119,7 +119,7 @@ Finally, update your Dagster asset to pass in the model information that's used 
   title="src/<project_name>/defs/assets.py"
 />
 
-## What's next?
+## Next steps
 
 - Schedule your pipeline to run periodically with [Automating Pipelines](/guides/automate)
 - Explore adding asset checks to validate your script with [Understanding Asset Checks](/guides/test/asset-checks)

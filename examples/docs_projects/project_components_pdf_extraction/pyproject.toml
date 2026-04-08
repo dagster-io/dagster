@@ -20,6 +20,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "dagster-webserver",
+    "pytest",
 ]
 
 [build-system]

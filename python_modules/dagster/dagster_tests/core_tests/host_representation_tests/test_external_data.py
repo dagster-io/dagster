@@ -9,7 +9,6 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetExecutio
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
@@ -1216,12 +1215,8 @@ def test_remote_time_window_valid_partition_key():
 
 
 def test_external_assets_def_to_asset_node_snaps():
-    asset1, asset2 = external_assets_from_specs(
-        [dg.AssetSpec("asset1"), dg.AssetSpec("asset2", deps=["asset1"])]
-    )
-
     asset_node_snaps = _get_asset_node_snaps_from_definitions(
-        dg.Definitions(assets=[asset1, asset2])
+        dg.Definitions(assets=[dg.AssetSpec("asset1"), dg.AssetSpec("asset2", deps=["asset1"])])
     )
 
     assert len(asset_node_snaps) == 2

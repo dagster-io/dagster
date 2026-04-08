@@ -3,10 +3,13 @@ import {AssetGraphQueryItem} from '../../asset-graph/types';
 import {
   buildAssetNode,
   buildDefinitionTag,
+  buildDimensionDefinitionType,
+  buildPartitionDefinition,
   buildRepository,
   buildRepositoryLocation,
   buildUserAssetOwner,
 } from '../../graphql/builders';
+import {PartitionDefinitionType} from '../../graphql/types';
 import {parseAssetSelectionQuery} from '../parseAssetSelectionQuery';
 
 const TEST_GRAPH: AssetGraphQueryItem[] = [
@@ -198,5 +201,97 @@ describe('parseAssetSelectionQuery', () => {
     it('should be able to filter to assets without any kind', () => {
       assertQueryResult('kind:<null>', ['A', 'B2', 'C']);
     });
+  });
+});
+
+const STATIC_DIM = buildDimensionDefinitionType({type: PartitionDefinitionType.STATIC});
+const DYNAMIC_DIM = buildDimensionDefinitionType({type: PartitionDefinitionType.DYNAMIC});
+const TIME_DIM = buildDimensionDefinitionType({type: PartitionDefinitionType.TIME_WINDOW});
+
+const PARTITIONS_GRAPH: AssetGraphQueryItem[] = [
+  {
+    name: 'unpartitioned',
+    node: buildAssetNode({partitionDefinition: null}),
+    inputs: [{dependsOn: []}],
+    outputs: [{dependedBy: []}],
+  },
+  {
+    name: 'static_asset',
+    node: buildAssetNode({
+      partitionDefinition: buildPartitionDefinition({dimensionTypes: [STATIC_DIM]}),
+    }),
+    inputs: [{dependsOn: []}],
+    outputs: [{dependedBy: []}],
+  },
+  {
+    name: 'dynamic_asset',
+    node: buildAssetNode({
+      partitionDefinition: buildPartitionDefinition({dimensionTypes: [DYNAMIC_DIM]}),
+    }),
+    inputs: [{dependsOn: []}],
+    outputs: [{dependedBy: []}],
+  },
+  {
+    name: 'time_asset',
+    node: buildAssetNode({
+      partitionDefinition: buildPartitionDefinition({dimensionTypes: [TIME_DIM]}),
+    }),
+    inputs: [{dependsOn: []}],
+    outputs: [{dependedBy: []}],
+  },
+  {
+    name: 'multi_asset',
+    node: buildAssetNode({
+      partitionDefinition: buildPartitionDefinition({dimensionTypes: [STATIC_DIM, TIME_DIM]}),
+    }),
+    inputs: [{dependsOn: []}],
+    outputs: [{dependedBy: []}],
+  },
+];
+
+function assertPartitionsQueryResult(query: string, expectedNames: string[]) {
+  const result = parseAssetSelectionQuery(PARTITIONS_GRAPH, query);
+  if (result instanceof Error) {
+    throw result;
+  }
+  expect(new Set(result.all.map((asset) => asset.name))).toEqual(new Set(expectedNames));
+}
+
+describe('parseAssetSelectionQuery - partitions', () => {
+  it('should filter to unpartitioned assets', () => {
+    assertPartitionsQueryResult('partitions:none', ['unpartitioned']);
+  });
+
+  it('should filter to static partitioned assets', () => {
+    assertPartitionsQueryResult('partitions:static', ['static_asset']);
+  });
+
+  it('should filter to dynamic partitioned assets', () => {
+    assertPartitionsQueryResult('partitions:dynamic', ['dynamic_asset']);
+  });
+
+  it('should filter to time-window partitioned assets', () => {
+    assertPartitionsQueryResult('partitions:time', ['time_asset']);
+  });
+
+  it('should filter to multi-dimensional partitioned assets', () => {
+    assertPartitionsQueryResult('partitions:multipartitions', ['multi_asset']);
+  });
+
+  it('should handle partitions:<null> as equivalent to partitions:none', () => {
+    assertPartitionsQueryResult('partitions:<null>', ['unpartitioned']);
+  });
+
+  it('should compose with other filters', () => {
+    assertPartitionsQueryResult('partitions:static or partitions:dynamic', [
+      'static_asset',
+      'dynamic_asset',
+    ]);
+    assertPartitionsQueryResult('not partitions:none', [
+      'static_asset',
+      'dynamic_asset',
+      'time_asset',
+      'multi_asset',
+    ]);
   });
 });

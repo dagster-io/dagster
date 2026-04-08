@@ -25,14 +25,15 @@ The [`dagster-dbt` library](/integrations/libraries/dbt/dagster-dbt) provides a 
 
 :::
 
-:::tip[dbt Fusion is supported as of 1.11.5]
+:::tip dbt Fusion is supported as of 1.11.5
 
 Dagster supports dbt Fusion as of the 1.11.5 release. Dagster will automatically detect which engine you have installed. If you're currently using core, to migrate uninstall dbt-core and install dbt Fusion. For more information please reference the dbt [docs](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-fusion).
 
 This feature is still in preview pending dbt Fusion GA.
+
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -46,7 +47,7 @@ Then, add the `dagster-dbt` library to the project, along with a duckdb adapter:
 
 <PackageInstallInstructions packageName="dagster-dbt dbt-duckdb" />
 
-## 2. Set up a dbt project
+## Step 2: Set up a dbt project
 
 <Tabs groupId="dbt-project-location">
 <TabItem value="colocate" label="Colocate with Dagster">
@@ -76,7 +77,7 @@ When using an external Git repository, Dagster manages the project as part of [c
 </TabItem>
 </Tabs>
 
-## 3. Scaffold a dbt component definition
+## Step 3: Scaffold a dbt component definition
 
 <Tabs groupId="dbt-project-location">
 <TabItem value="colocate" label="Colocate with Dagster">
@@ -143,7 +144,7 @@ This is sufficient to load your dbt models as assets. You can use `dg list defs`
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/8-list-defs.txt" />
 </WideContent>
 
-## 4. Run your dbt models
+## Step 4: Run your dbt models
 
 To execute your dbt models, you can use the `dg launch` command to kick off a run through the CLI:
 
@@ -159,7 +160,7 @@ dg launch --assets "key:'customers' and key:'orders'"
 
 :::
 
-## 5. Select or exclude specific models
+## Step 5: Select or exclude specific models
 
 You can control which dbt models are included in your component using the `select` or `exclude` attributes. This allows you to filter which models are represented as assets, using [dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax). For example, to include only the `customers` model:
 
@@ -173,7 +174,7 @@ You can control which dbt models are included in your component using the `selec
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/11-list-defs.txt" />
 </WideContent>
 
-## 6. Customize dbt assets
+## Step 6: Customize dbt assets
 
 ### Customize dbt asset metadata
 
@@ -221,11 +222,11 @@ First, create a template variable that extracts the group name from the `fqn`:
 
 With this configuration, models in `models/staging/` will be assigned to the `staging` group, models in `models/marts/` to the `marts` group, and so on.
 
-## 7. Connect upstream assets to dbt sources
+## Step 7: Connect upstream assets to dbt sources
 
 If your dbt models depend on data produced by other Dagster assets (e.g., data ingested by Sling, Fivetran, or custom Python assets), you can connect them using dbt sources with Dagster metadata.
 
-### 7.1 Define dbt sources with Dagster asset keys
+### Step 7.1: Define dbt sources with Dagster asset keys
 
 In your dbt project, create a `sources.yml` file that maps dbt sources to Dagster asset keys using the `meta.dagster.asset_key` configuration:
 
@@ -235,7 +236,7 @@ In your dbt project, create a `sources.yml` file that maps dbt sources to Dagste
   language="yaml"
 />
 
-### 7.2 Create upstream assets
+### Step 7.2: Create upstream assets
 
 Next, create Dagster assets that produce the source data. The asset key must match the `asset_key` defined in your dbt sources (see step 7.1):
 
@@ -253,7 +254,7 @@ This pattern works with any ingestion tool. For example, if you're using [Sling]
 
 :::
 
-## 8. Add dbt asset dependencies in other components
+## Step 8: Add dbt asset dependencies in other components
 
 If you want to refer to assets built by the dbt component elsewhere in your Dagster project, you can use the `asset_key_for_model` method on the dbt component.
 This lets you refer to an asset by the model name without having to know how that model is translated to an asset key.
@@ -276,7 +277,7 @@ You can refer to the `customers` asset in this component by using the `asset_key
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/17-list-defs.txt" />
 </WideContent>
 
-## 9. Handle incremental models
+## Step 9: Model incremental models as partitioned assets
 
 If you have incremental models in your dbt project, you can model these as partitioned assets, and update the command that is used to run the dbt models to pass in `--vars` based on the range of partitions that are being processed.
 
@@ -316,7 +317,7 @@ Dagster will automatically convert this configuration dictionary into the JSON-e
 
 If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.
 
-## 10. Customize manifest generation
+## Step 10: Customize manifest generation
 
 By default, `DbtProjectComponent` runs `dbt parse --quiet` to generate the manifest during development. If you need `dbt compile` instead — for example, to access `compiled_code` on your dbt nodes — you can set the `prepare_project_cli_args` option on the `project` attribute:
 
@@ -332,7 +333,7 @@ attributes:
 
 This passes the specified arguments to the dbt CLI when generating the manifest, instead of the default `["parse", "--quiet"]`. Using `compile` is useful when you want to leverage `node.compiled_code` in translations or custom subclasses, for example to include the compiled SQL in asset descriptions.
 
-## 11. Advanced configuration (subclassing)
+## Advanced configuration (subclassing)
 
 For more complex use cases that cannot easily be handled with templated yaml, you can create a custom subclass of `DbtProjectComponent` to add custom behavior. This allows you to:
 

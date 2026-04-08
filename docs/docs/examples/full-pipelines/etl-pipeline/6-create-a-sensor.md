@@ -18,7 +18,7 @@ In this step you will:
 - Create an asset that runs based on an event-driven workflow
 - Create a sensor to listen for conditions to materialize the asset
 
-## 1. Create an event-driven asset
+## Step 1: Create an event-driven asset
 
 For our pipeline, we want to model a situation where an executive wants a pivot table report of sales results by department and product. They want that processed in real time from their request.
 
@@ -34,7 +34,7 @@ Other than that, defining this asset is the same as our previous assets. Copy th
   title="src/etl_tutorial/defs/assets.py"
 />
 
-## 2. Build the sensor
+## Step 2: Build the sensor
 
 To define a sensor in Dagster, use the `@sensor` decorator. This decorator is applied to a function that evaluates whether the conditions for triggering a job are met.
 
@@ -55,7 +55,7 @@ Now copy the following sensor code in the `sensors.py` file:
   title="src/etl_tutorial/defs/sensors.py"
 />
 
-## 3. Materialize the sensor asset
+## Step 3: Materialize the sensor asset
 
 1. Reload your Definitions.
 2. Navigate to the Automation page.

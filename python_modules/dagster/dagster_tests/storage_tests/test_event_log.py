@@ -164,7 +164,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
                 temp_dir=tmpdir_path,
                 overrides={
                     "event_log_storage": {
-                        "module": "dagster.core.storage.event_log",
+                        "module": "dagster._core.storage.event_log",
                         "class": "ConsolidatedSqliteEventLogStorage",
                         "config": {"base_dir": tmpdir_path},
                     }

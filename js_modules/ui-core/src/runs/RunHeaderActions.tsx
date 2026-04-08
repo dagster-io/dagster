@@ -9,8 +9,10 @@ import {
   showToast,
 } from '@dagster-io/ui-components';
 import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
+import {CreateIssueForRunDialog} from '@shared/runs/CreateIssueForRunDialog';
 import {RunAlertNotifications} from '@shared/runs/RunAlertNotifications';
 import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
+import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
@@ -42,9 +44,11 @@ type VisibleDialog =
   | 'free_slots'
   | 'metrics'
   | 'pools'
+  | 'create-issue'
   | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
+  const canCreateIssue = useCanCreateIssueForRun(run.status);
   const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
@@ -108,6 +112,13 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                 {!isExternalRun(run) ? (
                   <>
                     <AISummaryForRunMenuItem run={run} />
+                    {canCreateIssue && (
+                      <MenuItem
+                        icon="issue"
+                        text="Create issue"
+                        onClick={() => setVisibleDialog('create-issue')}
+                      />
+                    )}
                     <Tooltip content="Loadable in dagster-webserver-debug" position="left">
                       <MenuItem
                         text="Download debug file"
@@ -218,6 +229,13 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           onClose={() => setVisibleDialog(null)}
         />
       ) : null}
+      {canCreateIssue && (
+        <CreateIssueForRunDialog
+          isOpen={visibleDialog === 'create-issue'}
+          onClose={() => setVisibleDialog(null)}
+          runId={run.id}
+        />
+      )}
     </div>
   );
 };

@@ -3085,3 +3085,29 @@ def test_job_definition_with_resolution_error():
         dg.DagsterInvalidDefinitionError, match="Failed to resolve asset job invalid_job"
     ):
         defs.get_repository_def().get_all_jobs()
+
+
+def test_asset_subset_preserves_run_tags() -> None:
+    """Test that subsetting an asset job preserves run_tags from the original job."""
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    @dg.asset
+    def asset_b():
+        return 2
+
+    job = dg.define_asset_job(
+        name="my_job",
+        selection=[asset_a, asset_b],
+        run_tags={"dagster/max_retries": "1", "my_tag": "my_value"},
+    )
+
+    defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[job])
+    job_def = defs.resolve_job_def("my_job")
+
+    # Subset to just asset_a
+    subset_job = job_def.get_subset(asset_selection={dg.AssetKey("asset_a")})
+
+    assert subset_job.run_tags == {"dagster/max_retries": "1", "my_tag": "my_value"}

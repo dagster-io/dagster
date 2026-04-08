@@ -1,8 +1,8 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/VirtualizedAssetPartitionListForDialog.module.css';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
@@ -117,30 +117,13 @@ const ExpandablePartitionName = ({
   onToggle,
 }: ExpandablePartitionNameProps) => {
   return (
-    <PartitionNameButton onClick={() => onToggle(partitionName)}>
+    <button className={styles.partitionNameButton} onClick={() => onToggle(partitionName)}>
       <Icon
         name="arrow_drop_down"
         style={{transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)'}}
       />
       <div>{partitionName}</div>
       <div>{detail}</div>
-    </PartitionNameButton>
+    </button>
   );
 };
-
-const PartitionNameButton = styled.button`
-  background-color: transparent;
-  cursor: pointer;
-  padding: 0;
-  border: 0;
-  display: flex;
-  height: 100%;
-  width: 100%;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-
-  :focus {
-    outline: none;
-  }
-`;

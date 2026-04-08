@@ -349,6 +349,8 @@ def _dagster_cloud_entry_for_project(
         dg_context.container_context_config,
     )
 
+    project_config = dg_context.config.project
+
     return {
         "location_name": dg_context.code_location_name,
         "code_source": {
@@ -360,6 +362,12 @@ def _dagster_cloud_entry_for_project(
             if merged_container_context_config
             else {}
         ),
+        **(
+            {"agent_queue": project_config.agent_queue}
+            if project_config and project_config.agent_queue
+            else {}
+        ),
+        **({"image": project_config.image} if project_config and project_config.image else {}),
     }
 
 

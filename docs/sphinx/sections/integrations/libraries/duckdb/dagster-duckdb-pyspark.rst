@@ -1,5 +1,6 @@
+##############################
 dagster-duckdb-pyspark library
-------------------------------
+##############################
 
 This library provides an integration with the `DuckDB <https://duckdb.org>`_ database and PySpark data processing library.
 
@@ -16,8 +17,9 @@ Related guides:
 
 .. autoclass:: DuckDBPySparkTypeHandler
 
+******
 Legacy
-=======
+******
 
 .. autoconfigurable:: duckdb_pyspark_io_manager
   :annotation: IOManagerDefinition

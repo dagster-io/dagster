@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, Colors} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
 import {AssetPartitionStatus} from '../../assets/AssetPartitionStatus';
@@ -97,7 +97,7 @@ export const MultipleSelectionDefault = () => {
         isDynamic={false}
         mode="multiple"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Selected: {selectedPartitions.length > 0 ? selectedPartitions.join(', ') : 'None'}
       </Box>
     </Box>
@@ -119,7 +119,7 @@ export const SingleSelectionMode = () => {
         isDynamic={false}
         mode="single"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Selected: {selectedPartition || 'None'}
       </Box>
     </Box>
@@ -141,7 +141,7 @@ export const DynamicPartitionsWithAddButton = () => {
         setShowCreatePartition={setShowCreatePartition}
         mode="multiple"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Selected: {selectedPartitions.length > 0 ? selectedPartitions.join(', ') : 'None'}
       </Box>
       {showCreatePartition && (
@@ -149,7 +149,7 @@ export const DynamicPartitionsWithAddButton = () => {
           margin={{top: 12}}
           padding={12}
           style={{
-            background: '#f0f0f0',
+            background: Colors.backgroundLight(),
             borderRadius: 4,
             fontSize: 14,
           }}
@@ -177,10 +177,10 @@ export const WithRunStatusHealth = () => {
         isDynamic={false}
         mode="multiple"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Selected: {selectedPartitions.join(', ')}
       </Box>
-      <Box margin={{top: 8}} style={{fontSize: 12, color: '#999'}}>
+      <Box margin={{top: 8}} style={{fontSize: 12, color: Colors.textLighter()}}>
         Shows run status dots: Success (green), Failure (red), Started (blue), Not Started (gray)
       </Box>
     </Box>
@@ -202,7 +202,7 @@ export const ManyPartitionsSelected = () => {
         isDynamic={false}
         mode="multiple"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         When more than 4 partitions are selected, it shows a count instead of listing them
       </Box>
     </Box>
@@ -241,7 +241,7 @@ export const LargePartitionList = () => {
         mode="multiple"
         placeholder="Select from 100 partitions"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Selected: {selectedPartitions.length} partitions
       </Box>
     </Box>
@@ -262,7 +262,7 @@ export const CustomPlaceholder = () => {
         mode="multiple"
         placeholder="Choose date partitions to materialize"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Custom placeholder text example
       </Box>
     </Box>
@@ -286,7 +286,7 @@ export const DisabledState = () => {
         mode="multiple"
         disabled={true}
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Disabled state - selector is not interactive
       </Box>
     </Box>
@@ -307,7 +307,7 @@ export const EmptyPartitionList = () => {
         setShowCreatePartition={() => {}}
         mode="multiple"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         No partitions available - shows &ldquo;No matching partitions found&rdquo; in dropdown
       </Box>
     </Box>
@@ -336,7 +336,7 @@ export const WithSearchFiltering = () => {
         isDynamic={false}
         mode="multiple"
       />
-      <Box margin={{top: 12}} style={{fontSize: 14, color: '#666'}}>
+      <Box margin={{top: 12}} style={{fontSize: 14, color: Colors.textLight()}}>
         Click to open and try the search/filter functionality with 100 partitions
       </Box>
     </Box>

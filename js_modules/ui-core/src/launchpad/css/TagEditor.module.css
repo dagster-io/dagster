@@ -1,0 +1,12 @@
+.container {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+}
+
+.tagList {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 4px;
+}

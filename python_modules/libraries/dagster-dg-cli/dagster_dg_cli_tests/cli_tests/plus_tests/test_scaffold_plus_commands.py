@@ -27,6 +27,10 @@ from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     mock_hybrid_response,
 )
 
+_SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR = (
+    "--build-strategy=${{ env.ENABLE_FAST_DEPLOYS == 'true' && 'python-executable' || 'docker' }}"
+)
+
 
 def _get_error_message(file: Path, details: dict[str, Any]):
     position = details["location"]
@@ -277,6 +281,38 @@ def setup_populated_git_workspace():
 
 
 @responses.activate
+def test_deploy_configure_serverless_github_default_pex_sets_python_executable_strategy(
+    dg_plus_cli_config,
+):
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+    )
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        subprocess.run(["git", "init"], check=False)
+        subprocess.run(
+            ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
+            check=False,
+        )
+        result = runner.invoke(
+            "plus",
+            "deploy",
+            "configure",
+            "serverless",
+            "--git-provider",
+            "github",
+            "--yes",
+        )
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        workflow_text = Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        assert 'ENABLE_FAST_DEPLOYS: "true"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
+
+
+@responses.activate
 @pytest.mark.parametrize(
     "version_override",
     [
@@ -304,14 +340,18 @@ def test_scaffold_github_actions_command_success_serverless(
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+        workflow_text = workflow_path.read_text()
+        assert workflow_path.exists()
+        assert "hooli" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
         assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
+        assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
         expected_version = f"v{version_override}" if version_override else "main"
         validate_github_actions_workflow(
-            Path(".github/workflows/dagster-plus-deploy.yml"),
+            workflow_path,
             expected_version=expected_version,
         )
     finally:
@@ -334,11 +374,15 @@ def test_scaffold_github_actions_command_success_project_serverless(
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+        workflow_text = workflow_path.read_text()
+        assert workflow_path.exists()
+        assert "hooli" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
+        assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
-        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+        validate_github_actions_workflow(workflow_path)
 
 
 @responses.activate
@@ -359,11 +403,15 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert "Dagster Plus organization name: " in result.output
-        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+        workflow_text = workflow_path.read_text()
+        assert workflow_path.exists()
+        assert "my-org" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
+        assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
-        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+        validate_github_actions_workflow(workflow_path)
 
 
 @responses.activate
@@ -395,11 +443,15 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
             result = runner.invoke("scaffold", "github-actions", "--git-root", str(Path.cwd()))
             assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-            assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-            assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+            workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+            workflow_text = workflow_path.read_text()
+            assert workflow_path.exists()
+            assert "hooli" in workflow_text
             assert not Path("dagster_cloud.yaml").exists()
+            assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+            assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
-            validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+            validate_github_actions_workflow(workflow_path)
 
 
 FAKE_ECR_URL = "10000.dkr.ecr.us-east-1.amazonaws.com"

@@ -1,10 +1,12 @@
 import os
 from collections.abc import Callable
+from pathlib import Path
 
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.step_builder import StepConfiguration, TopLevelStepConfiguration
+from buildkite_shared.utils import oss_path
 from dagster_buildkite.defines import (
     GCP_CREDS_FILENAME,
     GCP_CREDS_LOCAL_FILE,
@@ -19,7 +21,6 @@ from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
-    has_helm_changes,
     library_version_from_core_version,
     network_buildkite_container,
 )
@@ -34,7 +35,7 @@ def build_integration_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
 
     # Shared dependency of some test suites
     steps += PackageSpec(
-        os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra"),
+        oss_path(os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra")),
     ).build_steps(ctx)
 
     # test suites
@@ -60,7 +61,7 @@ def build_backcompat_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
     ]
 
     return build_integration_suite_steps(
-        os.path.join("integration_tests", "test_suites", "backcompat-test-suite"),
+        oss_path(os.path.join("integration_tests", "test_suites", "backcompat-test-suite")),
         ctx,
         pytest_extra_cmds=backcompat_extra_cmds,
         pytest_tox_factors=tox_factors,
@@ -83,7 +84,7 @@ def backcompat_extra_cmds(_, factor: ToxFactor | None) -> list[str]:
     return [
         f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}",
         f"export USER_CODE_DEFINITIONS_FILE={user_code_definitions_file}",
-        "pushd integration_tests/test_suites/backcompat-test-suite/webserver_service",
+        f"pushd {oss_path('integration_tests/test_suites/backcompat-test-suite/webserver_service')}",
         " ".join(
             [
                 "./build.sh",
@@ -130,13 +131,13 @@ def build_celery_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         ToxFactor("-default"),
         ToxFactor("-markredis"),
     ]
-    directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
+    directory = oss_path(os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite"))
     return build_integration_suite_steps(
         directory,
         ctx,
         pytest_tox_factors,
         queue=BuildkiteQueue.DOCKER,  # crashes on python 3.11/3.12 without additional resources
-        always_run_if=lambda: has_helm_changes(ctx),
+        force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=celery_k8s_integration_suite_pytest_extra_cmds,
     )
 
@@ -148,7 +149,7 @@ def build_celery_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
 
 def build_daemon_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = None
-    directory = os.path.join("integration_tests", "test_suites", "daemon-test-suite")
+    directory = oss_path(os.path.join("integration_tests", "test_suites", "daemon-test-suite"))
     return build_integration_suite_steps(
         directory,
         ctx,
@@ -161,7 +162,9 @@ def build_auto_materialize_perf_suite_steps(
     ctx: BuildkiteContext,
 ) -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = None
-    directory = os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
+    directory = oss_path(
+        os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
+    )
     return build_integration_suite_steps(
         directory,
         ctx,
@@ -178,7 +181,7 @@ def skip_if_not_azure_commit(ctx: BuildkiteContext) -> str | None:
     """If no dagster-azure files are changed, skip the azure live tests."""
     return (
         None
-        if (any("dagster-azure" in str(path) for path in ctx.all_changed_oss_files))
+        if (any("dagster-azure" in str(path) for path in ctx.changed_files))
         else "Not a dagster-azure commit"
     )
 
@@ -187,15 +190,15 @@ def skip_if_not_gcp_commit(ctx: BuildkiteContext) -> str | None:
     """If no dagster-gcp files are changed, skip the gcp live tests."""
     return (
         None
-        if (any("dagster-gcp" in str(path) for path in ctx.all_changed_oss_files))
+        if (any("dagster-gcp" in str(path) for path in ctx.changed_files))
         else "Not a dagster-gcp commit"
     )
 
 
 def build_azure_live_test_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
-        os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests"),
-        skip=lambda: skip_if_not_azure_commit(ctx),
+        oss_path(os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests")),
+        skip_run_fn=skip_if_not_azure_commit,
         env_vars=[
             "TEST_AZURE_TENANT_ID",
             "TEST_AZURE_CLIENT_ID",
@@ -226,12 +229,12 @@ def build_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigurati
         ToxFactor("-default_monitoring"),
         ToxFactor("-subchart_monitoring"),
     ]
-    directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
+    directory = oss_path(os.path.join("integration_tests", "test_suites", "k8s-test-suite"))
     return build_integration_suite_steps(
         directory,
         ctx,
         pytest_tox_factors,
-        always_run_if=lambda: has_helm_changes(ctx),
+        force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=k8s_integration_suite_pytest_extra_cmds,
         queue=BuildkiteQueue.DOCKER,
     )
@@ -243,12 +246,12 @@ def build_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigurati
 
 
 def build_integration_suite_steps(
-    directory: str,
+    directory: str | Path,
     ctx: BuildkiteContext,
     pytest_tox_factors: list[ToxFactor] | None = None,
     pytest_extra_cmds: PytestExtraCommandsFunction | None = None,
     queue=None,
-    always_run_if: Callable[[], bool] | None = None,
+    force_run_fn: Callable[[BuildkiteContext], bool] | None = None,
     unsupported_python_versions: list[AvailablePythonVersion]
     | UnsupportedVersionsFunction
     | None = None,
@@ -269,7 +272,7 @@ def build_integration_suite_steps(
         retries=2,
         timeout_in_minutes=30,
         queue=queue,
-        always_run_if=always_run_if,
+        force_run_fn=force_run_fn,
         unsupported_python_versions=unsupported_python_versions,
     ).build_steps(ctx)
 
@@ -302,7 +305,7 @@ def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersi
         ]
 
     cmds += [
-        "pushd python_modules/libraries/dagster-celery",
+        f"pushd {oss_path('python_modules/libraries/dagster-celery')}",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,

@@ -1,5 +1,6 @@
+########################
 dagster-postgres library
-------------------------
+########################
 
 .. currentmodule:: dagster_postgres
 

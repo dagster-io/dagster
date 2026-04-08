@@ -23,6 +23,7 @@ from dagster._core.definitions.partitions.utils.time_window import PersistedTime
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 from dagster._serdes import whitelist_for_serdes
+from dagster._time import datetime_from_timestamp
 
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
@@ -295,6 +296,24 @@ class TimeWindowPartitionsSubset(
                 for window in self.included_time_windows
             ]
 
+    def _can_merge_windows(
+        self, earlier_window_end_timestamp: float, later_window_start_timestamp: float
+    ) -> bool:
+        if earlier_window_end_timestamp == later_window_start_timestamp:
+            return True
+
+        if not self.partitions_def.exclusions:
+            return False
+
+        # if there are exclusions, we can check if there are any partitions
+        # between the two timestamps
+        return not self.partitions_def.has_any_partitions_in_window(
+            TimeWindow(
+                datetime_from_timestamp(earlier_window_end_timestamp, self.partitions_def.timezone),
+                datetime_from_timestamp(later_window_start_timestamp, self.partitions_def.timezone),
+            )
+        )
+
     def _add_partitions_to_time_windows(
         self,
         initial_windows: Sequence[PersistedTimeWindow],
@@ -323,9 +342,13 @@ class TimeWindowPartitionsSubset(
                     break
 
                 if not lt_end_of_range:
-                    merge_with_range = included_window.end_timestamp == window_start_timestamp
+                    merge_with_range = self._can_merge_windows(
+                        included_window.end_timestamp, window_start_timestamp
+                    )
                     merge_with_later_range = i + 1 < len(result_windows) and (
-                        window.end.timestamp() == result_windows[i + 1].start_timestamp
+                        self._can_merge_windows(
+                            window.end.timestamp(), result_windows[i + 1].start_timestamp
+                        )
                     )
 
                     if merge_with_range and merge_with_later_range:

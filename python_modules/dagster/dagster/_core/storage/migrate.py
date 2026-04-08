@@ -20,9 +20,12 @@ from dagster._core.definitions.partitions.definition.partitions_definition impor
     PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.temporal_context import TemporalContext
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.output import build_output_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager
+from dagster._time import get_current_datetime
 from dagster._utils.log import get_dagster_logger
 
 if TYPE_CHECKING:
@@ -42,7 +45,7 @@ logger = logging.getLogger(__name__)
 class MigrateIOStorageResult:
     """Result of a call to :py:func:`migrate_io_storage`.
 
-    Attributes:
+    Args:
         migrated: EntitySubsets of assets/partitions that were successfully migrated.
         skipped: EntitySubsets of assets/partitions that were skipped (via ``should_skip``).
         failed: EntitySubsets of assets/partitions that failed to migrate.
@@ -56,10 +59,11 @@ class MigrateIOStorageResult:
 @public
 @preview
 def migrate_io_storage(
-    definitions: Definitions,
-    destination_io_manager: IOManager,
-    instance: DagsterInstance,
     *,
+    definitions: Definitions | None = None,
+    destination_io_manager: IOManager,
+    instance: DagsterInstance | None = None,
+    context: OpExecutionContext | None = None,
     selection: AssetSelection | None = None,
     should_skip: Callable[[AssetKey, str | None], bool] | None = None,
     batch_partitions: bool = False,
@@ -67,23 +71,39 @@ def migrate_io_storage(
 ) -> MigrateIOStorageResult:
     """Migrate asset data from one IO manager to another.
 
-    Reads all materialized assets from the source IO manager (as configured in the
-    ``Definitions`` object) and writes them to the destination IO manager using
-    ``load_input`` / ``handle_output``. This is useful when switching between IO managers
-    (e.g., S3 to GCS, filesystem to S3) without re-materializing assets.
+    Reads all materialized assets from a source IO manager and writes them to the
+    destination IO manager using ``load_input`` / ``handle_output``. This is useful
+    when switching between IO managers (e.g., S3 to GCS, filesystem to S3) without
+    re-materializing assets.
 
-    The source IO manager for each asset is resolved from the ``Definitions`` object
-    based on the asset's configured ``io_manager_key``.
+    The set of assets to iterate over and the source IO manager for each asset can be
+    provided in one of two ways:
+
+    - **Via a ``Definitions`` object** (the ``definitions`` parameter): The assets and
+      their IO manager configuration are resolved from the ``Definitions`` object.
+      An ``instance`` must also be provided to discover materialized partitions.
+    - **Via an ``OpExecutionContext``** (the ``context`` parameter): The assets and
+      their IO manager configuration are resolved from the code location that the
+      currently executing op belongs to. The ``DagsterInstance`` is obtained from
+      the context automatically.
+
+    Exactly one of ``definitions`` or ``context`` must be provided.
 
     Args:
-        definitions (Definitions): The Definitions object containing asset definitions and
-            their currently-configured IO manager resources (the source). Each asset's
-            ``io_manager_key`` is used to resolve the IO manager for loading.
+        definitions (Optional[Definitions]): A Definitions object containing asset
+            definitions and their currently-configured IO manager resources (the source).
+            Each asset's ``io_manager_key`` is used to resolve the IO manager for loading.
+            Mutually exclusive with ``context``.
         destination_io_manager (IOManager): The IO manager to write asset data to.
-        instance (DagsterInstance): A DagsterInstance used to discover materialized assets
-            and partitions.
+        instance (Optional[DagsterInstance]): A DagsterInstance used to discover materialized
+            assets and partitions. Required when using ``definitions``, ignored when using
+            ``context`` (the instance is obtained from the context).
+        context (Optional[OpExecutionContext]): An execution context from within an op or
+            asset. When provided, the assets and IO managers are resolved from the code
+            location, and the instance is obtained from the context. Mutually exclusive
+            with ``definitions``.
         selection (Optional[AssetSelection]): An optional asset selection to filter which
-            assets to migrate. Defaults to all assets in the Definitions.
+            assets to migrate. Defaults to all assets.
         should_skip (Optional[Callable[[AssetKey, Optional[str]], bool]]): An optional
             callback that receives an asset key and partition key (None for unpartitioned
             assets) and returns True if the asset should be skipped.
@@ -99,9 +119,30 @@ def migrate_io_storage(
     Returns:
         MigrateIOStorageResult: EntitySubsets of migrated, skipped, and failed assets.
     """
+    check.param_invariant(
+        (definitions is not None) ^ (context is not None),
+        "definitions",
+        "Exactly one of 'definitions' or 'context' must be provided.",
+    )
+    if context is not None:
+        repo_def = context.repository_def
+        resolved_instance = context.instance
+        asset_graph = repo_def.asset_graph
+    else:
+        assert definitions is not None
+        resolved_instance = check.not_none_param(instance, "instance")
+        asset_graph = definitions.resolve_asset_graph()
+
+    resolved_destination = destination_io_manager
     dag_logger = get_dagster_logger("migrate_io_storage")
-    asset_graph_view = AssetGraphView.for_test(definitions, instance)
-    asset_graph = definitions.resolve_asset_graph()
+    asset_graph_view = AssetGraphView(
+        temporal_context=TemporalContext(
+            effective_dt=get_current_datetime(),
+            last_event_id=resolved_instance.event_log_storage.get_maximum_record_id(),
+        ),
+        instance=resolved_instance,
+        asset_graph=asset_graph,
+    )
 
     # Resolve selected keys
     if selection is not None:
@@ -125,7 +166,13 @@ def migrate_io_storage(
     skipped_subsets: list[EntitySubset[AssetKey]] = []
     failed_subsets: list[EntitySubset[AssetKey]] = []
 
-    with definitions.get_asset_value_loader(instance=instance) as loader:
+    if context is not None:
+        loader_source = context.repository_def
+    else:
+        assert definitions is not None
+        loader_source = definitions.get_repository_def()
+
+    with loader_source.get_asset_value_loader(instance=resolved_instance) as loader:
         for i, (asset_key, materialized_subset) in enumerate(materialized_map.items(), 1):
             assets_def = asset_graph.assets_def_for_key(asset_key)
             asset_label = asset_key.to_user_string()
@@ -138,7 +185,7 @@ def migrate_io_storage(
                     continue
                 dag_logger.info("[%d/%d] Migrating %s", i, total_assets, asset_label)
                 migrated, _failed = _migrate_single(
-                    loader, destination_io_manager, asset_key, transform=transform
+                    loader, resolved_destination, asset_key, transform=transform
                 )
                 if migrated:
                     migrated_subsets.append(materialized_subset)
@@ -186,7 +233,7 @@ def migrate_io_storage(
                     batch_size = _get_batch_size(assets_def)
                     m_subset, f_subset = _migrate_partitions_batched(
                         loader,
-                        destination_io_manager,
+                        resolved_destination,
                         asset_key,
                         migrate_subset,
                         partitions_def,
@@ -203,7 +250,7 @@ def migrate_io_storage(
                     failed_keys: set[str] = set()
                     for pk in migrate_subset.expensively_compute_partition_keys():
                         m, _f = _migrate_single(
-                            loader, destination_io_manager, asset_key, pk, transform=transform
+                            loader, resolved_destination, asset_key, pk, transform=transform
                         )
                         if m:
                             migrated_keys.add(pk)

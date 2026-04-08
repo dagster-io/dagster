@@ -71,7 +71,7 @@ def test_no_memory_leaks():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
                 "class": "QueuedRunCoordinator",
             },
         },

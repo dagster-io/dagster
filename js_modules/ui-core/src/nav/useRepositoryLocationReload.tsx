@@ -217,7 +217,7 @@ export const useRepositoryLocationReload = ({
   );
 };
 
-const REPOSITORY_LOCATION_STATUS_QUERY = gql`
+export const REPOSITORY_LOCATION_STATUS_QUERY = gql`
   query RepositoryLocationStatusQuery {
     workspaceOrError {
       ... on Workspace {
@@ -343,7 +343,7 @@ export const buildReloadFnForLocation = (location: string) => {
   };
 };
 
-const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
+export const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
   mutation ReloadRepositoryLocationMutation($location: String!) {
     reloadRepositoryLocation(repositoryLocationName: $location) {
       ... on WorkspaceLocationEntry {

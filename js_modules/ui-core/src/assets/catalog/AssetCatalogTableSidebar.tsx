@@ -50,7 +50,11 @@ export const AssetCatalogTableSidebar = ({
         !currentKeyPrefix?.key ? ['Catalog'] : currentKeyPrefix?.key ? [currentKeyPrefix.key] : []
       }
       onSelectPath={(e, path) => {
-        onChangeSelection(selectionReplacingKeyPrefix(selection, path));
+        onChangeSelection(
+          path === 'Catalog'
+            ? selectionWithoutKeyPrefix(selection)
+            : selectionReplacingKeyPrefix(selection, path),
+        );
       }}
     />
   );

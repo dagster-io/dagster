@@ -27,7 +27,7 @@ def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definiti
     # Project root is two parents up from the test file
     project_root = Path(__file__).parent.parent
     tree = dg.ComponentTree.for_project(project_root)
-    component = tree.load_component_at_path(component_path)
+    component = tree.load_component(component_path)
     defs = tree.build_defs_at_path(component_path)
     return component, defs
 ```
@@ -63,4 +63,4 @@ def test_function_component_execution() -> None:
     assert dg.materialize(defs.get_assets_def("some_asset")).success
 ```
 
-See [Unit Testing Assets and Ops](/guides/test/unit-testing-assets-and-ops) for more information about testing definitions.
+For more information about testing definitions, see [Unit testing assets and ops](/guides/test/unit-testing-assets-and-ops) for more information about testing definitions.

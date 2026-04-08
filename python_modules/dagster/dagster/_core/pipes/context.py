@@ -59,6 +59,7 @@ if TYPE_CHECKING:
 PipesExecutionResult: TypeAlias = MaterializeResult | AssetCheckResult
 
 
+@public
 class PipesLaunchedData(TypedDict):
     """Payload generated in the orchestration process after external process startup
     containing arbitrary information about the external process.

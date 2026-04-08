@@ -22,6 +22,7 @@ from dagster.components.utils.translation import (
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
@@ -35,6 +36,7 @@ from dagster_dbt.components.dbt_component_utils import (
     resolve_cli_args,
 )
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
+from dagster_dbt.core.dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import validate_manifest
@@ -383,7 +385,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     def _get_dbt_event_iterator(
         self, context: dg.AssetExecutionContext, dbt: DbtCliResource
-    ) -> Iterator:
+    ) -> DbtEventIterator[DbtDagsterEventType]:
         iterator = dbt.cli(self.get_cli_args(context), context=context).stream()
         if "column_metadata" in self.include_metadata:
             iterator = iterator.fetch_column_metadata()
@@ -467,10 +469,11 @@ class DbtProjectComponentTranslator(
     ) -> dg.AssetSpec:
         base_spec = super().get_asset_spec(manifest, unique_id, project)
         if self.component.translation is None:
-            return base_spec
+            spec = base_spec
         else:
             dbt_props = get_node(manifest, unique_id)
-            return self.component.translation(base_spec, dbt_props)
+            spec = self.component.translation(base_spec, dbt_props)
+        return spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:

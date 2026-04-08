@@ -60,7 +60,14 @@ class AutoMaterializePolicyType(Enum):
     old_fields={"time_window_partition_scope_minutes": 1e-6},
     serializer=AutoMaterializePolicySerializer,
 )
-@deprecated(breaking_version="1.10.0")
+@deprecated(
+    breaking_version="1.10.0",
+    additional_warn_text=(
+        "This type remains in Dagster for backwards compatibility because older serialized code "
+        "locations and automation state may still reference it. New code should use "
+        "`AutomationCondition` APIs instead."
+    ),
+)
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
@@ -121,8 +128,9 @@ class AutoMaterializePolicy(
 
     **Warning:**
 
-    Constructing an AutoMaterializePolicy directly is not recommended as the API is subject to change.
-    AutoMaterializePolicy.eager() and AutoMaterializePolicy.lazy() are the recommended API.
+    This API is deprecated and retained for backwards compatibility with older serialized code
+    locations and automation state. New code should use `AutomationCondition` APIs instead of
+    constructing an AutoMaterializePolicy directly.
 
     """
 

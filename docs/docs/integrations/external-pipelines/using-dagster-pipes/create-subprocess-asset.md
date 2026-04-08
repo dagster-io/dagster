@@ -77,7 +77,7 @@ Let’s take a look at what this code does:
 - This object contains a `get_materialize_result` method, which you can use to access the <PyObject section="assets" module="dagster" object="MaterializeResult" /> event reported by the subprocess. We'll talk about how to report events from the subprocess in the next section.
 - Lastly, return the result of the subprocess.
 
-## Step 5: Define a Definitions object
+## Step 5: Define a `Definitions` object
 
 import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
@@ -125,6 +125,6 @@ In this step, you’ll execute the subprocess asset you created in earlier steps
 
    ![Raw compute logs in the run details page](/images/guides/build/external-pipelines/subprocess/part-1-step-3-5-stdout.png)
 
-## What's next?
+## Next steps
 
 At this point, you've created a Dagster asset that invokes an external Python script, launched the code in a subprocess, and viewed the result in Dagster UI. Next, you'll learn how to [modify your external code to work with Dagster Pipes](/integrations/external-pipelines/using-dagster-pipes/modify-external-code) to send information back to Dagster.

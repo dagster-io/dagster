@@ -842,16 +842,6 @@ class Definitions(IHaveNew):
         )
 
     @public
-    @deprecated(
-        breaking_version="1.11",
-        additional_warn_text="Use resolve_all_asset_specs instead",
-        subject="get_all_asset_specs",
-    )
-    def get_all_asset_specs(self) -> Sequence[AssetSpec]:
-        """Returns an AssetSpec object for AssetsDefinitions and AssetSpec passed directly to the Definitions object."""
-        return self.resolve_all_asset_specs()
-
-    @public
     def resolve_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the resolved Definitions object."""
         asset_graph = self.resolve_asset_graph()

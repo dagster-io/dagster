@@ -58,7 +58,11 @@ export const AssetActionMenu = memo((props: Props) => {
   );
 
   const wipe = useWipeDialog(
-    {repository: definition ? definition.repository : null, assetKey: {path}},
+    {
+      assetKey: {path},
+      definitionHasWipePermission: !!definition?.hasWipePermission,
+      locationName: definition ? definition?.repository.location.name : null,
+    },
     onRefresh,
   );
 

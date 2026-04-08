@@ -56,7 +56,7 @@ def scoped_reconstruction_serdes_objects(
         with scoped_reconstruction_serdes_objects(test_key=ExampleDefState(a_string="bar")):
             loader_cached = ExampleStateBackedDefinitionsLoader("test_key")
             defs = loader_cached.build_defs()
-            assert len(defs.get_all_asset_specs()) == 1
+            assert len(defs.resolve_all_asset_specs()) == 1
             assert defs.get_assets_def("bar")
     """
     with scoped_reconstruction_metadata(
@@ -82,7 +82,7 @@ def scoped_reconstruction_metadata(
         with scoped_reconstruction_metadata({"test_key": "test_value"}):
             loader_cached = ExampleStateBackedDefinitionsLoader("test_key")
             defs = loader_cached.build_defs()
-            assert len(defs.get_all_asset_specs()) == 1
+            assert len(defs.resolve_all_asset_specs()) == 1
             assert defs.get_assets_def("bar")
     """
     prev_context = DefinitionsLoadContext.get()

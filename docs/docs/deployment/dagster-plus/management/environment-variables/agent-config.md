@@ -10,7 +10,7 @@ In this guide, we'll walk you through setting environment variables for a Dagste
 
 There are two ways to set environment variables:
 
-- **On a per-code location basis**, which involves modifying the `build.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui). Values will pass through Dagster+. Also note that if you have an older deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+- **On a per-code location basis**, which involves modifying the `build.yaml` file. This approach is functionally the same as [setting environment variables using the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui). Values will pass through Dagster+. Also note that if you have an older deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
 - **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster+ deployment. As values are pulled from the user cluster, values will bypass Dagster+ entirely.
 
 :::note

@@ -13,7 +13,7 @@ If you are just getting started with the dbt integration, we recommend using the
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline. Dagster's asset-oriented approach allows Dagster to understand dbt at the level of individual dbt models.
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -27,7 +27,7 @@ Then, add the `dagster-dbt` library to the project, along with a duckdb adapter:
 
 <PackageInstallInstructions packageName="dagster-dbt dbt-duckdb" />
 
-## 2. Set up a dbt project
+## Step 2: Set up a dbt project
 
 For this tutorial, we'll use the jaffle shop dbt project as an example. Clone it into your project:
 
@@ -41,7 +41,7 @@ We will create a `profiles.yml` file in the `dbt` directory to configure the pro
   language="yaml"
 />
 
-## 3. Initialize the dbt assets
+## Step 3: Initialize the dbt assets
 
 First create a dbt resource. This will point to the dbt project directory within the Dagster project directory:
 
@@ -59,13 +59,13 @@ With the dbt resource defined, you can use the dbt project to generate the dbt a
   language="python"
 />
 
-## 4. Run your dbt models
+## Step 4: Run your dbt models
 
 To execute your dbt models, you can use the `dg launch` command to kick off a run through the CLI:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/9-dbt-run.txt" />
 
-## 5. Customize dbt assets
+## Step 5: Customize dbt assets
 
 You can customize the properties of the assets emitted by each dbt model using a `DagsterDbtTranslator`. This allows you to modify asset metadata such as group names, descriptions, and other properties. To create a custom translator, create a new class that inherits from `DagsterDbtTranslator`. You can then write custom logic for metadata attributes of the dbt assets by overriding the `get_asset_key` and `get_group_name` methods. The translator is then applied to the `@dbt_assets` assets:
 
@@ -75,7 +75,7 @@ You can customize the properties of the assets emitted by each dbt model using a
   language="python"
 />
 
-## 6. Customize manifest generation
+## Step 6: Customize manifest generation
 
 By default, `DbtProject` runs `dbt parse --quiet` to generate the manifest during development. If you need `dbt compile` instead — for example, to access `compiled_code` on your dbt nodes — you can pass `prepare_project_cli_args` when creating your `DbtProject`:
 
@@ -93,7 +93,7 @@ my_dbt_project.prepare_if_dev()
 
 This is useful when you want to include compiled SQL in asset descriptions or other metadata via a custom `DagsterDbtTranslator`.
 
-## 7. Handling incremental models
+## Step 7: Model incremental models as partitioned assets
 
 If you have incremental models in your dbt project, you can model these as partitioned assets, and update the command that is used to run the dbt models to pass in `--vars` based on the range of partitions that are being processed.
 

@@ -1,0 +1,8 @@
+type: dagster_dlt.DltLoadCollectionComponent
+
+attributes:
+  loads:
+    - source: .loads.github_load_source
+      pipeline: .loads.github_pipeline
+      translation:
+        group_name: github

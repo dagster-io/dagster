@@ -37,7 +37,7 @@ To create a full deployment:
 4. In the new deployment modal, enter the following:
    - **Name** - Enter a name for the full deployment.
    - **Initial deployment permissions** - Select the permissions you want to use to create the full deployment:
-     - **Empty permissions** - Creates the full deployment with an empty set of permissions. **Note**: Only Organization Admins will be able to manage the full deployment until other uses are granted Admin or Editor permissions.
+     - **Empty permissions** - Creates the full deployment with an empty set of permissions. **Note that only Organization Admins will be able to manage the full deployment until other uses are granted Admin or Editor permissions.**
      - **Copy from** - Creates the full deployment using permissions duplicated from an existing full deployment.
 5. When finished, click **Create deployment**.
 
@@ -67,7 +67,7 @@ To delete a full deployment:
 
 :::
 
-Full deployment settings can be configured in the Dagster+ interface or using the `dagster-cloud` CLI. For more information about individual settings, see the [full deployment settings reference](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).
+Full deployment settings can be configured in the Dagster+ interface or using the `dg` or `dagster-cloud` CLI. For more information about individual settings, see the [full deployment settings reference](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).
 
 <Tabs>
   <TabItem value="Dagster+">
@@ -85,7 +85,46 @@ Full deployment settings can be configured in the Dagster+ interface or using th
 5. When finished, click **Save deployment settings**.
 
   </TabItem>
-<TabItem value="dagster-cloud CLI">
+<TabItem value="dg" label="dg CLI" default>
+
+Create a file with the settings you'd like to configure. For example:
+
+```yaml
+# my-settings.yaml
+
+concurrency:
+  pools:
+    granularity: 'run'
+    default_limit: 1
+  runs:
+    max_concurrent_runs: 10
+    tag_concurrency_limits:
+      - key: 'database'
+        value: 'redshift'
+        limit: 5
+
+run_monitoring:
+  start_timeout_seconds: 1200
+  cancel_timeout_seconds: 1200
+
+run_retries:
+  max_retries: 0
+```
+
+Use the CLI to upload the settings file:
+
+```shell
+dg api deployment settings set my-settings.yaml
+```
+
+This will replace all of your configured settings. Any that are not specified will resort to their default values. You can also use the CLI to read your current settings, including the default values:
+
+```shell
+dg api deployment settings get
+```
+
+  </TabItem>
+  <TabItem value="dagster-cloud" label="dagster-cloud CLI">
 
 :::note
 

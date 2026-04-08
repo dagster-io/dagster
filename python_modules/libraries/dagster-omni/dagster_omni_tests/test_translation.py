@@ -63,18 +63,11 @@ class TestOmniTranslation(TestTranslation):
         }
         body["attributes"]["translation"] = attributes
         with setup_omni_component(defs_yaml_contents=body) as (_, defs):
-            specs = [
-                spec
-                for spec in defs.get_all_asset_specs()
-                if "dagster/auto_created_stub_asset" not in spec.metadata
-            ]
-            assert len(specs) == 1
-            spec = specs[0]
-
             expected_key = dg.AssetKey(["analytics", "reports", "User Analysis"])
             if key_modifier:
                 expected_key = key_modifier(expected_key)
 
+            spec = defs.get_assets_def(expected_key).get_asset_spec(expected_key)
             assert assertion(spec)
             assert spec.key == expected_key
 
@@ -98,15 +91,9 @@ def test_per_object_type_translation() -> None:
         },
     }
     with setup_omni_component(defs_yaml_contents=body) as (_, defs):
-        specs = [
-            spec
-            for spec in defs.get_all_asset_specs()
-            if "dagster/auto_created_stub_asset" not in spec.metadata
-        ]
-        assert len(specs) == 1
-        spec = specs[0]
-
-        assert spec.key == dg.AssetKey(["document_prefix", "analytics", "reports", "User Analysis"])
+        key = dg.AssetKey(["document_prefix", "analytics", "reports", "User Analysis"])
+        spec = defs.get_assets_def(key).get_asset_spec(key)
+        assert spec.key == key
         assert spec.metadata["foo_global"] == "bar_global"
         assert spec.metadata["foo_document"] == "bar_document"
         assert spec.deps == [dg.AssetDep(dg.AssetKey(["query_prefix", "users"]))]

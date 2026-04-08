@@ -1,11 +1,9 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, cast
 
 import pytest
 import requests
 from dagster import Definitions
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
-from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.test_utils import instance_for_test
@@ -26,9 +24,6 @@ from kitchen_sink.airflow_instance import (
     local_airflow_instance,
 )
 from pytest_mock import MockFixture
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 
 @pytest.fixture
@@ -80,18 +75,20 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     change_dag_limit_source_code(1)
     af_instance = local_airflow_instance()
     defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
-    assert defs.assets
-    for assets_def in defs.assets:
-        metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
+    all_specs = defs.resolve_all_asset_specs()
+    assert all_specs
+    for spec in all_specs:
+        metadata = spec.metadata
         assert SOURCE_CODE_METADATA_KEY not in metadata
 
     change_dag_limit_source_code(200)
     # Also force re-retrieval of state by giving the airflow instance a different name.
     af_instance = local_airflow_instance(name="different_name")
     defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
-    assert defs.assets
-    for assets_def in defs.assets:
-        metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
+    all_specs = defs.resolve_all_asset_specs()
+    assert all_specs
+    for spec in all_specs:
+        metadata = spec.metadata
         if PEERED_DAG_MAPPING_METADATA_KEY not in metadata:
             continue
         assert SOURCE_CODE_METADATA_KEY in metadata
@@ -102,9 +99,10 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     defs = build_defs_from_airflow_instance(
         airflow_instance=af_instance, source_code_retrieval_enabled=True
     )
-    assert defs.assets
-    for assets_def in defs.assets:
-        metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
+    all_specs = defs.resolve_all_asset_specs()
+    assert all_specs
+    for spec in all_specs:
+        metadata = spec.metadata
         if PEERED_DAG_MAPPING_METADATA_KEY not in metadata:
             continue
         assert SOURCE_CODE_METADATA_KEY in metadata

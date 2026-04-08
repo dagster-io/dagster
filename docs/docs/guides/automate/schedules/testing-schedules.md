@@ -94,12 +94,3 @@ In the test for this schedule, we provided the `date_formatter` resource to the 
   title="tests/test_assets.py"
   dedent="4"
 />
-
-## APIs in this guide
-
-| Name                                                                                         | Description                                                                           |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />        | Decorator that defines a schedule that executes according to a given cron schedule.   |
-| <PyObject section="execution" module="dagster" object="validate_run_config" />               | A function that validates a provided run config blob against a job.                   |
-| <PyObject section="schedules-sensors" module="dagster" object="build_schedule_context" />    | A function that constructs a `ScheduleEvaluationContext`, typically used for testing. |
-| <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> | The context passed to the schedule definition execution function.                     |

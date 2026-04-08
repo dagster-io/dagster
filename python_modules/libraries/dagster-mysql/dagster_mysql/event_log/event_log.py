@@ -24,6 +24,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_result
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from sqlalchemy.engine import Connection
 
@@ -136,8 +137,11 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return MySQLEventLogStorage(conn_string)
 
     def get_server_version(self) -> str | None:
-        with self.index_connection() as conn:
-            row = conn.execute(db.text("select version()")).fetchone()
+        with (
+            self.index_connection() as conn,
+            db_result(conn, db.text("select version()")) as result,
+        ):
+            row = result.fetchone()
 
         if not row:
             return None

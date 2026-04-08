@@ -433,6 +433,8 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_status(self, key: "AssetKeyPartitionKey") -> StaleStatus:
+        from dagster._core.definitions.events import AssetKeyPartitionKey
+
         # The status loader does not support querying for the stale status of a
         # partitioned asset without specifying a partition, so we return here.
         asset = self.asset_graph.get(key.asset_key)
@@ -441,6 +443,21 @@ class CachingStaleStatusResolver:
         else:
             current_version = self._get_current_data_version(key=key)
             if current_version == NULL_DATA_VERSION:
+                if asset.is_virtual:
+                    # A view is MISSING only when none of its non-view ancestors
+                    # have been materialized yet. Otherwise it is
+                    # FRESH/STALE based on its stale causes (e.g. code version).
+                    non_virtual_ancestors = self.asset_graph.get_non_virtual_ancestor_keys(
+                        key.asset_key
+                    )
+                    any_ancestor_materialized = any(
+                        self._get_current_data_version(key=AssetKeyPartitionKey(ak, None))
+                        != NULL_DATA_VERSION
+                        for ak in non_virtual_ancestors
+                    )
+                    if any_ancestor_materialized:
+                        causes = self._get_stale_causes(key=key)
+                        return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
                 return StaleStatus.MISSING
             elif asset.is_external:
                 return StaleStatus.FRESH
@@ -458,6 +475,12 @@ class CachingStaleStatusResolver:
             return []
         elif asset.is_external:
             return []
+        elif asset.is_virtual:
+            current_version = self._get_current_data_version(key=key)
+            if current_version == NULL_DATA_VERSION:
+                return []
+            code_cause = self._get_code_version_stale_cause(key=key)
+            return [code_cause] if code_cause else []
         else:
             current_version = self._get_current_data_version(key=key)
             if current_version == NULL_DATA_VERSION:
@@ -466,6 +489,14 @@ class CachingStaleStatusResolver:
                 return sorted(
                     self._get_stale_causes_materialized(key=key), key=lambda cause: cause.sort_key
                 )
+
+    def _get_code_version_stale_cause(self, key: "AssetKeyPartitionKey") -> StaleCause | None:
+        code_version = self.asset_graph.get(key.asset_key).code_version
+        if code_version:
+            provenance = self._get_current_data_provenance(key=key)
+            if provenance and code_version != provenance.code_version:
+                return StaleCause(key, StaleCauseCategory.CODE, "has a new code version")
+        return None
 
     def _is_dep_updated(self, provenance: DataProvenance, dep_key: "AssetKeyPartitionKey") -> bool:
         dep_asset = self.asset_graph.get(dep_key.asset_key)
@@ -530,7 +561,6 @@ class CachingStaleStatusResolver:
     def _get_stale_causes_materialized(self, key: "AssetKeyPartitionKey") -> Iterator[StaleCause]:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
-        code_version = self.asset_graph.get(key.asset_key).code_version
         provenance = self._get_current_data_provenance(key=key)
 
         asset_deps = self.asset_graph.get(key.asset_key).parent_keys
@@ -540,8 +570,9 @@ class CachingStaleStatusResolver:
         materialization_time = materialization.timestamp
 
         if provenance:
-            if code_version and code_version != provenance.code_version:
-                yield StaleCause(key, StaleCauseCategory.CODE, "has a new code version")
+            code_cause = self._get_code_version_stale_cause(key=key)
+            if code_cause:
+                yield code_cause
 
             removed_deps = set(provenance.input_data_versions.keys()) - set(asset_deps)
             for dep_key in removed_deps:
@@ -614,6 +645,32 @@ class CachingStaleStatusResolver:
                         [
                             StaleCause(
                                 dep_key,
+                                StaleCauseCategory.DATA,
+                                "has a new materialization",
+                            )
+                        ],
+                    )
+
+        # Propagate staleness through virtual dependencies. Virtual assets are
+        # transparent for staleness: if a non-virtual ancestor behind a virtual
+        # asset has been updated since this asset's last materialization, we treat
+        # this asset as stale.
+        for dep_asset_key in self.asset_graph.get(key.asset_key).parent_keys:
+            if not self.asset_graph.get(dep_asset_key).is_virtual:
+                continue
+            non_virtual_ancestors = self.asset_graph.get_non_virtual_ancestor_keys(dep_asset_key)
+            for ancestor_key in sorted(non_virtual_ancestors):
+                ancestor_dep = AssetKeyPartitionKey(ancestor_key, None)
+                ancestor_record = self._get_latest_data_version_record(key=ancestor_dep)
+                if ancestor_record is not None and ancestor_record.timestamp > materialization_time:
+                    yield StaleCause(
+                        key,
+                        StaleCauseCategory.DATA,
+                        "has a new dependency materialization",
+                        ancestor_dep,
+                        [
+                            StaleCause(
+                                ancestor_dep,
                                 StaleCauseCategory.DATA,
                                 "has a new materialization",
                             )

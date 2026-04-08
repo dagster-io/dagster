@@ -10,7 +10,7 @@ Importing an existing dbt project in Dagster+ allows you to automatically load y
 
 To follow the steps in this guide, you'll need **Dagster+ Organization Admin**, **Admin**, or **Editor** permissions in order to create a code location.
 
-Additionally, Dagster+ requires several files to be present in your project. To learn more about the structure and files required in a dbt and Dagster project, see "[Creating a dbt project in a Dagster project](/integrations/libraries/dbt/using-dbt-with-dagster-plus)".
+Additionally, Dagster+ requires several files to be present in your project. To learn more about the structure and files required in a dbt and Dagster project, see [Creating a dbt project in a Dagster project](/integrations/libraries/dbt/using-dbt-with-dagster-plus).
 
 ## Step 1: Import your project in Dagster+
 
@@ -26,9 +26,9 @@ In this section, we'll demonstrate how to import an existing project to Dagster+
 
 5. At this point, you'll be prompted to select either GitHub or GitLab. For this guide, we'll select **GitHub**.
 
-6. If prompted, sign into your GitHub account and complete the authorization process for the Dagster+ application. **Note**: The profile or organization you're using to authorize Dagster+ must have read and write access to the repository containing the project. After the authorization is complete, you'll be redirected back to Dagster+.
+6. If prompted, sign into your GitHub account and complete the authorization process for the Dagster+ application. **Note that the profile or organization you're using to authorize Dagster+ must have read and write access to the repository containing the project.** After the authorization is complete, you'll be redirected back to Dagster+.
 
-7. In Dagster+, locate and select the repository containing the project by using the dropdowns. **Note**: dbt projects must have `dbt_profiles.yml` and `profiles.yml` files in the repository root or an error will display.
+7. In Dagster+, locate and select the repository containing the project by using the dropdowns. **Note that dbt projects must have `dbt_profiles.yml` and `profiles.yml` files in the repository root or an error will display.**
 
 8. Click **Continue** to begin the import process. Dagster+ will directly commit the files to the repository.
 

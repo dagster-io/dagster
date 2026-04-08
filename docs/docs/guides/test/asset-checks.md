@@ -95,8 +95,3 @@ In the example below, two jobs are defined: one for the asset and another for th
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
-
-## Next steps
-
-- Learn more about [assets](/guides/build/assets)
-- Learn how to use [Great Expectations with Dagster](https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations)

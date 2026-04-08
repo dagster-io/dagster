@@ -2,7 +2,7 @@ import sys
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES
 from dagster._utils.error import serializable_error_info_from_exc_info

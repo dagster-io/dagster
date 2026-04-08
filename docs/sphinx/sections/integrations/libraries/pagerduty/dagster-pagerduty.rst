@@ -1,5 +1,6 @@
+#########################
 dagster-pagerduty library
-=========================
+#########################
 
 This library provides an integration with PagerDuty, to support creating alerts from your Dagster
 code.
@@ -7,8 +8,9 @@ code.
 
 Presently, it provides a thin wrapper on the `Events API V2 <https://v2.developer.pagerduty.com/docs/events-api-v2>`_.
 
-Getting Started
----------------
+***************
+Getting started
+***************
 
 You can install this library with:
 
@@ -33,9 +35,9 @@ alerts from within your ops.
 .. autoconfigurable:: PagerDutyService
   :annotation: ResourceDefinition
 
-
+******
 Legacy
-------
+******
 
 .. autoconfigurable:: pagerduty_resource
   :annotation: ResourceDefinition

@@ -1,7 +1,8 @@
 .. currentmodule:: dagster
 
+########
 Metadata
-========
+########
 
 Dagster uses metadata to communicate arbitrary user-specified metadata about structured
 events.
@@ -12,8 +13,9 @@ Refer to the `Metadata <https://docs.dagster.io/guides/build/assets/metadata-and
 
 .. autoclass:: MetadataEntry
 
+**************
 Metadata types
-^^^^^^^^^^^^^^
+**************
 
 All metadata types inherit from `MetadataValue`. The following types are defined:
 
@@ -49,8 +51,9 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 
 .. autoclass:: CodeReferencesMetadataValue
 
+******
 Tables
-^^^^^^
+******
 
 These APIs provide the ability to express column schemas (`TableSchema`), rows/records (`TableRecord`), and column lineage (`TableColumnLineage`) in Dagster as metadata.
 
@@ -68,11 +71,12 @@ These APIs provide the ability to express column schemas (`TableSchema`), rows/r
 
 .. autoclass:: TableColumnDep
 
+***************
 Code references
-^^^^^^^^^^^^^^^
+***************
 
 The following functions are used to attach source code references to your assets.
-For more information, refer to the `Linking to asset definition code with code references <https://docs.dagster.io/guides/build/assets/metadata-and-tags#source-code>`_ guide.
+For more information, see `Linking assets with source code <https://docs.dagster.io/guides/build/assets/metadata-and-tags#source-code>`_.
 
 
 .. autofunction:: with_source_code_references

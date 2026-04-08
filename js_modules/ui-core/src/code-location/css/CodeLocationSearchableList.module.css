@@ -1,0 +1,6 @@
+.listLink {
+  &:active,
+  &:focus {
+    outline: none;
+  }
+}

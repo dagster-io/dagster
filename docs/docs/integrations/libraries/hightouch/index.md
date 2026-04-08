@@ -41,20 +41,12 @@ defs = dg.Definitions(
 
 For job-based workflows, the `ConfigurableHightouchResource` can be used with the `hightouch_sync_op` to trigger syncs within a job.
 
-```python
-import dagster as dg
-from dagster_hightouch import ConfigurableHightouchResource, hightouch_sync_op
-
-@dg.job(
-    resource_defs={
-        "hightouch": ConfigurableHightouchResource(
-            api_key=dg.EnvVar("HIGHTOUCH_API_KEY")
-        )
-    }
-)
-def sync_job():
-    hightouch_sync_op()
-```
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/hightouch_component.py"
+  language="python"
+  startAfter="start_job_example"
+  endBefore="end_job_example"
+/>
 
 ## About Hightouch
 

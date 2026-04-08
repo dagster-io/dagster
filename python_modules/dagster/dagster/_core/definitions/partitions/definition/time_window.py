@@ -249,6 +249,23 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
             return current_time.timestamp()
 
+    def has_any_partitions_in_window(self, time_window: TimeWindow) -> bool:
+        if time_window.start.timestamp() >= time_window.end.timestamp():
+            return False
+
+        fixed_minute_interval = get_fixed_minute_interval(self.cron_schedule)
+        if fixed_minute_interval and not self.exclusions:
+            return self.get_num_partitions_in_window(time_window) > 0
+
+        time_window_end_timestamp = time_window.end.timestamp()
+        for partition_time_window in self._iterate_time_windows(time_window.start.timestamp()):
+            if partition_time_window.start.timestamp() < time_window_end_timestamp:
+                return True
+            else:
+                break
+
+        return False
+
     def get_num_partitions_in_window(self, time_window: TimeWindow) -> int:
         if time_window.start.timestamp() >= time_window.end.timestamp():
             return 0

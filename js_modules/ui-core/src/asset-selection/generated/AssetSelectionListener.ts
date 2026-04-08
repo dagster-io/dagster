@@ -1,4 +1,4 @@
-// Generated from dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/bengotow/Work/F376/Projects/dagster-internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import {ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode} from 'antlr4ng';
 
@@ -28,6 +28,7 @@ import {TableNameAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnTagAttributeExprContext} from './AssetSelectionParser.js';
 import {CodeLocationAttributeExprContext} from './AssetSelectionParser.js';
 import {ChangedInBranchAttributeExprContext} from './AssetSelectionParser.js';
+import {PartitionsAttributeExprContext} from './AssetSelectionParser.js';
 import {ValueContext} from './AssetSelectionParser.js';
 import {KeyValueContext} from './AssetSelectionParser.js';
 
@@ -340,6 +341,18 @@ export class AssetSelectionListener implements ParseTreeListener {
    * @param ctx the parse tree
    */
   exitChangedInBranchAttributeExpr?: (ctx: ChangedInBranchAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `PartitionsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterPartitionsAttributeExpr?: (ctx: PartitionsAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `PartitionsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitPartitionsAttributeExpr?: (ctx: PartitionsAttributeExprContext) => void;
   /**
    * Enter a parse tree produced by `AssetSelectionParser.value`.
    * @param ctx the parse tree

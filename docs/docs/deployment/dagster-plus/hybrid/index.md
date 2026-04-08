@@ -1,7 +1,7 @@
 ---
 description: In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
 sidebar_label: Hybrid deployment
-sidebar_position: 400
+sidebar_position: 500
 title: Dagster+ Hybrid deployment
 canonicalUrl: '/deployment/dagster-plus/hybrid'
 slug: '/deployment/dagster-plus/hybrid'
@@ -34,6 +34,10 @@ To get started with a Hybrid deployment, you'll need to:
 If you are migrating from from Dagster+ Serverless, see the [Dagster+ Serverless to Hybrid migration guide](/migration/serverless-to-hybrid).
 
 :::
+
+## Run isolation
+
+Dagster+ Hybrid deployments support both isolated and non-isolated runs. Isolated runs execute in their own container with dedicated resources, while non-isolated runs use a shared container for faster iteration during development. For details, see [Run isolation](/deployment/dagster-plus/run-isolation).
 
 ## Best practices
 

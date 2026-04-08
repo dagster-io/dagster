@@ -91,7 +91,6 @@ from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
@@ -1475,7 +1474,7 @@ def asset_two(asset_one):
 two_assets_job = define_asset_job(name="two_assets_job", selection=[asset_one, asset_two])
 
 
-unexecutable_asset = external_asset_from_spec(AssetSpec("unexecutable_asset"))
+unexecutable_asset = AssetSpec("unexecutable_asset")
 
 
 @asset

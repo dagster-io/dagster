@@ -7,7 +7,7 @@ tags: [dagster-plus-feature]
 
 This reference describes the settings that can be configured for full deployments in Dagster+.
 
-For more information about configuring full deployment settings in the Dagster+ interface or with the `dagster-cloud` CLI, [Managing full deployments](/deployment/dagster-plus/deploying-code/full-deployments/managing-full-deployments).
+For more information about configuring full deployment settings in the Dagster+ interface or with the `dg` or `dagster-cloud` CLI, see [Managing full deployments](/deployment/dagster-plus/deploying-code/full-deployments/managing-full-deployments).
 
 ## Settings schema
 
@@ -118,7 +118,7 @@ sso_default_role: EDITOR
 
 ### Non-isolated runs
 
-Configure [non-isolated runs](/deployment/dagster-plus/serverless/run-isolation) on your deployment.
+Configure [non-isolated runs](/deployment/dagster-plus/run-isolation) on your deployment.
 
 ```yaml
 non_isolated_runs:

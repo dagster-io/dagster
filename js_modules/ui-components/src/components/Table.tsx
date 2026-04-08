@@ -2,7 +2,6 @@
 import {HTMLTable, HTMLTableProps} from '@blueprintjs/core';
 import styled from 'styled-components';
 
-import {StyledTag} from './BaseTag';
 import {Colors} from './Color';
 import {FontFamily} from './styles';
 
@@ -56,7 +55,7 @@ export const Table = styled(HTMLTable)<TableProps>`
       inset 0 -1px 0 ${Colors.keylineDefault()} !important;
   }
 
-  & tr td ${StyledTag} {
+  & tr td .BaseTag {
     font-family: ${FontFamily.default};
   }
 `;

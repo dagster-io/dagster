@@ -306,11 +306,17 @@ To access the overview tab, on the **Job details** page, click the **Overview** 
 </TabItem>
 <TabItem value="Launchpad tab">
 
-The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs. **Note**: For assets, this tab will only display if a job requires config. It displays by default for all op jobs.
+The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs.
 
 To access the launchpad tab, on the **Job details** page, click the **Launchpad** tab.
 
 ![UI Launchpad](/images/guides/operate/webserver/job-config-with-ops.png)
+
+:::note
+
+For assets, this tab will only display if a job requires config. It displays by default for all op jobs.
+
+:::
 
 </TabItem>
 <TabItem value="Runs tab">

@@ -1,7 +1,7 @@
 ---
 description: Dagster+ Serverless is a fully managed version of Dagster+ and is the easiest way to get started with Dagster.
 sidebar_label: Serverless deployment
-sidebar_position: 300
+sidebar_position: 400
 title: Dagster+ Serverless deployment
 canonicalUrl: '/deployment/dagster-plus/serverless'
 slug: '/deployment/dagster-plus/serverless'
@@ -33,6 +33,10 @@ Serverless is subject to the following limitations:
 - Infrastructure cannot be customized or extended, such as using additional containers
 
 Dagster+ Pro customers may request a quota increase by [contacting Sales](https://dagster.io/contact).
+
+## Run isolation
+
+Dagster+ Serverless supports both isolated and non-isolated runs. Isolated runs execute in their own container with dedicated resources, while non-isolated runs use a shared container for faster iteration during development. For details, see [Run isolation](/deployment/dagster-plus/run-isolation).
 
 ## Next steps
 

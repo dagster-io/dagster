@@ -9,7 +9,7 @@
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.noop" }}
-module: dagster.core.storage.noop_compute_log_manager
+module: dagster._core.storage.noop_compute_log_manager
 class: NoOpComputeLogManager
 {{- end }}
 
@@ -132,7 +132,7 @@ config:
 
 {{- define "dagsterYaml.computeLogManager.local" }}
 {{- $localComputeLogManagerConfig := .Values.computeLogManager.config.localComputeLogManager }}
-module: dagster.core.storage.local_compute_log_manager
+module: dagster._core.storage.local_compute_log_manager
 class: LocalComputeLogManager
 config:
   base_dir: {{ include "stringSource" $localComputeLogManagerConfig.baseDir }}

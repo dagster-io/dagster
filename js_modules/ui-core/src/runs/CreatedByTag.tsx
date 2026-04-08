@@ -1,8 +1,9 @@
 import {Box, Tag} from '@dagster-io/ui-components';
 import {UserDisplay} from '@shared/runs/UserDisplay';
+import clsx from 'clsx';
+import * as React from 'react';
 import {memo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {DagsterTag} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
@@ -10,6 +11,7 @@ import {RunTagsFragment} from './types/RunTagsFragment.types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import styles from './css/CreatedByTag.module.css';
 
 type Props = {
   repoAddress?: RepoAddress | null;
@@ -24,8 +26,6 @@ export const CreatedByTagCell = memo(({repoAddress, tags, onAddTag}: Props) => {
     </CreatedByTagCellWrapper>
   );
 });
-
-export const CreatedByTagCellWrapper = styled(Box)``;
 
 type TagType =
   | {
@@ -134,3 +134,7 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
     </TagActionsPopover>
   );
 };
+
+export function CreatedByTagCellWrapper(props: React.ComponentProps<typeof Box>) {
+  return <Box {...props} className={clsx(styles.createdByTagCellWrapper, props.className)} />;
+}

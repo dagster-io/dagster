@@ -1,7 +1,9 @@
 import os
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from buildkite_shared.context import BuildkiteContext
+if TYPE_CHECKING:
+    from buildkite_shared.context import BuildkiteContext
 
 
 class AvailablePythonVersion(Enum):
@@ -21,6 +23,10 @@ class AvailablePythonVersion(Enum):
     def get_default(cls) -> "AvailablePythonVersion":
         return cls["V3_12"]
 
+    @classmethod
+    def get_cloud(cls) -> "AvailablePythonVersion":
+        return cls["V3_12"]
+
     # Useful for providing to `PackageSpec.unsupported_python_versions` when you only want to test
     # the default version.
     @classmethod
@@ -28,7 +34,7 @@ class AvailablePythonVersion(Enum):
         return [v for v in cls.get_all() if v != cls.get_default()]
 
     @classmethod
-    def get_pytest_defaults(cls, ctx: BuildkiteContext) -> list["AvailablePythonVersion"]:
+    def get_pytest_defaults(cls, ctx: "BuildkiteContext") -> list["AvailablePythonVersion"]:
         if ctx.is_release_branch:
             return cls.get_all()
         else:

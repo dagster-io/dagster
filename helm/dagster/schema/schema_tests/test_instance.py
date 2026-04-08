@@ -576,7 +576,7 @@ def test_queued_run_coordinator_config_default(template: HelmTemplate):
 
     _check_valid_run_coordinator_yaml(instance)
 
-    assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+    assert instance["run_coordinator"]["module"] == "dagster._core.run_coordinator"
     assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
 
     assert instance["run_coordinator"]["config"]["max_concurrent_runs"] == -1
@@ -621,7 +621,7 @@ def test_queued_run_coordinator_config(
     _check_valid_run_coordinator_yaml(instance)
 
     if enabled:
-        assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+        assert instance["run_coordinator"]["module"] == "dagster._core.run_coordinator"
         assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
         assert instance["run_coordinator"]["config"]
 
@@ -693,7 +693,7 @@ def test_noop_compute_log_manager(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     compute_logs_config = instance["compute_logs"]
 
-    assert compute_logs_config["module"] == "dagster.core.storage.noop_compute_log_manager"
+    assert compute_logs_config["module"] == "dagster._core.storage.noop_compute_log_manager"
     assert compute_logs_config["class"] == "NoOpComputeLogManager"
 
 
@@ -911,7 +911,7 @@ def test_local_compute_log_manager(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     compute_logs_config = instance["compute_logs"]
 
-    assert compute_logs_config["module"] == "dagster.core.storage.local_compute_log_manager"
+    assert compute_logs_config["module"] == "dagster._core.storage.local_compute_log_manager"
     assert compute_logs_config["class"] == "LocalComputeLogManager"
     assert compute_logs_config["config"] == {
         "base_dir": base_dir,

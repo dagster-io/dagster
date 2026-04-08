@@ -74,6 +74,7 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
 
+
 # Maximum number of retries when Fivetran reschedules a sync due to quota limits.
 FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES = int(
     os.getenv("DAGSTER_FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES", "3")

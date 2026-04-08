@@ -178,13 +178,20 @@ class WillBeRequestedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class NewlyRequestedCondition(SubsetAutomationCondition):
+class NewlyRequestedCondition(TimedSubsetAutomationCondition):
     @property
     def name(self) -> str:
         return "newly_requested"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.get_previous_requested_subset(context.key) or context.get_empty_subset()
+    def compute_subset_with_timing_metadata(
+        self, context: AutomationContext
+    ) -> tuple[EntitySubset, TimingMetadata | None]:
+        subset = context.get_previous_requested_subset(context.key) or context.get_empty_subset()
+        if subset.is_empty or context.previous_evaluation_time is None:
+            return subset, None
+        return subset, TimingMetadata(
+            timestamps={context.previous_evaluation_time.timestamp(): subset}
+        )
 
 
 @whitelist_for_serdes

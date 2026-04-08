@@ -1,0 +1,9 @@
+[project]
+name = "backcompat-test-suite"
+version = "1!0+dev"
+dependencies = [
+    "dagster",
+    "dagster-graphql",
+    "dagster-test",
+    "dagster-postgres",
+]

@@ -94,8 +94,8 @@ When finished, your code should look like the following:
 
 ## Related
 
-For more Delta Lake features, refer to the [Delta Lake reference](/integrations/libraries/deltalake/reference).
+For more Delta Lake features, see the [Delta Lake reference](/integrations/libraries/deltalake/reference).
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets/defining-assets).
 
-For more information on I/O managers, refer to the [I/O manager documentation](/guides/build/io-managers).
+For more information on I/O managers, see the [I/O manager documentation](/guides/build/io-managers).

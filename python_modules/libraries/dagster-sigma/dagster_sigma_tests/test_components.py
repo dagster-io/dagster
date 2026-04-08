@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 import responses
-from dagster import AssetKey
+from dagster import AssetKey, AutomationCondition
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.instance_for_test import instance_for_test
@@ -125,7 +125,7 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
         ),
         (
             {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
+            lambda asset_spec: asset_spec.automation_condition == AutomationCondition.eager(),
             False,
         ),
         (

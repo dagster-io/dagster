@@ -202,6 +202,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
   description: 'This is a test asset description',
   graphName: null,
   hasMaterializePermission: true,
+  hasWipePermission: true,
   id: '["asset1"]',
   isObservable: false,
   isPartitioned: false,

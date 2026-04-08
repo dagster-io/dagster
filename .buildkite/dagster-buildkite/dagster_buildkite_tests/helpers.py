@@ -2,10 +2,8 @@
 
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
 
-import yaml
-from buildkite_shared.context import BuildkiteContext
+from buildkite_shared.context import BuildkiteContext, PythonPackage
 
 _ENV_DEFAULTS = {
     "BUILDKITE_BRANCH": "test-feature-branch",
@@ -18,22 +16,13 @@ _ENV_DEFAULTS = {
 
 
 def get_test_buildkite_context(
-    env: dict[str, str] = {}, changed_files: Iterable[Path] | None = None
+    env: dict[str, str] = {},
+    changed_files: Iterable[Path] | None = None,
+    packages: dict[str, PythonPackage] | None = None,
 ) -> BuildkiteContext:
     """Return a BuildkiteContext with test data."""
     return BuildkiteContext.create(
         env={**_ENV_DEFAULTS, **env},
         changed_files=changed_files,
+        packages=packages,
     )
-
-
-def assert_valid_pipeline_yaml(captured_out: str) -> dict[str, Any]:
-    """Parse captured stdout as YAML and verify basic pipeline structure."""
-    pipeline = yaml.safe_load(captured_out)
-    assert isinstance(pipeline, dict), "output should be a YAML dict"
-    assert "steps" in pipeline, "pipeline should have 'steps' key"
-    assert isinstance(pipeline["steps"], list), "'steps' should be a list"
-    assert "env" in pipeline, "pipeline should have 'env' key"
-    assert "CI_NAME" in pipeline["env"]
-    assert "CI_BRANCH" in pipeline["env"]
-    return pipeline

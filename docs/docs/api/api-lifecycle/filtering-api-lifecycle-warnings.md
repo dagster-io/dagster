@@ -1,6 +1,6 @@
 ---
 description: Filter Dagster API lifecycle warnings using the Python warnings module.
-sidebar_position: 200
+sidebar_position: 100
 title: Filtering API lifecycle warnings
 ---
 

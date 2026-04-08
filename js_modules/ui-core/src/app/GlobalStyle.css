@@ -1,0 +1,17 @@
+body {
+  scrollbar-color: var(--color-accent-gray-hover) var(--color-background-default);
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex: 1 1;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}

@@ -181,3 +181,12 @@ class DgApiEvaluationRecordList(BaseModel):
     """GET /api/assets/{key}/evaluations response."""
 
     items: list[DgApiEvaluationRecord]
+
+
+class DgApiPartitionStats(BaseModel):
+    """Partition materialization statistics for an asset."""
+
+    num_materialized: int
+    num_failed: int
+    num_materializing: int
+    num_partitions: int

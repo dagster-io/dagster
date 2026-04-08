@@ -52,8 +52,8 @@ def test_reload_component_tree_cached() -> None:
 
         with sandbox.build_component_tree() as tree:
             defs1 = tree.build_defs()
-            assert len(defs1.get_all_asset_specs()) == 2
-            keys = {spec.key for spec in defs1.get_all_asset_specs()}
+            assert len(defs1.resolve_all_asset_specs()) == 2
+            keys = {spec.key for spec in defs1.resolve_all_asset_specs()}
             assert keys == {dg.AssetKey("singleton"), dg.AssetKey("dup_0")}
 
             # should be cached, will not trip the singleton assertion
@@ -69,7 +69,7 @@ def test_reload_component_tree_cached() -> None:
 
             defs4 = tree.build_defs()
             # assert defs1 is not defs4
-            keys = {spec.key for spec in defs4.get_all_asset_specs()}
+            keys = {spec.key for spec in defs4.resolve_all_asset_specs()}
             # now have dup_1 instead of dup0
             assert keys == {dg.AssetKey("singleton"), dg.AssetKey("dup_1")}
 
@@ -78,7 +78,7 @@ def test_reload_component_tree_cached() -> None:
 
             defs5 = tree.build_defs()
             assert defs1 is not defs5
-            keys = {spec.key for spec in defs5.get_all_asset_specs()}
+            keys = {spec.key for spec in defs5.resolve_all_asset_specs()}
             # now have dup_2 instead of dup0
             assert keys == {dg.AssetKey("singleton"), dg.AssetKey("dup_2")}
 

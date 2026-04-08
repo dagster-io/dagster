@@ -1,3 +1,4 @@
+# trigger CI
 from dagster_dbt.asset_decorator import dbt_assets as dbt_assets
 from dagster_dbt.asset_specs import build_dbt_asset_specs as build_dbt_asset_specs
 from dagster_dbt.asset_utils import (

@@ -1,5 +1,6 @@
 import hashlib
 import re
+import uuid
 from collections.abc import Mapping
 from typing import Any
 
@@ -29,6 +30,7 @@ class RetryableEcsException(Exception): ...
 
 
 def run_ecs_task(ecs, run_task_kwargs) -> Mapping[str, Any]:
+    run_task_kwargs = {"clientToken": str(uuid.uuid4()), **run_task_kwargs}
     try:
         response = ecs.run_task(**run_task_kwargs)
     except ecs.exceptions.InvalidParameterException as e:

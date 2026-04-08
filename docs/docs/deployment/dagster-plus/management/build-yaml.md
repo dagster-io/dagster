@@ -102,6 +102,8 @@ The `build.yaml` file contains a single top-level key, `locations`. This key acc
 - [Build](#build)
 - [Python executable](#python-executable)
 - [Container context](#container-context)
+- [Agent queue](#agent-queue)
+- [Image](#image)
 
 ### Location name
 
@@ -257,3 +259,75 @@ Refer to the configuration reference for your agent for more info:
 - [Docker agent configuration reference](/deployment/dagster-plus/hybrid/docker/configuration)
 - [Amazon ECS agent configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference)
 - [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration)
+
+### Agent queue
+
+Use the `agent_queue` setting to route a code location to a specific agent queue. This is useful when running [multiple agents](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents) in different environments.
+
+```yaml
+# build.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: example_etl
+    agent_queue: special-queue
+```
+
+| Property      | Description                                                             | Format   |
+| ------------- | ----------------------------------------------------------------------- | -------- |
+| `agent_queue` | The name of the agent queue to route requests for this code location to | `string` |
+
+:::note
+
+For `dg`-based projects, `agent_queue` can also be set in `pyproject.toml` under `[tool.dg.project]`. See [configuring agent_queue in pyproject.toml](#agent-queue-pyproject).
+
+:::
+
+### Image
+
+Use the `image` setting to deploy a pre-built Docker image for a code location, skipping the build step entirely. This is an alternative to the [`build`](#build) setting.
+
+```yaml
+# build.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: example_etl
+    image: my-registry/my-image:latest
+```
+
+| Property | Description                                           | Format                     |
+| -------- | ----------------------------------------------------- | -------------------------- |
+| `image`  | A pre-built Docker image to use for the code location | `string` (image reference) |
+
+:::note
+
+For `dg`-based projects, `image` can also be set in `pyproject.toml` under `[tool.dg.project]`. See [configuring image in pyproject.toml](#image-pyproject).
+
+:::
+
+## Configuring `agent_queue` and `image` in `pyproject.toml`
+
+For projects managed with `dg`, the `agent_queue` and `image` settings can be configured directly in `pyproject.toml` under the `[tool.dg.project]` section, alongside other project settings like `code_location_name`. When running `dg plus deploy`, these settings are included in the generated `dagster_cloud.yaml`.
+
+### Agent queue \{#agent-queue-pyproject}
+
+```toml
+# pyproject.toml
+
+[tool.dg.project]
+root_module = "my_project"
+agent_queue = "special-queue"
+```
+
+### Image \{#image-pyproject}
+
+```toml
+# pyproject.toml
+
+[tool.dg.project]
+root_module = "my_project"
+image = "my-registry/my-image:latest"
+```

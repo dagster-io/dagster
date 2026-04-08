@@ -10,7 +10,7 @@ This guide covers common ways to customize your Dagster Helm deployment.
 
 Dagster allows you to pass custom configuration to the Kubernetes Jobs and Pods created by Dagster during execution.
 
-### Instance-level Kubernetes Configuration
+### Instance-level Kubernetes configuration
 
 If your instance is using the <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="K8sRunLauncher" />, you can configure custom configuration for every run launched by Dagster by setting the `k8sRunLauncher.runK8sConfig` dictionary in the Helm chart.
 
@@ -273,7 +273,7 @@ Finally, the `dagster-user-deployments` subchart can now be managed in its own r
 helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/values.yaml
 ```
 
-## Kubernetes Job and Pod TTL management
+## Kubernetes job and pod TTL management
 
 If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods)) will be deleted after 1 day. The TTL value can be modified in your job tags:
 

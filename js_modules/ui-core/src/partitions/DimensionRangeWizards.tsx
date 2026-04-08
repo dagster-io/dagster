@@ -6,7 +6,6 @@ import {
   PartitionDimensionSelection,
   PartitionHealthDataMerged,
 } from '../assets/usePartitionHealthData';
-import {PartitionDefinitionType} from '../graphql/types';
 import {RepoAddress} from '../workspace/types';
 
 export const DimensionRangeWizards = ({
@@ -38,16 +37,12 @@ export const DimensionRangeWizards = ({
           border={idx < selections.length - 1 ? 'bottom' : undefined}
           padding={{vertical: 12, horizontal: 20}}
         >
-          <Box flex={{alignItems: 'center', gap: 8}}>
-            <Icon name="partition" />
-            <Subheading>{range.dimension.name}</Subheading>
-          </Box>
-          <Box>
-            Select partitions to materialize.{' '}
-            {range.dimension.type === PartitionDefinitionType.TIME_WINDOW
-              ? 'Click and drag to select a range on the timeline.'
-              : null}
-          </Box>
+          {range.dimension.name !== 'default' ? (
+            <Box flex={{alignItems: 'center', gap: 8}} padding={{vertical: 4}}>
+              <Icon name="partition" />
+              <Subheading>{range.dimension.name}</Subheading>
+            </Box>
+          ) : null}
           <DimensionRangeWizard
             repoAddress={repoAddress}
             refetch={refetch}

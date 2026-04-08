@@ -93,7 +93,7 @@ To view the agent in Dagster+, click the Dagster icon in the top left to navigat
 
 ![Instance Status](/images/dagster-plus/deployment/agents/dagster-cloud-instance-status.png)
 
-## Credential Helpers
+## Credential helpers
 
 If your images are stored in a private registry, configuring a [Docker credentials helper](https://docs.docker.com/engine/reference/commandline/login/#credential-helpers) allows the agent to log in to your registry. The agent image comes with several popular credentials helpers preinstalled:
 
@@ -112,9 +112,43 @@ These credential helpers generally are configured in `~/.docker.config.json`. To
     dagster-cloud agent run /opt/dagster/app
 ```
 
+## Using a custom agent image
+
+By default, the Dagster+ agent uses the official `docker.io/dagster/dagster-cloud-agent` image. You can build and use your own custom agent image if you need additional dependencies, a different base image, or more control over the agent environment.
+
+### Building a custom agent image
+
+Create a Dockerfile that installs the `dagster-cloud` package with the `docker` extra:
+
+```dockerfile
+FROM python:3.12-slim
+
+ARG DAGSTER_VERSION=1.12.19
+RUN pip install dagster-cloud[docker]==${DAGSTER_VERSION}
+
+CMD ["dagster-cloud", "agent", "run"]
+```
+
+Build and push the image to your container registry:
+
+```shell
+docker build -t your-registry.com/dagster-cloud-agent:custom .
+docker push your-registry.com/dagster-cloud-agent:custom
+```
+
+### Running the custom agent image
+
+Use your custom image when starting the agent:
+
+```shell
+docker run \
+  --network=dagster_cloud_agent \
+  --volume $PWD/dagster.yaml:/opt/dagster/app/dagster.yaml:ro \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  -it your-registry.com/dagster-cloud-agent:custom \
+  dagster-cloud agent run /opt/dagster/app
+```
+
 ## Next steps
 
-Now that you've got your agent running, what's next?
-
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/guides/build/projects) using the agent.
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/guides/build/projects) guide for more info.
+Now that you've got your agent running, you can follow the steps in [Creating Dagster projects](/guides/build/projects/creating-projects) to create and deploy a project to Dagster+.
