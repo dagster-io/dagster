@@ -5383,6 +5383,26 @@ class TestEventLogStorage:
         # Adding no partitions is a no-op
         storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=[])
 
+    def test_dynamic_partition_labels(self, storage: EventLogStorage):
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo",
+            partition_keys=["foo", "bar"],
+            labels={"foo": "Foo label"},
+        )
+
+        assert storage.get_dynamic_partition_labels("foo") == {"foo": "Foo label"}
+
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo",
+            partition_keys=["foo", "baz"],
+            labels={"foo": "Updated foo label", "baz": "Baz label"},
+        )
+
+        assert storage.get_dynamic_partition_labels("foo") == {
+            "foo": "Updated foo label",
+            "baz": "Baz label",
+        }
+
     def test_delete_dynamic_partitions(self, storage: EventLogStorage):
         assert storage
 

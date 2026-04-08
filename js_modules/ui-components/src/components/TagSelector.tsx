@@ -290,6 +290,7 @@ export const TagSelectorTagsContainer = ({
 export const TagSelectorWithSearch = (
   props: Props & {
     searchPlaceholder?: string;
+    filterTag?: (tag: string, search: string) => boolean;
   },
 ) => {
   const [search, setSearch] = React.useState('');
@@ -300,14 +301,17 @@ export const TagSelectorWithSearch = (
     rowHeight: _rowHeight,
     renderDropdown,
     searchPlaceholder,
+    filterTag,
     ...rest
   } = props;
   const filteredTags = React.useMemo(() => {
     if (search.trim() === '') {
       return allTags;
     }
-    return allTags.filter((tag) => tag.toLowerCase().includes(search.toLowerCase()));
-  }, [allTags, search]);
+    return allTags.filter((tag) =>
+      filterTag ? filterTag(tag, search) : tag.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [allTags, filterTag, search]);
   return (
     <TagSelector
       {...rest}

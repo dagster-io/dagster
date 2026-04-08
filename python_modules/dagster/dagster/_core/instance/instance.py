@@ -16,6 +16,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME
 from dagster._core.instance.methods.asset_methods import AssetMethods
 from dagster._core.instance.methods.daemon_methods import DaemonMethods
@@ -598,7 +599,11 @@ class DagsterInstance(
     @public
     @traced
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        *,
+        labels: Mapping[str, str] | None = None,
     ) -> None:
         """Add partitions to the specified :py:class:`DynamicPartitionsDefinition` idempotently.
         Does not add any partitions that already exist.
@@ -606,8 +611,48 @@ class DagsterInstance(
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
+            labels (Optional[Mapping[str, str]]): Optional mapping of partition key to a
+                human-readable display label shown in the Dagster UI. Keys not present in the
+                mapping are left without a label.
         """
-        return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
+        if labels:
+            for label in labels.values():
+                if len(label) > 255:
+                    raise DagsterInvalidInvocationError(
+                        f"Partition label must be 255 characters or fewer, got {len(label)}."
+                    )
+
+        return self._event_storage.add_dynamic_partitions(
+            partitions_def_name, partition_keys, labels=labels
+        )
+
+    @traced
+    def get_dynamic_partition_labels(self, partitions_def_name: str) -> Mapping[str, str]:
+        """Get a mapping of partition key to display label for partitions that have a label set.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+        """
+        return self._event_storage.get_dynamic_partition_labels(partitions_def_name)
+
+    @traced
+    def set_dynamic_partition_label(
+        self, partitions_def_name: str, partition_key: str, label: str
+    ) -> None:
+        """Set a human-readable display label for an existing dynamic partition key.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_key (str): The partition key to label.
+            label (str): The human-readable display label (max 255 characters).
+        """
+        if len(label) > 255:
+            raise DagsterInvalidInvocationError(
+                f"Partition label must be 255 characters or fewer, got {len(label)}."
+            )
+        return self._event_storage.set_dynamic_partition_label(
+            partitions_def_name, partition_key, label
+        )
 
     @public
     @traced

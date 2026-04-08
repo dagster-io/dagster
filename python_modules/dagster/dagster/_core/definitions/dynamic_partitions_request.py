@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import NamedTuple
 
 from dagster_shared.serdes import whitelist_for_serdes
@@ -15,6 +15,7 @@ class AddDynamicPartitionsRequest(
         [
             ("partitions_def_name", str),
             ("partition_keys", Sequence[str]),
+            ("partition_key_labels", Mapping[str, str] | None),
         ],
     )
 ):
@@ -24,11 +25,18 @@ class AddDynamicPartitionsRequest(
         cls,
         partitions_def_name: str,
         partition_keys: Sequence[str],
+        partition_key_labels: Mapping[str, str] | None = None,
     ):
         return super().__new__(
             cls,
             partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
             partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
+            partition_key_labels=check.opt_nullable_mapping_param(
+                partition_key_labels,
+                "partition_key_labels",
+                key_type=str,
+                value_type=str,
+            ),
         )
 
 

@@ -304,24 +304,58 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn.execute(query)
 
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        *,
+        labels: Mapping[str, str] | None = None,
     ) -> None:
+        # Overload base implementation to push upsert logic down into the db layer
+        self._check_partitions_table()
+        supports_display_labels = self.has_dynamic_partition_display_label_col
+        if labels and not supports_display_labels:
+            self._check_dynamic_partition_label_column()
+
         if not partition_keys:
             return
 
-        # Overload base implementation to push upsert logic down into the db layer
-        self._check_partitions_table()
+        partition_key_set = set(partition_keys)
         with self.index_connection() as conn:
             conn.execute(
                 db_dialects.postgresql.insert(DynamicPartitionsTable)
                 .values(
                     [
+                        dict(
+                            partitions_def_name=partitions_def_name,
+                            partition=partition_key,
+                            display_label=labels.get(partition_key) if labels else None,
+                        )
+                        for partition_key in partition_keys
+                    ]
+                    if supports_display_labels
+                    else [
                         dict(partitions_def_name=partitions_def_name, partition=partition_key)
                         for partition_key in partition_keys
                     ]
                 )
                 .on_conflict_do_nothing(),
             )
+
+            if labels and supports_display_labels:
+                for partition_key, label in labels.items():
+                    if partition_key not in partition_key_set:
+                        continue
+
+                    conn.execute(
+                        DynamicPartitionsTable.update()
+                        .where(
+                            db.and_(
+                                DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                                DynamicPartitionsTable.c.partition == partition_key,
+                            )
+                        )
+                        .values(display_label=label)
+                    )
 
     def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)

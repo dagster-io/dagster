@@ -741,6 +741,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
+  partitionKeyLabels: [PartitionKeyLabel!]!
   partitionKeyConnection(limit: Int!, ascending: Boolean!, cursor: String): PartitionKeyConnection
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
   pools: [String!]!
@@ -803,6 +804,11 @@ type AutoMaterializeRuleEvaluation {
 }
 
 union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeyLabel {
+  key: String!
+  label: String!
+}
 
 type PartitionKeys {
   partitionKeys: [String!]!

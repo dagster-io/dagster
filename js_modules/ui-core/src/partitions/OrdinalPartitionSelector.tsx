@@ -32,6 +32,7 @@ export const OrdinalPartitionSelector = ({
   placeholder,
   mode = 'multiple',
   disabled,
+  labelForPartition,
 }: {
   allPartitions: string[];
   selectedPartitions: string[];
@@ -42,6 +43,7 @@ export const OrdinalPartitionSelector = ({
   placeholder?: string;
   mode?: 'single' | 'multiple';
   disabled?: boolean;
+  labelForPartition?: (key: string) => string | undefined;
 }) => {
   const dotForPartitionKey = React.useCallback(
     (partitionKey: string) => {
@@ -74,13 +76,26 @@ export const OrdinalPartitionSelector = ({
         placeholder ||
         (setShowCreatePartition ? 'Select a partition or create one' : 'Select a partition')
       }
+      filterTag={React.useCallback(
+        (tag: string, search: string) => {
+          const lower = search.toLowerCase();
+          if (tag.toLowerCase().includes(lower)) {
+            return true;
+          }
+          const lbl = labelForPartition?.(tag);
+          return lbl ? lbl.toLowerCase().includes(lower) : false;
+        },
+        [labelForPartition],
+      )}
       renderDropdownItem={React.useCallback(
         (tag: string, dropdownItemProps: TagSelectorDropdownItemProps) => {
+          const label = labelForPartition?.(tag);
+          const displayText = label ? `${tag} (${label})` : tag;
           const sharedContent = (
             <>
               {dotForPartitionKey(tag)}
-              <div data-tooltip={tag} data-tooltip-style={DropdownItemTooltipStyle}>
-                <MiddleTruncate text={tag} />
+              <div data-tooltip={displayText} data-tooltip-style={DropdownItemTooltipStyle}>
+                <MiddleTruncate text={displayText} />
               </div>
             </>
           );
@@ -131,7 +146,7 @@ export const OrdinalPartitionSelector = ({
             </label>
           );
         },
-        [dotForPartitionKey, mode],
+        [dotForPartitionKey, labelForPartition, mode],
       )}
       renderDropdown={React.useCallback(
         (dropdown: React.ReactNode, {width, allTags}: TagSelectorDropdownProps) => {

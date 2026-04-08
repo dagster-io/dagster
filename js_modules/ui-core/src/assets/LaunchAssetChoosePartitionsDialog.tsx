@@ -34,6 +34,8 @@ import {
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
 import {asAssetKeyInput} from './asInput';
 import {
+  DisplayedPartitionLabelsQuery,
+  DisplayedPartitionLabelsQueryVariables,
   LaunchAssetWarningsQuery,
   LaunchAssetWarningsQueryVariables,
 } from './types/LaunchAssetChoosePartitionsDialog.types';
@@ -83,6 +85,20 @@ import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext/util'
 import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
+
+export const DISPLAYED_PARTITION_LABELS_QUERY = gql`
+  query DisplayedPartitionLabelsQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        partitionKeyLabels {
+          key
+          label
+        }
+      }
+    }
+  }
+`;
 
 export interface LaunchAssetChoosePartitionsDialogProps {
   open: boolean;
@@ -193,6 +209,32 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         : null;
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
+  const displayedBaseAssetInput = displayedBaseAsset
+    ? asAssetKeyInput(displayedBaseAsset.assetKey)
+    : null;
+  const displayedPartitionLabelsResult = useQuery<
+    DisplayedPartitionLabelsQuery,
+    DisplayedPartitionLabelsQueryVariables
+  >(DISPLAYED_PARTITION_LABELS_QUERY, {
+    variables: {assetKey: displayedBaseAssetInput ?? {path: []}},
+    skip: !displayedBaseAssetInput,
+    blocking: false,
+  });
+  const displayedPartitionLabels = useMemo(
+    () =>
+      displayedPartitionLabelsResult.data?.assetNodeOrError.__typename === 'AssetNode'
+        ? displayedPartitionLabelsResult.data.assetNodeOrError.partitionKeyLabels
+        : [],
+    [displayedPartitionLabelsResult.data],
+  );
+  const partitionLabelMap = useMemo(
+    () => new Map<string, string>(displayedPartitionLabels.map(({key, label}) => [key, label])),
+    [displayedPartitionLabels],
+  );
+  const labelForPartition = useMemo(
+    () => (partitionKey: string) => partitionLabelMap.get(partitionKey),
+    [partitionLabelMap],
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
@@ -497,6 +539,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               setSelections={setSelections}
               displayedHealth={displayedHealth}
               displayedPartitionDefinition={displayedPartitionDefinition}
+              labelForPartition={labelForPartition}
             />
           </ToggleableSection>
         )}

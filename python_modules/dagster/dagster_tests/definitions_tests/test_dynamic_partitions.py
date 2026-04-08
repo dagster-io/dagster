@@ -61,6 +61,19 @@ def test_dynamic_partitions_def_methods():
         assert instance.has_dynamic_partition("foo", "a") is False
 
 
+def test_dynamic_partitions_build_add_request_with_labels():
+    partitions = dg.DynamicPartitionsDefinition(name="fruits")
+
+    request = partitions.build_add_request(
+        ["apple", "banana"],
+        partition_key_labels={"apple": "Apple", "banana": "Banana"},
+    )
+
+    assert request.partitions_def_name == "fruits"
+    assert request.partition_keys == ["apple", "banana"]
+    assert request.partition_key_labels == {"apple": "Apple", "banana": "Banana"}
+
+
 def test_dynamic_partitioned_run():
     with dg.instance_for_test() as instance:
         partitions_def = dg.DynamicPartitionsDefinition(name="foo")

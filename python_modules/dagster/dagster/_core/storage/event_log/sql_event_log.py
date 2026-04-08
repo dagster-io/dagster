@@ -2138,9 +2138,17 @@ class SqlEventLogStorage(EventLogStorage):
         return len(results) > 0
 
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        *,
+        labels: Mapping[str, str] | None = None,
     ) -> None:
         self._check_partitions_table()
+        supports_display_labels = self.has_dynamic_partition_display_label_col
+        if labels and not supports_display_labels:
+            self._check_dynamic_partition_label_column()
+
         with self.index_connection() as conn:
             existing_rows = conn.execute(
                 db_select([DynamicPartitionsTable.c.partition]).where(
@@ -2160,11 +2168,99 @@ class SqlEventLogStorage(EventLogStorage):
             if new_keys:
                 conn.execute(
                     DynamicPartitionsTable.insert(),
-                    [
-                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
-                        for partition_key in new_keys
-                    ],
+                    (
+                        [
+                            dict(
+                                partitions_def_name=partitions_def_name,
+                                partition=partition_key,
+                                display_label=labels.get(partition_key) if labels else None,
+                            )
+                            for partition_key in new_keys
+                        ]
+                        if supports_display_labels
+                        else [
+                            dict(
+                                partitions_def_name=partitions_def_name,
+                                partition=partition_key,
+                            )
+                            for partition_key in new_keys
+                        ]
+                    ),
                 )
+
+            # Update labels for existing keys that now have a label provided
+            if labels:
+                for partition_key in existing_keys:
+                    if partition_key in labels:
+                        conn.execute(
+                            DynamicPartitionsTable.update()
+                            .where(
+                                db.and_(
+                                    DynamicPartitionsTable.c.partitions_def_name
+                                    == partitions_def_name,
+                                    DynamicPartitionsTable.c.partition == partition_key,
+                                )
+                            )
+                            .values(display_label=labels[partition_key])
+                        )
+
+    def get_dynamic_partition_labels(self, partitions_def_name: str) -> dict[str, str]:
+        self._check_partitions_table()
+        if not self.has_dynamic_partition_display_label_col:
+            return {}
+
+        query = db_select(
+            [DynamicPartitionsTable.c.partition, DynamicPartitionsTable.c.display_label]
+        ).where(
+            db.and_(
+                DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                DynamicPartitionsTable.c.display_label.isnot(None),
+            )
+        )
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            rows = result.fetchall()
+        return {row[0]: row[1] for row in rows}
+
+    def set_dynamic_partition_label(
+        self, partitions_def_name: str, partition_key: str, label: str
+    ) -> None:
+        self._check_partitions_table()
+        self._check_dynamic_partition_label_column()
+        with self.index_connection() as conn:
+            result = conn.execute(
+                DynamicPartitionsTable.update()
+                .where(
+                    db.and_(
+                        DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                        DynamicPartitionsTable.c.partition == partition_key,
+                    )
+                )
+                .values(display_label=label)
+            )
+            if result.rowcount == 0:
+                raise DagsterInvalidInvocationError(
+                    f"Partition key {partition_key} does not exist for dynamic partitions definition {partitions_def_name}."
+                )
+
+    # This check is intentionally cached for process lifetime. If an instance starts before
+    # migrations run, it will continue treating the column as unavailable until process restart.
+    @cached_property
+    def has_dynamic_partition_display_label_col(self) -> bool:
+        if not self.has_table(DynamicPartitionsTable.name):
+            return False
+
+        with self.index_connection() as conn:
+            column_names = [
+                x.get("name") for x in db.inspect(conn).get_columns(DynamicPartitionsTable.name)
+            ]
+            return DynamicPartitionsTable.c.display_label.name in column_names
+
+    def _check_dynamic_partition_label_column(self) -> None:
+        if not self.has_dynamic_partition_display_label_col:
+            raise DagsterInvalidInvocationError(
+                "Dynamic partition labels require a database schema migration. Run"
+                " `dagster instance migrate`."
+            )
 
     def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
         self._check_partitions_table()

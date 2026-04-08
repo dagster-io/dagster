@@ -690,6 +690,18 @@ def add_dynamic_partitions_sensor(context):
     )
 
 
+@sensor()
+def add_dynamic_partitions_with_labels_sensor(context):
+    return dg.SensorResult(
+        dynamic_partitions_requests=[
+            quux.build_add_request(
+                ["baz", "foo"],
+                partition_key_labels={"baz": "Baz label", "foo": "Updated foo label"},
+            ),
+        ],
+    )
+
+
 @sensor(job=quux_asset_job)
 def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
     return dg.SensorResult(
@@ -892,6 +904,7 @@ def the_repo():
         logging_fail_tick_sensor,
         logging_status_sensor,
         add_delete_dynamic_partitions_and_yield_run_requests_sensor,
+        add_dynamic_partitions_with_labels_sensor,
         add_dynamic_partitions_sensor,
         quux_asset_job,
         error_on_deleted_dynamic_partitions_run_requests_sensor,
@@ -3230,6 +3243,32 @@ def test_add_dynamic_partitions_sensor(caplog, executor, instance, workspace_con
             "quux", added_partitions=["baz"], deleted_partitions=None, skipped_partitions=["foo"]
         ),
     ]
+
+
+def test_add_dynamic_partitions_with_labels_sensor(
+    caplog, executor, instance, workspace_context, remote_repo
+):
+    foo_job.execute_in_process(instance=instance)  # creates event log storage tables
+    instance.add_dynamic_partitions("quux", ["foo"], labels={"foo": "Original foo label"})
+    assert instance.get_dynamic_partition_labels("quux") == {"foo": "Original foo label"}
+
+    sensor = remote_repo.get_sensor("add_dynamic_partitions_with_labels_sensor")
+    instance.add_instigator_state(
+        InstigatorState(
+            sensor.get_remote_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+
+    evaluate_sensors(workspace_context, executor)
+
+    assert set(instance.get_dynamic_partitions("quux")) == {"baz", "foo"}
+    assert instance.get_dynamic_partition_labels("quux") == {
+        "baz": "Baz label",
+        "foo": "Updated foo label",
+    }
+    assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
 
 
 def test_add_delete_skip_dynamic_partitions(
