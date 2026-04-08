@@ -45,6 +45,21 @@
     "permanent": true
   },
   {
+    "source": "/_apidocs/libraries/dagster-clickhouse",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-clickhouse-pandas",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-clickhouse-polars",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse-polars",
+    "permanent": true
+  },
+  {
     "source": "/_apidocs/libraries/dagster-dask",
     "destination": "/integrations/libraries/dask/dagster-dask",
     "permanent": true
@@ -1240,6 +1255,21 @@
     "permanent": true
   },
   {
+    "source": "/api/libraries/dagster-clickhouse",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-clickhouse-pandas",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-clickhouse-polars",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse-polars",
+    "permanent": true
+  },
+  {
     "source": "/api/libraries/dagster-dask",
     "destination": "/integrations/libraries/dask/dagster-dask",
     "permanent": true
@@ -1402,6 +1432,21 @@
   {
     "source": "/api/python-api/libraries/dagster-census",
     "destination": "/integrations/libraries/census/dagster-census",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-clickhouse",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-clickhouse-pandas",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/api/python-api/libraries/dagster-clickhouse-polars",
+    "destination": "/integrations/libraries/clickhouse/dagster-clickhouse-polars",
     "permanent": true
   },
   {

@@ -427,7 +427,17 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     ]
 
 
-ui_extra_cmds = [f"just -f {oss_path('justfile')} rebuild_ui"]
+def clickhouse_testcontainers_extra_cmds(_version: AvailablePythonVersion, _) -> list[str]:
+    """Env for testcontainers + clickhouse-driver against Docker on Buildkite agents.
+
+    Matches other library tests that talk to the host Docker daemon from inside the job container.
+    """
+    return [
+        "export DOCKER_API_VERSION=1.41",
+    ]
+
+
+ui_extra_cmds = [f"make -C {oss_path('.')} rebuild_ui"]
 
 
 mysql_extra_cmds = [
@@ -907,6 +917,30 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 # duckdb
                 AvailablePythonVersion.V3_12,
             ],
+        ),
+        PackageSpec(
+            oss_path("python_modules/libraries/dagster-clickhouse"),
+            queue=BuildkiteQueue.DOCKER,
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+            ],
+            pytest_extra_cmds=clickhouse_testcontainers_extra_cmds,
+        ),
+        PackageSpec(
+            oss_path("python_modules/libraries/dagster-clickhouse-pandas"),
+            queue=BuildkiteQueue.DOCKER,
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+            ],
+            pytest_extra_cmds=clickhouse_testcontainers_extra_cmds,
+        ),
+        PackageSpec(
+            oss_path("python_modules/libraries/dagster-clickhouse-polars"),
+            queue=BuildkiteQueue.DOCKER,
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+            ],
+            pytest_extra_cmds=clickhouse_testcontainers_extra_cmds,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-pandas"),

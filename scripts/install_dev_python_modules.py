@@ -118,6 +118,9 @@ def main(
 
     if sys.version_info <= (3, 12):
         editable_target_paths += [
+            "python_modules/libraries/dagster-clickhouse",
+            "python_modules/libraries/dagster-clickhouse-pandas",
+            "python_modules/libraries/dagster-clickhouse-polars",
             "python_modules/libraries/dagster-duckdb",
             "python_modules/libraries/dagster-duckdb-pandas",
             "python_modules/libraries/dagster-duckdb-polars",
