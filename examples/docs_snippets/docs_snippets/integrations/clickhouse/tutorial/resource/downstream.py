@@ -1,10 +1,12 @@
 from dagster_clickhouse import ClickhouseResource
 
-from .create_table import iris_dataset
-
 # ruff: isort: split
 # start_example
 from dagster import asset
+
+# This example executes a query against the `iris.iris_dataset` table created in the
+# Using ClickHouse with Dagster guide.
+iris_dataset = asset(name="iris_dataset")(lambda: None)
 
 
 @asset(deps=[iris_dataset])

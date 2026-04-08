@@ -120,8 +120,8 @@ apache-airflow>2.7
 types-sqlalchemy==1.4.53.34
 fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 types-setuptools==80.9.0.20250822  # Pinned due to overly strict _DictLike types in newer versions (20251223) causing false positives in setup.py files
-clickhouse-driver
-testcontainers[clickhouse]
+clickhouse-driver==0.2.9
+testcontainers[clickhouse]==4.9.1
 
 ### EXAMPLES
 
