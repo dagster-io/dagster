@@ -43,6 +43,9 @@
 -e python_modules/libraries/dagster-celery-k8s/
 -e python_modules/libraries/dagster-celery/
 -e python_modules/libraries/dagster-census/
+-e python_modules/libraries/dagster-clickhouse/
+-e python_modules/libraries/dagster-clickhouse-pandas/
+-e python_modules/libraries/dagster-clickhouse-polars/
 -e python_modules/libraries/dagster-cloud-cli[test]
 -e python_modules/libraries/dagster-dask[yarn,pbs,kube,test]
 -e python_modules/libraries/dagster-databricks/
@@ -117,6 +120,8 @@ apache-airflow>2.7
 types-sqlalchemy==1.4.53.34
 fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 types-setuptools==80.9.0.20250822  # Pinned due to overly strict _DictLike types in newer versions (20251223) causing false positives in setup.py files
+clickhouse-driver
+testcontainers[clickhouse]
 
 ### EXAMPLES
 

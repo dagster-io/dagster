@@ -4,7 +4,7 @@ from typing import cast
 
 from clickhouse_driver import Client
 from clickhouse_driver.errors import ErrorCodes, ServerException
-from dagster import OutputContext
+from dagster import InputContext, OutputContext
 from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import DbClient, TablePartitionDimension, TableSlice
 
@@ -35,7 +35,7 @@ class ClickhouseDbClient(DbClient[Client]):
 
     @staticmethod
     @contextmanager
-    def connect(context, table_slice: TableSlice):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def connect(context: InputContext | OutputContext, table_slice: TableSlice):
         cfg = context.resource_config or {}
         kwargs = client_kwargs_from_resource_config({k: v for k, v in cfg.items() if k != "schema"})
         client = Client(**kwargs)
@@ -71,7 +71,9 @@ class ClickhouseDbClient(DbClient[Client]):
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
-        col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
+        col_str = (
+            ", ".join(_quote_ident(c) for c in table_slice.columns) if table_slice.columns else "*"
+        )
         fqn = _qualified_table_name(table_slice)
         if table_slice.partition_dimensions:
             query = f"SELECT {col_str} FROM {fqn} WHERE\n"
@@ -95,12 +97,12 @@ def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(CLICKHOUSE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(CLICKHOUSE_DATETIME_FORMAT)
-    return (
-        f"{table_partition.partition_expr} >= '{start_dt_str}' AND "
-        f"{table_partition.partition_expr} < '{end_dt_str}'"
-    )
+    expr = _quote_ident(table_partition.partition_expr)
+    return f"{expr} >= '{start_dt_str}' AND {expr} < '{end_dt_str}'"
 
 
 def _static_where_clause(table_partition: TablePartitionDimension) -> str:
-    partitions = ", ".join(f"'{partition}'" for partition in table_partition.partitions)
-    return f"{table_partition.partition_expr} IN ({partitions})"
+    partitions = ", ".join(
+        f"'{str(p).replace(chr(39), chr(39) * 2)}'" for p in table_partition.partitions
+    )
+    return f"{_quote_ident(table_partition.partition_expr)} IN ({partitions})"

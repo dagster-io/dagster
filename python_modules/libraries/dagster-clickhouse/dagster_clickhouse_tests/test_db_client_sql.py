@@ -34,7 +34,7 @@ def test_get_select_statement_columns():
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM `schema1`.`table1`"
+        == "SELECT `apple`, `banana` FROM `schema1`.`table1`"
     )
 
 
@@ -53,8 +53,8 @@ def test_get_select_statement_partitioned():
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM `schema1`.`table1` WHERE\nmy_timestamp_col >= '2020-01-02"
-        " 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
+        == "SELECT `apple`, `banana` FROM `schema1`.`table1` WHERE\n`my_timestamp_col` >= '2020-01-02"
+        " 00:00:00' AND `my_timestamp_col` < '2020-02-03 00:00:00'"
     )
 
 
@@ -70,7 +70,7 @@ def test_get_select_statement_static_partitioned():
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM `schema1`.`table1` WHERE\nmy_fruit_col IN ('apple')"
+        == "SELECT `apple`, `banana` FROM `schema1`.`table1` WHERE\n`my_fruit_col` IN ('apple')"
     )
 
 
@@ -89,6 +89,6 @@ def test_get_select_statement_multi_partitioned():
                 ],
             )
         )
-        == "SELECT * FROM `schema1`.`table1` WHERE\nmy_fruit_col IN ('apple') AND\nmy_timestamp_col >="
-        " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
+        == "SELECT * FROM `schema1`.`table1` WHERE\n`my_fruit_col` IN ('apple') AND\n`my_timestamp_col` >="
+        " '2020-01-02 00:00:00' AND `my_timestamp_col` < '2020-02-03 00:00:00'"
     )

@@ -40,7 +40,7 @@ class ClickhouseQueryComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLCli
 def _copy_fields_to_model(
     copy_from: type[BaseModel], copy_to: type[BaseModel], new_model_cls_name: str
 ) -> type[BaseModel]:
-    field_definitions: dict[str, tuple[type, Any]] = {
+    field_definitions: dict[str, Any] = {
         field_name: (cast("type", field.annotation), field)
         for field_name, field in copy_from.model_fields.items()
     }
@@ -49,7 +49,7 @@ def _copy_fields_to_model(
         new_model_cls_name,
         __base__=copy_to,
         __doc__=copy_to.__doc__,
-        **field_definitions,  # type: ignore
+        **field_definitions,
     )
 
 

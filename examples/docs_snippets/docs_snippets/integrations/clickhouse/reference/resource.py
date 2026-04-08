@@ -1,10 +1,11 @@
-from ..tutorial.resource.create_table import iris_dataset  # noqa: I001
-
-
 # start
 from dagster_clickhouse import ClickhouseResource
 
 from dagster import asset
+
+# This example executes a query against the `iris.iris_dataset` table created in the
+# Using ClickHouse with Dagster guide.
+iris_dataset = asset(name="iris_dataset")(lambda: None)
 
 
 @asset(deps=[iris_dataset])

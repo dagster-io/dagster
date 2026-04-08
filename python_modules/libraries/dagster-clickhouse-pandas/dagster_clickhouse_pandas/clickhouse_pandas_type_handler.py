@@ -4,12 +4,12 @@ import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_clickhouse.db_client import ClickhouseDbClient, format_clickhouse_table_fqn
+from dagster_clickhouse.db_client import (
+    ClickhouseDbClient,
+    _quote_ident,
+    format_clickhouse_table_fqn,
+)
 from dagster_clickhouse.io_manager import ClickhouseIOManager, build_clickhouse_io_manager
-
-
-def _quote_ident(name: str) -> str:
-    return f"`{name.replace('`', '``')}`"
 
 
 def _pandas_dtype_to_clickhouse(dtype) -> str:
@@ -32,10 +32,15 @@ class ClickhousePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     ) -> Mapping[str, RawMetadataValue]:
         fqn = format_clickhouse_table_fqn(table_slice)
         if len(obj.columns) > 0:
-            cols_sql = ", ".join(
-                f"{_quote_ident(str(col))} {_pandas_dtype_to_clickhouse(dtype)}"
-                for col, dtype in obj.dtypes.items()
-            )
+            cols = []
+            for col, dtype in obj.dtypes.items():
+                ch_type = _pandas_dtype_to_clickhouse(dtype)
+                has_nulls = bool(obj[col].isnull().any())
+                if has_nulls:
+                    ch_type = f"Nullable({ch_type})"
+                cols.append(f"{_quote_ident(str(col))} {ch_type}")
+
+            cols_sql = ", ".join(cols)
             create_sql = (
                 f"CREATE TABLE IF NOT EXISTS {fqn} ({cols_sql}) "
                 "ENGINE = MergeTree() ORDER BY tuple()"
