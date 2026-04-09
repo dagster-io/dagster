@@ -2,13 +2,33 @@ import importlib
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Optional, Union
 
 import dagster as dg
-from dagster import AssetKey, AssetSpec, Component, ComponentLoadContext, Resolvable, Resolver
+from dagster import (
+    AssetKey,
+    AssetSpec,
+    BackfillPolicy,
+    Component,
+    ComponentLoadContext,
+    PartitionsDefinition,
+    Resolvable,
+    Resolver,
+)
 from dagster._annotations import public
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.resolved.context import ResolutionContext
+from dagster.components.resolved.core_models import (
+    DailyPartitionsDefinitionModel,
+    HourlyPartitionsDefinitionModel,
+    MultiRunBackfillPolicyModel,
+    SingleRunBackfillPolicyModel,
+    StaticPartitionsDefinitionModel,
+    TimeWindowPartitionsDefinitionModel,
+    WeeklyPartitionsDefinitionModel,
+    resolve_backfill_policy,
+    resolve_partitions_def,
+)
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils.translation import (
     ComponentTranslator,
@@ -67,6 +87,30 @@ class DltLoadSpecModel(Resolvable):
         ]
         | None
     ) = None
+    partitions_def: Annotated[
+        Optional[PartitionsDefinition],
+        Resolver(
+            resolve_partitions_def,
+            model_field_type=Optional[
+                Union[
+                    HourlyPartitionsDefinitionModel,
+                    DailyPartitionsDefinitionModel,
+                    WeeklyPartitionsDefinitionModel,
+                    TimeWindowPartitionsDefinitionModel,
+                    StaticPartitionsDefinitionModel,
+                ]
+            ],
+        ),
+    ] = None
+    backfill_policy: Annotated[
+        Optional[BackfillPolicy],
+        Resolver(
+            resolve_backfill_policy,
+            model_field_type=Optional[
+                Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel]
+            ],
+        ),
+    ] = None
 
 
 @public
@@ -133,6 +177,8 @@ class DltLoadCollectionComponent(Component, Resolvable):
                 dlt_pipeline=load.pipeline,
                 name=f"dlt_assets_{load.source.name}_{load.pipeline.dataset_name}",
                 dagster_dlt_translator=translator,
+                partitions_def=load.partitions_def,
+                backfill_policy=load.backfill_policy,
             )
             def dlt_assets_def(context: AssetExecutionContext):
                 yield from self.execute(context, self.dlt_pipeline_resource)
