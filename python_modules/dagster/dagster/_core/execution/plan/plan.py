@@ -400,6 +400,7 @@ class _PlanBuilder:
 def _get_ordering_step_keys_for_view(
     input_asset_key: "AssetKey | None",
     asset_layer: AssetLayer,
+    current_step_key: str,
 ) -> set[str]:
     """When an input comes from an excluded view asset, resolve the view's non-view ancestors
     and return their step keys as ordering dependencies so downstream steps wait for them.
@@ -424,7 +425,12 @@ def _get_ordering_step_keys_for_view(
     for ancestor_key in ancestor_keys:
         if ancestor_key in selected_keys:
             node_output_handle = asset_layer.get_op_output_handle(ancestor_key)
-            step_keys.add(str(node_output_handle.node_handle))
+            step_key = str(node_output_handle.node_handle)
+            # Filter out self-references to prevent deadlock. This happens when
+            # a subsettable multi-asset has virtual intermediaries between its
+            # own non-virtual outputs — the ancestor resolves to the same step.
+            if step_key != current_step_key:
+                step_keys.add(step_key)
     return step_keys
 
 
@@ -455,7 +461,9 @@ def get_step_input_source(
             input_asset_key = asset_layer.get_asset_key_for_node_input(
                 handle, input_handle.input_name
             )
-            ordering_keys = _get_ordering_step_keys_for_view(input_asset_key, asset_layer)
+            ordering_keys = _get_ordering_step_keys_for_view(
+                input_asset_key, asset_layer, current_step_key=str(handle)
+            )
             return FromLoadableAsset(ordering_step_keys=frozenset(ordering_keys))
         elif input_def.input_manager_key:
             return FromInputManager(node_handle=handle, input_name=input_name)

@@ -184,3 +184,41 @@ def test_ancestor_not_in_plan():
     # C should still be in the plan with no deps (A is not in selection)
     assert "c" in deps
     assert deps["c"] == set()
+
+
+def test_subsettable_multi_asset_no_self_dependency():
+    """Subsettable multi-asset with virtual intermediaries must not create self-dependencies.
+
+    Given a single can_subset=True multi-asset producing:
+        table_a (non-virtual) -> view_b (virtual) -> table_c (non-virtual)
+    Selecting only table_a + table_c should NOT cause the step to depend on itself.
+    The virtual view_b's non-virtual ancestor (table_a) lives in the same op, so
+    the ordering dep would point back at the same step key — a deadlock.
+    """
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("table_a"),
+            dg.AssetSpec("view_b", deps=["table_a"], is_virtual=True),
+            dg.AssetSpec("table_c", deps=["view_b"]),
+        ],
+        can_subset=True,
+    )
+    def my_multi_asset(context):
+        for key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=key)
+
+    job = _resolve_job(
+        [my_multi_asset],
+        dg.define_asset_job("test_job", selection=dg.AssetSelection.assets("table_a", "table_c")),
+    )
+
+    plan = create_execution_plan(job)
+    deps = plan.get_executable_step_deps()
+
+    # The multi-asset step should appear with no self-dependency
+    step_keys = list(deps.keys())
+    for step_key in step_keys:
+        assert step_key not in deps[step_key], (
+            f"Step {step_key} has a self-dependency, which would cause a deadlock"
+        )
