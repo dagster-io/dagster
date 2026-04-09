@@ -42,6 +42,7 @@ export const DimensionRangeWizard = ({
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
   const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
+  const scopedLabelForPartition = isDynamic ? labelForPartition : undefined;
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
 
@@ -282,7 +283,7 @@ export const DimensionRangeWizard = ({
               health={health}
               setShowCreatePartition={setShowCreatePartition}
               isDynamic={isDynamic}
-              labelForPartition={labelForPartition}
+              labelForPartition={scopedLabelForPartition}
             />
           )}
         </Box>
