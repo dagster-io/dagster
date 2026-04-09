@@ -17,7 +17,7 @@ def _build_storage(
     connection: _RecordingConnection, supports_display_labels: bool
 ) -> PostgresEventLogStorage:
     storage = PostgresEventLogStorage.__new__(PostgresEventLogStorage)
-    storage.__dict__["has_dynamic_partition_display_label_col"] = supports_display_labels
+    storage.has_dynamic_partition_display_label_col = lambda: supports_display_labels  # type: ignore[method-assign]
     storage._check_partitions_table = lambda: None  # noqa: SLF001
 
     @contextmanager

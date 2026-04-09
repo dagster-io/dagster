@@ -1149,6 +1149,56 @@ def test_dynamic_partition_labels_require_display_label_column():
                 instance.set_dynamic_partition_label("foo", "foo", "Updated foo label")
 
 
+def test_dynamic_partition_labels_detect_new_column_without_restart():
+    with tempfile.TemporaryDirectory() as test_dir:
+        with dg.instance_for_test(temp_dir=test_dir) as instance:
+            instance.add_dynamic_partitions("foo", ["foo"])
+            storage = check.inst(instance.event_log_storage, SqlEventLogStorage)
+            db_path = os.path.join(storage._base_dir, "index.db")
+
+        con = sqlite3.connect(db_path)
+        cursor = con.cursor()
+        cursor.execute("ALTER TABLE dynamic_partitions RENAME TO dynamic_partitions_old")
+        cursor.execute(
+            """
+            CREATE TABLE dynamic_partitions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                partitions_def_name TEXT NOT NULL,
+                partition TEXT NOT NULL,
+                create_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        cursor.execute(
+            """
+            INSERT INTO dynamic_partitions (id, partitions_def_name, partition, create_timestamp)
+            SELECT id, partitions_def_name, partition, create_timestamp
+            FROM dynamic_partitions_old
+            """
+        )
+        cursor.execute("DROP TABLE dynamic_partitions_old")
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX idx_dynamic_partitions
+            ON dynamic_partitions (partitions_def_name, partition)
+            """
+        )
+        con.commit()
+        con.close()
+
+        with DagsterInstance.from_config(test_dir) as instance:
+            assert instance.get_dynamic_partition_labels("foo") == {}
+
+            con = sqlite3.connect(db_path)
+            cursor = con.cursor()
+            cursor.execute("ALTER TABLE dynamic_partitions ADD COLUMN display_label TEXT")
+            con.commit()
+            con.close()
+
+            instance.set_dynamic_partition_label("foo", "foo", "Foo label")
+            assert instance.get_dynamic_partition_labels("foo") == {"foo": "Foo label"}
+
+
 def _get_table_row_count(run_storage, table, with_non_null_id=False):
     query = db_select([db.func.count()]).select_from(table)
     if with_non_null_id:

@@ -219,17 +219,41 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     variables: {assetKey: displayedBaseAssetInput ?? {path: []}},
     skip: !displayedBaseAssetInput,
     blocking: false,
+    notifyOnNetworkStatusChange: true,
   });
-  const displayedPartitionLabels = useMemo(
-    () =>
-      displayedPartitionLabelsResult.data?.assetNodeOrError.__typename === 'AssetNode'
-        ? displayedPartitionLabelsResult.data.assetNodeOrError.partitionKeyLabels
-        : [],
-    [displayedPartitionLabelsResult.data],
-  );
+  const displayedPartitionLabelsState = useMemo(() => {
+    if (!displayedBaseAssetInput) {
+      return {labels: [], status: 'idle' as const};
+    }
+
+    if (displayedPartitionLabelsResult.loading) {
+      return {labels: [], status: 'loading' as const};
+    }
+
+    if (displayedPartitionLabelsResult.error) {
+      return {labels: [], status: 'error' as const};
+    }
+
+    if (displayedPartitionLabelsResult.data?.assetNodeOrError.__typename === 'AssetNode') {
+      return {
+        labels: displayedPartitionLabelsResult.data.assetNodeOrError.partitionKeyLabels ?? [],
+        status: 'ready' as const,
+      };
+    }
+
+    return {labels: [], status: 'ready' as const};
+  }, [
+    displayedBaseAssetInput,
+    displayedPartitionLabelsResult.data,
+    displayedPartitionLabelsResult.error,
+    displayedPartitionLabelsResult.loading,
+  ]);
   const partitionLabelMap = useMemo(
-    () => new Map<string, string>(displayedPartitionLabels.map(({key, label}) => [key, label])),
-    [displayedPartitionLabels],
+    () =>
+      new Map<string, string>(
+        displayedPartitionLabelsState.labels.map(({key, label}) => [key, label]),
+      ),
+    [displayedPartitionLabelsState.labels],
   );
   const labelForPartition = useMemo(
     () => (partitionKey: string) => partitionLabelMap.get(partitionKey),

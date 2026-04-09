@@ -312,7 +312,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     ) -> None:
         # Overload base implementation to push upsert logic down into the db layer
         self._check_partitions_table()
-        supports_display_labels = self.has_dynamic_partition_display_label_col
+        supports_display_labels = self.has_dynamic_partition_display_label_col()
         if labels and not supports_display_labels:
             self._check_dynamic_partition_label_column()
 

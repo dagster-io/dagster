@@ -2145,7 +2145,7 @@ class SqlEventLogStorage(EventLogStorage):
         labels: Mapping[str, str] | None = None,
     ) -> None:
         self._check_partitions_table()
-        supports_display_labels = self.has_dynamic_partition_display_label_col
+        supports_display_labels = self.has_dynamic_partition_display_label_col()
         if labels and not supports_display_labels:
             self._check_dynamic_partition_label_column()
 
@@ -2206,7 +2206,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_dynamic_partition_labels(self, partitions_def_name: str) -> dict[str, str]:
         self._check_partitions_table()
-        if not self.has_dynamic_partition_display_label_col:
+        if not self.has_dynamic_partition_display_label_col():
             return {}
 
         query = db_select(
@@ -2242,9 +2242,6 @@ class SqlEventLogStorage(EventLogStorage):
                     f"Partition key {partition_key} does not exist for dynamic partitions definition {partitions_def_name}."
                 )
 
-    # This check is intentionally cached for process lifetime. If an instance starts before
-    # migrations run, it will continue treating the column as unavailable until process restart.
-    @cached_property
     def has_dynamic_partition_display_label_col(self) -> bool:
         if not self.has_table(DynamicPartitionsTable.name):
             return False
@@ -2256,7 +2253,7 @@ class SqlEventLogStorage(EventLogStorage):
             return DynamicPartitionsTable.c.display_label.name in column_names
 
     def _check_dynamic_partition_label_column(self) -> None:
-        if not self.has_dynamic_partition_display_label_col:
+        if not self.has_dynamic_partition_display_label_col():
             raise DagsterInvalidInvocationError(
                 "Dynamic partition labels require a database schema migration. Run"
                 " `dagster instance migrate`."
