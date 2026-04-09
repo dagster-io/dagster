@@ -332,7 +332,7 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
 
     ```yaml
     - name: Checkout internal repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
       with:
         token: ${{ secrets.GH_PAT }}
         repository: my-org/private-repo
