@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.13.0 (core) / 0.29.0 (libraries)
+
+### Major Changes Since 1.12.0
+
+- **AI-assisted development**: Released [dagster-io/skills](https://github.com/dagster-io/skills), a collection of Dagster-focused AI skills for coding agents like Claude Code, OpenAI Codex, and others. Expanded `dg api` commands for programmatic inspection of assets, runs, jobs, schedules, and more.
+- **Partitioned asset checks**: Asset checks can now target specific partitions of an upstream asset, aligning data quality logic with how partitioned data is produced and monitored.
+- **State-backed components enabled by default**: Integrations that depend on external metadata (dbt, Fivetran, Airbyte, Tableau, Looker, etc.) now use persisted local state by default, providing a more predictable code location loading experience.
+- **Virtual assets (preview)**: New `is_virtual` parameter on `@asset` and `AssetSpec` for modeling assets like database views that automatically reflect upstream changes without explicit materialization.
+- **20+ new components**: Added or expanded components for dbt Cloud, Spark, Azure (Blob Storage, ADLS2), GCP (BigQuery, GCS, Dataproc), Databricks, Tableau, Looker, Census, Polytomic, and more. Integrations gained richer observability, metadata, and operational support.
+- **Deeper integration support**: dbt Cloud supports partitioned assets; Databricks gained job-level subsetting and auto-cancel on run termination; Fivetran added polling sensors, retry-on-reschedule, and resync support; BI integrations auto-enrich assets with table metadata for cross-system lineage.
+- **Dagster+ improvements**: Organization-level timezone settings, service users for Pro accounts, more resilient code server redeploy behavior, improved agent failure recovery, and expanded insights and alerting workflows.
+
+### Breaking Changes
+
+- Removed deprecated `external_asset_from_spec` and `external_assets_from_specs`. Use `AssetSpec` inputs directly to `Definitions(...)` or `AssetsDefinition(specs=[...])` instead.
+- Removed deprecated single-`AssetKey` `deps` argument support from asset dependencies. Use a sequence of `AssetDep` objects instead.
+- Removed deprecated `get_all_asset_specs` from `Definitions`.
+- Removed deprecated `legacy_freshness_policy` parameter from `@observable_source_asset`.
+- Removed deprecated `auto_observe_interval_minutes` parameter from `@observable_source_asset`.
+- Removed deprecated `legacy_freshness_policies_by_output_name` parameter from `AssetsDefinition`.
+- Removed deprecated `load_component_at_path` from `ComponentLoadContext`. Use `context.load_component` instead.
+- Removed deprecated `build_defs_at_path` from `ComponentLoadContext`.
+- [dagster-airbyte] Removed deprecated `AirbyteState` enum (use `AirbyteJobStatusType` instead) and removed deprecated `legacy_freshness_policy` and `auto_materialize_policy` parameters from `build_airbyte_assets()`.
+- [dagster-looker] Removed deprecated `DagsterLookerResource.build_defs`, `get_asset_key`, `get_dashboard_asset_key`, `get_explore_asset_key`, `get_view_asset_key` methods, and `Type[DagsterLookerApiTranslator]` support from API helpers.
+- [dagster-powerbi] Removed deprecated `PowerBIWorkspace.build_defs()`, translator key helpers (use `get_asset_spec()` instead), and `Type[DagsterPowerBITranslator]` support in `load_powerbi_asset_specs()` (pass an instance instead).
+- [dagster-sigma] Removed deprecated `SigmaOrganization.build_defs()`, `DagsterSigmaTranslator.get_asset_key()` (use `get_asset_spec(...).key` instead), and `Type[DagsterSigmaTranslator]` support in `load_sigma_asset_specs()` (pass an instance instead).
+
+### New
+
+- (Preview) Added support for virtual assets. The `@asset` decorator and `AssetSpec` now accept an `is_virtual` parameter for defining assets that represent views or derived tables that don't need to be materialized. Virtual assets are supported in staleness calculations, execution planning, and declarative automation.
+- Job-level config defaults are now applied when partial config is provided to a run.
+- [dagster-dbt] Added `enable_dbt_views_as_virtual_assets` setting to `DbtTranslatorSettings` for automatically treating dbt views as virtual assets.
+
+### Bugfixes
+
+- Fixed an issue where a sensor targeting a job with `run_tags` and specifying an `asset_selection` in the `RunRequest` would not apply the job's `run_tags` to the resulting run.
+- Fixed a potential error in YAML config snapshot conversion when encountering `None` fields.
+- [dg] Fixed `dg plus deploy configure` generating a GitHub Action that used Docker instead of the PEX build strategy.
+- [dagster-cloud-cli] PR comments in CI are now scoped by deployment name, preventing overwrites across deployments.
+- [ui] Fixed "Missing" partition selection for time-based partitioned assets.
+- [ui] Fixed raw log display rendering after `ansi-to-react` library update.
+- [ui] "Terminate all runs" dialog now handles extremely large sets of runs more reliably.
+
+### Documentation
+
+- Added Dagster+ agent configuration page for serverless and hybrid deployments.
+- Added data portability documentation page.
+- Reorganized run isolation documentation for hybrid and serverless deployments.
+- Added ELT pipeline example with dlt and Sling.
+
+### Dagster Plus
+
+- Added percent-change comparison type for metric monitor alerts.
+- Added SCIM Groups filter support for `members.value eq` queries.
+- Added MCP server integration providing AI assistants with access to Dagster Cloud operations.
+- Fixed an issue where the Dagster+ Kubernetes agent would emit log noise about `DAGSTER_CLOUD_RAW_GIT_URL` and `DAGSTER_CLOUD_GIT_URL` environment variables when `onlyAllowUserDefinedK8sConfigFields` was set.
+- Fixed incorrect alert type label for metrics alerts.
+- Fixed Databricks connections failing with an "unable to start warehouse" error.
+
 ## 1.12.22 (core) / 0.28.22 (libraries)
 
 ### New
