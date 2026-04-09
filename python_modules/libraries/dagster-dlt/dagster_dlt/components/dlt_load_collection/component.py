@@ -2,7 +2,7 @@ import importlib
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Optional, Union
+from typing import TYPE_CHECKING, Annotated
 
 import dagster as dg
 from dagster import (
@@ -88,27 +88,21 @@ class DltLoadSpecModel(Resolvable):
         | None
     ) = None
     partitions_def: Annotated[
-        Optional[PartitionsDefinition],
+        PartitionsDefinition | None,
         Resolver(
             resolve_partitions_def,
-            model_field_type=Optional[
-                Union[
-                    HourlyPartitionsDefinitionModel,
-                    DailyPartitionsDefinitionModel,
-                    WeeklyPartitionsDefinitionModel,
-                    TimeWindowPartitionsDefinitionModel,
-                    StaticPartitionsDefinitionModel,
-                ]
-            ],
+            model_field_type=HourlyPartitionsDefinitionModel
+            | DailyPartitionsDefinitionModel
+            | WeeklyPartitionsDefinitionModel
+            | TimeWindowPartitionsDefinitionModel
+            | StaticPartitionsDefinitionModel,
         ),
     ] = None
     backfill_policy: Annotated[
-        Optional[BackfillPolicy],
+        BackfillPolicy | None,
         Resolver(
             resolve_backfill_policy,
-            model_field_type=Optional[
-                Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel]
-            ],
+            model_field_type=SingleRunBackfillPolicyModel | MultiRunBackfillPolicyModel,
         ),
     ] = None
 
