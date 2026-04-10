@@ -2,7 +2,7 @@ import logging
 import time
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from urllib.parse import quote, urlencode
 
 import alembic.config
@@ -13,8 +13,11 @@ from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
 
 # re-export
 from dagster._core.storage.config import pg_config as pg_config
-from dagster._core.storage.sql import get_alembic_config
+from dagster._core.storage.sql import create_engine, get_alembic_config
 from sqlalchemy.engine import Connection
+
+if TYPE_CHECKING:
+    from dagster_postgres.auth import PgTokenProvider
 
 T = TypeVar("T")
 
@@ -41,14 +44,18 @@ def pg_url_from_config(config_value: Mapping[str, Any]) -> str:
 
 def get_conn_string(
     username: str,
-    password: str,
-    hostname: str,
-    db_name: str,
+    password: str = "",
+    hostname: str = "",
+    db_name: str = "",
     port: str = "5432",
     params: Mapping[str, object] | None = None,
     scheme: str = "postgresql",
 ) -> str:
-    uri = f"{scheme}://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
+    if password:
+        userinfo = f"{quote(username)}:{quote(password)}"
+    else:
+        userinfo = quote(username)
+    uri = f"{scheme}://{userinfo}@{hostname}:{port}/{db_name}"
 
     if params:
         query_string = f"{urlencode(params, quote_via=quote)}"
@@ -157,3 +164,41 @@ def set_pg_statement_timeout(conn: Any, millis: int):
     with conn:
         with conn.cursor() as curs:
             curs.execute(f"SET statement_timeout = {millis};")
+
+
+def create_pg_engine(
+    postgres_url: str,
+    token_provider: "PgTokenProvider | None" = None,
+    **engine_kwargs: Any,
+) -> sqlalchemy.engine.Engine:
+    """Create a SQLAlchemy engine, optionally with WIF token injection via
+    the ``do_connect`` event hook.
+    """
+    engine = create_engine(postgres_url, **engine_kwargs)
+    if token_provider is not None:
+        from dagster_postgres.auth import register_do_connect_hook
+
+        register_do_connect_hook(engine, token_provider)
+    return engine
+
+
+def get_token_provider_from_config(
+    config_value: Mapping[str, Any],
+) -> "PgTokenProvider | None":
+    """Extract and build a token provider from config, or return ``None`` for
+    password auth.
+    """
+    auth_config = config_value.get("auth_provider")
+    if auth_config is None:
+        return None
+
+    check.invariant(
+        "postgres_url" not in config_value or not config_value["postgres_url"],
+        "auth_provider cannot be used with postgres_url. Use postgres_db instead"
+        " so that tokens can be injected at the DBAPI connection level.",
+    )
+
+    from dagster_postgres.auth import create_token_provider
+
+    db_config = config_value.get("postgres_db")
+    return create_token_provider(auth_config, db_config)

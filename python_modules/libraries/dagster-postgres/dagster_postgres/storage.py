@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.base_storage import DagsterStorage
@@ -10,7 +12,10 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_postgres.schedule_storage import PostgresScheduleStorage
-from dagster_postgres.utils import pg_url_from_config
+from dagster_postgres.utils import get_token_provider_from_config, pg_url_from_config
+
+if TYPE_CHECKING:
+    from dagster_postgres.auth import PgTokenProvider
 
 
 class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
@@ -34,18 +39,25 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
 
     def __init__(
         self,
-        postgres_url,
-        should_autocreate_tables=True,
+        postgres_url: str,
+        should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
+        token_provider: "PgTokenProvider | None" = None,
     ):
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
             should_autocreate_tables, "should_autocreate_tables"
         )
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        self._run_storage = PostgresRunStorage(postgres_url, should_autocreate_tables)
-        self._event_log_storage = PostgresEventLogStorage(postgres_url, should_autocreate_tables)
-        self._schedule_storage = PostgresScheduleStorage(postgres_url, should_autocreate_tables)
+        self._run_storage = PostgresRunStorage(
+            postgres_url, should_autocreate_tables, token_provider=token_provider
+        )
+        self._event_log_storage = PostgresEventLogStorage(
+            postgres_url, should_autocreate_tables, token_provider=token_provider
+        )
+        self._schedule_storage = PostgresScheduleStorage(
+            postgres_url, should_autocreate_tables, token_provider=token_provider
+        )
         super().__init__()
 
     @property
@@ -64,6 +76,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
+            token_provider=get_token_provider_from_config(config_value),
         )
 
     @property
