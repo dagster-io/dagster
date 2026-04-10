@@ -13,6 +13,9 @@ postgres_db:
   scheme: {{ .Values.postgresql.postgresqlScheme }}
   {{- end }}
 {{- if .Values.global.postgresqlAuthWifEnabled }}
+{{- if not (or (eq .Values.postgresql.authProvider.type "azure_wif") (eq .Values.postgresql.authProvider.type "gcp_wif") (eq .Values.postgresql.authProvider.type "aws_wif")) }}
+{{- fail (printf "postgresql.authProvider.type must be one of azure_wif, gcp_wif, aws_wif when postgresqlAuthWifEnabled is true; got %q" .Values.postgresql.authProvider.type) }}
+{{- end }}
 auth_provider:
   {{- if eq .Values.postgresql.authProvider.type "azure_wif" }}
   azure_wif:
