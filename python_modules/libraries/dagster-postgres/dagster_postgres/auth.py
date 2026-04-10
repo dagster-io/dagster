@@ -57,18 +57,19 @@ class AzureWifTokenProvider(PgTokenProvider):
     ) -> None:
         super().__init__()
         self._scope = scope
+        self._credential: Any = None
 
     def _fetch_token(self) -> tuple[str, float]:
-        # Optional dependency — import lazily so the error is clear.
-        try:
-            from azure.identity import DefaultAzureCredential  # type: ignore[import-untyped]
-        except ImportError:
-            raise ImportError(
-                "azure-identity is required for Azure WIF auth. "
-                "Install with: pip install dagster-postgres[azure]"
-            )
-        credential = DefaultAzureCredential()
-        token = credential.get_token(self._scope)
+        if self._credential is None:
+            try:
+                from azure.identity import DefaultAzureCredential  # type: ignore[import-untyped]
+            except ImportError:
+                raise ImportError(
+                    "azure-identity is required for Azure WIF auth. "
+                    "Install with: pip install dagster-postgres[azure]"
+                )
+            self._credential = DefaultAzureCredential()
+        token = self._credential.get_token(self._scope)
         return token.token, token.expires_on
 
 
@@ -79,21 +80,32 @@ class GcpWifTokenProvider(PgTokenProvider):
     the projected service account token on GKE pods.
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        self._credentials: Any = None
+        self._request: Any = None
+
     def _fetch_token(self) -> tuple[str, float]:
-        try:
-            import google.auth  # type: ignore[import-untyped]
-            import google.auth.transport.requests  # type: ignore[import-untyped]
-        except ImportError:
-            raise ImportError(
-                "google-auth is required for GCP WIF auth. "
-                "Install with: pip install dagster-postgres[gcp]"
+        if self._credentials is None:
+            try:
+                import google.auth  # type: ignore[import-untyped]
+                import google.auth.transport.requests  # type: ignore[import-untyped]
+            except ImportError:
+                raise ImportError(
+                    "google-auth is required for GCP WIF auth. "
+                    "Install with: pip install dagster-postgres[gcp]"
+                )
+            self._credentials, _ = google.auth.default(
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
-        credentials, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            self._request = google.auth.transport.requests.Request()
+        self._credentials.refresh(self._request)
+        expiry = (
+            self._credentials.expiry.timestamp()
+            if self._credentials.expiry
+            else (time.time() + 3600)
         )
-        credentials.refresh(google.auth.transport.requests.Request())
-        expiry = credentials.expiry.timestamp() if credentials.expiry else (time.time() + 3600)
-        return credentials.token, expiry
+        return self._credentials.token, expiry
 
 
 class AwsWifTokenProvider(PgTokenProvider):
@@ -115,17 +127,19 @@ class AwsWifTokenProvider(PgTokenProvider):
         self._port = port
         self._username = username
         self._region = region
+        self._client: Any = None
 
     def _fetch_token(self) -> tuple[str, float]:
-        try:
-            import boto3  # type: ignore[import-untyped]
-        except ImportError:
-            raise ImportError(
-                "boto3 is required for AWS WIF auth. "
-                "Install with: pip install dagster-postgres[aws]"
-            )
-        client = boto3.client("rds", region_name=self._region)
-        token = client.generate_db_auth_token(
+        if self._client is None:
+            try:
+                import boto3  # type: ignore[import-untyped]
+            except ImportError:
+                raise ImportError(
+                    "boto3 is required for AWS WIF auth. "
+                    "Install with: pip install dagster-postgres[aws]"
+                )
+            self._client = boto3.client("rds", region_name=self._region)
+        token = self._client.generate_db_auth_token(
             DBHostname=self._hostname,
             Port=self._port,
             DBUsername=self._username,
