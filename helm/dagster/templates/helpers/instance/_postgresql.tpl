@@ -19,7 +19,7 @@ postgres_db:
 auth_provider:
   {{- if eq .Values.postgresql.authProvider.type "azure_wif" }}
   azure_wif:
-    scope: {{ .Values.postgresql.authProvider.azureScope }}
+    scope: {{ .Values.postgresql.authProvider.azureScope | quote }}
   {{- else if eq .Values.postgresql.authProvider.type "gcp_wif" }}
   gcp_wif: {}
   {{- else if eq .Values.postgresql.authProvider.type "aws_wif" }}
