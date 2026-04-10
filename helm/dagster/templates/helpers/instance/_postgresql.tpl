@@ -23,8 +23,11 @@ auth_provider:
   {{- else if eq .Values.postgresql.authProvider.type "gcp_wif" }}
   gcp_wif: {}
   {{- else if eq .Values.postgresql.authProvider.type "aws_wif" }}
+  {{- if not .Values.postgresql.authProvider.awsRegion }}
+  {{- fail "postgresql.authProvider.awsRegion is required when type is aws_wif" }}
+  {{- end }}
   aws_wif:
-    region: {{ .Values.postgresql.authProvider.awsRegion }}
+    region: {{ .Values.postgresql.authProvider.awsRegion | quote }}
   {{- end }}
 {{- end }}
 {{- end }}

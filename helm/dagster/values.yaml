@@ -846,7 +846,6 @@ postgresql:
   # Workload Identity Federation auth. When enabled, no password/secret is needed.
   # The pod's service account token is exchanged for a short-lived DB access token.
   authProvider:
-    enabled: false
     # One of: azure_wif, gcp_wif, aws_wif
     type: ""
     # Azure-specific: override the default token scope
