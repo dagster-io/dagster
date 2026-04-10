@@ -315,6 +315,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         supports_display_labels = self.has_dynamic_partition_display_label_col()
         if labels and not supports_display_labels:
             self._check_dynamic_partition_label_column()
+            supports_display_labels = True
 
         if not partition_keys:
             return

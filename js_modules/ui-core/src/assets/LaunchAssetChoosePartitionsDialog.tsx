@@ -209,9 +209,10 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         : null;
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
-  const displayedBaseAssetInput = displayedBaseAsset
-    ? asAssetKeyInput(displayedBaseAsset.assetKey)
-    : null;
+  const displayedBaseAssetInput = useMemo(
+    () => (displayedBaseAsset ? asAssetKeyInput(displayedBaseAsset.assetKey) : null),
+    [displayedBaseAsset?.assetKey.path.join('\0')],
+  );
   const displayedPartitionLabelsResult = useQuery<
     DisplayedPartitionLabelsQuery,
     DisplayedPartitionLabelsQueryVariables

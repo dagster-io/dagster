@@ -2148,6 +2148,7 @@ class SqlEventLogStorage(EventLogStorage):
         supports_display_labels = self.has_dynamic_partition_display_label_col()
         if labels and not supports_display_labels:
             self._check_dynamic_partition_label_column()
+            supports_display_labels = True
 
         with self.index_connection() as conn:
             existing_rows = conn.execute(
@@ -2189,7 +2190,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
             # Update labels for existing keys that now have a label provided
-            if labels:
+            if labels and supports_display_labels:
                 for partition_key in existing_keys:
                     if partition_key in labels:
                         conn.execute(
@@ -2242,7 +2243,7 @@ class SqlEventLogStorage(EventLogStorage):
                     f"Partition key {partition_key} does not exist for dynamic partitions definition {partitions_def_name}."
                 )
 
-    def has_dynamic_partition_display_label_col(self) -> bool:
+    def _get_dynamic_partition_display_label_col_support(self) -> bool:
         if not self.has_table(DynamicPartitionsTable.name):
             return False
 
@@ -2252,8 +2253,27 @@ class SqlEventLogStorage(EventLogStorage):
             ]
             return DynamicPartitionsTable.c.display_label.name in column_names
 
+    def has_dynamic_partition_display_label_col(self) -> bool:
+        cached_support = getattr(self, "_dynamic_partition_display_label_col_support", None)
+        if cached_support is True:
+            return True
+
+        cached_support = self._get_dynamic_partition_display_label_col_support()
+        if cached_support:
+            self._dynamic_partition_display_label_col_support = True
+
+        return cached_support
+
+    def _refresh_dynamic_partition_display_label_col_support(self) -> bool:
+        supports_display_labels = self._get_dynamic_partition_display_label_col_support()
+        if supports_display_labels:
+            self._dynamic_partition_display_label_col_support = True
+        else:
+            self.__dict__.pop("_dynamic_partition_display_label_col_support", None)
+        return supports_display_labels
+
     def _check_dynamic_partition_label_column(self) -> None:
-        if not self.has_dynamic_partition_display_label_col():
+        if not self._refresh_dynamic_partition_display_label_col_support():
             raise DagsterInvalidInvocationError(
                 "Dynamic partition labels require a database schema migration. Run"
                 " `dagster instance migrate`."

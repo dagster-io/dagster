@@ -540,7 +540,7 @@ describe('launchAssetChoosePartitionsDialog', () => {
   });
 
   it('does not apply dynamic labels to non-dynamic dimensions with overlapping keys', async () => {
-    const asset = buildAsset('asset_a', ['shared'], [], {
+    const asset = buildAsset('asset_a', ['shared'], {
       type: PartitionDefinitionType.STATIC,
       keys: ['shared', 'plain'],
     });
@@ -654,12 +654,195 @@ describe('launchAssetChoosePartitionsDialog', () => {
       within(staticMenu as HTMLElement).getByText('No matching partitions found'),
     ).toBeVisible();
   });
+
+  it('does not rerun displayed partition label queries on rerender for the same asset key', async () => {
+    const assetA = buildAsset('asset_a', ['test']);
+    const assetB = buildAsset('asset_b', ['test']);
+    const rerenderedAssetA = buildAsset('asset_a', ['test']);
+    const rerenderedAssetB = buildAsset('asset_b', ['test']);
+
+    const assetAQueryMock = buildQueryMock<PartitionHealthQuery, PartitionHealthQueryVariables>({
+      query: PARTITION_HEALTH_QUERY,
+      variables: {assetKey: {path: ['asset_a']}},
+      data: {assetNodeOrError: assetA},
+    });
+    const assetBQueryMock = buildQueryMock<PartitionHealthQuery, PartitionHealthQueryVariables>({
+      query: PARTITION_HEALTH_QUERY,
+      variables: {assetKey: {path: ['asset_b']}},
+      data: {assetNodeOrError: assetB},
+    });
+    const rerenderedAssetAQueryMock = buildQueryMock<
+      PartitionHealthQuery,
+      PartitionHealthQueryVariables
+    >({
+      query: PARTITION_HEALTH_QUERY,
+      variables: {assetKey: {path: ['asset_a']}},
+      data: {assetNodeOrError: rerenderedAssetA},
+    });
+    const rerenderedAssetBQueryMock = buildQueryMock<
+      PartitionHealthQuery,
+      PartitionHealthQueryVariables
+    >({
+      query: PARTITION_HEALTH_QUERY,
+      variables: {assetKey: {path: ['asset_b']}},
+      data: {assetNodeOrError: rerenderedAssetB},
+    });
+    const displayedPartitionLabelsMock = buildQueryMock({
+      query: DISPLAYED_PARTITION_LABELS_QUERY,
+      variables: {assetKey: {path: ['asset_a']}},
+      data: {
+        assetNodeOrError: {
+          __typename: 'AssetNode',
+          id: assetA.id,
+          partitionKeyLabels: [
+            {__typename: 'PartitionKeyLabel', key: 'test', label: 'Friendly label'},
+          ],
+        },
+      },
+    });
+    const displayedPartitionLabelsMockResult = getMockResultFn(displayedPartitionLabelsMock);
+    const assetPermissionsMock = buildQueryMock<
+      AssetsPermissionsQuery,
+      AssetsPermissionsQueryVariables
+    >({
+      query: ASSETS_PERMISSIONS_QUERY,
+      variables: {
+        assetKeys: [{path: ['asset_a']}, {path: ['asset_b']}],
+      },
+      data: {
+        assetNodes: [
+          buildAssetNode({
+            id: 'asset-a-permissions',
+            hasMaterializePermission: true,
+            hasWipePermission: true,
+            hasReportRunlessAssetEventPermission: true,
+          }),
+          buildAssetNode({
+            id: 'asset-b-permissions',
+            hasMaterializePermission: true,
+            hasWipePermission: true,
+            hasReportRunlessAssetEventPermission: true,
+          }),
+        ],
+      },
+    });
+    const launchpadRootMock = buildQueryMock<LaunchpadRootQuery, LaunchpadRootQueryVariables>({
+      query: PIPELINE_EXECUTION_ROOT_QUERY,
+      variables: {
+        repositoryName: 'test',
+        repositoryLocationName: 'test',
+        pipelineName: '__ASSET_JOB',
+        assetSelection: [{path: ['asset_a']}, {path: ['asset_b']}],
+      },
+      data: buildQuery({
+        pipelineOrError: buildPipeline(),
+        partitionSetsOrError: buildPartitionSets(),
+        runConfigSchemaOrError: buildRunConfigSchema(),
+      }),
+    });
+    const rerenderedLaunchpadRootMock = buildQueryMock<
+      LaunchpadRootQuery,
+      LaunchpadRootQueryVariables
+    >({
+      query: PIPELINE_EXECUTION_ROOT_QUERY,
+      variables: {
+        repositoryName: 'test',
+        repositoryLocationName: 'test',
+        pipelineName: '__ASSET_JOB',
+        assetSelection: [{path: ['asset_a']}, {path: ['asset_b']}],
+      },
+      data: buildQuery({
+        pipelineOrError: buildPipeline(),
+        partitionSetsOrError: buildPartitionSets(),
+        runConfigSchemaOrError: buildRunConfigSchema(),
+      }),
+    });
+
+    const {rerender} = render(
+      <MemoryRouter>
+        <MockedProvider
+          mocks={[
+            assetAQueryMock,
+            assetBQueryMock,
+            rerenderedAssetAQueryMock,
+            rerenderedAssetBQueryMock,
+            displayedPartitionLabelsMock,
+            assetPermissionsMock,
+            buildLaunchAssetWarningsMock([]),
+            NoRunningBackfills,
+            launchpadRootMock,
+            rerenderedLaunchpadRootMock,
+            ...workspaceMocks,
+          ]}
+        >
+          <WorkspaceProvider>
+            <LaunchAssetChoosePartitionsDialog
+              open={true}
+              setOpen={(_open: boolean) => {}}
+              repoAddress={buildRepoAddress('test', 'test')}
+              target={{
+                jobName: '__ASSET_JOB',
+                assetKeys: [assetA.assetKey, assetB.assetKey],
+                type: 'job',
+              }}
+              assets={[assetA, assetB]}
+              upstreamAssetKeys={[]}
+            />
+          </WorkspaceProvider>
+        </MockedProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(displayedPartitionLabelsMockResult).toHaveBeenCalledTimes(1);
+    });
+
+    rerender(
+      <MemoryRouter>
+        <MockedProvider
+          mocks={[
+            assetAQueryMock,
+            assetBQueryMock,
+            rerenderedAssetAQueryMock,
+            rerenderedAssetBQueryMock,
+            displayedPartitionLabelsMock,
+            assetPermissionsMock,
+            buildLaunchAssetWarningsMock([]),
+            NoRunningBackfills,
+            launchpadRootMock,
+            rerenderedLaunchpadRootMock,
+            ...workspaceMocks,
+          ]}
+        >
+          <WorkspaceProvider>
+            <LaunchAssetChoosePartitionsDialog
+              open={true}
+              setOpen={(_open: boolean) => {}}
+              repoAddress={buildRepoAddress('test', 'test')}
+              target={{
+                jobName: '__ASSET_JOB',
+                assetKeys: [rerenderedAssetA.assetKey, rerenderedAssetB.assetKey],
+                type: 'job',
+              }}
+              assets={[rerenderedAssetA, rerenderedAssetB]}
+              upstreamAssetKeys={[]}
+            />
+          </WorkspaceProvider>
+        </MockedProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Select a partition or create one')).toBeVisible();
+    });
+
+    expect(displayedPartitionLabelsMockResult).toHaveBeenCalledTimes(1);
+  });
 });
 
 function buildAsset(
   name: string,
   dynamicPartitionKeys: string[],
-  partitionKeyLabels: Array<{__typename: 'PartitionKeyLabel'; key: string; label: string}> = [],
   secondDimension: {
     type: PartitionDefinitionType;
     keys: string[];
@@ -668,7 +851,6 @@ function buildAsset(
   return buildAssetNode({
     assetKey: buildAssetKey({path: [name]}),
     id: `repro_dynamic_in_multipartitions_bug.py.__repository__.["${name}"]`,
-    partitionKeyLabels,
     partitionKeysByDimension: [
       buildDimensionPartitionKeys({
         name: 'a',
