@@ -143,7 +143,6 @@ class AwsWifTokenProvider(PgTokenProvider):
             DBHostname=self._hostname,
             Port=self._port,
             DBUsername=self._username,
-            Region=self._region,
         )
         # RDS auth tokens are valid for 15 minutes
         return token, time.time() + 900
