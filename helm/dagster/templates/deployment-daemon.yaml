@@ -89,7 +89,7 @@ spec:
             "{{- template "dagster.dagsterDaemon.daemonCommand" . }}"
           ]
           env:
-            {{- if not .Values.postgresql.authProvider.enabled }}
+            {{- if not .Values.global.postgresqlAuthWifEnabled }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:

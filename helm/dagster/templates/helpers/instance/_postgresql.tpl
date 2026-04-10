@@ -1,7 +1,7 @@
 {{- define "dagsterYaml.postgresql.config" }}
 postgres_db:
   username: {{ .Values.postgresql.postgresqlUsername }}
-  {{- if not .Values.postgresql.authProvider.enabled }}
+  {{- if not .Values.global.postgresqlAuthWifEnabled }}
   password:
     env: DAGSTER_PG_PASSWORD
   {{- end }}
@@ -12,7 +12,7 @@ postgres_db:
   {{- if .Values.postgresql.postgresqlScheme }}
   scheme: {{ .Values.postgresql.postgresqlScheme }}
   {{- end }}
-{{- if .Values.postgresql.authProvider.enabled }}
+{{- if .Values.global.postgresqlAuthWifEnabled }}
 auth_provider:
   {{- if eq .Values.postgresql.authProvider.type "azure_wif" }}
   azure_wif:

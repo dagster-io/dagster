@@ -65,7 +65,7 @@ spec:
           command: ["dagster-celery"]
           args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}", {{- if $queue.additionalCeleryArgs -}}"--", "{{- join "\",\"" $queue.additionalCeleryArgs -}}" {{- end -}}]
           env:
-            {{- if not $.Values.postgresql.authProvider.enabled }}
+            {{- if not $.Values.global.postgresqlAuthWifEnabled }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
