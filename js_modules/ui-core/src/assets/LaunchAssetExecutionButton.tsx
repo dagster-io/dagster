@@ -570,25 +570,30 @@ async function stateForLaunchingAssets(
       error: 'One or more observable assets are selected and cannot be materialized.',
     };
   }
-  if (assets.some((x) => !x.isExecutable)) {
+  const executableAssets = assets.filter((x) => x.isExecutable);
+  if (executableAssets.length === 0) {
     return {
       type: 'error',
       error: 'One or more external assets are selected.',
     };
   }
+  // Filter out external assets so mixed selections launch only materializable assets.
+  const launchAssets = executableAssets.length < assets.length ? executableAssets : assets;
 
   const repoAddress = buildRepoAddress(
-    assets[0]?.repository.name || '',
-    assets[0]?.repository.location.name || '',
+    launchAssets[0]?.repository.name || '',
+    launchAssets[0]?.repository.location.name || '',
   );
-  const jobName = getCommonJob(assets, preferredJobName);
-  const partitionDefinition = assets.find((a) => !!a.partitionDefinition)?.partitionDefinition;
+  const jobName = getCommonJob(launchAssets, preferredJobName);
+  const partitionDefinition = launchAssets.find(
+    (a) => !!a.partitionDefinition,
+  )?.partitionDefinition;
 
-  const inSameRepo = assets.every(
+  const inSameRepo = launchAssets.every(
     (a) =>
       a.repository.name === repoAddress.name && a.repository.location.name === repoAddress.location,
   );
-  const inSameOrNoPartitionSpace = assets.every(
+  const inSameOrNoPartitionSpace = launchAssets.every(
     (a) =>
       !a.partitionDefinition ||
       !partitionDefinition ||
@@ -599,11 +604,11 @@ async function stateForLaunchingAssets(
     if (!partitionDefinition) {
       return {type: 'error', error: ERROR_INVALID_ASSET_SELECTION};
     }
-    const anchorAsset = getAnchorAssetForPartitionMappedBackfill(assets);
+    const anchorAsset = getAnchorAssetForPartitionMappedBackfill(launchAssets);
     if (!anchorAsset) {
       return {
         type: 'partitions',
-        assets,
+        assets: launchAssets,
         target: {type: 'pureAll'},
         upstreamAssetKeys: [],
         repoAddress,
@@ -611,9 +616,9 @@ async function stateForLaunchingAssets(
     }
     return {
       type: 'partitions',
-      assets,
+      assets: launchAssets,
       target: {type: 'pureWithAnchorAsset', anchorAssetKey: anchorAsset.assetKey},
-      upstreamAssetKeys: getUpstreamAssetKeys(assets),
+      upstreamAssetKeys: getUpstreamAssetKeys(launchAssets),
       repoAddress,
     };
   }
@@ -622,7 +627,7 @@ async function stateForLaunchingAssets(
   // we assume that any required config will be provided by a PartitionedConfig function
   // attached to the job. Otherwise backfills won't work and you'll know to add one!
   const configAssumedPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
-  const configRequired = assets.some((a) => a.configField?.isRequired);
+  const configRequired = launchAssets.some((a) => a.configField?.isRequired);
   let needLaunchpad = false;
 
   if (configAssumedPresent) {
@@ -630,7 +635,7 @@ async function stateForLaunchingAssets(
   } else if (configRequired) {
     needLaunchpad = true;
   } else {
-    const requiredResourceKeys = assets.flatMap((a) =>
+    const requiredResourceKeys = launchAssets.flatMap((a) =>
       a.requiredResources.map((r) => r.resourceKey),
     );
     if (requiredResourceKeys.length) {
@@ -650,15 +655,15 @@ async function stateForLaunchingAssets(
   }
 
   if (needLaunchpad || forceLaunchpad) {
-    const assetOpNames = assets.flatMap((a) => a.opNames || []);
+    const assetOpNames = launchAssets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
       jobName,
       repoAddress,
       sessionPresets: {
         flattenGraphs: true,
-        assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
-        assetChecksAvailable: assets.flatMap((a) =>
+        assetSelection: launchAssets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
+        assetChecksAvailable: launchAssets.flatMap((a) =>
           a.assetChecksOrError.__typename === 'AssetChecks'
             ? a.assetChecksOrError.checks
                 // For user code prior to 1.5.10 jobNames isn't populated, so don't filter on it
@@ -677,15 +682,15 @@ async function stateForLaunchingAssets(
   if (partitionDefinition) {
     return {
       type: 'partitions',
-      assets,
-      target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
-      upstreamAssetKeys: getUpstreamAssetKeys(assets),
+      assets: launchAssets,
+      target: {type: 'job', jobName, assetKeys: launchAssets.map(asAssetKeyInput)},
+      upstreamAssetKeys: getUpstreamAssetKeys(launchAssets),
       repoAddress,
     };
   }
   return {
     type: 'single-run',
-    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, []),
+    executionParams: executionParamsForAssetJob(repoAddress, jobName, launchAssets, []),
   };
 }
 
