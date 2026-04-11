@@ -762,6 +762,11 @@ def test_dynamic_partition_labels_require_display_label_column(hostname, conn_st
             with pytest.raises(DagsterInvalidInvocationError, match="dagster instance migrate"):
                 instance.add_dynamic_partitions("foo", [], labels={"baz": "Baz label"})
 
+            with pytest.raises(DagsterInvalidInvocationError, match="dagster instance migrate"):
+                instance.event_log_storage.set_dynamic_partition_label(
+                    "foo", "foo", "Updated foo label"
+                )
+
 
 def _get_table_row_count(run_storage, table, with_non_null_id=False):
     query = db_select([db.func.count()]).select_from(table)

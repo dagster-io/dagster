@@ -1307,6 +1307,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 if isinstance(dim.partitions_def, DynamicPartitionsDefinition)
                 and dim.partitions_def.name is not None
             ]
+            # Only support labels when exactly one dynamic dimension is present.
+            # Multi-dynamic-dimension assets are not yet supported; return [] rather
+            # than raising, since callers treat an empty list as "no labels available".
             dynamic_partitions_def_name = (
                 dynamic_partitions_def_names[0] if len(dynamic_partitions_def_names) == 1 else None
             )

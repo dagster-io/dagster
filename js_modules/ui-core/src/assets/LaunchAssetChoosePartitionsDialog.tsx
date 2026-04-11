@@ -17,7 +17,7 @@ import {
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import reject from 'lodash/reject';
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
@@ -211,7 +211,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
   const displayedBaseAssetInput = useMemo(
     () => (displayedBaseAsset ? asAssetKeyInput(displayedBaseAsset.assetKey) : null),
-    [displayedBaseAsset?.assetKey.path.join('\0')],
+    [displayedBaseAsset],
   );
   const displayedPartitionLabelsResult = useQuery<
     DisplayedPartitionLabelsQuery,
@@ -256,8 +256,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       ),
     [displayedPartitionLabelsState.labels],
   );
-  const labelForPartition = useMemo(
-    () => (partitionKey: string) => partitionLabelMap.get(partitionKey),
+  const labelForPartition = useCallback(
+    (partitionKey: string) => partitionLabelMap.get(partitionKey),
     [partitionLabelMap],
   );
 
