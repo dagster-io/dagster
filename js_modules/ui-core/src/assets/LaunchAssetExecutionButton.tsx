@@ -578,7 +578,7 @@ async function stateForLaunchingAssets(
     };
   }
   // Filter out external assets so mixed selections launch only materializable assets.
-  const launchAssets = executableAssets.length < assets.length ? executableAssets : assets;
+  // Filter out external assets so mixed selections launch only materializable assets.
 
   const repoAddress = buildRepoAddress(
     launchAssets[0]?.repository.name || '',
