@@ -120,8 +120,14 @@ def build_pex_using_setup_py(
         for d in all_package_dirs
     )
     pm: PackageManager | None = None
+    pm: PackageManager | None = None
     if has_pyproject:
-        pm = detect_package_manager(python_interpreter)
+        try:
+            pm = detect_package_manager(python_interpreter)
+        except PackageManagerError as e:
+            raise ui.error(
+                f"No package manager available for building local packages: {e}"
+            ) from e
         if pm.name == "uv":
             ui.warn(
                 f"pip not available in {python_interpreter}, falling back to uv for local package builds"
