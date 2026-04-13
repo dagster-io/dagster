@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 from dagster_cloud_cli.commands.serverless import _check_source_directory
 from dagster_cloud_cli.core.pex_builder import deps, source
+from dagster_cloud_cli.core.pex_builder.package_manager import PackageManager
 from dagster_cloud_cli.ui import ExitWithMessage
 from packaging import version
 
@@ -163,9 +164,11 @@ dependencies = ["requests>=2.25.0"]
 
 
 @patch("subprocess.run")
-def test_build_local_package_with_pyproject_toml(mock_run, temp_dir):
+@patch("dagster_cloud_cli.core.pex_builder.source.detect_package_manager")
+def test_build_local_package_with_pyproject_toml(mock_detect_package_manager, mock_run, temp_dir):
     """Test building a package with pyproject.toml."""
     mock_run.return_value = None
+    mock_detect_package_manager.return_value = PackageManager("pip", "python", "python")
 
     pyproject_path = Path(temp_dir) / "pyproject.toml"
     pyproject_path.write_text("""
@@ -179,8 +182,9 @@ version = "0.1.0"
 
     source._build_local_package(temp_dir, str(build_dir), "python")  # noqa: SLF001
 
+    mock_detect_package_manager.assert_called_once_with("python")
     mock_run.assert_called_once()
-    args, _kwargs = mock_run.call_args
+    args, kwargs = mock_run.call_args
     command = args[0]
 
     expected_command = [
@@ -194,6 +198,10 @@ version = "0.1.0"
         ".",
     ]
     assert command == expected_command
+    assert kwargs["check"] is True
+    assert kwargs["cwd"] == temp_dir
+    assert kwargs["capture_output"] is True
+    assert kwargs["text"] is True
 
 
 @patch("subprocess.run")
@@ -218,11 +226,15 @@ name = "test-package"
 
     # Should use setup.py, not pyproject.toml
     mock_run.assert_called_once()
-    args, _ = mock_run.call_args
+    args, kwargs = mock_run.call_args
     command = args[0]
 
     expected_command = ["python", "setup.py", "build", "--build-lib", str(build_dir)]
     assert command == expected_command
+    assert kwargs["check"] is True
+    assert kwargs["cwd"] == temp_dir
+    assert kwargs["capture_output"] is True
+    assert kwargs["text"] is True
 
 
 @patch("dagster_cloud_cli.ui.warn")
