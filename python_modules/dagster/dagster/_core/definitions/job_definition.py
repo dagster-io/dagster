@@ -1359,7 +1359,7 @@ def _config_mapping_with_default_value(
     config_evr = validate_config(config_schema, default_config)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            f"Error in config when building job '{job_name}' ",
+            f"Error in config when building job '{job_name}': the provided config is missing required fields or contains invalid entries",
             config_evr.errors,
             default_config,
         )

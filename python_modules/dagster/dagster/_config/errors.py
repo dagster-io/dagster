@@ -275,8 +275,8 @@ def create_missing_required_field_error(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
         message=(
-            'Missing required config entry "{expected}" {path_msg}. Sample config for missing'
-            " entry: {minimal_config}"
+            'Missing required config entry "{expected}" {path_msg}. You must provide this value in your'
+            " run config. Example config for the missing entry: {minimal_config}"
         ).format(
             expected=expected_field,
             path_msg=get_friendly_path_msg(context.stack),
@@ -305,8 +305,8 @@ def create_missing_required_fields_error(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS,
         message=(
-            "Missing required config entries {missing_fields} {path_msg}. Sample config for missing"
-            " entries: {minimal_config}".format(
+            "Missing required config entries {missing_fields} {path_msg}. You must provide these values in your"
+            " run config. Example config for the missing entries: {minimal_config}".format(
                 missing_fields=missing_fields,
                 path_msg=get_friendly_path_msg(context.stack),
                 minimal_config={
