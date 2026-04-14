@@ -181,7 +181,7 @@
     "ts-prune": "0.10.3",
     "typescript": "5.9.2",
     "vite": "^7.0.0",
-    "webpack": "^5.94.0"
+    "webpack": "^5.105.4"
   },
   "babelMacros": {},
   "browserslist": [

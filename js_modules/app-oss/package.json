@@ -52,7 +52,7 @@
     "postcss-import": "^16.1.1",
     "prettier": "3.8.1",
     "typescript": "5.9.2",
-    "webpack": "^5.94.0",
+    "webpack": "^5.105.4",
     "webpack-bundle-analyzer": "^4.7.0",
     "webpack-stats-plugin": "^1.1.3"
   },
