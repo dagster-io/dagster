@@ -9,6 +9,7 @@
 - [dagster-spark] Added Spark Declarative Pipeline support in feature preview.
 - [ui] Added a date range picker to the backfill modal for date-formatted partitions.
 - [ui] The "Report evaluation" action for asset checks has been moved to a consolidated dropdown menu.
+- [ui] Asset nodes in the lineage graph now support custom background colors via the `dagster/ui_color` metadata tag. Supported values are `red`, `yellow`, `green`, `blue`, `olive`, `cyan`, `lime`, and `gray`. Colors are applied to both the node header and body, and adapt automatically to dark and light mode.
 
 ### Bugfixes
 
