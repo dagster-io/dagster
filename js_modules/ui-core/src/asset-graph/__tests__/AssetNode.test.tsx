@@ -1,4 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
+import {Colors} from '@dagster-io/ui-components';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
@@ -9,8 +10,13 @@ import {AssetHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
-import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/builders';
-import {AssetNode} from '../AssetNode';
+import {
+  buildAssetKey,
+  buildAssetNode,
+  buildDefinitionTag,
+  buildStaleCause,
+} from '../../graphql/builders';
+import {AssetNameRow, AssetNode} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {tokenForAssetKey} from '../Utils';
 import {
@@ -123,6 +129,31 @@ describe('AssetNode', function () {
       });
     }),
   );
+});
+
+describe('AssetNameRow', () => {
+  it('uses the custom header background for the truncated-name tooltip style', () => {
+    const displayName = 'very_long_asset_name_that_should_truncate_in_the_asset_graph';
+    const definition = buildAssetNode({
+      assetKey: buildAssetKey({path: [displayName]}),
+      isMaterializable: true,
+      tags: [buildDefinitionTag({key: 'dagster/ui_color', value: 'blue'})],
+    });
+
+    render(
+      <AssetNameRow definition={definition} $customBackground={Colors.backgroundBlueHover()} />,
+    );
+
+    const tooltipTarget = screen.getByText(
+      withMiddleTruncation(displayName, {
+        maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+      }),
+    );
+
+    expect(JSON.parse(tooltipTarget.getAttribute('data-tooltip-style') || '{}')).toMatchObject({
+      background: Colors.backgroundBlueHover(),
+    });
+  });
 });
 
 function scenarioAssetKey(scenario: AssetNodeScenario) {

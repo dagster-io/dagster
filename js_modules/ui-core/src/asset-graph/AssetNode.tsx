@@ -498,7 +498,10 @@ export const AssetNameRow = ({
       </span>
       <div
         data-tooltip={displayName}
-        data-tooltip-style={definition.isMaterializable ? NameTooltipStyle : NameTooltipStyleSource}
+        data-tooltip-style={getNameTooltipStyle({
+          customBackground: $customBackground,
+          isMaterializable: definition.isMaterializable,
+        })}
         style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
       >
         {withMiddleTruncation(displayName, {
@@ -795,17 +798,20 @@ export const NameTooltipCSS: CSSObject = {
   fontSize: 14,
 };
 
-export const NameTooltipStyle = JSON.stringify({
-  ...NameTooltipCSS,
-  background: Colors.lineageNodeBackground(),
-  border: `none`,
-});
-
-const NameTooltipStyleSource = JSON.stringify({
-  ...NameTooltipCSS,
-  background: Colors.backgroundLight(),
-  border: `none`,
-});
+const getNameTooltipStyle = ({
+  customBackground,
+  isMaterializable,
+}: {
+  customBackground?: string;
+  isMaterializable: boolean;
+}) =>
+  JSON.stringify({
+    ...NameTooltipCSS,
+    background:
+      customBackground ||
+      (isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight()),
+    border: `none`,
+  });
 
 const AssetName = styled.div<{$isMaterializable: boolean; $customBackground?: string}>`
   ${NameCSS};
