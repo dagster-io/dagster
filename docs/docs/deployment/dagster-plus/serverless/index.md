@@ -29,10 +29,15 @@ Serverless is subject to the following limitations:
 - Maximum of 4500 step-minutes per day
 - Runs receive 4 vCPU cores, 16 GB of RAM, and 128 GB of ephemeral disk
 - Code locations receive 0.25 vCPU cores and 1 GB of RAM
-- All Serverless jobs run in the United States
 - Infrastructure cannot be customized or extended, such as using additional containers
 
 Dagster+ Pro customers may request a quota increase by [contacting Sales](https://dagster.io/contact).
+
+:::note Serverless job location
+
+Serverless jobs for US organizations run in the US, while Serverless jobs for EU organizations run in the EU.
+
+:::
 
 ## Run isolation
 
