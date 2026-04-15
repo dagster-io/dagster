@@ -631,6 +631,7 @@ type Asset {
   latestEventSortKey: ID
   assetHealth: AssetHealth
   latestMaterializationTimestamp: Float
+  latestObservationTimestamp: Float
   hasDefinitionOrRecord: Boolean!
   latestFailedToMaterializeTimestamp: Float
   freshnessStatusChangedTimestamp: Float
