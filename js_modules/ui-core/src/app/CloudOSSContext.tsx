@@ -7,7 +7,6 @@ type FeatureContext = {
   canSeeToggleSensorAction: boolean;
   canSeeExecuteChecksAction: boolean;
   canSeeBackfillCoordinatorLogs: boolean;
-  lastObservationTimestampAvailable: boolean;
 };
 
 export const CloudOSSContext = React.createContext<{
@@ -22,6 +21,5 @@ export const CloudOSSContext = React.createContext<{
     canSeeWipeMaterializationAction: true,
     canSeeExecuteChecksAction: true,
     canSeeBackfillCoordinatorLogs: false,
-    lastObservationTimestampAvailable: false,
   },
 });

@@ -6,19 +6,12 @@ import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 
 const INTERVAL_MSEC = 30 * 1000;
 
-const DEFAULT_EVENT_TYPE_SELECTORS: AssetEventHistoryEventTypeSelector[] = [
-  AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-  AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-  AssetEventHistoryEventTypeSelector.OBSERVATION,
-];
-
 type Config = {
   asset: {key: {path: string[]}};
-  eventTypeSelectors?: AssetEventHistoryEventTypeSelector[];
 };
 
-export const useAssetRecentUpdates = ({asset, eventTypeSelectors}: Config) => {
-  // Wait 500ms to avoid querying during fast scrolling of the table
+export const useAssetRecentUpdates = ({asset}: Config) => {
+  // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(500);
   const {
     events: recentEvents,
@@ -28,7 +21,11 @@ export const useAssetRecentUpdates = ({asset, eventTypeSelectors}: Config) => {
   } = useRecentAssetEventsForCatalogView({
     assetKey: shouldQuery ? asset.key : undefined,
     limit: 5,
-    eventTypeSelectors: eventTypeSelectors ?? DEFAULT_EVENT_TYPE_SELECTORS,
+    eventTypeSelectors: [
+      AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+      AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+      AssetEventHistoryEventTypeSelector.OBSERVATION,
+    ],
   });
 
   useRefreshAtInterval({

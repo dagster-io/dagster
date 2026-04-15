@@ -290,7 +290,6 @@ class GrapheneAsset(graphene.ObjectType):
     latestEventSortKey = graphene.Field(graphene.ID)
     assetHealth = graphene.Field(GrapheneAssetHealth)
     latestMaterializationTimestamp = graphene.Float()
-    latestObservationTimestamp = graphene.Float()
     hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
     latestFailedToMaterializeTimestamp = graphene.Float()
     freshnessStatusChangedTimestamp = graphene.Float()
@@ -495,15 +494,6 @@ class GrapheneAsset(graphene.ObjectType):
         return (
             latest_materialization_event.timestamp * 1000  # FE prefers timestamp in milliseconds
             if latest_materialization_event
-            else None
-        )
-
-    async def resolve_latestObservationTimestamp(self, graphene_info: ResolveInfo) -> float | None:
-        record = await AssetRecord.gen(graphene_info.context, self._asset_key)
-        latest_observation_event = record.asset_entry.last_observation if record else None
-        return (
-            latest_observation_event.timestamp * 1000  # FE prefers timestamp in milliseconds
-            if latest_observation_event
             else None
         )
 

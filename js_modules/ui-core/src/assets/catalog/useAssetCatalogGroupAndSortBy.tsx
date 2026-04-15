@@ -1,5 +1,5 @@
 import {ParsedQs} from 'qs';
-import {useCallback, useContext, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {Grouped} from './AssetCatalogV2VirtualizedTable';
 import {
@@ -9,110 +9,68 @@ import {
   NONE_KEY,
 } from './AttributeStatusHeaderRow';
 import {HealthStatusHeaderRow} from './HealthStatusHeaderRow';
-import {CloudOSSContext} from '../../app/CloudOSSContext';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {AssetEventHistoryEventTypeSelector, AssetHealthStatus} from '../../graphql/types';
+import {AssetHealthStatus} from '../../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {DagsterTag} from '../../runs/RunTag';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
-const SORT_OPTIONS = [
-  {
-    key: 'all_events_asc' as const,
-    text: 'All events (new to old)',
-    requiresObservations: true,
-  },
-  {
-    key: 'all_events_desc' as const,
-    text: 'All events (old to new)',
-    requiresObservations: true,
-  },
+const SORT_ITEMS = [
   {
     key: 'materialization_asc' as const,
     text: 'Materialization (new to old)',
-    requiresObservations: false,
   },
   {
     key: 'materialization_desc' as const,
     text: 'Materialization (old to new)',
-    requiresObservations: false,
-  },
-  {
-    key: 'observation_asc' as const,
-    text: 'Observation (new to old)',
-    requiresObservations: true,
-  },
-  {
-    key: 'observation_desc' as const,
-    text: 'Observation (old to new)',
-    requiresObservations: true,
   },
   {
     key: 'key_asc' as const,
     text: 'Asset key (a to z)',
-    requiresObservations: false,
   },
   {
     key: 'key_desc' as const,
     text: 'Asset key (z to a)',
-    requiresObservations: false,
   },
 ];
+
+const ITEMS_BY_KEY = SORT_ITEMS.reduce(
+  (acc, item) => {
+    acc[item.key] = item;
+    return acc;
+  },
+  {} as Record<(typeof SORT_ITEMS)[number]['key'], (typeof SORT_ITEMS)[number]>,
+);
 
 type UseAssetCatalogGroupAndSortByProps = {
   liveDataByNode: Record<string, AssetHealthFragment>;
   assetsByAssetKey: Map<string, AssetTableFragment>;
 };
 
-export type SortOptionConfig = (typeof SORT_OPTIONS)[number];
-export type SortBy = SortOptionConfig['key'];
+type SortBy = (typeof SORT_ITEMS)[number]['key'];
 
 export const useAssetCatalogGroupAndSortBy = ({
   liveDataByNode,
   assetsByAssetKey,
 }: UseAssetCatalogGroupAndSortByProps) => {
-  const {
-    featureContext: {lastObservationTimestampAvailable},
-  } = useContext(CloudOSSContext);
-
-  const defaultSortBy: SortBy = lastObservationTimestampAvailable
-    ? 'all_events_asc'
-    : 'materialization_asc';
-
-  const sortOptions = useMemo(
-    () =>
-      lastObservationTimestampAvailable
-        ? SORT_OPTIONS
-        : SORT_OPTIONS.filter((item) => !item.requiresObservations),
-    [lastObservationTimestampAvailable],
-  );
-
-  const sortOptionsByKey = useMemo(
-    () =>
-      Object.fromEntries(sortOptions.map((item) => [item.key, item])) as Record<
-        SortBy,
-        SortOptionConfig
-      >,
-    [sortOptions],
-  );
-
   const [sortBy, setSortBy] = useQueryAndLocalStoragePersistedState<SortBy>({
     localStorageKey: usePrefixedCacheKey('catalog-sortBy'),
-    isEmptyState: (state) => !state || state === defaultSortBy,
-    decode: useCallback(
-      (json: ParsedQs) => {
-        if (sortOptions.some((item) => item.key === json.sortBy)) {
-          return json.sortBy as SortBy;
-        }
-        return defaultSortBy;
-      },
-      [sortOptions, defaultSortBy],
-    ),
+    isEmptyState: (state) => !state || state === 'materialization_asc',
+    decode: useCallback((json: ParsedQs) => {
+      if (
+        ['materialization_asc', 'materialization_desc', 'key_asc', 'key_desc'].includes(
+          json.sortBy as SortBy,
+        )
+      ) {
+        return json.sortBy as SortBy;
+      }
+      return 'materialization_asc';
+    }, []),
     encode: useCallback((sortBy: SortBy) => ({sortBy}), []),
   });
 
@@ -350,42 +308,21 @@ export const useAssetCatalogGroupAndSortBy = ({
   }, [groupBy, grouped]);
 
   const groupedAndSorted = useMemo(() => {
-    const timestampForAsset = (asset: {key: {path: string[]}}) => {
-      const health = getHealthData(liveDataByNode, asset);
-      switch (sortBy) {
-        case 'all_events_asc':
-        case 'all_events_desc':
-          return latestOfTimestamps(
-            health?.latestMaterializationTimestamp,
-            health?.latestObservationTimestamp,
-          );
-        case 'materialization_asc':
-        case 'materialization_desc':
-          return health?.latestMaterializationTimestamp ?? undefined;
-        case 'observation_asc':
-        case 'observation_desc':
-          return health?.latestObservationTimestamp ?? undefined;
-        case 'key_asc':
-        case 'key_desc':
-          return undefined;
-        default:
-          assertUnreachable(sortBy);
-      }
-    };
-
     let sortFn;
     switch (sortBy) {
-      case 'all_events_asc':
       case 'materialization_asc':
-      case 'observation_asc':
         sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
-          sortByTimestampDesc(timestampForAsset(a), timestampForAsset(b));
+          sortAssetsByMaterializationTimestamp(
+            liveDataByNode?.[tokenForAssetKey(a.key)] ?? a,
+            liveDataByNode?.[tokenForAssetKey(b.key)] ?? b,
+          );
         break;
-      case 'all_events_desc':
       case 'materialization_desc':
-      case 'observation_desc':
         sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
-          sortByTimestampDesc(timestampForAsset(b), timestampForAsset(a));
+          sortAssetsByMaterializationTimestamp(
+            liveDataByNode?.[tokenForAssetKey(b.key)] ?? b,
+            liveDataByNode?.[tokenForAssetKey(a.key)] ?? a,
+          );
         break;
       case 'key_asc':
         sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
@@ -416,76 +353,29 @@ export const useAssetCatalogGroupAndSortBy = ({
     grouped,
     groupedAndSorted,
     allGroups,
-    sortOptions,
-    sortOptionsByKey,
+    SORT_ITEMS,
+    ITEMS_BY_KEY,
   };
 };
 
-/**
- * Sort comparator that sorts by timestamp descending (newest first),
- * with assets missing timestamps sorted to the end.
- */
-function sortByTimestampDesc(aTs: number | null | undefined, bTs: number | null | undefined) {
-  if (!aTs && !bTs) {
+export function sortAssetsByMaterializationTimestamp(
+  a: AssetHealthFragment | {key: {path: string[]}},
+  b: AssetHealthFragment | {key: {path: string[]}},
+) {
+  const aMaterialization =
+    'latestMaterializationTimestamp' in a ? a.latestMaterializationTimestamp : undefined;
+  const bMaterialization =
+    'latestMaterializationTimestamp' in b ? b.latestMaterializationTimestamp : undefined;
+  if (!aMaterialization && !bMaterialization) {
     return 0;
   }
-  if (!aTs) {
+  if (!aMaterialization) {
     return 1;
   }
-  if (!bTs) {
+  if (!bMaterialization) {
     return -1;
   }
-  return bTs - aTs;
-}
-
-function getHealthData(
-  liveDataByNode: Record<string, AssetHealthFragment>,
-  asset: {key: {path: string[]}},
-): AssetHealthFragment | undefined {
-  return liveDataByNode[tokenForAssetKey(asset.key)];
-}
-
-export function sortAssetsByMaterializationTimestamp(
-  a: {latestMaterializationTimestamp?: number | null},
-  b: {latestMaterializationTimestamp?: number | null},
-) {
-  return sortByTimestampDesc(a.latestMaterializationTimestamp, b.latestMaterializationTimestamp);
-}
-
-function latestOfTimestamps(...values: (number | null | undefined)[]): number | undefined {
-  const nums = values.filter((v): v is number => v != null);
-  return nums.length ? Math.max(...nums) : undefined;
-}
-
-const MATERIALIZATION_EVENT_TYPE_SELECTORS: AssetEventHistoryEventTypeSelector[] = [
-  AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-  AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-];
-const OBSERVATION_EVENT_TYPE_SELECTORS: AssetEventHistoryEventTypeSelector[] = [
-  AssetEventHistoryEventTypeSelector.OBSERVATION,
-];
-const ALL_EVENT_TYPE_SELECTORS: AssetEventHistoryEventTypeSelector[] = [
-  AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-  AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-  AssetEventHistoryEventTypeSelector.OBSERVATION,
-];
-
-export function eventTypeSelectorsForSortBy(sortBy: SortBy) {
-  switch (sortBy) {
-    case 'materialization_asc':
-    case 'materialization_desc':
-      return MATERIALIZATION_EVENT_TYPE_SELECTORS;
-    case 'observation_asc':
-    case 'observation_desc':
-      return OBSERVATION_EVENT_TYPE_SELECTORS;
-    case 'all_events_asc':
-    case 'all_events_desc':
-    case 'key_asc':
-    case 'key_desc':
-      return ALL_EVENT_TYPE_SELECTORS;
-    default:
-      assertUnreachable(sortBy);
-  }
+  return Number(bMaterialization) - Number(aMaterialization);
 }
 
 const groupByAttribute = <TGroup extends string, TAsset extends {key: {path: string[]}}>({

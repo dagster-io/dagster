@@ -155,7 +155,6 @@ type Asset = {
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
   latestFailedToMaterializeTimestamp: Maybe<Scalars['Float']['output']>;
   latestMaterializationTimestamp: Maybe<Scalars['Float']['output']>;
-  latestObservationTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
 type AssetAssetEventHistoryArgs = {
@@ -6310,10 +6309,6 @@ export const buildAsset = (
       overrides && overrides.hasOwnProperty('latestMaterializationTimestamp')
         ? overrides.latestMaterializationTimestamp!
         : 1.04,
-    latestObservationTimestamp:
-      overrides && overrides.hasOwnProperty('latestObservationTimestamp')
-        ? overrides.latestObservationTimestamp!
-        : 1.7,
   };
 };
 

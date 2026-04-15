@@ -12,7 +12,6 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {forwardRef, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 
-import {SortBy, eventTypeSelectorsForSortBy} from './useAssetCatalogGroupAndSortBy';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
@@ -53,7 +52,6 @@ export type AssetCatalogV2VirtualizedTableProps<
   checkedDisplayKeys: Set<string>;
   onToggleFactory: (id: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
   onToggleGroup: (group: T) => (checked: boolean) => void;
-  sortBy?: SortBy;
 };
 
 const AssetCatalogV2VirtualizedTableImpl = <
@@ -68,7 +66,6 @@ const AssetCatalogV2VirtualizedTableImpl = <
   checkedDisplayKeys,
   onToggleFactory,
   onToggleGroup,
-  sortBy,
 }: AssetCatalogV2VirtualizedTableProps<T, TAsset>) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -196,7 +193,6 @@ const AssetCatalogV2VirtualizedTableImpl = <
                 index={index}
                 checked={checkedDisplayKeys.has(tokenForAssetKey(item.key))}
                 onToggle={onToggleFactory(tokenForAssetKey(item.key))}
-                sortBy={sortBy}
               />
             );
           })}
@@ -215,17 +211,15 @@ interface RowProps<TAsset> {
   index: number;
   checked: boolean;
   onToggle: (values: {checked: boolean; shiftKey: boolean}) => void;
-  sortBy?: SortBy;
 }
 
 const AssetRow = forwardRef(
   <TAsset extends {key: {path: string[]}}>(
-    {asset, index, checked, onToggle, sortBy}: RowProps<TAsset>,
+    {asset, index, checked, onToggle}: RowProps<TAsset>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     const linkUrl = assetDetailsPathForKey({path: asset.key.path});
-    const eventTypeSelectors = sortBy ? eventTypeSelectorsForSortBy(sortBy) : undefined;
-    const {recentEvents, latestInfo, loading} = useAssetRecentUpdates({asset, eventTypeSelectors});
+    const {recentEvents, latestInfo, loading} = useAssetRecentUpdates({asset});
     const lastEvent = recentEvents[0];
     const latestInfoItem =
       latestInfo?.inProgressRunIds.length || latestInfo?.unstartedRunIds.length
