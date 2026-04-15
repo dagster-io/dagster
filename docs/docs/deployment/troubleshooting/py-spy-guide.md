@@ -46,29 +46,23 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
         For more information on applying this type of configuration to your Kubernetes pod in Dagster OSS, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment#instance-level-kubernetes-configuration).
     </TabItem>
     <TabItem value="hybrid" label="Dagster+ Hybrid with Kubernetes agent">
-        For example, you can set the following in your `build.yaml` file for your code location if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
+        For example, you can set the following in your `container_context.yaml` file if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
 
-        ```
-        # build.yaml
-        locations:
-        - location_name: cloud-examples
-          image: dagster/dagster-cloud-examples:latest
-          code_source:
-            package_name: dagster_cloud_examples
-          container_context:
-            k8s:
-              server_k8s_config: # Raw kubernetes config for code servers launched by the agent
-                container_config:
-                    securityContext:
-                      capabilities:
-                        add:
-                          - SYS_PTRACE
-                run_k8s_config: # Raw kubernetes config for runs launched by the agent
-                  container_config:
-                    securityContext:
-                      capabilities:
-                        add:
-                          - SYS_PTRACE
+        ```yaml
+        # container_context.yaml
+        k8s:
+          server_k8s_config:
+            container_config:
+              securityContext:
+                capabilities:
+                  add:
+                    - SYS_PTRACE
+          run_k8s_config:
+            container_config:
+              securityContext:
+                capabilities:
+                  add:
+                    - SYS_PTRACE
         ```
 
         For more information on applying this type of customization to your Kubernetes pod in Dagster+, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).

@@ -64,7 +64,10 @@ class DagsterDbtTranslatorSettings(Resolvable):
         enable_source_tests_as_checks (bool): Whether to load dbt source tests as Dagster asset checks.
             Defaults to False. If False, asset observations will be emitted for source tests.
         enable_source_metadata (bool): Whether to include metadata on AssetDep objects for dbt sources.
-            If set to True, enables the ability to remap upstream asset keys based on table name. Defaults to False.
+            If set to True, enables the ability to remap upstream asset keys based on table name. Defaults to True.
+        enable_dbt_views_as_virtual_assets (bool): Whether to treat dbt models with
+            ``materialized: view`` as virtual assets. When enabled, view models will have
+            ``is_virtual=True`` and ``"view"`` added to their kinds. Defaults to False.
     """
 
     enable_asset_checks: bool = True
@@ -72,7 +75,8 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_code_references: bool = False
     enable_dbt_selection_by_name: bool = False
     enable_source_tests_as_checks: bool = False
-    enable_source_metadata: bool = False
+    enable_source_metadata: bool = True
+    enable_dbt_views_as_virtual_assets: bool = False
 
 
 class DagsterDbtTranslator:
@@ -187,6 +191,14 @@ class DagsterDbtTranslator:
         else:
             owners_resource_props = resource_props
 
+        materialization_type = resource_props.get("config", {}).get("materialized")
+        is_virtual = (
+            self.settings.enable_dbt_views_as_virtual_assets and materialization_type == "view"
+        )
+        kinds = {"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")}
+        if is_virtual:
+            kinds.add("view")
+
         spec = AssetSpec(
             key=self.get_asset_key(resource_props),
             deps=deps,
@@ -198,8 +210,9 @@ class DagsterDbtTranslator:
             automation_condition=self.get_automation_condition(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
-            kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
+            kinds=kinds,
             partitions_def=self.get_partitions_def(resource_props),
+            is_virtual=is_virtual,
         )
 
         # add integration-specific metadata to the spec

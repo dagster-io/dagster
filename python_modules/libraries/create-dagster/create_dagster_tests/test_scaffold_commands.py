@@ -395,8 +395,8 @@ def validate_published_pyproject_toml(
         dict,
     ) == {
         "dev": [
-            "dagster-webserver",
             "dagster-dg-cli",
+            "dagster-webserver",
         ]
     }
 

@@ -180,7 +180,7 @@ class CommandStepBuilder:
 
     def on_integration_slim_image(self, env: list[str] | None = None) -> Self:
         return self.on_python_image(
-            image="buildkite-test-image-py-slim:pre-6652dfe7da",
+            image="buildkite-test-image-py-slim:prod-1776274200",
             env=env,
         )
 
@@ -355,33 +355,14 @@ class CommandStepBuilder:
                 "COMBINED_COMMIT_HASH",
                 "DAGSTER_COMMIT_HASH",
                 "INTERNAL_COMMIT_HASH",
-                "DAGSTER_BRANCH",
             ]
             + [
                 # tox related env variables. ideally these are in
                 # the test specification themselves, but for now this is easier
-                "DD_DOGSTATSD_DISABLE",
                 "AWS_DEFAULT_REGION",
-                "TOYS_SNOWFLAKE_ACCOUNT",
-                "TOYS_SNOWFLAKE_PASSWORD",
-                "TOYS_BIGQUERY_PROJECT",
-                "TOYS_BIGQUERY_CREDENTIALS",
-                "TOYS_GCP_PRIVATE_KEY_ID",
-                "TOYS_GCP_PRIVATE_KEY",
-                "TOYS_GCP_CLIENT_EMAIL",
-                "TOYS_GCP_CLIENT_ID",
-                "TOYS_GCP_CLIENT_CERT_URL",
                 "SNOWFLAKE_ACCOUNT",
                 "SNOWFLAKE_USER",
                 "SNOWFLAKE_PASSWORD",
-                "DAGSTER_SERVERLESS_AWS_ACCOUNT_ID",
-                "DAGSTER_SERVERLESS_SERVICE_NAME",
-                "DAGSTER_SERVERLESS_AWS_ACCOUNT_NAME",
-                "DAGSTER_SERVERLESS_SUBNETS_PER_VPC",
-            ]
-            + [
-                "DATADOG_API_KEY",
-                "FOSSA_API_KEY",
             ]
             + ["PYTEST_DEBUG_TEMPROOT=/tmp"]
             + (env or []),

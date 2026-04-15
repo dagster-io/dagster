@@ -15,7 +15,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 class EnvVarScope(str, Enum):
@@ -96,6 +95,8 @@ def create_env_command(
     **global_options: object,
 ) -> None:
     """Create or update an environment variable in Dagster Plus."""
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     if not env_value and not from_local_env:
         raise click.UsageError(
             "Environment variable value is required. You can either directly provide this value or use the --from-local-env flag to pull the value from your shell environment or project .env file."

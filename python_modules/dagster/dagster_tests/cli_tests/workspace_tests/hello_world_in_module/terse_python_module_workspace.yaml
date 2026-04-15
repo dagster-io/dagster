@@ -1,2 +1,2 @@
 load_from:
-  - python_module: dagster.utils.test.hello_world_repository
+  - python_module: dagster._utils.test.hello_world_repository

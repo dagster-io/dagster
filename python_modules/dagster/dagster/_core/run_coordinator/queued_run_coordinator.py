@@ -30,6 +30,7 @@ class RunQueueConfig(
             ("should_block_op_concurrency_limited_runs", bool),
             ("op_concurrency_slot_buffer", int),
             ("explicitly_enabled_concurrency_run_blocking", bool),
+            ("max_concurrent_runs_all_branch_deployments", int | None),
         ],
     )
 ):
@@ -42,6 +43,7 @@ class RunQueueConfig(
         should_block_op_concurrency_limited_runs: bool = True,
         op_concurrency_slot_buffer: int = 0,
         explicitly_enabled_concurrency_run_blocking: bool = False,
+        max_concurrent_runs_all_branch_deployments: int | None = None,
     ):
         return super().__new__(
             cls,
@@ -56,6 +58,10 @@ class RunQueueConfig(
             check.bool_param(
                 explicitly_enabled_concurrency_run_blocking,
                 "explicitly_enabled_concurrency_run_blocking",
+            ),
+            check.opt_int_param(
+                max_concurrent_runs_all_branch_deployments,
+                "max_concurrent_runs_all_branch_deployments",
             ),
         )
 
@@ -76,6 +82,7 @@ class RunQueueConfig(
                 "op_granularity_run_buffer", self.op_concurrency_slot_buffer
             ),
             explicitly_enabled_concurrency_run_blocking=self.explicitly_enabled_concurrency_run_blocking,
+            max_concurrent_runs_all_branch_deployments=self.max_concurrent_runs_all_branch_deployments,
         )
 
 

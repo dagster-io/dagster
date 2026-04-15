@@ -29,7 +29,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecretList")
+@dg_response_schema(module="dagster_rest_resources.schemas.secret", cls="DgApiSecretList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -52,7 +52,7 @@ def list_secrets_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.secret import DgApiSecretApi
+    from dagster_rest_resources.api.secret import DgApiSecretApi
 
     api = DgApiSecretApi(client)
 
@@ -82,7 +82,7 @@ def list_secrets_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecret")
+@dg_response_schema(module="dagster_rest_resources.schemas.secret", cls="DgApiSecret")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -109,7 +109,7 @@ def get_secret_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.secret import DgApiSecretApi
+    from dagster_rest_resources.api.secret import DgApiSecretApi
 
     api = DgApiSecretApi(client)
 

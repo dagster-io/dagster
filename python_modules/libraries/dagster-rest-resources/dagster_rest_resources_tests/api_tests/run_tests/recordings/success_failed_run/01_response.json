@@ -1,0 +1,12 @@
+{
+  "runOrError": {
+    "__typename": "Run",
+    "creationTime": 1757703542.251137,
+    "endTime": 1757703554.673739,
+    "id": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+    "jobName": "snowflake_insights_import",
+    "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+    "startTime": 1757703550.780887,
+    "status": "FAILURE"
+  }
+}

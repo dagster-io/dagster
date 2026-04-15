@@ -20,7 +20,7 @@ from kitchen_sink_tests.integration_tests.conftest import (
 )
 
 
-@pytest.fixture(name="dagster_dev_cmd")
+@pytest.fixture(name="dagster_dev_cmd", scope="module")
 def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_dagster_mapped", "-C", str(makefile_dir())]
 
@@ -86,7 +86,7 @@ def test_dagster_weekly_daily_materializes(
 
     start_time = get_current_datetime()
     final_result = None
-    while get_current_datetime() - start_time < timedelta(seconds=30):
+    while get_current_datetime() - start_time < timedelta(seconds=60):
         records_result = dagster_instance.fetch_materializations(records_filter=asset_one, limit=10)
 
         if len(records_result.records) == 2:

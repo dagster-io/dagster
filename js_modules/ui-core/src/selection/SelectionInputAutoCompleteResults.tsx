@@ -73,6 +73,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
                         </Box>
                       ) : (
                         <MenuItem
+                          key={result.text}
                           text={result.jsx}
                           active={index === selectedIndex}
                           onClick={() => onSelect(result)}

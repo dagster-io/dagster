@@ -20,7 +20,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.organization", cls="OrganizationSettings"
+    module="dagster_rest_resources.schemas.organization", cls="OrganizationSettings"
 )
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
@@ -38,7 +38,7 @@ def get_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.organization import DgApiOrganizationApi
+    from dagster_rest_resources.api.organization import DgApiOrganizationApi
 
     api = DgApiOrganizationApi(client)
 
@@ -57,7 +57,7 @@ def get_settings_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.organization", cls="OrganizationSettings"
+    module="dagster_rest_resources.schemas.organization", cls="OrganizationSettings"
 )
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
@@ -86,12 +86,12 @@ def set_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.organization import DgApiOrganizationApi
+    from dagster_rest_resources.api.organization import DgApiOrganizationApi
 
     api = DgApiOrganizationApi(client)
 
     with handle_api_errors(ctx, output_json):
-        from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
+        from dagster_rest_resources.schemas.organization import OrganizationSettings
 
         settings = api.update_organization_settings(OrganizationSettings(settings=settings_dict))
         output = format_organization_settings(settings, as_json=output_json)
@@ -106,7 +106,7 @@ def set_settings_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.saml", cls="SamlOperationResult")
+@dg_response_schema(module="dagster_rest_resources.schemas.saml", cls="SamlOperationResult")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -153,7 +153,7 @@ def upload_saml_metadata_command(
                 f" {response.text}"
             )
 
-        from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
+        from dagster_rest_resources.schemas.saml import SamlOperationResult
 
         result = SamlOperationResult(
             message="The identity provider metadata was successfully uploaded."
@@ -168,7 +168,7 @@ def upload_saml_metadata_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.saml", cls="SamlOperationResult")
+@dg_response_schema(module="dagster_rest_resources.schemas.saml", cls="SamlOperationResult")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -206,7 +206,7 @@ def remove_saml_metadata_command(
 
         response.raise_for_status()
 
-        from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
+        from dagster_rest_resources.schemas.saml import SamlOperationResult
 
         result = SamlOperationResult(
             message="The identity provider metadata was successfully removed."

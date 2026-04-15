@@ -5,23 +5,16 @@ Covers the tick adapter, formatting, and CLI invocation for both
 """
 
 import json
-from unittest.mock import MagicMock
 
 from click.testing import CliRunner
-from dagster_dg_cli.api_layer.graphql_adapter.tick import (
-    _find_selector_for_name,
-    _process_ticks_response,
-    get_schedule_ticks_via_graphql,
-    get_sensor_ticks_via_graphql,
-)
-from dagster_dg_cli.api_layer.schemas.tick import (
+from dagster_dg_cli.cli.api.client import DgApiTestContext
+from dagster_dg_cli.cli.api.formatters import format_ticks
+from dagster_rest_resources.schemas.tick import (
     DgApiTick,
     DgApiTickError,
     DgApiTickList,
     DgApiTickStatus,
 )
-from dagster_dg_cli.cli.api.client import DgApiTestContext
-from dagster_dg_cli.cli.api.formatters import format_ticks
 
 # ---------------------------------------------------------------------------
 # Sample data
@@ -98,155 +91,6 @@ def _make_schedule_ticks_response(ticks):
             "scheduleState": {"ticks": ticks},
         }
     }
-
-
-# ---------------------------------------------------------------------------
-# Adapter tests
-# ---------------------------------------------------------------------------
-
-
-class TestFindSelectorForName:
-    def test_finds_sensor(self):
-        client = MagicMock()
-        client.execute.return_value = _REPOS_RESPONSE
-
-        selector = _find_selector_for_name(client, "my_sensor", "sensor")
-        assert selector["sensorName"] == "my_sensor"
-        assert selector["repositoryLocationName"] == "my_location"
-        assert selector["repositoryName"] == "__repository__"
-
-    def test_finds_schedule(self):
-        client = MagicMock()
-        client.execute.return_value = _REPOS_RESPONSE
-
-        selector = _find_selector_for_name(client, "my_schedule", "schedule")
-        assert selector["scheduleName"] == "my_schedule"
-
-    def test_not_found_raises(self):
-        client = MagicMock()
-        client.execute.return_value = _REPOS_RESPONSE
-
-        try:
-            _find_selector_for_name(client, "nonexistent", "sensor")
-            assert False, "Should have raised"
-        except Exception as e:
-            assert "not found" in str(e).lower()
-
-    def test_multiple_matches_raises(self):
-        client = MagicMock()
-        client.execute.return_value = {
-            "repositoriesOrError": {
-                "__typename": "RepositoryConnection",
-                "nodes": [
-                    {
-                        "name": "repo1",
-                        "location": {"name": "loc1"},
-                        "sensors": [{"name": "dup_sensor"}],
-                        "schedules": [],
-                    },
-                    {
-                        "name": "repo2",
-                        "location": {"name": "loc2"},
-                        "sensors": [{"name": "dup_sensor"}],
-                        "schedules": [],
-                    },
-                ],
-            }
-        }
-
-        try:
-            _find_selector_for_name(client, "dup_sensor", "sensor")
-            assert False, "Should have raised"
-        except Exception as e:
-            assert "Multiple" in str(e)
-
-
-class TestProcessTicksResponse:
-    def test_processes_ticks(self):
-        result = _process_ticks_response(_SAMPLE_TICKS)
-        assert len(result.items) == 3
-        assert result.items[0].status == DgApiTickStatus.SUCCESS
-        assert result.items[0].run_ids == ["run-abc"]
-        assert result.items[1].status == DgApiTickStatus.SKIPPED
-        assert result.items[1].skip_reason == "No new data"
-        assert result.items[2].status == DgApiTickStatus.FAILURE
-        assert result.items[2].error is not None
-        assert "timeout" in result.items[2].error.message
-
-    def test_empty_ticks(self):
-        result = _process_ticks_response([])
-        assert result.items == []
-        assert result.total == 0
-        assert result.cursor is None
-
-    def test_cursor_from_last_tick(self):
-        result = _process_ticks_response(_SAMPLE_TICKS)
-        assert result.cursor == "tick-3"
-
-
-class TestGetSensorTicksViaGraphql:
-    def test_basic_fetch(self):
-        client = MagicMock()
-        client.execute.side_effect = [
-            _REPOS_RESPONSE,
-            _make_sensor_ticks_response(_SAMPLE_TICKS),
-        ]
-
-        result = get_sensor_ticks_via_graphql(client, sensor_name="my_sensor")
-        assert len(result.items) == 3
-        assert client.execute.call_count == 2
-
-    def test_passes_filter_variables(self):
-        client = MagicMock()
-        client.execute.side_effect = [
-            _REPOS_RESPONSE,
-            _make_sensor_ticks_response([]),
-        ]
-
-        get_sensor_ticks_via_graphql(
-            client,
-            sensor_name="my_sensor",
-            limit=10,
-            statuses=("SUCCESS",),
-            before_timestamp=1700000000.0,
-        )
-
-        # Second call is the ticks query
-        call_args = client.execute.call_args_list[1]
-        variables = call_args[0][1]
-        assert variables["limit"] == 10
-        assert variables["statuses"] == ["SUCCESS"]
-        assert variables["beforeTimestamp"] == 1700000000.0
-
-    def test_sensor_not_found(self):
-        client = MagicMock()
-        client.execute.side_effect = [
-            _REPOS_RESPONSE,
-            {
-                "sensorOrError": {
-                    "__typename": "SensorNotFoundError",
-                    "message": "Sensor not found",
-                }
-            },
-        ]
-
-        try:
-            get_sensor_ticks_via_graphql(client, sensor_name="my_sensor")
-            assert False, "Should have raised"
-        except Exception as e:
-            assert "not found" in str(e).lower()
-
-
-class TestGetScheduleTicksViaGraphql:
-    def test_basic_fetch(self):
-        client = MagicMock()
-        client.execute.side_effect = [
-            _REPOS_RESPONSE,
-            _make_schedule_ticks_response(_SAMPLE_TICKS),
-        ]
-
-        result = get_schedule_ticks_via_graphql(client, schedule_name="my_schedule")
-        assert len(result.items) == 3
 
 
 # ---------------------------------------------------------------------------

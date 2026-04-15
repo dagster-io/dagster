@@ -155,6 +155,7 @@ type Asset = {
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
   latestFailedToMaterializeTimestamp: Maybe<Scalars['Float']['output']>;
   latestMaterializationTimestamp: Maybe<Scalars['Float']['output']>;
+  latestObservationTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
 type AssetAssetEventHistoryArgs = {
@@ -638,6 +639,7 @@ type AssetNode = {
   isMaterializable: Scalars['Boolean']['output'];
   isObservable: Scalars['Boolean']['output'];
   isPartitioned: Scalars['Boolean']['output'];
+  isVirtual: Scalars['Boolean']['output'];
   jobNames: Array<Scalars['String']['output']>;
   jobs: Array<Pipeline>;
   kinds: Array<Scalars['String']['output']>;
@@ -5043,6 +5045,7 @@ type RunQueueConfig = {
   __typename: 'RunQueueConfig';
   isOpConcurrencyAware: Maybe<Scalars['Boolean']['output']>;
   maxConcurrentRuns: Scalars['Int']['output'];
+  maxConcurrentRunsAllBranchDeployments: Maybe<Scalars['Int']['output']>;
   tagConcurrencyLimitsYaml: Maybe<Scalars['String']['output']>;
 };
 
@@ -6307,6 +6310,10 @@ export const buildAsset = (
       overrides && overrides.hasOwnProperty('latestMaterializationTimestamp')
         ? overrides.latestMaterializationTimestamp!
         : 1.04,
+    latestObservationTimestamp:
+      overrides && overrides.hasOwnProperty('latestObservationTimestamp')
+        ? overrides.latestObservationTimestamp!
+        : 1.7,
   };
 };
 
@@ -7409,6 +7416,7 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('isObservable') ? overrides.isObservable! : false,
     isPartitioned:
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
+    isVirtual: overrides && overrides.hasOwnProperty('isVirtual') ? overrides.isVirtual! : true,
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     jobs: overrides && overrides.hasOwnProperty('jobs') ? overrides.jobs! : [],
     kinds: overrides && overrides.hasOwnProperty('kinds') ? overrides.kinds! : [],
@@ -14798,6 +14806,10 @@ export const buildRunQueueConfig = (
       overrides && overrides.hasOwnProperty('maxConcurrentRuns')
         ? overrides.maxConcurrentRuns!
         : 9835,
+    maxConcurrentRunsAllBranchDeployments:
+      overrides && overrides.hasOwnProperty('maxConcurrentRunsAllBranchDeployments')
+        ? overrides.maxConcurrentRunsAllBranchDeployments!
+        : 8486,
     tagConcurrencyLimitsYaml:
       overrides && overrides.hasOwnProperty('tagConcurrencyLimitsYaml')
         ? overrides.tagConcurrencyLimitsYaml!

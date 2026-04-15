@@ -111,13 +111,14 @@ Quick reference for Python packages in the Dagster repository.
 
 ## utilities
 
-**dagster-shared**: `python_modules/libraries/dagster-shared`
-**dagster-ssh**: `python_modules/libraries/dagster-ssh`
-**dagster-github**: `python_modules/libraries/dagster-github`
-**dagster-datahub**: `python_modules/libraries/dagster-datahub`
 **dagster-census**: `python_modules/libraries/dagster-census`
+**dagster-datahub**: `python_modules/libraries/dagster-datahub`
+**dagster-github**: `python_modules/libraries/dagster-github`
 **dagster-hightouch**: `python_modules/libraries/dagster-hightouch`
 **dagster-managed-elements**: `python_modules/libraries/dagster-managed-elements`
+**dagster-rest-resources**: `python_modules/libraries/dagster-rest-resources`
+**dagster-shared**: `python_modules/libraries/dagster-shared`
+**dagster-ssh**: `python_modules/libraries/dagster-ssh`
 
 ## cli tools
 
@@ -137,5 +138,5 @@ Quick reference for Python packages in the Dagster repository.
 All paths are relative to the repository root and follow these patterns:
 
 - Core: `python_modules/{package-name}`
-- Libraries: `python_modules/libraries/{package-name}`
+- Libraries: `dagster-oss/python_modules/libraries/{package-name}`
 - Testing: Most packages have `{package-name}_tests/` subdirectories

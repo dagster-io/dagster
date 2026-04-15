@@ -12,8 +12,9 @@ from dagster import AutoMaterializeRule, AutomationCondition, DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
 from dagster._core.scheduler.instigation import (
+    InstigatorState,
     InstigatorStatus,
     InstigatorTick,
     InstigatorType,
@@ -770,6 +771,97 @@ def test_auto_materialize_sensor_name_transition() -> None:
                 ).evaluation_id
                 > 0  # real world should be larger
             )
+
+
+def test_copy_default_auto_materialize_sensor_states_skips_non_matching_sensors() -> None:
+    """Regression test: _copy_default_auto_materialize_sensor_states should only copy state from
+    sensors named 'default_auto_materialize_sensor' with sensor_type AUTO_MATERIALIZE. It must
+    not copy state from unrelated sensors (wrong name or wrong type).
+    """
+    from dagster._core.remote_origin import (
+        GrpcServerCodeLocationOrigin,
+        RemoteInstigatorOrigin,
+        RemoteRepositoryOrigin,
+    )
+    from dagster._daemon.asset_daemon import AssetDaemon
+
+    repo_origin = RemoteRepositoryOrigin(
+        code_location_origin=GrpcServerCodeLocationOrigin(
+            host="localhost", port=1234, location_name="test_location"
+        ),
+        repository_name="__repository__",
+    )
+
+    def _make_state(
+        name: str,
+        sensor_type: SensorType | None = None,
+    ) -> InstigatorState:
+        origin = RemoteInstigatorOrigin(
+            repository_origin=repo_origin,
+            instigator_name=name,
+        )
+        return InstigatorState(
+            origin,
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+            SensorInstigatorData(sensor_type=sensor_type),
+        )
+
+    # The sensor that SHOULD be migrated
+    matching_state = _make_state("default_auto_materialize_sensor", SensorType.AUTO_MATERIALIZE)
+    # An unrelated sensor with a different name and AUTO_MATERIALIZE type
+    other_am_state = _make_state("some_other_sensor", SensorType.AUTO_MATERIALIZE)
+    # An unrelated sensor with a different name and STANDARD type
+    standard_state = _make_state("my_standard_sensor", SensorType.STANDARD)
+    # A sensor with the right name but wrong type (should not be migrated)
+    wrong_type_state = _make_state("default_auto_materialize_sensor", SensorType.STANDARD)
+
+    all_states: dict[str, InstigatorState] = {}
+    for state in [matching_state, other_am_state, standard_state]:
+        selector_id = state.origin.get_selector().get_id()
+        all_states[selector_id] = state
+
+    daemon = AssetDaemon(settings={}, pre_sensor_interval_seconds=30)
+
+    with get_daemon_instance(paused=False) as instance:
+        # Pre-populate the states
+        for state in all_states.values():
+            instance.add_instigator_state(state)
+
+        result = daemon._copy_default_auto_materialize_sensor_states(instance, all_states)  # noqa: SLF001
+
+        migrated_names = {s.instigator_name for s in result.values()}
+
+        # The matching sensor should have been copied to the new name
+        assert "default_automation_condition_sensor" in migrated_names
+        # The original states should still be present
+        assert "default_auto_materialize_sensor" in migrated_names
+        assert "some_other_sensor" in migrated_names
+        assert "my_standard_sensor" in migrated_names
+
+        # Crucially: the number of entries should be exactly 4 (3 original + 1 migrated copy).
+        # Before the fix, unrelated sensors would also produce spurious copies.
+        assert len(result) == 4
+
+        # Verify the migrated state has the correct cursor data from the matching sensor
+        migrated_states = [
+            s for s in result.values() if s.instigator_name == "default_automation_condition_sensor"
+        ]
+        assert len(migrated_states) == 1
+        assert migrated_states[0].instigator_data == matching_state.instigator_data
+
+    # Also verify that a sensor with the right name but wrong type is NOT migrated
+    wrong_type_states: dict[str, InstigatorState] = {}
+    selector_id = wrong_type_state.origin.get_selector().get_id()
+    wrong_type_states[selector_id] = wrong_type_state
+
+    with get_daemon_instance(paused=False) as instance:
+        instance.add_instigator_state(wrong_type_state)
+        result = daemon._copy_default_auto_materialize_sensor_states(instance, wrong_type_states)  # noqa: SLF001
+
+        # Should not have created a new entry - wrong sensor type
+        assert len(result) == 1
+        assert all(s.instigator_name == "default_auto_materialize_sensor" for s in result.values())
 
 
 @pytest.mark.parametrize("num_threads", [0, 4])

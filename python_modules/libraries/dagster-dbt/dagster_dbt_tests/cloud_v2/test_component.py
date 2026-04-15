@@ -66,11 +66,9 @@ def mock_workspace(mock_workspace_data):
     """Mock the DbtCloudWorkspace resource."""
     workspace = MagicMock(spec=DbtCloudWorkspace)
     workspace.unique_id = "123-456"
-    workspace.account_name = "test_account"
-    workspace.project_name = "test_project"
-    workspace.environment_name = "test_environment"
     workspace.project_id = 123
     workspace.environment_id = 456
+    workspace.credentials = MagicMock(account_id=999)
     workspace.fetch_workspace_data.return_value = mock_workspace_data
     workspace.get_or_fetch_workspace_data.return_value = mock_workspace_data
 

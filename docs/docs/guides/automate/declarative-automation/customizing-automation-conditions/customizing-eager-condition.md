@@ -68,6 +68,21 @@ Alternatively, you can pass in an <PyObject section="assets" module="dagster" ob
   title="src/<project_name>/defs/assets.py"
 />
 
+## Resolving dependencies through virtual assets (views)
+
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
+By default, `AutomationCondition.eager()` evaluates dependencies against an asset's direct parents. When some of those parents are virtual assets such as database views, you may want the condition to look through them to the nearest non-virtual ancestors instead. For more information, see [virtual assets](/guides/build/assets/virtual-assets).
+
+The `.resolve_through_virtual()` modifier causes all dependency-related sub-conditions (such as `any_deps_updated()`, `any_deps_missing()`, and `any_deps_in_progress()`) to resolve through virtual assets. This means the condition will react to updates from non-virtual ancestors, skipping over any virtual assets in the graph:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/resolve_through_virtual.py"
+  title="src/<project_name>/defs/assets.py"
+/>
+
 ## Respecting data versioning
 
 By default, `AutomationCondition.eager()` will consider any upstream asset to be "updated" if it has been materialized, regardless of the data version of that materialization.

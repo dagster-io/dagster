@@ -24,7 +24,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.sensor", cls="DgApiSensorList")
+@dg_response_schema(module="dagster_rest_resources.schemas.sensor", cls="DgApiSensorList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -44,7 +44,7 @@ def list_sensors_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.sensor import DgApiSensorApi
+    from dagster_rest_resources.api.sensor import DgApiSensorApi
 
     api = DgApiSensorApi(client)
 
@@ -52,7 +52,7 @@ def list_sensors_command(
         sensors = api.list_sensors()
 
         if status:
-            from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensorList, DgApiSensorStatus
+            from dagster_rest_resources.schemas.sensor import DgApiSensorList, DgApiSensorStatus
 
             filtered_sensors = [
                 sensor for sensor in sensors.items if sensor.status == DgApiSensorStatus(status)
@@ -71,7 +71,7 @@ def list_sensors_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.sensor", cls="DgApiSensor")
+@dg_response_schema(module="dagster_rest_resources.schemas.sensor", cls="DgApiSensor")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -91,7 +91,7 @@ def get_sensor_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.sensor import DgApiSensorApi
+    from dagster_rest_resources.api.sensor import DgApiSensorApi
 
     api = DgApiSensorApi(client)
 
@@ -119,7 +119,7 @@ def get_sensor_command(
     "--after", "after_timestamp", type=float, help="Filter ticks after this Unix timestamp"
 )
 @click.option("--json", "output_json", is_flag=True, help="Output in JSON format")
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.tick", cls="DgApiTickList")
+@dg_response_schema(module="dagster_rest_resources.schemas.tick", cls="DgApiTickList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -138,7 +138,7 @@ def get_sensor_ticks_command(
     view_graphql: bool,
 ) -> None:
     """Get tick history for a specific sensor."""
-    from dagster_dg_cli.api_layer.api.tick import DgApiTickApi
+    from dagster_rest_resources.api.tick import DgApiTickApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,

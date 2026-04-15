@@ -1,4 +1,24 @@
 # serializer version: 1
+# name: TestFormatIssues.test_format_created_issue_json_output[0]
+  dict({
+    'asset_key': None,
+    'context': None,
+    'created_by_email': 'creator@example.com',
+    'description': 'Pipeline failed unexpectedly.',
+    'id': 'new-issue-uuid-abc',
+    'run_id': None,
+    'status': 'OPEN',
+    'title': 'New pipeline issue',
+  })
+# ---
+# name: TestFormatIssues.test_format_created_issue_text_output[0]
+  '''
+  Title:       New pipeline issue
+  Status:      OPEN
+  Created By:  creator@example.com
+  Description: Pipeline failed unexpectedly.
+  '''
+# ---
 # name: TestFormatIssues.test_format_empty_issues_json_output[0]
   dict({
     'cursor': None,
@@ -126,6 +146,47 @@
   Additional Context: Additional diagnostic information here.
   '''
 # ---
+# name: TestFormatIssues.test_format_updated_issue_json_output[0]
+  dict({
+    'asset_key': None,
+    'context': None,
+    'created_by_email': 'owner@example.com',
+    'description': 'Updated description after investigation.',
+    'id': 'existing-issue-uuid-xyz',
+    'run_id': None,
+    'status': 'CLOSED',
+    'title': 'Updated issue title',
+  })
+# ---
+# name: TestFormatIssues.test_format_updated_issue_text_output[0]
+  '''
+  Title:       Updated issue title
+  Status:      CLOSED
+  Created By:  owner@example.com
+  Description: Updated description after investigation.
+  '''
+# ---
+# name: TestFormatIssues.test_format_updated_issue_with_context_json_output[0]
+  dict({
+    'asset_key': None,
+    'context': 'New context added during update.',
+    'created_by_email': 'owner@example.com',
+    'description': 'Updated description after investigation.',
+    'id': 'existing-issue-uuid-xyz',
+    'run_id': None,
+    'status': 'OPEN',
+    'title': 'Updated issue title',
+  })
+# ---
+# name: TestFormatIssues.test_format_updated_issue_with_context_text_output[0]
+  '''
+  Title:              Updated issue title
+  Status:             OPEN
+  Created By:         owner@example.com
+  Description:        Updated description after investigation.
+  Additional Context: New context added during update.
+  '''
+# ---
 # name: TestIssueDataProcessing.test_issue_creation_with_all_statuses[0]
   dict({
     'cursor': None,
@@ -162,5 +223,65 @@
         'title': 'Issue with status TRIAGE',
       }),
     ]),
+  })
+# ---
+# name: TestListIssuesGraphQLVariables.test_combined_filters[0]
+  dict({
+    'cursor': 'some-cursor',
+    'filters': dict({
+      'createdAfter': 1700000000.0,
+      'createdBefore': 1710000000.0,
+      'statuses': list([
+        'CLOSED',
+      ]),
+    }),
+    'limit': 20,
+  })
+# ---
+# name: TestListIssuesGraphQLVariables.test_created_after_filter[0]
+  dict({
+    'filters': dict({
+      'createdAfter': 1700000000.0,
+    }),
+    'limit': 10,
+  })
+# ---
+# name: TestListIssuesGraphQLVariables.test_created_before_filter[0]
+  dict({
+    'filters': dict({
+      'createdBefore': 1710000000.0,
+    }),
+    'limit': 10,
+  })
+# ---
+# name: TestListIssuesGraphQLVariables.test_empty_statuses_omitted[0]
+  dict({
+    'limit': 10,
+  })
+# ---
+# name: TestListIssuesGraphQLVariables.test_no_filters[0]
+  dict({
+    'limit': 5,
+  })
+# ---
+# name: TestListIssuesGraphQLVariables.test_status_filter_multiple[0]
+  dict({
+    'filters': dict({
+      'statuses': list([
+        'OPEN',
+        'TRIAGE',
+      ]),
+    }),
+    'limit': 10,
+  })
+# ---
+# name: TestListIssuesGraphQLVariables.test_status_filter_single[0]
+  dict({
+    'filters': dict({
+      'statuses': list([
+        'OPEN',
+      ]),
+    }),
+    'limit': 10,
   })
 # ---

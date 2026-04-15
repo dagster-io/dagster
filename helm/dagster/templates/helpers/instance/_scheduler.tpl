@@ -1,6 +1,6 @@
 {{- define "dagsterYaml.scheduler.daemon" }}
 {{- $daemonSchedulerConfig := .Values.scheduler.config.daemonScheduler }}
-module: dagster.core.scheduler
+module: dagster._core.scheduler
 class: DagsterDaemonScheduler
 {{- if not (empty (compact (values $daemonSchedulerConfig))) }}
 config:

@@ -1669,14 +1669,20 @@ class DagsterEvent(
         job_name: str,
         step_key: str | None,
         asset_materialization_failure: "AssetMaterializationFailure",
+        *,
         error: SerializableErrorInfo | None = None,
+        location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> "DagsterEvent":
         return DagsterEvent(
             event_type_value=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
             job_name=job_name,
             message=f"Asset {asset_materialization_failure.asset_key.to_string()} failed to materialize",
             event_specific_data=AssetFailedToMaterializeData(
-                asset_materialization_failure, error=error
+                asset_materialization_failure,
+                error=error,
+                location_name=location_name,
+                repository_name=repository_name,
             ),
             step_key=step_key,
         )
@@ -1711,13 +1717,15 @@ class AssetObservationData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(skip_when_none_fields={"location_name", "repository_name"})
 class AssetFailedToMaterializeData(
     NamedTuple(
         "AssetFailedToMaterializeData",
         [
             ("asset_materialization_failure", AssetMaterializationFailure),
             ("error", SerializableErrorInfo | None),
+            ("location_name", str | None),
+            ("repository_name", str | None),
         ],
     )
 ):
@@ -1725,6 +1733,8 @@ class AssetFailedToMaterializeData(
         cls,
         asset_materialization_failure: AssetMaterializationFailure,
         error: SerializableErrorInfo | None = None,
+        location_name: str | None = None,
+        repository_name: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -1736,6 +1746,8 @@ class AssetFailedToMaterializeData(
             error=truncate_event_error_info(
                 check.opt_inst_param(error, "error", SerializableErrorInfo)
             ),
+            location_name=check.opt_str_param(location_name, "location_name"),
+            repository_name=check.opt_str_param(repository_name, "repository_name"),
         )
 
     @property

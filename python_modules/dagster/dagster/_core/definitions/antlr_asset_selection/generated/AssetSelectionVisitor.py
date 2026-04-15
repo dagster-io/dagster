@@ -129,6 +129,24 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     ):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#AutomationTypeAttributeExpr.
+    def visitAutomationTypeAttributeExpr(
+        self, ctx: AssetSelectionParser.AutomationTypeAttributeExprContext
+    ):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#SensorAttributeExpr.
+    def visitSensorAttributeExpr(self, ctx: AssetSelectionParser.SensorAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#ScheduleAttributeExpr.
+    def visitScheduleAttributeExpr(self, ctx: AssetSelectionParser.ScheduleAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#JobAttributeExpr.
+    def visitJobAttributeExpr(self, ctx: AssetSelectionParser.JobAttributeExprContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#value.
     def visitValue(self, ctx: AssetSelectionParser.ValueContext):
         return self.visitChildren(ctx)

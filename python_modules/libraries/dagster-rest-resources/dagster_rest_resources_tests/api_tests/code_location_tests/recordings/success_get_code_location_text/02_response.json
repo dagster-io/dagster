@@ -1,0 +1,9 @@
+{
+  "locationStatusesOrError": {
+    "__typename": "WorkspaceLocationStatusEntries",
+    "entries": [
+      {"name": "loc-a", "loadStatus": "LOADED"},
+      {"name": "loc-b", "loadStatus": "LOADING"}
+    ]
+  }
+}

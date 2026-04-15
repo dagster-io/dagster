@@ -94,7 +94,7 @@ export const Run = memo((props: RunProps) => {
     setSelectionQuery(query);
     setLogsFilter({
       ...logsFilter,
-      logQuery: query !== '*' ? [{token: 'query', value: query}] : [],
+      logQuery: query && query !== '*' ? [{token: 'query', value: query}] : [],
     });
   };
 
@@ -254,18 +254,18 @@ const RunWithData = ({
         nextSelectionQuery = addStepToSelection(nextSelectionQuery, stepKey);
       }
     } else {
-      // deselect the step if already selected
+      // If the step is already the only selected step, do nothing.
       if (selectionStepKeys.length === 1 && index !== -1) {
-        nextSelectionQuery = '';
-      } else {
-        // select the step otherwise
-        nextSelectionQuery = `name:"${stepKey}"`;
+        return;
+      }
 
-        // When only one step is selected, set the compute log key as well.
-        const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
-        if (matchingLogKey) {
-          setComputeLogFileKey(matchingLogKey);
-        }
+      // select the step
+      nextSelectionQuery = `name:"${stepKey}"`;
+
+      // When only one step is selected, set the compute log key as well.
+      const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
+      if (matchingLogKey) {
+        setComputeLogFileKey(matchingLogKey);
       }
     }
 

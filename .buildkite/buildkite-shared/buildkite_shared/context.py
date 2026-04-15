@@ -164,7 +164,11 @@ class BuildkiteContext(Generic[T_Config]):
         norm_name = name.replace("_", "-")
         if norm_name not in self._packages:
             all_packages_str = "\n".join([pkg.name for pkg in sorted(self._packages.values())])
-            raise Exception(f"Could not find {name} in package list. Packages:\n{all_packages_str}")
+            raise Exception(
+                f"Could not find {name} in package list. Packages are discovered via"
+                " `git ls-files '**/tox.ini'` — ensure the package has a tox.ini file committed"
+                f"and tracked by git.\nPackages:\n{all_packages_str}"
+            )
         return self._packages[norm_name]
 
     def has_package(self, name: str) -> bool:
@@ -267,8 +271,15 @@ class BuildkiteContext(Generic[T_Config]):
             for path in self.changed_files
         )
 
-    def has_dg_or_component_integration_changes(self) -> bool:
-        return self.has_dg_changes() or self.has_component_integration_changes()
+    def has_rest_resources_changes(self) -> bool:
+        return any("dagster-rest-resources" in str(path) for path in self.changed_files)
+
+    def has_dg_or_component_integration_or_rest_resource_changes(self) -> bool:
+        return (
+            self.has_dg_changes()
+            or self.has_component_integration_changes()
+            or self.has_rest_resources_changes()
+        )
 
     def has_storage_test_fixture_changes(self) -> bool:
         return any(
@@ -580,18 +591,32 @@ def _setup_git_repo(repo_path: Path) -> None:
                 check=False,
             )
 
-        # Only fetch if origin/master doesn't exist locally (e.g. shallow clone on CI).
-        # Avoids a slow network call when running locally or in tests.
-        has_origin_master = (
-            subprocess.run(
-                ["git", "rev-parse", "--verify", "origin/master"],
-                capture_output=True,
-                check=False,
-            ).returncode
-            == 0
-        )
-        if not has_origin_master:
-            subprocess.run(["git", "fetch", "origin", "master"], check=True)
+        if _is_master_branch(os.environ.get("BUILDKITE_BRANCH", "")):
+            # On master we diff HEAD^...HEAD, so ensure the parent commit is
+            # present locally. Buildkite's default shallow clone may not include it.
+            has_parent = (
+                subprocess.run(
+                    ["git", "rev-parse", "--verify", "HEAD^"],
+                    capture_output=True,
+                    check=False,
+                ).returncode
+                == 0
+            )
+            if not has_parent:
+                subprocess.run(["git", "fetch", "--deepen=1"], check=True)
+        else:
+            # Only fetch if origin/master doesn't exist locally (e.g. shallow clone on CI).
+            # Avoids a slow network call when running locally or in tests.
+            has_origin_master = (
+                subprocess.run(
+                    ["git", "rev-parse", "--verify", "origin/master"],
+                    capture_output=True,
+                    check=False,
+                ).returncode
+                == 0
+            )
+            if not has_origin_master:
+                subprocess.run(["git", "fetch", "origin", "master"], check=True)
 
 
 # ########################
@@ -602,15 +627,23 @@ def _setup_git_repo(repo_path: Path) -> None:
 def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
     """Shared logic for loading changed files from git."""
     with pushd(repo_path):
-        origin = _get_commit("origin/master")
+        # On master, diff against the previous commit so that file-change-gated
+        # steps (e.g. utility docker image builds) actually run on merges to
+        # master. On other branches, diff against origin/master.
+        base_ref = (
+            "HEAD^"
+            if _is_master_branch(os.environ.get("BUILDKITE_BRANCH", ""))
+            else "origin/master"
+        )
+        base = _get_commit(base_ref)
         head = _get_commit("HEAD")
-        logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
+        logging.info(f"Changed files between {base_ref} ({base}) and HEAD ({head}):")
 
         result = subprocess.run(
             [
                 "git",
                 "diff",
-                "origin/master...HEAD",
+                f"{base_ref}...HEAD",
                 "--name-only",
                 "--relative",
                 "--",

@@ -25,9 +25,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.asset_check", cls="DgApiAssetCheckList"
-)
+@dg_response_schema(module="dagster_rest_resources.schemas.asset_check", cls="DgApiAssetCheckList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -47,7 +45,7 @@ def list_asset_checks_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset_check import DgApiAssetCheckApi
+    from dagster_rest_resources.api.asset_check import DgApiAssetCheckApi
 
     api = DgApiAssetCheckApi(client)
 
@@ -88,7 +86,7 @@ def list_asset_checks_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.asset_check", cls="DgApiAssetCheckExecutionList"
+    module="dagster_rest_resources.schemas.asset_check", cls="DgApiAssetCheckExecutionList"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -112,7 +110,7 @@ def get_asset_check_executions_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset_check import DgApiAssetCheckApi
+    from dagster_rest_resources.api.asset_check import DgApiAssetCheckApi
 
     api = DgApiAssetCheckApi(client)
 

@@ -56,8 +56,9 @@ def detect_agent_type_and_platform(
         return None, None
 
     try:
-        from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
-        from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+        from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
+        from dagster_dg_cli.cli.plus.build import get_agent_type_and_platform_from_graphql
 
         gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
         detected_type, detected_platform = get_agent_type_and_platform_from_graphql(gql_client)

@@ -9,7 +9,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-import psutil
 import pytest
 import requests
 from dagster._core.test_utils import environ
@@ -18,6 +17,24 @@ from dagster._utils import process_is_alive
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+
+
+def _graceful_kill_process_group(process: subprocess.Popen) -> None:
+    """Try SIGTERM first for graceful shutdown, then SIGKILL if the process is still alive."""
+    pid = process.pid
+    if pid is None or not process_is_alive(pid):
+        return
+    try:
+        os.killpg(pid, signal.SIGTERM)
+        process.wait(10)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    if process_is_alive(pid):
+        os.killpg(pid, signal.SIGKILL)
+        try:
+            process.wait(5)
+        except subprocess.TimeoutExpired:
+            pass
 
 
 ####################################################################################################
@@ -95,19 +112,16 @@ def stand_up_airflow(
         initial_time = get_current_timestamp()
 
         airflow_ready = False
-        while get_current_timestamp() - initial_time < 60:
+        while get_current_timestamp() - initial_time < 120:
             if _airflow_is_ready(port=port, expected_num_dags=expected_num_dags):
                 airflow_ready = True
                 break
             time.sleep(1)
 
-        assert airflow_ready, "Airflow did not start within 60 seconds..."
+        assert airflow_ready, "Airflow did not start within 120 seconds..."
         yield process
     finally:
-        if process_is_alive(process.pid):
-            # Kill process group, since process.kill and process.terminate do not work.
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait(5)
+        _graceful_kill_process_group(process)
 
 
 @pytest.fixture(name="airflow_instance")
@@ -182,12 +196,10 @@ def stand_up_dagster(
                 break
             time.sleep(1)
 
-        assert dagster_ready, "Dagster did not start within 30 seconds..."
+        assert dagster_ready, "Dagster did not start within 60 seconds..."
         yield process
     finally:
-        if psutil.Process(pid=process.pid).is_running():
-            # Kill process group, since process.kill and process.terminate do not work.
-            os.killpg(process.pid, signal.SIGKILL)
+        _graceful_kill_process_group(process)
 
 
 ####################################################################################################

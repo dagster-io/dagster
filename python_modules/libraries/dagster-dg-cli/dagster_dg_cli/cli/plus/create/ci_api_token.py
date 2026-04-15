@@ -5,7 +5,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 @click.command(name="ci-api-token", cls=DgClickCommand)
@@ -14,6 +13,8 @@ from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 @cli_telemetry_wrapper
 def create_ci_api_token(description: str | None = None, **global_options: object) -> None:
     """Create a Dagster Plus API token for CI."""
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     if not DagsterPlusCliConfig.exists():
         raise click.UsageError(
             "`dg plus create ci-api-token` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."

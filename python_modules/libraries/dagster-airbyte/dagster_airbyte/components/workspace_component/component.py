@@ -279,7 +279,7 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Function used to translate Airbyte connection table properties into Dagster asset specs.",
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @property
     def defs_state_config(self) -> DefsStateConfig:

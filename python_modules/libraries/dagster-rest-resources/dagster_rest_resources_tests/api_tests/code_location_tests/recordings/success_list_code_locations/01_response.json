@@ -1,0 +1,14 @@
+{
+  "workspace": {
+    "workspaceEntries": [
+      {
+        "locationName": "loc-a",
+        "serializedDeploymentMetadata": "{\"image\": \"img-a:latest\", \"module_name\": \"mod_a\"}"
+      },
+      {
+        "locationName": "loc-b",
+        "serializedDeploymentMetadata": "{\"image\": \"img-b:v2\", \"python_file\": \"defs.py\"}"
+      }
+    ]
+  }
+}

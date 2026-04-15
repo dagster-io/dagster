@@ -7,6 +7,7 @@ import click
 from dagster_dg_core.config import merge_build_configs
 from dagster_dg_core.utils import exit_with_error
 
+from dagster_dg_cli.cli.plus.build import get_dockerfile_path
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.utils import (
     BUILD_LOCATION_FRAGMENT,
@@ -22,7 +23,6 @@ from dagster_dg_cli.cli.plus.deploy.configure.utils import (
     get_git_web_url,
     get_project_contexts,
 )
-from dagster_dg_cli.utils.plus.build import get_dockerfile_path
 
 
 def _get_build_fragment_for_locations(

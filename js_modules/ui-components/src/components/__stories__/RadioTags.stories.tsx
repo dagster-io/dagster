@@ -11,7 +11,7 @@ export default {
 };
 
 export const Default = () => {
-  const [value, setValue] = useState('all');
+  const [value, setValue] = useState<'all' | 'active' | 'paused' | 'error'>('all');
 
   return (
     <Box flex={{direction: 'column', gap: 16}} padding={16}>
@@ -33,7 +33,7 @@ export const Default = () => {
 };
 
 export const WithIcons = () => {
-  const [value, setValue] = useState('list');
+  const [value, setValue] = useState<'list' | 'grid' | 'graph'>('list');
 
   return (
     <Box flex={{direction: 'column', gap: 16}} padding={16}>

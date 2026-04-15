@@ -16,13 +16,17 @@ class M(BaseModel):
     asset_attributes: Sequence[AssetPostProcessorModel] = []
 
 
-defs = dg.Definitions(
-    assets=[
+@dg.multi_asset(
+    specs=[
         dg.AssetSpec("a", group_name="g1"),
         dg.AssetSpec("b", group_name="g2"),
         dg.AssetSpec("c", group_name="g2", tags={"tag": "val"}),
-    ],
+    ]
 )
+def my_assets(): ...
+
+
+defs = dg.Definitions(assets=[my_assets])
 
 
 def test_replace_attributes() -> None:

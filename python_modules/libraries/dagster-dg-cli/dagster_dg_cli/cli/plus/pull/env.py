@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -11,7 +12,9 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus.gql import SECRETS_QUERY
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+
+if TYPE_CHECKING:
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
 
 
 def _get_config_or_error() -> DagsterPlusCliConfig:
@@ -23,14 +26,24 @@ def _get_config_or_error() -> DagsterPlusCliConfig:
 
 
 def _get_local_secrets_for_locations(
-    client: DagsterPlusGraphQLClient, location_names: set[str]
+    client: "DagsterPlusGraphQLClient", location_names: set[str]
 ) -> Mapping[str, Mapping[str, str]]:
+    from dagster_rest_resources.gql_client import (
+        DagsterPlusGraphqlError,
+        DagsterPlusUnauthorizedError,
+    )
+
     secrets_by_location = {location_name: {} for location_name in location_names}
 
-    result = client.execute(
-        SECRETS_QUERY,
-        variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
-    )
+    try:
+        result = client.execute(
+            SECRETS_QUERY,
+            variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
+        )
+    except DagsterPlusUnauthorizedError as e:
+        raise click.ClickException(str(e))
+    except DagsterPlusGraphqlError as e:
+        raise click.ClickException(str(e))
     for secret in result["secretsOrError"]["secrets"]:
         if not secret["localDeploymentScope"]:
             continue
@@ -47,6 +60,8 @@ def _get_local_secrets_for_locations(
 @cli_telemetry_wrapper
 def pull_env_command(target_path: Path, **global_options: object) -> None:
     """Pull environment variables from Dagster Plus and save to a .env file for local use."""
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)

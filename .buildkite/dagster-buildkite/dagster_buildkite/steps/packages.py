@@ -22,7 +22,11 @@ from buildkite_shared.utils import oss_path
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
-from dagster_buildkite.utils import connect_sibling_docker_container, network_buildkite_container
+from dagster_buildkite.utils import (
+    connect_sibling_docker_container,
+    network_buildkite_container,
+    wait_for_mysql_container,
+)
 
 _CORE_PACKAGES = [
     oss_path("python_modules/dagster"),
@@ -445,6 +449,12 @@ mysql_extra_cmds = [
         "test-mysql-db-pinned-backcompat",
         "MYSQL_TEST_PINNED_BACKCOMPAT_DB_HOST",
     ),
+    # Wait for mysqld to accept connections; `docker-compose up -d` returns before
+    # init is finished, which caused flaky ECONNREFUSED (111) failures on early-
+    # running tests. Placed after network setup so the two overlap with mysqld init.
+    wait_for_mysql_container("test-mysql-db"),
+    wait_for_mysql_container("test-mysql-db-pinned", port=3307),
+    wait_for_mysql_container("test-mysql-db-pinned-backcompat", port=3308),
     "popd",
 ]
 
@@ -826,12 +836,11 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dg-cli"),
             pytest_tox_factors=[
-                ToxFactor("general", splits=3),
-                ToxFactor("docs"),
+                ToxFactor("general"),
                 ToxFactor("plus"),
             ],
             env_vars=["SHELL"],
-            force_run_fn=BuildkiteContext.has_dg_or_component_integration_changes,
+            force_run_fn=BuildkiteContext.has_dg_or_component_integration_or_rest_resource_changes,
             # general tests depend on dagster-dbt which does not support Python 3.14
             unsupported_python_versions=(
                 lambda tox_factor: (
@@ -999,6 +1008,13 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("storage_tests_sqlalchemy_1_3"),
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
+        ),
+        PackageSpec(
+            oss_path("python_modules/libraries/dagster-rest-resources"),
+            pytest_tox_factors=[
+                ToxFactor("default"),
+            ],
+            force_run_fn=BuildkiteContext.has_rest_resources_changes,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-twilio"),

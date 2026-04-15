@@ -20,8 +20,6 @@ from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     DiagnosticsLevel,
     create_claude_diagnostics_service,
 )
-
-# Lazy import of ClaudeSDKClient to avoid docs build failures when claude_code_sdk is not available
 from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS, ModelType
 from dagster_dg_cli.cli.scaffold.branch.git import (
     check_git_repository,
@@ -257,6 +255,7 @@ def execute_scaffold_branch_command(
         with diagnostics.time_operation("planning_mode", "planning"):
             ensure_claude_sdk_python_version()
 
+            # Lazy import to avoid build failures when claude_code_sdk is not available
             from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 
             claude_client = ClaudeSDKClient(diagnostics)

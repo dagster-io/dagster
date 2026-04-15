@@ -159,6 +159,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const onCommitTickResult = useCallback(async () => {
     const cursor = sensorExecutionData?.evaluationResult?.cursor;
     if (!cursor) {
+      showToast({message: 'Tick result committed', intent: 'success'});
+      onClose();
       return;
     }
     const {data} = await setCursorMutation({
@@ -166,6 +168,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
       showToast({message: 'Cursor value updated', intent: 'success'});
+      onClose();
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
       showToast({
@@ -194,7 +197,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         ),
       });
     }
-  }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation]);
+  }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation, onClose]);
 
   const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
 
@@ -301,7 +304,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (sensorExecutionData || error) {
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
-      const didSkip = !error && numRunRequests === 0;
+      const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
+      const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
 
       if (error) {
         return (
@@ -375,6 +379,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     canApply,
     onApply,
     submitTest,
+    dynamicPartitionRequests?.length,
   ]);
 
   const content = useMemo(() => {
@@ -389,9 +394,10 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (sensorExecutionData || error) {
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
-      const didSkip = !error && numRunRequests === 0;
       const dynamicPartitionRequests =
         sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
+      const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
+      const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
       return (
         <Box flex={{direction: 'column', gap: 8}}>
           <Grid>
@@ -401,8 +407,15 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                 <div>
                   {error ? (
                     <Tag intent="danger">Failed</Tag>
-                  ) : numRunRequests ? (
-                    <Tag intent="success">{numRunRequests} run requests</Tag>
+                  ) : numRunRequests || hasDynamicPartitionRequests ? (
+                    <Tag intent="success">
+                      {[
+                        numRunRequests ? `${numRunRequests} run requests` : null,
+                        hasDynamicPartitionRequests ? 'dynamic partition requests' : null,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </Tag>
                   ) : (
                     <Tag intent="warning">Skipped</Tag>
                   )}

@@ -6,7 +6,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus.gql import FULL_DEPLOYMENTS_QUERY
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 EU_DAGSTER_CLOUD_URL = "https://eu.dagster.cloud"
 
@@ -21,6 +20,8 @@ EU_DAGSTER_CLOUD_URL = "https://eu.dagster.cloud"
 @cli_telemetry_wrapper
 def login_command(region: str | None) -> None:
     """Login to Dagster Plus."""
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     # Determine the base URL based on region
     if region == "eu":
         org_url = EU_DAGSTER_CLOUD_URL

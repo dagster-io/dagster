@@ -8,7 +8,7 @@ import pytest
 # present before tests run.
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="session")
 def kernel():
     warnings.warn(
         "Installing Jupyter kernel dagster. Don't worry, this is noninvasive "

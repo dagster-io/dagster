@@ -962,6 +962,7 @@ class JobDefinition(IHasInternalInit):
             resource_defs=self.resource_defs,
             description=self.description,
             tags=self.tags,
+            run_tags=self._run_tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
             allow_different_partitions_defs=True,

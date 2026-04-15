@@ -38,7 +38,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     default=None,
     help="Filter branch deployments by pull request status (only applies with --type branch or all)",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="DeploymentList")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="DeploymentList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -57,8 +57,8 @@ def list_deployments_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
-    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
+    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.schemas.deployment import DeploymentList
 
     api = DgApiDeploymentApi(client)
 
@@ -85,7 +85,7 @@ def list_deployments_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="Deployment")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="Deployment")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -103,7 +103,7 @@ def get_deployment_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(client)
 
@@ -126,7 +126,7 @@ def get_deployment_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="DeploymentSettings")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="DeploymentSettings")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -145,7 +145,7 @@ def get_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(client)
 
@@ -163,7 +163,7 @@ def get_settings_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="DeploymentSettings")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="DeploymentSettings")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -193,12 +193,12 @@ def set_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(client)
 
     with handle_api_errors(ctx, output_json):
-        from dagster_dg_cli.api_layer.schemas.deployment import DeploymentSettings
+        from dagster_rest_resources.schemas.deployment import DeploymentSettings
 
         settings = api.update_deployment_settings(DeploymentSettings(settings=settings_dict))
         output = format_deployment_settings(settings, as_json=output_json)
@@ -219,7 +219,7 @@ def set_settings_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="Deployment")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="Deployment")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -238,7 +238,7 @@ def delete_deployment_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(client)
 

@@ -29,7 +29,6 @@ from rich.text import Text
 
 from dagster_dg_cli.cli.response_schema import dg_response_schema
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
     from rich.table import Table
@@ -489,6 +488,8 @@ def _get_dagster_plus_keys(
     location_name: str, env_var_keys: set[str]
 ) -> Mapping[str, DagsterPlusScopesForVariable] | None:
     """Retrieves the set Dagster Plus keys for the given location name, if Plus is configured, otherwise returns None."""
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     if not DagsterPlusCliConfig.exists():
         return None
     config = DagsterPlusCliConfig.get()

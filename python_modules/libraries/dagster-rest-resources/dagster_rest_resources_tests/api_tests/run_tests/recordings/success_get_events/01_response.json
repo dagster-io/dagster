@@ -1,0 +1,27 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "events": [
+      {
+        "__typename": "MessageEvent",
+        "runId": "a34cd75c-cfa9-4e99-8f0a-955492b89afd",
+        "message": "Started execution of run for \"dbt_analytics_core_job\".",
+        "timestamp": "1771476078297",
+        "level": "INFO",
+        "stepKey": null,
+        "eventType": "PIPELINE_START"
+      },
+      {
+        "__typename": "MessageEvent",
+        "runId": "a34cd75c-cfa9-4e99-8f0a-955492b89afd",
+        "message": "dbt_analytics_core_job intends to materialize asset \"my_asset\".",
+        "timestamp": "1771476078298",
+        "level": "INFO",
+        "stepKey": "dbt_non_partitioned_models_2",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED"
+      }
+    ],
+    "cursor": null,
+    "hasMore": false
+  }
+}

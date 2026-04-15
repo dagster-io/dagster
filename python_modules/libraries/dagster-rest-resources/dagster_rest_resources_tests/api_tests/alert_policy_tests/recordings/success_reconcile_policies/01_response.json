@@ -1,0 +1,9 @@
+{
+  "reconcileAlertPoliciesFromDocument": {
+    "__typename": "ReconcileAlertPoliciesSuccess",
+    "alertPolicies": [
+      {"name": "email-on-failure"},
+      {"name": "slack-on-sla-miss"}
+    ]
+  }
+}

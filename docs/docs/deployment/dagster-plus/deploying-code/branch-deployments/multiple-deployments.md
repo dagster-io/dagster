@@ -77,25 +77,9 @@ For more information about the Kubernetes agent setup and Helm chart values, see
 - [Dagster+ Helm chart values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 
 </TabItem>
-<TabItem value="build_yaml" label="build.yaml (Optional queue routing configuration for code locations)">
+<TabItem value="build_yaml" label="pyproject.toml (Optional queue routing configuration for code locations)">
 
-:::note
-
-If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
-
-:::
-
-Whether in the context of a [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) or a [branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments), you can configure the code location to be served on a specific agent queue:
-
-```yaml
-# build.yaml
-locations:
-  - location_name: <location name>
-    # The named queue that this code location will be served on. If not set, the default queue is used.
-    agent_queue: <queue name>
-```
-
-For `dg`-based projects, you can alternatively set the agent queue in `pyproject.toml`:
+Whether in the context of a [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) or a [branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments), you can configure the code location to be served on a specific agent queue in [`pyproject.toml`](/deployment/dagster-plus/management/build-yaml#pyprojecttoml):
 
 ```toml
 # pyproject.toml

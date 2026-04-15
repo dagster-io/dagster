@@ -108,12 +108,13 @@ def _get_editable_package_root(pkg_name: str) -> str:
 def test_components_from_dagster():
     common_deps: list[str] = []
     for pkg_name in [
-        "dagster-shared",
         "dagster-cloud-cli",
+        "dagster-dg-cli",
         "dagster-dg-core",
         "dagster-pipes",
+        "dagster-rest-resources",
+        "dagster-shared",
         "dagster",
-        "dagster-dg-cli",
     ]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
@@ -217,11 +218,13 @@ def isolated_venv_with_component_lib_dagster_foo(
                 "-e",
                 _get_editable_package_root("dagster-shared"),
                 "-e",
-                _get_editable_package_root("dagster-cloud-cli"),
+                _get_editable_package_root("dagster-dg-cli"),
                 "-e",
                 _get_editable_package_root("dagster-dg-core"),
                 "-e",
-                _get_editable_package_root("dagster-dg-cli"),
+                _get_editable_package_root("dagster-cloud-cli"),
+                "-e",
+                _get_editable_package_root("dagster-rest-resources"),
                 "-e",
                 "dagster-foo",
             ]

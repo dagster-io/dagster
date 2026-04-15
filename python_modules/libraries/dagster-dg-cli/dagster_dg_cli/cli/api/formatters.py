@@ -5,16 +5,13 @@ import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
-    from dagster_dg_cli.api_layer.schemas.alert_policy import (
+    from dagster_rest_resources.schemas.agent import DgApiAgent, DgApiAgentList
+    from dagster_rest_resources.schemas.alert_policy import (
         AlertPolicyDocument,
         AlertPolicySyncResult,
     )
-    from dagster_dg_cli.api_layer.schemas.artifact import (
-        ArtifactDownloadResult,
-        ArtifactUploadResult,
-    )
-    from dagster_dg_cli.api_layer.schemas.asset import (
+    from dagster_rest_resources.schemas.artifact import ArtifactDownloadResult, ArtifactUploadResult
+    from dagster_rest_resources.schemas.asset import (
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
@@ -22,35 +19,35 @@ if TYPE_CHECKING:
         DgApiEvaluationRecordList,
         DgApiPartitionStats,
     )
-    from dagster_dg_cli.api_layer.schemas.asset_check import (
+    from dagster_rest_resources.schemas.asset_check import (
         DgApiAssetCheckExecutionList,
         DgApiAssetCheckList,
     )
-    from dagster_dg_cli.api_layer.schemas.code_location import (
+    from dagster_rest_resources.schemas.code_location import (
         DgApiAddCodeLocationResult,
         DgApiCodeLocation,
         DgApiCodeLocationList,
         DgApiDeleteCodeLocationResult,
     )
-    from dagster_dg_cli.api_layer.schemas.compute_log import (
+    from dagster_rest_resources.schemas.compute_log import (
         DgApiComputeLogLinkList,
         DgApiComputeLogList,
     )
-    from dagster_dg_cli.api_layer.schemas.deployment import (
+    from dagster_rest_resources.schemas.deployment import (
         Deployment,
         DeploymentList,
         DeploymentSettings,
     )
-    from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
-    from dagster_dg_cli.api_layer.schemas.job import DgApiJob, DgApiJobList
-    from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
-    from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
-    from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
-    from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
-    from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
-    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
-    from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
-    from dagster_dg_cli.api_layer.schemas.tick import DgApiTickList
+    from dagster_rest_resources.schemas.issue import DgApiIssue, DgApiIssueList
+    from dagster_rest_resources.schemas.job import DgApiJob, DgApiJobList
+    from dagster_rest_resources.schemas.organization import OrganizationSettings
+    from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunList
+    from dagster_rest_resources.schemas.run_event import RunEventList
+    from dagster_rest_resources.schemas.saml import SamlOperationResult
+    from dagster_rest_resources.schemas.schedule import DgApiSchedule, DgApiScheduleList
+    from dagster_rest_resources.schemas.secret import DgApiSecret, DgApiSecretList
+    from dagster_rest_resources.schemas.sensor import DgApiSensor, DgApiSensorList
+    from dagster_rest_resources.schemas.tick import DgApiTickList
 
 MAX_COL_WIDTH = 60
 

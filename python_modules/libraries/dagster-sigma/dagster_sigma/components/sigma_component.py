@@ -230,7 +230,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
     fetch_lineage_data: bool = True
     translation: ResolvedMultilayerTranslationFn | None = None
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.local_filesystem
     )
 
     @property

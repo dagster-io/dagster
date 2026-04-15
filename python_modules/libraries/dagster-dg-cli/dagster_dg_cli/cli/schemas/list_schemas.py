@@ -2,9 +2,8 @@
 
 from typing import TYPE_CHECKING
 
+from dagster_rest_resources.schemas.asset import DgApiAutomationCondition, DgAssetBase
 from pydantic import BaseModel
-
-from dagster_dg_cli.api_layer.schemas.asset import DgApiAutomationCondition, DgAssetBase
 
 if TYPE_CHECKING:
     from dagster_shared.serdes.objects.definition_metadata import (

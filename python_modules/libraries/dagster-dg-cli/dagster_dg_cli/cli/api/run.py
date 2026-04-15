@@ -8,7 +8,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
-from dagster_dg_cli.api_layer.api.run_event import DgApiRunEventApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import (
     format_compute_log_links,
@@ -58,7 +57,7 @@ DG_API_MAX_RUN_LIMIT: Final = 1000
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRunList")
+@dg_response_schema(module="dagster_rest_resources.schemas.run", cls="DgApiRunList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -75,7 +74,7 @@ def list_runs_command(
     view_graphql: bool,
 ) -> None:
     """List runs with optional filtering and pagination."""
-    from dagster_dg_cli.api_layer.api.run import DgApiRunApi
+    from dagster_rest_resources.api.run import DgApiRunApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
@@ -106,7 +105,7 @@ def list_runs_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.run", cls="DgApiRun")
+@dg_response_schema(module="dagster_rest_resources.schemas.run", cls="DgApiRun")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -120,7 +119,7 @@ def get_run_command(
     view_graphql: bool,
 ) -> None:
     """Get run metadata by ID."""
-    from dagster_dg_cli.api_layer.api.run import DgApiRunApi
+    from dagster_rest_resources.api.run import DgApiRunApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
@@ -173,7 +172,7 @@ def get_run_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.run_event", cls="RunEventList")
+@dg_response_schema(module="dagster_rest_resources.schemas.run_event", cls="RunEventList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -192,6 +191,8 @@ def get_events_run_command(
     view_graphql: bool,
 ) -> None:
     """Get execution log events for a specific run ID."""
+    from dagster_rest_resources.api.run_event import DgApiRunEventApi
+
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -248,9 +249,7 @@ def get_events_run_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.compute_log", cls="DgApiComputeLogList"
-)
+@dg_response_schema(module="dagster_rest_resources.schemas.compute_log", cls="DgApiComputeLogList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -268,7 +267,7 @@ def get_logs_command(
     view_graphql: bool,
 ) -> None:
     """Get stdout/stderr compute logs for a specific run."""
-    from dagster_dg_cli.api_layer.api.compute_log import DgApiComputeLogApi
+    from dagster_rest_resources.api.compute_log import DgApiComputeLogApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,

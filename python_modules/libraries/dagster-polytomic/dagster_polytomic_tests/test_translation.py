@@ -108,18 +108,11 @@ class TestPolytomicTranslation(TestTranslation):
         }
         body["attributes"]["translation"] = attributes
         with setup_polytomic_component(defs_yaml_contents=body) as (_, defs):
-            specs = [
-                spec
-                for spec in defs.resolve_all_asset_specs()
-                if "dagster/auto_created_stub_asset" not in spec.metadata
-            ]
-            assert len(specs) == 1
-            spec = specs[0]
-
             expected_key = dg.AssetKey(["public", "schema-1"])
             if key_modifier:
                 expected_key = key_modifier(expected_key)
 
+            spec = defs.get_assets_def(expected_key).get_asset_spec(expected_key)
             assert assertion(spec)
             assert spec.key == expected_key
 
@@ -142,14 +135,8 @@ def test_per_object_type_translation() -> None:
         },
     }
     with setup_polytomic_component(defs_yaml_contents=body) as (_, defs):
-        specs = [
-            spec
-            for spec in defs.resolve_all_asset_specs()
-            if "dagster/auto_created_stub_asset" not in spec.metadata
-        ]
-        assert len(specs) == 1
-        spec = specs[0]
-
-        assert spec.key == dg.AssetKey(["schema_prefix", "public", "schema-1"])
+        key = dg.AssetKey(["schema_prefix", "public", "schema-1"])
+        spec = defs.get_assets_def(key).get_asset_spec(key)
+        assert spec.key == key
         assert spec.metadata["foo_global"] == "bar_global"
         assert spec.metadata["foo_schema"] == "bar_schema"

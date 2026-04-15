@@ -144,24 +144,13 @@ Finally, update the tags in the "Build and upload Docker image" step to match th
 
 ### Step 3.4: Update the `build.yaml` build configuration to use the Azure Container Registry
 
-Edit the `build.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
+Edit the `build.yaml` file in the root of your repository. Update it to use the Azure Container Registry. The registry value must match the registry and image name used in the previous step.
 
 ```yaml
 # build.yaml
-locations:
-  - location_name: quickstart_etl
-    code_source:
-      package_name: quickstart_etl.definitions
-    build:
-      directory: ./
-      registry: <your-acr-name>.azurecr.io/<image-name>
+registry: <your-acr-name>.azurecr.io/<image-name>
+directory: ./
 ```
-
-:::note
-
-If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
-
-:::
 
 ### Step 3.5: Push and run the workflow
 

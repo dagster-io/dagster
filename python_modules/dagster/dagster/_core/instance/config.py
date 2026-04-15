@@ -656,6 +656,7 @@ class ConcurrencyConfig:
                     "op_granularity_run_buffer",
                     run_coordinator_run_queue_config.op_concurrency_slot_buffer,
                 ),
+                max_concurrent_runs_all_branch_deployments=run_coordinator_run_queue_config.max_concurrent_runs_all_branch_deployments,
             )
         else:
             run_queue_config = None

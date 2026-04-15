@@ -1,6 +1,7 @@
 import pickle
 from collections.abc import Callable
 from typing import Any
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -26,7 +27,11 @@ from dagster._core.definitions.partitions.definition import StaticPartitionsDefi
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
-from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
+from dagster_aws.s3.io_manager import (
+    PickledObjectS3IOManager,
+    S3PickleIOManager,
+    s3_pickle_io_manager,
+)
 from dagster_aws.s3.utils import construct_s3_client
 
 
@@ -268,3 +273,10 @@ def test_s3_pickle_io_manager_dynamic_output(mock_s3_bucket, s3_and_io_manager):
 
     assert any("return_value--foo" in key for key in keys)
     assert any("return_value--bar" in key for key in keys)
+
+
+@pytest.mark.parametrize("s3_prefix", ["", None])
+def test_pickled_object_s3_io_manager_init_with_none_prefix(s3_prefix: str | None):
+    mock_session = mock.Mock()
+    PickledObjectS3IOManager(s3_bucket="test-bucket", s3_session=mock_session, s3_prefix=s3_prefix)
+    mock_session.list_objects.assert_called_once_with(Bucket="test-bucket", Prefix="", MaxKeys=1)

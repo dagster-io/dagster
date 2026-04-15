@@ -1,0 +1,24 @@
+{
+  "fullDeployments": [
+    {
+      "deploymentId": 87,
+      "deploymentName": "data-eng-prod",
+      "deploymentType": "PRODUCTION"
+    },
+    {
+      "deploymentId": 190248,
+      "deploymentName": "gtm20",
+      "deploymentType": "PRODUCTION"
+    },
+    {
+      "deploymentId": 213933,
+      "deploymentName": "data-eng-staging",
+      "deploymentType": "PRODUCTION"
+    },
+    {
+      "deploymentId": 217021,
+      "deploymentName": "data-eng-dev",
+      "deploymentType": "PRODUCTION"
+    }
+  ]
+}

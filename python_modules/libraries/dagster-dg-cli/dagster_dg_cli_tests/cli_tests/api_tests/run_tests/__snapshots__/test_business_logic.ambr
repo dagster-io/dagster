@@ -123,13 +123,3 @@
   run-003  QUEUED   N/A               2024-01-15 10:03:20 UTC
   '''
 # ---
-# name: TestRunDataProcessing.test_run_creation_with_all_fields[0]
-  dict({
-    'created_at': 1705311000.0,
-    'ended_at': None,
-    'id': 'complete-run-xyz',
-    'job_name': 'comprehensive_pipeline',
-    'started_at': 1705311060.0,
-    'status': 'STARTING',
-  })
-# ---

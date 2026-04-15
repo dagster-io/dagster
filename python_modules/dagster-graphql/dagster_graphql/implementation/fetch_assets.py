@@ -1,4 +1,5 @@
 import datetime
+import logging
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Mapping, Union, cast  # noqa: UP035
@@ -10,6 +11,7 @@ from dagster import (
     DagsterRun,
     _check as check,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
@@ -32,6 +34,8 @@ from dagster_graphql.implementation.partition_status_utils import (
     build_multi_partition_ranges_generic,
     extract_partition_keys_by_status,
 )
+
+logger = logging.getLogger("dagster")
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import (
@@ -403,12 +407,18 @@ def get_assets_for_run(graphene_info: "ResolveInfo", run: DagsterRun) -> Sequenc
 
     # Fetch planned asset keys from execution plan snapshot
     if run.execution_plan_snapshot_id:
-        execution_plan_snapshot = check.not_none(
-            graphene_info.context.instance.get_execution_plan_snapshot(
+        execution_plan_snapshot = None
+        try:
+            execution_plan_snapshot = graphene_info.context.instance.get_execution_plan_snapshot(
                 run.execution_plan_snapshot_id
             )
-        )
-        asset_keys.update(execution_plan_snapshot.asset_selection)
+        except CheckError:
+            logger.warning(
+                f"Execution plan snapshot not found for run {run.run_id}",
+            )
+
+        if execution_plan_snapshot:
+            asset_keys.update(execution_plan_snapshot.asset_selection)
 
     return [GrapheneAsset(key=asset_key) for asset_key in asset_keys if asset_key]
 

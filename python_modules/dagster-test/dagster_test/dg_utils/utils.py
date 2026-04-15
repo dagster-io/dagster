@@ -118,13 +118,14 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
         install_editable_dagster_packages_to_venv(
             venv_path,
             [
-                "dagster",
                 "dagster-pipes",
+                "dagster-test",
+                "dagster",
+                "libraries/dagster-cloud-cli",
                 "libraries/dagster-dg-cli",
                 "libraries/dagster-dg-core",
+                "libraries/dagster-rest-resources",
                 "libraries/dagster-shared",
-                "libraries/dagster-cloud-cli",
-                "dagster-test",
             ],
         )
 
@@ -142,15 +143,16 @@ def install_editable_dg_dev_packages_to_venv(venv_path: Path) -> None:
     install_editable_dagster_packages_to_venv(
         venv_path,
         [
-            "dagster",
-            "dagster-webserver",
             "dagster-graphql",
-            "dagster-test",
             "dagster-pipes",
-            "libraries/dagster-dg-core",
-            "libraries/dagster-dg-cli",
-            "libraries/dagster-shared",
+            "dagster-test",
+            "dagster-webserver",
+            "dagster",
             "libraries/dagster-cloud-cli",
+            "libraries/dagster-dg-cli",
+            "libraries/dagster-dg-core",
+            "libraries/dagster-rest-resources",
+            "libraries/dagster-shared",
         ],
     )
 

@@ -245,6 +245,42 @@ class AssetSelectionListener(ParseTreeListener):
     def exitPartitionsAttributeExpr(self, ctx: AssetSelectionParser.PartitionsAttributeExprContext):
         pass
 
+    # Enter a parse tree produced by AssetSelectionParser#AutomationTypeAttributeExpr.
+    def enterAutomationTypeAttributeExpr(
+        self, ctx: AssetSelectionParser.AutomationTypeAttributeExprContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#AutomationTypeAttributeExpr.
+    def exitAutomationTypeAttributeExpr(
+        self, ctx: AssetSelectionParser.AutomationTypeAttributeExprContext
+    ):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#SensorAttributeExpr.
+    def enterSensorAttributeExpr(self, ctx: AssetSelectionParser.SensorAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#SensorAttributeExpr.
+    def exitSensorAttributeExpr(self, ctx: AssetSelectionParser.SensorAttributeExprContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#ScheduleAttributeExpr.
+    def enterScheduleAttributeExpr(self, ctx: AssetSelectionParser.ScheduleAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#ScheduleAttributeExpr.
+    def exitScheduleAttributeExpr(self, ctx: AssetSelectionParser.ScheduleAttributeExprContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#JobAttributeExpr.
+    def enterJobAttributeExpr(self, ctx: AssetSelectionParser.JobAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#JobAttributeExpr.
+    def exitJobAttributeExpr(self, ctx: AssetSelectionParser.JobAttributeExprContext):
+        pass
+
     # Enter a parse tree produced by AssetSelectionParser#value.
     def enterValue(self, ctx: AssetSelectionParser.ValueContext):
         pass

@@ -10,6 +10,7 @@ import yaml
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._utils import alter_sys_path, pushd
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.core.component_tree import ComponentTree
@@ -42,9 +43,12 @@ def setup_fivetran_component(
             component_cls=FivetranAccountComponent,
             defs_yaml_contents=defs_yaml_contents,
         )
-        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-            component,
-            defs,
+        with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+                component,
+                defs,
+            ),
         ):
             assert isinstance(component, FivetranAccountComponent)
             yield component, defs
@@ -202,16 +206,22 @@ def test_custom_filter_fn_python(
     filter_fn: Callable[[FivetranConnector], bool],
     num_assets: int,
 ) -> None:
-    defs = FivetranAccountComponent(
-        workspace=FivetranWorkspace(
-            api_key=TEST_API_KEY,
-            api_secret=TEST_API_SECRET,
-            account_id=TEST_ACCOUNT_ID,
-        ),
-        connector_selector=filter_fn,
-        translation=None,
-    ).build_defs(ComponentTree.for_test().load_context)
-    assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        alter_sys_path(to_add=[str(sandbox.project_root / "src")], to_remove=[]),
+        pushd(str(sandbox.project_root)),
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        defs = FivetranAccountComponent(
+            workspace=FivetranWorkspace(
+                api_key=TEST_API_KEY,
+                api_secret=TEST_API_SECRET,
+                account_id=TEST_ACCOUNT_ID,
+            ),
+            connector_selector=filter_fn,
+            translation=None,
+        ).build_defs(ComponentTree.for_test().load_context)
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 class TestFivetranTranslation(TestTranslation):
@@ -261,13 +271,19 @@ def test_subclass_override_get_asset_spec(
                 tags={**base_spec.tags, "custom_tag": "override_test"},
             )
 
-    defs = CustomFivetranAccountComponent(
-        workspace=FivetranWorkspace(
-            api_key=TEST_API_KEY,
-            api_secret=TEST_API_SECRET,
-            account_id=TEST_ACCOUNT_ID,
-        ),
-    ).build_defs(ComponentTree.for_test().load_context)
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        alter_sys_path(to_add=[str(sandbox.project_root / "src")], to_remove=[]),
+        pushd(str(sandbox.project_root)),
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        defs = CustomFivetranAccountComponent(
+            workspace=FivetranWorkspace(
+                api_key=TEST_API_KEY,
+                api_secret=TEST_API_SECRET,
+                account_id=TEST_ACCOUNT_ID,
+            ),
+        ).build_defs(ComponentTree.for_test().load_context)
 
     # Verify that the custom get_asset_spec method is being used
     assets_def = defs.resolve_assets_def(

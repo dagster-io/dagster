@@ -1,0 +1,43 @@
+# serializer version: 1
+# name: TestFormatArtifactDownload.test_format_download_deployment_scope_json[0]
+  dict({
+    'deployment': 'prod',
+    'key': 'my-artifact',
+    'path': '/tmp/artifact.tar.gz',
+    'scope': 'deployment',
+  })
+# ---
+# name: TestFormatArtifactDownload.test_format_download_deployment_scope_text[0]
+  "Downloaded artifact 'my-artifact' from deployment 'prod' to /tmp/artifact.tar.gz."
+# ---
+# name: TestFormatArtifactDownload.test_format_download_organization_scope_json[0]
+  dict({
+    'deployment': None,
+    'key': 'org-artifact',
+    'path': '/tmp/org-artifact.tar.gz',
+    'scope': 'organization',
+  })
+# ---
+# name: TestFormatArtifactDownload.test_format_download_organization_scope_text[0]
+  "Downloaded artifact 'org-artifact' from organization to /tmp/org-artifact.tar.gz."
+# ---
+# name: TestFormatArtifactUpload.test_format_upload_deployment_scope_json[0]
+  dict({
+    'deployment': 'prod',
+    'key': 'my-artifact',
+    'scope': 'deployment',
+  })
+# ---
+# name: TestFormatArtifactUpload.test_format_upload_deployment_scope_text[0]
+  "Uploaded artifact 'my-artifact' to deployment 'prod'."
+# ---
+# name: TestFormatArtifactUpload.test_format_upload_organization_scope_json[0]
+  dict({
+    'deployment': None,
+    'key': 'org-artifact',
+    'scope': 'organization',
+  })
+# ---
+# name: TestFormatArtifactUpload.test_format_upload_organization_scope_text[0]
+  "Uploaded artifact 'org-artifact' to organization."
+# ---

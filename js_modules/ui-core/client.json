@@ -168,6 +168,7 @@
   "SensorRootQuery": "64eee51b33cd29c69fc5e5eb5c88187a5b55bd61fada886bbcf3981e56531147",
   "SensorAssetSelectionQuery": "2fb6c2c612ee7ab4a7ad1f59cfd7677a6a3d14319200f8c49b43850de8b3b0f3",
   "SensorStateQuery": "867ed8f85db89c801fcd6f099356971c9c8a64ce52e6c61e6b73dc18680439aa",
+  "AssetInstigatorsQuery": "ec03eb9a3677674fee93fd8a09267e274fee5d07630647ea50f7076d5f39bc1e",
   "AssetsOverviewRootQuery": "77ab0417c979b92c9ec01cd76a0f49b59f5b8ce7af775cab7e9b3e57b7871f7d",
   "PipelineExplorerRootQuery": "4221d0d8b2d5f733513cc046448f5d9931186904aa33429dde0883718f3922e3",
   "SnapshotQuery": "6ada4abd4592a558d98b2557ec511e87c9420bab5cbc155ec8473c55bd820a7a",

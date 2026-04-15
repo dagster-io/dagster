@@ -75,8 +75,8 @@ Blog = "https://dagster.io/blog"
 Newsletter = "https://dagster.io/newsletter-signup"
 
 [project.scripts]
-dagster = "dagster.cli:main"
-dagster-daemon = "dagster.daemon.cli:main"
+dagster = "dagster._cli:main"
+dagster-daemon = "dagster._daemon.cli:main"
 
 [project.entry-points."dagster_dg_cli.registry_modules"]
 dagster = "dagster"

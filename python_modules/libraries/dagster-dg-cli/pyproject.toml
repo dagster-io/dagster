@@ -17,9 +17,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-dg-core==1!0+dev",
-    "dagster==1!0+dev",
     "dagster-cloud-cli==1!0+dev",
+    "dagster-dg-core==1!0+dev",
+    "dagster-rest-resources==1!0+dev",
+    "dagster==1!0+dev",
     "typer",
 ]
 
@@ -40,10 +41,6 @@ ai = [
 
 [tool.hatch.build]
 exclude = [
-    "dagster_dg_cli/.gitignore",
     "dagster_dg_cli/cli/plus/*.md",
     "dagster_dg_cli/cli/plus/schema.graphql",
-    "dagster_dg_cli/cli/api/*.md",
-    "dagster_dg_cli/api_layer/*.md",
-    "dagster_dg_cli/api_layer/schemas/*.md",
 ]

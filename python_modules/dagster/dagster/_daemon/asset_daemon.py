@@ -784,7 +784,7 @@ class AssetDaemon(DagsterDaemon):
         for instigator_state in all_sensor_states.values():
             # only migrate instigators with the name "default_auto_materialize_sensor" and are
             # handled by the asset daemon
-            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" and (
+            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" or not (
                 instigator_state.sensor_instigator_data
                 and instigator_state.sensor_instigator_data.sensor_type
                 and instigator_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon

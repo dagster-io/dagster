@@ -1,0 +1,11 @@
+{
+  "organizationSettings": {
+    "settings": {
+      "run_queue_config": {
+        "max_concurrent_runs": 25,
+        "tag_concurrency_limits": []
+      },
+      "sso_default_role": "VIEWER"
+    }
+  }
+}

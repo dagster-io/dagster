@@ -1,0 +1,48 @@
+{
+  "agents": [
+    {
+      "agentLabel": null,
+      "id": "858fd654-d0b5-477c-ac1a-c63db56246b7",
+      "lastHeartbeatTime": 1758118924.6589644,
+      "metadata": [
+        {
+          "key": "utilization_metrics",
+          "value": "{}"
+        },
+        {
+          "key": "version",
+          "value": "\"1.11.10\""
+        },
+        {
+          "key": "type",
+          "value": "\"K8sUserCodeLauncher\""
+        },
+        {
+          "key": "queues",
+          "value": "[\"default queue\"]"
+        }
+      ],
+      "status": "RUNNING"
+    },
+    {
+      "agentLabel": null,
+      "id": "da7da2bb-33eb-4ce1-93ef-1a92e6737236",
+      "lastHeartbeatTime": 1758118915.5946717,
+      "metadata": [
+        {
+          "key": "version",
+          "value": "\"1.5.1\""
+        },
+        {
+          "key": "type",
+          "value": "\"K8sUserCodeLauncher\""
+        },
+        {
+          "key": "queues",
+          "value": "[\"default queue\"]"
+        }
+      ],
+      "status": "RUNNING"
+    }
+  ]
+}

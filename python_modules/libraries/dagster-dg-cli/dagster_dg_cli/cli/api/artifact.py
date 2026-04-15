@@ -26,7 +26,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.artifact", cls="ArtifactUploadResult")
+@dg_response_schema(module="dagster_rest_resources.schemas.artifact", cls="ArtifactUploadResult")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -45,7 +45,7 @@ def upload_artifact_command(
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to upload.
     """
-    from dagster_dg_cli.api_layer.api.artifact import DgApiArtifactApi
+    from dagster_rest_resources.api.artifact import DgApiArtifactApi
 
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
@@ -78,9 +78,7 @@ def upload_artifact_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.artifact", cls="ArtifactDownloadResult"
-)
+@dg_response_schema(module="dagster_rest_resources.schemas.artifact", cls="ArtifactDownloadResult")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -99,7 +97,7 @@ def download_artifact_command(
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to save to.
     """
-    from dagster_dg_cli.api_layer.api.artifact import DgApiArtifactApi
+    from dagster_rest_resources.api.artifact import DgApiArtifactApi
 
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,

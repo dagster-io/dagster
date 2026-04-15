@@ -1,0 +1,68 @@
+# serializer version: 1
+# name: TestAgentDataProcessing.test_agent_creation_with_all_statuses[0]
+  dict({
+    'items': list([
+      dict({
+        'agent_label': 'Agent Running',
+        'id': 'agent-running-uuid',
+        'last_heartbeat_time': 1641046800.0,
+        'metadata': list([
+          dict({
+            'key': 'status_test',
+            'value': 'RUNNING',
+          }),
+        ]),
+        'status': 'RUNNING',
+      }),
+      dict({
+        'agent_label': 'Agent Stopped',
+        'id': 'agent-stopped-uuid',
+        'last_heartbeat_time': None,
+        'metadata': list([
+          dict({
+            'key': 'status_test',
+            'value': 'STOPPED',
+          }),
+        ]),
+        'status': 'STOPPED',
+      }),
+      dict({
+        'agent_label': 'Agent Not_Running',
+        'id': 'agent-not_running-uuid',
+        'last_heartbeat_time': None,
+        'metadata': list([
+          dict({
+            'key': 'status_test',
+            'value': 'NOT_RUNNING',
+          }),
+        ]),
+        'status': 'NOT_RUNNING',
+      }),
+      dict({
+        'agent_label': 'Agent Unhealthy',
+        'id': 'agent-unhealthy-uuid',
+        'last_heartbeat_time': None,
+        'metadata': list([
+          dict({
+            'key': 'status_test',
+            'value': 'UNHEALTHY',
+          }),
+        ]),
+        'status': 'UNHEALTHY',
+      }),
+      dict({
+        'agent_label': 'Agent Unknown',
+        'id': 'agent-unknown-uuid',
+        'last_heartbeat_time': None,
+        'metadata': list([
+          dict({
+            'key': 'status_test',
+            'value': 'UNKNOWN',
+          }),
+        ]),
+        'status': 'UNKNOWN',
+      }),
+    ]),
+    'total': 5,
+  })
+# ---

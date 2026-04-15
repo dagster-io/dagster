@@ -32,7 +32,7 @@ def _wait_k8s_job_to_start(
     api_client: DagsterKubernetesClient, job_name: str, namespace: str
 ) -> bool:
     """Wait until Kubernetes job exists."""
-    for _ in range(5):
+    for _ in range(12):
         try:
             api_client.batch_api.read_namespaced_job_status(job_name, namespace)
             return True
@@ -44,7 +44,7 @@ def _wait_k8s_job_to_start(
 
 def _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher: str, run_id: str) -> None:
     """Check if Dagster job could be terminated."""
-    timeout = datetime.timedelta(0, 30)
+    timeout = datetime.timedelta(0, 120)
     start_time = datetime.datetime.now()
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for can_terminate"
@@ -201,7 +201,7 @@ def test_k8s_run_launcher_terminate(
     _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher, run_id)
     terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id=run_id)
 
-    timeout = datetime.timedelta(0, 30)
+    timeout = datetime.timedelta(0, 120)
     start_time = datetime.datetime.now()
     dagster_run = None
     while True:

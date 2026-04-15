@@ -29,6 +29,19 @@ def connect_sibling_docker_container(
     ]
 
 
+def wait_for_mysql_container(container_name: str, port: int = 3306) -> str:
+    """Shell command that polls `mysqladmin ping` inside `container_name` until it
+    succeeds, or fails after ~120s. `docker-compose up -d` returns before mysqld
+    finishes initializing, so tests that run early were hitting ECONNREFUSED (111).
+    """
+    return (
+        rf"i=0; until docker exec {container_name} mysqladmin ping -h 127.0.0.1 "
+        rf"-P {port} --silent >/dev/null 2>&1; do i=\$((i+1)); "
+        rf'if [ \$i -ge 60 ]; then echo "{container_name} not ready" >&2; exit 1; fi; '
+        r"sleep 2; done"
+    )
+
+
 # Preceding a line of BK output with "---" turns it into a section header.
 # The characters surrounding the `message` are ANSI escope sequences used to colorize the output.
 # Note that "\" is doubled below to insert a single literal backslash in the string.

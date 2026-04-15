@@ -349,6 +349,10 @@ run_monitoring:
   cancel_timeout_seconds: 180
   max_resume_run_attempts: 3
   poll_interval_seconds: 120
+  # free concurrency slots held by finished runs after this many seconds.
+  # required when using dagster/concurrency_key op tags to prevent
+  # cancelled runs from permanently blocking the concurrency pool.
+  free_slots_after_run_end_seconds: 300
 
 # end_run_monitoring
 

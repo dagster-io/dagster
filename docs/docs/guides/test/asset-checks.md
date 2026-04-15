@@ -84,6 +84,22 @@ In the example below, if the `orders_id_has_no_nulls` check fails, the downstrea
   title="src/<project_name>/defs/assets.py"
 />
 
+## Partitioned asset checks \{#partitioned-checks}
+
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
+Asset checks can be partitioned to match the partitions of the asset they check. When a `partitions_def` is provided to the `@asset_check` decorator or `AssetCheckSpec`, each execution of the check targets a single partition of the asset. This allows you to validate data quality on a per-partition basis and view the check status for each individual partition in the UI.
+
+The check's `partitions_def` must be the same as the `partitions_def` of the associated asset.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/partitioned-asset-check.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
+
 ## Scheduling and monitoring asset checks
 
 In some cases, running asset checks separately from the job materializing the assets can be useful. For example, running all data quality checks once a day and sending an alert if they fail. This can be achieved using schedules and sensors.

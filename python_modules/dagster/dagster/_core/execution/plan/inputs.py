@@ -99,6 +99,11 @@ class FromLoadableAsset(StepInputSource):
     # deprecated, preserved for back-compat
     node_handle: NodeHandle = NodeHandle("", None)
     input_name: str = ""
+    ordering_step_keys: frozenset[str] = frozenset()
+
+    @property
+    def step_key_dependencies(self) -> set[str]:
+        return set(self.ordering_step_keys)
 
     def load_input_object(
         self,

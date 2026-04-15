@@ -1,0 +1,38 @@
+{
+  "assetsOrError": {
+    "__typename": "AssetConnection",
+    "nodes": [
+      {
+        "key": {
+          "path": [
+            "aws",
+            "cloud-prod",
+            "workspace_staging_jobs"
+          ]
+        },
+        "definition": {
+          "freshnessInfo": null,
+          "freshnessPolicy": null
+        },
+        "assetHealth": {
+          "assetHealth": "HEALTHY",
+          "materializationStatus": "HEALTHY",
+          "materializationStatusMetadata": null,
+          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatusMetadata": null,
+          "freshnessStatus": "HEALTHY",
+          "freshnessStatusMetadata": {
+            "lastMaterializedTimestamp": 1759310437.7702928
+          }
+        },
+        "assetMaterializations": [
+          {
+            "timestamp": "1759310437770",
+            "runId": "3fb15668-f967-45ec-ac66-7682a6097583",
+            "partition": null
+          }
+        ]
+      }
+    ]
+  }
+}

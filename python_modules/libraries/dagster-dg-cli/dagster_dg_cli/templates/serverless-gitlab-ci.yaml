@@ -7,6 +7,7 @@ variables:
   DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
   # Path to the root folder containing the dagster project
   DAGSTER_PROJECT_DIR: TEMPLATE_PROJECT_DIR
+  ENABLE_FAST_DEPLOYS: "TEMPLATE_ENABLE_FAST_DEPLOYS"
   # State directory for deploy session
   DAGSTER_BUILD_STATEDIR: /tmp/dagster-build-state-$CI_PIPELINE_ID
   # Required for Docker-in-Docker
@@ -53,7 +54,9 @@ dagster-cloud-serverless-deploy:
     - echo ".venv" >> .dockerignore
 
     # Build and push (PEX or Docker based on project configuration)
-    - python -m uv run dg plus deploy build-and-push --agent-type=serverless
+    - |
+      if [ "$ENABLE_FAST_DEPLOYS" = "true" ]; then bs=python-executable; else bs=docker; fi
+      python -m uv run dg plus deploy build-and-push --agent-type=serverless --build-strategy="$bs"
 
     # Deploy all code locations in this build session to Dagster Cloud
     - python -m uv run dg plus deploy finish

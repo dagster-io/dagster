@@ -44,6 +44,11 @@ export function getValue(
   if ('NULL_STRING' in ctx && ctx.NULL_STRING()) {
     return '';
   }
+  // Keyword tokens (SENSOR, SCHEDULE, JOB) used as values
+  const text = ctx.getText();
+  if (text) {
+    return text;
+  }
   throw new Error('Invalid value');
 }
 

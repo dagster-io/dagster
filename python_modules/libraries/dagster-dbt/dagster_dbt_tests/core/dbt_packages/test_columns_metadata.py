@@ -1,6 +1,8 @@
 import json
 import os
+import shutil
 import subprocess
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
@@ -29,6 +31,50 @@ from dagster_dbt_tests.dbt_projects import (
 )
 
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
+
+
+@pytest.fixture(autouse=True)
+def _isolated_duckdb_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Give each test its own DuckDB database file in a pytest tmp_path.
+
+    These tests use ``fetch_column_metadata``, which opens an in-process READ_ONLY
+    DuckDB adapter connection via ``dbt.adapters.factory``. The adapter registry is a
+    process-global singleton, so a connection opened in one test can linger into the
+    next test's ``dbt build`` subprocess and cause ``IO Error: Could not set lock on
+    file`` failures. Giving each test its own DB file eliminates the shared resource
+    entirely — no lock conflict is possible regardless of adapter cleanup timing.
+
+    The filename stem is preserved from the session-scoped fixture in ``conftest.py``:
+    in DuckDB the database identifier is derived from the file stem, and the
+    session-scoped ``test_metadata_manifest`` fixture builds the project (including
+    dbt's partial-parse cache at ``target/partial_parse.msgpack``) with SQL that
+    qualifies tables as ``{stem}.main.<table>``. Changing the stem would leave the
+    compiled references dangling.
+
+    The session-built DB file is copied into tmp_path when present. Several tests in
+    this module run ``dbt build`` against ``test_metadata_path`` and rely on the
+    source tables (seeded at session setup) already existing: ``stg_customers.sql``
+    references ``raw_customers`` via ``source()`` rather than ``ref()``, so dbt's
+    threaded scheduler does not encode a seed→model edge. On a fresh empty DB the
+    view can race ahead of the seed. Starting each test from a copy of the
+    session-built DB preserves the pre-seeded state while keeping per-test isolation
+    for the lock issue above. ``tmp_path`` is cleaned up by pytest, so this adds no
+    persistent disk footprint.
+    """
+    db_file_name = os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME"]
+    db_path = tmp_path / f"{db_file_name}.duckdb"
+
+    # The session-scoped ``test_metadata_manifest`` fixture builds the project with
+    # ``build_project=True``, leaving a populated DB at this path. Tests that depend
+    # on that session fixture will have triggered the build before this autouse
+    # fixture runs (session fixtures are always resolved before function-scoped
+    # fixtures for a given test). For the rare test that doesn't use the session
+    # fixture, the source may not exist — in that case we start with an empty DB.
+    session_db_path = test_metadata_path / "target" / f"{db_file_name}.duckdb"
+    if session_db_path.exists():
+        shutil.copy(session_db_path, db_path)
+
+    monkeypatch.setenv("DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH", os.fspath(db_path))
 
 
 def test_no_column_schema(test_jaffle_shop_manifest: dict[str, Any]) -> None:
@@ -614,6 +660,12 @@ def test_column_lineage(
     manifest["metadata"]["adapter_type"] = sql_dialect
 
     dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    # Seed explicitly before building. `stg_customers` references `raw_customers` via
+    # ``source()`` rather than ``ref()``, so dbt does not encode a seed→model edge in the
+    # DAG. With a fresh per-test DuckDB file and multi-threaded execution, the view can
+    # race ahead of the seed and fail with "raw_customers does not exist". Running the
+    # seed first guarantees the source table exists before any view is built.
+    dbt.cli(["--quiet", "seed"]).wait()
     dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
 
     @dbt_assets(manifest=manifest)

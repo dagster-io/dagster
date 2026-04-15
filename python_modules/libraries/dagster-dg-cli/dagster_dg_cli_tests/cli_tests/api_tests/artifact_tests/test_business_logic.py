@@ -2,8 +2,8 @@
 
 import json
 
-from dagster_dg_cli.api_layer.schemas.artifact import ArtifactDownloadResult, ArtifactUploadResult
 from dagster_dg_cli.cli.api.formatters import format_artifact_download, format_artifact_upload
+from dagster_rest_resources.schemas.artifact import ArtifactDownloadResult, ArtifactUploadResult
 
 
 class TestFormatArtifactUpload:

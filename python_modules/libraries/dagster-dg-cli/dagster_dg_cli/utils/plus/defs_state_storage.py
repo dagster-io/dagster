@@ -63,7 +63,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], Config
     def from_location_state(
         cls, location_state: "LocationState", api_token: str, organization: str
     ):
-        from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+        from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
 
         return cls(
             location_state.url,
@@ -90,7 +90,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], Config
 
     @classmethod
     def from_config_value(cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]):
-        from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+        from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
 
         url = check.str_param(config_value.get("url"), "url")
         api_token = check.str_param(config_value.get("api_token"), "api_token")

@@ -203,6 +203,44 @@ def test_get_cleanup_statement_multi_partitioned():
     )
 
 
+def test_get_select_statement_escapes():
+    assert (
+        SnowflakeDbClient.get_select_statement(
+            TableSlice(
+                database="database_abc",
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "SELECT * FROM database_abc.schema1.table1 WHERE\nmy_col in ('it''s a test')"
+    )
+
+
+def test_get_cleanup_statement_escapes():
+    assert (
+        _get_cleanup_statement(
+            TableSlice(
+                database="database_abc",
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "DELETE FROM database_abc.schema1.table1 WHERE\nmy_col in ('it''s a test')"
+    )
+
+
 def test_io_manager_snowflake_additional_snowflake_connection_args():
     """Tests that args passed to additional_snowflake_connection_args are correctly forwarded to
     snowflake.connector.connect.

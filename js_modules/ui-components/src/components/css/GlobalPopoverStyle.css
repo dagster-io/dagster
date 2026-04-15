@@ -6,7 +6,14 @@
 .dagster-popover .bp5-popover-content,
 .dagster-popover .bp5-popover-content {
   background-color: var(--color-popover-background);
+  scrollbar-color: var(--color-accent-gray-hover) var(--color-popover-background);
   border-radius: 4px;
+}
+
+/* scrollbar-color is inherited, but scrollbar-width is not. Apply it to all
+   descendants so any scrollable element within a popover uses a thin scrollbar. */
+.dagster-popover .bp5-popover-content * {
+  scrollbar-width: thin;
 }
 
 .dagster-popover .bp5-popover-content > :first-child,

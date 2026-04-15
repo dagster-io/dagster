@@ -1,9 +1,11 @@
 import os
+import time
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import patch
 
+import pandas
 import pandas_gbq
 import pytest
 from dagster import (
@@ -44,6 +46,21 @@ from google.cloud import bigquery
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, to_date
 from pyspark.sql.types import LongType, StringType, StructField, StructType
+
+
+def _read_gbq_with_retry(
+    query: str, project_id: str, max_retries: int = 3, delay: float = 2.0
+) -> pandas.DataFrame:
+    """Read from BigQuery with retries to handle eventual consistency after writes."""
+    for attempt in range(max_retries):
+        try:
+            return pandas_gbq.read_gbq(query, project_id=project_id)
+        except Exception:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(delay)
+    assert False, "unreachable"
+
 
 resource_config = {
     "database": "database_abc",
@@ -238,7 +255,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
@@ -250,7 +267,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
@@ -262,7 +279,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
@@ -321,7 +338,7 @@ def test_static_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
@@ -333,7 +350,7 @@ def test_static_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
@@ -345,7 +362,7 @@ def test_static_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
@@ -415,7 +432,7 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
@@ -427,7 +444,7 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
@@ -439,7 +456,7 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
@@ -451,7 +468,7 @@ def test_multi_partitioned_asset(spark, io_manager):
             run_config={"ops": {asset_full_name: {"config": {"value": "4"}}}},
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
@@ -517,7 +534,7 @@ def test_dynamic_partitions(spark, io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
             )
 
-            out_df = pandas_gbq.read_gbq(
+            out_df = _read_gbq_with_retry(
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
@@ -532,7 +549,7 @@ def test_dynamic_partitions(spark, io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
             )
 
-            out_df = pandas_gbq.read_gbq(
+            out_df = _read_gbq_with_retry(
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
@@ -545,7 +562,7 @@ def test_dynamic_partitions(spark, io_manager):
                 run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
             )
 
-            out_df = pandas_gbq.read_gbq(
+            out_df = _read_gbq_with_retry(
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
@@ -616,7 +633,7 @@ def test_self_dependent_asset(spark, io_manager):
             },
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
@@ -632,7 +649,7 @@ def test_self_dependent_asset(spark, io_manager):
             },
         )
 
-        out_df = pandas_gbq.read_gbq(
+        out_df = _read_gbq_with_retry(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]

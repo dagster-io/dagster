@@ -6,7 +6,12 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster._core.storage.db_io_manager import (
+    DbTypeHandler,
+    TablePartitionDimension,
+    TableSlice,
+    escape_sql_string_literal,
+)
 from deltalake import CommitProperties, DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
@@ -306,11 +311,14 @@ def _format_predicate_value(value) -> str | None:
 
     # Format based on type
     if hasattr(value, "strftime"):  # datetime-like object
-        return f"'{value.strftime('%Y-%m-%d')}'"  # type: ignore[attr-defined]
+        # strftime output is safe (digits, dashes, colons, spaces) but escape
+        # defensively in case a custom format is ever introduced
+        formatted = value.strftime("%Y-%m-%d")  # type: ignore[attr-defined]
+        return f"'{escape_sql_string_literal(formatted)}'"
     elif isinstance(value, str):
-        return f"'{value}'"
+        return f"'{escape_sql_string_literal(value)}'"
     else:
-        return str(value)
+        raise ValueError(f"Unsupported partition predicate value type: {type(value).__name__}")
 
 
 def _build_partition_predicate(partition_dimensions, table_schema) -> str | None:

@@ -1,0 +1,39 @@
+# serializer version: 1
+# name: TestIssueDataProcessing.test_issue_creation_with_all_statuses[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'test@example.com',
+        'description': 'Test issue for status OPEN.',
+        'id': 'issue-open-uuid',
+        'run_id': None,
+        'status': 'OPEN',
+        'title': 'Issue with status OPEN',
+      }),
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'test@example.com',
+        'description': 'Test issue for status CLOSED.',
+        'id': 'issue-closed-uuid',
+        'run_id': None,
+        'status': 'CLOSED',
+        'title': 'Issue with status CLOSED',
+      }),
+      dict({
+        'asset_key': None,
+        'context': None,
+        'created_by_email': 'test@example.com',
+        'description': 'Test issue for status TRIAGE.',
+        'id': 'issue-triage-uuid',
+        'run_id': None,
+        'status': 'TRIAGE',
+        'title': 'Issue with status TRIAGE',
+      }),
+    ]),
+  })
+# ---

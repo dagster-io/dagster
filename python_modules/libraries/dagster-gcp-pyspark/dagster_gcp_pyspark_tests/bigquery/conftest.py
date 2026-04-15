@@ -1,4 +1,5 @@
 import os
+import time
 
 import pytest
 import requests
@@ -34,13 +35,23 @@ def gcs_jar_path(tmp_path_factory):
     # however, the shaded jar cannot be automatically downloaded from the maven central repository when setting up
     # the spark session. So we download the jar ourselves
     jar_name = "gcs-connector-hadoop2-2.2.11-shaded.jar"
-    jar_path = f"https://repo1.maven.org/maven2/com/google/cloud/bigdataoss/gcs-connector/hadoop2-2.2.11/{jar_name}"
-    r = requests.get(jar_path)
+    jar_url = f"https://repo1.maven.org/maven2/com/google/cloud/bigdataoss/gcs-connector/hadoop2-2.2.11/{jar_name}"
     local_path = os.path.join(tmp_path_factory.mktemp("jars"), jar_name)
-    with open(local_path, "wb+") as f:
-        f.write(r.content)
 
-    return local_path
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            r = requests.get(jar_url, timeout=60)
+            r.raise_for_status()
+            with open(local_path, "wb+") as f:
+                f.write(r.content)
+            return local_path
+        except (requests.RequestException, OSError):
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(2**attempt)
+
+    return local_path  # unreachable, but satisfies type checker
 
 
 @pytest.fixture(scope="module")

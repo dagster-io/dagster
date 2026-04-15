@@ -11,10 +11,7 @@ from unittest.mock import MagicMock, patch
 import dagster as dg
 import pytest
 import yaml
-from dagster import (
-    _check as check,
-    seven,
-)
+from dagster import _check as check
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
@@ -53,6 +50,7 @@ from dagster._daemon.controller import create_daemons_from_instance
 from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils import file_relative_path
+from dagster_shared import seven
 from typing_extensions import Self
 
 from dagster_tests.api_tests.utils import get_bar_workspace
@@ -211,7 +209,7 @@ def test_run_queue_key():
     with dg.instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
                 "class": "QueuedRunCoordinator",
                 "config": config,
             }
@@ -235,7 +233,7 @@ def test_run_queue_key():
             overrides={
                 "run_queue": config,
                 "run_coordinator": {
-                    "module": "dagster.core.run_coordinator",
+                    "module": "dagster._core.run_coordinator",
                     "class": "QueuedRunCoordinator",
                     "config": config,
                 },

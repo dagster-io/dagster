@@ -184,4 +184,5 @@ class RandomAssets(NamedTuple):
             activity_history=ActivityHistory(run_requests),
             max_execution_time_seconds=max_execution_time_seconds,
             name=name,
+            current_time=datetime(2024, 1, 1),
         )

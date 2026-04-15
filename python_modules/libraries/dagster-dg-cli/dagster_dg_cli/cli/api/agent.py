@@ -20,7 +20,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.agent", cls="DgApiAgentList")
+@dg_response_schema(module="dagster_rest_resources.schemas.agent", cls="DgApiAgentList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -33,7 +33,7 @@ def list_agents_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.agent import DgApiAgentApi
+    from dagster_rest_resources.api.agent import DgApiAgentApi
 
     api = DgApiAgentApi(client)
 
@@ -51,7 +51,7 @@ def list_agents_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.agent", cls="DgApiAgent")
+@dg_response_schema(module="dagster_rest_resources.schemas.agent", cls="DgApiAgent")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -69,7 +69,7 @@ def get_agent_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.agent import DgApiAgentApi
+    from dagster_rest_resources.api.agent import DgApiAgentApi
 
     api = DgApiAgentApi(client)
 

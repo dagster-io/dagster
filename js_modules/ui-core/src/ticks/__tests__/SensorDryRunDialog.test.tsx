@@ -146,6 +146,17 @@ describe('SensorDryRunTest', () => {
     });
   });
 
+  it('shows apply button for dynamic partition requests with no run requests', async () => {
+    const user = userEvent.setup();
+    render(<Test mocks={[Mocks.SensorDryRunMutationDynamicPartitionsOnly]} />);
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    // Should show "Apply requests & commit tick result", not just "Commit tick result"
+    expect(await screen.findByTestId('launch-all')).toBeVisible();
+    expect(screen.queryByTestId('commit-tick-result')).toBe(null);
+  });
+
   it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
     const user = userEvent.setup();
     const pushSpy = jest.fn();

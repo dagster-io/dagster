@@ -8,10 +8,12 @@ import {
   AllExpressionContext,
   AndExpressionContext,
   AttributeExpressionContext,
+  AutomationTypeAttributeExprContext,
   CodeLocationAttributeExprContext,
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
   GroupAttributeExprContext,
+  JobAttributeExprContext,
   KeyExprContext,
   KindAttributeExprContext,
   NotExpressionContext,
@@ -19,6 +21,8 @@ import {
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
   PartitionsAttributeExprContext,
+  ScheduleAttributeExprContext,
+  SensorAttributeExprContext,
   StartContext,
   StatusAttributeExprContext,
   TagAttributeExprContext,
@@ -312,6 +316,40 @@ export class AntlrAssetSelectionVisitor
             return false;
         }
       }),
+    );
+  }
+
+  visitAutomationTypeAttributeExpr(ctx: AutomationTypeAttributeExprContext) {
+    const valueCtx = ctx.value();
+    return this._supplementaryDataLookup('automation_type', valueCtx ? getValue(valueCtx) : '');
+  }
+
+  visitSensorAttributeExpr(ctx: SensorAttributeExprContext) {
+    const valueCtx = ctx.value();
+    return this._supplementaryDataLookup('sensor', valueCtx ? getValue(valueCtx) : '');
+  }
+
+  visitScheduleAttributeExpr(ctx: ScheduleAttributeExprContext) {
+    const valueCtx = ctx.value();
+    return this._supplementaryDataLookup('schedule', valueCtx ? getValue(valueCtx) : '');
+  }
+
+  visitJobAttributeExpr(ctx: JobAttributeExprContext) {
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    return new Set([...this.all_assets].filter((i) => i.node.jobNames.includes(value)));
+  }
+
+  private _supplementaryDataLookup(field: string, value: string): Set<AssetGraphQueryItem> {
+    const supplementaryDataKey = getSupplementaryDataKey({field, value});
+    const matchingAssetKeys = this.supplementaryData?.[supplementaryDataKey];
+    if (!matchingAssetKeys) {
+      return new Set<AssetGraphQueryItem>();
+    }
+    return new Set(
+      matchingAssetKeys
+        .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key)))
+        .filter((item): item is AssetGraphQueryItem => item !== undefined),
     );
   }
 }

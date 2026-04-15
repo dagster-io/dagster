@@ -71,6 +71,7 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron from '../icon-svgs/chevron.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
+import claude from '../icon-svgs/claude.svg';
 import close from '../icon-svgs/close.svg';
 import cloud from '../icon-svgs/cloud.svg';
 import code_block from '../icon-svgs/code_block.svg';
@@ -106,6 +107,7 @@ import create_view from '../icon-svgs/create_view.svg';
 import credit_card from '../icon-svgs/credit_card.svg';
 import credits from '../icon-svgs/credits.svg';
 import curly_braces from '../icon-svgs/curly_braces.svg';
+import cursor from '../icon-svgs/cursor.svg';
 import daemon from '../icon-svgs/daemon.svg';
 import dagster_primary from '../icon-svgs/dagster_primary.svg';
 import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
@@ -266,6 +268,7 @@ import offline from '../icon-svgs/offline.svg';
 import op from '../icon-svgs/op.svg';
 import op_dynamic from '../icon-svgs/op_dynamic.svg';
 import op_selector from '../icon-svgs/op_selector.svg';
+import open_ai from '../icon-svgs/open_ai.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import or from '../icon-svgs/or.svg';
 import organization from '../icon-svgs/organization.svg';
@@ -502,6 +505,7 @@ export const Icons = {
   chevron,
   chevron_left,
   chevron_right,
+  claude,
   close,
   cloud,
   code_block,
@@ -537,6 +541,7 @@ export const Icons = {
   credit_card,
   credits,
   curly_braces,
+  cursor,
   daemon,
   dagster_primary,
   dagster_reversed,
@@ -695,6 +700,7 @@ export const Icons = {
   offline,
   op,
   op_selector,
+  open_ai,
   open_in_new,
   or,
   organization,

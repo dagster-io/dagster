@@ -83,7 +83,7 @@ def test_dagster_dev_command_no_dagster_home():
     }
     dagster_yaml = {
         "run_coordinator": {
-            "module": "dagster.core.run_coordinator",
+            "module": "dagster._core.run_coordinator",
             "class": "QueuedRunCoordinator",
         },
     }

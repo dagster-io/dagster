@@ -1,0 +1,54 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODUyODM1MX0=",
+    "events": [
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "run_etl_pipeline intends to materialize asset [\"enriched_data\"]",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.concat_chunk_list",
+        "timestamp": "1758808865047"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Launched as an automatic retry",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808865075"
+      },
+      {
+        "__typename": "RunEnqueuedEvent",
+        "eventType": "RUN_ENQUEUED",
+        "level": "INFO",
+        "message": "",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808865098"
+      },
+      {
+        "__typename": "RunStartingEvent",
+        "eventType": "RUN_STARTING",
+        "level": "INFO",
+        "message": "",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867161"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending a request to the agent to execute steps in the user cloud",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867189"
+      }
+    ],
+    "hasMore": true
+  }
+}

@@ -1,0 +1,83 @@
+# serializer version: 1
+# name: TestAssetCheckDataProcessing.test_asset_check_execution_all_statuses[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'test_check',
+        'id': 'exec-in_progress',
+        'partition': None,
+        'run_id': 'run-in_progress',
+        'status': 'IN_PROGRESS',
+        'step_key': 'test_step',
+        'timestamp': 1706745600.0,
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'test_check',
+        'id': 'exec-succeeded',
+        'partition': None,
+        'run_id': 'run-succeeded',
+        'status': 'SUCCEEDED',
+        'step_key': 'test_step',
+        'timestamp': 1706745600.0,
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'test_check',
+        'id': 'exec-failed',
+        'partition': None,
+        'run_id': 'run-failed',
+        'status': 'FAILED',
+        'step_key': 'test_step',
+        'timestamp': 1706745600.0,
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'test_check',
+        'id': 'exec-skipped',
+        'partition': None,
+        'run_id': 'run-skipped',
+        'status': 'SKIPPED',
+        'step_key': 'test_step',
+        'timestamp': 1706745600.0,
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'check_name': 'test_check',
+        'id': 'exec-execution_failed',
+        'partition': None,
+        'run_id': 'run-execution_failed',
+        'status': 'EXECUTION_FAILED',
+        'step_key': 'test_step',
+        'timestamp': 1706745600.0,
+      }),
+    ]),
+  })
+# ---
+# name: TestAssetCheckDataProcessing.test_asset_check_list_serialization[0]
+  dict({
+    'items': list([
+      dict({
+        'asset_key': 'my/asset',
+        'blocking': True,
+        'can_execute_individually': None,
+        'description': 'First check',
+        'job_names': list([
+        ]),
+        'name': 'check_a',
+      }),
+      dict({
+        'asset_key': 'my/asset',
+        'blocking': False,
+        'can_execute_individually': None,
+        'description': None,
+        'job_names': list([
+        ]),
+        'name': 'check_b',
+      }),
+    ]),
+  })
+# ---

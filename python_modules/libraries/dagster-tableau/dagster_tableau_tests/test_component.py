@@ -153,7 +153,8 @@ class TestTableauTranslation(TestTranslation):
                     key = key_modifier(key)
 
                 assets_def = defs.resolve_assets_def(key)
-                assert assertion(assets_def.get_asset_spec(key))
+                asset_spec = assets_def.get_asset_spec(key)
+                assert assertion(asset_spec)
 
 
 def test_component_workbook_selector_by_id(

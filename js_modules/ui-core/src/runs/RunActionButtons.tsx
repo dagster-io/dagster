@@ -1,4 +1,4 @@
-import {Box, Button, Icon, showToast} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Tooltip, showToast} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
@@ -25,7 +25,7 @@ interface RunActionButtonsProps {
 }
 
 export const CancelRunButton = ({run}: {run: RunFragment}) => {
-  const {id: runId, canTerminate} = run;
+  const {id: runId, canTerminate, hasTerminatePermission} = run;
   const [showDialog, setShowDialog] = useState<boolean>(false);
   const closeDialog = useCallback(() => setShowDialog(false), []);
 
@@ -48,16 +48,20 @@ export const CancelRunButton = ({run}: {run: RunFragment}) => {
     return null;
   }
 
-  return (
+  const button = (
+    <Button
+      icon={<Icon name="cancel" />}
+      intent="danger"
+      disabled={showDialog || !hasTerminatePermission}
+      onClick={() => setShowDialog(true)}
+    >
+      Terminate
+    </Button>
+  );
+
+  return hasTerminatePermission ? (
     <>
-      <Button
-        icon={<Icon name="cancel" />}
-        intent="danger"
-        disabled={showDialog}
-        onClick={() => setShowDialog(true)}
-      >
-        Terminate
-      </Button>
+      {button}
       <TerminationDialog
         isOpen={showDialog}
         onClose={closeDialog}
@@ -65,6 +69,8 @@ export const CancelRunButton = ({run}: {run: RunFragment}) => {
         selectedRuns={{[runId]: canTerminate}}
       />
     </>
+  ) : (
+    <Tooltip content={DEFAULT_DISABLED_REASON}>{button}</Tooltip>
   );
 };
 

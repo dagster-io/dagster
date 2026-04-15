@@ -197,8 +197,9 @@ export const SuggestionJSXBase = ({
 };
 
 type Functions = Array<'sinks' | 'roots'>;
+type AttributeItems = string[] | {key: string; value?: string}[];
 export const createProvider = <
-  TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
+  TAttributeMap extends {[key: string]: AttributeItems},
   TPrimaryAttributeKey extends keyof TAttributeMap,
 >({
   attributeToIcon,
@@ -400,23 +401,22 @@ export const createProvider = <
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
 
       const regex = createRegex(query, shouldTreatAsteriskAsWildcard);
-      const results =
-        values
-          ?.filter((value) => {
-            if (shouldTreatAsteriskAsWildcard) {
-              if (typeof value === 'string') {
-                return regex.test(value);
+      const results = values
+        ? filterMap<AttributeItems[0], Suggestion>(
+            values,
+            (value) => {
+              if (shouldTreatAsteriskAsWildcard) {
+                if (typeof value === 'string') {
+                  return regex.test(value);
+                }
+                return regex.test(value.key) || (value.value ? regex.test(value.value) : false);
               }
-              return regex.test(value.key) || (value.value && regex.test(value.value));
-            }
-            return doesValueIncludeQuery({value, query});
-          })
-          .map((value) =>
-            createAttributeValueSuggestion({
-              value,
-              textCallback,
-            }),
-          ) ?? [];
+              return doesValueIncludeQuery({value, query});
+            },
+            (value) => createAttributeValueSuggestion({value, textCallback}),
+            MAX_RESULTS_PER_ATTRIBUTE,
+          )
+        : [];
       if (results.length === 0) {
         return [
           {
@@ -452,21 +452,42 @@ export const createProvider = <
     },
     getAllResults: ({query, textCallback}) => {
       return Object.keys(attributesMap).flatMap((attribute) => {
-        return (
-          attributesMap[attribute]
-            ?.filter((value) => doesValueIncludeQuery({value, query}))
-            .map((value) =>
-              createAttributeAndValueSuggestion({
-                attribute,
-                value,
-                textCallback,
-              }),
-            ) ?? []
-        );
+        return attributesMap[attribute]
+          ? filterMap<AttributeItems[0], Suggestion>(
+              attributesMap[attribute],
+              (value) => doesValueIncludeQuery({value, query}),
+              (value) => createAttributeAndValueSuggestion({attribute, value, textCallback}),
+              MAX_RESULTS_PER_ATTRIBUTE,
+            )
+          : [];
       });
     },
   };
 };
+
+const MAX_RESULTS_PER_ATTRIBUTE = 50;
+
+/**
+ * Like Array.filter().map(), but exits early once `limit` results have been collected.
+ * This avoids running the predicate and mapper on the remaining elements.
+ */
+function filterMap<T, R>(
+  items: T[],
+  predicate: (item: T) => boolean,
+  mapper: (item: T) => R,
+  limit: number,
+): R[] {
+  const results: R[] = [];
+  for (const item of items) {
+    if (predicate(item)) {
+      results.push(mapper(item));
+      if (results.length >= limit) {
+        break;
+      }
+    }
+  }
+  return results;
+}
 
 function createRegex(pattern: string, interpretWildcards: boolean): RegExp {
   if (!interpretWildcards) {

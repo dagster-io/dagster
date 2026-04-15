@@ -40,6 +40,8 @@ type SelectionAutoCompleteInputProps = {
   onErrorStateChange?: (errors: SyntaxError[]) => void;
   onChange?: (value: string) => void;
   // Omitting onChange will make the input read only
+  onSubmit?: (value: string) => void;
+  className?: string;
 
   wildcardAttributeName: string;
 };
@@ -50,12 +52,15 @@ export const SelectionAutoCompleteInput = ({
   value,
   placeholder,
   onChange,
+  onSubmit,
   linter,
   useAutoComplete,
   saveOnBlur = false,
   onErrorStateChange,
   wildcardAttributeName,
+  className,
 }: SelectionAutoCompleteInputProps) => {
+  const onSubmitRef = useUpdatingRef(onSubmit);
   const trackEvent = useTrackEvent();
 
   const trackSelection = useMemo(() => {
@@ -292,6 +297,7 @@ export const SelectionAutoCompleteInput = ({
           e.stopPropagation();
           e.preventDefault();
           onSelectionChange(innerValueRef.current);
+          onSubmitRef.current?.(innerValueRef.current);
           setShowResults({current: false});
         }
       } else if (!showResults.current) {
@@ -327,6 +333,7 @@ export const SelectionAutoCompleteInput = ({
       selectedItem,
       onSelect,
       onSelectionChange,
+      onSubmitRef,
       innerValueRef,
       setShowResults,
       autoCompleteResults?.list.length,
@@ -426,6 +433,7 @@ export const SelectionAutoCompleteInput = ({
         canEscapeKeyClose={true}
       >
         <InputDiv
+          className={className}
           $isCommitted={innerValue === value}
           $hasErrors={errors.length > 0}
           style={{

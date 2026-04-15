@@ -249,8 +249,10 @@ const List = ({rows}: {rows: React.ReactNode[]}) => {
           }}
         >
           {rowItems.map(({index, key}) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const row = rows[index]!;
+            const row = rows[index];
+            if (!row) {
+              return null;
+            }
             return (
               <div key={key} ref={rowVirtualizer.measureElement} data-index={index}>
                 {row}
@@ -346,21 +348,21 @@ const SelectionListItem = React.memo(
     item: ViewType;
     assetsByAssetKey: Map<string, AssetTableFragment>;
   }) => {
-    if (item.__typename === 'CatalogView') {
-      return <AssetSelectionSummaryListItemFromSelection index={index} item={item} />;
+    if (item.__typename === 'FavoritesView') {
+      return (
+        <AssetSelectionSummaryListItem
+          index={index}
+          assets={item.assets
+            .map((assetKey: string) => assetsByAssetKey.get(assetKey))
+            .filter((asset: AssetTableFragment | undefined) => !!asset)}
+          icon={<Icon name={item.icon as IconName} size={16} />}
+          label={item.name}
+          link={item.link}
+        />
+      );
     }
-    return (
-      <AssetSelectionSummaryListItem
-        index={index}
-        assets={item.assets
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .map((assetKey: string) => assetsByAssetKey.get(assetKey)!)
-          .filter(Boolean)}
-        icon={<Icon name={item.icon as IconName} size={16} />}
-        label={item.name}
-        link={item.link}
-      />
-    );
+
+    return <AssetSelectionSummaryListItemFromSelection index={index} item={item} />;
   },
 );
 
@@ -378,8 +380,9 @@ export const SelectionTile = React.memo(
       <AssetSelectionSummaryTile
         icon={<Icon name={item.icon as IconName} size={20} />}
         label={item.name}
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        assets={item.assets.map((assetKey: any) => assetsByAssetKey.get(assetKey)!).filter(Boolean)}
+        assets={item.assets
+          .map((assetKey: string) => assetsByAssetKey.get(assetKey))
+          .filter((asset: AssetTableFragment | undefined) => !!asset)}
         link={item.link}
       />
     ) : (

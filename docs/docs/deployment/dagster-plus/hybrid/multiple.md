@@ -150,20 +150,7 @@ To route requests for a code location to a specific agent, annotate the code loc
 
 ### Step 1: Define an agent queue for the code location
 
-First, set an agent queue for the code location in your [`build.yaml`](/deployment/dagster-plus/management/build-yaml):
-
-```yaml
-# build.yaml
-
-locations:
-  - location_name: data-eng-pipeline
-    code_source:
-      package_name: quickstart_etl
-    executable_path: venvs/path/to/dataengineering_spark_team/bin/python
-    agent_queue: special-queue
-```
-
-For `dg`-based projects, you can alternatively set the agent queue in [`pyproject.toml`](/deployment/dagster-plus/management/build-yaml#agent-queue-pyproject):
+First, set an agent queue for the code location in your [`pyproject.toml`](/deployment/dagster-plus/management/build-yaml#pyprojecttoml):
 
 ```toml
 # pyproject.toml

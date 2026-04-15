@@ -61,7 +61,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Defines how to translate an Omni object into an AssetSpec object.",
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.versioned_state_storage()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @property
     def defs_state_config(self) -> DefsStateConfig:

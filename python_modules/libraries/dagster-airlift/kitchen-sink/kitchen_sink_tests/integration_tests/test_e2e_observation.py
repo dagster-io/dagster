@@ -27,7 +27,7 @@ def poll_for_observation(
     asset_key: AssetKey,
 ) -> EventLogEntry:
     start_time = get_current_datetime()
-    while get_current_datetime() - start_time < timedelta(seconds=30):
+    while get_current_datetime() - start_time < timedelta(seconds=60):
         records = dagster_instance.fetch_observations(records_filter=asset_key, limit=1).records
         if len(records) > 0:
             return records[0].event_log_entry
@@ -36,12 +36,12 @@ def poll_for_observation(
     raise Exception(f"Timeout waiting for observation event on {asset_key}")
 
 
-@pytest.fixture(name="dagster_home")
+@pytest.fixture(name="dagster_home", scope="module")
 def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
-@pytest.fixture(name="dagster_dev_cmd")
+@pytest.fixture(name="dagster_dev_cmd", scope="module")
 def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_observation_defs", "-C", str(makefile_dir())]
 

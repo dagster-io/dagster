@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from dagster import AssetKey
+from dagster import AssetKey, AutomationCondition
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
+from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_powerbi import PowerBIWorkspaceComponent
@@ -40,6 +41,7 @@ def setup_powerbi_component(
             defs_yaml_contents=defs_yaml_contents,
         )
         with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
@@ -143,7 +145,7 @@ def test_basic_component_load(
         ),
         (
             {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
+            lambda asset_spec: asset_spec.automation_condition == AutomationCondition.eager(),
             False,
         ),
         (
@@ -316,6 +318,7 @@ def test_subclass_override_get_asset_spec(
             },
         )
         with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (_, defs),
         ):

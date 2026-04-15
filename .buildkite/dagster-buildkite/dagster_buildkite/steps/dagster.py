@@ -103,6 +103,12 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                     "uv venv",
                     "source .venv/bin/activate",
                     f"make -C {oss_path('.')} install_pyright",
+                    # Cap Node.js heap at 4GB. Without this, pyright (which runs
+                    # on Node.js) can exceed physical memory under pressure,
+                    # causing V8's garbage collector to thrash on swapped pages
+                    # and hang silently for the full job timeout. With the cap,
+                    # it OOMs immediately with a clear error instead.
+                    "export NODE_OPTIONS=--max-old-space-size=4096",
                     f"make -C {oss_path('.')} pyright",
                 )
                 .skip(get_general_python_step_skip_reason(ctx, other_paths=["pyright"]))
@@ -117,6 +123,12 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                     "uv venv",
                     "source .venv/bin/activate",
                     f"make -C {oss_path('.')} install_pyright",
+                    # Cap Node.js heap at 4GB. Without this, pyright (which runs
+                    # on Node.js) can exceed physical memory under pressure,
+                    # causing V8's garbage collector to thrash on swapped pages
+                    # and hang silently for the full job timeout. With the cap,
+                    # it OOMs immediately with a clear error instead.
+                    "export NODE_OPTIONS=--max-old-space-size=4096",
                     f"make -C {oss_path('.')} rebuild_pyright_pins",
                 )
                 .skip(_get_pyright_pin_step_skip_reason(ctx))

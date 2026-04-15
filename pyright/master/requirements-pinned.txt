@@ -186,6 +186,7 @@ dagster-modal==0.0.4
 -e python_modules/libraries/dagster-prometheus
 -e python_modules/libraries/dagster-pyspark
 dagster-qdrant==0.0.3
+-e python_modules/libraries/dagster-rest-resources
 -e python_modules/libraries/dagster-shared
 -e python_modules/libraries/dagster-sigma
 -e python_modules/libraries/dagster-slack

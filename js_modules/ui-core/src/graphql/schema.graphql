@@ -631,6 +631,7 @@ type Asset {
   latestEventSortKey: ID
   assetHealth: AssetHealth
   latestMaterializationTimestamp: Float
+  latestObservationTimestamp: Float
   hasDefinitionOrRecord: Boolean!
   latestFailedToMaterializeTimestamp: Float
   freshnessStatusChangedTimestamp: Float
@@ -723,6 +724,7 @@ type AssetNode {
   isObservable: Boolean!
   isMaterializable: Boolean!
   isPartitioned: Boolean!
+  isVirtual: Boolean!
   isAutoCreatedStub: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
@@ -2860,6 +2862,7 @@ type RunQueueConfig {
   maxConcurrentRuns: Int!
   tagConcurrencyLimitsYaml: String
   isOpConcurrencyAware: Boolean
+  maxConcurrentRunsAllBranchDeployments: Int
 }
 
 type ConcurrencyKeyInfo {

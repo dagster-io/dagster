@@ -24,19 +24,13 @@ Agent queues are a Dagster+ Pro feature.
 
 Add a `build.yaml` to the directory containing the Hybrid code location. The Hybrid location uses Docker images and routes to a dedicated agent queue.
 
-The `build.registry` field specifies where the Docker image is stored.
+The `registry` field specifies where the Docker image is stored.
 
 ```yaml title="build.yaml"
-locations:
-  - location_name: hybrid-location
-    code_source:
-      package_name: hybrid_location.definitions
-    working_directory: ./src/
-    build:
-      registry: ghcr.io/my-org/my-repo/hybrid-location
+registry: ghcr.io/my-org/my-repo/hybrid-location
 ```
 
-Configure `agent_queue` in `pyproject.toml` to route this location to agents serving that queue name:
+Configure `agent_queue` and other project settings in `pyproject.toml`:
 
 ```toml title="pyproject.toml"
 [tool.dg.project]
@@ -44,7 +38,7 @@ root_module = "hybrid_location"
 agent_queue = "hybrid-queue"
 ```
 
-For a full `build.yaml` specification, see the [build.yaml reference](/deployment/dagster-plus/management/build-yaml).
+For the full specification of all deployment configuration files, see the [deployment configuration reference](/deployment/dagster-plus/management/build-yaml).
 
 ## Full working example
 

@@ -1,6 +1,4 @@
-import logging
 from collections.abc import Sequence
-from functools import cached_property
 from typing import NamedTuple
 
 from dagster import (
@@ -11,7 +9,6 @@ from dagster import (
     Definitions,
     Resolvable,
     _check as check,
-    get_dagster_logger,
     multi_asset_check,
 )
 from dagster._annotations import public
@@ -34,13 +31,7 @@ from dagster_dbt.asset_utils import (
 from dagster_dbt.cloud_v2.cli_invocation import DbtCloudCliInvocation
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
-from dagster_dbt.cloud_v2.types import (
-    DbtCloudAccount,
-    DbtCloudEnvironment,
-    DbtCloudJob,
-    DbtCloudProject,
-    DbtCloudWorkspaceData,
-)
+from dagster_dbt.cloud_v2.types import DbtCloudJob, DbtCloudWorkspaceData
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from dagster_dbt.utils import clean_name
 
@@ -48,15 +39,8 @@ DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
 
 
-def get_dagster_adhoc_job_name(
-    project_id: int,
-    project_name: str | None,
-    environment_id: int,
-    environment_name: str | None,
-) -> str:
-    name = (
-        f"{DAGSTER_ADHOC_PREFIX}{project_name or project_id}__{environment_name or environment_id}"
-    )
+def get_dagster_adhoc_job_name(project_id: int, environment_id: int) -> str:
+    name = f"{DAGSTER_ADHOC_PREFIX}{project_id}__{environment_id}"
     # Clean the name and convert it to uppercase
     return clean_name(name).upper()
 
@@ -129,11 +113,6 @@ class DbtCloudWorkspace(ConfigurableResource, Resolvable):
     )
 
     @property
-    @cached_method
-    def _log(self) -> logging.Logger:
-        return get_dagster_logger()
-
-    @property
     def unique_id(self) -> str:
         """Unique ID for this dbt Cloud workspace, which is composed of the project ID and environment ID.
 
@@ -141,59 +120,6 @@ class DbtCloudWorkspace(ConfigurableResource, Resolvable):
             str: the unique ID for this dbt Cloud workspace.
         """
         return f"{self.project_id}-{self.environment_id}"
-
-    @cached_property
-    def account_name(self) -> str | None:
-        """The name of the account for this dbt Cloud workspace.
-
-        Returns:
-            Optional[str]: the name of the account for this dbt Cloud workspace.
-        """
-        account = DbtCloudAccount.from_account_details(
-            account_details=self.get_client().get_account_details()
-        )
-        if not account.name:
-            self._log.warning(
-                f"Account name was not returned by the dbt Cloud API for account ID `{account.id}`. "
-                f"Make sure to set a name for this account in dbt Cloud."
-            )
-        return account.name
-
-    @cached_property
-    def project_name(self) -> str | None:
-        """The name of the project for this dbt Cloud workspace.
-
-        Returns:
-            str: the name of the project for this dbt Cloud workspace.
-        """
-        project = DbtCloudProject.from_project_details(
-            project_details=self.get_client().get_project_details(project_id=self.project_id)
-        )
-        if not project.name:
-            self._log.warning(
-                f"Project name was not returned by the dbt Cloud API for project ID `{project.id}`. "
-                f"Make sure to set a name for this project in dbt Cloud."
-            )
-        return project.name
-
-    @cached_property
-    def environment_name(self) -> str | None:
-        """The name of the environment for this dbt Cloud workspace.
-
-        Returns:
-            str: the name of the environment for this dbt Cloud workspace.
-        """
-        environment = DbtCloudEnvironment.from_environment_details(
-            environment_details=self.get_client().get_environment_details(
-                environment_id=self.environment_id
-            )
-        )
-        if not environment.name:
-            self._log.warning(
-                f"Environment name was not returned by the dbt Cloud API for environment ID `{environment.id}`. "
-                f"Make sure to set a name for this environment in dbt Cloud."
-            )
-        return environment.name
 
     @cached_method
     def get_client(self) -> DbtCloudWorkspaceClient:
@@ -218,11 +144,13 @@ class DbtCloudWorkspace(ConfigurableResource, Resolvable):
             DbtCloudJob: Internal representation of the dbt Cloud job.
         """
         client = self.get_client()
-        expected_job_name = self.adhoc_job_name or get_dagster_adhoc_job_name(
-            project_id=self.project_id,
-            project_name=self.project_name,
-            environment_id=self.environment_id,
-            environment_name=self.environment_name,
+        expected_job_name = (
+            self.adhoc_job_name
+            if self.adhoc_job_name is not None
+            else get_dagster_adhoc_job_name(
+                project_id=self.project_id,
+                environment_id=self.environment_id,
+            )
         )
         jobs = [
             DbtCloudJob.from_job_details(job_details)

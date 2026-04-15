@@ -24,7 +24,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.schedule", cls="DgApiScheduleList")
+@dg_response_schema(module="dagster_rest_resources.schemas.schedule", cls="DgApiScheduleList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -44,7 +44,7 @@ def list_schedules_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.schedule import DgApiScheduleApi
+    from dagster_rest_resources.api.schedule import DgApiScheduleApi
 
     api = DgApiScheduleApi(client)
 
@@ -52,7 +52,7 @@ def list_schedules_command(
         schedules = api.list_schedules()
 
         if status:
-            from dagster_dg_cli.api_layer.schemas.schedule import (
+            from dagster_rest_resources.schemas.schedule import (
                 DgApiScheduleList,
                 DgApiScheduleStatus,
             )
@@ -76,7 +76,7 @@ def list_schedules_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.schedule", cls="DgApiSchedule")
+@dg_response_schema(module="dagster_rest_resources.schemas.schedule", cls="DgApiSchedule")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -96,7 +96,7 @@ def get_schedule_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.schedule import DgApiScheduleApi
+    from dagster_rest_resources.api.schedule import DgApiScheduleApi
 
     api = DgApiScheduleApi(client)
 
@@ -124,7 +124,7 @@ def get_schedule_command(
     "--after", "after_timestamp", type=float, help="Filter ticks after this Unix timestamp"
 )
 @click.option("--json", "output_json", is_flag=True, help="Output in JSON format")
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.tick", cls="DgApiTickList")
+@dg_response_schema(module="dagster_rest_resources.schemas.tick", cls="DgApiTickList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -143,7 +143,7 @@ def get_schedule_ticks_command(
     view_graphql: bool,
 ) -> None:
     """Get tick history for a specific schedule."""
-    from dagster_dg_cli.api_layer.api.tick import DgApiTickApi
+    from dagster_rest_resources.api.tick import DgApiTickApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,

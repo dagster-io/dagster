@@ -1,0 +1,98 @@
+# serializer version: 1
+# name: TestSecretDataProcessing.test_secret_creation_with_all_scopes[0]
+  dict({
+    'items': list([
+      dict({
+        'all_branch_deployments_scope': False,
+        'can_edit_secret': True,
+        'can_view_secret_value': True,
+        'full_deployment_scope': True,
+        'id': 'scope-test-secret-0',
+        'local_deployment_scope': False,
+        'location_names': list([
+          'location_0',
+        ]),
+        'name': 'scope_test_secret_0',
+        'specific_branch_deployment_scope': None,
+        'update_timestamp': '2022-01-01T14:20:00',
+        'updated_by': dict({
+          'email': 'user0@company.com',
+        }),
+        'value': 'test_value_0',
+      }),
+      dict({
+        'all_branch_deployments_scope': True,
+        'can_edit_secret': True,
+        'can_view_secret_value': True,
+        'full_deployment_scope': False,
+        'id': 'scope-test-secret-1',
+        'local_deployment_scope': False,
+        'location_names': list([
+          'location_1',
+        ]),
+        'name': 'scope_test_secret_1',
+        'specific_branch_deployment_scope': None,
+        'update_timestamp': '2022-01-01T14:20:01',
+        'updated_by': dict({
+          'email': 'user1@company.com',
+        }),
+        'value': 'test_value_1',
+      }),
+      dict({
+        'all_branch_deployments_scope': False,
+        'can_edit_secret': True,
+        'can_view_secret_value': True,
+        'full_deployment_scope': False,
+        'id': 'scope-test-secret-2',
+        'local_deployment_scope': False,
+        'location_names': list([
+          'location_2',
+        ]),
+        'name': 'scope_test_secret_2',
+        'specific_branch_deployment_scope': 'main',
+        'update_timestamp': '2022-01-01T14:20:02',
+        'updated_by': dict({
+          'email': 'user2@company.com',
+        }),
+        'value': 'test_value_2',
+      }),
+      dict({
+        'all_branch_deployments_scope': False,
+        'can_edit_secret': True,
+        'can_view_secret_value': True,
+        'full_deployment_scope': False,
+        'id': 'scope-test-secret-3',
+        'local_deployment_scope': True,
+        'location_names': list([
+          'location_3',
+        ]),
+        'name': 'scope_test_secret_3',
+        'specific_branch_deployment_scope': None,
+        'update_timestamp': '2022-01-01T14:20:03',
+        'updated_by': dict({
+          'email': 'user3@company.com',
+        }),
+        'value': 'test_value_3',
+      }),
+      dict({
+        'all_branch_deployments_scope': True,
+        'can_edit_secret': True,
+        'can_view_secret_value': True,
+        'full_deployment_scope': True,
+        'id': 'scope-test-secret-4',
+        'local_deployment_scope': True,
+        'location_names': list([
+          'location_4',
+        ]),
+        'name': 'scope_test_secret_4',
+        'specific_branch_deployment_scope': None,
+        'update_timestamp': '2022-01-01T14:20:04',
+        'updated_by': dict({
+          'email': 'user4@company.com',
+        }),
+        'value': 'test_value_4',
+      }),
+    ]),
+    'total': 5,
+  })
+# ---

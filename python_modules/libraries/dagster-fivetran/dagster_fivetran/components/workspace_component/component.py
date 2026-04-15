@@ -135,7 +135,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             "Use this when Fivetran connectors run on Fivetran's auto-schedule."
         ),
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @cached_property
     def workspace_resource(self) -> FivetranWorkspace:

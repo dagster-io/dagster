@@ -277,6 +277,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     isObservable = graphene.NonNull(graphene.Boolean)
     isMaterializable = graphene.NonNull(graphene.Boolean)
     isPartitioned = graphene.NonNull(graphene.Boolean)
+    isVirtual = graphene.NonNull(graphene.Boolean)
     isAutoCreatedStub = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
@@ -1053,6 +1054,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_isExecutable(self, _graphene_info: ResolveInfo) -> bool:
         return self._asset_node_snap.is_executable
+
+    def resolve_isVirtual(self, _graphene_info: ResolveInfo) -> bool:
+        return self._asset_node_snap.is_virtual
 
     def resolve_latestMaterializationByPartition(
         self,
