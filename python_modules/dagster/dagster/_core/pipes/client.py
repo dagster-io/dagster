@@ -12,7 +12,7 @@ from dagster_pipes import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import preview, public
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.result import MaterializeResult
@@ -205,6 +205,18 @@ class PipesMessageReader(ABC):
         The code calling `open_pipes_session()` is responsible for calling `PipesSession.report_launched()`
         if using a message reader that accesses `launched_payload`.
         """
+
+    @property
+    @preview
+    def expected_writer_count(self) -> int:
+        """The number of independent external writers that will report into this reader.
+
+        Defaults to 1 for single-writer readers. Multi-writer readers like
+        :py:class:`PipesCompositeMessageReader` override this to report the actual number of
+        expected writers so that :py:class:`PipesMessageHandler` can correctly track the
+        aggregate `opened`/`closed` lifecycle.
+        """
+        return 1
 
     @abstractmethod
     def no_messages_debug_text(self) -> str:

@@ -25,7 +25,7 @@ from dagster_pipes import (
 
 import dagster._check as check
 from dagster import DagsterEvent
-from dagster._annotations import public
+from dagster._annotations import preview, public
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -57,6 +57,13 @@ if TYPE_CHECKING:
 
 
 PipesExecutionResult: TypeAlias = MaterializeResult | AssetCheckResult
+
+
+# Reserved key used by `PipesCompositeMessageReader` to encode a list of per-writer params
+# inside the opaque `message_reader_params` dict. When present, session helpers like
+# `get_per_writer_bootstrap_env_vars` unpack the list; otherwise the session behaves as
+# single-writer.
+PIPES_COMPOSITE_WRITERS_KEY = "dagster_pipes_composite_writers"
 
 
 @public
@@ -91,10 +98,13 @@ class PipesMessageHandler:
         # Queue is thread-safe
         self._result_queue: Queue[PipesExecutionResult] = Queue()
         self._extra_msg_queue: Queue[Any] = Queue()
-        # Only read by the main thread after all messages are handled, so no need for a lock
-        self._received_opened_msg = False
+        # `opened`/`closed` are tracked as counts to support readers that demultiplex multiple
+        # writers into a single handler (e.g. PipesCompositeMessageReader). The expected count is
+        # read from the reader; single-writer readers default to 1 and behavior is unchanged.
+        self._expected_writers = message_reader.expected_writer_count
+        self._opened_count = 0
+        self._closed_count = 0
         self._messages_include_stdio_logs = False
-        self._received_closed_msg = False
         self._opened_payload: PipesOpenedData | None = None
 
     @contextmanager
@@ -110,11 +120,15 @@ class PipesMessageHandler:
 
     @property
     def received_opened_message(self) -> bool:
-        return self._received_opened_msg
+        # True once at least one writer has opened. Used to distinguish "no messages at all"
+        # from "some writers didn't close cleanly".
+        return self._opened_count >= 1
 
     @property
     def received_closed_message(self) -> bool:
-        return self._received_closed_msg
+        # True once all expected writers have closed. For single-writer (the default) this is
+        # identical to the original boolean semantics.
+        return self._closed_count >= self._expected_writers
 
     def _resolve_metadata(
         self, metadata: Mapping[str, ExternalMetadataValue]
@@ -123,7 +137,7 @@ class PipesMessageHandler:
 
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
-        if self._received_closed_msg:
+        if self.received_closed_message:
             self._context.log.warning(
                 f"[pipes] unexpected message received after closed: `{message}`"
             )
@@ -147,12 +161,15 @@ class PipesMessageHandler:
             raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
 
     def _handle_opened(self, opened_payload: PipesOpenedData) -> None:
-        self._received_opened_msg = True
-        self._context.log.info("[pipes] external process successfully opened dagster pipes.")
+        self._opened_count += 1
+        # Only log once on the first `opened` from any writer; subsequent composite writers are
+        # noisy and not useful to surface individually.
+        if self._opened_count == 1:
+            self._context.log.info("[pipes] external process successfully opened dagster pipes.")
         self._message_reader.on_opened(opened_payload)
 
     def _handle_closed(self, params: Mapping[str, Any] | None) -> None:
-        self._received_closed_msg = True
+        self._closed_count += 1
         if params and "exception" in params:
             err_info = _ser_err_from_pipes_exc(params["exception"])
             # report as an engine event to provide structured exception data
@@ -317,6 +334,51 @@ class PipesSession:
             _env_var_to_cli_argument(param_name): encode_param(param_value)
             for param_name, param_value in self.get_bootstrap_params().items()
         }
+
+    @public
+    @preview
+    def get_per_writer_bootstrap_env_vars(self) -> Sequence[Mapping[str, str]]:
+        """Encode bootstrap params for each external writer as environment variables.
+
+        Most sessions are single-writer and this returns a one-element sequence equivalent to
+        `[get_bootstrap_env_vars()]`. For sessions using :py:class:`PipesCompositeMessageReader`,
+        this returns N per-writer env var mappings, one per underlying reader. Callers that
+        launch multiple external processes that independently report back into a single
+        Dagster session (e.g. Databricks multi-task jobs) should pass each writer's mapping
+        to its corresponding external process.
+        """
+        return [
+            {param_name: encode_param(param_value) for param_name, param_value in params.items()}
+            for params in self._per_writer_bootstrap_params()
+        ]
+
+    @public
+    @preview
+    def get_per_writer_bootstrap_cli_arguments(self) -> Sequence[Mapping[str, str]]:
+        """Per-writer analog of `get_bootstrap_cli_arguments`. See
+        :py:meth:`get_per_writer_bootstrap_env_vars` for semantics.
+        """
+        return [
+            {
+                _env_var_to_cli_argument(param_name): encode_param(param_value)
+                for param_name, param_value in params.items()
+            }
+            for params in self._per_writer_bootstrap_params()
+        ]
+
+    def _per_writer_bootstrap_params(self) -> Sequence[Mapping[str, Any]]:
+        msg_params = self.message_reader_params
+        if PIPES_COMPOSITE_WRITERS_KEY in msg_params:
+            writer_params_list = msg_params[PIPES_COMPOSITE_WRITERS_KEY]
+        else:
+            writer_params_list = [msg_params]
+        return [
+            {
+                DAGSTER_PIPES_CONTEXT_ENV_VAR: self.context_injector_params,
+                DAGSTER_PIPES_MESSAGES_ENV_VAR: writer_params,
+            }
+            for writer_params in writer_params_list
+        ]
 
     @public
     def get_bootstrap_params(self) -> Mapping[str, Any]:

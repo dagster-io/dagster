@@ -21,5 +21,10 @@ dependencies = [
     "databricks-sdk>=0.41,<0.61.0",
 ]
 
+[project.optional-dependencies]
+test = [
+    "build",
+]
+
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks"

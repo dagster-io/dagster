@@ -11,6 +11,7 @@ from contextlib import ExitStack, contextmanager
 from typing import Any, Literal, TextIO
 
 import dagster._check as check
+from dagster._annotations import preview
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
@@ -27,6 +28,7 @@ from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
     PipesChunkedLogReader,
+    PipesCompositeMessageReader,
     PipesLogReader,
     open_pipes_session,
 )
@@ -151,7 +153,14 @@ class BasePipesDatabricksClient(PipesClient):
         context_injector: PipesContextInjector,
         message_reader: PipesMessageReader,
     ) -> PipesClientCompletedInvocation:
-        """Shared implementation for multi-task job submission and polling."""
+        """Shared implementation for multi-task job submission and polling.
+
+        Each task is enriched with its own per-writer Pipes bootstrap params so that
+        concurrent tasks never collide on a shared message destination. The message reader
+        is expected to be a :py:class:`PipesCompositeMessageReader` with one child per task
+        (or a single-writer reader, for legacy callers that are OK with tasks sharing a
+        destination).
+        """
         with open_pipes_session(
             context=context,
             extras=extras,
@@ -159,10 +168,13 @@ class BasePipesDatabricksClient(PipesClient):
             message_reader=message_reader,
         ) as pipes_session:
             enriched_tasks = []
-            for task in tasks:
+            for i, task in enumerate(tasks):
                 submit_task_dict = task.as_dict()
                 submit_task_dict = self._enrich_submit_task_dict(
-                    context=context, session=pipes_session, submit_task_dict=submit_task_dict
+                    context=context,
+                    session=pipes_session,
+                    submit_task_dict=submit_task_dict,
+                    writer_index=i,
                 )
                 enriched_tasks.append(jobs.SubmitTask.from_dict(submit_task_dict))
 
@@ -189,6 +201,7 @@ class BasePipesDatabricksClient(PipesClient):
         context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         submit_task_dict: dict[str, Any],
+        writer_index: int = 0,
     ) -> dict[str, Any]:
         raise NotImplementedError()
 
@@ -356,6 +369,7 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
         )
 
+    @preview
     def run_multi_task(
         self,
         *,
@@ -383,7 +397,17 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
         if not tasks:
             raise ValueError("tasks sequence cannot be empty")
         context_injector = self.context_injector or PipesDbfsContextInjector(client=self.client)
-        message_reader = self.message_reader or self.get_default_message_reader(tasks[0])
+        # When no reader is user-provided, build one reader per task and compose them in a
+        # composite reader. This gives each task its own independent DBFS destination so concurrent
+        # writers never collide. If the user provides their own reader, we pass it through
+        # unchanged; responsibility for multi-writer safety is theirs (e.g. they may have
+        # provided a PipesCompositeMessageReader directly).
+        if self.message_reader is None:
+            message_reader: PipesMessageReader = PipesCompositeMessageReader(
+                [self.get_default_message_reader(task) for task in tasks]
+            )
+        else:
+            message_reader = self.message_reader
         return self._submit_multi_task_and_poll(
             context=context,
             extras=extras,
@@ -398,11 +422,21 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
         context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         submit_task_dict: dict[str, Any],
+        writer_index: int = 0,
     ) -> dict[str, Any]:
+        # Per-writer helpers return a single-element list for non-composite readers.
+        # Clamp the index so that a user-supplied single-writer reader doesn't cause
+        # an IndexError when multiple tasks share the same destination.
+        env_vars_list = session.get_per_writer_bootstrap_env_vars()
+        cli_args_list = session.get_per_writer_bootstrap_cli_arguments()
+        clamped_index = min(writer_index, len(env_vars_list) - 1)
+        per_writer_env_vars = env_vars_list[clamped_index]
+        per_writer_cli_args = cli_args_list[clamped_index]
+
         if "existing_cluster_id" in submit_task_dict:
             # we can't set env vars on an existing cluster
             # so we must use CLI to pass Pipes params
-            cli_args = session.get_bootstrap_cli_arguments()  # this is a mapping
+            cli_args = per_writer_cli_args
 
             for task_type in self.get_task_fields_which_support_cli_parameters():
                 if task_type in submit_task_dict:
@@ -422,16 +456,14 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
             if submit_task_dict.get("notebook_task"):
                 existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
                 # merge the existing parameters with the CLI arguments
-                existing_params = {**existing_params, **session.get_bootstrap_env_vars()}
+                existing_params = {**existing_params, **per_writer_env_vars}
                 submit_task_dict["notebook_task"]["base_parameters"] = existing_params
 
         else:
-            pipes_env_vars = session.get_bootstrap_env_vars()
-
             submit_task_dict["new_cluster"]["spark_env_vars"] = {
                 **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
                 **(self.env or {}),
-                **pipes_env_vars,
+                **per_writer_env_vars,
             }
 
         submit_task_dict["tags"] = {
@@ -755,6 +787,7 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
         )
 
+    @preview
     def run_multi_task(
         self,
         *,
@@ -785,10 +818,20 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         context_injector = self.context_injector or PipesUnityCatalogVolumesContextInjector(
             client=self.client, volume_path=self.volume_path
         )
-        message_reader = self.message_reader or PipesUnityCatalogVolumesMessageReader(
-            client=self.client,
-            volume_path=self.volume_path,
-        )
+        # See `PipesDatabricksClient.run_multi_task` for rationale; serverless tasks get
+        # independent UC Volumes tempdirs to avoid chunk-filename collisions.
+        if self.message_reader is None:
+            message_reader: PipesMessageReader = PipesCompositeMessageReader(
+                [
+                    PipesUnityCatalogVolumesMessageReader(
+                        client=self.client,
+                        volume_path=self.volume_path,
+                    )
+                    for _ in tasks
+                ]
+            )
+        else:
+            message_reader = self.message_reader
         return self._submit_multi_task_and_poll(
             context=context,
             extras=extras,
@@ -803,16 +846,26 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         context: OpExecutionContext | AssetExecutionContext,
         session: PipesSession,
         submit_task_dict: dict[str, Any],
+        writer_index: int = 0,
     ) -> dict[str, Any]:
+        # Per-writer helpers return a single-element list for non-composite readers.
+        # Clamp the index so that a user-supplied single-writer reader doesn't cause
+        # an IndexError when multiple tasks share the same destination.
+        env_vars_list = session.get_per_writer_bootstrap_env_vars()
+        cli_args_list = session.get_per_writer_bootstrap_cli_arguments()
+        clamped_index = min(writer_index, len(env_vars_list) - 1)
+        per_writer_env_vars = env_vars_list[clamped_index]
+        per_writer_cli_args = cli_args_list[clamped_index]
+
         if "notebook_task" in submit_task_dict:
             existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
 
             # merge the existing parameters with the CLI arguments
-            existing_params = {**existing_params, **session.get_bootstrap_env_vars()}
+            existing_params = {**existing_params, **per_writer_env_vars}
 
             submit_task_dict["notebook_task"]["base_parameters"] = existing_params
         else:
-            cli_args = session.get_bootstrap_cli_arguments()  # this is a mapping
+            cli_args = per_writer_cli_args
 
             for task_type in self.get_task_fields_which_support_cli_parameters():
                 if task_type in submit_task_dict:

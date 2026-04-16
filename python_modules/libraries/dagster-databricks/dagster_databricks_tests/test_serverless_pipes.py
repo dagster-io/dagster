@@ -2,13 +2,16 @@ import os
 from collections.abc import Callable
 from typing import Any
 
+import dagster._check as check
 import pytest
-from dagster import AssetExecutionContext, asset, materialize
+from dagster import AssetExecutionContext, AssetSpec, asset, materialize, multi_asset
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster_databricks._test_utils import (  # noqa: F401
     databricks_client,
     get_databricks_notebook_path,
     get_databricks_python_file_path,
+    temp_workspace_notebook,
+    upload_dagster_pipes_whl_to_volume,
 )
 from dagster_databricks.pipes import PipesDatabricksServerlessClient
 from databricks.sdk import WorkspaceClient
@@ -17,7 +20,7 @@ from databricks.sdk.service import jobs
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 IS_WORKSPACE = os.getenv("DATABRICKS_HOST") is not None
 
-TEST_VOLUME_PATH = "/Volumes/workspace/default/databricks_serverless_pipes_test"
+TEST_VOLUME_PATH = "/Volumes/workspace/dagster_databricks_testing/tmp"
 
 
 def script_fn():
@@ -159,3 +162,89 @@ def test_nonexistent_entry_point(databricks_client: WorkspaceClient):  # noqa: F
                 )
             },
         )
+
+
+def multi_task_script_fn():
+    # Executed inside a Databricks notebook task. Each task receives its assigned asset key
+    # and a path to the dagster-pipes wheel via widget parameters. Pipes bootstrap params are
+    # also delivered as widget params by PipesDatabricksNotebookWidgetsParamsLoader.
+    import subprocess
+
+    dagster_pipes_whl = dbutils.widgets.get("dagster_pipes_whl")  # noqa  # pyright: ignore
+    subprocess.check_call(["pip", "install", dagster_pipes_whl])
+
+    from dagster_pipes import (
+        PipesDatabricksNotebookWidgetsParamsLoader,
+        PipesUnityCatalogVolumesContextLoader,
+        PipesUnityCatalogVolumesMessageWriter,
+        open_dagster_pipes,
+    )
+
+    asset_key = dbutils.widgets.get("asset_key")  # noqa  # pyright: ignore
+    with open_dagster_pipes(
+        context_loader=PipesUnityCatalogVolumesContextLoader(),
+        message_writer=PipesUnityCatalogVolumesMessageWriter(),
+        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa  # pyright: ignore
+    ) as context:
+        context.report_asset_materialization(
+            metadata={"writer": asset_key},
+            asset_key=asset_key,
+        )
+
+
+@pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
+@pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
+def test_serverless_run_multi_task(
+    databricks_client: WorkspaceClient,  # noqa: F811
+):
+    """End-to-end check that `run_multi_task` fans out to N independent UC Volumes destinations.
+
+    Two notebook tasks run concurrently, each reporting a materialization for a distinct asset
+    key. The default (no user-supplied reader) path wraps N
+    `PipesUnityCatalogVolumesMessageReader`s in a `PipesCompositeMessageReader`, so neither task's
+    chunk uploads collide with the other's.
+    """
+    asset_keys = ["multi_w0", "multi_w1"]
+
+    @multi_asset(specs=[AssetSpec(k) for k in asset_keys])
+    def multi(context: AssetExecutionContext, pipes_client: PipesDatabricksServerlessClient):
+        with (
+            upload_dagster_pipes_whl_to_volume(databricks_client, TEST_VOLUME_PATH) as whl_path,
+            temp_workspace_notebook(
+                databricks_client,
+                workspace_path="/Shared/dagster-pipes-test",
+                script_fn=multi_task_script_fn,
+            ) as notebook_path,
+        ):
+            tasks = []
+            for i, asset_key in enumerate(asset_keys):
+                task_dict = make_submit_task_dict(
+                    file_path=notebook_path,
+                    task_type="notebook_task",
+                    file_path_key="notebook_path",
+                )
+                task_dict["task_key"] = f"DAGSTER_PIPES_TASK_{i}"
+                task_dict["notebook_task"]["base_parameters"] = {
+                    "asset_key": asset_key,
+                    "dagster_pipes_whl": whl_path,
+                }
+                tasks.append(jobs.SubmitTask.from_dict(task_dict))
+
+            return pipes_client.run_multi_task(context=context, tasks=tasks).get_results()
+
+    result = materialize(
+        [multi],
+        resources={
+            "pipes_client": PipesDatabricksServerlessClient(
+                client=databricks_client, volume_path=TEST_VOLUME_PATH
+            )
+        },
+        raise_on_error=False,
+    )
+    assert result.success
+
+    mats = result.asset_materializations_for_node("multi")
+    labels_by_key = {
+        check.not_none(m.asset_key).to_user_string(): m.metadata["writer"].value for m in mats
+    }
+    assert labels_by_key == {"multi_w0": "multi_w0", "multi_w1": "multi_w1"}
