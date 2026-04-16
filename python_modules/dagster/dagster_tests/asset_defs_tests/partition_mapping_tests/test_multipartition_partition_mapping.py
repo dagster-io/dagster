@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
 import dagster as dg
 import pytest
 from dagster import AssetExecutionContext, DagsterInstance
 from dagster._check import CheckError
-from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.subset import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.instance import DynamicPartitionsStore
 
 
 def test_get_downstream_partitions_single_key_in_range():
@@ -945,6 +948,106 @@ def test_dynamic_dimension_multipartition_mapping():
         dynamic_partitions_store=instance,
     )
     assert result.partitions_subset == foo_bar.empty_subset().with_partition_keys(["2|a", "1|a"])
+
+
+def test_get_upstream_mapped_partitions_all_downstream_subset_multi_to_single() -> None:
+    """When the downstream subset is AllPartitionsSubset, upstream should be all partitions on the
+    mapped dimension without enumerating every downstream multi-partition key.
+    """
+    upstream_partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
+    downstream_partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "abc": upstream_partitions_def,
+            "123": dg.StaticPartitionsDefinition(["1", "2", "3"]),
+        }
+    )
+    current_time = datetime(2023, 1, 1)
+    with partition_loading_context(current_time, MagicMock(spec=DynamicPartitionsStore)) as ctx:
+        downstream_subset = AllPartitionsSubset(downstream_partitions_def, context=ctx)
+        result = dg.MultiToSingleDimensionPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
+            downstream_partitions_subset=downstream_subset,
+            downstream_partitions_def=downstream_partitions_def,
+            upstream_partitions_def=upstream_partitions_def,
+            current_time=current_time,
+        )
+
+    assert result.required_but_nonexistent_subset.is_empty
+    with partition_loading_context(current_time, MagicMock(spec=DynamicPartitionsStore)) as ctx2:
+        assert result.partitions_subset == AllPartitionsSubset(
+            upstream_partitions_def, context=ctx2
+        )
+
+
+def test_multi_static_and_dynamic_upstream_of_single_dynamic_partition_mapping() -> None:
+    """Upstream is multi (static + dynamic), downstream is the same dynamic dimension only.
+
+    Covers both directions of MultiToSingleDimensionPartitionMapping with a DynamicPartitionsStore.
+    """
+    dyn_name = "test_mp_static_dyn_single_asset"
+    dyn = dg.DynamicPartitionsDefinition(name=dyn_name)
+    static = dg.StaticPartitionsDefinition(["p", "q"])
+    multi = dg.MultiPartitionsDefinition({"static": static, "dyn": dyn})
+    mapping = dg.MultiToSingleDimensionPartitionMapping()
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions(dyn_name, ["alpha", "beta"])
+
+        def multi_keys_for_tenant(tenant: str) -> set[str]:
+            return {
+                pk
+                for pk in multi.get_partition_keys(dynamic_partitions_store=instance)
+                if multi.get_partition_key_from_str(pk).keys_by_dimension["dyn"] == tenant
+            }
+
+        # Downstream mapping: collapse multi keys that share the same dynamic tenant.
+        downstream_from_multi = mapping.get_downstream_partitions_for_partitions(
+            upstream_partitions_subset=multi.empty_subset().with_partition_keys(
+                [
+                    dg.MultiPartitionKey({"static": "p", "dyn": "alpha"}),
+                    dg.MultiPartitionKey({"static": "q", "dyn": "alpha"}),
+                ]
+            ),
+            upstream_partitions_def=multi,
+            downstream_partitions_def=dyn,
+            dynamic_partitions_store=instance,
+        )
+        assert set(downstream_from_multi.get_partition_keys()) == {"alpha"}
+
+        downstream_two_tenants = mapping.get_downstream_partitions_for_partitions(
+            upstream_partitions_subset=multi.empty_subset().with_partition_keys(
+                [
+                    dg.MultiPartitionKey({"static": "p", "dyn": "alpha"}),
+                    dg.MultiPartitionKey({"static": "p", "dyn": "beta"}),
+                ]
+            ),
+            upstream_partitions_def=multi,
+            downstream_partitions_def=dyn,
+            dynamic_partitions_store=instance,
+        )
+        assert set(downstream_two_tenants.get_partition_keys()) == {"alpha", "beta"}
+
+        # Upstream mapping: fan out a single tenant to the full cross-product over the static dim.
+        upstream_result = mapping.get_upstream_mapped_partitions_result_for_partitions(
+            downstream_partitions_subset=dyn.empty_subset().with_partition_keys(["alpha"]),
+            downstream_partitions_def=dyn,
+            upstream_partitions_def=multi,
+            dynamic_partitions_store=instance,
+        )
+        assert upstream_result.required_but_nonexistent_subset.is_empty
+        assert set(upstream_result.partitions_subset.get_partition_keys()) == multi_keys_for_tenant(
+            "alpha"
+        )
+
+        upstream_two = mapping.get_upstream_mapped_partitions_result_for_partitions(
+            downstream_partitions_subset=dyn.empty_subset().with_partition_keys(["alpha", "beta"]),
+            downstream_partitions_def=dyn,
+            upstream_partitions_def=multi,
+            dynamic_partitions_store=instance,
+        )
+        assert upstream_two.required_but_nonexistent_subset.is_empty
+        assert set(upstream_two.partitions_subset.get_partition_keys()) == (
+            multi_keys_for_tenant("alpha") | multi_keys_for_tenant("beta")
+        )
 
 
 def test_description():

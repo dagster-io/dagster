@@ -15,6 +15,7 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,
 )
+from dagster._core.definitions.partitions.subset import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
@@ -60,6 +61,16 @@ class BaseMultiPartitionMapping(ABC):
         partition keys in the partitions definition b_partitions_def that are
         dependencies of the partition keys in a_partition_keys.
         """
+        if isinstance(a_partitions_subset, AllPartitionsSubset) and not a_upstream_of_b:
+            with partition_loading_context() as ctx:
+                return UpstreamPartitionsResult(
+                    partitions_subset=AllPartitionsSubset(b_partitions_def, ctx),
+                    required_but_nonexistent_subset=DefaultPartitionsSubset(),
+                )
+        elif isinstance(a_partitions_subset, AllPartitionsSubset) and a_upstream_of_b:
+            with partition_loading_context() as ctx:
+                return AllPartitionsSubset(b_partitions_def, ctx)
+
         a_partition_keys_by_dimension = defaultdict(set)
         if isinstance(a_partitions_def, MultiPartitionsDefinition):
             for partition_key in a_partitions_subset.get_partition_keys():
