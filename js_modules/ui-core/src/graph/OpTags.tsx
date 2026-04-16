@@ -27,6 +27,7 @@ import aws from './kindtag-images/tool-aws-color.svg';
 import ax from './kindtag-images/tool-ax-color.svg';
 import axioma from './kindtag-images/tool-axioma-color.svg';
 import azure from './kindtag-images/tool-azure-color.svg';
+import azuredevops from './kindtag-images/tool-azuredevops-color.svg';
 import azureml from './kindtag-images/tool-azureml-color.svg';
 import bigquery from './kindtag-images/tool-bigquery-color.svg';
 import botorch from './kindtag-images/tool-botorch-color.svg';
@@ -253,6 +254,7 @@ export type KnownTagType =
   | 'ax'
   | 'axioma'
   | 'azure'
+  | 'azuredevops'
   | 'azureml'
   | 'bigquery'
   | 'botorch'
@@ -650,6 +652,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   azure: {
     icon: azure,
     content: 'Azure',
+  },
+  azuredevops: {
+    icon: azuredevops,
+    content: 'Azure DevOps',
   },
   azureml: {
     icon: azureml,

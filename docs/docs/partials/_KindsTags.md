@@ -13,6 +13,7 @@
 | `ax`                  | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-ax-color.svg" width={20} height={20} />                             |
 | `axioma`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-axioma-color.svg" width={20} height={20} />                         |
 | `azure`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-azure-color.svg" width={20} height={20} />                          |
+| `azuredevops`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-azuredevops-color.svg" width={20} height={20} />                    |
 | `azureml`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-azureml-color.svg" width={20} height={20} />                        |
 | `bigquery`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-bigquery-color.svg" width={20} height={20} />                       |
 | `botorch`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-botorch-color.svg" width={20} height={20} />                        |
