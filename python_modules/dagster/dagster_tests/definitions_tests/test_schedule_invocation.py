@@ -273,6 +273,39 @@ def test_dynamic_partition_run_request_schedule():
             assert request.tags.get(PARTITION_NAME_TAG) == "1"
 
 
+def test_dagster_instance_get_within_schedule_body():
+    dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="fruits")
+
+    @dg.asset(partitions_def=dynamic_partitions_def)
+    def fruits_asset():
+        return 1
+
+    @dg.repository
+    def my_repo():
+        return [fruits_asset]
+
+    @dg.schedule(cron_schedule="* * * * *", job_name="no_pipeline")
+    def test_schedule():
+        with dg.DagsterInstance.get() as instance:
+            assert instance.get_dynamic_partitions("fruits") == ["apple"]
+            return {}
+
+    with dg.instance_for_test(set_dagster_home=False) as instance:
+        instance.add_dynamic_partitions("fruits", ["apple"])
+
+        with dg.build_schedule_context(
+            repository_def=my_repo,
+            instance=instance,
+        ) as ctx:
+            test_schedule(ctx)
+
+        with dg.build_schedule_context(
+            repository_def=my_repo,
+            instance_ref=instance.get_ref(),
+        ) as ctx:
+            test_schedule(ctx)
+
+
 def test_logging():
     @dg.schedule(cron_schedule="* * * * *", job_name="no_pipeline")
     def logs(context):

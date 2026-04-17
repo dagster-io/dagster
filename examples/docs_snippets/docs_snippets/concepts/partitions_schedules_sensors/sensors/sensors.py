@@ -138,9 +138,9 @@ from dagster import build_sensor_context
 
 
 def test_my_directory_sensor_cursor():
-    context = build_sensor_context(cursor="0")
-    for run_request in my_directory_sensor_cursor(context):
-        assert validate_run_config(log_file_job, run_request.run_config)
+    with build_sensor_context(cursor="0") as context:
+        for run_request in my_directory_sensor_cursor(context):
+            assert validate_run_config(log_file_job, run_request.run_config)
 
 
 # end_sensor_testing_with_context
