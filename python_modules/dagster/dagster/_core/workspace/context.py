@@ -797,7 +797,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
                 if self._asset_check_support is None:
                     self._asset_check_support = self.instance.get_asset_check_support()
 
-        return self._asset_check_support
+        return check.not_none(self._asset_check_support)
 
     def get_current_workspace(self) -> CurrentWorkspace:
         return self._current_workspace
