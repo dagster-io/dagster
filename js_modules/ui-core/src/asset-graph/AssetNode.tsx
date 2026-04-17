@@ -15,6 +15,7 @@ import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {ManualPositionHandle} from './ManualPositionHandle';
 import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetAutomationData} from '../asset-data/AssetAutomationDataProvider';
@@ -40,6 +41,10 @@ interface Props2025 {
   selected: boolean;
   facets: Set<AssetNodeFacet>;
   onChangeAssetSelection?: (selection: string) => void;
+  isManuallyPositioned?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onResetPosition?: () => void;
 }
 
 export const ASSET_NODE_HOVER_EXPAND_HEIGHT = 3;
@@ -60,6 +65,10 @@ export const AssetNodeWithLiveData = ({
   selected,
   facets,
   onChangeAssetSelection,
+  isManuallyPositioned,
+  isDragging,
+  onDragStart,
+  onResetPosition,
   liveData,
   automationData,
   assetHealthEnabled,
@@ -68,7 +77,7 @@ export const AssetNodeWithLiveData = ({
   assetHealthEnabled: boolean;
 }) => {
   return (
-    <AssetNodeContainer $selected={selected}>
+    <AssetNodeContainer $selected={selected} style={{position: 'relative'}}>
       {facets.has(AssetNodeFacet.UnsyncedTag) ? (
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
@@ -86,7 +95,13 @@ export const AssetNodeWithLiveData = ({
         <div style={{minHeight: ASSET_NODE_HOVER_EXPAND_HEIGHT}} />
       )}
       <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
-        <AssetNameRow definition={definition} />
+        <AssetNameRow
+          definition={definition}
+          isDragging={!!isDragging}
+          isManuallyPositioned={!!isManuallyPositioned}
+          onDragStart={onDragStart}
+          onResetPosition={onResetPosition}
+        />
         {facets.has(AssetNodeFacet.Description) && (
           <AssetNodeRow label={null}>
             {definition.description ? (
@@ -434,7 +449,19 @@ export const AutomationConditionEvaluationLink = ({
   );
 };
 
-export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+export const AssetNameRow = ({
+  definition,
+  isDragging = false,
+  isManuallyPositioned = false,
+  onDragStart,
+  onResetPosition,
+}: {
+  definition: AssetNodeFragment;
+  isDragging?: boolean;
+  isManuallyPositioned?: boolean;
+  onDragStart?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onResetPosition?: () => void;
+}) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
@@ -453,6 +480,14 @@ export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
         })}
       </div>
       <div style={{flex: 1}} />
+      {onDragStart ? (
+        <ManualPositionHandle
+          isDragging={isDragging}
+          isManuallyPositioned={isManuallyPositioned}
+          onDragStart={onDragStart}
+          onReset={onResetPosition}
+        />
+      ) : null}
     </AssetName>
   );
 };
@@ -490,6 +525,10 @@ type AssetNodeMinimalProps = {
   definition: AssetNodeFragment;
   facets: Set<AssetNodeFacet> | null;
   height: number;
+  isManuallyPositioned?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onResetPosition?: () => void;
 };
 
 export const AssetNodeMinimal = (props: AssetNodeMinimalProps) => {
@@ -505,6 +544,10 @@ export const AssetNodeMinimalWithHealth = ({
   facets,
   height,
   selected,
+  isManuallyPositioned,
+  isDragging,
+  onDragStart,
+  onResetPosition,
 }: AssetNodeMinimalProps) => {
   const {isMaterializable, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
@@ -549,7 +592,7 @@ export const AssetNodeMinimalWithHealth = ({
   }
 
   return (
-    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
+    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop, position: 'relative'}}>
       <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
         <MinimalAssetNodeBox
           $selected={selected}
@@ -560,6 +603,15 @@ export const AssetNodeMinimalWithHealth = ({
           $isQueued={!!queuedRuns}
           $height={nodeHeight}
         >
+          {onDragStart ? (
+            <ManualPositionHandle
+              placement="edge"
+              isDragging={!!isDragging}
+              isManuallyPositioned={!!isManuallyPositioned}
+              onDragStart={onDragStart}
+              onReset={onResetPosition}
+            />
+          ) : null}
           {isChanged ? (
             <MinimalNodeChangedDot changedReasons={definition.changedReasons} assetKey={assetKey} />
           ) : null}
@@ -578,6 +630,10 @@ export const AssetNodeMinimalWithoutHealth = ({
   facets,
   height,
   selected,
+  isManuallyPositioned,
+  isDragging,
+  onDragStart,
+  onResetPosition,
 }: AssetNodeMinimalProps) => {
   const {isMaterializable, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
@@ -613,7 +669,7 @@ export const AssetNodeMinimalWithoutHealth = ({
   }
 
   return (
-    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
+    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop, position: 'relative'}}>
       <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
         <MinimalAssetNodeBox
           $selected={selected}
@@ -624,6 +680,15 @@ export const AssetNodeMinimalWithoutHealth = ({
           $isQueued={!!queuedRuns}
           $height={nodeHeight}
         >
+          {onDragStart ? (
+            <ManualPositionHandle
+              placement="edge"
+              isDragging={!!isDragging}
+              isManuallyPositioned={!!isManuallyPositioned}
+              onDragStart={onDragStart}
+              onReset={onResetPosition}
+            />
+          ) : null}
           {isChanged ? (
             <MinimalNodeChangedDot changedReasons={definition.changedReasons} assetKey={assetKey} />
           ) : null}

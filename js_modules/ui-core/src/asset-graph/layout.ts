@@ -32,6 +32,7 @@ export type AssetGraphLayout = {
   edges: AssetLayoutEdge[];
   nodes: {[id: string]: AssetLayout};
   groups: {[name: string]: GroupLayout};
+  linkNodeIds: string[];
 };
 const MARGIN = 100;
 
@@ -295,22 +296,21 @@ export const layoutAssetGraphImpl = (
     const vXInset = !!linksToAssetsOutsideGraphedSet[e.v] ? 16 : 24;
     const wXInset = !!linksToAssetsOutsideGraphedSet[e.w] ? 16 : 24;
 
-    // Ignore the coordinates from dagre and use the top left + bottom left of the
-    edges.push(
-      opts.direction === 'horizontal'
-        ? {
-            from: {x: v.x + v.width / 2, y: v.y},
-            fromId: e.v,
-            to: {x: w.x - w.width / 2 - 5, y: w.y},
-            toId: e.w,
-          }
-        : {
-            from: {x: v.x - v.width / 2 + vXInset, y: v.y - 30 + v.height / 2},
-            fromId: e.v,
-            to: {x: w.x - w.width / 2 + wXInset, y: w.y + 20 - w.height / 2},
-            toId: e.w,
-          },
-    );
+    // Convert dagre center-based coords to top-left-based IBounds for the helper
+    const fromBounds: IBounds = {
+      x: v.x - v.width / 2,
+      y: v.y - v.height / 2,
+      width: v.width,
+      height: v.height,
+    };
+    const toBounds: IBounds = {
+      x: w.x - w.width / 2,
+      y: w.y - w.height / 2,
+      width: w.width,
+      height: w.height,
+    };
+    const {from, to} = computeEdgeEndpoints(fromBounds, toBounds, opts.direction, vXInset, wXInset);
+    edges.push({from, fromId: e.v, to, toId: e.w});
   });
 
   return {
@@ -319,8 +319,33 @@ export const layoutAssetGraphImpl = (
     width: maxWidth + MARGIN,
     height: maxHeight + MARGIN,
     groups: groupsPresent ? groups : {},
+    linkNodeIds: Object.keys(linksToAssetsOutsideGraphedSet),
   };
 };
+
+/**
+ * Computes the from/to endpoint coordinates for an edge given the bounds of the
+ * source and target nodes and the graph direction. Uses top-left-based IBounds.
+ * xInset values control the horizontal offset within the node for vertical edges.
+ */
+export function computeEdgeEndpoints(
+  fromBounds: IBounds,
+  toBounds: IBounds,
+  direction: AssetLayoutDirection,
+  fromXInset: number = 24,
+  toXInset: number = 24,
+): {from: IPoint; to: IPoint} {
+  if (direction === 'horizontal') {
+    return {
+      from: {x: fromBounds.x + fromBounds.width, y: fromBounds.y + fromBounds.height / 2},
+      to: {x: toBounds.x - 5, y: toBounds.y + toBounds.height / 2},
+    };
+  }
+  return {
+    from: {x: fromBounds.x + fromXInset, y: fromBounds.y + fromBounds.height - 30},
+    to: {x: toBounds.x + toXInset, y: toBounds.y + 20},
+  };
+}
 
 export const ASSET_LINK_NAME_MAX_LENGTH = 30;
 

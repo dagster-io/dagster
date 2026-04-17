@@ -1,4 +1,5 @@
 import {ComponentProps, ReactNode, memo, useLayoutEffect, useMemo} from 'react';
+// eslint-disable-next-line dagster-rules/no-react-router-route
 import {Route as ReactRouterRoute, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 

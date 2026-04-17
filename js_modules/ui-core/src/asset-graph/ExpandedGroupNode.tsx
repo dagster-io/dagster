@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import {GroupNodeNameAndRepo, useGroupNodeContextMenu} from './CollapsedGroupNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {ManualPositionHandle} from './ManualPositionHandle';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
 import {SVGRelativeContainerForSafari} from '../graph/SVGComponents';
@@ -16,6 +17,10 @@ export const ExpandedGroupNode = ({
   preferredJobName,
   onFilterToGroup,
   setHighlighted,
+  isManuallyPositioned,
+  isDragging,
+  onDragStart,
+  onResetPosition,
 }: {
   group: GroupLayout & {assets: GraphNode[]};
   minimal: boolean;
@@ -24,6 +29,10 @@ export const ExpandedGroupNode = ({
   preferredJobName?: string;
   onFilterToGroup?: () => void;
   setHighlighted: (ids: string[] | null) => void;
+  isManuallyPositioned?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onResetPosition?: () => void;
 }) => {
   const {menu, dialog} = useGroupNodeContextMenu({
     onFilterToGroup,
@@ -47,6 +56,14 @@ export const ExpandedGroupNode = ({
           }}
         >
           <GroupNodeNameAndRepo group={group} minimal={minimal} />
+          {onDragStart ? (
+            <ManualPositionHandle
+              isDragging={!!isDragging}
+              isManuallyPositioned={!!isManuallyPositioned}
+              onDragStart={onDragStart}
+              onReset={onResetPosition}
+            />
+          ) : null}
           {onCollapse && (
             <Box padding={{vertical: 4}}>
               <Icon name="unfold_less" />
