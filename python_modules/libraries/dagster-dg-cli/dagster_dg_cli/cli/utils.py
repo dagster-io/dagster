@@ -579,7 +579,10 @@ def integrations_docs_command(output_json: bool) -> None:
     """View an index of available Dagster integrations."""
     import requests  # defer for import perf
 
-    response = requests.get("https://dagster-marketplace.vercel.app/api/integrations/index.json")
+    response = requests.get(
+        "https://dagster-marketplace.vercel.app/api/integrations/index.json",
+        timeout=(5, 60),
+    )
     response.raise_for_status()
 
     payload = response.json()
