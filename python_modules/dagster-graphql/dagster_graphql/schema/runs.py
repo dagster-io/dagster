@@ -112,6 +112,7 @@ class GraphenePipelineRuns(graphene.Interface):
 class GrapheneRuns(graphene.ObjectType):
     results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
     count = graphene.Int()
+    cursor = graphene.String()
 
     class Meta:
         interfaces = (GraphenePipelineRuns,)
@@ -123,12 +124,28 @@ class GrapheneRuns(graphene.ObjectType):
         self._filters = filters
         self._cursor = cursor
         self._limit = limit
+        self._cached_results = None
 
     def resolve_results(self, graphene_info: ResolveInfo):
-        return get_runs(graphene_info, self._filters, self._cursor, self._limit)
+        if self._cached_results is None:
+            results = get_runs(graphene_info, self._filters, self._cursor, self._limit)
+            self._cached_results = results
+            return results
+        return self._cached_results
 
     def resolve_count(self, graphene_info: ResolveInfo):
         return get_runs_count(graphene_info, self._filters)
+
+    def resolve_cursor(self, graphene_info: ResolveInfo):
+        # Handle if you only every query cursor.
+        # Handle if you only ever query cursor.
+        if self._cached_results is None:
+            self._cached_results = get_runs(
+                graphene_info, self._filters, self._cursor, self._limit
+            )
+        if len(self._cached_results) == 0:
+            return self._cursor
+        return self._cached_results[-1].dagster_run.run_id
 
 
 class GrapheneRunsOrError(graphene.Union):

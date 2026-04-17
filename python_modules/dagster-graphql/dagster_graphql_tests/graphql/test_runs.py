@@ -135,6 +135,30 @@ ALL_RUNS_QUERY = """
   }
 }
 """
+ALL_RUNS_PAGINATED_QUERY = """
+query PaginatedRunsQuery($cursor: String, $limit: Int) {
+  runsOrError(
+    cursor: $cursor
+    limit: $limit
+  ) {
+    ... on Runs {
+      results {
+        runId
+      }
+      cursor
+    }
+  }
+}
+"""
+JUST_CURSOR_QUERY = """
+query JustCursorRunsQuery($cursor: String, $limit: Int) {
+  runsOrError(cursor: $cursor, limit: $limit) {
+    ... on Runs {
+      cursor
+    }
+  }
+}
+"""
 
 
 FILTERED_RUN_QUERY = """
@@ -707,6 +731,64 @@ def test_runs_over_time():
                 "name": "evolving_job",
                 "solidSelection": None,
             }
+
+
+def test_just_cursor():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        run_id = (
+            repo.get_job("foo_job")
+            .execute_in_process(instance=instance, tags={"run": "run"})
+            .run_id
+        )
+        with define_out_of_process_context(
+            __file__, "get_repo_at_time_2", instance
+        ) as context:
+            result = execute_dagster_graphql(
+                context,
+                JUST_CURSOR_QUERY,
+                variables={"cursor": None, "limit": 1},
+            )
+            assert result.data
+            assert result.data["runsOrError"]["cursor"] == run_id
+
+
+def test_cursor_pagination():
+    with instance_for_test() as instance:
+        run_ids = []
+        repo = get_repo_at_time_1()
+        for i in range(10):
+            run_ids.append(
+                repo.get_job("foo_job")
+                .execute_in_process(instance=instance, tags={"run": f"run_{i}"})
+                .run_id
+            )
+
+        with define_out_of_process_context(
+            __file__, "get_repo_at_time_2", instance
+        ) as context_at_time_2:
+            found_run_ids = []
+            cursor = None
+            # Note run for longer than possible.
+            for i in range(10):
+                result = execute_dagster_graphql(
+                    context_at_time_2,
+                    ALL_RUNS_PAGINATED_QUERY,
+                    variables={"limit": 2, "cursor": cursor},
+                )
+                assert result.data
+                found_run_ids.extend(
+                    [run["runId"] for run in result.data["runsOrError"]["results"]]
+                )
+                if result.data["runsOrError"]["cursor"] == cursor:
+                    assert len(result.data["runsOrError"]["results"]) == 0, (
+                        "When the cursor is the last runId, there should be no results."
+                    )
+                    break
+                else:
+                    cursor = result.data["runsOrError"]["cursor"]
+            found_run_ids.reverse()
+            assert found_run_ids == run_ids, (found_run_ids, run_ids)
 
 
 def test_filtered_runs():
