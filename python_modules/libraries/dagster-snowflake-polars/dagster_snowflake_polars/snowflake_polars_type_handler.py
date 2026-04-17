@@ -5,7 +5,11 @@ from dagster import InputContext, MetadataValue, OutputContext, TableColumn, Tab
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
+from dagster_snowflake.snowflake_io_manager import (
+    SnowflakeDbClient,
+    SnowflakeIOManager,
+    partition_where_clause,
+)
 
 
 def _table_exists(table_slice: TableSlice, connection):
@@ -67,12 +71,9 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         # For partitioned assets, we should append rather than replace
         if table_slice.partition_dimensions and _table_exists(table_slice, connection):
             write_mode = "append"
-            # Build DELETE statement for the partition
-            delete_stmt = f"DELETE FROM {full_table_name} WHERE "
-            partition_conditions = []
-            for dim in table_slice.partition_dimensions:
-                partition_conditions.append(f"{dim.partition_expr} = '{dim.partitions[0]}'")
-            delete_stmt += " AND ".join(partition_conditions)
+            delete_stmt = f"DELETE FROM {full_table_name} WHERE\n" + partition_where_clause(
+                table_slice.partition_dimensions
+            )
             connection.cursor().execute(delete_stmt)
 
         # Write using Polars native write_database with ADBC

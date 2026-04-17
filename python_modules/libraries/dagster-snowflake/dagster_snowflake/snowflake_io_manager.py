@@ -393,7 +393,7 @@ class SnowflakeDbClient(DbClient):
                 f"SELECT {col_str} FROM"
                 f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
-            return query + _partition_where_clause(table_slice.partition_dimensions)
+            return query + partition_where_clause(table_slice.partition_dimensions)
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
@@ -406,12 +406,12 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         query = (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
-        return query + _partition_where_clause(table_slice.partition_dimensions)
+        return query + partition_where_clause(table_slice.partition_dimensions)
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
-def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
+def partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
     return " AND\n".join(
         (
             _time_window_where_clause(partition_dimension)
