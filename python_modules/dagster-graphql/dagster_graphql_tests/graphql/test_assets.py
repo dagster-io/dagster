@@ -4418,6 +4418,22 @@ def test_concurrency_assets(graphql_context: WorkspaceRequestContext):
     assert _graphql_pool(AssetKey(["concurrency_multi_asset_1"])) == {"buzz"}
 
 
+def test_legacy_freshness_policy_killswitch(graphql_context: WorkspaceRequestContext, monkeypatch):
+    monkeypatch.setenv("DAGSTER_LEGACY_FRESHNESS_POLICY_KILLSWITCH", "true")
+    result = execute_dagster_graphql(graphql_context, GET_FRESHNESS_INFO)
+
+    assert result.data
+    assert result.data["assetNodes"]
+
+    fresh_diamond_bottom = next(
+        a
+        for a in result.data["assetNodes"]
+        if a["id"] == f'{main_repo_location_name()}.test_repo.["fresh_diamond_bottom"]'
+    )
+    assert fresh_diamond_bottom["freshnessInfo"] is None
+    assert fresh_diamond_bottom["freshnessPolicy"] is None
+
+
 class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
     def test_asset_event_history_no_observation_events(
         self, graphql_context: WorkspaceRequestContext

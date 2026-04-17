@@ -860,6 +860,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_freshnessInfo(
         self, graphene_info: ResolveInfo
     ) -> GrapheneAssetFreshnessInfo | None:
+        if graphene_info.context.instance.legacy_freshness_policy_killswitch_enabled():
+            return None
         if self._asset_node_snap.legacy_freshness_policy:
             return get_freshness_info(
                 asset_key=self._asset_node_snap.asset_key,
@@ -867,9 +869,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         return None
 
-    def resolve_freshnessPolicy(
-        self, _graphene_info: ResolveInfo
-    ) -> GrapheneFreshnessPolicy | None:
+    def resolve_freshnessPolicy(self, graphene_info: ResolveInfo) -> GrapheneFreshnessPolicy | None:
+        if graphene_info.context.instance.legacy_freshness_policy_killswitch_enabled():
+            return None
         if self._asset_node_snap.legacy_freshness_policy:
             return GrapheneFreshnessPolicy(self._asset_node_snap.legacy_freshness_policy)
         return None

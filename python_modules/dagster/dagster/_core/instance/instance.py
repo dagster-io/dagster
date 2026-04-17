@@ -686,6 +686,12 @@ class DagsterInstance(
     def is_ephemeral(self) -> bool:
         return self._instance_type == InstanceType.EPHEMERAL
 
+    def legacy_freshness_policy_killswitch_enabled(self) -> bool:
+        return os.getenv("DAGSTER_LEGACY_FRESHNESS_POLICY_KILLSWITCH", "").lower() in (
+            "1",
+            "true",
+        )
+
     def get_ref(self) -> InstanceRef:
         if self._ref:
             return self._ref
