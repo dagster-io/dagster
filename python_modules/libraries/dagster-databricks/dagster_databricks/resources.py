@@ -169,4 +169,5 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
 @dagster_maintained_resource
 @resource(config_schema=DatabricksClientResource.to_config_schema())
 def databricks_client(init_context) -> DatabricksClient:
-    return DatabricksClientResource.from_resource_context(init_context).get_client()
+    with DatabricksClientResource.from_resource_context_cm(init_context) as resource:
+        return resource.get_client()
