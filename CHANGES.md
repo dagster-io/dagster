@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.13.1 (core) / 0.29.1 (libraries)
+
+### New
+
+- Added `PipesCompositeMessageReader` (preview) to support multiple concurrent message streams in a single Pipes session.
+- Added `sensor:`, `schedule:`, and `job:` attribute support to the asset selection syntax (e.g., `sensor:my_sensor`, `job:my_job`).
+- Added `automation_type:` attribute support to the asset selection syntax, allowing queries like `automation_type:schedule` or `automation_type:sensor`. (Thanks, [@bengotow](https://github.com/bengotow)!)
+- State-backed integration components (e.g., `AirbyteWorkspaceComponent`, `FivetranWorkspaceComponent`) now default to `LOCAL_FILESYSTEM` state storage instead of `legacy_code_server_snapshots`.
+- [dg] Added `dg api issue create` and `dg api issue update` commands.
+- [dg] Added filter support to `dg api issue list`.
+- [ui] Improved asset selection autocomplete performance.
+- [dagster-dbt] `DagsterDbtTranslatorSettings.enable_source_metadata` now defaults to `True`, enabling upstream asset key remapping based on dbt source table names by default.
+
+### Bugfixes
+
+- Fixed a possible SQL injection in a few IO managers when used with dynamic partition.
+- Fixed an issue where runs executed via `execute_in_process()` would sometimes fail to display the step timeline in the Dagster UI.
+- Fixed a bug where multi-asset definitions containing virtual assets would produce incorrect execution plans.
+- [ui] Fixed the tick result button for sensors using dynamic partitions.
+- [dagster-aws] `PickledObjectS3IOManager` now defaults the S3 key prefix to an empty string when none is provided. (Thanks, [@aksestok](https://github.com/aksestok)!)
+- [dagster-databricks] `PipesDatabricksClient.run_multi_task` and `PipesDatabricksServerlessClient.run_multi_task` now give each submitted task its own message destination by default, fixing chunk-file collisions between concurrent tasks.
+- [dagster-dbt] Fixed the dbt Cloud v2 polling sensor and adhoc job to use stable, ID-based identifiers, preventing naming conflicts.
+- [dagster-dbt] Fixed the dbt Cloud v2 polling sensor to correctly filter out runs from adhoc jobs.
+
+### Documentation
+
+- Added a guide for virtual assets.
+- Added documentation for partitioned asset checks.
+- Added documentation for the `free_slots_after_run_end_seconds` concurrency configuration option.
+- Clarified SCIM provisioning and SSO permission requirements in the authentication documentation.
+- Added a guide for migrating Dagster+ from the US to the EU control plane.
+
 ## 1.13.0 (core) / 0.29.0 (libraries)
 
 ### Major Changes Since 1.12.0
