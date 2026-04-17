@@ -1,10 +1,12 @@
 """Facilities for running arbitrary commands in child processes."""
 
+import importlib
+import logging
 import os
 import queue
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
@@ -65,12 +67,33 @@ class ChildProcessCrashException(Exception):
         super().__init__()
 
 
-def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessCommand):
+def _execute_command_in_child_process(
+    event_queue: Queue,
+    command: ChildProcessCommand,
+    preload_modules: Sequence[str] | None = None,
+):
     """Wraps the execution of a ChildProcessCommand.
 
     Handles errors and communicates across a queue with the parent process.
     """
     check.inst_param(command, "command", ChildProcessCommand)
+
+    # Import preload modules before executing the command. This is used to work around
+    # allocator initialization races on Windows when running under a debugger (e.g. VS Code /
+    # debugpy) with libraries such as Polars >=1.32.2 that register a custom allocator via a
+    # C extension. Note: debugpy injects into the child process at OS spawn time, before any
+    # Python code here runs. This preload does NOT prevent that injection. Instead it ensures
+    # the library's allocator (e.g. Polars' mimalloc) is initialized early — before
+    # high-memory step execution begins — reducing the chance of a heap conflict with memory
+    # already allocated by the debugger's injected threads.
+    if preload_modules:
+        for module_name in preload_modules:
+            try:
+                importlib.import_module(module_name)
+            except Exception:
+                logging.getLogger(__name__).warning(
+                    "Failed to preload module '%s' in child process.", module_name, exc_info=True
+                )
 
     with capture_interrupts():
         pid = os.getpid()
@@ -119,7 +142,9 @@ def _poll_for_event(
 
 
 def execute_child_process_command(
-    multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
+    multiprocessing_ctx: MultiprocessingBaseContext,
+    command: ChildProcessCommand,
+    preload_modules: Sequence[str] | None = None,
 ) -> Iterator[Union["DagsterEvent", ChildProcessEvent, BaseProcess] | None]:
     """Execute a ChildProcessCommand in a new process.
 
@@ -149,7 +174,7 @@ def execute_child_process_command(
     event_queue = multiprocessing_ctx.Queue()
     try:
         process = multiprocessing_ctx.Process(  # type: ignore
-            target=_execute_command_in_child_process, args=(event_queue, command)
+            target=_execute_command_in_child_process, args=(event_queue, command, preload_modules)
         )
         process.start()
         yield process

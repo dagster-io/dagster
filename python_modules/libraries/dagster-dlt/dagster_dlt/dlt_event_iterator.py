@@ -44,7 +44,11 @@ def fetch_row_count_metadata(
 
     jobs_metadata = materialization.metadata.get("jobs")
     if not jobs_metadata or not isinstance(jobs_metadata, list):
-        raise Exception("Missing jobs metadata to retrieve row count.")
+        context.log.debug(
+            "No jobs metadata found for resource. Row count metadata"
+            " will not be included in the event. This can occur when a dlt source yields no data."
+        )
+        return TableMetadataSet(row_count=None)
     table_name = jobs_metadata[0].get("table_name")
     try:
         return TableMetadataSet(row_count=_fetch_row_count(dlt_pipeline, table_name))
