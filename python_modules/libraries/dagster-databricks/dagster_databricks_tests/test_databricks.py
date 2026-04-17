@@ -359,7 +359,7 @@ class TestDatabricksClientHasCredentials:
             host="https://some.host",
             credentials_strategy=mock_strategy,
         )
-        assert client._credentials_strategy is mock_strategy  # noqa: SLF001
+        assert client.credentials_strategy is mock_strategy
         assert client.token is None
         assert client.oauth_credentials is None
         assert client.azure_credentials is None

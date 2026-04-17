@@ -1,6 +1,7 @@
 from typing import Any
 
 from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from databricks.sdk.core import CredentialsStrategy
 from pydantic import Field, model_validator
@@ -91,17 +92,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             " This is no longer used and will be removed in a 0.21."
         ),
     )
-
-    def __init__(
-        self,
-        credentials_strategy: CredentialsStrategy | None = None,
-        **kwargs: Any,
-    ):
-        super().__init__(**kwargs)
-        # CredentialsStrategy is not a Dagster-serializable config type and cannot be
-        # declared as a Pydantic Field on a ConfigurableResource. Store it directly on
-        # the instance after Pydantic construction completes.
-        object.__setattr__(self, "_credentials_strategy", credentials_strategy)
+    credentials_strategy: ResourceDependency[CredentialsStrategy | None] = None
 
     @model_validator(mode="before")
     def has_token_or_oauth_credentials(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -123,9 +114,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         return True
 
     def get_client(self) -> DatabricksClient:
-        credentials_strategy: CredentialsStrategy | None = getattr(
-            self, "_credentials_strategy", None
-        )
+        credentials_strategy: CredentialsStrategy | None = self.credentials_strategy
 
         has_serializable_credentials = (
             self.token is not None
