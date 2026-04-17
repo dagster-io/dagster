@@ -143,6 +143,7 @@ def upload_saml_metadata_command(
                     "Dagster-Cloud-Organization": organization,
                 },
                 files={"metadata.xml": f},
+                timeout=(5, 60),
             )
 
         response.raise_for_status()
@@ -202,6 +203,7 @@ def remove_saml_metadata_command(
                 "Dagster-Cloud-Api-Token": api_token,
                 "Dagster-Cloud-Organization": organization,
             },
+            timeout=(5, 60),
         )
 
         response.raise_for_status()
