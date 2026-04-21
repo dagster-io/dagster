@@ -183,7 +183,7 @@ export const AppProvider = (props: AppProviderProps) => {
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>
               <GlobalStyleProvider />
-              <Toaster richColors />
+              <Toaster richColors position="top-center"/>
               <CompatRouter>
                 <TimeProvider>
                   <CodeLinkProtocolProvider>
