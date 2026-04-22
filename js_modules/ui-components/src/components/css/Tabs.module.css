@@ -1,6 +1,6 @@
 .count {
   display: inline;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: -0.02%;

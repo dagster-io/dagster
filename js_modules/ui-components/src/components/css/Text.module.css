@@ -82,14 +82,14 @@
 .code {
   background-color: var(--color-background-blue);
   border-radius: 2px;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 14px;
   font-variant-ligatures: none;
   padding: 2px 4px;
 }
 
 .mono {
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-variant-ligatures: none;
   font-size: 14px;
   line-height: 20px;
@@ -97,7 +97,7 @@
 }
 
 .captionMono {
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-variant-ligatures: none;
   font-size: 12px;
   line-height: 16px;
@@ -137,14 +137,14 @@
 }
 
 .monoLarge {
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 16px;
   line-height: 20px;
   font-weight: 400;
 }
 
 .monoSmall {
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
   font-weight: 400;

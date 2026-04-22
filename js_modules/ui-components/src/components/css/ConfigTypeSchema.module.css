@@ -9,7 +9,7 @@
   background-color: var(--color-tooltip-background);
   color: var(--color-tooltip-text);
   white-space: pre-wrap;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 12px;
   padding: 8px;
   margin: 0;
