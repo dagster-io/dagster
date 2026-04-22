@@ -145,7 +145,7 @@ If there are code location-level overrides, a small **N override(s)** link will 
 | View runs of [jobs](/guides/build/jobs)                   | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Launch, re-execute, terminate, and delete runs of jobs    | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/schedules)    | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Start and stop [schedules](/guides/automate/sensors)      | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Start and stop [sensors](/guides/automate/sensors)      | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Wipe assets                                               | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Launch and cancel [schedules](/guides/automate/schedules) | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Add dynamic partitions                                    | ❌     | ❌       | ✅     | ✅    | ✅                       |
