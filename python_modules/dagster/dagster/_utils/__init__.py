@@ -5,7 +5,6 @@ import errno
 import functools
 import inspect
 import multiprocessing
-import multiprocessing.synchronize
 import os
 import re
 import signal
@@ -60,6 +59,8 @@ import dagster._check as check
 from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if TYPE_CHECKING:
+    import multiprocessing.synchronize
+
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryDefinition,
@@ -372,10 +373,6 @@ def _termination_handler(
 def start_termination_thread(
     should_stop_event: "multiprocessing.synchronize.Event", is_done_event: threading.Event
 ) -> None:
-    check.inst_param(
-        should_stop_event, "should_stop_event", ttype=multiprocessing.synchronize.Event
-    )
-
     int_thread = threading.Thread(
         target=_termination_handler,
         args=(should_stop_event, is_done_event),
