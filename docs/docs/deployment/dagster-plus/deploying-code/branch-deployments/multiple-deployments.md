@@ -129,29 +129,9 @@ On Hybrid, you can also use [Setting environment variables using agent config](/
 
 See: [Dagster+ branch deployments](/guides/operate/configuration/using-environment-variables-and-secrets#dagster-branch-deployments)
 
-### Setting the concurrency limit for runs across all branch deployments
+### Setting concurrency limits for branch deployment runs
 
-There is an organization-scoped setting `max_concurrent_branch_deployment_runs` that controls concurrency across all branch deployments. By default its value is 50.
-
-Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/api/clis/dagster-cloud-cli). The CLI must be [authenticated](/api/clis/dagster-cloud-cli/installing-and-configuring#step-21-set-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
-
-To view the organization settings in the terminal:
-
-```bash
-dagster-cloud organization settings get # max_concurrent_branch_deployment_runs: 50
-```
-
-To modify organization settings, first save the settings to a `YAML` file on your local system:
-
-```bash
-dagster-cloud organization settings get > org-settings.yaml
-```
-
-Edit the contents of this `YAML` file and save it. Then run the below command to sync the changes:
-
-```bash
-dagster-cloud organization settings set-from-file org-settings.yaml
-```
+Branch deployment concurrency is controlled by a set of organization-scoped settings that apply across all branch deployments, including a global run limit, a per-branch-deployment run limit, and tag-based concurrency limits. For details, see [Configuring concurrency for branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/branch-deployment-concurrency).
 
 ### Serving specific code location branch deployments on specific agents when you have multiple agents in distinct environments
 
