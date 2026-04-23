@@ -1,15 +1,43 @@
 # Changelog
 
+## 1.13.2 (core) / 0.29.2 (libraries)
+
+### New
+
+- [ui] Users can now hold Cmd or Ctrl while clicking launch, materialize, re-execute, or retry buttons to open the resulting run in a new
+  browser tab instead of navigating away from the current page.
+- [ui] Added an Azure DevOps kind tag icon for assets tagged with the `azuredevops` kind.
+- [dg] The `dg utils integrations` sub-command has been removed.
+- [dagster-databricks] `DatabricksClientResource` now accepts a `credentials_strategy` argument, enabling federated and custom authentication flows via the Databricks SDK's `CredentialsStrategy` protocol. (Thanks, [@hbellur0526](https://github.com/hbellur0526)!)
+
+### Bugfixes
+
+- Fixed an issue where the asset daemon could fail when encountering foreign sensor cursors in automation condition sensor state.
+- Fixed an issue where run retries were sometimes not executed by the event log consumer daemon.
+- Fixed an issue where an invalid multi-partition key format could cause errors when computing partition statuses.
+- [dg] Fixed an issue where the `--api-token` flag was ignored when passed to `dg` CLI commands.
+- [dg] Fixed an issue in `dg api asset-checks` where the command used a non-existent top-level GraphQL resolver path.
+- [ui] Fixed incorrect font rendering caused by a CSS variable name mismatch.
+- [ui] Fixed an issue where the run config editor dialog displayed at an incorrect height.
+- [ui] Fixed an issue where clicking asset selection autocomplete suggestions could cause the input to lose focus.
+- [ui] Fixed an issue where the Users table in Org Settings did not support horizontal scrolling.
+- [dagster-cloud-cli] Fixed GitHub Enterprise authentication for branch deployment CI/CD workflows.
+- [dagster-databricks] Fixed a `TypeError` when `credentials_strategy` was `None`.
+- [dagster-dbt] Fixed a thread-safety issue in concurrent metadata fetching that could cause intermittent errors.
+- [dagster-snowflake-polars] Fixed an issue where dynamic partition keys were not properly escaped.
+
+### Dagster Plus
+
+- [ui] Branch deployments now expose run queue settings in the run queue configuration dialog.
+
 ## 1.13.1 (core) / 0.29.1 (libraries)
 
 ### New
 
 - Added `PipesCompositeMessageReader` (preview) to support multiple concurrent message streams in a single Pipes session.
 - Added `sensor:`, `schedule:`, and `job:` attribute support to the asset selection syntax (e.g., `sensor:my_sensor`, `job:my_job`).
-- Added `automation_type:` attribute support to the asset selection syntax, allowing queries like `automation_type:schedule` or `automation_type:sensor`. (Thanks, [@bengotow](https://github.com/bengotow)!)
+- Added `automation_type:` attribute support to the asset selection syntax, allowing queries like `automation_type:schedule` or `automation_type:sensor`.
 - State-backed integration components (e.g., `AirbyteWorkspaceComponent`, `FivetranWorkspaceComponent`) now default to `LOCAL_FILESYSTEM` state storage instead of `legacy_code_server_snapshots`.
-- [dg] Added `dg api issue create` and `dg api issue update` commands.
-- [dg] Added filter support to `dg api issue list`.
 - [ui] Improved asset selection autocomplete performance.
 - [dagster-dbt] `DagsterDbtTranslatorSettings.enable_source_metadata` now defaults to `True`, enabling upstream asset key remapping based on dbt source table names by default.
 
