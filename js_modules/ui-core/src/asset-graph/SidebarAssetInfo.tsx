@@ -1,4 +1,12 @@
-import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Colors,
+  ConfigTypeSchema,
+  Icon,
+  Spinner,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {AddToFavoritesButton} from '@shared/asset-graph/AddToFavoritesButton';
 import {Link} from 'react-router-dom';
 
@@ -49,7 +57,13 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
+export const SidebarAssetInfo = ({
+  graphNode,
+  onToggleCollapse,
+}: {
+  graphNode: GraphNode;
+  onToggleCollapse?: () => void;
+}) => {
   const {assetKey, definition} = graphNode;
   const {liveData} = useAssetLiveData(assetKey, 'sidebar');
   const {liveData: liveAutomationData} = useAssetAutomationData(assetKey, 'sidebar');
@@ -76,7 +90,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   if (!asset) {
     return (
       <>
-        <Header assetNode={definition} repoAddress={null} />
+        <Header assetNode={definition} repoAddress={null} onToggleCollapse={onToggleCollapse} />
         <Box padding={{vertical: 64}}>
           <Spinner purpose="section" />
         </Box>
@@ -102,7 +116,11 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
   return (
     <>
-      <Header assetNode={definition} repoAddress={repoAddress} />
+      <Header
+        assetNode={definition}
+        repoAddress={repoAddress}
+        onToggleCollapse={onToggleCollapse}
+      />
 
       <AssetDefinedInMultipleReposNotice
         assetKey={assetKey}
@@ -263,9 +281,10 @@ interface HeaderProps {
   assetNode: WorkspaceAssetFragment;
   opName?: string;
   repoAddress?: RepoAddress | null;
+  onToggleCollapse?: () => void;
 }
 
-const Header = ({assetNode, repoAddress}: HeaderProps) => {
+const Header = ({assetNode, repoAddress, onToggleCollapse}: HeaderProps) => {
   const displayName = displayNameForAssetKey(assetNode.assetKey);
 
   return (
@@ -278,7 +297,19 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
           flexWrap: 'wrap',
         }}
       >
-        <Box>{displayName}</Box>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+          {onToggleCollapse ? (
+            <Tooltip content="Hide details panel">
+              <Button
+                icon={<Icon name="panel_hide_right" />}
+                aria-label="Hide details panel"
+                title="Hide details panel"
+                onClick={onToggleCollapse}
+              />
+            </Tooltip>
+          ) : null}
+          <Box>{displayName}</Box>
+        </Box>
       </SidebarTitle>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', gap: 4}}>
