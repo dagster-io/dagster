@@ -1151,3 +1151,246 @@ def test_nested_resources_with_default_set_in_configure_at_launch() -> None:
         }
     ).success
     assert completed["yes"]
+
+
+def test_nested_resource_list_fully_configured() -> None:
+    out_txt: list[str] = []
+
+    class ChildResource(dg.ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class ParentResource(dg.ConfigurableResource):
+        children: list[ChildResource]
+
+        def output_all(self, text: str) -> None:
+            for child in self.children:
+                child.output(text)
+
+    @dg.asset
+    def my_asset(parent: ParentResource):
+        parent.output_all("hello")
+
+    child_a = ChildResource(prefix="A: ")
+    child_b = ChildResource(prefix="B: ")
+    parent = ParentResource(children=[child_a, child_b])
+
+    assert (
+        dg.Definitions(
+            assets=[my_asset],
+            resources={"parent": parent},
+        )
+        .resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ["A: hello", "B: hello"]
+
+
+def test_nested_resource_list_with_partial() -> None:
+    out_txt: list[str] = []
+
+    class ChildResource(dg.ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class ParentResource(dg.ConfigurableResource):
+        children: list[ChildResource]
+
+        def output_all(self, text: str) -> None:
+            for child in self.children:
+                child.output(text)
+
+    @dg.asset
+    def my_asset(parent: ParentResource):
+        parent.output_all("hello")
+
+    child_a = ChildResource(prefix="A: ")
+    child_b = ChildResource.configure_at_launch()
+    parent = ParentResource(children=[child_a, child_b])
+
+    assert (
+        dg.Definitions(
+            assets=[my_asset],
+            resources={
+                "parent": parent,
+                "child_b": child_b,
+            },
+        )
+        .resolve_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "child_b": {
+                        "config": {
+                            "prefix": "B: ",
+                        }
+                    }
+                }
+            }
+        )
+        .success
+    )
+
+    assert out_txt == ["A: hello", "B: hello"]
+
+
+def test_nested_resource_tuple() -> None:
+    out_txt: list[str] = []
+
+    class ChildResource(dg.ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class ParentResource(dg.ConfigurableResource):
+        children: tuple[ChildResource, ...]
+
+        def output_all(self, text: str) -> None:
+            for child in self.children:
+                child.output(text)
+
+    @dg.asset
+    def my_asset(parent: ParentResource):
+        parent.output_all("hello")
+
+    child_a = ChildResource(prefix="A: ")
+    child_b = ChildResource(prefix="B: ")
+    parent = ParentResource(children=[child_a, child_b])
+
+    assert (
+        dg.Definitions(
+            assets=[my_asset],
+            resources={"parent": parent},
+        )
+        .resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ["A: hello", "B: hello"]
+
+
+def test_nested_resource_sequence() -> None:
+    from collections.abc import Sequence
+
+    out_txt: list[str] = []
+
+    class ChildResource(dg.ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class ParentResource(dg.ConfigurableResource):
+        children: Sequence[ChildResource]
+
+        def output_all(self, text: str) -> None:
+            for child in self.children:
+                child.output(text)
+
+    @dg.asset
+    def my_asset(parent: ParentResource):
+        parent.output_all("hello")
+
+    child_a = ChildResource(prefix="A: ")
+    child_b = ChildResource(prefix="B: ")
+    parent = ParentResource(children=[child_a, child_b])
+
+    assert (
+        dg.Definitions(
+            assets=[my_asset],
+            resources={"parent": parent},
+        )
+        .resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ["A: hello", "B: hello"]
+
+
+def test_nested_resource_list_multiple_partials() -> None:
+    out_txt: list[str] = []
+
+    class ChildResource(dg.ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class ParentResource(dg.ConfigurableResource):
+        children: list[ChildResource]
+
+        def output_all(self, text: str) -> None:
+            for child in self.children:
+                child.output(text)
+
+    @dg.asset
+    def my_asset(parent: ParentResource):
+        parent.output_all("hello")
+
+    child_a = ChildResource.configure_at_launch()
+    child_b = ChildResource.configure_at_launch()
+    parent = ParentResource(children=[child_a, child_b])
+
+    assert (
+        dg.Definitions(
+            assets=[my_asset],
+            resources={
+                "parent": parent,
+                "child_a": child_a,
+                "child_b": child_b,
+            },
+        )
+        .resolve_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "child_a": {
+                        "config": {
+                            "prefix": "X: ",
+                        }
+                    },
+                    "child_b": {
+                        "config": {
+                            "prefix": "Y: ",
+                        }
+                    },
+                }
+            }
+        )
+        .success
+    )
+
+    assert out_txt == ["X: hello", "Y: hello"]
+
+
+def test_nested_resource_empty_list() -> None:
+    class ChildResource(dg.ConfigurableResource):
+        prefix: str
+
+    class ParentResource(dg.ConfigurableResource):
+        children: list[ChildResource]
+
+    @dg.asset
+    def my_asset(parent: ParentResource):
+        assert parent.children == []
+
+    parent = ParentResource(children=[])
+
+    assert (
+        dg.Definitions(
+            assets=[my_asset],
+            resources={"parent": parent},
+        )
+        .resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )

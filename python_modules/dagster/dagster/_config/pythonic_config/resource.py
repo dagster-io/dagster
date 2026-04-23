@@ -1,3 +1,4 @@
+import collections.abc
 import contextlib
 import inspect
 from abc import ABC, abstractmethod
@@ -77,16 +78,19 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
     def configurable_resource_cls(self) -> type: ...
 
     def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        for attr_name, partial_resource in self.nested_partial_resources.items():
-            yield PartialResourceDependencyRequirement(
-                class_name=self.configurable_resource_cls.__name__,
-                attr_name=attr_name,
-                partial_resource=partial_resource,
-            )
+        for attr_name, value in self.nested_partial_resources.items():
+            for item, _idx in _iter_resources_in_value(value):
+                if is_coercible_to_resource(item) and not _is_fully_configured(item):
+                    yield PartialResourceDependencyRequirement(
+                        class_name=self.configurable_resource_cls.__name__,
+                        attr_name=attr_name,
+                        partial_resource=item,
+                    )
 
-        for inner_key, resource in self.nested_resources.items():
-            if is_coercible_to_resource(resource):
-                yield from coerce_to_resource(resource).get_resource_requirements(inner_key)
+        for inner_key, value in self.nested_resources.items():
+            for item, _idx in _iter_resources_in_value(value):
+                if is_coercible_to_resource(item):
+                    yield from coerce_to_resource(item).get_resource_requirements(inner_key)
 
         yield from super().get_resource_requirements(source_key)
 
@@ -94,21 +98,19 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
         self, resource_defs: Mapping[str, ResourceDefinition]
     ) -> AbstractSet[str]:
         resolved_keys = set(self.required_resource_keys)
-        for attr_name, partial_resource in self.nested_partial_resources.items():
-            if is_coercible_to_resource(partial_resource):
-                resolved_keys.add(
-                    _resolve_partial_resource_to_key(attr_name, partial_resource, resource_defs)
-                )
-            else:
-                check.failed(
-                    f"Unexpected nested partial resource of type {type(partial_resource)} is not coercible to resource"
-                )
+        for attr_name, value in self.nested_partial_resources.items():
+            for item, _idx in _iter_resources_in_value(value):
+                if is_coercible_to_resource(item) and not _is_fully_configured(item):
+                    resolved_keys.add(
+                        _resolve_partial_resource_to_key(attr_name, item, resource_defs)
+                    )
 
-        for resource in self.nested_resources.values():
-            if is_coercible_to_resource(resource):
-                resolved_keys.update(
-                    coerce_to_resource(resource).get_required_resource_keys(resource_defs)
-                )
+        for value in self.nested_resources.values():
+            for item, _idx in _iter_resources_in_value(value):
+                if is_coercible_to_resource(item):
+                    resolved_keys.update(
+                        coerce_to_resource(item).get_required_resource_keys(resource_defs)
+                    )
 
         return resolved_keys
 
@@ -239,7 +241,7 @@ class ConfigurableResourceFactory(
             # We keep track of any resources we depend on which are not fully configured
             # so that we can retrieve them at runtime
             nested_partial_resources={
-                k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+                k: v for k, v in resource_pointers.items() if (not _is_value_fully_configured(v))
             },
             resolved_config_dict=resolved_config_dict,
             # These are unfortunately named very similarily
@@ -358,25 +360,50 @@ class ConfigurableResourceFactory(
 
         partial_resources_to_update: dict[str, Any] = {}
         if self._nested_partial_resources:
-            for attr_name, resource in self._nested_partial_resources.items():
-                key = _resolve_partial_resource_to_key(
-                    attr_name, resource, context.all_resource_defs
-                )
-                resolved_resource = getattr(context.resources, key)
-                partial_resources_to_update[attr_name] = resolved_resource
+            for attr_name, value in self._nested_partial_resources.items():
+                if isinstance(value, (list, tuple)):
+                    resolved_items = []
+                    for item in value:
+                        if is_coercible_to_resource(item) and not _is_fully_configured(item):
+                            key = _resolve_partial_resource_to_key(
+                                attr_name, item, context.all_resource_defs
+                            )
+                            resolved_items.append(getattr(context.resources, key))
+                        else:
+                            resolved_items.append(item)
+                    partial_resources_to_update[attr_name] = type(value)(resolved_items)
+                else:
+                    key = _resolve_partial_resource_to_key(
+                        attr_name, value, context.all_resource_defs
+                    )
+                    resolved_resource = getattr(context.resources, key)
+                    partial_resources_to_update[attr_name] = resolved_resource
 
         # Also evaluate any resources that are not partial
         with contextlib.ExitStack() as stack:
             resources_to_update, _ = separate_resource_params(self.__class__, self.__dict__)
-            resources_to_update = {
-                attr_name: _call_resource_fn_with_default(
-                    stack, wrap_resource_for_execution(resource), context
-                )
-                for attr_name, resource in resources_to_update.items()
-                if attr_name not in partial_resources_to_update
-            }
+            resolved_resources: dict[str, Any] = {}
+            for attr_name, value in resources_to_update.items():
+                if attr_name in partial_resources_to_update:
+                    continue
+                if isinstance(value, (list, tuple)):
+                    resolved_items = []
+                    for item in value:
+                        if is_coercible_to_resource(item):
+                            resolved_items.append(
+                                _call_resource_fn_with_default(
+                                    stack, wrap_resource_for_execution(item), context
+                                )
+                            )
+                        else:
+                            resolved_items.append(item)
+                    resolved_resources[attr_name] = type(value)(resolved_items)
+                else:
+                    resolved_resources[attr_name] = _call_resource_fn_with_default(
+                        stack, wrap_resource_for_execution(value), context
+                    )
 
-            to_update = {**resources_to_update, **partial_resources_to_update}
+            to_update = {**resolved_resources, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
 
     @deprecated(
@@ -719,7 +746,7 @@ class PartialResource(
             # We keep track of any resources we depend on which are not fully configured
             # so that we can retrieve them at runtime
             nested_partial_resources={
-                k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+                k: v for k, v in resource_pointers.items() if (not _is_value_fully_configured(v))
             },
             config_schema=infer_schema_from_config_class(
                 resource_cls,
@@ -851,9 +878,83 @@ def _is_annotated_as_resource_type(annotation: type, metadata: list[str]) -> boo
         annotation, "__metadata__", None
     ) == ("resource_dependency",)
 
-    return is_annotated_as_resource_dependency or safe_is_subclass(
+    if is_annotated_as_resource_dependency or safe_is_subclass(
         annotation, (ResourceDefinition, ConfigurableResourceFactory)
-    )
+    ):
+        return True
+
+    return _is_annotated_as_resource_sequence_type(annotation, metadata)
+
+
+def _get_sequence_resource_inner_type(annotation: type) -> type | None:
+    """Returns the inner resource type if annotation is list[R], tuple[R, ...], or Sequence[R]
+    where R is a resource type. Returns None otherwise.
+    """
+    from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+
+    origin = get_origin(annotation)
+    if origin not in (list, tuple, collections.abc.Sequence):
+        return None
+
+    args = get_args(annotation)
+    if not args:
+        return None
+
+    # For tuple, only support homogeneous tuple[R, ...]
+    if origin is tuple:
+        if len(args) != 2 or args[1] is not Ellipsis:
+            return None
+        inner = args[0]
+    else:
+        inner = args[0]
+
+    # Check if the inner type is itself a resource type
+    if safe_is_subclass(inner, (ResourceDefinition, ConfigurableResourceFactory)):
+        return inner
+
+    return None
+
+
+def _is_annotated_as_resource_sequence_type(annotation: type, metadata: list[str]) -> bool:
+    """Returns True if annotation is a sequence of resource types (list[R], tuple[R, ...], Sequence[R])."""
+    inner = _get_sequence_resource_inner_type(annotation)
+    if inner is not None:
+        return True
+
+    # Also handle the case where the inner type has already been transformed by the metaclass
+    # (i.e. it's Annotated[X | PartialResource, "resource_dependency"])
+    origin = get_origin(annotation)
+    if origin not in (list, tuple, collections.abc.Sequence):
+        return False
+
+    args = get_args(annotation)
+    if not args:
+        return False
+
+    if origin is tuple:
+        if len(args) != 2 or args[1] is not Ellipsis:
+            return False
+        inner_type = args[0]
+    else:
+        inner_type = args[0]
+
+    return _is_annotated_as_resource_type(inner_type, getattr(inner_type, "__metadata__", []))
+
+
+def _iter_resources_in_value(value: Any) -> Iterator[tuple[Any, int | None]]:
+    """Yields (resource, index) for list/tuple values, (value, None) for single values."""
+    if isinstance(value, (list, tuple)):
+        for i, item in enumerate(value):
+            yield item, i
+    else:
+        yield value, None
+
+
+def _is_value_fully_configured(value: Any) -> bool:
+    """For lists/tuples, checks all items. For single values, delegates to _is_fully_configured."""
+    if isinstance(value, (list, tuple)):
+        return all(_is_fully_configured(item) for item in value if is_coercible_to_resource(item))
+    return _is_fully_configured(value)
 
 
 class ResourceDataWithAnnotation(NamedTuple):
