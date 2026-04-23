@@ -4,6 +4,7 @@ import dagster as dg
 import pytest
 from dagster import AutomationCondition as AC
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._utils.security import non_secure_md5_hash_str
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -27,25 +28,25 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
     [
         # cron condition returns a unique value hash if parents change, if schedule changes, if the
         # partitions def changes, or if an asset is materialized
-        ("93a765c5052e9c0e26fbb97b11f31ea9", AC.on_cron("0 * * * *"), one_parent, False),
-        ("c9fc208a4bd809418b372c28a7d33cba", AC.on_cron("0 * * * *"), one_parent, True),
-        ("1e26dfd160b5d289156992e6e44e7959", AC.on_cron("0 0 * * *"), one_parent, False),
-        ("aee5e2b0af668dfdde74f81d1b76773b", AC.on_cron("0 * * * *"), one_parent_daily, False),
-        ("9d04ca345d1605f756f1f92f6a48a2a7", AC.on_cron("0 * * * *"), two_parents, False),
-        ("98b9c46de1d70a4c3fd5f2a53b3207e6", AC.on_cron("0 * * * *"), two_parents_daily, False),
+        ("e1eb2dcf84a24c4f8b0e328174eb6f82", AC.on_cron("0 * * * *"), one_parent, False),
+        ("c70a6e0116190dd47c63eb7ed571c30f", AC.on_cron("0 * * * *"), one_parent, True),
+        ("53c9bd094776a1293972551b9f77efa0", AC.on_cron("0 0 * * *"), one_parent, False),
+        ("612d7d015db28b363dc0ea38a8d7d21c", AC.on_cron("0 * * * *"), one_parent_daily, False),
+        ("4982541e273f0d5e00c500d559ce78a0", AC.on_cron("0 * * * *"), two_parents, False),
+        ("563b2dae9572bc93d01b847a5b9e920d", AC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
-        ("c89e6e6cd095a5ed39bca4a566f3a988", AC.eager(), one_parent, False),
-        ("3a3793b6b0267173caf31b043c836a1a", AC.eager(), one_parent, True),
-        ("dd079a402386d1a5a750c6d12aa6af75", AC.eager(), one_parent_daily, False),
+        ("0a35066676dfc02f1afc906a671860ac", AC.eager(), one_parent, False),
+        ("b10e8c43ac5c619a3f9515f402e3f3f3", AC.eager(), one_parent, True),
+        ("183dbebeea08971f12f5c9e1220b87a0", AC.eager(), one_parent_daily, False),
         (
             # note: identical hash to the above
-            "dd079a402386d1a5a750c6d12aa6af75",
+            "8c05e2d37a7ed8b7705fba907ce5d433",
             AC.eager().allow(AssetSelection.all()),
             one_parent_daily,
             False,
         ),
-        ("e83d9ec4cc577e786daa8acc1ee6bebb", AC.eager(), two_parents, False),
-        ("aaf5f236045cb349300e500702e2676d", AC.eager(), two_parents_daily, False),
+        ("4d0cfd5ae88cd83c00ff23ead3228923", AC.eager(), two_parents, False),
+        ("69972fd8dc81a14c13125330afa4c9e1", AC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
         ("6d7809c4949e3d812d7eddfb1b60d529", AC.missing(), one_parent, False),
         ("6d7809c4949e3d812d7eddfb1b60d529", AC.missing(), one_parent, True),
@@ -133,11 +134,103 @@ def test_node_unique_id() -> None:
         .allow(AssetSelection.keys("a"))
         .ignore(AssetSelection.keys("b"))
     )
-    assert (
-        condition.get_node_unique_id(parent_unique_id=None, index=None, target_key=None)
-        == "80f87fb32baaf7ce3f65f68c12d3eb11"
+    assert condition.get_node_unique_id(
+        parent_unique_id=None, index=None, target_key=None
+    ) == non_secure_md5_hash_str(f"{None}{None}{condition.name}".encode())
+    assert condition.get_backcompat_node_unique_ids(
+        parent_unique_id=None, index=None, target_key=None
+    ) == [non_secure_md5_hash_str(f"{None}{None}{condition.base_name}".encode())]
+
+
+@pytest.mark.parametrize(
+    "make_cond",
+    [
+        pytest.param(AC.any_deps_match, id="any_deps_match"),
+        pytest.param(AC.all_deps_match, id="all_deps_match"),
+    ],
+)
+def test_dep_condition_id_collision_fix(make_cond) -> None:
+    allow_a = make_cond(AC.missing()).allow(AssetSelection.keys("assetA"))
+    allow_b = make_cond(AC.missing()).allow(AssetSelection.keys("assetB"))
+
+    assert allow_a.get_node_unique_id(
+        parent_unique_id=None, index=0, target_key=None
+    ) != allow_b.get_node_unique_id(parent_unique_id=None, index=0, target_key=None)
+    assert allow_a.get_backcompat_node_unique_ids(
+        parent_unique_id=None, index=0, target_key=None
+    ) == allow_b.get_backcompat_node_unique_ids(parent_unique_id=None, index=0, target_key=None)
+
+    ignore_a = make_cond(AC.missing()).ignore(AssetSelection.keys("assetC"))
+    ignore_b = make_cond(AC.missing()).ignore(AssetSelection.keys("assetD"))
+
+    assert ignore_a.get_node_unique_id(
+        parent_unique_id=None, index=0, target_key=None
+    ) != ignore_b.get_node_unique_id(parent_unique_id=None, index=0, target_key=None)
+    assert ignore_a.get_backcompat_node_unique_ids(
+        parent_unique_id=None, index=0, target_key=None
+    ) == ignore_b.get_backcompat_node_unique_ids(
+        parent_unique_id=None, index=0, target_key=None
     )
-    assert (
-        condition.get_backcompat_node_unique_ids(parent_unique_id=None, index=None, target_key=None)
-        == []
+
+
+def test_labeled_condition_node_unique_id_backcompat() -> None:
+    condition = AC.missing().with_label("my_label")
+
+    assert condition.get_node_unique_id(
+        parent_unique_id="parent", index=0, target_key=None
+    ) == non_secure_md5_hash_str(f"parent0{condition.name}{condition.get_label()}".encode())
+    assert condition.get_backcompat_node_unique_ids(
+        parent_unique_id="parent", index=0, target_key=None
+    ) == [non_secure_md5_hash_str(f"parent0{condition.name}".encode())]
+
+
+def test_since_condition_cursor_backcompat() -> None:
+    cond_a = AC.any_deps_match(AC.missing()).allow(AssetSelection.keys("assetA")).since_last_handled()
+    cond_b = AC.any_deps_match(AC.missing()).allow(AssetSelection.keys("assetB")).since_last_handled()
+
+    assert cond_a.get_node_unique_id(
+        parent_unique_id="parent", index=0, target_key=None
+    ) != cond_b.get_node_unique_id(parent_unique_id="parent", index=0, target_key=None)
+    assert cond_a.get_backcompat_node_unique_ids(
+        parent_unique_id="parent", index=0, target_key=None
+    ) == cond_b.get_backcompat_node_unique_ids(
+        parent_unique_id="parent", index=0, target_key=None
     )
+
+
+def test_newly_true_condition_cursor_backcompat() -> None:
+    cond_a = AC.any_deps_match(AC.missing()).allow(AssetSelection.keys("assetA")).newly_true()
+    cond_b = AC.any_deps_match(AC.missing()).allow(AssetSelection.keys("assetB")).newly_true()
+
+    assert cond_a.get_node_unique_id(
+        parent_unique_id="parent", index=0, target_key=None
+    ) != cond_b.get_node_unique_id(parent_unique_id="parent", index=0, target_key=None)
+    assert cond_a.get_backcompat_node_unique_ids(
+        parent_unique_id="parent", index=0, target_key=None
+    ) == cond_b.get_backcompat_node_unique_ids(
+        parent_unique_id="parent", index=0, target_key=None
+    )
+
+
+def test_node_unique_ids_deduplicate_noop_backcompat_ids() -> None:
+    condition = AC.any_deps_match(AC.missing())
+
+    unique_ids = condition.get_node_unique_ids(
+        parent_unique_ids=[None], child_indices=[None], target_key=None
+    )
+
+    assert len(unique_ids) == 1
+
+
+def test_nested_dep_conditions_do_not_expand_duplicate_unique_ids() -> None:
+    condition = AC.any_deps_match(AC.any_deps_match(AC.missing()))
+
+    root_unique_ids = condition.get_node_unique_ids(
+        parent_unique_ids=[None], child_indices=[None], target_key=None
+    )
+    child_unique_ids = condition.children[0].get_node_unique_ids(
+        parent_unique_ids=root_unique_ids, child_indices=[None, 0], target_key=None
+    )
+
+    assert len(root_unique_ids) == 1
+    assert len(child_unique_ids) == 2
