@@ -37,10 +37,12 @@ from sqlalchemy.engine import Connection
 from dagster_postgres.utils import (
     create_pg_connection,
     pg_alembic_config,
+    pg_config_password_provider,
     pg_url_from_config,
     retry_pg_connection_fn,
     retry_pg_creation_fn,
     set_pg_statement_timeout,
+    setup_pg_password_provider_event,
 )
 
 CHANNEL_NAME = "run_events"
@@ -80,6 +82,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         postgres_url: str,
         should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
+        password_provider: str | None = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = check.str_param(postgres_url, "postgres_url")
@@ -91,6 +94,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
+        self.password_provider = password_provider
+        if self.password_provider:
+            setup_pg_password_provider_event(self._engine, self.password_provider)
+
         self._event_watcher: SqlPollingEventWatcher | None = None
 
         self._secondary_index_cache = {}
@@ -126,6 +133,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if existing_options:
             kwargs["connect_args"] = {"options": existing_options}
         self._engine = create_engine(self.postgres_url, **kwargs)
+        if self.password_provider:
+            setup_pg_password_provider_event(self._engine, self.password_provider)
+
         event.listen(
             self._engine,
             "connect",
@@ -153,21 +163,27 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
+            password_provider=pg_config_password_provider(config_value),
         )
 
     @staticmethod
     def create_clean_storage(
-        conn_string: str, should_autocreate_tables: bool = True
+        conn_string: str,
+        should_autocreate_tables: bool = True,
+        password_provider: str | None = None,
     ) -> "PostgresEventLogStorage":
         engine = create_engine(
             conn_string, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
+        if password_provider:
+            setup_pg_password_provider_event(engine, password_provider)
+
         try:
             SqlEventLogStorageMetadata.drop_all(engine)
         finally:
             engine.dispose()
 
-        return PostgresEventLogStorage(conn_string, should_autocreate_tables)
+        return PostgresEventLogStorage(conn_string, should_autocreate_tables, password_provider=password_provider)
 
     def store_event(self, event: EventLogEntry) -> None:
         """Store an event corresponding to a run.
