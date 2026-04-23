@@ -540,7 +540,13 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                         wait_timeout=pod_wait_timeout,
                     )
             finally:
-                client.core_api.delete_namespaced_pod(pod_name, namespace)
+                try:
+                    client.core_api.delete_namespaced_pod(pod_name, namespace)
+                except kubernetes.client.exceptions.ApiException as e:
+                    if e.status != 404:
+                        raise
+                    # Pod already gone — killed by K8s (node eviction, spot
+                    # preemption, OOMKill) before cleanup ran. Safe to ignore.
 
         return PipesClientCompletedInvocation(pipes_session)
 
