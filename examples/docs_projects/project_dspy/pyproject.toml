@@ -6,7 +6,7 @@ dependencies = [
     "dagster",
     "dspy>=2.6.27",
     "ipykernel>=6.30.1",
-    "litellm==1.83.0",
+    "litellm==1.83.7",
     "openai>=1.107.2",
     "pandas>=2.3.2",
     "pydantic>=2.11.9",

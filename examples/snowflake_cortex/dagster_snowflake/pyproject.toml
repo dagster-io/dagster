@@ -3,14 +3,14 @@ name = "dagster-snowflake-ai"
 requires-python = ">=3.10,<3.15"
 version = "0.1.0"
 dependencies = [
-    "dagster>=1.9.0",
+    "dagster>=1.13.2",
     "dagster-dbt>=0.25.0",
     "dagster-snowflake>=0.23.0",
     "dbt-snowflake>=1.8.0",
     "cryptography>=41.0.0",
     "pandas>=2.0.0",
     "pydantic>=2.0.0",
-    "python-dotenv>=1.0.0",
+    "python-dotenv>=1.2.2",
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.0",
 ]
