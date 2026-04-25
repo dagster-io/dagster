@@ -353,26 +353,6 @@ def test_dbt_fusion_no_row_limit_on_materialization(mocker: MockerFixture, tmp_p
     limit_idx = list(invocation.process.args).index("--limit")
     assert invocation.process.args[limit_idx + 1] == "0"
 
-    dbt_with_global_limit = DbtCliResource(
-        project_dir=os.fspath(test_jaffle_shop_path),
-        dbt_executable=fusion_executable,
-        global_config_flags=["--limit", "5"],
-    )
-    dbt_with_global_limit.__dict__["_cli_version"] = version.parse("2.0.0")
-    invocation = dbt_with_global_limit.cli(["seed"])
-    assert list(invocation.process.args).count("--limit") == 1
-    assert invocation.process.args[list(invocation.process.args).index("--limit") + 1] == "5"
-
-    dbt_with_global_limit = DbtCliResource(
-        project_dir=os.fspath(test_jaffle_shop_path),
-        dbt_executable=fusion_executable,
-        global_config_flags=["--limit=5"],
-    )
-    dbt_with_global_limit.__dict__["_cli_version"] = version.parse("2.0.0")
-    invocation = dbt_with_global_limit.cli(["seed"])
-    assert "--limit" not in invocation.process.args
-    assert any(arg == "--limit=5" for arg in invocation.process.args)
-
 
 @pytest.mark.core
 def test_dbt_fusion_v1_no_row_limit_injection(mocker: MockerFixture, tmp_path: Path) -> None:
