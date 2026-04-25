@@ -760,8 +760,9 @@ class DbtCliResource(ConfigurableResource):
         # rather than assuming it is always the first token.
         if should_inject_row_limit:
             dbt_command = _get_dbt_command(args)
+            supplied_args = [*self.global_config_flags, *args]
             user_supplied_limit = any(
-                arg == "--limit" or arg.startswith("--limit=") for arg in args
+                arg == "--limit" or arg.startswith("--limit=") for arg in supplied_args
             )
             if dbt_command in _FUSION_ROW_LIMITED_CMDS and not user_supplied_limit:
                 args = [*args, "--limit", "0"]
