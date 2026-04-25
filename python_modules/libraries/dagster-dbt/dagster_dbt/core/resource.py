@@ -47,8 +47,58 @@ DBT_EXECUTABLE = _get_dbt_executable()
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
 
+# dbt-fusion's `dbtf` executable (v2+) silently caps row output to 10 rows by default for these
+# commands.
+# Materialization and test commands query full datasets, so the cap causes silent data loss or
+# incorrect test results.
+_FUSION_ROW_LIMITED_CMDS = frozenset({"build", "run", "seed", "snapshot", "test"})
+_DBT_FLAGS_WITH_VALUES = frozenset(
+    {
+        "--deprecated-favor-state",
+        "--defer-state",
+        "--indirect-selection",
+        "--log-format",
+        "--log-format-file",
+        "--log-level",
+        "--log-level-file",
+        "--log-path",
+        "--partial-parse-file-diff",
+        "--printer-width",
+        "--profile",
+        "--profiles-dir",
+        "--project-dir",
+        "--record-timing-info",
+        "--state",
+        "--target",
+        "--vars",
+        "--warn-error-options",
+        "-r",
+        "-t",
+    }
+)
+
 
 DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
+
+
+def _is_dbt_fusion_executable(dbt_executable: str) -> bool:
+    return Path(os.fspath(dbt_executable)).stem.lower() == "dbtf"
+
+
+def _get_dbt_command(args: Sequence[str]) -> str | None:
+    idx = 0
+    while idx < len(args):
+        arg = args[idx]
+        if not arg.startswith("-"):
+            return arg
+        if arg.startswith("--") and "=" in arg:
+            idx += 1
+        elif arg in _DBT_FLAGS_WITH_VALUES:
+            idx += 2
+        else:
+            idx += 1
+
+    return None
 
 
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
@@ -685,6 +735,28 @@ class DbtCliResource(ConfigurableResource):
 
         if self.target:
             profile_args += ["--target", self.target]
+
+        # dbt-fusion's `dbtf` executable (v2+) silently caps row output to 10 rows by default.
+        # Inject --limit 0 to disable this unless the user already supplied --limit in `args`.
+        # `DbtCliResource.cli()` accepts leading global flags, so find the first dbt subcommand
+        # rather than assuming it is always the first token.
+        try:
+            is_fusion = (
+                _is_dbt_fusion_executable(self.dbt_executable) and self._cli_version.major >= 2
+            )
+        except Exception:
+            logger.debug(
+                "Could not determine dbt CLI version; skipping dbt-fusion row-limit injection.",
+                exc_info=True,
+            )
+            is_fusion = False
+        if is_fusion:
+            dbt_command = _get_dbt_command(args)
+            user_supplied_limit = any(
+                arg == "--limit" or arg.startswith("--limit=") for arg in args
+            )
+            if dbt_command in _FUSION_ROW_LIMITED_CMDS and not user_supplied_limit:
+                args = [*args, "--limit", "0"]
 
         full_dbt_args = [
             self.dbt_executable,
