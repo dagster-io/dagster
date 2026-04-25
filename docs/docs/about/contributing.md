@@ -39,7 +39,7 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
    source .venv/bin/activate
    ```
 
-   Dagster supports Python 3.10 through 3.14.
+   Dagster supports Python 3.10 or higher.
 
 4. Install Node.js (20.X and above). We recommend using [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager) to manage Node.js versions. It allows you to switch between different Node versions:
 
