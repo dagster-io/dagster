@@ -56,6 +56,7 @@ _DBT_FLAGS_WITH_VALUES = frozenset(
     {
         "--deprecated-favor-state",
         "--defer-state",
+        "--exclude-resource-type",
         "--indirect-selection",
         "--log-format",
         "--log-format-file",
@@ -68,6 +69,7 @@ _DBT_FLAGS_WITH_VALUES = frozenset(
         "--profiles-dir",
         "--project-dir",
         "--record-timing-info",
+        "--resource-type",
         "--state",
         "--target",
         "--vars",
@@ -736,21 +738,27 @@ class DbtCliResource(ConfigurableResource):
         if self.target:
             profile_args += ["--target", self.target]
 
+        is_fusion_executable = _is_dbt_fusion_executable(self.dbt_executable)
+        try:
+            cli_version = self._cli_version
+            should_inject_row_limit = is_fusion_executable and cli_version.major >= 2
+        except Exception:
+            if not is_fusion_executable:
+                raise
+
+            logger.warning(
+                "Could not determine dbt CLI version; skipping dbt-fusion row-limit injection.",
+                exc_info=True,
+            )
+            # Preserve fusion execution behavior even when version probing fails later in `cli()`.
+            cli_version = version.parse("2.0.0")
+            should_inject_row_limit = False
+
         # dbt-fusion's `dbtf` executable (v2+) silently caps row output to 10 rows by default.
         # Inject --limit 0 to disable this unless the user already supplied --limit in `args`.
         # `DbtCliResource.cli()` accepts leading global flags, so find the first dbt subcommand
         # rather than assuming it is always the first token.
-        try:
-            is_fusion = (
-                _is_dbt_fusion_executable(self.dbt_executable) and self._cli_version.major >= 2
-            )
-        except Exception:
-            logger.debug(
-                "Could not determine dbt CLI version; skipping dbt-fusion row-limit injection.",
-                exc_info=True,
-            )
-            is_fusion = False
-        if is_fusion:
+        if should_inject_row_limit:
             dbt_command = _get_dbt_command(args)
             user_supplied_limit = any(
                 arg == "--limit" or arg.startswith("--limit=") for arg in args
@@ -773,7 +781,7 @@ class DbtCliResource(ConfigurableResource):
         adapter: BaseAdapter | None = None
         with pushd(str(project_dir)):
             # we do not need to initialize the adapter if we are using the fusion engine
-            if self._cli_version.major < 2:
+            if cli_version.major < 2:
                 try:
                     adapter = self._initialize_dbt_core_adapter(args)
                 except:
@@ -792,7 +800,7 @@ class DbtCliResource(ConfigurableResource):
                 raise_on_error=raise_on_error,
                 context=context,
                 adapter=adapter,
-                cli_version=self._cli_version,
+                cli_version=cli_version,
                 dbt_project=updated_params.dbt_project,
             )
 

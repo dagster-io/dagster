@@ -343,6 +343,16 @@ def test_dbt_fusion_no_row_limit_on_materialization(mocker: MockerFixture, tmp_p
     limit_idx = list(invocation.process.args).index("--limit")
     assert invocation.process.args[limit_idx + 1] == "0"
 
+    invocation = dbt.cli(["--resource-type", "model", "build"])
+    assert "--limit" in invocation.process.args
+    limit_idx = list(invocation.process.args).index("--limit")
+    assert invocation.process.args[limit_idx + 1] == "0"
+
+    invocation = dbt.cli(["--exclude-resource-type", "test", "build"])
+    assert "--limit" in invocation.process.args
+    limit_idx = list(invocation.process.args).index("--limit")
+    assert invocation.process.args[limit_idx + 1] == "0"
+
 
 @pytest.mark.core
 def test_dbt_fusion_v1_no_row_limit_injection(mocker: MockerFixture, tmp_path: Path) -> None:
@@ -380,6 +390,29 @@ def test_dbt_core_v2_no_row_limit_injection(mocker: MockerFixture, tmp_path: Pat
         assert "--limit" not in invocation.process.args, (
             f"dbt-core v2 must not receive --limit injection for '{cmd}'"
         )
+
+
+@pytest.mark.core
+def test_dbt_fusion_row_limit_injection_warns_on_version_probe_failure(
+    caplog: pytest.LogCaptureFixture, mocker: MockerFixture, tmp_path: Path
+) -> None:
+    fusion_executable = _make_fake_executable(tmp_path, "dbtf")
+    _patch_fake_which(mocker, fusion_executable)
+    dbt = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        dbt_executable=fusion_executable,
+    )
+    mocker.patch("dagster_dbt.core.resource.check_output", side_effect=ValueError("boom"))
+    _make_fake_popen(mocker)
+
+    with caplog.at_level("WARNING"):
+        invocation = dbt.cli(["build"])
+
+    assert "--limit" not in invocation.process.args
+    assert (
+        "Could not determine dbt CLI version; skipping dbt-fusion row-limit injection."
+        in caplog.text
+    )
 
 
 @pytest.mark.parametrize(
