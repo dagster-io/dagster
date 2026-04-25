@@ -45,6 +45,8 @@ Here, we define a basic op in `ops.py` and its configurable parameters in `resou
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/op_example/ops.py"
   title="src/<project_name>/defs/ops.py"
+  startAfter="start"
+  endBefore="end"
 />
 
 <CodeExample
