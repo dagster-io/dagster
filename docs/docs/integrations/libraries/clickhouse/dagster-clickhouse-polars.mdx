@@ -1,0 +1,47 @@
+---
+title: 'dagster-clickhouse-polars library'
+sidebar_position: 1000
+title_meta: 'dagster-clickhouse-polars library API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'dagster-clickhouse-polars library Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2026-04-27'
+custom_edit_url: null
+---
+
+<div class="section" id="dagster-clickhouse-polars-library">
+
+# dagster-clickhouse-polars library
+
+This library provides an integration for storing and loading Polars DataFrames in [ClickHouse](https://clickhouse.com/) using Dagster.
+
+Related Guides:
+
+  - [Using Dagster with ClickHouse tutorial](https://docs.dagster.io/integrations/libraries/clickhouse)
+  - [ClickHouse reference](https://docs.dagster.io/integrations/libraries/clickhouse/reference)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_clickhouse_polars.ClickhousePolarsIOManager'>dagster_clickhouse_polars.ClickhousePolarsIOManager IOManagerDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-clickhouse-polars/dagster_clickhouse_polars/clickhouse_polars_type_handler.py#L115' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_clickhouse_polars.ClickhousePolarsIOManager" class="hash-link"></a></Link></dt>
+    <dd>
+        <div className='lineblock'> </div>
+        I/O manager for Polars DataFrames stored in ClickHouse.
+
+        Examples:
+        ```python
+        from dagster import Definitions
+        from dagster_clickhouse_polars import ClickhousePolarsIOManager
+
+        defs = Definitions(
+            assets=[example_df],
+            resources={
+                "io_manager": ClickhousePolarsIOManager(
+                    host="localhost",
+                    port=9000,
+                    database="default",
+                    schema="example_schema",
+                )
+            },
+        )
+        ```
+    </dd>
+</dl>
+</div>

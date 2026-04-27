@@ -1,0 +1,134 @@
+---
+title: 'dagster-clickhouse library'
+sidebar_position: 1000
+title_meta: 'dagster-clickhouse library API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'dagster-clickhouse library Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2026-04-27'
+custom_edit_url: null
+---
+
+<div class="section" id="dagster-clickhouse-library">
+
+# dagster-clickhouse library
+
+This library provides an integration with the [ClickHouse](https://clickhouse.com/) database.
+
+Related Guides:
+
+  - [Using Dagster with ClickHouse tutorial](https://docs.dagster.io/integrations/libraries/clickhouse)
+  - [ClickHouse reference](https://docs.dagster.io/integrations/libraries/clickhouse/reference)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_clickhouse.ClickhouseResource'>dagster_clickhouse.ClickhouseResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-clickhouse/dagster_clickhouse/resource.py#L24' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_clickhouse.ClickhouseResource" class="hash-link"></a></Link></dt>
+    <dd>
+        <div className='lineblock'> </div>
+        Resource for interacting with a ClickHouse database via the native protocol.
+
+        Examples:
+        ```python
+        from dagster import Definitions, asset
+        from dagster_clickhouse import ClickhouseResource
+
+        @asset
+        def my_table(clickhouse: ClickhouseResource):
+            with clickhouse.get_connection() as client:
+                client.execute("SELECT * FROM my_database.my_table LIMIT 1")
+
+        Definitions(
+            assets=[my_table],
+            resources={"clickhouse": ClickhouseResource(host="localhost")},
+        )
+        ```
+    </dd>
+</dl>
+
+<dl>
+    <dt><Link class="anchor" id='dagster_clickhouse.ClickhouseIOManager'>dagster_clickhouse.ClickhouseIOManager IOManagerDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-clickhouse/dagster_clickhouse/io_manager.py#L47' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_clickhouse.ClickhouseIOManager" class="hash-link"></a></Link></dt>
+    <dd>
+        <div className='lineblock'> </div>
+        Base class for an IO manager that reads inputs from and writes outputs to ClickHouse.
+
+        Asset and op metadata `schema` (and the I/O manager `schema` config) refer to the ClickHouse **database** that contains the table.
+
+        The `database` field is the default database **on the ClickHouse connection** (server-side), not the database that qualifies table names in Dagster metadata (that is `schema`).
+
+        Examples:
+        ```python
+        from dagster_clickhouse import ClickhouseIOManager
+        from dagster_clickhouse_pandas import ClickhousePandasTypeHandler
+
+        class MyClickhouseIOManager(ClickhouseIOManager):
+            @staticmethod
+            def type_handlers() -> Sequence[DbTypeHandler]:
+                return [ClickhousePandasTypeHandler()]
+
+        @asset(
+            key_prefix=["my_database"]  # will be used as the database in ClickHouse
+        )
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            ...
+
+        Definitions(
+            assets=[my_table],
+            resources={"io_manager": MyClickhouseIOManager()}
+        )
+        ```
+        If you do not provide a database, Dagster will determine a database based on the assets and ops using the I/O Manager. For assets, the database will be determined from the asset key, as in the above example. For ops, the database can be specified by including a "schema" entry in output metadata. If none of these is provided, the database will default to "default".
+
+        ```python
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_database"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+        ```
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the In or AssetIn.
+
+        ```python
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame):
+            # my_table will just contain the data from column "a"
+            ...
+        ```
+    </dd>
+</dl>
+
+<dl>
+    <dt><Link class="anchor" id='dagster_clickhouse.ClickhouseQueryComponent'>dagster_clickhouse.ClickhouseQueryComponent Component <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-clickhouse/dagster_clickhouse/components/sql_component/component.py' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_clickhouse.ClickhouseQueryComponent" class="hash-link"></a></Link></dt>
+    <dd>
+        <div className='lineblock'> </div>
+        A ClickHouse connection component for ``TemplatedSqlComponent`` and other SQL tooling.
+
+        Examples:
+        ```yaml
+        type: dagster_clickhouse.ClickhouseQueryComponent
+
+        attributes:
+            host: localhost
+            port: 9000
+            user: default
+            password: ""
+        ```
+    </dd>
+</dl>
+
+<dl>
+    <dt><Link class="anchor" id='dagster_clickhouse.ClickhouseDbClient'>dagster_clickhouse.ClickhouseDbClient Utility <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-clickhouse/dagster_clickhouse/db_client.py#L30' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_clickhouse.ClickhouseDbClient" class="hash-link"></a></Link></dt>
+    <dd>
+        <div className='lineblock'> </div>
+        Low-level client for interacting with ClickHouse databases, used internally by IO managers and type handlers.
+    </dd>
+</dl>
+
+<dl>
+    <dt><Link class="anchor" id='dagster_clickhouse.build_clickhouse_io_manager'>dagster_clickhouse.build_clickhouse_io_manager Function <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-clickhouse/dagster_clickhouse/io_manager.py#L14' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_clickhouse.build_clickhouse_io_manager" class="hash-link"></a></Link></dt>
+    <dd>
+        <div className='lineblock'> </div>
+        Builds an IO manager definition that reads inputs from and writes outputs to ClickHouse.
+
+    </dd>
+</dl>
+</div>

@@ -17,8 +17,7 @@ scaffold a reusable connection and reference it from templated SQL definitions.
 
 :::info
 
-<PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse" object="ClickhouseQueryComponent" />
-is currently **preview**. Behavior and configuration may change in minor releases.
+<PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse" object="ClickhouseQueryComponent" /> is currently **preview**. Behavior and configuration may change in minor releases.
 
 :::
 
