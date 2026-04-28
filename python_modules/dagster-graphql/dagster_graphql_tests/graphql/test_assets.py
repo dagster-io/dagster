@@ -906,6 +906,23 @@ GET_ASSET_BACKFILL_POLICY = """
 """
 
 
+GET_ASSET_OP_TAGS = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                assetKey {
+                    path
+                }
+                opTags {
+                    key
+                    value
+                }
+            }
+        }
+    }
+"""
+
+
 GET_TAGS = """
     query AssetNodeQuery($assetKey: AssetKeyInput!) {
         assetNodeOrError(assetKey: $assetKey) {
@@ -3506,6 +3523,27 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             result.data["assetNodeOrError"]["backfillPolicy"]["description"]
             == "Backfills in multiple runs, with a maximum of 10 partitions per run"
         )
+
+    def test_get_op_tags(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OP_TAGS,
+            variables={"assetKey": {"path": ["asset_with_op_tags"]}},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["assetNodeOrError"]["assetKey"]["path"] == ["asset_with_op_tags"]
+        op_tags = {tag["key"]: tag["value"] for tag in result.data["assetNodeOrError"]["opTags"]}
+        assert op_tags == {"foo": "bar", "baz": "qux", "dagster/kind/python": ""}
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OP_TAGS,
+            variables={"assetKey": {"path": ["single_run_backfill_policy_asset"]}},
+        )
+        assert not result.errors
+        assert result.data["assetNodeOrError"]["opTags"] == []
 
     def test_get_partition_mapping(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(

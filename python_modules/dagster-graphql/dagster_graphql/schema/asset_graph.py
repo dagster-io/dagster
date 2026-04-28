@@ -294,6 +294,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
     opNames = non_null_list(graphene.String)
+    opTags = non_null_list(GrapheneDefinitionTag)
     opVersion = graphene.String()
     partitionDefinition = graphene.Field(GraphenePartitionDefinition)
     partitionKeys = non_null_list(graphene.String)
@@ -1233,6 +1234,16 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_opNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
         return self._asset_node_snap.op_names or []
+
+    def resolve_opTags(self, graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        if not self.is_executable:
+            return []
+        node_def_snap = self.get_node_definition_snap(graphene_info)
+        if node_def_snap is None:
+            return []
+        return [
+            GrapheneDefinitionTag(key, value) for key, value in (node_def_snap.tags or {}).items()
+        ]
 
     def resolve_graphName(self, _graphene_info: ResolveInfo) -> str | None:
         return self._asset_node_snap.graph_name

@@ -738,6 +738,7 @@ type AssetNode {
   op: SolidDefinition
   opName: String
   opNames: [String!]!
+  opTags: [DefinitionTag!]!
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!

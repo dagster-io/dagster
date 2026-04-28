@@ -2016,6 +2016,11 @@ def multi_run_backfill_policy_asset(context):
     pass
 
 
+@asset(op_tags={"foo": "bar", "baz": "qux", "dagster/kind/python": ""})
+def asset_with_op_tags():
+    pass
+
+
 named_groups_job = define_asset_job(
     "named_groups_job",
     [
@@ -2379,6 +2384,7 @@ def define_assets():
         check_in_op_asset,
         single_run_backfill_policy_asset,
         multi_run_backfill_policy_asset,
+        asset_with_op_tags,
         executable_asset,
         unexecutable_asset,
         upstream_dynamic_partitioned_asset,

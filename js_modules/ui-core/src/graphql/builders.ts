@@ -671,6 +671,7 @@ type AssetNode = {
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']['output']>;
   opNames: Array<Scalars['String']['output']>;
+  opTags: Array<DefinitionTag>;
   opVersion: Maybe<Scalars['String']['output']>;
   owners: Array<AssetOwner>;
   partitionDefinition: Maybe<PartitionDefinition>;
@@ -7459,6 +7460,7 @@ export const buildAssetNode = (
           : buildSolidDefinition({}, relationshipsToOmit),
     opName: overrides && overrides.hasOwnProperty('opName') ? overrides.opName! : 'veritatis',
     opNames: overrides && overrides.hasOwnProperty('opNames') ? overrides.opNames! : [],
+    opTags: overrides && overrides.hasOwnProperty('opTags') ? overrides.opTags! : [],
     opVersion:
       overrides && overrides.hasOwnProperty('opVersion') ? overrides.opVersion! : 'cupiditate',
     owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
