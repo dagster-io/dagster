@@ -152,6 +152,11 @@ def test_pandera_schema_to_dagster_type(schema):
     )
 
 
+def test_typing_type_is_polars(schema):
+    dagster_type = pandera_schema_to_dagster_type(schema)
+    assert dagster_type.typing_type is pl.DataFrame
+
+
 def test_name_extraction():
     schema = sample_schema_model()
     assert pandera_schema_to_dagster_type(schema).key == schema.__name__

@@ -149,8 +149,14 @@ def pandera_schema_to_dagster_type(
         metadata={
             "schema": MetadataValue.table_schema(tschema),
         },
-        typing_type=pd.DataFrame,  # TODO: pending alternative dataframe support
+        typing_type=_resolve_typing_type(norm_schema),
     )
+
+
+def _resolve_typing_type(schema: DagsterPanderaSchema) -> type:
+    if pa_pl and pl and isinstance(schema, pa_pl.DataFrameSchema):
+        return pl.DataFrame
+    return pd.DataFrame
 
 
 # call next() on this to generate next unique Dagster Type name for anonymous schemas
