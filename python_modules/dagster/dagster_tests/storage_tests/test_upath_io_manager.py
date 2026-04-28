@@ -651,3 +651,27 @@ def test_upath_can_transition_from_non_partitioned_to_partitioned(
     assert dg.materialize(
         [my_asset], resources={"io_manager": my_io_manager}, partition_key=start.strftime(daily.fmt)
     ).success
+
+
+def test_storage_options_returns_upath_kwargs(tmp_path: Path):
+    """Cloud-backed UPaths expose configuration via the public `storage_options`
+    accessor. The IOManager's `storage_options` property must surface that
+    mapping as a mutable dict so downstream callers (e.g. dagster-polars,
+    dagster-deltalake) can pass it to readers/writers without aliasing the
+    UPath internals.
+
+    Regression test for the `_kwargs` private-attribute usage that broke on
+    universal-pathlib >= 0.3 (see dagster-io/dagster#32637).
+    """
+    options = {"anon": True, "endpoint_url": "http://localhost:9000"}
+    manager = DummyIOManager(base_path=UPath("s3://bucket/prefix", **options))
+    so = manager.storage_options
+    assert so == options
+    # Must be a real, mutable dict — not the underlying mapping proxy.
+    so["mutated"] = True
+    assert "mutated" not in manager.storage_options
+
+
+def test_storage_options_local_path_returns_empty(tmp_path: Path):
+    manager = DummyIOManager(base_path=tmp_path)
+    assert manager.storage_options == {}

@@ -117,7 +117,16 @@ class UPathIOManager(IOManager):
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
-            return self._base_path._kwargs.copy()  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+            # `UPath.storage_options` is the public accessor (universal-pathlib >= 0.1);
+            # the prior `_kwargs` private attribute was deprecated in 0.2 and removed
+            # in 0.3. Prefer the public API and fall back to `_kwargs` only on the
+            # ancient 0.0.x line that predates `storage_options`. Wrap in `dict()` so
+            # callers retain the previous mutable-copy contract — `storage_options`
+            # returns a `MappingProxyType` on 0.3+.
+            options = getattr(self._base_path, "storage_options", None)
+            if options is None:
+                options = getattr(self._base_path, "_kwargs", {})
+            return dict(options)
         elif isinstance(self._base_path, Path):
             return {}
         else:
