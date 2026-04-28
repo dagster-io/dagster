@@ -653,7 +653,7 @@ def test_upath_can_transition_from_non_partitioned_to_partitioned(
     ).success
 
 
-def test_storage_options_returns_upath_kwargs(tmp_path: Path):
+def test_storage_options_returns_upath_kwargs():
     """Cloud-backed UPaths expose configuration via the public `storage_options`
     accessor. The IOManager's `storage_options` property must surface that
     mapping as a mutable dict so downstream callers (e.g. dagster-polars,
