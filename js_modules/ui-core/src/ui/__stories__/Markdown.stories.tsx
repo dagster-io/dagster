@@ -98,6 +98,16 @@ export const BlockquoteNewlines = () => {
   );
 };
 
+export const BlockquoteHardBreaks = () => {
+  return (
+    <Markdown>
+      {`> ✅ Step one\\
+> ✅ Step two\\
+> ✅ Step three`}
+    </Markdown>
+  );
+};
+
 export const MarkdownBase64Image = () => {
   return (
     <Markdown>
