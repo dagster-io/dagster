@@ -269,5 +269,6 @@ def test_owners_validation():
         dg.DagsterInvalidDefinitionError,
         match="Owner must be an email address or a team name prefixed with 'team:'",
     ):
+
         @dg.schedule(cron_schedule="@daily", job_name="test_job", owners=["not-an-email-or-team"])
         def schedule_with_invalid_owner(): ...

@@ -345,8 +345,7 @@ def test_owners_validation():
 
     # Test empty team name
     with pytest.raises(
-        dg.DagsterInvalidDefinitionError,
-        match="Team name cannot be empty after 'team:' prefix"
+        dg.DagsterInvalidDefinitionError, match="Team name cannot be empty after 'team:' prefix"
     ):
 
         @dg.job(owners=["team:"])
@@ -357,5 +356,6 @@ def test_owners_validation():
         dg.DagsterInvalidDefinitionError,
         match="Owner must be an email address or a team name prefixed with 'team:'",
     ):
+
         @dg.job(owners=["not-an-email-or-team"])
         def job_with_invalid_owner(): ...
