@@ -2,6 +2,7 @@ import {Colors} from '@dagster-io/ui-components';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, {defaultSchema} from 'rehype-sanitize';
+import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 import {createGlobalStyle} from 'styled-components';
 import 'highlight.js/styles/github.css';
@@ -123,16 +124,17 @@ const GlobalStyle = createGlobalStyle`
 
 interface Props {
   children: string;
+  softBreaks?: boolean;
 }
 
-export const MarkdownWithPlugins = (props: Props) => {
+export const MarkdownWithPlugins = ({softBreaks, ...props}: Props) => {
   return (
     <>
       <GlobalStyle />
       <ReactMarkdown
         {...props}
         className="dagster-markdown"
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={softBreaks ? [remarkBreaks, remarkGfm] : [remarkGfm]}
         rehypePlugins={[
           [rehypeHighlight, {ignoreMissing: true}],
           [rehypeSanitize, sanitizeConfig],

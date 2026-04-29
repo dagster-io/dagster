@@ -90,7 +90,7 @@ New line is expected here as there are two in a row`}
 
 export const BlockquoteNewlines = () => {
   return (
-    <Markdown>
+    <Markdown softBreaks>
       {`> ✅ Step one
 > ✅ Step two
 > ✅ Step three`}
