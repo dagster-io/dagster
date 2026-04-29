@@ -170,7 +170,7 @@ def validate_component_owner(owner: str) -> None:
 
 
 def validate_definition_owner(owner: str, definition_type: str, definition_name: str) -> None:
-    """Owner validation for job, sensors, and schedules.
+    """Owner validation for jobs, sensors, and schedules.
 
     Args:
         owner: The owner string to validate. Must be either a valid email address or a team name
