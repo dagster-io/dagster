@@ -155,25 +155,31 @@ class AssetCheckResult(
             all_check_names_by_asset_key.setdefault(check_key.asset_key, set()).add(check_key.name)
         check_key = self.resolve_target_check_key(all_check_names_by_asset_key)
 
-        input_asset_info = step_context.maybe_fetch_and_get_input_asset_version_info(
-            check_key.asset_key
-        )
-        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import AssetRecordsFilter
 
-        if (
-            input_asset_info is not None
-            and input_asset_info.event_type == DagsterEventType.ASSET_MATERIALIZATION
-        ):
+        asset_materializations = step_context.instance.fetch_materializations(
+            AssetRecordsFilter(
+                asset_key=check_key.asset_key,
+                # Target latest materialization of given asset partition
+                asset_partitions=[step_context.partition_key]
+                if step_context.has_partition_key
+                else None,
+            ),
+            limit=1,
+        )
+        if asset_materializations.records:
+            mat = asset_materializations.records[0]
             target_materialization_data = AssetCheckEvaluationTargetMaterializationData(
-                run_id=input_asset_info.run_id,
-                storage_id=input_asset_info.storage_id,
-                timestamp=input_asset_info.timestamp,
+                run_id=mat.event_log_entry.run_id,
+                storage_id=mat.storage_id,
+                timestamp=mat.timestamp,
             )
         else:
             target_materialization_data = None
 
+        # Unpartitioned asset check can exist for partitioned asset
+        check_spec = assets_def_for_check.get_spec_for_check_key(check_key)
         if step_context.has_partition_key:
-            check_spec = assets_def_for_check.get_spec_for_check_key(check_key)
             if check_spec.partitions_def is not None:
                 partition = step_context.partition_key
             else:
@@ -189,7 +195,7 @@ class AssetCheckResult(
             target_materialization_data=target_materialization_data,
             severity=self.severity,
             description=self.description,
-            blocking=assets_def_for_check.get_spec_for_check_key(check_key).blocking,
+            blocking=check_spec.blocking,
             partition=partition,
         )
 
