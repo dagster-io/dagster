@@ -149,8 +149,12 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return f"{name}({props_str})"
 
 
+def is_valid_owner(owner: str) -> bool:
+    return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
+
+
 def validate_asset_owner(owner: str, key: "AssetKey") -> None:
-    if not is_valid_asset_owner(owner):
+    if not is_valid_owner(owner):
         raise DagsterInvalidDefinitionError(
             f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
@@ -158,15 +162,11 @@ def validate_asset_owner(owner: str, key: "AssetKey") -> None:
 
 
 def validate_component_owner(owner: str) -> None:
-    if not is_valid_asset_owner(owner):
+    if not is_valid_owner(owner):
         raise DagsterInvalidDefinitionError(
             f"Invalid owner '{owner}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
         )
-
-
-def is_valid_asset_owner(owner: str) -> bool:
-    return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
 
 
 def validate_definition_owner(owner: str, definition_type: str, definition_name: str) -> None:
@@ -181,7 +181,7 @@ def validate_definition_owner(owner: str, definition_type: str, definition_name:
     Raises:
         DagsterInvalidDefinitionError: When owner is not a valid email or team name
     """
-    if not is_valid_asset_owner(owner):
+    if not is_valid_owner(owner):
         if owner.startswith("team:") and len(owner) <= 5:
             raise DagsterInvalidDefinitionError(
                 f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
