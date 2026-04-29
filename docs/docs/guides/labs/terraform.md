@@ -4,6 +4,7 @@ description: Use the Dagster+ Terraform provider to manage your organization's d
 tags: [dagster-plus-feature]
 canonicalUrl: '/guides/labs/terraform'
 slug: '/guides/labs/terraform'
+sidebar_position: 50
 ---
 
 :::info Early access preview

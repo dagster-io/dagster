@@ -165,6 +165,11 @@
     "permanent": true
   },
   {
+    "source": "/deployment/dagster-plus/account/managing-user-agent-tokens",
+    "destination": "/deployment/dagster-plus/management/tokens",
+    "permanent": true
+  },
+  {
     "source": "/dagster-plus/account/authentication",
     "destination": "/deployment/dagster-plus/authentication-and-access-control",
     "permanent": true
@@ -385,6 +390,11 @@
     "permanent": true
   },
   {
+    "source": "/deploying/k8s_part2",
+    "destination": "/deployment/oss/deployment-options/kubernetes",
+    "permanent": true
+  },
+  {
     "source": "/deployment/guides/docker",
     "destination": "/deployment/oss/deployment-options/docker",
     "permanent": true
@@ -417,6 +427,11 @@
   {
     "source": "/guides/dagster/branch_deployments",
     "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/dagster-plus/managing-deployments/branch-deployments",
+    "destination": "/deployment/dagster-plus/deploying-code/branch-deployments",
     "permanent": true
   },
   {
@@ -606,6 +621,11 @@
   },
   {
     "source": "/dagster-plus/features/ci-cd",
+    "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/dagster-plus/ci-cd/configuring-ci-cd",
     "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd",
     "permanent": true
   },

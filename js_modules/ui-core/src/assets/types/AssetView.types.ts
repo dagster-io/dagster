@@ -88,6 +88,7 @@ export type AssetViewDefinitionQuery = {
               }
             | null;
           backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
+          opTags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           repository: {
             __typename: 'Repository';
@@ -16569,6 +16570,7 @@ export type AssetViewDefinitionNodeFragment = {
       }
     | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
+  opTags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   repository: {
     __typename: 'Repository';
@@ -32764,4 +32766,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '9f5a93da2fbdbe56f7ac56ce9a30a3b440d873c920d367ad9a4ca77f0e0feb04';
+export const AssetViewDefinitionQueryVersion = '577b8f0c0f253b558752ff66e5670ccdfdf640c8d8724a1efcce9306bcac0990';

@@ -76,3 +76,30 @@ def test_to_asset_key_path():
     assert AssetKey.from_escaped_user_string(r"foo\/bar\/baz").path == ["foo/bar/baz"]
     assert AssetKey.from_escaped_user_string(r"foo\/bar/baz").path == ["foo/bar", "baz"]
     assert AssetKey.from_escaped_user_string(r"foo/bar\/baz").path == ["foo", "bar/baz"]
+
+
+def test_to_escaped_user_string_is_unique():
+    r"""to_escaped_user_string must produce distinct strings for distinct AssetKeys, even when
+    parts contain backslashes and/or slashes. Backslashes escape to \\ and slashes to \/.
+    """
+    # Keys that collided under the previous encoding (only / was escaped).
+    k1 = AssetKey(["a/b"])
+    k2 = AssetKey(["a\\", "b"])
+    assert k1.to_escaped_user_string() != k2.to_escaped_user_string()
+
+    # Round-trip for a range of tricky inputs.
+    tricky = [
+        AssetKey(["foo"]),
+        AssetKey(["foo", "bar"]),
+        AssetKey(["a/b"]),
+        AssetKey(["a\\", "b"]),
+        AssetKey(["a\\", "/b"]),
+        AssetKey(["a\\/b"]),
+        AssetKey(["a", "b\\c"]),
+        AssetKey(["a\\\\", "b"]),
+    ]
+    for key in tricky:
+        round_tripped = AssetKey.from_escaped_user_string(key.to_escaped_user_string())
+        assert round_tripped == key, (
+            f"round-trip failed for {key.path!r}: got {round_tripped.path!r}"
+        )

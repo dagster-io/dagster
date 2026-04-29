@@ -57,3 +57,22 @@ class GrapheneInternalFreshnessPolicy(graphene.Union):
                 timezone=policy.timezone,
             )
         raise Exception("Unknown freshness policy type")
+
+    @staticmethod
+    def to_manifest_dict(policy: FreshnessPolicy) -> dict:
+        if isinstance(policy, TimeWindowFreshnessPolicy):
+            return {
+                "__typename": "TimeWindowFreshnessPolicy",
+                "failWindowSeconds": int(policy.fail_window.to_timedelta().total_seconds()),
+                "warnWindowSeconds": int(policy.warn_window.to_timedelta().total_seconds())
+                if policy.warn_window
+                else None,
+            }
+        elif isinstance(policy, CronFreshnessPolicy):
+            return {
+                "__typename": "CronFreshnessPolicy",
+                "deadlineCron": policy.deadline_cron,
+                "lowerBoundDeltaSeconds": int(policy.lower_bound_delta.total_seconds()),
+                "timezone": policy.timezone,
+            }
+        raise Exception(f"Unknown freshness policy type: {type(policy)}")

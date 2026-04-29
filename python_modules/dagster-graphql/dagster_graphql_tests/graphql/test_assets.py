@@ -826,6 +826,88 @@ GET_ASSET_OWNERS = """
 """
 
 
+GET_LOCATION_ASSET_NODES_AND_MANIFEST = """
+    query LocationAssetManifestQuery($name: String!) {
+        workspaceLocationEntryOrError(name: $name) {
+            ... on WorkspaceLocationEntry {
+                locationOrLoadError {
+                    ... on RepositoryLocation {
+                        repositories {
+                            assetManifest
+                            assetNodes {
+                                __typename
+                                id
+                                graphName
+                                opVersion
+                                dependencyKeys { __typename path }
+                                dependedByKeys { __typename path }
+                                changedReasons
+                                groupName
+                                opNames
+                                isMaterializable
+                                isObservable
+                                isExecutable
+                                isPartitioned
+                                isAutoCreatedStub
+                                hasAssetChecks
+                                computeKind
+                                hasMaterializePermission
+                                hasWipePermission
+                                hasReportRunlessAssetEventPermission
+                                assetKey { __typename path }
+                                internalFreshnessPolicy {
+                                    ... on TimeWindowFreshnessPolicy {
+                                        __typename
+                                        failWindowSeconds
+                                        warnWindowSeconds
+                                    }
+                                    ... on CronFreshnessPolicy {
+                                        __typename
+                                        deadlineCron
+                                        lowerBoundDeltaSeconds
+                                        timezone
+                                    }
+                                }
+                                partitionDefinition {
+                                    __typename
+                                    description
+                                    dimensionTypes {
+                                        __typename
+                                        type
+                                        dynamicPartitionsDefinitionName
+                                    }
+                                }
+                                automationCondition {
+                                    __typename
+                                    label
+                                    expandedLabel
+                                }
+                                description
+                                owners {
+                                    __typename
+                                    ... on UserAssetOwner { email }
+                                    ... on TeamAssetOwner { team }
+                                }
+                                tags { __typename key value }
+                                pools
+                                jobNames
+                                kinds
+                                repository {
+                                    __typename
+                                    id
+                                    name
+                                    location { __typename id name }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+
 GET_RUN_MATERIALIZATIONS = """
     query RunAssetsQuery {
         runsOrError {
@@ -1777,7 +1859,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert len(result.data["assetNodes"]) == 1
         asset_node = result.data["assetNodes"][0]
-        assert asset_node["id"] == f'{main_repo_location_name()}.test_repo.["asset_one"]'
+        assert asset_node["id"] == f"{main_repo_location_name()}.test_repo.asset_one"
         assert asset_node["hasMaterializePermission"]
         assert asset_node["hasReportRunlessAssetEventPermission"]
 
@@ -1792,7 +1874,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert len(result.data["assetNodes"]) == 2
         asset_node = result.data["assetNodes"][0]
-        assert asset_node["id"] == f'{main_repo_location_name()}.test_repo.["asset_one"]'
+        assert asset_node["id"] == f"{main_repo_location_name()}.test_repo.asset_one"
 
     def test_asset_node_is_executable(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
@@ -3330,7 +3412,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         fresh_diamond_bottom = [
             a
             for a in result.data["assetNodes"]
-            if a["id"] == f'{main_repo_location_name()}.test_repo.["fresh_diamond_bottom"]'
+            if a["id"] == f"{main_repo_location_name()}.test_repo.fresh_diamond_bottom"
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
@@ -3344,8 +3426,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         automation_condition_asset = [
             a
             for a in result.data["assetNodes"]
-            if a["id"]
-            == f'{main_repo_location_name()}.test_repo.["asset_with_automation_condition"]'
+            if a["id"] == f"{main_repo_location_name()}.test_repo.asset_with_automation_condition"
         ]
         assert len(automation_condition_asset) == 1
         condition = automation_condition_asset[0]["automationCondition"]
@@ -3356,7 +3437,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             a
             for a in result.data["assetNodes"]
             if a["id"]
-            == f'{main_repo_location_name()}.test_repo.["asset_with_custom_automation_condition"]'
+            == f"{main_repo_location_name()}.test_repo.asset_with_custom_automation_condition"
         ]
         assert len(custom_automation_condition_asset) == 1
         condition = custom_automation_condition_asset[0]["automationCondition"]
@@ -3654,6 +3735,39 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             asset_key = AssetKey.from_graphql_input(list_item["key"])
             assert asset_key in expected_order.keys()
             assert list_item["latestEventSortKey"] == expected_order[asset_key]
+
+    def test_asset_manifest_matches_asset_nodes(self, graphql_context: WorkspaceRequestContext):
+        location_name = infer_repository_selector(graphql_context)["repositoryLocationName"]
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LOCATION_ASSET_NODES_AND_MANIFEST,
+            variables={"name": location_name},
+        )
+        assert result.data
+        entry = result.data["workspaceLocationEntryOrError"]
+        assert "locationOrLoadError" in entry, entry
+        repositories = entry["locationOrLoadError"]["repositories"]
+
+        def asset_key(node: dict) -> tuple:
+            return tuple(node["assetKey"]["path"])
+
+        for repo in repositories:
+            gql_nodes = repo["assetNodes"]
+            manifest_nodes = repo["assetManifest"]
+
+            assert len(gql_nodes) == len(manifest_nodes)
+
+            gql_by_key = {asset_key(n): n for n in gql_nodes}
+            manifest_by_key = {asset_key(n): n for n in manifest_nodes}
+
+            assert set(gql_by_key.keys()) == set(manifest_by_key.keys())
+
+            for key in gql_by_key:
+                assert gql_by_key[key] == manifest_by_key[key], (
+                    f"Mismatch for asset {key!r}:\n"
+                    f"  GQL:      {gql_by_key[key]}\n"
+                    f"  Manifest: {manifest_by_key[key]}"
+                )
 
 
 # This is factored out of TestAssetAwareEventLog because there is a separate implementation for plus
@@ -4309,7 +4423,7 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
         derived_asset = next(
             node
             for node in asset_nodes
-            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["derived_asset"]'
+            if node["id"] == "cross_asset_repos.upstream_assets_repository.derived_asset"
         )
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
@@ -4571,7 +4685,7 @@ def test_legacy_freshness_policy_killswitch(graphql_context: WorkspaceRequestCon
     fresh_diamond_bottom = next(
         a
         for a in result.data["assetNodes"]
-        if a["id"] == f'{main_repo_location_name()}.test_repo.["fresh_diamond_bottom"]'
+        if a["id"] == f"{main_repo_location_name()}.test_repo.fresh_diamond_bottom"
     )
     assert fresh_diamond_bottom["freshnessInfo"] is None
     assert fresh_diamond_bottom["freshnessPolicy"] is None

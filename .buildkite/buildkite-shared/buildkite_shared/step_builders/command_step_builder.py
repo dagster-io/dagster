@@ -22,10 +22,17 @@ ECR_LOGIN_FAILURE_EXIT_CODE = 200
 
 
 class ResourceRequests:
-    def __init__(self, cpu: str, memory: str | None, docker_cpu: str = "500m") -> None:
+    def __init__(
+        self,
+        cpu: str,
+        memory: str | None = None,
+        docker_cpu: str = "500m",
+        ephemeral_storage: str | None = None,
+    ) -> None:
         self._cpu = cpu
         self._memory = memory
         self._docker_cpu = docker_cpu
+        self._ephemeral_storage = ephemeral_storage
 
     @property
     def cpu(self) -> str:
@@ -38,6 +45,10 @@ class ResourceRequests:
     @property
     def docker_cpu(self) -> str:
         return self._docker_cpu
+
+    @property
+    def ephemeral_storage(self) -> str | None:
+        return self._ephemeral_storage
 
 
 class BuildkiteQueue(StrEnum):
@@ -305,11 +316,15 @@ class CommandStepBuilder:
             else ("1500m" if self._requires_docker else "500m")
         )
         memory = self._resources.memory if self._resources else None
+        default_ephemeral_storage = "10Gi" if self._requires_docker else "5Gi"
+        ephemeral_storage = (
+            self._resources.ephemeral_storage if self._resources else None
+        ) or default_ephemeral_storage
         return {
             "requests": {
                 "cpu": cpu,
                 "memory": memory,
-                "ephemeral-storage": ("10Gi" if self._requires_docker else "5Gi"),
+                "ephemeral-storage": ephemeral_storage,
             },
         }
 
@@ -370,8 +385,11 @@ class CommandStepBuilder:
     def _base_k8s_settings(self) -> Mapping[Any, Any]:
         buildkite_shell = "/bin/bash -e -c"
         assert self._docker_settings
-        if self._docker_settings["image"] == "hashicorp/terraform:light":
+        image = str(self._docker_settings["image"])
+        if image == "hashicorp/terraform:light" or "/datadog-ci:" in image:
             buildkite_shell = "/bin/sh -e -c"
+        elif "kaniko-project/executor" in image:
+            buildkite_shell = "/busybox/sh -e -c"
 
         sidecars = []
         if self._requires_docker:

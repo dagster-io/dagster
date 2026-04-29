@@ -15,8 +15,7 @@ from dagster_pipes import (
     PipesParams,
     PipesPartitionKeyRange,
     PipesTimeWindow,
-    de_escape_asset_key,
-    to_assey_key_path,
+    to_asset_key_path,
 )
 
 TEST_PIPES_CONTEXT_DEFAULTS = PipesContextData(
@@ -68,24 +67,18 @@ def _assert_undefined_asset_key(context, method, *args, **kwargs) -> None:
         getattr(context, method)(*args, **kwargs)
 
 
-def test_de_escape_asset_key():
-    assert de_escape_asset_key("foo") == "foo"
-    assert de_escape_asset_key("foo/bar") == "foo/bar"
-    assert de_escape_asset_key(r"foo\/bar") == "foo/bar"
-    assert de_escape_asset_key(r"foo\bar") == r"foo\bar"
-    assert de_escape_asset_key(r"foo\bar\/baz") == r"foo\bar/baz"
-
-
-def test_to_assey_key_path():
-    assert to_assey_key_path("foo") == ["foo"]
-    assert to_assey_key_path("foo/bar") == ["foo", "bar"]
-    assert to_assey_key_path(r"foo\/bar") == ["foo/bar"]
-    assert to_assey_key_path("foo/bar/baz") == ["foo", "bar", "baz"]
-    assert to_assey_key_path(r"foo\/bar\/baz") == ["foo/bar/baz"]
-    assert to_assey_key_path(r"foo\/bar/baz") == ["foo/bar", "baz"]
-    assert to_assey_key_path(r"foo/bar\/baz") == ["foo", "bar/baz"]
-    assert to_assey_key_path(r"foo\bar") == [r"foo\bar"]
-    assert to_assey_key_path(r"foo\bar\/baz") == [r"foo\bar/baz"]
+def test_to_asset_key_path():
+    assert to_asset_key_path("foo") == ["foo"]
+    assert to_asset_key_path("foo/bar") == ["foo", "bar"]
+    assert to_asset_key_path(r"foo\/bar") == ["foo/bar"]
+    assert to_asset_key_path("foo/bar/baz") == ["foo", "bar", "baz"]
+    assert to_asset_key_path(r"foo\/bar\/baz") == ["foo/bar/baz"]
+    assert to_asset_key_path(r"foo\/bar/baz") == ["foo/bar", "baz"]
+    assert to_asset_key_path(r"foo/bar\/baz") == ["foo", "bar/baz"]
+    # Escaped backslash decodes to a single backslash
+    assert to_asset_key_path(r"foo\\bar") == [r"foo\bar"]
+    # \\ is an escaped backslash; the following / is a separator
+    assert to_asset_key_path(r"foo\\/bar") == ["foo\\", "bar"]
 
 
 def test_no_asset_context():

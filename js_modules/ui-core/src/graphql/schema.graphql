@@ -2488,6 +2488,7 @@ type Repository {
   sensors(sensorType: SensorType): [Sensor!]!
   assetNodes: [AssetNode!]!
   assetNodesConnection(cursor: String, limit: Int!): AssetNodeConnection!
+  assetManifest: GenericScalar
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!

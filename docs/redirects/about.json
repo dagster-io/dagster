@@ -5,6 +5,26 @@
     "permanent": true
   },
   {
+    "source": "/getting-started/releases",
+    "destination": "/about/releases",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started/telemetry",
+    "destination": "/about/telemetry",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started/install",
+    "destination": "/getting-started/installation",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started/overview",
+    "destination": "/",
+    "permanent": true
+  },
+  {
     "source": "/community",
     "destination": "/about/community",
     "permanent": true

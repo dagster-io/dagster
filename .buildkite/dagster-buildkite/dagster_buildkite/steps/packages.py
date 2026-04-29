@@ -207,15 +207,29 @@ class PackageSpec:
                         elif callable(self.pytest_step_dependencies):
                             dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
+                    factor_pytest_args = (
+                        list(other_factor.pytest_args)
+                        if other_factor and other_factor.pytest_args
+                        else []
+                    )
+                    label_suffix = (
+                        f" {other_factor.label_suffix}"
+                        if other_factor and other_factor.label_suffix
+                        else ""
+                    )
+
                     # Generate multiple steps if splits > 1
                     for split_index in range(1, splits + 1):
                         if splits > 1:
-                            split_label = f"{base_name} ({split_index}/{splits})"
-                            pytest_args = [f"--split {split_index}/{splits}"]
+                            split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
+                            pytest_args = [
+                                f"--split {split_index}/{splits}",
+                                *factor_pytest_args,
+                            ]
                             extra_commands_pre = base_extra_commands_pre
                         else:
-                            split_label = base_name
-                            pytest_args = None
+                            split_label = f"{base_name}{label_suffix}"
+                            pytest_args = factor_pytest_args or None
                             extra_commands_pre = base_extra_commands_pre
 
                         steps.append(
@@ -483,6 +497,40 @@ gcp_creds_extra_cmds = (
 )
 
 
+# Heavyweight docs-snapshot tests, each pinned to its own Buildkite shard.
+# Order/contents only affect sharding; adding/removing entries is safe.
+_DOCS_SNAPSHOT_HEAVY_TESTS: list[tuple[str, str]] = [
+    (
+        "dbt-component",
+        "docs_snippets_tests/snippet_checks/guides/components/integrations/test_dbt_component.py",
+    ),
+    (
+        "dbt-component-remote",
+        "docs_snippets_tests/snippet_checks/guides/components/integrations/test_dbt_component_remote.py",
+    ),
+    (
+        "sling-component",
+        "docs_snippets_tests/snippet_checks/guides/components/integrations/test_sling_component.py",
+    ),
+    (
+        "customizing-existing-component",
+        "docs_snippets_tests/snippet_checks/guides/components/test_customizing_existing_component.py",
+    ),
+    (
+        "using-env",
+        "docs_snippets_tests/snippet_checks/guides/dg/test_using_env.py",
+    ),
+    (
+        "dg-docs-workspace",
+        "docs_snippets_tests/snippet_checks/guides/dg/test_dg_docs_workspace.py",
+    ),
+    (
+        "scaffolding-project",
+        "docs_snippets_tests/snippet_checks/guides/dg/test_scaffolding_project.py",
+    ),
+]
+
+
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageSpec]:
@@ -510,7 +558,27 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_tox_factors=[
                 ToxFactor("all"),
                 ToxFactor("integrations"),
-                ToxFactor("docs_snapshot_test", splits=3),
+                # Heavyweight docs-snapshot tests get their own shard so the
+                # slowest single test bounds wall time, not the slowest cluster.
+                # Each shard pays full tox setup; this is intentional and traded
+                # off for parallelism. Residual shard runs everything else.
+                *[
+                    ToxFactor(
+                        "docs_snapshot_test",
+                        label_suffix=label_suffix,
+                        pytest_args=[test_path],
+                    )
+                    for label_suffix, test_path in _DOCS_SNAPSHOT_HEAVY_TESTS
+                ],
+                ToxFactor(
+                    "docs_snapshot_test",
+                    label_suffix="rest",
+                    splits=3,
+                    pytest_args=[
+                        "docs_snippets_tests/snippet_checks",
+                        *[f"--ignore={test_path}" for _, test_path in _DOCS_SNAPSHOT_HEAVY_TESTS],
+                    ],
+                ),
             ],
             force_run_fn=BuildkiteContext.has_dg_changes,
         ),
@@ -845,16 +913,17 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-dg-cli"),
             pytest_tox_factors=[
                 ToxFactor("general"),
-                ToxFactor("slow"),
+                ToxFactor("slow", splits=4),
+                ToxFactor("serial"),
                 ToxFactor("plus"),
             ],
             env_vars=["SHELL"],
             force_run_fn=BuildkiteContext.has_dg_or_component_integration_or_rest_resource_changes,
-            # general/slow tests depend on dagster-dbt which does not support Python 3.14
+            # general/slow/serial tests depend on dagster-dbt which does not support Python 3.14
             unsupported_python_versions=(
                 lambda tox_factor: (
                     [AvailablePythonVersion.V3_14]
-                    if (tox_factor and tox_factor.factor in ("general", "slow"))
+                    if (tox_factor and tox_factor.factor in ("general", "slow", "serial"))
                     else []
                 )
             ),

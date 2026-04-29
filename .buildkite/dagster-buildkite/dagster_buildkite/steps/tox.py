@@ -25,12 +25,19 @@ class ToxFactor:
             concurrency group (default: None, no limit)
         concurrency_group: Name of the concurrency group for this factor. Required
             if concurrency is set.
+        pytest_args: Extra arguments passed to pytest via tox posargs. Useful for
+            scoping a factor to specific test files, or for excluding test files
+            from a residual factor with --ignore=<path>.
+        label_suffix: Optional suffix appended to the Buildkite step label, used
+            to differentiate multiple factors that share the same factor name.
     """
 
     factor: str
     splits: int = 1
     concurrency: int | None = None
     concurrency_group: str | None = None
+    pytest_args: list[str] | None = None
+    label_suffix: str | None = None
 
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {

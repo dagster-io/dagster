@@ -23,6 +23,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+azure = ["azure-identity>=1.12.0"]
+gcp = ["google-auth>=2.0.0"]
+aws = ["boto3>=1.26.0"]
+wif = [
+    "azure-identity>=1.12.0",
+    "google-auth>=2.0.0",
+    "boto3>=1.26.0",
+]
 test = []
 
 [project.urls]

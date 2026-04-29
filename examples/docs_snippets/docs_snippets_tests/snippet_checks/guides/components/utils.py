@@ -23,7 +23,7 @@ MASK_SLING_WARNING = (r"warning.*\n", "")
 MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
 MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
 MASK_EDITABLE_DAGSTER = (r" --use-editable-dagster", "")
-MASK_USING_ENVIRONMENT = (r"\nUsing[\s\S]*", "\n...")
+MASK_USING_ENVIRONMENT = (r"(Running `uv sync[^`]*`\.\.\.)[\s\S]*", r"\1\n...")
 MASK_TMP_WORKSPACE = (
     r"--workspace (/var/folders/.+|/tmp/.+)",
     "--workspace /tmp/workspace.yaml",

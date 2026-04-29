@@ -1,7 +1,7 @@
 ---
 title: Compass AI assistant (Dagster+)
 description: Use the Compass AI assistant to generate plain-language summaries of run failures and degraded asset materializations in Dagster+.
-sidebar_position: 400
+sidebar_position: 10
 tags: [dagster-plus-feature]
 ---
 

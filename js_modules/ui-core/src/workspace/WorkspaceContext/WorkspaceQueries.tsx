@@ -182,6 +182,13 @@ export const WORKSPACE_ASSET_FRAGMENT = gql`
   ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
 
+export const WORKSPACE_ASSET_GROUP_FRAGMENT = gql`
+  fragment WorkspaceAssetGroup on AssetGroup {
+    id
+    groupName
+  }
+`;
+
 export const WORKSPACE_REPOSITORY_ASSETS_FRAGMENT = gql`
   fragment WorkspaceRepositoryAssets on Repository {
     id
@@ -195,10 +202,7 @@ export const WORKSPACE_REPOSITORY_ASSETS_FRAGMENT = gql`
     }
   }
   ${WORKSPACE_ASSET_FRAGMENT}
-  fragment WorkspaceAssetGroup on AssetGroup {
-    id
-    groupName
-  }
+  ${WORKSPACE_ASSET_GROUP_FRAGMENT}
 `;
 
 export const WORKSPACE_LOCATION_ASSETS_FRAGMENT = gql`
@@ -275,6 +279,44 @@ export const LOCATION_WORKSPACE_ASSETS_QUERY = gql`
     }
   }
   ${WORKSPACE_LOCATION_ASSETS_ENTRY_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const WORKSPACE_LOCATION_ASSETS_MANIFEST_ENTRY_FRAGMENT = gql`
+  fragment WorkspaceLocationAssetsManifestEntry on WorkspaceLocationEntry {
+    id
+    name
+    loadStatus
+    updatedTimestamp
+    versionKey
+    locationOrLoadError {
+      ... on RepositoryLocation {
+        id
+        name
+        repositories {
+          id
+          name
+          assetManifest
+          assetGroups {
+            ...WorkspaceAssetGroup
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+  ${WORKSPACE_ASSET_GROUP_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const LOCATION_WORKSPACE_ASSETS_MANIFEST_QUERY = gql`
+  query LocationWorkspaceAssetsManifestQuery($name: String!) {
+    workspaceLocationEntryOrError(name: $name) {
+      ...WorkspaceLocationAssetsManifestEntry
+      ...PythonErrorFragment
+    }
+  }
+  ${WORKSPACE_LOCATION_ASSETS_MANIFEST_ENTRY_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

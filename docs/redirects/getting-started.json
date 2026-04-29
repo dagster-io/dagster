@@ -13,5 +13,10 @@
     "source": "/concepts",
     "destination": "/getting-started/concepts",
     "permanent": true
+  },
+  {
+    "source": "/install",
+    "destination": "/getting-started/installation",
+    "permanent": true
   }
 ]

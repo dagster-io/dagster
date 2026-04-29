@@ -404,6 +404,8 @@ export type WorkspaceAssetFragment = {
   };
 };
 
+export type WorkspaceAssetGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
+
 export type WorkspaceRepositoryAssetsFragment = {
   __typename: 'Repository';
   id: string;
@@ -473,8 +475,6 @@ export type WorkspaceRepositoryAssetsFragment = {
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
 };
-
-export type WorkspaceAssetGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
 
 export type WorkspaceLocationAssetsFragment = {
   __typename: 'RepositoryLocation';
@@ -1061,6 +1061,91 @@ export type LocationWorkspaceAssetsQuery = {
     | null;
 };
 
+export type WorkspaceLocationAssetsManifestEntryFragment = {
+  __typename: 'WorkspaceLocationEntry';
+  id: string;
+  name: string;
+  loadStatus: Types.RepositoryLocationLoadStatus;
+  updatedTimestamp: number;
+  versionKey: string;
+  locationOrLoadError:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'RepositoryLocation';
+        id: string;
+        name: string;
+        repositories: Array<{
+          __typename: 'Repository';
+          id: string;
+          name: string;
+          assetManifest: any | null;
+          assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+        }>;
+      }
+    | null;
+};
+
+export type LocationWorkspaceAssetsManifestQueryVariables = Types.Exact<{
+  name: Types.Scalars['String']['input'];
+}>;
+
+export type LocationWorkspaceAssetsManifestQuery = {
+  __typename: 'Query';
+  workspaceLocationEntryOrError:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'WorkspaceLocationEntry';
+        id: string;
+        name: string;
+        loadStatus: Types.RepositoryLocationLoadStatus;
+        updatedTimestamp: number;
+        versionKey: string;
+        locationOrLoadError:
+          | {
+              __typename: 'PythonError';
+              message: string;
+              stack: Array<string>;
+              errorChain: Array<{
+                __typename: 'ErrorChainLink';
+                isExplicitLink: boolean;
+                error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+              }>;
+            }
+          | {
+              __typename: 'RepositoryLocation';
+              id: string;
+              name: string;
+              repositories: Array<{
+                __typename: 'Repository';
+                id: string;
+                name: string;
+                assetManifest: any | null;
+                assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+              }>;
+            }
+          | null;
+      }
+    | null;
+};
+
 export type WorkspaceLocationNodeFragment = {
   __typename: 'WorkspaceLocationEntry';
   id: string;
@@ -1525,3 +1610,5 @@ export const LocationWorkspaceQueryVersion = '13d0e674c559c7506419e36c9f30ecc793
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
 export const LocationWorkspaceAssetsQueryVersion = '509f48f34fd4594f163f9196f43afd28a2aca4f1805dbcef1873e8759e54cf64';
+
+export const LocationWorkspaceAssetsManifestQueryVersion = '26f05a136fa06937c3c7c0536f69f2c5dde1956750e8de4eec7fcaf9dd684d94';

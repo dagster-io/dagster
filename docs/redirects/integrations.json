@@ -505,6 +505,11 @@
     "permanent": true
   },
   {
+    "source": "/integrations/libraries/dagster-embedded-elt",
+    "destination": "/integrations/libraries/embedded-elt",
+    "permanent": true
+  },
+  {
     "source": "/integrations/embedded-elt/dlt",
     "destination": "/integrations/libraries/dlt",
     "permanent": true
@@ -1226,6 +1231,11 @@
   },
   {
     "source": "/api/libraries/dagster-snowflake",
+    "destination": "/integrations/libraries/snowflake/dagster-snowflake",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-snowflake-polars",
     "destination": "/integrations/libraries/snowflake/dagster-snowflake",
     "permanent": true
   },

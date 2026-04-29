@@ -434,9 +434,9 @@ def get_unique_asset_id(
         else ""
     )
     return (
-        f"{repository_identifier}.{asset_key.to_string()}"
+        f"{repository_identifier}.{asset_key.to_escaped_user_string()}"
         if repository_identifier
-        else f"{asset_key.to_string()}"
+        else f"{asset_key.to_escaped_user_string()}"
     )
 
 

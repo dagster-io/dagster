@@ -230,6 +230,11 @@
     "permanent": true
   },
   {
+    "source": "/guides/build/external-assets",
+    "destination": "/guides/build/assets/external-assets",
+    "permanent": true
+  },
+  {
     "source": "/concepts/automation",
     "destination": "/guides/automate",
     "permanent": true
@@ -302,6 +307,11 @@
   {
     "source": "/guides/automate/declarative-automation/customizing-automation-conditions/automation-condition-operands-and-operators",
     "destination": "/guides/automate/declarative-automation/automation-condition-reference",
+    "permanent": true
+  },
+  {
+    "source": "/guides/automate/declarative-automation/migrating-from-multi-asset-sensors",
+    "destination": "/guides/automate/declarative-automation/migrating-from-sensors",
     "permanent": true
   },
   {
@@ -690,6 +700,11 @@
     "permanent": true
   },
   {
+    "source": "/guides/deploy/concurrency-control",
+    "destination": "/guides/operate/managing-concurrency",
+    "permanent": true
+  },
+  {
     "source": "/guides/dagster/dagster_type_factories",
     "destination": "/guides/build/assets",
     "permanent": true
@@ -971,7 +986,12 @@
   },
   {
     "source": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
-    "destination": "/guides/build/projects",
+    "destination": "/getting-started/concepts#code-location",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/code-locations/managing-code-locations-with-definitions",
+    "destination": "/getting-started/concepts#code-location",
     "permanent": true
   },
   {
@@ -1125,6 +1145,11 @@
     "permanent": true
   },
   {
+    "source": "/guides/operate/run-failure-alerts",
+    "destination": "/guides/observe/alerts/alert-policy-types",
+    "permanent": true
+  },
+  {
     "source": "/guides/build/assets/asset-catalog",
     "destination": "/guides/observe/asset-catalog",
     "permanent": true
@@ -1192,6 +1217,11 @@
   {
     "source": "/guides/build/components/asset-factories-to-components",
     "destination": "/guides/build/assets/creating-asset-factories",
+    "permanent": true
+  },
+  {
+    "source": "/assets/asset-lineage",
+    "destination": "/guides/build/assets",
     "permanent": true
   }
 ]

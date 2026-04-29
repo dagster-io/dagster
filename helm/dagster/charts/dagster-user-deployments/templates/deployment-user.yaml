@@ -63,11 +63,14 @@ spec:
           env:
             - name: DAGSTER_CURRENT_IMAGE
               value: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
+            {{- $global := $.Values.global | default dict }}
+            {{- if not ($global.postgresqlAuthWifEnabled | default false) }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dagsterUserDeployments.postgresql.secretName" $ }}
                   key: postgresql-password
+            {{- end }}
             {{- $includeConfigInLaunchedRuns := $deployment.includeConfigInLaunchedRuns | default (dict "enabled" true) }}
             {{- if $includeConfigInLaunchedRuns.enabled }}
             {{- if $deployment.dagsterApiGrpcArgs }}

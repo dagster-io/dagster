@@ -12,7 +12,11 @@ The features in this section are under active development. You may encounter fea
 
 Compass analyzes run logs, identifies root causes of failures, and suggests debugging steps. Trigger a summary from any completed run or from a degraded asset on the home page, then ask follow-up questions in a conversational chat interface. For more information, see the [Compass AI assistant guide](/guides/labs/compass-ai-assistant).
 
-### Connections
+### Issues (Dagster+)
+
+Issues let you link together multiple failures with a shared root cause, to help you get from noticing a problem to having a fix in production quickly and with full visibility across your team. For more information, see the [Issues docs](/guides/labs/issues).
+
+### Connections (Dagster+)
 
 Connections allow you to easily discover and sync data warehouse assets from sources like Snowflake, BigQuery, Postgres, and Databricks into Dagster. These assets are viewable in the Dagster UI catalog, and you can set alerts on schema changes or metadata values (like row count). For more information, see the [Connections docs](/guides/labs/connections).
 

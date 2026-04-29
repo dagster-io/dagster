@@ -271,11 +271,12 @@ export const SelectionAutoCompleteInput = ({
   const selectedItem = autoCompleteResults?.list[selectedIndexRef.current];
 
   const onSelect = useCallback(
-    (suggestion: {text: string}) => {
+    (suggestion: {text: string; trailingSpace?: boolean}) => {
       if (autoCompleteResults && suggestion && cmInstance.current) {
         const editor = cmInstance.current;
+        const insertText = suggestion.trailingSpace ? suggestion.text + ' ' : suggestion.text;
         editor.replaceRange(
-          suggestion.text,
+          insertText,
           {line: 0, ch: autoCompleteResults.from},
           {line: 0, ch: autoCompleteResults.to},
           'complete',
@@ -287,7 +288,7 @@ export const SelectionAutoCompleteInput = ({
         }
         editor.setCursor({
           line: 0,
-          ch: autoCompleteResults.from + suggestion.text.length + offset,
+          ch: autoCompleteResults.from + insertText.length + offset,
         });
       }
     },
@@ -300,6 +301,8 @@ export const SelectionAutoCompleteInput = ({
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
         if (selectedIndexRef.current !== -1 && selectedItem) {
+          e.preventDefault();
+          e.stopPropagation();
           onSelect(selectedItem);
         } else {
           e.stopPropagation();

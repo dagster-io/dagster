@@ -21,9 +21,15 @@ from dagster_test.dg_utils.utils import (
     launch_dev_command,
 )
 
-pytestmark = pytest.mark.slow
+# Tests that call `launch_dev_command` are marked `serial` and run in their own tox env
+# (see tox.ini). They are not a thread-safety problem: each test uses its own tempdir and a
+# `find_free_port()`-allocated port. The issue is resource contention — each test does one or more
+# `uv sync`s and then spawns `dg dev`, which must boot `dagster-webserver` and answer a request
+# within a 30s handshake window (`_ping_webserver` in dagster_test.dg_utils.utils). Running four of
+# these in parallel under xdist starved webserver startup enough to blow past that deadline on CI.
 
 
+@pytest.mark.serial
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_workspace_context_success(monkeypatch):
     # The command will use `uv tool run dagster dev` to start the webserver if it
@@ -61,6 +67,7 @@ def test_dev_workspace_context_success(monkeypatch):
             assert_projects_loaded_and_exit(projects, port, dev_process)
 
 
+@pytest.mark.serial
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_workspace_context_set_python_executable_from_env_file():
     """Test that the dg dev command properly loads env files from the workspace and projects."""
@@ -114,6 +121,7 @@ def test_dev_workspace_context_set_python_executable_from_env_file():
                 ).read_text()
 
 
+@pytest.mark.serial
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_workspace_load_env_files(monkeypatch):
     """Test that the dg dev command properly loads env files from the workspace and projects."""
@@ -165,6 +173,7 @@ def test_dev_workspace_load_env_files(monkeypatch):
                 ).read_text()
 
 
+@pytest.mark.serial
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_project_context_success():
     with (
@@ -262,6 +271,7 @@ def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
             BASIC_MISSING_VALUE.check_error_msg(str(result.output))
 
 
+@pytest.mark.serial
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_uses_active_venv_when_flag_set():
     """Test that dev command logs the active venv Python when --use-active-venv is set."""

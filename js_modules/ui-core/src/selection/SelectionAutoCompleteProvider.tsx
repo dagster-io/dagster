@@ -103,6 +103,7 @@ export type Suggestion =
   | {
       text: string;
       jsx: React.ReactNode;
+      trailingSpace?: boolean;
     }
   | {
       text: string;
@@ -258,6 +259,7 @@ export const createProvider = <
     return {
       text: textCallback ? textCallback('<null>') : '<null>',
       jsx: <SuggestionJSXBase label={<span className={styles.nullString}>No value</span>} />,
+      trailingSpace: true,
     };
   }
 
@@ -276,6 +278,7 @@ export const createProvider = <
       return {
         text: textCallback ? textCallback(valueText) : valueText,
         jsx: <AttributeValueTagSuggestion tag={value} />,
+        trailingSpace: true,
       };
     }
     if (value === '') {
@@ -284,6 +287,7 @@ export const createProvider = <
     return {
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
       jsx: <SuggestionJSXBase label={<MiddleTruncate text={value} />} />,
+      trailingSpace: true,
     };
   }
 
@@ -336,6 +340,7 @@ export const createProvider = <
     return {
       text: textCallback ? textCallback(text) : text,
       jsx: <SuggestionJSXBase label={displayText} rightLabel={<MiddleTruncate text={text} />} />,
+      trailingSpace: true,
     };
   }
 
@@ -376,6 +381,7 @@ export const createProvider = <
           }
         />
       ),
+      trailingSpace: true,
     };
   }
 

@@ -97,3 +97,7 @@ To customize this behavior, see the [customizing on_missing](/guides/automate/de
 </TabItem>
 
 </Tabs>
+
+## Testing declarative automations
+
+To test automation conditions in isolation without starting the automation daemon, use <PyObject section="assets" module="dagster" object="evaluate_automation_conditions" />. Usage examples covering missing assets, same-code-location dependencies, and cross-code-location dependencies are available in the [API reference](/api/dagster/assets#testing-declarative-automations).

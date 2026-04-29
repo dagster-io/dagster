@@ -54,3 +54,9 @@ class GrapheneAssetOwner(graphene.Union):
             GrapheneTeamAssetOwner,
         )
         name = "AssetOwner"
+
+    @staticmethod
+    def to_manifest_dict(owner_str: str) -> dict:
+        if is_valid_email(owner_str):
+            return {"__typename": "UserAssetOwner", "email": owner_str}
+        return {"__typename": "TeamAssetOwner", "team": owner_str[5:]}

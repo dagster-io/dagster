@@ -35,6 +35,9 @@ def _graceful_kill_process_group(process: subprocess.Popen) -> None:
             process.wait(5)
         except subprocess.TimeoutExpired:
             pass
+    # Allow child processes time to fully exit so that subsequent cleanup
+    # (e.g. TemporaryDirectory removal) doesn't race with lingering writes.
+    time.sleep(1)
 
 
 ####################################################################################################

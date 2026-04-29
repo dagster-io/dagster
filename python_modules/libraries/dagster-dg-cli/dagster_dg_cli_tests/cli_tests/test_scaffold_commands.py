@@ -132,7 +132,7 @@ def test_scaffold_defs_validation_failure() -> None:
 def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace, uv_sync=True),
+        isolated_example_project_foo_bar(runner, in_workspace=in_workspace, uv_sync=True),
     ):
         result = runner.invoke(
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
@@ -257,7 +257,7 @@ def test_scaffold_defs_component_substring_multiple_match_success(selection: str
 def test_scaffold_defs_component_json_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace),
+        isolated_example_project_foo_bar(runner, in_workspace=in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
@@ -281,7 +281,7 @@ def test_scaffold_defs_component_json_params_success(in_workspace: bool) -> None
 def test_scaffold_defs_component_key_value_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace),
+        isolated_example_project_foo_bar(runner, in_workspace=in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
@@ -350,7 +350,7 @@ def test_scaffold_defs_component_command_with_non_matching_module_name():
 def test_scaffold_defs_component_already_exists_fails(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace),
+        isolated_example_project_foo_bar(runner, in_workspace=in_workspace),
     ):
         result = runner.invoke(
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"

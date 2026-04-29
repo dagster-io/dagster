@@ -1,13 +1,13 @@
 import {useMemo} from 'react';
 
+import {WorkspaceAssetFragment} from './WorkspaceContext/types/WorkspaceQueries.types';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
-import {RepoAssetTableFragment} from './types/WorkspaceAssetsQuery.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {usePersistedExpansionState} from '../ui/usePersistedExpansionState';
 
-type Asset = RepoAssetTableFragment;
+type Asset = WorkspaceAssetFragment;
 
 type RowType =
   | {type: 'group'; name: string; assetCount: number}

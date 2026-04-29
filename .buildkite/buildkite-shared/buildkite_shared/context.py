@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
@@ -655,20 +656,26 @@ def _discover_changed_files(repo_path: Path) -> frozenset[Path]:
         head = _get_commit("HEAD")
         logging.info(f"Changed files between {base_ref} ({base}) and HEAD ({head}):")
 
-        result = subprocess.run(
-            [
-                "git",
-                "diff",
-                f"{base_ref}...HEAD",
-                "--name-only",
-                "--relative",
-                "--",
-                ".",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        try:
+            result = subprocess.run(
+                [
+                    "git",
+                    "diff",
+                    f"{base_ref}...HEAD",
+                    "--name-only",
+                    "--relative",
+                    "--",
+                    ".",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            sys.stderr.write(
+                f"git diff failed (exit {e.returncode}); stderr:\n{e.stderr}\nstdout:\n{e.stdout}\n"
+            )
+            raise
 
         all_files: set[Path] = set()
         for path in sorted(result.stdout.strip().split("\n")):

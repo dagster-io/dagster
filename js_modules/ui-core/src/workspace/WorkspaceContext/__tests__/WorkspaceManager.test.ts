@@ -57,6 +57,7 @@ describe('WorkspaceManager', () => {
       getData: mockGetData,
       setData: mockSetData,
       setCodeLocationStatusAtom: mockSetCodeLocationStatusAtom,
+      shouldUseAssetManifest: false,
     });
 
     expect(WorkspaceStatusPoller).toHaveBeenCalledWith({
@@ -75,6 +76,7 @@ describe('WorkspaceManager', () => {
       localCacheIdPrefix: 'prefix',
       getData: mockGetData,
       statusPoller: mockStatusPoller,
+      shouldUseAssetManifest: false,
     });
   });
 
@@ -98,6 +100,7 @@ describe('WorkspaceManager', () => {
       getData: mockGetData,
       setData: mockSetData,
       setCodeLocationStatusAtom: mockSetCodeLocationStatusAtom,
+      shouldUseAssetManifest: false,
     });
 
     // Simulate data fetcher update
@@ -132,6 +135,7 @@ describe('WorkspaceManager', () => {
       getData: mockGetData,
       setData: mockSetData,
       setCodeLocationStatusAtom: mockSetCodeLocationStatusAtom,
+      shouldUseAssetManifest: false,
     });
 
     manager.destroy();

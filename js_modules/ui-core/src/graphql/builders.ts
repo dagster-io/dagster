@@ -4536,6 +4536,7 @@ type Repository = {
   __typename: 'Repository';
   allTopLevelResourceDetails: Array<ResourceDetails>;
   assetGroups: Array<AssetGroup>;
+  assetManifest: Maybe<Scalars['GenericScalar']['output']>;
   assetNodes: Array<AssetNode>;
   assetNodesConnection: AssetNodeConnection;
   displayMetadata: Array<RepositoryMetadata>;
@@ -13905,6 +13906,10 @@ export const buildRepository = (
         ? overrides.allTopLevelResourceDetails!
         : [],
     assetGroups: overrides && overrides.hasOwnProperty('assetGroups') ? overrides.assetGroups! : [],
+    assetManifest:
+      overrides && overrides.hasOwnProperty('assetManifest')
+        ? overrides.assetManifest!
+        : 'exercitationem',
     assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
     assetNodesConnection:
       overrides && overrides.hasOwnProperty('assetNodesConnection')

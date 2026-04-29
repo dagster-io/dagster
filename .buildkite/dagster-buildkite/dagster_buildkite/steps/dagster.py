@@ -7,17 +7,29 @@ from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
     CommandStepConfiguration,
 )
-from buildkite_shared.step_builders.group_step_builder import GroupStepBuilder
+from buildkite_shared.step_builders.group_step_builder import (
+    GroupLeafStepConfiguration,
+    GroupStepBuilder,
+)
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.utils import oss_path
 from buildkite_shared.uv import UV_PIN
 from dagster_buildkite.steps.helm import build_helm_steps
-from dagster_buildkite.steps.integration import build_integration_steps
+from dagster_buildkite.steps.integration import (
+    build_azure_live_test_suite_steps,
+    build_backcompat_suite_steps,
+    build_celery_k8s_suite_steps,
+    build_daemon_suite_steps,
+    build_k8s_suite_steps,
+)
 from dagster_buildkite.steps.packages import (
+    PackageSpec,
     build_example_packages_steps,
     build_library_packages_steps,
 )
 from dagster_buildkite.steps.test_project import build_test_project_steps
+
+TEST_PROJECT_AND_DEPENDENTS_GROUP_KEY = "test-project-and-dependents"
 
 
 def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
@@ -53,15 +65,55 @@ def build_dagster_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     steps += build_sql_schema_check_steps(ctx)
     steps += build_graphql_python_client_backcompat_steps(ctx)
     if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
-        steps += build_integration_steps(ctx)
-
-    # Build images containing the dagster-test sample project. This is a dependency of certain
-    # dagster core and extension lib tests. Run this after we build our library package steps
-    # because need to know whether it's a dependency of any of them.
-    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
-        steps += build_test_project_steps()
+        # Bundle the test-project image build with every suite that depends on
+        # it into one Buildkite group so reviewers can scan the docker-dependent
+        # block as a unit (and the internal pipeline can attach a status gate
+        # to it). Suites that do not depend on the image stay outside.
+        steps += build_test_project_and_dependents_group(ctx)
+        steps += PackageSpec(
+            oss_path(os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra")),
+        ).build_steps(ctx)
+        steps += build_azure_live_test_suite_steps(ctx)
 
     return steps
+
+
+def build_test_project_and_dependents_group(
+    ctx: BuildkiteContext,
+) -> list[StepConfiguration]:
+    """Wrap the test-project Docker image build and every integration suite that
+    depends on it into one Buildkite group.
+
+    Buildkite forbids nested groups, so the per-suite groups produced by
+    PackageSpec are flattened to their leaf command steps. Each leaf still
+    carries the suite name in its label.
+
+    Order matters: the suite builders mutate `build_test_project_for` via
+    `test_project_depends_fn`, and `build_test_project_steps()` reads that
+    set, so suites must be assembled before the image build.
+    """
+    dependent_steps: list[StepConfiguration] = []
+    dependent_steps += build_backcompat_suite_steps(ctx)
+    dependent_steps += build_celery_k8s_suite_steps(ctx)
+    dependent_steps += build_k8s_suite_steps(ctx)
+    dependent_steps += build_daemon_suite_steps(ctx)
+
+    image_steps = build_test_project_steps()
+
+    leaves: list[GroupLeafStepConfiguration] = []
+    for s in [*image_steps, *dependent_steps]:
+        if "group" in s:
+            leaves.extend(s["steps"])
+        else:
+            leaves.append(s)
+
+    return [
+        GroupStepBuilder(
+            name=":docker: test-project + dependents",
+            key=TEST_PROJECT_AND_DEPENDENTS_GROUP_KEY,
+            steps=leaves,
+        ).build()
+    ]
 
 
 def build_repo_wide_ruff_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:

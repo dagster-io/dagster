@@ -6,6 +6,8 @@
 ---
 global:
   postgresqlSecretName: "dagster-postgresql-secret"
+  # When true, PostgreSQL uses workload identity federation instead of a password secret.
+  postgresqlAuthWifEnabled: false
   # The DAGSTER_HOME env var is set by default on all nodes from this value
   dagsterHome: "/opt/dagster/dagster_home"
 
@@ -840,6 +842,16 @@ postgresql:
 
   service:
     port: 5432
+
+  # Workload Identity Federation auth. When enabled, no password/secret is needed.
+  # The pod's service account token is exchanged for a short-lived DB access token.
+  authProvider:
+    # One of: azure_wif, gcp_wif, aws_wif
+    type: ""
+    # Azure-specific: override the default token scope
+    azureScope: "https://ossrdbms-aad.database.windows.net/.default"
+    # AWS-specific: the RDS region
+    awsRegion: ""
 
 # Whether to generate a secret resource for the PostgreSQL password. Useful if
 # global.postgresqlSecretName is managed outside of this helm chart.

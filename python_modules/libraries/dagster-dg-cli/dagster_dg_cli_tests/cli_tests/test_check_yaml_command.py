@@ -2,6 +2,7 @@ import importlib
 import json
 import shutil
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -194,11 +195,88 @@ def test_actionable_error_message_no_defs_check_yaml():
         )
 
 
-@pytest.mark.slow
+def _terminate_watch_process(
+    check_process: "subprocess.Popen[bytes]", reader: threading.Thread
+) -> None:
+    interrupt_ipc_subprocess(check_process)
+    try:
+        check_process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        check_process.kill()
+        try:
+            check_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            pass
+    reader.join(timeout=5)
+
+
+def _run_watch_test(tmpdir_valid: Path, tmpdir: Path) -> None:
+    check_process = subprocess.Popen(
+        ["dg", "check", "yaml", "--watch"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+    collected: list[str] = []
+    lock = threading.Lock()
+
+    def _reader() -> None:
+        assert check_process.stdout is not None
+        for line in iter(check_process.stdout.readline, b""):
+            with lock:
+                collected.append(line.decode("utf-8", errors="replace"))
+
+    reader = threading.Thread(target=_reader, daemon=True)
+    reader.start()
+
+    def _stdout() -> str:
+        with lock:
+            return "".join(collected)
+
+    def _wait_for(needle: str, timeout: float) -> bool:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if needle in _stdout():
+                return True
+            if check_process.poll() is not None:
+                # Process exited — drain buffered stdout from the reader before final check.
+                reader.join(timeout=2)
+                return needle in _stdout()
+            time.sleep(0.1)
+        return False
+
+    try:
+        # The initial synchronous check runs inside PathChangeHandler.__init__
+        # and prints this banner when it finishes; on CI this can take tens of seconds.
+        assert _wait_for("watching for changes", timeout=60), (
+            f"Initial check never completed.\nOutput:\n{_stdout()}"
+        )
+
+        # Small buffer for observer.schedule()/observer.start() in watch_paths
+        # to install OS-level watches after the banner is printed.
+        time.sleep(3)
+
+        shutil.copy(
+            tmpdir_valid / "src" / "foo_bar" / "defs" / "basic_component_success" / "defs.yaml",
+            tmpdir / "src" / "foo_bar" / "defs" / "basic_component_invalid_value" / "defs.yaml",
+        )
+
+        success_msg = "All component YAML validated successfully"
+        assert _wait_for(success_msg, timeout=60), (
+            f"Watcher never detected the fix.\nOutput:\n{_stdout()}"
+        )
+    finally:
+        _terminate_watch_process(check_process, reader)
+
+    output = _stdout()
+    assert "All component YAML validated successfully" in output
+    assert BASIC_INVALID_VALUE.check_error_msg
+    BASIC_INVALID_VALUE.check_error_msg(output)
+
+
+@pytest.mark.serial
 def test_check_yaml_with_watch() -> None:
-    """Tests that the check CLI prints rich error messages when attempting to
-    load components with errors.
-    """
+    """Tests that `dg check yaml --watch` re-validates when a component file changes."""
     with (
         ProxyRunner.test() as runner,
         create_project_from_components(
@@ -215,30 +293,7 @@ def test_check_yaml_with_watch() -> None:
         ) as tmpdir,
     ):
         with pushd(tmpdir), activate_venv(tmpdir / ".venv"):
-            check_process = subprocess.Popen(
-                ["dg", "check", "yaml", "--watch"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-
-            time.sleep(10)  # Give the check command time to start
-
-            # Copy the invalid component into the valid code location
-            shutil.copy(
-                tmpdir_valid / "src" / "foo_bar" / "defs" / "basic_component_success" / "defs.yaml",
-                tmpdir / "src" / "foo_bar" / "defs" / "basic_component_invalid_value" / "defs.yaml",
-            )
-
-            time.sleep(10)  # Give time for the watcher to detect changes
-
-            # Signal the watcher to exit
-            interrupt_ipc_subprocess(check_process)
-
-            stdout, _stderr = check_process.communicate()
-
-            assert "All component YAML validated successfully" in stdout.decode("utf-8")
-            assert BASIC_INVALID_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(stdout.decode("utf-8"))
+            _run_watch_test(tmpdir_valid, tmpdir)
 
 
 @pytest.mark.parametrize(

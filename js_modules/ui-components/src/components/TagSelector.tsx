@@ -191,8 +191,6 @@ export const TagSelector = ({
     viewport.width,
   ]);
 
-  const dropdownContainer = React.useRef<HTMLDivElement>(null);
-
   const tagsContent = React.useMemo(() => {
     if (selectedTags.length === 0) {
       return <div className={styles.placeholder}>{placeholder || 'Select tags'}</div>;
@@ -226,15 +224,7 @@ export const TagSelector = ({
     <Popover
       placement="bottom-start"
       isOpen={isDropdownOpen && !disabled}
-      onInteraction={(nextOpenState, e) => {
-        const target = e?.target;
-        if (isDropdownOpen && target instanceof HTMLElement) {
-          const isClickInside = dropdownContainer.current?.contains(target);
-          if (!isClickInside) {
-            setIsDropdownOpen(nextOpenState);
-          }
-        }
-      }}
+      onInteraction={(nextOpenState) => setIsDropdownOpen(nextOpenState)}
       content={<div>{dropdown}</div>}
       targetTagName="div"
       onOpening={rowVirtualizer.measure}
@@ -243,9 +233,6 @@ export const TagSelector = ({
     >
       <div
         className={clsx(styles.tagSelectorContainer, disabled && styles.disabled)}
-        onClick={() => {
-          setIsDropdownOpen((isOpen) => !isOpen);
-        }}
         {...containerProps}
       >
         <Box className={styles.tagsContainer} flex={{grow: 1, gap: 6}}>

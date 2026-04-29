@@ -482,6 +482,10 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     backfillPolicy {
       description
     }
+    opTags {
+      key
+      value
+    }
     requiredResources {
       resourceKey
     }

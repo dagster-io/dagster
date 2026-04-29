@@ -132,11 +132,12 @@ export const useAssetCatalogGroupAndSortBy = ({
           liveDataByNode: assetsByAssetKey,
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
-            return (
-              asset?.definition?.owners.map((owner) =>
+            if (asset?.definition?.owners && asset.definition.owners.length) {
+              return asset.definition.owners.map((owner) =>
                 'email' in owner ? owner.email : owner.team,
-              ) ?? [NONE_KEY]
-            );
+              );
+            }
+            return [NONE_KEY];
           },
           renderGroupHeader: (props) => {
             return (
@@ -183,11 +184,13 @@ export const useAssetCatalogGroupAndSortBy = ({
           liveDataByNode: assetsByAssetKey,
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
-            return (
-              asset?.definition?.tags
-                .filter((tag) => !tag.key.startsWith(DagsterTag.Namespace))
-                .map((tag) => `${tag.key}${tag.value ? `: ${tag.value}` : ''}`) ?? [NONE_KEY]
+            const tags = asset?.definition?.tags.filter(
+              (tag) => !tag.key.startsWith(DagsterTag.Namespace),
             );
+            if (tags && tags.length) {
+              return tags.map((tag) => `${tag.key}${tag.value ? `: ${tag.value}` : ''}`);
+            }
+            return [NONE_KEY];
           },
           renderGroupHeader: (props) => {
             return (

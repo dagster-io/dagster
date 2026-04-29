@@ -182,17 +182,6 @@ PYRIGHT_ENV_ROOT: Final = "pyright"
 DEFAULT_REQUIREMENTS_FILE: Final = "requirements.txt"
 
 
-def get_pyspark_constraints_path():
-    return os.path.abspath(
-        os.path.join(
-            "python_modules",
-            "libraries",
-            "dagster-pyspark",
-            "build-constraints",
-        )
-    )
-
-
 def get_env_path(env: str, rel_path: str | None = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
     return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
@@ -326,8 +315,6 @@ def normalize_env(
                         "pip",
                         "install",
                         "--no-config",
-                        "-b",
-                        get_pyspark_constraints_path(),
                         "--python",
                         python_path,
                         # editable-mode=compat ensures dagster-internal editable installs are done

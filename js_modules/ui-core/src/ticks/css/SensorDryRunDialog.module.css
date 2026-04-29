@@ -1,0 +1,30 @@
+.dialogContent {
+  min-height: 300px;
+  overflow-y: auto;
+  background: var(--color-background-default);
+}
+
+.summaryLabel {
+  color: var(--color-text-light);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.cursorValueWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-background-light);
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.cursorValueWrapper pre {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: var(--font-family-monospace);
+  font-size: 13px;
+}

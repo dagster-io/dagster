@@ -502,6 +502,18 @@ class GraphenePartitionDefinitionType(graphene.Enum):
     class Meta:
         name = "PartitionDefinitionType"
 
+    @staticmethod
+    def snap_type_str(snap: PartitionsSnap) -> str:
+        if isinstance(snap, StaticPartitionsSnap):
+            return "STATIC"
+        elif isinstance(snap, TimeWindowPartitionsSnap):
+            return "TIME_WINDOW"
+        elif isinstance(snap, MultiPartitionsSnap):
+            return "MULTIPARTITIONED"
+        elif isinstance(snap, DynamicPartitionsSnap):
+            return "DYNAMIC"
+        check.failed(f"Invalid external partitions definition data type: {type(snap)}")
+
     @classmethod
     def from_partition_def_data(cls, partition_def_data):
         check.inst_param(partition_def_data, "partition_def_data", PartitionsSnap)
@@ -580,6 +592,35 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                 )
             ]
         )
+
+    @staticmethod
+    def to_manifest_dict(partitions: PartitionsSnap) -> dict:
+        if isinstance(partitions, MultiPartitionsSnap):
+            dimension_types = [
+                {
+                    "__typename": "DimensionDefinitionType",
+                    "type": GraphenePartitionDefinitionType.snap_type_str(dim.partitions),
+                    "dynamicPartitionsDefinitionName": dim.partitions.name
+                    if isinstance(dim.partitions, DynamicPartitionsSnap)
+                    else None,
+                }
+                for dim in partitions.partition_dimensions
+            ]
+        else:
+            dimension_types = [
+                {
+                    "__typename": "DimensionDefinitionType",
+                    "type": GraphenePartitionDefinitionType.snap_type_str(partitions),
+                    "dynamicPartitionsDefinitionName": partitions.name
+                    if isinstance(partitions, DynamicPartitionsSnap)
+                    else None,
+                }
+            ]
+        return {
+            "__typename": "PartitionDefinition",
+            "description": str(partitions.get_partitions_definition()),
+            "dimensionTypes": dimension_types,
+        }
 
     def __init__(self, partition_def_data: PartitionsSnap):
         self._partition_def_data = partition_def_data

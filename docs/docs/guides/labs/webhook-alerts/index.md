@@ -4,6 +4,7 @@ sidebar_label: Webhooks
 description: Configure generic HTTP requests triggered by Dagster alerts to integrate with any third-party service.
 canonicalUrl: '/guides/labs/webhook-alerts'
 slug: '/guides/labs/webhook-alerts'
+sidebar_position: 40
 ---
 
 import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';

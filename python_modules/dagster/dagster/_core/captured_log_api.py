@@ -8,7 +8,7 @@ from dagster_shared.seven import json
 @record
 class LogLineCursor:
     """Representation of a log line cursor, to keep track of the place in the logs.
-    The captured logs are stored in multiple files in the same direcotry. The cursor keeps
+    The captured logs are stored in multiple files in the same directory. The cursor keeps
     track of the file name and the number of lines read so far.
 
     line=-1 means that the entire file has been read and the next file should be read. This covers the

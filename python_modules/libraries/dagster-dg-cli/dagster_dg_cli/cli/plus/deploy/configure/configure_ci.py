@@ -280,10 +280,18 @@ def configure_gitlab_ci_impl(config: DgPlusDeployConfigureOptions) -> None:
         )
         build_fragment = _get_build_fragment_for_locations_gitlab(config, registry_urls)
 
+        # Both placeholders sit at a 4-space indent under `script:`. The fragment files
+        # on disk are stored flush-left, so every line must be re-indented before
+        # substitution — otherwise subsequent lines land at column 0 and produce
+        # invalid YAML. Mirrors the pattern used by the GitHub Actions branch above.
         template = template.replace(
-            "# TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT", registry_fragment
+            "    # TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT",
+            textwrap.indent(registry_fragment, "    "),
         )
-        template = template.replace("    # TEMPLATE_BUILD_LOCATION_FRAGMENT", build_fragment)
+        template = template.replace(
+            "    # TEMPLATE_BUILD_LOCATION_FRAGMENT",
+            textwrap.indent(build_fragment, "    "),
+        )
 
     gitlab_ci_file.write_text(template)
 
