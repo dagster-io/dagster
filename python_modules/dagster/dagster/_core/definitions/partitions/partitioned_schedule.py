@@ -1,7 +1,7 @@
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, cast
 
-from dagster_shared.record import copy, record
+from dagster_shared.record import IHaveNew, copy, record_custom
 from typing_extensions import Self
 
 import dagster._check as check
@@ -29,11 +29,12 @@ from dagster._core.definitions.schedule_definition import (
     ScheduleEvaluationContext,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.utils import validate_definition_owner
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
-@record
-class UnresolvedPartitionedAssetScheduleDefinition:
+@record_custom
+class UnresolvedPartitionedAssetScheduleDefinition(IHaveNew):
     """Points to an unresolved asset job. The asset selection isn't resolved yet, so we can't resolve
     the PartitionsDefinition, so we can't resolve the schedule cadence.
     """
@@ -48,6 +49,40 @@ class UnresolvedPartitionedAssetScheduleDefinition:
     day_of_month: int | None
     tags: Mapping[str, str] | None
     metadata: Mapping[str, Any] | None
+    owners: Sequence[str] | None
+
+    def __new__(
+        cls,
+        job,
+        default_status,
+        name,
+        description,
+        minute_of_hour,
+        hour_of_day,
+        day_of_week,
+        day_of_month,
+        tags,
+        metadata,
+        owners,
+    ):
+        if owners:
+            for owner in owners:
+                validate_definition_owner(owner, "schedule", name)
+
+        return super().__new__(
+            cls,
+            job=job,
+            default_status=default_status,
+            name=name,
+            description=description,
+            minute_of_hour=minute_of_hour,
+            hour_of_day=hour_of_day,
+            day_of_week=day_of_week,
+            day_of_month=day_of_month,
+            tags=tags,
+            metadata=metadata,
+            owners=owners,
+        )
 
     def resolve(self, resolved_job: JobDefinition) -> ScheduleDefinition:
         partitions_def = resolved_job.partitions_def
@@ -70,6 +105,7 @@ class UnresolvedPartitionedAssetScheduleDefinition:
             execution_timezone=time_partitions_def.timezone,
             description=self.description,
             metadata=self.metadata,
+            owners=self.owners,
         )(_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags))
 
     def with_metadata(self, metadata: RawMetadataMapping) -> Self:
@@ -89,6 +125,7 @@ def build_schedule_from_partitioned_job(
     cron_schedule: str | None = None,
     execution_timezone: str | None = None,
     metadata: RawMetadataMapping | None = None,
+    owners: Sequence[str] | None = None,
 ) -> UnresolvedPartitionedAssetScheduleDefinition | ScheduleDefinition:
     """Creates a schedule from a job that targets
     time window-partitioned or statically-partitioned assets. The job can also be
@@ -179,6 +216,7 @@ def build_schedule_from_partitioned_job(
             day_of_month=day_of_month,
             tags=tags,
             metadata=metadata,
+            owners=owners,
         )
     else:
         partitions_def = job.partitions_def
@@ -229,6 +267,7 @@ def build_schedule_from_partitioned_job(
             name=check.opt_str_param(name, "name", f"{job.name}_schedule"),
             description=check.opt_str_param(description, "description"),
             should_execute=should_execute,
+            owners=owners,
         )(_get_schedule_evaluation_fn(partitions_def, job, tags))
 
 
