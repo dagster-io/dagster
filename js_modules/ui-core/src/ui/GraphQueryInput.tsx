@@ -389,6 +389,7 @@ export const GraphQueryInput = React.memo(
                       onChange={() => {
                         props.setFlattenGraphs?.();
                       }}
+                      onClick={(e) => e.stopPropagation()}
                       format="switch"
                     />
                     <Tooltip
