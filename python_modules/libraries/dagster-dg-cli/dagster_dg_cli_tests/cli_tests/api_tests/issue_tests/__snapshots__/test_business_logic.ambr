@@ -229,6 +229,16 @@
         'status': 'TRIAGE',
         'title': 'Issue with status TRIAGE',
       }),
+      dict({
+        'context': None,
+        'created_by_email': 'test@example.com',
+        'description': 'Test issue for status CANCELED.',
+        'id': '4',
+        'linked_objects': list([
+        ]),
+        'status': 'CANCELED',
+        'title': 'Issue with status CANCELED',
+      }),
     ]),
   })
 # ---

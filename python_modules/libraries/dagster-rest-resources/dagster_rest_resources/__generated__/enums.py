@@ -901,6 +901,7 @@ class IssueStatus(str, Enum):
     OPEN = "OPEN"
     CLOSED = "CLOSED"
     TRIAGE = "TRIAGE"
+    CANCELED = "CANCELED"
 
 
 class ReexecutionStrategy(str, Enum):
