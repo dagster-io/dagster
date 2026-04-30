@@ -10,6 +10,7 @@ from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSe
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster_shared.serdes import whitelist_for_serdes
+from dateutil.parser import isoparse
 
 from dagster_airbyte.utils import generate_table_schema, get_airbyte_connection_table_name
 
@@ -146,10 +147,8 @@ class AirbyteJob:
             status=job_details["status"],
             type=job_details["jobType"],
             connection_id=job_details.get("connectionId"),
-            start_time=datetime.fromisoformat(job_details["startTime"])
-            if "startTime" in job_details
-            else None,
-            last_updated_at=datetime.fromisoformat(job_details["lastUpdatedAt"])
+            start_time=isoparse(job_details["startTime"]) if "startTime" in job_details else None,
+            last_updated_at=isoparse(job_details["lastUpdatedAt"])
             if "lastUpdatedAt" in job_details
             else None,
             duration=job_details.get("duration"),
