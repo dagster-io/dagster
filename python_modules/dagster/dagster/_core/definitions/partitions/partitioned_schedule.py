@@ -5,6 +5,7 @@ from dagster_shared.record import IHaveNew, copy, record_custom
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._annotations import beta_param
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping
@@ -112,6 +113,7 @@ class UnresolvedPartitionedAssetScheduleDefinition(IHaveNew):
         return copy(self, metadata=metadata)
 
 
+@beta_param(param="owners")
 def build_schedule_from_partitioned_job(
     job: JobDefinition | UnresolvedAssetJobDefinition,
     description: str | None = None,
