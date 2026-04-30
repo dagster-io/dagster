@@ -48,6 +48,22 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     def can_wipe_asset_partitions(self) -> bool:
         return False
 
+    def test_instance_add_dynamic_partitions_with_labels(self, instance):
+        instance.add_dynamic_partitions("foo", ["foo", "bar"], labels={"foo": "Foo label"})
+
+        assert instance.get_dynamic_partition_labels("foo") == {"foo": "Foo label"}
+
+        instance.add_dynamic_partitions(
+            "foo",
+            ["foo", "baz"],
+            labels={"foo": "Updated foo label", "baz": "Baz label"},
+        )
+
+        assert instance.get_dynamic_partition_labels("foo") == {
+            "foo": "Updated foo label",
+            "baz": "Baz label",
+        }
+
     def test_event_log_storage_two_watchers(self, conn_string):
         with _clean_storage(conn_string) as storage:
             run_id = make_new_run_id()

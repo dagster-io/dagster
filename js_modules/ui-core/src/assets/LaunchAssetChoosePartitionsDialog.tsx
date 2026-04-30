@@ -17,7 +17,7 @@ import {
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import reject from 'lodash/reject';
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
@@ -34,6 +34,8 @@ import {
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
 import {asAssetKeyInput} from './asInput';
 import {
+  DisplayedPartitionLabelsQuery,
+  DisplayedPartitionLabelsQueryVariables,
   LaunchAssetWarningsQuery,
   LaunchAssetWarningsQueryVariables,
 } from './types/LaunchAssetChoosePartitionsDialog.types';
@@ -83,6 +85,20 @@ import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext/util'
 import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
+
+export const DISPLAYED_PARTITION_LABELS_QUERY = gql`
+  query DisplayedPartitionLabelsQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        partitionKeyLabels {
+          key
+          label
+        }
+      }
+    }
+  }
+`;
 
 export interface LaunchAssetChoosePartitionsDialogProps {
   open: boolean;
@@ -193,6 +209,57 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         : null;
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
+  const displayedBaseAssetInput = useMemo(
+    () => (displayedBaseAsset ? asAssetKeyInput(displayedBaseAsset.assetKey) : null),
+    [displayedBaseAsset],
+  );
+  const displayedPartitionLabelsResult = useQuery<
+    DisplayedPartitionLabelsQuery,
+    DisplayedPartitionLabelsQueryVariables
+  >(DISPLAYED_PARTITION_LABELS_QUERY, {
+    variables: {assetKey: displayedBaseAssetInput ?? {path: []}},
+    skip: !displayedBaseAssetInput,
+    blocking: false,
+    notifyOnNetworkStatusChange: true,
+  });
+  const displayedPartitionLabelsState = useMemo(() => {
+    if (!displayedBaseAssetInput) {
+      return {labels: [], status: 'idle' as const};
+    }
+
+    if (displayedPartitionLabelsResult.loading) {
+      return {labels: [], status: 'loading' as const};
+    }
+
+    if (displayedPartitionLabelsResult.error) {
+      return {labels: [], status: 'error' as const};
+    }
+
+    if (displayedPartitionLabelsResult.data?.assetNodeOrError.__typename === 'AssetNode') {
+      return {
+        labels: displayedPartitionLabelsResult.data.assetNodeOrError.partitionKeyLabels ?? [],
+        status: 'ready' as const,
+      };
+    }
+
+    return {labels: [], status: 'ready' as const};
+  }, [
+    displayedBaseAssetInput,
+    displayedPartitionLabelsResult.data,
+    displayedPartitionLabelsResult.error,
+    displayedPartitionLabelsResult.loading,
+  ]);
+  const partitionLabelMap = useMemo(
+    () =>
+      new Map<string, string>(
+        displayedPartitionLabelsState.labels.map(({key, label}) => [key, label]),
+      ),
+    [displayedPartitionLabelsState.labels],
+  );
+  const labelForPartition = useCallback(
+    (partitionKey: string) => partitionLabelMap.get(partitionKey),
+    [partitionLabelMap],
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
@@ -497,6 +564,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               setSelections={setSelections}
               displayedHealth={displayedHealth}
               displayedPartitionDefinition={displayedPartitionDefinition}
+              labelForPartition={labelForPartition}
             />
           </ToggleableSection>
         )}

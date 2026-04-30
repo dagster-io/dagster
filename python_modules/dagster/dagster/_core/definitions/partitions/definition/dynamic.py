@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
@@ -208,10 +208,18 @@ class DynamicPartitionsDefinition(
                     partitions_def_name=self._validated_name(), partition_key=partition_key
                 )
 
-    def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
+    def build_add_request(
+        self,
+        partition_keys: Sequence[str],
+        partition_key_labels: Mapping[str, str] | None = None,
+    ) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         validated_name = self._validated_name()
-        return AddDynamicPartitionsRequest(validated_name, partition_keys)
+        return AddDynamicPartitionsRequest(
+            validated_name,
+            partition_keys,
+            partition_key_labels=partition_key_labels,
+        )
 
     def build_delete_request(self, partition_keys: Sequence[str]) -> DeleteDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)

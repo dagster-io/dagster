@@ -101,6 +101,7 @@ DynamicPartitionsTable = db.Table(
     db.Column("partitions_def_name", db.Text, nullable=False),
     db.Column("partition", db.Text, nullable=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("display_label", db.Text, nullable=True),
 )
 
 ConcurrencyLimitsTable = db.Table(

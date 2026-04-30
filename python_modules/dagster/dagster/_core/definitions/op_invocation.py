@@ -14,6 +14,7 @@ from dagster._core.definitions.events import (
     Output,
 )
 from dagster._core.definitions.output import DynamicOutputDefinition, OutputDefinition
+from dagster._core.definitions.resource_annotation import get_resource_arg_specs
 from dagster._core.definitions.result import AssetResult
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
@@ -43,11 +44,11 @@ def _separate_args_and_kwargs(
     compute_fn: "DecoratedOpFunction",
     args: tuple[Any, ...],
     kwargs: dict[str, Any],
-    resource_arg_mapping: dict[str, Any],
+    resource_arg_names: set[str],
 ) -> SeparatedArgsKwargs:
-    """Given a decorated compute function, a set of args and kwargs, and set of resource param names,
-    separates the set of resource inputs from op/asset inputs returns a tuple of the categorized
-    args and kwargs.
+    """Given a decorated compute function, a set of args and kwargs, and resource param names,
+    separates the set of resource inputs from op/asset inputs and returns a tuple of the
+    categorized args and kwargs.
 
     We use the remaining args and kwargs to cleanly invoke the compute function, and we use the
     extracted resource inputs to populate the execution context.
@@ -65,7 +66,7 @@ def _separate_args_and_kwargs(
     for i, arg in enumerate(args):
         param = params_without_context[i] if i < len(params_without_context) else None
         if param and param.kind != inspect.Parameter.KEYWORD_ONLY:
-            if param.name in resource_arg_mapping:
+            if param.name in resource_arg_names:
                 resources_from_args_and_kwargs[param.name] = arg
                 continue
             if param.name == "config":
@@ -75,7 +76,7 @@ def _separate_args_and_kwargs(
         adjusted_args.append(arg)
 
     # Get any kwargs that correspond to resource inputs & strip them from the kwargs dict
-    for resource_arg in resource_arg_mapping:
+    for resource_arg in resource_arg_names:
         if resource_arg in kwargs:
             resources_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
 
@@ -175,7 +176,8 @@ def direct_invocation_result(
         context = args[0]
         args = args[1:]
 
-    resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
+    resource_arg_specs = get_resource_arg_specs(compute_fn.decorated_fn)
+    resource_arg_names = {spec.name for spec in resource_arg_specs}
 
     # The user is allowed to invoke an op with an arbitrary mix of args and kwargs.
     # We ensure that these args and kwargs are correctly categorized as inputs, config, or resource objects and then validated.
@@ -187,7 +189,7 @@ def direct_invocation_result(
     # - Inputs are type checked
     #
     # We recollect all the varying args/kwargs into a dictionary and invoke the user-defined function with kwargs only.
-    extracted = _separate_args_and_kwargs(compute_fn, args, kwargs, resource_arg_mapping)
+    extracted = _separate_args_and_kwargs(compute_fn, args, kwargs, resource_arg_names)
 
     input_args = extracted.input_args
     input_kwargs = extracted.input_kwargs
@@ -221,7 +223,7 @@ def direct_invocation_result(
             config_arg_cls=(
                 compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
             ),
-            resource_args=resource_arg_mapping,
+            resource_args=resource_arg_specs,
         )
         return _type_check_output_wrapper(op_def, result, bound_context)  # type: ignore # (pyright bug)
     except Exception:

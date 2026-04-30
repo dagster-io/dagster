@@ -527,10 +527,29 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        *,
+        labels: Mapping[str, str] | None = None,
     ) -> None:
         """Add a partition for the specified dynamic partitions definition."""
         raise NotImplementedError()
+
+    def get_dynamic_partition_labels(self, partitions_def_name: str) -> dict[str, str]:
+        """Get a mapping of partition key -> display label for partitions that have a label set."""
+        return {}
+
+    def set_dynamic_partition_label(
+        self, partitions_def_name: str, partition_key: str, label: str
+    ) -> None:
+        """Set the display label for an existing dynamic partition key."""
+        from dagster._core.errors import DagsterInvalidInvocationError
+
+        raise DagsterInvalidInvocationError(
+            "Dynamic partition labels require a database schema migration. Run"
+            " `dagster instance migrate`."
+        )
 
     @abstractmethod
     def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:

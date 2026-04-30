@@ -422,6 +422,18 @@ GET_ASSET_PARTITIONS = """
     }
 """
 
+GET_ASSET_PARTITION_LABELS = """
+    query AssetNodeQuery($assetKeys: [AssetKeyInput!]) {
+        assetNodes(assetKeys: $assetKeys) {
+            id
+            partitionKeyLabels {
+                key
+                label
+            }
+        }
+    }
+"""
+
 GET_ASSET_PARTITIONS_CONNECTION = """
     query AssetNodeQuery($assetKeys: [AssetKeyInput!], $limit: Int!, $ascending: Boolean!, $cursor: String) {
         assetNodes(assetKeys: $assetKeys) {
@@ -1956,6 +1968,32 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert asset_node["partitionKeys"] and len(asset_node["partitionKeys"]) > 100
         assert asset_node["partitionKeys"][0] == "2021-05-05-01:00"
         assert asset_node["partitionKeys"][1] == "2021-05-05-02:00"
+
+    def test_dynamic_asset_partition_key_labels(self, graphql_context: WorkspaceRequestContext):
+        graphql_context.instance.add_dynamic_partitions(
+            "foo",
+            ["apple", "banana"],
+            labels={"apple": "Apple label", "banana": "Banana label"},
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_PARTITION_LABELS,
+            variables={
+                "assetKeys": [
+                    {"path": ["upstream_dynamic_partitioned_asset"]},
+                    {"path": ["upstream_static_partitioned_asset"]},
+                ]
+            },
+        )
+
+        assert result.data
+        assert len(result.data["assetNodes"]) == 2
+        assert result.data["assetNodes"][0]["partitionKeyLabels"] == [
+            {"key": "apple", "label": "Apple label"},
+            {"key": "banana", "label": "Banana label"},
+        ]
+        assert result.data["assetNodes"][1]["partitionKeyLabels"] == []
 
     def test_asset_partition_key_connection(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(

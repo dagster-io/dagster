@@ -111,7 +111,10 @@ from dagster_graphql.schema.owners import (
     GrapheneTeamAssetOwner,
     GrapheneUserAssetOwner,
 )
-from dagster_graphql.schema.partition_keys import GraphenePartitionKeyConnection
+from dagster_graphql.schema.partition_keys import (
+    GraphenePartitionKeyConnection,
+    GraphenePartitionKeyLabel,
+)
 from dagster_graphql.schema.partition_mappings import GraphenePartitionMapping
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
@@ -305,6 +308,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     opVersion = graphene.String()
     partitionDefinition = graphene.Field(GraphenePartitionDefinition)
     partitionKeys = non_null_list(graphene.String)
+    partitionKeyLabels = non_null_list(GraphenePartitionKeyLabel)
     partitionKeyConnection = graphene.Field(
         GraphenePartitionKeyConnection,
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
@@ -1314,6 +1318,41 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionKeys(self, graphene_info: ResolveInfo) -> Sequence[str]:
         return self._get_partition_keys(graphene_info)
+
+    def resolve_partitionKeyLabels(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[GraphenePartitionKeyLabel]:
+        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
+        from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
+
+        partitions_def = self._get_partitions_def()
+        dynamic_partitions_def_name: str | None
+
+        if isinstance(partitions_def, DynamicPartitionsDefinition):
+            dynamic_partitions_def_name = partitions_def.name
+        elif isinstance(partitions_def, MultiPartitionsDefinition):
+            dynamic_partitions_def_names = [
+                dim.partitions_def.name
+                for dim in partitions_def.partitions_defs
+                if isinstance(dim.partitions_def, DynamicPartitionsDefinition)
+                and dim.partitions_def.name is not None
+            ]
+            # Only support labels when exactly one dynamic dimension is present.
+            # Multi-dynamic-dimension assets are not yet supported; return [] rather
+            # than raising, since callers treat an empty list as "no labels available".
+            dynamic_partitions_def_name = (
+                dynamic_partitions_def_names[0] if len(dynamic_partitions_def_names) == 1 else None
+            )
+        else:
+            dynamic_partitions_def_name = None
+
+        if dynamic_partitions_def_name is None:
+            return []
+
+        labels = graphene_info.context.instance.get_dynamic_partition_labels(
+            dynamic_partitions_def_name
+        )
+        return [GraphenePartitionKeyLabel(key=k, label=v) for k, v in labels.items()]
 
     def resolve_partitionKeyConnection(
         self,

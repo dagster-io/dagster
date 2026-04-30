@@ -734,6 +734,40 @@ def test_add_dynamic_partitions_table(hostname, conn_string):
             assert instance.get_dynamic_partitions("foo") == []
 
 
+def test_dynamic_partition_labels_require_display_label_column(hostname, conn_string):
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            instance.add_dynamic_partitions("foo", ["foo"], labels={"foo": "Foo label"})
+            assert {"display_label"} <= get_columns(instance, "dynamic_partitions")
+
+            with instance.event_log_storage.index_connection() as conn:
+                conn.execute(db.text("ALTER TABLE dynamic_partitions DROP COLUMN display_label"))
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "display_label" not in get_columns(instance, "dynamic_partitions")
+            assert instance.get_dynamic_partition_labels("foo") == {}
+
+            instance.add_dynamic_partitions("foo", [])
+            instance.add_dynamic_partitions("foo", ["bar"])
+            assert set(instance.get_dynamic_partitions("foo")) == {"foo", "bar"}
+
+            with pytest.raises(DagsterInvalidInvocationError, match="dagster instance migrate"):
+                instance.add_dynamic_partitions("foo", ["baz"], labels={"baz": "Baz label"})
+
+            with pytest.raises(DagsterInvalidInvocationError, match="dagster instance migrate"):
+                instance.add_dynamic_partitions("foo", [], labels={"baz": "Baz label"})
+
+            with pytest.raises(DagsterInvalidInvocationError, match="dagster instance migrate"):
+                instance.event_log_storage.set_dynamic_partition_label(
+                    "foo", "foo", "Updated foo label"
+                )
+
+
 def _get_table_row_count(run_storage, table, with_non_null_id=False):
     query = db_select([db.func.count()]).select_from(table)
     if with_non_null_id:

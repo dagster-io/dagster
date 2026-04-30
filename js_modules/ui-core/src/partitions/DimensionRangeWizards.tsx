@@ -15,6 +15,7 @@ export const DimensionRangeWizards = ({
   displayedPartitionDefinition,
   repoAddress,
   refetch,
+  labelForPartition,
 }: {
   selections: PartitionDimensionSelection[];
   setSelections: Dispatch<SetStateAction<PartitionDimensionSelection[]>>;
@@ -28,6 +29,7 @@ export const DimensionRangeWizards = ({
   } | null;
   repoAddress?: RepoAddress;
   refetch?: () => Promise<void>;
+  labelForPartition?: (key: string) => string | undefined;
 }) => {
   return (
     <>
@@ -67,6 +69,7 @@ export const DimensionRangeWizards = ({
               )?.dynamicPartitionsDefinitionName
             }
             showQuickSelectOptionsForStatuses={selections.length === 1}
+            labelForPartition={labelForPartition}
           />
         </Box>
       ))}

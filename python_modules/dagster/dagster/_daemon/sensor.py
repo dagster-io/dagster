@@ -935,11 +935,22 @@ def _handle_dynamic_partitions_requests(
                 instance.add_dynamic_partitions(
                     request.partitions_def_name,
                     nonexistent_partitions,
+                    labels=request.partition_key_labels,
                 )
                 context.logger.info(
                     "Added partition keys to dynamic partitions definition"
                     f" '{request.partitions_def_name}': {nonexistent_partitions}"
                 )
+
+            # Update labels for partitions that already exist but have a new label
+            if existent_partitions and request.partition_key_labels:
+                for partition_key in existent_partitions:
+                    if partition_key in request.partition_key_labels:
+                        instance.set_dynamic_partition_label(
+                            request.partitions_def_name,
+                            partition_key,
+                            request.partition_key_labels[partition_key],
+                        )
 
             if existent_partitions:
                 context.logger.info(

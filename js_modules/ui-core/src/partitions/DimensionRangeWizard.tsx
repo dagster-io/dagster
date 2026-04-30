@@ -27,6 +27,7 @@ export const DimensionRangeWizard = ({
   repoAddress,
   refetch,
   showQuickSelectOptionsForStatuses,
+  labelForPartition,
 }: {
   selected: string[];
   setSelected: (selected: string[]) => void;
@@ -37,9 +38,11 @@ export const DimensionRangeWizard = ({
   repoAddress?: RepoAddress;
   refetch?: () => Promise<void>;
   showQuickSelectOptionsForStatuses: boolean;
+  labelForPartition?: (key: string) => string | undefined;
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
   const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
+  const scopedLabelForPartition = isDynamic ? labelForPartition : undefined;
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
 
@@ -280,6 +283,7 @@ export const DimensionRangeWizard = ({
               health={health}
               setShowCreatePartition={setShowCreatePartition}
               isDynamic={isDynamic}
+              labelForPartition={scopedLabelForPartition}
             />
           )}
         </Box>

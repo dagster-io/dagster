@@ -650,10 +650,24 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         )
 
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        *,
+        labels: Mapping[str, str] | None = None,
     ) -> None:
         return self._storage.event_log_storage.add_dynamic_partitions(
-            partitions_def_name, partition_keys
+            partitions_def_name, partition_keys, labels=labels
+        )
+
+    def get_dynamic_partition_labels(self, partitions_def_name: str) -> dict[str, str]:
+        return self._storage.event_log_storage.get_dynamic_partition_labels(partitions_def_name)
+
+    def set_dynamic_partition_label(
+        self, partitions_def_name: str, partition_key: str, label: str
+    ) -> None:
+        return self._storage.event_log_storage.set_dynamic_partition_label(
+            partitions_def_name, partition_key, label
         )
 
     def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
