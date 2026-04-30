@@ -17,7 +17,12 @@ fragment IssueFields on Issue {
     }
   }
   createdBy {
-    email
+    ... on DagsterCloudUser {
+      displayName
+    }
+    ... on ServiceUser {
+      displayName
+    }
   }
 }
 

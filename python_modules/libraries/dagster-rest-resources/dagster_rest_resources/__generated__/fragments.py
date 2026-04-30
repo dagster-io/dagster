@@ -21,7 +21,15 @@ class IssueFields(BaseModel):
             Field(discriminator="typename__"),
         ]
     ] = Field(alias="linkedObjects")
-    created_by: Optional["IssueFieldsCreatedBy"] = Field(alias="createdBy")
+    created_by: Optional[
+        Annotated[
+            Union[
+                "IssueFieldsCreatedByServiceUser",
+                "IssueFieldsCreatedByDagsterCloudUser",
+            ],
+            Field(discriminator="typename__"),
+        ]
+    ] = Field(alias="createdBy")
 
 
 class IssueFieldsLinkedObjectsAsset(BaseModel):
@@ -38,8 +46,14 @@ class IssueFieldsLinkedObjectsRun(BaseModel):
     id: str
 
 
-class IssueFieldsCreatedBy(BaseModel):
-    email: str
+class IssueFieldsCreatedByServiceUser(BaseModel):
+    typename__: Literal["ServiceUser"] = Field(alias="__typename")
+    display_name: str = Field(alias="displayName")
+
+
+class IssueFieldsCreatedByDagsterCloudUser(BaseModel):
+    typename__: Literal["DagsterCloudUser"] = Field(alias="__typename")
+    display_name: str = Field(alias="displayName")
 
 
 class SecretFields(BaseModel):

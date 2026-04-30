@@ -27,7 +27,7 @@ class TestFormatIssues:
                 title="Asset materialization failed",
                 description="The asset failed to materialize due to a connection error.",
                 status=DgApiIssueStatus.OPEN,
-                created_by_email="alice@example.com",
+                created_by_name="Alice Apple",
                 linked_objects=[
                     DgApiIssueLinkedRun(run_id="run-abc-123"),
                     DgApiIssueLinkedAsset(asset_key="my_asset"),
@@ -38,7 +38,7 @@ class TestFormatIssues:
                 title="Schedule missed execution",
                 description="The daily schedule did not execute as expected.",
                 status=DgApiIssueStatus.CLOSED,
-                created_by_email="bob@example.com",
+                created_by_name="Bob Brown",
                 linked_objects=[],
             ),
             DgApiIssue(
@@ -46,7 +46,7 @@ class TestFormatIssues:
                 title="Sensor error",
                 description="Sensor encountered an unhandled exception.",
                 status=DgApiIssueStatus.OPEN,
-                created_by_email="carol@example.com",
+                created_by_name="Carol Cherry",
                 context="Stack trace: ...",
                 linked_objects=[],
             ),
@@ -65,7 +65,7 @@ class TestFormatIssues:
                 title="First paginated issue",
                 description="Description for first paginated issue.",
                 status=DgApiIssueStatus.OPEN,
-                created_by_email="dave@example.com",
+                created_by_name="Dave Day",
                 linked_objects=[],
             ),
         ]
@@ -78,7 +78,7 @@ class TestFormatIssues:
             title="Critical pipeline failure",
             description="The pipeline failed with a critical error during execution.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="engineer@example.com",
+            created_by_name="Engineer Engine",
             linked_objects=[
                 DgApiIssueLinkedRun(run_id="run-xyz-789"),
                 DgApiIssueLinkedAsset(asset_key="namespace/my_critical_asset"),
@@ -145,7 +145,7 @@ class TestFormatIssues:
             title="Minimal issue",
             description="Only required fields.",
             status=DgApiIssueStatus.CLOSED,
-            created_by_email="user@example.com",
+            created_by_name="User D'User",
             linked_objects=[],
         )
         result = format_issue(issue, as_json=False)
@@ -158,7 +158,7 @@ class TestFormatIssues:
             title="Run failure issue",
             description="This issue is linked to a specific run.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="ops@example.com",
+            created_by_name="Ops Service Account",
             linked_objects=[DgApiIssueLinkedRun(run_id="run-failing-456")],
         )
         result = format_issue(issue, as_json=False)
@@ -171,7 +171,7 @@ class TestFormatIssues:
             title="New pipeline issue",
             description="Pipeline failed unexpectedly.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="creator@example.com",
+            created_by_name="Creator Clark",
             linked_objects=[],
         )
         result = format_issue(issue, as_json=False)
@@ -184,7 +184,7 @@ class TestFormatIssues:
             title="New pipeline issue",
             description="Pipeline failed unexpectedly.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="creator@example.com",
+            created_by_name="Creator Clark",
             linked_objects=[],
         )
         result = format_issue(issue, as_json=True)
@@ -198,7 +198,7 @@ class TestFormatIssues:
             title="Updated issue title",
             description="Updated description after investigation.",
             status=DgApiIssueStatus.CLOSED,
-            created_by_email="owner@example.com",
+            created_by_name="Owner O'Owner",
             linked_objects=[],
         )
         result = format_issue(issue, as_json=False)
@@ -211,7 +211,7 @@ class TestFormatIssues:
             title="Updated issue title",
             description="Updated description after investigation.",
             status=DgApiIssueStatus.CLOSED,
-            created_by_email="owner@example.com",
+            created_by_name="Owner O'Owner",
             linked_objects=[],
         )
         result = format_issue(issue, as_json=True)
@@ -225,7 +225,7 @@ class TestFormatIssues:
             title="Updated issue title",
             description="Updated description after investigation.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="owner@example.com",
+            created_by_name="Owner O'Owner",
             context="New context added during update.",
             linked_objects=[],
         )
@@ -239,7 +239,7 @@ class TestFormatIssues:
             title="Updated issue title",
             description="Updated description after investigation.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="owner@example.com",
+            created_by_name="Owner O'Owner",
             context="New context added during update.",
             linked_objects=[],
         )
@@ -259,7 +259,7 @@ class TestIssueDataProcessing:
                 title=f"Issue with status {status.value}",
                 description=f"Test issue for status {status.value}.",
                 status=status,
-                created_by_email="test@example.com",
+                created_by_name="Test Tester",
                 linked_objects=[],
             )
             for i, status in enumerate(DgApiIssueStatus)
@@ -277,7 +277,7 @@ class TestIssueDataProcessing:
             title="Test",
             description="Test description.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="test@example.com",
+            created_by_name="Test Tester",
             linked_objects=[],
         )
         issue_list = DgApiIssueList(items=[issue], cursor="1", has_more=True)
@@ -293,7 +293,7 @@ class TestIssueDataProcessing:
             title="Test",
             description="Test.",
             status=DgApiIssueStatus.OPEN,
-            created_by_email="test@example.com",
+            created_by_name="Test Tester",
             linked_objects=[],
         )
 

@@ -704,7 +704,12 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  displayName
+                }
+                ... on ServiceUser {
+                  displayName
+                }
               }
             }
             """
@@ -765,7 +770,12 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  displayName
+                }
+                ... on ServiceUser {
+                  displayName
+                }
               }
             }
             """
@@ -824,7 +834,12 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  displayName
+                }
+                ... on ServiceUser {
+                  displayName
+                }
               }
             }
             """
@@ -891,7 +906,12 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  displayName
+                }
+                ... on ServiceUser {
+                  displayName
+                }
               }
             }
             """
@@ -952,7 +972,12 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  displayName
+                }
+                ... on ServiceUser {
+                  displayName
+                }
               }
             }
             """
@@ -1010,7 +1035,12 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  displayName
+                }
+                ... on ServiceUser {
+                  displayName
+                }
               }
             }
             """

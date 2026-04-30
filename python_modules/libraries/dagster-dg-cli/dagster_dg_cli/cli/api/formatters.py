@@ -997,7 +997,7 @@ def format_issue(issue: "DgApiIssue", as_json: bool) -> str:
     fields: list[tuple[str, str]] = [
         ("Title", issue.title),
         ("Status", issue.status.value),
-        ("Created By", issue.created_by_email),
+        ("Created By", issue.created_by_name),
     ]
 
     run_ids = []
@@ -1032,7 +1032,7 @@ def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
 
     headers = ["STATUS", "TITLE", "ID", "CREATED BY"]
     rows = [
-        [issue.status.value, issue.title, issue.id, issue.created_by_email]
+        [issue.status.value, issue.title, issue.id, issue.created_by_name]
         for issue in issue_list.items
     ]
 

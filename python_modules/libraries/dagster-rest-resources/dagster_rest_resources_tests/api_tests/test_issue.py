@@ -17,7 +17,7 @@ from dagster_rest_resources.__generated__.create_issue import (
 )
 from dagster_rest_resources.__generated__.enums import IssueStatus
 from dagster_rest_resources.__generated__.fragments import (
-    IssueFieldsCreatedBy,
+    IssueFieldsCreatedByDagsterCloudUser,
     IssueFieldsLinkedObjectsAsset,
     IssueFieldsLinkedObjectsAssetKey,
     IssueFieldsLinkedObjectsRun,
@@ -69,7 +69,9 @@ def _make_issue_fields(**kwargs) -> dict:
         status=IssueStatus.OPEN,
         context=None,
         linkedObjects=[],
-        createdBy=IssueFieldsCreatedBy(email="test@email.com"),
+        createdBy=IssueFieldsCreatedByDagsterCloudUser(
+            __typename="DagsterCloudUser", displayName="test@email.com"
+        ),
     )
     defaults.update(kwargs)
     return defaults
@@ -108,7 +110,7 @@ class TestGetIssue:
         assert result.linked_objects[0].run_id == "run-123"
         assert isinstance(result.linked_objects[1], DgApiIssueLinkedAsset)
         assert result.linked_objects[1].asset_key == "test/asset"
-        assert result.created_by_email == "test@email.com"
+        assert result.created_by_name == "test@email.com"
 
     def test_none_response_raises(self):
         client = Mock()

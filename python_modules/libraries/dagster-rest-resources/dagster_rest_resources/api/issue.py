@@ -180,7 +180,7 @@ class DgApiIssueApi:
             title=issue.title,
             description=issue.description,
             status=issue.status,
-            created_by_email=issue.created_by.email if issue.created_by else "",
+            created_by_name=issue.created_by.display_name if issue.created_by else "",
             linked_objects=linked_objects,
             context=issue.context,
         )
