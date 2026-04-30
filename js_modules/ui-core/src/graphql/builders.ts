@@ -686,6 +686,7 @@ type AssetNode = {
   staleCausesByPartition: Maybe<Array<Array<StaleCause>>>;
   staleStatus: Maybe<StaleStatus>;
   staleStatusByPartition: Array<StaleStatus>;
+  storageAddress: Maybe<StorageAddress>;
   tags: Array<DefinitionTag>;
   targetingInstigators: Array<Instigator>;
   type: Maybe<ListDagsterType | NullableDagsterType | RegularDagsterType>;
@@ -5751,6 +5752,12 @@ type StopSensorMutationResult = {
 
 type StopSensorMutationResultOrError = PythonError | StopSensorMutationResult | UnauthorizedError;
 
+type StorageAddress = {
+  __typename: 'StorageAddress';
+  storageKind: Maybe<Scalars['String']['output']>;
+  tableName: Scalars['String']['output'];
+};
+
 type Subscription = {
   __typename: 'Subscription';
   capturedLogs: CapturedLogs;
@@ -7513,6 +7520,12 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('staleStatusByPartition')
         ? overrides.staleStatusByPartition!
         : [],
+    storageAddress:
+      overrides && overrides.hasOwnProperty('storageAddress')
+        ? overrides.storageAddress!
+        : relationshipsToOmit.has('StorageAddress')
+          ? ({} as StorageAddress)
+          : buildStorageAddress({}, relationshipsToOmit),
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     targetingInstigators:
       overrides && overrides.hasOwnProperty('targetingInstigators')
@@ -16107,6 +16120,20 @@ export const buildStopSensorMutationResult = (
         : relationshipsToOmit.has('InstigationState')
           ? ({} as InstigationState)
           : buildInstigationState({}, relationshipsToOmit),
+  };
+};
+
+export const buildStorageAddress = (
+  overrides?: Partial<StorageAddress>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'StorageAddress'} & StorageAddress => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StorageAddress');
+  return {
+    __typename: 'StorageAddress',
+    storageKind:
+      overrides && overrides.hasOwnProperty('storageKind') ? overrides.storageKind! : 'occaecati',
+    tableName: overrides && overrides.hasOwnProperty('tableName') ? overrides.tableName! : 'magni',
   };
 };
 

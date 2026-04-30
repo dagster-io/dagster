@@ -985,16 +985,6 @@
     "permanent": true
   },
   {
-    "source": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
-    "destination": "/getting-started/concepts#code-location",
-    "permanent": true
-  },
-  {
-    "source": "/deployment/code-locations/managing-code-locations-with-definitions",
-    "destination": "/getting-started/concepts#code-location",
-    "permanent": true
-  },
-  {
     "source": "/guides/deploy/code-locations/workspace-yaml",
     "destination": "/guides/build/projects/workspaces/workspace-yaml",
     "permanent": true

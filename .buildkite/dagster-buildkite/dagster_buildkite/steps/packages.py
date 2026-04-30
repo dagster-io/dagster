@@ -374,7 +374,7 @@ airline_demo_extra_cmds = [
     f"pushd {oss_path('examples/airline_demo')}",
     # Run the postgres db. We are in docker running docker
     # so this will be a sibling container.
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+    "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit
     # Can't use host networking on buildkite and communicate via localhost
     # between these sibling containers, so pass along the ip.
     *network_buildkite_container("postgres"),
@@ -389,7 +389,7 @@ def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
     if tox_factor and tox_factor.factor.startswith("postgres"):
         return [
             f"pushd {oss_path('python_modules/dagster-graphql/dagster_graphql_tests/graphql/')}",
-            "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+            "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
             # Can't use host networking on buildkite and communicate via localhost
             # between these sibling containers, so pass along the ip.
             *network_buildkite_container("postgres"),
@@ -405,7 +405,7 @@ def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
 deploy_docker_example_extra_cmds = [
     f"pushd {oss_path('examples/deploy_docker/from_source')}",
     "./build.sh",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+    "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit
     *network_buildkite_container("docker_example_network"),
     *connect_sibling_docker_container(
         "docker_example_network",
@@ -423,7 +423,7 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
         f"pushd {oss_path('python_modules/libraries/dagster-celery')}",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
         *network_buildkite_container("rabbitmq"),
@@ -456,7 +456,7 @@ ui_extra_cmds = [f"make -C {oss_path('.')} rebuild_ui"]
 
 mysql_extra_cmds = [
     f"pushd {oss_path('python_modules/libraries/dagster-mysql/dagster_mysql_tests/')}",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+    "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
     *network_buildkite_container("mysql"),
     *network_buildkite_container("mysql_pinned"),
     *network_buildkite_container("mysql_pinned_backcompat"),
@@ -469,7 +469,7 @@ mysql_extra_cmds = [
         "test-mysql-db-pinned-backcompat",
         "MYSQL_TEST_PINNED_BACKCOMPAT_DB_HOST",
     ),
-    # Wait for mysqld to accept connections; `docker-compose up -d` returns before
+    # Wait for mysqld to accept connections; `docker compose up -d` returns before
     # init is finished, which caused flaky ECONNREFUSED (111) failures on early-
     # running tests. Placed after network setup so the two overlap with mysqld init.
     wait_for_mysql_container("test-mysql-db"),
@@ -853,7 +853,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=[
                 "SNOWFLAKE_ACCOUNT",
                 "SNOWFLAKE_USER",
-                "SNOWFLAKE_BUILDKITE_PASSWORD",
+                "SNOWFLAKE_BUILDKITE_PRIVATE_KEY",
             ],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
@@ -864,7 +864,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=[
                 "SNOWFLAKE_ACCOUNT",
                 "SNOWFLAKE_USER",
-                "SNOWFLAKE_BUILDKITE_PASSWORD",
+                "SNOWFLAKE_DEMO_PRIVATE_KEY",
             ],
         ),
         PackageSpec(
@@ -1087,18 +1087,18 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pandas"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pyspark"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # pyspark<4 not available
             ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-polars"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-postgres"),

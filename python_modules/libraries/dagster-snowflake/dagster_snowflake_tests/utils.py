@@ -29,7 +29,7 @@ def temporary_snowflake_table() -> Iterator[str]:
             "snowflake": SnowflakeResource(
                 account=os.getenv("SNOWFLAKE_ACCOUNT"),
                 user=os.environ["SNOWFLAKE_USER"],
-                private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+                private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
                 database="TESTDB",
                 schema="TESTSCHEMA",
             )
@@ -55,7 +55,7 @@ def temporary_snowflake_view() -> Iterator[str]:
             "snowflake": SnowflakeResource(
                 account=os.getenv("SNOWFLAKE_ACCOUNT"),
                 user=os.environ["SNOWFLAKE_USER"],
-                private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+                private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
                 database="TESTDB",
                 schema="TESTSCHEMA",
             )
@@ -88,7 +88,7 @@ def temporary_snowflake_pipe() -> Iterator[str]:
             "snowflake": SnowflakeResource(
                 account=os.getenv("SNOWFLAKE_ACCOUNT"),
                 user=os.environ["SNOWFLAKE_USER"],
-                private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+                private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
                 database="TESTDB",
                 schema="TESTSCHEMA",
             )
@@ -124,7 +124,7 @@ def temporary_snowflake_stage() -> Iterator[str]:
             "snowflake": SnowflakeResource(
                 account=os.getenv("SNOWFLAKE_ACCOUNT"),
                 user=os.environ["SNOWFLAKE_USER"],
-                private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+                private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
                 database="TESTDB",
                 schema="TESTSCHEMA",
             )

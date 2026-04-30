@@ -2345,6 +2345,16 @@ def table_asset_4():
     pass
 
 
+@asset(
+    metadata={
+        "dagster/table_name": "db.schema.snowflake_table",
+        "dagster/storage_kind": "snowflake",
+    },
+)
+def table_asset_with_kind():
+    pass
+
+
 def define_assets():
     return [
         asset_one,
@@ -2428,6 +2438,7 @@ def define_assets():
         table_asset_2,
         table_asset_3,
         table_asset_4,
+        table_asset_with_kind,
         partitioned_asset_for_checks,
     ]
 

@@ -1,6 +1,9 @@
 import os
+from collections.abc import Mapping
+from typing import Any
 from unittest.mock import MagicMock, patch
 
+import dagster as dg
 import pytest
 from dagster import AssetsDefinition, SensorDefinition
 from dagster._utils.test.definitions import scoped_definitions_load_context
@@ -253,3 +256,106 @@ def test_dbt_cloud_component_from_yaml_with_sensor(mock_workspace_data):
         ):
             assert isinstance(component, DbtCloudComponent)
             assert component.create_sensor is True
+
+
+def test_dbt_cloud_component_translation_none_by_default(mock_workspace_data):
+    """Test that translation is None by default and does not alter asset specs."""
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=BASIC_DBT_CLOUD_COMPONENT_BODY,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert component.translation is None
+
+
+def test_dbt_cloud_component_translation_group_name_yaml(mock_workspace_data):
+    """Test that the translation YAML block is parsed and the resolved fn applies correctly."""
+    body = {
+        **BASIC_DBT_CLOUD_COMPONENT_BODY,
+        "attributes": {
+            **BASIC_DBT_CLOUD_COMPONENT_BODY["attributes"],
+            "translation": {
+                "group_name": "{{ node.fqn[1] if node.fqn|length > 1 else 'default' }}",
+            },
+        },
+    }
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert component.translation is not None
+
+            # Call the resolved Jinja2 translation fn directly to verify it works
+            # without hitting the real dbt Cloud API.
+            base_spec = dg.AssetSpec(key=dg.AssetKey("my_model"))
+            result = component.translation(base_spec, {"fqn": ["my_project", "my_model"]})
+            assert result.group_name == "my_model"
+
+            result_default = component.translation(base_spec, {"fqn": ["my_project"]})
+            assert result_default.group_name == "default"
+
+
+def test_dbt_cloud_component_translation_applies_to_asset_specs(
+    tmp_path, mock_workspace, mock_workspace_data
+):
+    """Test that a translation fn is applied when building defs from state."""
+
+    def my_translation(base_spec: dg.AssetSpec, dbt_props: Mapping[str, Any]) -> dg.AssetSpec:
+        fqn = dbt_props.get("fqn", [])
+        return base_spec.replace_attributes(group_name=fqn[1] if len(fqn) > 1 else "default")
+
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+        translation=my_translation,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+    mock_load_context = MagicMock()
+    defs = component.build_defs_from_state(mock_load_context, state_path)
+
+    assets = list(defs.assets) if defs.assets else []
+    assert len(assets) == 1
+    assert isinstance(assets[0], AssetsDefinition)
+    spec = next(iter(assets[0].specs))
+    # fqn for "model.my_project.my_model" is ["my_project", "my_model"] -> fqn[1] = "my_model"
+    assert spec.group_name == "my_model"
+
+
+def test_dbt_cloud_component_subclass_get_asset_spec(tmp_path, mock_workspace, mock_workspace_data):
+    """Test that a subclass can override get_asset_spec to customise asset specs."""
+
+    class CustomDbtCloudComponent(DbtCloudComponent):
+        def get_asset_spec(self, manifest, unique_id, project) -> dg.AssetSpec:
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+            return base_spec.replace_attributes(
+                tags={**base_spec.tags, "custom_tag": "custom_value"}
+            )
+
+    component = CustomDbtCloudComponent(
+        workspace=mock_workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+    mock_load_context = MagicMock()
+    defs = component.build_defs_from_state(mock_load_context, state_path)
+
+    assets = list(defs.assets) if defs.assets else []
+    assert len(assets) == 1
+    assert isinstance(assets[0], AssetsDefinition)
+    spec = next(iter(assets[0].specs))
+    assert spec.tags.get("custom_tag") == "custom_value"

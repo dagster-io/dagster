@@ -90,6 +90,7 @@ def build_asset_job(
     partitions_def: PartitionsDefinition | None = None,
     hooks: AbstractSet[HookDefinition] | None = None,
     op_retry_policy: RetryPolicy | None = None,
+    owners: Sequence[str] | None = None,
     _asset_selection_data: AssetSelectionData | None = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets. This is a private function that is used
@@ -196,6 +197,7 @@ def build_asset_job(
         asset_layer=asset_layer,
         hooks=hooks,
         op_retry_policy=op_retry_policy,
+        owners=owners,
         _asset_selection_data=_asset_selection_data,
     )
 

@@ -150,23 +150,23 @@ class TestMySQLInstance:
 
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "stop", service_name]
             )
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name]
             )
         except subprocess.CalledProcessError:
             pass
 
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name],
+                ["docker", "compose", "-f", docker_compose_file, "up", "-d", service_name],
                 stderr=subprocess.STDOUT,  # capture STDERR for error handling
             )
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode()
             raise MySQLDockerError(
-                f"Failed to launch docker container(s) via docker-compose: {err_text}",
+                f"Failed to launch docker container(s) via docker compose: {err_text}",
                 ex,
             ) from ex
 
@@ -176,10 +176,10 @@ class TestMySQLInstance:
 
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "stop", service_name]
             )
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name]
             )
         except subprocess.CalledProcessError:
             pass

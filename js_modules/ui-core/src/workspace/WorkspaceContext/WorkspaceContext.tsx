@@ -26,6 +26,8 @@ import {
 import {useApolloClient} from '../../apollo-client';
 import {AppContext} from '../../app/AppContext';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
+import type {AssetNodeKeyFragment} from '../../asset-graph/types/AssetNode.types';
 import {codeLocationStatusAtom} from '../../nav/useCodeLocationsStatus';
 import {useGetData} from '../../search/useIndexedDBCachedQuery';
 
@@ -279,6 +281,50 @@ function narrowToTypedResponse(raw: RawWorkspaceAssetsResponse): LocationWorkspa
   return raw as LocationWorkspaceAssetsQuery;
 }
 
+// Re-derives `dependedByKeys` and `repository` for every asset in a manifest
+// repo, instead of trusting whatever the server emitted on the manifest dict.
+// This lets us shrink the manifest payload on the server (drop both fields
+// from the asset manifest serializer) without changing anything on the client.
+//
+// - `dependedByKeys`: built from a per-repo reverse index over `dependencyKeys`,
+//   matching the server's per-repo `remote_node.child_keys` resolver — children
+//   outside the same repository were never included.
+// - `repository`: copied from the parent `Repository` / `RepositoryLocation`,
+//   which the manifest query already returns at the surrounding levels.
+function deriveAssetNodes(
+  rawAssetNodes: WorkspaceAssetFragment[],
+  repo: {id: string; name: string},
+  location: {id: string; name: string},
+): WorkspaceAssetFragment[] {
+  const repository: WorkspaceAssetFragment['repository'] = {
+    __typename: 'Repository',
+    id: repo.id,
+    name: repo.name,
+    location: {
+      __typename: 'RepositoryLocation',
+      id: location.id,
+      name: location.name,
+    },
+  };
+  const childrenByParent = new Map<string, AssetNodeKeyFragment[]>();
+  for (const node of rawAssetNodes) {
+    for (const dep of node.dependencyKeys) {
+      const parentToken = tokenForAssetKey(dep);
+      const list = childrenByParent.get(parentToken);
+      if (list) {
+        list.push(node.assetKey);
+      } else {
+        childrenByParent.set(parentToken, [node.assetKey]);
+      }
+    }
+  }
+  return rawAssetNodes.map((node) => ({
+    ...node,
+    dependedByKeys: childrenByParent.get(tokenForAssetKey(node.assetKey)) ?? [],
+    repository,
+  }));
+}
+
 function transformManifestResponse(
   raw: LocationWorkspaceAssetsManifestQuery,
 ): LocationWorkspaceAssetsQuery {
@@ -313,9 +359,10 @@ function transformManifestResponse(
           // assetManifest is GenericScalar (any | null) on the wire. The backend
           // serializer guarantees its dicts match the WorkspaceAssetFragment shape;
           // we still defend against a non-array landing here.
-          const assetNodes: WorkspaceAssetFragment[] = Array.isArray(assetManifest)
+          const rawAssetNodes: WorkspaceAssetFragment[] = Array.isArray(assetManifest)
             ? assetManifest
             : [];
+          const assetNodes = deriveAssetNodes(rawAssetNodes, rest, locationOrLoadError);
           return {...rest, assetNodes};
         }),
       },

@@ -76,7 +76,7 @@ def backcompat_extra_cmds(_, factor: ToxFactor | None) -> list[str]:
                 user_code_definitions_file,
             ]
         ),
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         *network_buildkite_container("webserver_service_network"),
         *connect_sibling_docker_container(
             "webserver_service_network",
@@ -269,7 +269,7 @@ def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersi
         f"pushd {oss_path('python_modules/libraries/dagster-celery')}",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
         *network_buildkite_container("rabbitmq"),

@@ -31,15 +31,17 @@ def rabbitmq():
 
     try:
         subprocess.check_output(
-            ["docker-compose", "-f", docker_compose_file, "stop", service_name],
+            ["docker", "compose", "-f", docker_compose_file, "stop", service_name],
         )
         subprocess.check_output(
-            ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
+            ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name],
         )
     except Exception:
         pass
 
-    subprocess.check_output(["docker-compose", "-f", docker_compose_file, "up", "-d", service_name])
+    subprocess.check_output(
+        ["docker", "compose", "-f", docker_compose_file, "up", "-d", service_name]
+    )
 
     print("Waiting for rabbitmq to be ready...")  # noqa: T201
     while True:
@@ -53,10 +55,10 @@ def rabbitmq():
     finally:
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "stop", service_name]
             )
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name]
             )
         except Exception:
             pass

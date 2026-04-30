@@ -506,8 +506,10 @@ def test_to_job_incomplete_default_config():
     def my_graph():
         my_op()
 
-    default_config_error = "Error in config when building job 'my_job' "
-    invalid_default_error = "Invalid default_value for Field."
+    default_config_error = "Error in config when building job 'my_job': the provided config is missing required fields or contains invalid entries"
+    invalid_default_error = (
+        "Invalid default_value for Field. Ensure all required config entries are provided"
+    )
     invalid_configs = [
         (
             {},

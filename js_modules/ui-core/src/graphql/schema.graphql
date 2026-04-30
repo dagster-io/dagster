@@ -733,6 +733,7 @@ type AssetNode {
   assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
+  storageAddress: StorageAddress
   tags: [DefinitionTag!]!
   kinds: [String!]!
   op: SolidDefinition
@@ -981,6 +982,11 @@ type PartitionStats {
   numPartitions: Int!
   numFailed: Int!
   numMaterializing: Int!
+}
+
+type StorageAddress {
+  storageKind: String
+  tableName: String!
 }
 
 type DefinitionTag {

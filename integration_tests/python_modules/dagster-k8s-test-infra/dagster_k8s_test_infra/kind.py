@@ -16,6 +16,21 @@ from dagster_k8s_test_infra.integration_utils import check_output, which_, withi
 CLUSTER_INFO_DUMP_DIR = "kind-info-dump"
 
 
+def _docker_pull_with_retry(image, attempts=3, backoff_seconds=5):
+    # Docker Hub intermittently returns 5xx from its blob CDN; a couple of retries with
+    # backoff is enough to mask transient failures without masking real auth/404 errors
+    # (those will still fail every attempt).
+    for attempt in range(1, attempts + 1):
+        try:
+            check_output(["docker", "pull", image])
+            return
+        except subprocess.CalledProcessError:
+            if attempt == attempts:
+                raise
+            print(f"docker pull {image} failed (attempt {attempt}/{attempts}); retrying...")
+            time.sleep(backoff_seconds)
+
+
 def kind_load_images(cluster_name, local_dagster_test_image, additional_images=None):
     check.str_param(cluster_name, "cluster_name")
     check.str_param(local_dagster_test_image, "local_dagster_test_image")
@@ -23,10 +38,9 @@ def kind_load_images(cluster_name, local_dagster_test_image, additional_images=N
 
     print("Loading images into kind cluster...")
 
-    # Pull rabbitmq/pg images
     for image in additional_images:
         print(f"kind: Loading image {image} into kind cluster {cluster_name}")
-        check_output(["docker", "pull", image])
+        _docker_pull_with_retry(image)
         check_output(["kind", "load", "docker-image", "--name", cluster_name, image])
 
     print(f"kind: Loading image {local_dagster_test_image} into kind cluster {cluster_name}")

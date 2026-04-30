@@ -60,7 +60,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 SHARED_BUILDKITE_SNOWFLAKE_CONF: Mapping[str, Any] = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": "BUILDKITE",
-    "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
+    "private_key": os.getenv("SNOWFLAKE_BUILDKITE_PRIVATE_KEY", ""),
     "warehouse": "BUILDKITE",
 }
 
@@ -71,7 +71,7 @@ pythonic_snowflake_io_manager = SnowflakePySparkIOManager(
     database=DATABASE,
     account=EnvVar("SNOWFLAKE_ACCOUNT"),
     user="BUILDKITE",
-    password=EnvVar("SNOWFLAKE_BUILDKITE_PASSWORD"),
+    private_key=EnvVar("SNOWFLAKE_BUILDKITE_PRIVATE_KEY"),
     warehouse="BUILDKITE",
 )
 old_snowflake_io_manager = snowflake_pyspark_io_manager.configured(

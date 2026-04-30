@@ -313,7 +313,7 @@ def test_fetch_last_updated_timestamps_missing_table():
         connector="sqlalchemy",
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+        private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     ).get_connection() as conn:
@@ -378,7 +378,7 @@ def test_fetch_last_updated_timestamps(db_str: str):
                 "snowflake": SnowflakeResource(
                     account=os.getenv("SNOWFLAKE_ACCOUNT"),
                     user=os.environ["SNOWFLAKE_USER"],
-                    private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+                    private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
                     database="TESTDB" if db_str is None else db_str,
                 )
             },
@@ -404,7 +404,7 @@ def test_resources_snowflake_sqlalchemy_connection():
         connector="sqlalchemy",
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+        private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     ).get_connection() as conn:
@@ -460,7 +460,7 @@ def test_snowpark_session_integration():
     resource = SnowflakeResource(
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     )
@@ -479,7 +479,7 @@ def test_get_databases_integration():
     resource = SnowflakeResource(
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     )
@@ -500,7 +500,7 @@ def test_get_schemas_integration():
     resource = SnowflakeResource(
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     )
@@ -522,7 +522,7 @@ def test_get_tables_integration():
         resource = SnowflakeResource(
             account=os.getenv("SNOWFLAKE_ACCOUNT"),
             user=os.environ["SNOWFLAKE_USER"],
-            password=os.getenv("SNOWFLAKE_PASSWORD"),
+            private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
             database="TESTDB",
             schema="TESTSCHEMA",
         )
@@ -542,7 +542,7 @@ def test_multiple_patterns_integration():
     resource = SnowflakeResource(
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     )
@@ -570,7 +570,7 @@ def test_get_views_integration():
         resource = SnowflakeResource(
             account=os.getenv("SNOWFLAKE_ACCOUNT"),
             user=os.environ["SNOWFLAKE_USER"],
-            password=os.getenv("SNOWFLAKE_PASSWORD"),
+            private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
             database="TESTDB",
             schema="TESTSCHEMA",
         )
@@ -593,7 +593,7 @@ def test_get_pipes_integration():
         resource = SnowflakeResource(
             account=os.getenv("SNOWFLAKE_ACCOUNT"),
             user=os.environ["SNOWFLAKE_USER"],
-            password=os.getenv("SNOWFLAKE_PASSWORD"),
+            private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
             database="TESTDB",
             schema="TESTSCHEMA",
         )
@@ -616,7 +616,7 @@ def test_get_stages_integration():
         resource = SnowflakeResource(
             account=os.getenv("SNOWFLAKE_ACCOUNT"),
             user=os.environ["SNOWFLAKE_USER"],
-            password=os.getenv("SNOWFLAKE_PASSWORD"),
+            private_key=os.getenv("SNOWFLAKE_DEMO_PRIVATE_KEY"),
             database="TESTDB",
             schema="TESTSCHEMA",
         )

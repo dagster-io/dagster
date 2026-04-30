@@ -3,7 +3,7 @@ title: Dagster & ADBC
 sidebar_label: ADBC
 sidebar_position: 1
 description: The community-supported dagster-adbc package provides an ADBCResource for connecting to ADBC-compatible databases in Dagster.
-tags: [community-supported, database]
+tags: [community-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-adbc
 pypi: https://pypi.org/project/dagster-adbc/
 sidebar_custom_props:

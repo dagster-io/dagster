@@ -4,6 +4,11 @@ export const config: VercelConfig = {
   buildCommand: "echo 'Starting build...' && yarn build-api-docs && yarn build-kinds-tags && yarn build",
   cleanUrls: true,
   trailingSlash: false,
+  /**
+   * The redirects directory contains JSON files of server-side redirects handled by Vercel.
+   * These files are organized by destination, e.g., guides.json contains redirects TO
+   * destination URLs that start with `/guides`.
+   */
   bulkRedirectsPath: 'redirects',
   redirects: [
     /**

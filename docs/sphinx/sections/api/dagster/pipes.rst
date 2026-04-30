@@ -8,7 +8,7 @@ Dagster Pipes
 
 For a detailed look at the Pipes process, including how to customize it, see `Dagster Pipes details and customization <https://docs.dagster.io/integrations/external-pipelines/dagster-pipes-details-and-customization>`__.
 
-**Looking to write code in an external process?** Refer to the API reference for the separately-installed `dagster-pipes <https://docs.dagster.io/api/libraries/dagster-pipes>`_ library. 
+**Looking to write code in an external process?** Refer to the API reference for the separately-installed `dagster-pipes <https://docs.dagster.io/integrations/libraries/pipes>`_ library. 
 
 ********
 Sessions

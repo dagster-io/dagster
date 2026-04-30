@@ -31,7 +31,7 @@ def connect_sibling_docker_container(
 
 def wait_for_mysql_container(container_name: str, port: int = 3306) -> str:
     """Shell command that polls `mysqladmin ping` inside `container_name` until it
-    succeeds, or fails after ~120s. `docker-compose up -d` returns before mysqld
+    succeeds, or fails after ~120s. `docker compose up -d` returns before mysqld
     finishes initializing, so tests that run early were hitting ECONNREFUSED (111).
     """
     return (

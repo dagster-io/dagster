@@ -56,6 +56,12 @@ KNOWN_DAGSTER_INBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
     "d1dcf85a65f353dc374619d832ad602a2ae9f058",
     # [dg] Bump actions/checkout -- synced extra events/__init__.py
     "7f043ce962acab36f2919cfc8a02dac623eb4244",
+    # [dagster-postgres] add workload identity federation auth -- inbound sync of John
+    # Mav's OSS PR #33735 included a stale revert of Joe Braha's cluster_id additions in
+    # dagster-oss/.buildkite/.../trigger_step_builder.py. Joe's cluster_id was later
+    # intentionally reverted by "fix: revert trigger cluster_id + add queue to dogfood
+    # gate steps (#23396)", so the current state is consistent.
+    "e3554b46b14c77826141314ee2086be3ae04b71c",
 ]
 
 KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
@@ -105,6 +111,15 @@ KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
     # [dg] Bump actions/setup-python -- synced extra dg-cli templates,
     # runtime-environment.md, and .github/workflows files
     "5fa0b5b4e301eef12594fba117573789a85d1ad7",
+    # buildkite: add cluster_id to trigger steps (#23383) -- outbound sync to OSS
+    # incorrectly reverted John Mav's WIF work in OSS (helm/*, dagster-postgres/*).
+    # Re-added by the next outbound sync (4ad89db4, Isaac's UI fix).
+    "b8609e25b2fe72e202bd6dac2062a3de66e1eda7",
+    # [ui] Fix partition filter input unresponsive (#23393) -- outbound sync to OSS
+    # carried 18 extra files: re-added John Mav's WIF work (fixing b8609e25's revert)
+    # and reverted Joe Braha's cluster_id. Joe's cluster_id was later intentionally
+    # reverted internally by #23396, so current state is consistent.
+    "4ad89db4436a3ea6bc0804676093fb604ea2ff3a",
 ]
 
 KNOWN_SKILLS_INBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
@@ -119,6 +134,10 @@ KNOWN_SKILLS_OUTBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
     "019683d75c3d4b8ecc98232912e727d74589d9db",
     "77130e5db58f357f12e6c60f5c2257f14df8d4b5",
     "1b4c90176aae779c4e0bd1eb580d200dc93de083",
+    # fix(copybara): update file:// origin URL (#23385) -- outbound sync to skills carried
+    # 3 extra plugin.json bumps (.claude-plugin/plugin.json, dagster-expert, dignified-python)
+    # from a stale skills snapshot
+    "3f04acfbd53705f63124c034f74966339cc04481",
 ]
 
 

@@ -2974,6 +2974,22 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'table_asset_with_kind',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'table_asset_with_kind',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'tag_asset_op',
           }),
           'invocations': list([

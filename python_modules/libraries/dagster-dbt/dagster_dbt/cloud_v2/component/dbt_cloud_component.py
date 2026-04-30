@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import replace
 from functools import cached_property
 from pathlib import Path
@@ -13,6 +13,12 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
 from dagster.components.utils.defs_state import DefsStateConfig, DefsStateConfigArgs
+from dagster.components.utils.translation import (
+    ComponentTranslator,
+    TranslationFn,
+    TranslationFnResolver,
+    create_component_translator_cls,
+)
 from dagster_shared.serdes import deserialize_value, serialize_value
 from pydantic import Field
 
@@ -21,6 +27,7 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
+    get_node,
 )
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
@@ -170,6 +177,11 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         ),
     ] = DBT_DEFAULT_SELECTOR
 
+    translation: Annotated[
+        TranslationFn[Mapping[str, Any]] | None,
+        TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
+    ] = None
+
     translation_settings: DagsterDbtComponentTranslatorSettings = Field(
         default_factory=DagsterDbtComponentTranslatorSettings,
         description="Allows enabling or disabling various features for translating dbt models in to Dagster assets.",
@@ -200,9 +212,56 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         return DefsStateConfig.from_args(self.defs_state, default_key=key)
 
     @cached_property
-    def translator(self) -> DagsterDbtTranslator:
+    def _base_translator(self) -> DagsterDbtTranslator:
         settings = replace(self.translation_settings, enable_code_references=False)
         return DagsterDbtTranslator(settings)
+
+    @public
+    def get_asset_spec(
+        self, manifest: Mapping[str, Any], unique_id: str, project: Any
+    ) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given dbt node.
+
+        This method can be overridden in a subclass to customize how dbt nodes are converted
+        to Dagster asset specs. By default, it delegates to the configured DagsterDbtTranslator.
+
+        Args:
+            manifest: The dbt manifest dictionary containing information about all dbt nodes.
+            unique_id: The unique identifier for the dbt node (e.g., "model.my_project.my_model").
+            project: Always ``None`` for dbt Cloud (execution is remote).
+
+        Returns:
+            An AssetSpec that represents the dbt node as a Dagster asset.
+
+        Example:
+            .. code-block:: python
+
+                from dagster_dbt import DbtCloudComponent
+                import dagster as dg
+
+                class MyDbtCloudComponent(DbtCloudComponent):
+                    def get_asset_spec(self, manifest, unique_id, project):
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        return base_spec.replace_attributes(
+                            tags={**base_spec.tags, "custom_tag": "my_value"}
+                        )
+        """
+        return self._base_translator.get_asset_spec(manifest, unique_id, project)
+
+    def get_asset_check_spec(
+        self,
+        asset_spec: dg.AssetSpec,
+        *,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Any,
+    ) -> dg.AssetCheckSpec | None:
+        return self._base_translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)
+
+    @cached_property
+    def translator(self) -> DagsterDbtTranslator:
+        settings = replace(self.translation_settings, enable_code_references=False)
+        return DbtCloudComponentTranslator(self, settings)
 
     @property
     def op_config_schema(self) -> type[dg.Config] | None:
@@ -283,3 +342,33 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             context=context,
         )
         yield from invocation.wait()
+
+
+class DbtCloudComponentTranslator(
+    create_component_translator_cls(DbtCloudComponent, DagsterDbtTranslator),
+    ComponentTranslator[DbtCloudComponent],
+):
+    """Translator for :py:class:`DbtCloudComponent` that applies the optional ``translation``
+    function from the component's YAML configuration on top of the base
+    :py:class:`DagsterDbtTranslator` output.
+
+    Subclasses of :py:class:`DbtCloudComponent` that override ``get_asset_spec`` are
+    automatically detected and called before the YAML ``translation`` layer is applied.
+    """
+
+    def __init__(
+        self,
+        component: DbtCloudComponent,
+        settings: DagsterDbtComponentTranslatorSettings | None,
+    ):
+        self._component = component
+        super().__init__(settings)
+
+    def get_asset_spec(
+        self, manifest: Mapping[str, Any], unique_id: str, project: Any
+    ) -> dg.AssetSpec:
+        base_spec = super().get_asset_spec(manifest, unique_id, project)
+        if self.component.translation is None:
+            return base_spec
+        dbt_props = get_node(manifest, unique_id)
+        return self.component.translation(base_spec, dbt_props)
