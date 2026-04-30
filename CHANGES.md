@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.13.3 (core) / 0.29.3 (libraries)
+
+### New
+
+- Added an `owners` parameter to `define_asset_job`, mirroring the field on regular jobs.
+- Improved error messages when required config is missing in Dagster jobs, with clearer guidance on which fields are missing and example config to provide.
+- `LOGS_CAPTURED` event messages no longer say "Started capturing logs", since compute log managers typically upload logs on completion rather than streaming in real time.
+- [ui] Added client-side validation for the deployment settings YAML editor that warns when unknown keys are detected.
+- [ui] Op tags are now shown on the asset details page in a separate "Op tags" row, alongside the asset's own tags.
+- [ui] Redesigned the sensor dry run dialog with a stacked cursor layout, copy buttons for cursor values, and an inline run config preview.
+- [dagster-clickhouse] Added new `dagster-clickhouse`, `dagster-clickhouse-pandas`, and `dagster-clickhouse-polars` libraries with native ClickHouse resources, IO managers, and `dg` components.
+- [dagster-cloud] The `EcsUserCodeLauncher` now accepts a `repository_credentials` config option, allowing ECR credentials to be configured at the agent or deployment level instead of only per code location.
+- [dagster-postgres] Added workload identity federation (WIF) authentication for PostgreSQL via a new `auth_provider` config option (`azure_wif`, `gcp_wif`, or `aws_wif`), with optional extras `dagster-postgres[azure]`, `dagster-postgres[gcp]`, and `dagster-postgres[aws]`. The Helm chart supports WIF via `global.postgresqlAuthWifEnabled`. (Thanks, [@JohnMav](https://github.com/JohnMav)!)
+
+### Bugfixes
+
+- Fixed an error when starting a schedule whose name was previously used for a sensor (or vice versa).
+- Fixed a race condition in Pipes that could cause dynamically-added log readers to be missed.
+- [dg] Fixed bugs in the GitLab hybrid scaffolder used by `dg plus deploy configure`.
+- [ui] Fixed the open/close behavior of the partition selector in the materialization dialog.
+- [ui] Fixed false-positive syntax errors in asset selection inputs while the autocomplete dropdown was open.
+- [ui] Fixed `key:value` autocompletion in search inputs not advancing into value-suggestion context when accepting a key with the Enter key.
+- [ui] Fixed the asset catalog "Group by Owner" and "Group by Tags" views not showing assets with empty owner or tag arrays under a "None" section.
+- [ui] Fixed asset selection summary tiles with long titles visually overlapping with adjacent UI.
+- [ui] Fixed monospace text in several places that had reverted to the default font.
+- [dagster-airbyte] Fixed errors parsing timestamps from newer versions of the Airbyte API.
+- [dagster-cloud] Fixed an issue where the `--defs-state-info` argument was applied to the multipex server command but not to the gRPC server command in serverless deployments.
+- [dagster-dbt] Fixed an issue where dbt assets configured with `enable_duplicate_source_asset_keys` could emit duplicate dependency entries and ambiguous source metadata when multiple dbt sources resolved to the same asset key.
+- [dagster-k8s] Added a workaround for an upstream issue in the Kubernetes Python client where setting the `NO_PROXY` or `no_proxy` environment variable did not affect the configuration of Kubernetes API calls.
+- [dagster-snowflake] Replaced deprecated Pydantic `validator` usage with `field_validator` to eliminate Pydantic deprecation warnings.
+
+### Documentation
+
+- Added documentation for writing unit tests for declarative automation conditions.
+- Added documentation for branch deployment RBAC.
+- Added a dedicated documentation page for branch deployment concurrency settings.
+- Documented the new asset-event webhook tokens.
+- Clarified asset metric monitor behavior in the alerts documentation.
+- Added required API scopes to the Databricks connection documentation.
+- Updated the Databricks connection documentation with an OAuth flow for service principals.
+- [dg] Documented the `dg` CLI configuration option for setting a custom virtual environment path.
+
 ## 1.13.2 (core) / 0.29.2 (libraries)
 
 ### New
