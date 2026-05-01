@@ -69,6 +69,7 @@ Quick reference for Python packages in the Dagster repository.
 **dagster-airbyte**: `python_modules/libraries/dagster-airbyte`
 **dagster-fivetran**: `python_modules/libraries/dagster-fivetran`
 **dagster-sling**: `python_modules/libraries/dagster-sling`
+**dagster-soda**: `python_modules/libraries/dagster-soda`
 **dagster-dlt**: `python_modules/libraries/dagster-dlt`
 **dagster-polytomic**: `python_modules/libraries/dagster-polytomic`
 
