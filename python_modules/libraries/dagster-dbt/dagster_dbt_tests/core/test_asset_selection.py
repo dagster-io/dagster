@@ -8,11 +8,13 @@ import pytest
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
-from dagster_dbt import DagsterDbtTranslator, build_dbt_asset_selection
+from dagster_dbt import DagsterDbtTranslator, DbtProject, build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+from dagster_dbt.utils import _select_unique_ids_from_cli, _select_unique_ids_from_manifest
 from dagster_shared.check.functions import ParameterCheckError
+from dagster_dbt_tests.dbt_projects import test_dependencies_path, test_jaffle_shop_path, test_metadata_path
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AndAssetSelection
@@ -331,6 +333,199 @@ def test_dbt_asset_selection_selector(
     asset_selection = build_dbt_asset_selection([selected_dbt_assets])
     selected_asset_keys = asset_selection.resolve([selected_dbt_assets])
     assert selected_asset_keys == expected_asset_keys
+
+
+@pytest.mark.parametrize(
+    ["dbt_selector", "expected_dbt_resource_names"],
+    [
+        (
+            "select-with-fqn",
+            {
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        (
+            "select-with-path",
+            {
+                "raw_customers",
+                "raw_orders",
+                "raw_payments",
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        (
+            "select-staging-with-path",
+            {
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+            },
+        ),
+        (
+            "select-model-sql-files",
+            {
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        ("select-root-sql-files", set()),
+        (
+            "select-staging-schema-patch",
+            {
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+            },
+        ),
+        (
+            "select-model-directories",
+            {
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+                "customers",
+                "orders",
+            },
+        ),
+        (
+            "select-staging-directory",
+            {
+                "stg_customers",
+                "stg_orders",
+                "stg_payments",
+            },
+        ),
+        ("select-missing-path", set()),
+    ],
+)
+def test_dbt_asset_selection_selector_path_method(
+    test_jaffle_shop_manifest: dict[str, Any],
+    dbt_selector: str,
+    expected_dbt_resource_names: set[str],
+) -> None:
+    expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def all_dbt_assets(): ...
+
+    asset_selection = build_dbt_asset_selection([all_dbt_assets], dbt_selector=dbt_selector)
+    selected_asset_keys = asset_selection.resolve([all_dbt_assets])
+
+    assert selected_asset_keys == expected_asset_keys
+
+
+@pytest.mark.parametrize(
+    "dbt_selector",
+    [
+        "select-with-path",
+        "select-staging-with-path",
+        "select-model-sql-files",
+        "select-root-sql-files",
+        "select-staging-schema-patch",
+        "select-model-directories",
+        "select-staging-directory",
+        "select-missing-path",
+    ],
+)
+def test_manifest_path_selector_matches_dbt_cli(
+    test_jaffle_shop_manifest: dict[str, Any],
+    dbt_selector: str,
+) -> None:
+    project = DbtProject(project_dir=os.fspath(test_jaffle_shop_path))
+
+    manifest_selected_unique_ids = _select_unique_ids_from_manifest(
+        select=DBT_DEFAULT_SELECT,
+        exclude=DBT_DEFAULT_EXCLUDE,
+        selector=dbt_selector,
+        manifest_json=test_jaffle_shop_manifest,
+    )
+    cli_selected_unique_ids = _select_unique_ids_from_cli(
+        select=DBT_DEFAULT_SELECT,
+        exclude=DBT_DEFAULT_EXCLUDE,
+        selector=dbt_selector,
+        project=project,
+    )
+
+    assert manifest_selected_unique_ids == cli_selected_unique_ids
+
+
+@pytest.mark.parametrize(
+    "dbt_select",
+    [
+        "path:*",
+        "path:models/**/*.sql",
+        "path:models/staging/",
+        "path:models/schema.yml",
+        "path:seeds/*.csv",
+        "path:packages.yml",
+        "path:models/does_not_exist.sql",
+        "path:snapshots/**/*.sql",
+    ],
+)
+def test_manifest_path_select_matches_dbt_cli_metadata_project(
+    test_metadata_manifest: dict[str, Any],
+    dbt_select: str,
+) -> None:
+    project = DbtProject(project_dir=os.fspath(test_metadata_path))
+
+    manifest_selected_unique_ids = _select_unique_ids_from_manifest(
+        select=dbt_select,
+        exclude=DBT_DEFAULT_EXCLUDE,
+        selector="",
+        manifest_json=test_metadata_manifest,
+    )
+    cli_selected_unique_ids = _select_unique_ids_from_cli(
+        select=dbt_select,
+        exclude=DBT_DEFAULT_EXCLUDE,
+        selector="",
+        project=project,
+    )
+
+    assert manifest_selected_unique_ids == cli_selected_unique_ids
+
+
+@pytest.mark.parametrize(
+    "dbt_select",
+    [
+        "path:models/",
+        "path:models/schema.yml",
+        "path:models/does_not_exist.sql",
+    ],
+)
+def test_manifest_path_select_matches_dbt_cli_for_windows_style_paths(
+    test_dependencies_manifest_windows: dict[str, Any],
+    dbt_select: str,
+) -> None:
+    project = DbtProject(project_dir=os.fspath(test_dependencies_path))
+
+    manifest_selected_unique_ids = _select_unique_ids_from_manifest(
+        select=dbt_select,
+        exclude=DBT_DEFAULT_EXCLUDE,
+        selector="",
+        manifest_json=test_dependencies_manifest_windows,
+    )
+    cli_selected_unique_ids = _select_unique_ids_from_cli(
+        select=dbt_select,
+        exclude=DBT_DEFAULT_EXCLUDE,
+        selector="",
+        project=project,
+    )
+
+    assert manifest_selected_unique_ids == cli_selected_unique_ids
 
 
 def test_dbt_asset_selection_selector_invalid(

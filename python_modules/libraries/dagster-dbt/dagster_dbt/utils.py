@@ -1,5 +1,8 @@
 from argparse import Namespace
 from collections.abc import Mapping
+from fnmatch import fnmatchcase
+from functools import lru_cache
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster_shared.check as check
@@ -17,6 +20,76 @@ if TYPE_CHECKING:
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
 clean_name = clean_name_lower
+
+
+def _get_patch_path_relative_to_manifest(node: Any) -> str | None:
+    patch_path = getattr(node, "patch_path", None)
+    if not patch_path or "://" not in patch_path:
+        return None
+
+    _, relative_path = patch_path.split("://", 1)
+    return relative_path or None
+
+
+def _normalize_manifest_relative_path(path_str: str) -> str:
+    return str(PurePosixPath(path_str.replace("\\", "/")))
+
+
+@lru_cache(maxsize=None)
+def _split_manifest_relative_path(path_str: str) -> tuple[str, ...]:
+    normalized_path = _normalize_manifest_relative_path(path_str)
+    if normalized_path in {"", "."}:
+        return ()
+    return tuple(part for part in normalized_path.split("/") if part)
+
+
+@lru_cache(maxsize=None)
+def _compile_manifest_relative_glob(selector: str) -> tuple[tuple[str, ...], bool]:
+    normalized_selector = selector.replace("\\", "/")
+    directory_only = normalized_selector.endswith("/")
+    stripped_selector = normalized_selector.strip("/")
+    if stripped_selector in {"", "."}:
+        return (), directory_only
+    return tuple(part for part in stripped_selector.split("/") if part), directory_only
+
+
+@lru_cache(maxsize=None)
+def _match_manifest_relative_glob_parts(
+    pattern_parts: tuple[str, ...], path_parts: tuple[str, ...], pattern_index: int, path_index: int
+) -> bool:
+    if pattern_index == len(pattern_parts):
+        return path_index == len(path_parts)
+
+    pattern_part = pattern_parts[pattern_index]
+    if pattern_part == "**":
+        if pattern_index == len(pattern_parts) - 1:
+            return True
+        return any(
+            _match_manifest_relative_glob_parts(
+                pattern_parts, path_parts, pattern_index + 1, candidate_path_index
+            )
+            for candidate_path_index in range(path_index, len(path_parts) + 1)
+        )
+
+    if path_index == len(path_parts):
+        return False
+
+    if not fnmatchcase(path_parts[path_index], pattern_part):
+        return False
+
+    return _match_manifest_relative_glob_parts(
+        pattern_parts, path_parts, pattern_index + 1, path_index + 1
+    )
+
+
+@lru_cache(maxsize=None)
+def _matches_manifest_relative_glob(path_str: str, selector: str, *, is_dir: bool) -> bool:
+    pattern_parts, directory_only = _compile_manifest_relative_glob(selector)
+    if directory_only and not is_dir:
+        return False
+
+    path_parts = _split_manifest_relative_path(path_str)
+    return _match_manifest_relative_glob_parts(pattern_parts, path_parts, 0, 0)
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
@@ -95,6 +168,7 @@ def _select_unique_ids_from_manifest(
     from dbt.contracts.graph.manifest import Manifest
     from dbt.contracts.graph.nodes import SavedQuery, SemanticModel
     from dbt.contracts.selection import SelectorFile
+    from dbt.graph.selector_methods import MethodName, PathSelectorMethod
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
@@ -227,8 +301,42 @@ def _select_unique_ids_from_manifest(
         parsed_exclude_spec = graph_cli.parse_union([exclude], False)
         parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
+    class _ManifestRelativePathSelectorMethod(PathSelectorMethod):
+        def search(self, included_nodes, selector):
+            """Apply dbt path selectors against manifest-relative paths instead of the process cwd."""
+            candidate_nodes = list(self.all_nodes(included_nodes))
+
+            for unique_id, node in candidate_nodes:
+                original_file_path = _normalize_manifest_relative_path(node.original_file_path)
+                if _matches_manifest_relative_glob(original_file_path, selector, is_dir=False):
+                    yield unique_id
+                    continue
+
+                patch_path = _get_patch_path_relative_to_manifest(node)
+                if (
+                    patch_path
+                    and _matches_manifest_relative_glob(
+                        _normalize_manifest_relative_path(patch_path), selector, is_dir=False
+                    )
+                ):
+                    yield unique_id
+                    continue
+
+                if any(
+                    _matches_manifest_relative_glob(str(parent), selector, is_dir=True)
+                    for parent in PurePosixPath(original_file_path).parents
+                    if str(parent) != "."
+                ):
+                    yield unique_id
+
+    class _ManifestRelativePathNodeSelector(graph_selector.NodeSelector):
+        SELECTOR_METHODS = {
+            **graph_selector.NodeSelector.SELECTOR_METHODS,
+            MethodName.Path: _ManifestRelativePathSelectorMethod,
+        }
+
     # execute this selection against the graph
-    node_selector = graph_selector.NodeSelector(graph, manifest)
+    node_selector = _ManifestRelativePathNodeSelector(graph, manifest)
     selected, _ = node_selector.select_nodes(parsed_spec)
     return selected
 
