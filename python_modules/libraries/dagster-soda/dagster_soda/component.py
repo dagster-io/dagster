@@ -3,7 +3,7 @@
 import re
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from dagster import (
@@ -209,7 +209,7 @@ class SodaScanComponent(Component, Model, Resolvable):
     data_source_name: str = Field(
         description="The name of the data source connection defined in the configuration."
     )
-    asset_key_map: Optional[dict[str, str]] = Field(
+    asset_key_map: dict[str, str] | None = Field(
         default_factory=dict, description="Mapping of Soda dataset names to Dagster AssetKeys."
     )
     default_severity: str = Field(
