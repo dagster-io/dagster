@@ -141,8 +141,8 @@ def _filter_results_for_dataset(scan_results: Any, dataset: str) -> list[Any]:
 
 def _get_outcome(soda_check: Any) -> str:
     """Extract outcome (pass, warn, fail) from a Soda check result."""
-    outcome = getattr(soda_check, "outcome", None) or getattr(soda_check, "result", "pass")
-    return str(outcome).lower() if outcome else "pass"
+    outcome = getattr(soda_check, "outcome", None) or getattr(soda_check, "result", None)
+    return str(outcome).lower() if outcome else "unknown"
 
 
 def _get_check_name(soda_check: Any) -> str:
@@ -155,9 +155,9 @@ def _get_check_name(soda_check: Any) -> str:
     return str(name) if name else "unknown"
 
 
-def _get_severity(soda_check: Any) -> str:
+def _get_severity(soda_check: Any, default_severity: str = "warn") -> str:
     """Extract severity from a Soda check result."""
-    severity = getattr(soda_check, "severity", None) or "warn"
+    severity = getattr(soda_check, "severity", None) or default_severity
     return str(severity).lower() if severity else "warn"
 
 
@@ -366,8 +366,8 @@ class SodaScanComponent(Component, Model, Resolvable):
                                 continue
 
                             outcome = _get_outcome(soda_check)
-                            severity = _get_severity(soda_check)
-                            passed = outcome != "fail"
+                            severity = _get_severity(soda_check, self.default_severity)
+                            passed = outcome == "pass"
 
                             metadata: dict[str, Any] = {
                                 "soda_outcome": outcome,

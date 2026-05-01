@@ -202,6 +202,10 @@ def test_get_outcome() -> None:
     del obj.outcome
     obj.result = "fail"
     assert _get_outcome(obj) == "fail"
+    obj = mock.Mock(spec=[])
+    del obj.outcome
+    del obj.result
+    assert _get_outcome(obj) == "unknown"
 
 
 def test_get_check_name() -> None:
@@ -219,6 +223,7 @@ def test_get_severity() -> None:
     obj = mock.Mock(spec=[])
     del obj.severity
     assert _get_severity(obj) == "warn"
+    assert _get_severity(obj, "error") == "error"
 
 
 def test_to_dagster_severity() -> None:
@@ -302,6 +307,99 @@ def test_execution_yields_asset_check_results_pass_and_fail(tmp_path: Path) -> N
     assert by_name["row_count___0"].passed is True
     assert by_name["freshness_updated_at____1d"].passed is False
     assert all(r.asset_key == AssetKey("my_table") for r in results)
+
+
+def test_execution_warn_outcome_yields_failed_warn_severity(tmp_path: Path) -> None:
+    (tmp_path / "checks.yml").write_text(
+        textwrap.dedent("""
+            checks for my_table:
+              - freshness(updated_at) < 1d
+        """)
+    )
+    (tmp_path / "configuration.yml").write_text("data_source ds: {}")
+
+    mock_check_warn = mock.Mock(
+        table="my_table",
+        outcome="warn",
+        name="freshness_updated_at____1d",
+        severity="warn",
+        definition="freshness(updated_at) < 1d",
+    )
+    mock_scan_results = mock.Mock(checks=[mock_check_warn])
+
+    component = SodaScanComponent(
+        checks_paths=[str(tmp_path / "checks.yml")],
+        configuration_path=str(tmp_path / "configuration.yml"),
+        data_source_name="ds",
+        asset_key_map={"my_table": "my_table"},
+    )
+    tree = TestComponentTree(defs_module=mock.Mock(), project_root=tmp_path)
+    defs = component.build_defs(tree.load_context)
+
+    asset_checks = list(defs.asset_checks) if defs.asset_checks else []
+    assert len(asset_checks) == 1
+    check_def = asset_checks[0]
+
+    with mock.patch("dagster_soda.component.Scan") as MockScan:
+        mock_scan = mock.Mock()
+        MockScan.return_value = mock_scan
+        mock_scan.get_scan_results.return_value = mock_scan_results
+        mock_scan.build_scan_results.return_value = mock_scan_results
+
+        results = list(cast("Iterable[AssetCheckResult]", check_def(build_op_context())))
+
+    assert len(results) == 1
+    result = results[0]
+    assert result.check_name == "freshness_updated_at____1d"
+    assert result.passed is False
+
+
+def test_execution_uses_default_severity_when_missing(tmp_path: Path) -> None:
+    (tmp_path / "checks.yml").write_text(
+        textwrap.dedent("""
+            checks for my_table:
+              - row_count > 0
+        """)
+    )
+    (tmp_path / "configuration.yml").write_text("data_source ds: {}")
+
+    mock_check = mock.Mock(
+        table="my_table",
+        outcome="fail",
+        name="row_count___0",
+        definition="row_count > 0",
+        spec=["table", "outcome", "name", "definition"],
+    )
+    del mock_check.severity
+    mock_scan_results = mock.Mock(checks=[mock_check])
+
+    component = SodaScanComponent(
+        checks_paths=[str(tmp_path / "checks.yml")],
+        configuration_path=str(tmp_path / "configuration.yml"),
+        data_source_name="ds",
+        asset_key_map={"my_table": "my_table"},
+        default_severity="error",
+    )
+    tree = TestComponentTree(defs_module=mock.Mock(), project_root=tmp_path)
+    defs = component.build_defs(tree.load_context)
+
+    asset_checks = list(defs.asset_checks) if defs.asset_checks else []
+    assert len(asset_checks) == 1
+    check_def = asset_checks[0]
+
+    with mock.patch("dagster_soda.component.Scan") as MockScan:
+        mock_scan = mock.Mock()
+        MockScan.return_value = mock_scan
+        mock_scan.get_scan_results.return_value = mock_scan_results
+        mock_scan.build_scan_results.return_value = mock_scan_results
+
+        results = list(cast("Iterable[AssetCheckResult]", check_def(build_op_context())))
+
+    assert len(results) == 1
+    severity = results[0].metadata.get("severity")
+    assert severity is not None
+    severity_text = str(severity.value) if hasattr(severity, "value") else str(severity)
+    assert severity_text == "error"
 
 
 def test_execution_missing_check_yields_specific_failure(tmp_path: Path) -> None:
