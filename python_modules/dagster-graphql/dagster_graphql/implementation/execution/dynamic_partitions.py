@@ -86,12 +86,18 @@ def add_dynamic_partition(
             )
         )
 
-    if graphene_info.context.instance.has_dynamic_partition(partitions_def_name, partition_key):
+    location_name = unpacked_repository_selector.location_name
+
+    if graphene_info.context.instance.has_dynamic_partition(
+        partitions_def_name, partition_key, code_location_name=location_name
+    ):
         raise UserFacingGraphQLError(
             GrapheneDuplicateDynamicPartitionError(partitions_def_name, partition_key)
         )
 
-    graphene_info.context.instance.add_dynamic_partitions(partitions_def_name, [partition_key])
+    graphene_info.context.instance.add_dynamic_partitions(
+        partitions_def_name, [partition_key], code_location_name=location_name
+    )
     return GrapheneAddDynamicPartitionSuccess(
         partitionsDefName=partitions_def_name, partitionKey=partition_key
     )
@@ -126,7 +132,10 @@ def delete_dynamic_partitions(
             )
         )
 
+    location_name = unpacked_repository_selector.location_name
     for partition_key in partition_keys:
-        graphene_info.context.instance.delete_dynamic_partition(partitions_def_name, partition_key)
+        graphene_info.context.instance.delete_dynamic_partition(
+            partitions_def_name, partition_key, code_location_name=location_name
+        )
 
     return GrapheneDeleteDynamicPartitionsSuccess(partitionsDefName=partitions_def_name)

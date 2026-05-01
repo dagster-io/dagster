@@ -144,24 +144,37 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
     to avoid repeated calls to the database for the same partitions definition.
     """
 
-    def __init__(self, instance: "DagsterInstance"):
+    def __init__(self, instance: "DagsterInstance", code_location_name: str | None = None):
         self._instance = instance
+        self._code_location_name = code_location_name
 
     @cached_method
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self._instance.get_dynamic_partitions(partitions_def_name)
+        return self._instance.get_dynamic_partitions(
+            partitions_def_name, code_location_name=self._code_location_name
+        )
 
     @cached_method
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
+        self,
+        partitions_def_name: str,
+        limit: int,
+        ascending: bool,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]:
         return self._instance.get_paginated_dynamic_partitions(
-            partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
+            partitions_def_name=partitions_def_name,
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
+            code_location_name=self._code_location_name,
         )
 
     @cached_method
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
+        return self._instance.has_dynamic_partition(
+            partitions_def_name, partition_key, code_location_name=self._code_location_name
+        )
 
     @cached_method
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
@@ -223,7 +236,11 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
 
     @cached_method
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
+        self,
+        partitions_def_name: str,
+        limit: int,
+        ascending: bool,
+        cursor: str | None = None,
     ) -> PaginatedResults[str]:
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
         return PaginatedResults.create_from_sequence(

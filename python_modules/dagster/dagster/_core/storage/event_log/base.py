@@ -510,30 +510,44 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+    def get_dynamic_partitions(
+        self, partitions_def_name: str, code_location_name: str | None = None
+    ) -> Sequence[str]:
         """Get the list of partition keys for a dynamic partitions definition."""
         raise NotImplementedError()
 
     @abstractmethod
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
+        self,
+        partitions_def_name: str,
+        limit: int,
+        ascending: bool,
+        cursor: str | None = None,
+        code_location_name: str | None = None,
     ) -> PaginatedResults[str]:
         raise NotImplementedError()
 
     @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+    def has_dynamic_partition(
+        self, partitions_def_name: str, partition_key: str, code_location_name: str | None = None
+    ) -> bool:
         """Check if a dynamic partition exists."""
         raise NotImplementedError()
 
     @abstractmethod
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        code_location_name: str | None = None,
     ) -> None:
         """Add a partition for the specified dynamic partitions definition."""
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+    def delete_dynamic_partition(
+        self, partitions_def_name: str, partition_key: str, code_location_name: str | None = None
+    ) -> None:
         """Delete a partition for the specified dynamic partitions definition."""
         raise NotImplementedError()
 

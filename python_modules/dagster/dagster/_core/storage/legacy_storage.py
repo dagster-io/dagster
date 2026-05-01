@@ -634,31 +634,51 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, after_storage_id
         )
 
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self._storage.event_log_storage.get_dynamic_partitions(partitions_def_name)
-
-    def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
-    ) -> PaginatedResults[str]:
-        return self._storage.event_log_storage.get_paginated_dynamic_partitions(
-            partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
+    def get_dynamic_partitions(
+        self, partitions_def_name: str, code_location_name: str | None = None
+    ) -> Sequence[str]:
+        return self._storage.event_log_storage.get_dynamic_partitions(
+            partitions_def_name, code_location_name=code_location_name
         )
 
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+    def get_paginated_dynamic_partitions(
+        self,
+        partitions_def_name: str,
+        limit: int,
+        ascending: bool,
+        cursor: str | None = None,
+        code_location_name: str | None = None,
+    ) -> PaginatedResults[str]:
+        return self._storage.event_log_storage.get_paginated_dynamic_partitions(
+            partitions_def_name=partitions_def_name,
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
+            code_location_name=code_location_name,
+        )
+
+    def has_dynamic_partition(
+        self, partitions_def_name: str, partition_key: str, code_location_name: str | None = None
+    ) -> bool:
         return self._storage.event_log_storage.has_dynamic_partition(
-            partitions_def_name, partition_key
+            partitions_def_name, partition_key, code_location_name=code_location_name
         )
 
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        code_location_name: str | None = None,
     ) -> None:
         return self._storage.event_log_storage.add_dynamic_partitions(
-            partitions_def_name, partition_keys
+            partitions_def_name, partition_keys, code_location_name=code_location_name
         )
 
-    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+    def delete_dynamic_partition(
+        self, partitions_def_name: str, partition_key: str, code_location_name: str | None = None
+    ) -> None:
         return self._storage.event_log_storage.delete_dynamic_partition(
-            partitions_def_name, partition_key
+            partitions_def_name, partition_key, code_location_name=code_location_name
         )
 
     def get_event_tags_for_asset(

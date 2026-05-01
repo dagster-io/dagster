@@ -862,7 +862,10 @@ def _evaluate_sensor(
 
     if sensor_runtime_data.dynamic_partitions_requests:
         _handle_dynamic_partitions_requests(
-            sensor_runtime_data.dynamic_partitions_requests, instance, context
+            sensor_runtime_data.dynamic_partitions_requests,
+            instance,
+            context,
+            code_location_name=code_location.name,
         )
     if not (
         sensor_runtime_data.run_requests or sensor_runtime_data.automation_condition_evaluations
@@ -920,12 +923,15 @@ def _handle_dynamic_partitions_requests(
     ],
     instance: DagsterInstance,
     context: SensorLaunchContext,
+    code_location_name: str | None = None,
 ) -> None:
     for request in dynamic_partitions_requests:
         existent_partitions = []
         nonexistent_partitions = []
         for partition_key in request.partition_keys:
-            if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
+            if instance.has_dynamic_partition(
+                request.partitions_def_name, partition_key, code_location_name=code_location_name
+            ):
                 existent_partitions.append(partition_key)
             else:
                 nonexistent_partitions.append(partition_key)
@@ -935,6 +941,7 @@ def _handle_dynamic_partitions_requests(
                 instance.add_dynamic_partitions(
                     request.partitions_def_name,
                     nonexistent_partitions,
+                    code_location_name=code_location_name,
                 )
                 context.logger.info(
                     "Added partition keys to dynamic partitions definition"
@@ -960,7 +967,11 @@ def _handle_dynamic_partitions_requests(
             if existent_partitions:
                 # TODO add a bulk delete method to the instance
                 for partition in existent_partitions:
-                    instance.delete_dynamic_partition(request.partitions_def_name, partition)
+                    instance.delete_dynamic_partition(
+                        request.partitions_def_name,
+                        partition,
+                        code_location_name=code_location_name,
+                    )
 
                 context.logger.info(
                     "Deleted partition keys from dynamic partitions definition"

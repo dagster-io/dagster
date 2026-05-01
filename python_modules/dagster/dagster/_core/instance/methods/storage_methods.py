@@ -54,6 +54,7 @@ class StorageMethods:
         limit: int,
         ascending: bool,
         cursor: str | None = None,
+        code_location_name: str | None = None,
     ) -> PaginatedResults[str]:
         """Get a paginatable subset of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
 
@@ -62,12 +63,14 @@ class StorageMethods:
             limit (int): Maximum number of partition keys to return.
             ascending (bool): The order of dynamic partitions to return.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            code_location_name (str | None): The code location to scope the query to.
         """
         return self._event_storage.get_paginated_dynamic_partitions(
             partitions_def_name=partitions_def_name,
             limit=limit,
             ascending=ascending,
             cursor=cursor,
+            code_location_name=code_location_name,
         )
 
     def optimize_for_webserver(

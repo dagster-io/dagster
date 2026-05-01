@@ -645,6 +645,30 @@ def test_create_run_with_dynamic_partitioned_asset_stores_partitions_snapshot():
         )
 
 
+def test_caching_dynamic_partitions_loader_scoped_to_code_location():
+    from dagster._core.instance.types import CachingDynamicPartitionsLoader
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions("fruits", ["apple", "banana"], code_location_name="loc_a")
+        instance.add_dynamic_partitions("fruits", ["cherry", "date"], code_location_name="loc_b")
+
+        loader_a = CachingDynamicPartitionsLoader(instance, code_location_name="loc_a")
+        loader_b = CachingDynamicPartitionsLoader(instance, code_location_name="loc_b")
+        loader_global = CachingDynamicPartitionsLoader(instance)
+
+        assert list(loader_a.get_dynamic_partitions("fruits")) == ["apple", "banana"]
+        assert list(loader_b.get_dynamic_partitions("fruits")) == ["cherry", "date"]
+        assert list(loader_global.get_dynamic_partitions("fruits")) == []
+
+        assert loader_a.has_dynamic_partition("fruits", "apple") is True
+        assert loader_a.has_dynamic_partition("fruits", "cherry") is False
+        assert loader_b.has_dynamic_partition("fruits", "cherry") is True
+        assert loader_b.has_dynamic_partition("fruits", "apple") is False
+
+        # results are cached — second call must not hit the db again
+        assert list(loader_a.get_dynamic_partitions("fruits")) == ["apple", "banana"]
+
+
 def test_get_required_daemon_types():
     from dagster._daemon.daemon import (
         BackfillDaemon,

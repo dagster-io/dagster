@@ -101,6 +101,7 @@ DynamicPartitionsTable = db.Table(
     db.Column("partitions_def_name", db.Text, nullable=False),
     db.Column("partition", db.Text, nullable=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("code_location_name", db.Text, nullable=True),
 )
 
 ConcurrencyLimitsTable = db.Table(
@@ -260,10 +261,10 @@ db.Index(
 )
 db.Index(
     "idx_dynamic_partitions",
+    DynamicPartitionsTable.c.code_location_name,
     DynamicPartitionsTable.c.partitions_def_name,
     DynamicPartitionsTable.c.partition,
-    mysql_length={"partitions_def_name": 64, "partition": 64},
-    unique=True,
+    mysql_length={"code_location_name": 64, "partitions_def_name": 64, "partition": 64},
 )
 db.Index(
     "idx_pending_steps",

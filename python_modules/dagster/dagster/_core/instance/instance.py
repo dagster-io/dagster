@@ -598,7 +598,10 @@ class DagsterInstance(
     @public
     @traced
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        code_location_name: str | None = None,
     ) -> None:
         """Add partitions to the specified :py:class:`DynamicPartitionsDefinition` idempotently.
         Does not add any partitions that already exist.
@@ -606,30 +609,46 @@ class DagsterInstance(
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
+            code_location_name (str | None): The code location the partitions belong to.
         """
-        return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
+        return self._event_storage.add_dynamic_partitions(
+            partitions_def_name, partition_keys, code_location_name=code_location_name
+        )
 
     @public
     @traced
-    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+    def delete_dynamic_partition(
+        self,
+        partitions_def_name: str,
+        partition_key: str,
+        code_location_name: str | None = None,
+    ) -> None:
         """Delete a partition for the specified :py:class:`DynamicPartitionsDefinition`.
         If the partition does not exist, exits silently.
 
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (str): Partition key to delete.
+            code_location_name (str | None): The code location the partition belongs to.
         """
-        return self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
+        return self._event_storage.delete_dynamic_partition(
+            partitions_def_name, partition_key, code_location_name=code_location_name
+        )
 
     @public
     @traced
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+    def get_dynamic_partitions(
+        self, partitions_def_name: str, code_location_name: str | None = None
+    ) -> Sequence[str]:
         """Get the set of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
 
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            code_location_name (str | None): The code location to scope the query to.
         """
-        return self._event_storage.get_dynamic_partitions(partitions_def_name)
+        return self._event_storage.get_dynamic_partitions(
+            partitions_def_name, code_location_name=code_location_name
+        )
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
         from dagster._core.definitions.partitions.context import partition_loading_context
@@ -645,14 +664,19 @@ class DagsterInstance(
 
     @public
     @traced
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+    def has_dynamic_partition(
+        self, partitions_def_name: str, partition_key: str, code_location_name: str | None = None
+    ) -> bool:
         """Check if a partition key exists for the :py:class:`DynamicPartitionsDefinition`.
 
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (str): Partition key to check.
+            code_location_name (str | None): The code location to scope the query to.
         """
-        return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
+        return self._event_storage.has_dynamic_partition(
+            partitions_def_name, partition_key, code_location_name=code_location_name
+        )
 
     # =====================================================================================
     # INTERNAL METHODS

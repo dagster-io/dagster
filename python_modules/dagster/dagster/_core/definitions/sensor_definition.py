@@ -229,8 +229,15 @@ class SensorEvaluationContext:
         return check.not_none(self._sensor_name, "Only valid when sensor name provided")
 
     @functools.cached_property
-    def caching_dynamic_partitions_loader(self):
-        return CachingDynamicPartitionsLoader(self.instance) if self.instance_ref else None
+    def caching_dynamic_partitions_loader(self) -> Optional["CachingDynamicPartitionsLoader"]:
+        if not self.instance_ref:
+            return None
+        location_name = (
+            self._code_location_origin.location_name
+            if self._code_location_origin is not None
+            else None
+        )
+        return CachingDynamicPartitionsLoader(self.instance, code_location_name=location_name)
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.

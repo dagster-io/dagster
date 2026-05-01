@@ -2062,25 +2062,44 @@ class SqlEventLogStorage(EventLogStorage):
                 " instance migrate`."
             )
 
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+    def _code_location_filter(self, code_location_name: str | None):
+        if code_location_name is None:
+            return DynamicPartitionsTable.c.code_location_name.is_(None)
+        return DynamicPartitionsTable.c.code_location_name == code_location_name
+
+    def get_dynamic_partitions(
+        self, partitions_def_name: str, code_location_name: str | None = None
+    ) -> Sequence[str]:
         """Get the list of partition keys for a partition definition."""
         self._check_partitions_table()
-        columns = [
-            DynamicPartitionsTable.c.partitions_def_name,
-            DynamicPartitionsTable.c.partition,
-        ]
         query = (
-            db_select(columns)
-            .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
-            .order_by(DynamicPartitionsTable.c.id)
+            db_select(
+                [
+                    DynamicPartitionsTable.c.partition,
+                    db.func.min(DynamicPartitionsTable.c.id).label("min_id"),
+                ]
+            )
+            .where(
+                db.and_(
+                    DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                    self._code_location_filter(code_location_name),
+                )
+            )
+            .group_by(DynamicPartitionsTable.c.partition)
+            .order_by(db.func.min(DynamicPartitionsTable.c.id))
         )
         with self.index_connection() as conn, db_result(conn, query) as result:
             rows = result.fetchall()
 
-        return [cast("str", row[1]) for row in rows]
+        return [cast("str", row[0]) for row in rows]
 
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: str | None = None
+        self,
+        partitions_def_name: str,
+        limit: int,
+        ascending: bool,
+        cursor: str | None = None,
+        code_location_name: str | None = None,
     ) -> PaginatedResults[str]:
         self._check_partitions_table()
         order_by = (
@@ -2093,7 +2112,12 @@ class SqlEventLogStorage(EventLogStorage):
                     DynamicPartitionsTable.c.partition,
                 ]
             )
-            .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
+            .where(
+                db.and_(
+                    DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                    self._code_location_filter(code_location_name),
+                )
+            )
             .order_by(order_by)
             .limit(limit)
         )
@@ -2120,7 +2144,9 @@ class SqlEventLogStorage(EventLogStorage):
             has_more=len(rows) == limit,
         )
 
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+    def has_dynamic_partition(
+        self, partitions_def_name: str, partition_key: str, code_location_name: str | None = None
+    ) -> bool:
         self._check_partitions_table()
         query = (
             db_select([DynamicPartitionsTable.c.partition])
@@ -2128,6 +2154,7 @@ class SqlEventLogStorage(EventLogStorage):
                 db.and_(
                     DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
                     DynamicPartitionsTable.c.partition == partition_key,
+                    self._code_location_filter(code_location_name),
                 )
             )
             .limit(1)
@@ -2138,7 +2165,10 @@ class SqlEventLogStorage(EventLogStorage):
         return len(results) > 0
 
     def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
+        self,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        code_location_name: str | None = None,
     ) -> None:
         self._check_partitions_table()
         with self.index_connection() as conn:
@@ -2147,26 +2177,29 @@ class SqlEventLogStorage(EventLogStorage):
                     db.and_(
                         DynamicPartitionsTable.c.partition.in_(partition_keys),
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                        self._code_location_filter(code_location_name),
                     )
                 )
             ).fetchall()
-            existing_keys = set([row[0] for row in existing_rows])
-            new_keys = [
-                partition_key
-                for partition_key in partition_keys
-                if partition_key not in existing_keys
-            ]
+            existing_keys = {row[0] for row in existing_rows}
+            new_keys = [k for k in partition_keys if k not in existing_keys]
 
             if new_keys:
                 conn.execute(
                     DynamicPartitionsTable.insert(),
                     [
-                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
+                        dict(
+                            partitions_def_name=partitions_def_name,
+                            partition=partition_key,
+                            code_location_name=code_location_name,
+                        )
                         for partition_key in new_keys
                     ],
                 )
 
-    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+    def delete_dynamic_partition(
+        self, partitions_def_name: str, partition_key: str, code_location_name: str | None = None
+    ) -> None:
         self._check_partitions_table()
         with self.index_connection() as conn:
             conn.execute(
@@ -2174,6 +2207,7 @@ class SqlEventLogStorage(EventLogStorage):
                     db.and_(
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
                         DynamicPartitionsTable.c.partition == partition_key,
+                        self._code_location_filter(code_location_name),
                     )
                 )
             )

@@ -5417,6 +5417,30 @@ class TestEventLogStorage:
         assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
         assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")
 
+    def test_dynamic_partitions_isolated_across_code_locations(self, storage: EventLogStorage):
+        """Two code locations with the same partitions_def_name must not share partition keys."""
+        storage.add_dynamic_partitions("fruits", ["apple", "banana"], code_location_name="loc_a")
+        storage.add_dynamic_partitions("fruits", ["cherry", "date"], code_location_name="loc_b")
+
+        assert list(storage.get_dynamic_partitions("fruits", code_location_name="loc_a")) == [
+            "apple",
+            "banana",
+        ]
+        assert list(storage.get_dynamic_partitions("fruits", code_location_name="loc_b")) == [
+            "cherry",
+            "date",
+        ]
+        # Null namespace is still empty — didn't bleed into global scope
+        assert storage.get_dynamic_partitions("fruits", code_location_name=None) == []
+
+        assert storage.has_dynamic_partition("fruits", "apple", code_location_name="loc_a") is True
+        assert storage.has_dynamic_partition("fruits", "apple", code_location_name="loc_b") is False
+
+        storage.delete_dynamic_partition("fruits", "apple", code_location_name="loc_a")
+        assert storage.has_dynamic_partition("fruits", "apple", code_location_name="loc_a") is False
+        # loc_b still unaffected
+        assert storage.has_dynamic_partition("fruits", "cherry", code_location_name="loc_b") is True
+
     def test_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")

@@ -250,8 +250,16 @@ def run_step_from_ref(
             isinstance(partitions_def, DynamicPartitionsDefinition)
             and partitions_def.name is not None
         ):
+            origin = step_context.dagster_run.remote_job_origin
+            code_location_name = (
+                origin.repository_origin.code_location_origin.location_name
+                if origin is not None
+                else None
+            )
             step_context.instance.add_dynamic_partitions(
-                partitions_def_name=partitions_def.name, partition_keys=[step_context.partition_key]
+                partitions_def_name=partitions_def.name,
+                partition_keys=[step_context.partition_key],
+                code_location_name=code_location_name,
             )
 
     # The step should be forced to run locally with respect to the remote process that this step
