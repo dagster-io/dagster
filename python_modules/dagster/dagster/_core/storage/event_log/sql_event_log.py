@@ -2052,17 +2052,47 @@ class SqlEventLogStorage(EventLogStorage):
 
         return materialization_planned_rows_by_partition
 
+    @cached_property
+    def _has_code_location_name_col(self) -> bool:
+        if not self.has_table(DynamicPartitionsTable.name):
+            return False
+        with self.index_connection() as conn:
+            col_names = [
+                c["name"] for c in db.inspect(conn).get_columns(DynamicPartitionsTable.name)
+            ]
+        return DynamicPartitionsTable.c.code_location_name.name in col_names
+
     def _check_partitions_table(self) -> None:
         # Guards against cases where the user is not running the latest migration for
         # partitions storage. Should be updated when the partitions storage schema changes.
         if not self.has_table("dynamic_partitions"):
             raise DagsterInvalidInvocationError(
                 "Using dynamic partitions definitions requires the dynamic partitions table, which"
-                " currently does not exist. Add this table by running `dagster"
-                " instance migrate`."
+                " currently does not exist. Add this table by running `dagster instance migrate`."
+            )
+        if not self._has_code_location_name_col:
+            raise DagsterInvalidInvocationError(
+                "The dynamic_partitions table is missing the code_location_name column required"
+                " for code-location-scoped dynamic partitions. Add this column by running"
+                " `dagster instance migrate`."
             )
 
-    def _code_location_filter(self, code_location_name: str | None):
+    def _code_location_read_filter(self, code_location_name: str | None):
+        """Filter for read operations. When code_location_name is provided, returns rows
+        scoped to that location AND legacy NULL-scoped rows so pre-migration data remains
+        visible after upgrade.
+        """
+        if code_location_name is None:
+            return DynamicPartitionsTable.c.code_location_name.is_(None)
+        return db.or_(
+            DynamicPartitionsTable.c.code_location_name == code_location_name,
+            DynamicPartitionsTable.c.code_location_name.is_(None),
+        )
+
+    def _code_location_exact_filter(self, code_location_name: str | None):
+        """Exact filter for write/delete operations. Only matches rows for the given
+        scope; never touches rows belonging to a different code location.
+        """
         if code_location_name is None:
             return DynamicPartitionsTable.c.code_location_name.is_(None)
         return DynamicPartitionsTable.c.code_location_name == code_location_name
@@ -2082,7 +2112,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 db.and_(
                     DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
-                    self._code_location_filter(code_location_name),
+                    self._code_location_read_filter(code_location_name),
                 )
             )
             .group_by(DynamicPartitionsTable.c.partition)
@@ -2114,7 +2144,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 db.and_(
                     DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
-                    self._code_location_filter(code_location_name),
+                    self._code_location_read_filter(code_location_name),
                 )
             )
             .group_by(DynamicPartitionsTable.c.partition)
@@ -2154,7 +2184,7 @@ class SqlEventLogStorage(EventLogStorage):
                 db.and_(
                     DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
                     DynamicPartitionsTable.c.partition == partition_key,
-                    self._code_location_filter(code_location_name),
+                    self._code_location_read_filter(code_location_name),
                 )
             )
             .limit(1)
@@ -2177,7 +2207,7 @@ class SqlEventLogStorage(EventLogStorage):
                     db.and_(
                         DynamicPartitionsTable.c.partition.in_(partition_keys),
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
-                        self._code_location_filter(code_location_name),
+                        self._code_location_exact_filter(code_location_name),
                     )
                 )
             ).fetchall()
@@ -2207,7 +2237,7 @@ class SqlEventLogStorage(EventLogStorage):
                     db.and_(
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
                         DynamicPartitionsTable.c.partition == partition_key,
-                        self._code_location_filter(code_location_name),
+                        self._code_location_exact_filter(code_location_name),
                     )
                 )
             )
