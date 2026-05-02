@@ -2102,13 +2102,12 @@ class SqlEventLogStorage(EventLogStorage):
         code_location_name: str | None = None,
     ) -> PaginatedResults[str]:
         self._check_partitions_table()
-        order_by = (
-            DynamicPartitionsTable.c.id.asc() if ascending else DynamicPartitionsTable.c.id.desc()
-        )
+        storage_id = db.func.min(DynamicPartitionsTable.c.id)
+        order_by = storage_id.asc() if ascending else storage_id.desc()
         query = (
             db_select(
                 [
-                    DynamicPartitionsTable.c.id,
+                    storage_id.label("storage_id"),
                     DynamicPartitionsTable.c.partition,
                 ]
             )
@@ -2118,15 +2117,16 @@ class SqlEventLogStorage(EventLogStorage):
                     self._code_location_filter(code_location_name),
                 )
             )
+            .group_by(DynamicPartitionsTable.c.partition)
             .order_by(order_by)
             .limit(limit)
         )
         if cursor:
             last_storage_id = StorageIdCursor.from_cursor(cursor).storage_id
             if ascending:
-                query = query.where(DynamicPartitionsTable.c.id > last_storage_id)
+                query = query.having(storage_id > last_storage_id)
             else:
-                query = query.where(DynamicPartitionsTable.c.id < last_storage_id)
+                query = query.having(storage_id < last_storage_id)
 
         with self.index_connection() as conn, db_result(conn, query) as result:
             rows = result.fetchall()
