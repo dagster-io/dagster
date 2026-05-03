@@ -1,9 +1,12 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from datetime import datetime
 from typing import Any, cast
 
 import pytest
-from dagster import DefaultScheduleStatus, RunConfig
+from dagster import DefaultScheduleStatus, RunConfig, build_schedule_context
 from dagster._core.definitions.asset_selection import AndAssetSelection
+from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
 
@@ -20,6 +23,10 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
         "config",
         "execution_timezone",
         "default_status",
+        "metadata",
+        "should_execute",
+        "description",
+        "owners",
     ],
     [
         (
@@ -33,6 +40,10 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
             None,
             None,
             DefaultScheduleStatus.STOPPED,
+            None,
+            None,
+            None,
+            None,
         ),
         (
             "test_job",
@@ -45,6 +56,10 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
             RunConfig(ops={"my_op": {"config": "value"}}),
             "America/Vancouver",
             DefaultScheduleStatus.RUNNING,
+            {"baz": "qux"},
+            lambda x: True,
+            "My schedule description",
+            ["user@example.com", "team:data"],
         ),
         (
             "test_job",
@@ -57,6 +72,10 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
             RunConfig(ops={"my_op": {"config": "value"}}),
             "America/Vancouver",
             DefaultScheduleStatus.RUNNING,
+            {"baz": "qux"},
+            lambda x: False,
+            "My schedule description",
+            ["user@example.com", "team:data"],
         ),
     ],
 )
@@ -72,6 +91,10 @@ def test_dbt_build_schedule(
     config: RunConfig | None,
     execution_timezone: str | None,
     default_status: DefaultScheduleStatus,
+    metadata: RawMetadataMapping | None,
+    should_execute: Callable[[ScheduleEvaluationContext], bool] | None,
+    description: str | None,
+    owners: Sequence[str] | None,
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(): ...
@@ -88,12 +111,23 @@ def test_dbt_build_schedule(
         config=config,
         execution_timezone=execution_timezone,
         default_status=default_status,
+        metadata=metadata,
+        should_execute=should_execute,
+        description=description,
+        owners=owners,
     )
 
     assert test_daily_schedule.name == schedule_name or f"{job_name}_schedule"
     assert test_daily_schedule.job.name == job_name
     assert test_daily_schedule.execution_timezone == execution_timezone
     assert test_daily_schedule.default_status == default_status
+    if metadata is None:
+        assert test_daily_schedule.metadata == {}
+    else:
+        for key, value in metadata.items():
+            assert test_daily_schedule.metadata[key].value == value
+    assert test_daily_schedule.description == description
+    assert test_daily_schedule.owners == owners
 
     job = test_daily_schedule.job
 
@@ -113,3 +147,14 @@ def test_dbt_build_schedule(
     assert job_selection.select == (dbt_select or "fqn:*")
     assert job_selection.exclude == (dbt_exclude or "")
     assert job_selection.selector == (dbt_selector or "")
+
+    context_with_time = build_schedule_context(
+        scheduled_execution_time=datetime(year=2026, month=5, day=3)
+    )
+    execution_data = test_daily_schedule.evaluate_tick(context_with_time)
+    expected_skip_message = (
+        None
+        if should_execute is None or should_execute(context_with_time)
+        else f"should_execute function for {test_daily_schedule.name} returned false."
+    )
+    assert execution_data.skip_message == expected_skip_message
