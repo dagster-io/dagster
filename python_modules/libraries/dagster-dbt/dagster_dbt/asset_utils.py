@@ -398,7 +398,7 @@ def build_schedule_from_dbt_selection(
             Takes a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True``
             if the schedule should execute). Defaults to a function that always returns ``True``.
         description (Optional[str]): A human-readable description of the schedule.
-        owners (Optional[Sequence[str]]): A list of strings representing owners of the job.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the schedule.
             Each string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
 
