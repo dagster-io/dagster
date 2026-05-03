@@ -30,6 +30,7 @@ from dagster import (
     define_asset_job,
     get_dagster_logger,
 )
+from dagster._annotations import beta_param
 from dagster._core.definitions.assets.definition.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import RawMetadataMapping, TableMetadataSet
 from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext
@@ -351,6 +352,7 @@ def build_dbt_asset_selection(
     )
 
 
+@beta_param(param="owners")
 def build_schedule_from_dbt_selection(
     dbt_assets: Sequence[AssetsDefinition],
     job_name: str,
