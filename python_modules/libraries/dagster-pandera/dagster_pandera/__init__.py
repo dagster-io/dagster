@@ -7,19 +7,15 @@ import pandas as pd
 
 # NOTE: Pandera supports multiple dataframe libraries. Most of the alternatives
 # to pandas implement a pandas-like API wrapper around an underlying library
-# that can handle big data (a weakness of pandas). Typically this means the
-# data is only partly loaded into memory, or is distributed across multiple
-# nodes. Because Dagster types perform runtime validation within a single
-# Python process, it's not clear at present how to interface the more complex
-# validation computations on distributed dataframes with Dagster Types.
-# Therefore, for the time being dagster-pandera only supports pandas dataframes.
-# However, some commented-out scaffolding has been left in place for support of
-# alternatives in the future. These sections are marked with:
+# that can handle big data (a weakness of pandas). Because Dagster types
+# perform runtime validation within a single Python process, distributed
+# dataframes are still out of scope. dagster-pandera currently supports
+# pandas (via ``pandera.pandas``) and polars (via ``pandera.polars``);
+# ``_resolve_typing_type`` picks the right ``typing_type`` based on the
+# schema class. Scaffolding for further alternatives is marked with:
 # "TODO: pending alternative dataframe support"
 import pandera as pa
 
-# Currently assume pandas support (prefer pandera.pandas, fallback to main pandera for old versions)
-# TODO: pending alternative dataframe support
 import pandera.pandas as pa_pd
 
 # Try polars support
@@ -59,7 +55,6 @@ from dagster_pandera.version import __version__
 
 # Set up valid classes based on available imports
 if pa_pd and pa_pl and pl:
-    # TODO: pending alternative dataframe support
     VALID_DATAFRAME_CLASSES = (pd.DataFrame, pl.DataFrame)
     VALID_SCHEMA_CLASSES = (pa_pd.DataFrameSchema, pa_pl.DataFrameSchema)
     VALID_SCHEMA_MODEL_CLASSES = (pa_pd.DataFrameModel, pa_pl.DataFrameModel)
@@ -186,7 +181,6 @@ def _pandera_schema_to_type_check_fn(
         if isinstance(value, VALID_DATAFRAME_CLASSES):
             try:
                 # `lazy` instructs pandera to capture every (not just the first) validation error
-                # TODO: pending alternative dataframe support
                 if isinstance(schema, pa_pd.DataFrameSchema):
                     df = check.inst(value, pd.DataFrame, "Must be a pandas DataFrame.")
                     schema.validate(df, lazy=True)
