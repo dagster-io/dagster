@@ -20,13 +20,8 @@ from pathlib import Path
 
 from dagster import Definitions, definitions, load_from_defs_folder
 
-# Enable remote debugging — see README for usage
+# Enable remote debugging when DAGSTER_DEBUG is set.
 if os.environ.get("DAGSTER_DEBUG"):
-    # Suppress debugpy's "frozen modules" warning on Python 3.12+.
-    # Without this, debugpy emits noisy warnings about sys.stdlib_module_names
-    # that don't affect debugging but clutter the console output.
-    os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
-
     try:
         import debugpy
     except ImportError:
