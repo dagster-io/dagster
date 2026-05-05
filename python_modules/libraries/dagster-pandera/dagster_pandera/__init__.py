@@ -1,3 +1,4 @@
+import importlib
 import itertools
 import re
 from collections.abc import Sequence
@@ -5,17 +6,14 @@ from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
 
 import pandas as pd
 
-# NOTE: Pandera supports multiple dataframe libraries. Most of the alternatives
-# to pandas implement a pandas-like API wrapper around an underlying library
-# that can handle big data (a weakness of pandas). Because Dagster types
-# perform runtime validation within a single Python process, distributed
-# dataframes are still out of scope. dagster-pandera currently supports
-# pandas (via ``pandera.pandas``) and polars (via ``pandera.polars``);
-# ``_resolve_typing_type`` picks the right ``typing_type`` based on the
-# schema class. Scaffolding for further alternatives is marked with:
+# NOTE: Pandera supports multiple dataframe backends. ``_resolve_typing_type``
+# dispatches on the schema's module path (``pandera.api.<backend>.container``)
+# and looks up the dataframe class in ``_BACKEND_DF_TYPE``. Currently only
+# pandas and polars are wired up end-to-end; extending to pyspark/ibis/dask/
+# modin/geopandas needs a registry entry plus per-backend validation in
+# ``_pandera_schema_to_type_check_fn``. Scaffolding marked with:
 # "TODO: pending alternative dataframe support"
 import pandera as pa
-
 import pandera.pandas as pa_pd
 
 # Try polars support
@@ -148,10 +146,30 @@ def pandera_schema_to_dagster_type(
     )
 
 
-def _resolve_typing_type(schema: DagsterPanderaSchema) -> type:
-    if pa_pl and pl and isinstance(schema, pa_pl.DataFrameSchema):
-        return pl.DataFrame
-    return pd.DataFrame
+# Pandera schema classes live at ``pandera.api.<backend>.container.DataFrameSchema``.
+# ``_resolve_typing_type`` parses the backend name from the module path and looks
+# up the canonical dataframe class here. New backends can be added with a single
+# entry; backends absent from this map (or whose lib isn't installed) fall back
+# to ``pd.DataFrame`` so dagster-pandera stays usable.
+#
+# Verified against pandera 0.31.x. Only pandas and polars are listed because
+# they are the only backends with end-to-end test coverage; extending to
+# pyspark/ibis/geopandas/dask/modin is a one-line addition once each is
+# verified against the actual instance type its IO manager dispatches on.
+_BACKEND_DF_TYPE: dict[str, tuple[str, str]] = {
+    "pandas": ("pandas", "DataFrame"),
+    "polars": ("polars", "DataFrame"),
+}
+
+
+def _resolve_typing_type(schema: object) -> type:
+    parts = type(schema).__module__.split(".")
+    backend = parts[2] if len(parts) > 2 and parts[0] == "pandera" else "pandas"
+    mod_name, attr = _BACKEND_DF_TYPE.get(backend, _BACKEND_DF_TYPE["pandas"])
+    try:
+        return getattr(importlib.import_module(mod_name), attr)
+    except (ImportError, AttributeError):
+        return pd.DataFrame
 
 
 # call next() on this to generate next unique Dagster Type name for anonymous schemas
