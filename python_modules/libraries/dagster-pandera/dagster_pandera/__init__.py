@@ -1,18 +1,9 @@
-import importlib
 import itertools
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
+from typing import TYPE_CHECKING, Callable, Union  # noqa: UP035
 
 import pandas as pd
-
-# NOTE: Pandera supports multiple dataframe backends. ``_resolve_typing_type``
-# dispatches on the schema's module path (``pandera.api.<backend>.container``)
-# and looks up the dataframe class in ``_BACKEND_DF_TYPE``. Currently only
-# pandas and polars are wired up end-to-end; extending to pyspark/ibis/dask/
-# modin/geopandas needs a registry entry plus per-backend validation in
-# ``_pandera_schema_to_type_check_fn``. Scaffolding marked with:
-# "TODO: pending alternative dataframe support"
 import pandera as pa
 import pandera.pandas as pa_pd
 
@@ -111,6 +102,11 @@ def pandera_schema_to_dagster_type(
     - `num_failures` total number of validation errors.
     - `failure_sample` a table containing up to the first 10 validation errors.
 
+    Only pandera pandas and polars schemas are supported; other pandera backends
+    raise `TypeError`. Polars `LazyFrame` values are rejected at type check time
+    because pandera silently skips value-level checks on LazyFrames. Call
+    `.collect()` before returning.
+
     Args:
         schema (Union[pa.DataFrameSchema, Type[pa.DataFrameModel]])
 
@@ -123,7 +119,9 @@ def pandera_schema_to_dagster_type(
         or (isinstance(schema, type) and issubclass(schema, VALID_SCHEMA_MODEL_CLASSES))
     ):
         raise TypeError(
-            "schema must be a pandera `DataFrameSchema` or a subclass of a pandera `DataFrameModel`"
+            "schema must be a pandera pandas or polars `DataFrameSchema`, or a "
+            "subclass of a pandera pandas or polars `DataFrameModel`. Only pandas "
+            "and polars are supported."
         )
 
     name = _extract_name_from_pandera_schema(schema)
@@ -146,30 +144,19 @@ def pandera_schema_to_dagster_type(
     )
 
 
-# Pandera schema classes live at ``pandera.api.<backend>.container.DataFrameSchema``.
-# ``_resolve_typing_type`` parses the backend name from the module path and looks
-# up the canonical dataframe class here. New backends can be added with a single
-# entry; backends absent from this map (or whose lib isn't installed) fall back
-# to ``pd.DataFrame`` so dagster-pandera stays usable.
-#
-# Verified against pandera 0.31.x. Only pandas and polars are listed because
-# they are the only backends with end-to-end test coverage; extending to
-# pyspark/ibis/geopandas/dask/modin is a one-line addition once each is
-# verified against the actual instance type its IO manager dispatches on.
-_BACKEND_DF_TYPE: dict[str, tuple[str, str]] = {
-    "pandas": ("pandas", "DataFrame"),
-    "polars": ("polars", "DataFrame"),
-}
+_LAZYFRAME_REJECTED_MSG = (
+    "polars `LazyFrame` is not supported. pandera silently skips value-level "
+    "checks on LazyFrames. Call `.collect()` before returning."
+)
 
 
+# Polars-aware IO managers dispatch on DagsterType.typing_type. We use a
+# single class (pl.DataFrame) rather than Union because IO managers like
+# DbIOManager call issubclass() on it, which raises TypeError on Union types.
 def _resolve_typing_type(schema: object) -> type:
-    parts = type(schema).__module__.split(".")
-    backend = parts[2] if len(parts) > 2 and parts[0] == "pandera" else "pandas"
-    mod_name, attr = _BACKEND_DF_TYPE.get(backend, _BACKEND_DF_TYPE["pandas"])
-    try:
-        return getattr(importlib.import_module(mod_name), attr)
-    except (ImportError, AttributeError):
-        return pd.DataFrame
+    if pa_pl is not None and pl is not None and isinstance(schema, pa_pl.DataFrameSchema):
+        return pl.DataFrame
+    return pd.DataFrame
 
 
 # call next() on this to generate next unique Dagster Type name for anonymous schemas
@@ -196,6 +183,10 @@ def _pandera_schema_to_type_check_fn(
     table_schema: TableSchema,
 ) -> Callable[[TypeCheckContext, object], TypeCheck]:
     def type_check_fn(_context, value: object) -> TypeCheck:
+        # Reject polars LazyFrame early. pandera silently skips value-level
+        # checks on LazyFrames, so we refuse rather than validate partially.
+        if pl is not None and isinstance(value, pl.LazyFrame):
+            return TypeCheck(success=False, description=_LAZYFRAME_REJECTED_MSG)
         if isinstance(value, VALID_DATAFRAME_CLASSES):
             try:
                 # `lazy` instructs pandera to capture every (not just the first) validation error
