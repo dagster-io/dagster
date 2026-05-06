@@ -546,6 +546,10 @@ class DagsterInstance(
             filters, limit, order_by, ascending, cursor, bucket_by
         )
 
+    def get_default_graphql_run_records_limit(self) -> int | None:
+        env_value = os.getenv("DAGSTER_DEFAULT_GRAPHQL_RUN_RECORDS_LIMIT")
+        return int(env_value) if env_value is not None else None
+
     # Event Domain
     # ------------
 
