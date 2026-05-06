@@ -19,12 +19,13 @@ from dagster._core.definitions.asset_selection import AssetSelection, CoercibleT
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.execution.api import execute_run_iterator
+from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
 from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.test_utils import (
     create_test_asset_job,
     ignore_warning,
@@ -2927,6 +2928,72 @@ def test_subset_cycle_dependencies():
     result = job.execute_in_process()
     assert result.success
     assert _all_asset_keys(result) == {dg.AssetKey("a"), dg.AssetKey("b")}
+
+
+def test_subset_cycle_resolution_preserves_orphan_check():
+    """When cycle resolution splits a multi-asset by color, asset checks whose
+    target asset is not in the user-selected asset_selection (but were explicitly
+    requested in the user's check selection) must not be silently dropped.
+    """
+
+    @dg.asset(deps=["A"])
+    def B():
+        return 1
+
+    @dg.multi_asset(
+        can_subset=True,
+        specs=[
+            dg.AssetSpec("A"),
+            dg.AssetSpec("C", deps=["B"]),
+            dg.AssetSpec("Z"),
+        ],
+        check_specs=[
+            dg.AssetCheckSpec("check_A", asset="A"),
+            dg.AssetCheckSpec("check_C", asset="C"),
+            dg.AssetCheckSpec("check_Z", asset="Z"),
+        ],
+    )
+    def M1():
+        yield dg.Output(1, "A")
+        yield dg.Output(3, "C")
+        yield dg.Output(26, "Z")
+        yield dg.AssetCheckResult(asset_key="A", check_name="check_A", passed=True)
+        yield dg.AssetCheckResult(asset_key="C", check_name="check_C", passed=True)
+        yield dg.AssetCheckResult(asset_key="Z", check_name="check_Z", passed=True)
+
+    job = dg.Definitions(assets=[M1, B]).resolve_implicit_global_asset_job_def()
+
+    # Selecting A, B, C creates a cycle (M1 -> M2 -> M1) that triggers
+    # _attempt_resolve_node_cycles, splitting M1 into two color pieces.
+    # check_Z's target Z is NOT in the asset_selection, so it would be orphaned.
+    subset_job = job.get_subset(
+        asset_selection={dg.AssetKey("A"), dg.AssetKey("B"), dg.AssetKey("C")},
+        asset_check_selection={
+            dg.AssetCheckKey(dg.AssetKey("A"), "check_A"),
+            dg.AssetCheckKey(dg.AssetKey("C"), "check_C"),
+            dg.AssetCheckKey(dg.AssetKey("Z"), "check_Z"),
+        },
+    )
+
+    plan = create_execution_plan(subset_job)
+    snap = snapshot_from_execution_plan(plan, subset_job.get_job_snapshot_id())
+
+    found_check_keys = set()
+    for step in snap.steps:
+        if step.key not in snap.step_keys_to_execute:
+            continue
+        for out in step.outputs:
+            if out.properties and out.properties.asset_check_key:
+                found_check_keys.add(out.properties.asset_check_key)
+
+    expected = {
+        dg.AssetCheckKey(dg.AssetKey("A"), "check_A"),
+        dg.AssetCheckKey(dg.AssetKey("C"), "check_C"),
+        dg.AssetCheckKey(dg.AssetKey("Z"), "check_Z"),
+    }
+    assert found_check_keys == expected, (
+        f"Expected {expected}, got {found_check_keys}. Missing: {expected - found_check_keys}"
+    )
 
 
 def test_subset_recongeal() -> None:

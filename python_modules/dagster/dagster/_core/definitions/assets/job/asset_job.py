@@ -7,6 +7,7 @@ from toposort import CircularDependencyError
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks.asset_checks_definition import has_only_asset_checks
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph, AssetNode
@@ -585,26 +586,47 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
     This ensures that no asset that shares a node with another asset will be downstream of
     that asset via a different node (i.e. there will be no cycles).
     """
-    # color for each asset
-    colors: dict[AssetKey, int] = {}
+    # color for each entity
+    colors: dict[EntityKey, int] = {}
 
-    # recursively color an asset and all of its downstream assets
-    def _dfs(key: AssetKey, cur_color: int):
+    # AssetNode.child_entity_keys does not include checks that list this asset only in their
+    # additional_deps (only checks that target the asset). For cycle resolution we need to
+    # follow those edges so an additional-dep'd check is colored alongside its actual
+    # downstream position rather than getting stranded in its own color partition.
+    # In the future, we could consider updating AssetNode.child_entity_keys to include these checks,
+    # but that's a more invasive change that requires us to be more careful about perf.
+    extra_check_children: dict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
+    for ad in asset_graph.assets_defs:
+        for spec in ad.check_specs:
+            for dep in spec.additional_deps:
+                extra_check_children[dep.asset_key].add(spec.key)
+
+    # recursively color an entity and all of its downstream entities
+    def _dfs(key: EntityKey, cur_color: int):
         node = asset_graph.get(key)
         colors[key] = cur_color
         # in an external asset, treat all downstream as if they're in the same node
-        cur_node_asset_keys = node.assets_def.keys if node.is_materializable else node.child_keys
+        assets_def = asset_graph.assets_def_for_key(key)
+        cur_node_entity_keys = (
+            assets_def.keys | assets_def.check_keys
+            if assets_def.is_materializable
+            else node.child_entity_keys
+        )
 
-        for child_key in node.child_keys:
-            # if the downstream asset is in the current node,keep the same color
-            new_color = cur_color if child_key in cur_node_asset_keys else cur_color + 1
+        children = node.child_entity_keys
+        if isinstance(key, AssetKey):
+            children = children | extra_check_children.get(key, set())
 
-            # if current color of the downstream asset is less than the new color, re-do dfs
+        for child_key in children:
+            # if the downstream entity is in the current node, keep the same color
+            new_color = cur_color if child_key in cur_node_entity_keys else cur_color + 1
+
+            # if current color of the downstream entity is less than the new color, re-do dfs
             if colors.get(child_key, -1) < new_color:
                 _dfs(child_key, new_color)
 
     # dfs for each root node; will throw an error if there are key-level cycles
-    root_keys = asset_graph.toposorted_asset_keys_by_level[0]
+    root_keys = asset_graph.toposorted_entity_keys_by_level[0]
     for key in root_keys:
         _dfs(key, 0)
 
@@ -612,26 +634,23 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
         lambda: defaultdict(set)
     )
     for key, color in colors.items():
-        node = asset_graph.get(key)
-        color_mapping_by_assets_defs[node.assets_def][color].add(key)
+        assets_def = asset_graph.assets_def_for_key(key)
+        color_mapping_by_assets_defs[assets_def][color].add(key)
 
     subsetted_assets_defs: list[AssetsDefinition] = []
     for assets_def, color_mapping in color_mapping_by_assets_defs.items():
         if assets_def.is_external or len(color_mapping) == 1 or not assets_def.can_subset:
             subsetted_assets_defs.append(assets_def)
         else:
-            for asset_keys in color_mapping.values():
+            for entity_keys in color_mapping.values():
+                asset_keys = {key for key in entity_keys if isinstance(key, AssetKey)}
+                check_keys = {key for key in entity_keys if isinstance(key, AssetCheckKey)}
                 subsetted_assets_defs.append(
-                    assets_def.subset_for(asset_keys, selected_asset_check_keys=None)
+                    assets_def.subset_for(asset_keys, selected_asset_check_keys=check_keys)
                 )
 
-    # We didn't color asset checks, so add any that are in their own node.
-    assets_defs_with_only_checks = [
-        ad for ad in asset_graph.assets_defs if has_only_asset_checks(ad)
-    ]
-
     asset_nodes_by_key, assets_defs_by_check_key = JobScopedAssetGraph.key_mappings_from_assets(
-        subsetted_assets_defs + assets_defs_with_only_checks
+        subsetted_assets_defs
     )
     return JobScopedAssetGraph(asset_nodes_by_key, assets_defs_by_check_key, asset_graph)
 
