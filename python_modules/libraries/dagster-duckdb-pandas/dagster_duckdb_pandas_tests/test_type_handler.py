@@ -132,6 +132,7 @@ def test_io_manager_asset_metadata(tmp_path) -> None:
     assert mat.materialization.metadata["dagster/table_name"] == MetadataValue.text(
         f"{db_file}.custom_schema.my_pandas_df"
     )
+    assert mat.materialization.metadata["dagster/storage_kind"] == MetadataValue.text("duckdb")
 
 
 def test_duckdb_io_manager_with_schema(tmp_path):
@@ -460,7 +461,7 @@ def test_dynamic_partition(tmp_path, io_managers):
         with instance_for_test() as instance:
             resource_defs = {"io_manager": io_manager}
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned],
@@ -475,7 +476,7 @@ def test_dynamic_partition(tmp_path, io_managers):
             assert out_df["a"].tolist() == ["1", "1", "1"]
             duckdb_conn.close()
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned],

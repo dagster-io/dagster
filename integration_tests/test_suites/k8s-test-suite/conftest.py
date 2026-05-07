@@ -28,11 +28,14 @@ def dagster_home() -> Iterator[None]:
         os.environ["DAGSTER_HOME"] = old_env
 
 
+# These images need to match what the Helm chart actually deploys (helm/dagster/values.yaml)
+# and what test pods spec, so the kind cluster has them cached and the kubelet doesn't have
+# to reach Docker Hub at test time.
 cluster_provider = define_cluster_provider_fixture(
     additional_kind_images=[
         "docker.io/busybox",
-        "docker.io/bitnami/rabbitmq",
-        "docker.io/bitnami/postgresql",
+        "docker.io/bitnamilegacy/rabbitmq:3.8.12",
+        "docker.io/library/postgres:14.6",
     ]
 )
 

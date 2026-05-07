@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import dagster as dg
 import dagster._check as check
@@ -42,16 +42,24 @@ class ADLS2ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="The credentials with which to authenticate",
     )
 
+    endpoint_suffix: str | None = Field(
+        default=None,
+        description="The endpoint suffix for the Azure storage account (e.g. 'core.usgovcloudapi.net' for Azure Government).",
+    )
+
     resource_key: str | None = Field(
         default=None, description="Resource key for binding to definitions"
     )
 
     @property
     def resource(self) -> ADLS2Resource:
-        return ADLS2Resource(
-            storage_account=check.not_none(self.storage_account, "storage_account is required"),
-            credential=check.not_none(self.credential, "credential is required"),
-        )
+        kwargs: dict[str, Any] = {
+            "storage_account": check.not_none(self.storage_account, "storage_account is required"),
+            "credential": check.not_none(self.credential, "credential is required"),
+        }
+        if self.endpoint_suffix is not None:
+            kwargs["endpoint_suffix"] = self.endpoint_suffix
+        return ADLS2Resource(**kwargs)
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.resource_key is None:

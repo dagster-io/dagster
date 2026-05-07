@@ -155,8 +155,8 @@ def _materialize_asset(env, return_dict):
                 resources={"pipes_ecs_client": pipes},
             )
     finally:
-        assert len(pipes._client._task_runs) > 0  # noqa  # pyright: ignore[reportAttributeAccessIssue]
-        task_arn = next(iter(pipes._client._task_runs.keys()))  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+        assert len(pipes._client._task_runs) > 0  # noqa  # ty: ignore[unresolved-attribute]
+        task_arn = next(iter(pipes._client._task_runs.keys()))  # noqa  # ty: ignore[unresolved-attribute]
         return_dict[0] = pipes._client.describe_tasks(  # noqa
             cluster="test-cluster", tasks=[task_arn]
         )
@@ -227,7 +227,7 @@ def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
         Test Error is thrown when the wait delay is less than the processing time.
         """
         os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "1", "SLEEP_SECONDS": "2"})
-        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # pyright: ignore (reportAttributeAccessIssue)
+        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # ty: ignore (reportAttributeAccessIssue)
             materialize(
                 [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
             )
@@ -236,7 +236,7 @@ def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
         Test Error is thrown when the wait attempts * wait delay is less than the processing time.
         """
         os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "2", "SLEEP_SECONDS": "3"})
-        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # pyright: ignore (reportAttributeAccessIssue)
+        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # ty: ignore (reportAttributeAccessIssue)
             materialize(
                 [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
             )

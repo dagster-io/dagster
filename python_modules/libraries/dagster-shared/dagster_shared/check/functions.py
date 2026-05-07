@@ -2,7 +2,16 @@ import collections.abc
 import inspect
 from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from os import PathLike, fspath
-from typing import AbstractSet, Any, Callable, NoReturn, TypeAlias, TypeVar, overload  # noqa: UP035
+from typing import (  # noqa: UP035
+    AbstractSet,
+    Any,
+    Callable,
+    NoReturn,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from typing_extensions import Never
 
@@ -269,7 +278,7 @@ def opt_dict_param(
 
 
 @overload
-def opt_nullable_dict_param(  # pyright: ignore[reportOverlappingOverload]
+def opt_nullable_dict_param(
     obj: None,
     param_name: str,
     key_type: TypeOrTupleOfTypes | None = ...,
@@ -512,7 +521,7 @@ def opt_generator_param(
             f'Param "{param_name}" is not a generator (return value of function that yields) Got '
             f"{obj} instead"
         )
-    return obj
+    return cast("Generator | None", obj)
 
 
 def generator(
@@ -522,7 +531,7 @@ def generator(
         raise ParameterCheckError(
             f"Not a generator (return value of function that yields) Got {obj} instead"
         )
-    return obj
+    return cast("Generator", obj)
 
 
 def opt_generator(
@@ -532,7 +541,7 @@ def opt_generator(
         raise ParameterCheckError(
             f"Not a generator (return value of function that yields) Got {obj} instead"
         )
-    return obj
+    return cast("Generator | None", obj)
 
 
 # ########################
@@ -871,7 +880,7 @@ def is_list(
     if not of_type:
         return obj
 
-    return list(_check_iterable_items(obj, of_type, "list"))
+    return cast("list[T]", list(_check_iterable_items(obj, of_type, "list")))
 
 
 # ########################
@@ -1277,7 +1286,9 @@ def is_iterable(
         if not isinstance(obj, Iterable):
             raise _type_mismatch_error(obj, list, additional_message)
 
-    return obj if not of_type else _check_iterable_items(obj, of_type, "iterable")
+    return cast(
+        "Iterable[T]", obj if not of_type else _check_iterable_items(obj, of_type, "iterable")
+    )
 
 
 # ########################

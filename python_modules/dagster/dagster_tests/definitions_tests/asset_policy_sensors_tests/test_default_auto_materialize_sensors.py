@@ -18,14 +18,17 @@ def other_auto_materialize_asset():
     pass
 
 
-@dg.observable_source_asset(auto_observe_interval_minutes=1)
-def auto_observe_asset():
-    pass
+auto_observe_asset = dg.SourceAsset(
+    key="auto_observe_asset",
+    observe_fn=lambda context: dg.DataVersion("1"),
+    auto_observe_interval_minutes=1,
+)
 
-
-@dg.observable_source_asset(auto_observe_interval_minutes=1)
-def other_auto_observe_asset():
-    pass
+other_auto_observe_asset = dg.SourceAsset(
+    key="other_auto_observe_asset",
+    observe_fn=lambda context: dg.DataVersion("1"),
+    auto_observe_interval_minutes=1,
+)
 
 
 @dg.asset

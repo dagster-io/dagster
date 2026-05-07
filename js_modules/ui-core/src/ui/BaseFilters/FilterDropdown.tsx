@@ -60,7 +60,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
         : filters;
 
-    const results: Record<string, {label: JSX.Element; key: string; value: any}[]> = {};
+    const results: Record<string, {label: JSX.Element; key: string; value: unknown}[]> = {};
     if (search) {
       filters.forEach((filter) => {
         results[filter.name] = filter.getResults(search);
@@ -70,7 +70,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   }, [search, filters, selectedFilter]);
 
   const selectValue = React.useCallback(
-    (filter: FilterObject, value: any) => {
+    (filter: FilterObject, value: unknown) => {
       filter.onSelect({
         value,
         close: () => {
@@ -286,98 +286,102 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 type FilterDropdownButtonProps = {
   filters: FilterObject[];
   label?: string;
+  rightIcon?: React.ReactNode;
 };
-export const FilterDropdownButton = React.memo(({filters, label}: FilterDropdownButtonProps) => {
-  const keyRef = React.useRef(0);
+export const FilterDropdownButton = React.memo(
+  ({filters, label, rightIcon}: FilterDropdownButtonProps) => {
+    const keyRef = React.useRef(0);
 
-  const [isOpen, _setIsOpen] = useState(false);
-  const prevOpenRef = React.useRef(isOpen);
+    const [isOpen, _setIsOpen] = useState(false);
+    const prevOpenRef = React.useRef(isOpen);
 
-  const setIsOpen = useSetStateUpdateCallback(isOpen, (isOpen) => {
-    _setIsOpen(isOpen);
-    if (isOpen && !prevOpenRef.current) {
-      // Reset the key when the dropdown is opened
-      // But not when its closed because of the closing animation
-      keyRef.current++;
-    }
-    prevOpenRef.current = isOpen;
-  });
-
-  const [portaledElements, setPortaledElements] = useState<JSX.Element[]>([]);
-
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-
-  /**
-   * Popover doesn't seem to support canOutsideClickClose, so we have to do this ourselves.
-   */
-  React.useLayoutEffect(() => {
-    const listener = (e: MouseEvent) => {
-      if (
-        buttonRef.current?.contains(e.target as Node) ||
-        dropdownRef.current?.contains(e.target as Node) ||
-        !document.contains(e.target as Node)
-      ) {
-        return;
+    const setIsOpen = useSetStateUpdateCallback(isOpen, (isOpen) => {
+      _setIsOpen(isOpen);
+      if (isOpen && !prevOpenRef.current) {
+        // Reset the key when the dropdown is opened
+        // But not when its closed because of the closing animation
+        keyRef.current++;
       }
-      setIsOpen(false);
-    };
-    document.body.addEventListener('mousedown', listener);
-    return () => {
-      document.body.removeEventListener('mousedown', listener);
-    };
-  }, [setIsOpen]);
+      prevOpenRef.current = isOpen;
+    });
 
-  return (
-    <ShortcutHandler
-      shortcutLabel="F"
-      shortcutFilter={(e) =>
-        e.code === 'KeyF' && !(e.metaKey || e.ctrlKey || e.altKey || e.shiftKey)
-      }
-      onShortcut={() => setIsOpen((isOpen) => !isOpen)}
-    >
-      <PopoverStyle />
-      <Popover
-        content={
-          <div ref={dropdownRef}>
-            <FilterDropdown
-              filters={filters}
-              setIsOpen={setIsOpen}
-              key={keyRef.current}
-              setPortaledElements={setPortaledElements}
-            />
-          </div>
+    const [portaledElements, setPortaledElements] = useState<JSX.Element[]>([]);
+
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+    /**
+     * Popover doesn't seem to support canOutsideClickClose, so we have to do this ourselves.
+     */
+    React.useLayoutEffect(() => {
+      const listener = (e: MouseEvent) => {
+        if (
+          buttonRef.current?.contains(e.target as Node) ||
+          dropdownRef.current?.contains(e.target as Node) ||
+          !document.contains(e.target as Node)
+        ) {
+          return;
         }
-        canEscapeKeyClose
-        popoverClassName="filter-dropdown"
-        isOpen={isOpen}
-        placement="bottom-start"
-        onClosing={() => {
-          prevOpenRef.current = false;
-        }}
+        setIsOpen(false);
+      };
+      document.body.addEventListener('mousedown', listener);
+      return () => {
+        document.body.removeEventListener('mousedown', listener);
+      };
+    }, [setIsOpen]);
+
+    return (
+      <ShortcutHandler
+        shortcutLabel="F"
+        shortcutFilter={(e) =>
+          e.code === 'KeyF' && !(e.metaKey || e.ctrlKey || e.altKey || e.shiftKey)
+        }
+        onShortcut={() => setIsOpen((isOpen) => !isOpen)}
       >
-        <div>
-          <Popover
-            content={<>{portaledElements}</>}
-            canEscapeKeyClose
-            isOpen={!!portaledElements.length}
-            position="bottom"
-          >
-            <Button
-              ref={buttonRef}
-              icon={<Icon name="filter_alt" />}
-              onClick={() => {
-                setIsOpen((isOpen) => !isOpen);
-              }}
+        <PopoverStyle />
+        <Popover
+          content={
+            <div ref={dropdownRef}>
+              <FilterDropdown
+                filters={filters}
+                setIsOpen={setIsOpen}
+                key={keyRef.current}
+                setPortaledElements={setPortaledElements}
+              />
+            </div>
+          }
+          canEscapeKeyClose
+          popoverClassName="filter-dropdown"
+          isOpen={isOpen}
+          placement="bottom-start"
+          onClosing={() => {
+            prevOpenRef.current = false;
+          }}
+        >
+          <div>
+            <Popover
+              content={<>{portaledElements}</>}
+              canEscapeKeyClose
+              isOpen={!!portaledElements.length}
+              position="bottom"
             >
-              {label ?? 'Filter'}
-            </Button>
-          </Popover>
-        </div>
-      </Popover>
-    </ShortcutHandler>
-  );
-});
+              <Button
+                ref={buttonRef}
+                icon={<Icon name="filter_alt" />}
+                rightIcon={rightIcon}
+                onClick={() => {
+                  setIsOpen((isOpen) => !isOpen);
+                }}
+              >
+                {label ?? 'Filter'}
+              </Button>
+            </Popover>
+          </div>
+        </Popover>
+      </ShortcutHandler>
+    );
+  },
+);
 
 const DropdownMenuContainer = styled.div`
   .iconGlobal {

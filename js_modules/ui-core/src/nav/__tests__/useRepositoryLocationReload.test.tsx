@@ -134,10 +134,17 @@ describe('useRepositoryReloadLocation', () => {
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
 
-    await waitFor(() => {
-      expect(screen.queryByText(/Has error: false/)).toBeVisible();
-      expect(screen.queryByText(/Reloading: false/)).toBeVisible();
-    });
+    // The transition back to Reloading: false requires the polling query to
+    // fire, resolve, run the setTimeout-wrapped onCompleted handler, and
+    // dispatch finish-polling/success. On slow CI workers this chain can
+    // exceed waitFor's default 1000ms timeout, so give it more room.
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/Has error: false/)).toBeVisible();
+        expect(screen.queryByText(/Reloading: false/)).toBeVisible();
+      },
+      {timeout: 5000},
+    );
   });
 
   it('surfaces mutation errors', async () => {
@@ -194,10 +201,13 @@ describe('useRepositoryReloadLocation', () => {
       expect(screen.queryByText(/Has error: false/)).toBeVisible();
     });
 
-    await waitFor(() => {
-      expect(screen.queryByText(/Reloading: false/)).toBeVisible();
-      expect(screen.queryByText(/Has error: true/)).toBeVisible();
-    });
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/Reloading: false/)).toBeVisible();
+        expect(screen.queryByText(/Has error: true/)).toBeVisible();
+      },
+      {timeout: 5000},
+    );
   });
 
   // eslint-disable-next-line jest/no-disabled-tests
@@ -267,9 +277,14 @@ describe('useRepositoryReloadLocation', () => {
       await client.refetchQueries({include: 'active'});
     });
 
-    await waitFor(() => {
-      expect(screen.queryByText(/Reloading: false/)).toBeVisible();
-      expect(screen.queryByText(/Has error: true/)).toBeVisible();
-    });
+    // Same async chain as the success path (onCompleted is wrapped in
+    // setTimeout(0) and dispatches after `act` has already flushed).
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/Reloading: false/)).toBeVisible();
+        expect(screen.queryByText(/Has error: true/)).toBeVisible();
+      },
+      {timeout: 5000},
+    );
   });
 });

@@ -13,7 +13,7 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/simple-schedule-example.py"
+  path="docs_snippets/docs_snippets/guides/automate/simple-schedule-example.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -43,7 +43,7 @@ If using partitions and jobs, you can create a schedule using the partition with
 If you have a [partitioned asset](/guides/build/partitions-and-backfills) and job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition.py"
+  path="docs_snippets/docs_snippets/guides/automate/schedule-with-partition.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -54,7 +54,7 @@ If you have a [partitioned asset](/guides/build/partitions-and-backfills) and jo
 If you have a partitioned op job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition-ops.py"
+  path="docs_snippets/docs_snippets/guides/automate/schedule-with-partition-ops.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />

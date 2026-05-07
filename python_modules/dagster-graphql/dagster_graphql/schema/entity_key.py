@@ -11,6 +11,10 @@ class GrapheneAssetKey(graphene.ObjectType):
     class Meta:
         name = "AssetKey"
 
+    @staticmethod
+    def to_manifest_dict(asset_key: AssetKey) -> dict:
+        return {"__typename": "AssetKey", "path": asset_key.path}
+
 
 class GrapheneAssetCheckHandle(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)

@@ -1,10 +1,10 @@
 ---
-title: Dagster+ Hybrid performance optimization and troubleshooting
+title: 'Troubleshooting Dagster+ deployments and optimizing performance'
 description: Configure your agent and code server container settings for optimal performance of your Dagster+ deployment.
-sidebar_position: 100
+sidebar_position: 10
 ---
 
-import HybridResources from '@site/docs/partials/\_HybridResources.md';
+import HybridResources from '@site/docs/partials/_HybridResources.md';
 
 To ensure the best performance of your Dagster+ deployment, we recommend following the guidance in the [performance optimization](#performance-optimization) section of this doc to tune your [agent](/deployment/dagster-plus/hybrid/architecture#the-agent) and [code server](/deployment/dagster-plus/hybrid/architecture#code-server) container settings to meet your organization's needs.
 
@@ -18,7 +18,7 @@ If you run into issues as you scale your deployment (especially as asset counts 
 
 ### General guidance
 
-- Look for `exit code 137` / `OOMKilled` in the agent or code server container logs -- this is the strongest signal that the issue is insufficient memory.
+- Look for `exit code 137` / `OOMKilled` in the agent or code server container logs — this is the strongest signal that the issue is insufficient memory.
 - Correlate heartbeat timeouts (agent or code server) with CPU spikes or container restarts.
 - Distinguish issues where the run never starts (agent can’t schedule workers) from those where the run starts, then dies (worker or code server out of memory).
 - If errors disappear when you lower concurrency, this is a signal that you were hitting CPU/RAM saturation with the previous concurrency settings.
@@ -49,11 +49,11 @@ If you run into issues as you scale your deployment (especially as asset counts 
 
 If you see errors like the following in your agent logs, your agent may be experiencing network connectivity issues when communicating with the Dagster+ API:
 
-```
+```text
 dagster_cloud_cli.core.errors.GraphQLStorageError: HTTPSConnectionPool(host='{organisation}.agent.dagster.cloud', port=443): Read timed out. (read timeout=60)
 ```
 
-```
+```text
 requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
 ```
 
@@ -89,3 +89,28 @@ These settings configure the TCP stack to:
 - Send the first keepalive probe after 11 seconds of idle time (`TCP_KEEPIDLE`)
 - Send subsequent probes every 7 seconds (`TCP_KEEPINTVL`)
 - Close the connection after 5 failed probes (`TCP_KEEPCNT`)
+
+### Handling duplicate code locations
+
+When restarting Dagster agent pods or updating configurations, you may encounter duplicate code locations if the agent-to-Dagster+ communication is disrupted. This can happen when:
+
+- Deleting and recreating agent pods
+- Using `dagster-cloud deployment settings set-from-file`
+
+To minimize the occurrence of duplicate code locations, use `kubectl rollout restart` when possible, as this ensures a more graceful shutdown and restart of the agent.
+
+Note that in cases where configuration changes are needed, you'll need to:
+
+1. First apply the configuration changes:
+
+   ```bash
+   kubectl apply -f <your-config-file>.yaml
+   ```
+
+2. Then perform the rollout restart if needed.
+
+If duplicate code locations do appear, they may need to be manually cleaned up through the Dagster interface. This issue can occur due to:
+
+- New code locations being created instead of updating existing ones
+- Old locations not being properly deregistered
+- Race conditions during agent reconnection

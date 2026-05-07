@@ -24,7 +24,6 @@ import {
 } from '../../graphql/builders';
 import {RunStatus} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
@@ -59,6 +58,7 @@ const buildGraphNodeMock = (
     isPartitioned: false,
     isObservable: false,
     isMaterializable: true,
+    dependedByKeys: [],
     ...definitionOverrides,
   }),
 });
@@ -77,6 +77,8 @@ const buildSidebarQueryMock = (
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset1"]',
         description: null,
+        // @ts-expect-error builder return type includes incomplete ConfigTypeField branches
+        configField: null,
         jobNames: ['test_job'],
         assetKey: {
           path: ['asset1'],
@@ -243,9 +245,7 @@ const TestContainer = ({
       ]
     }
   >
-    <WorkspaceProvider>
-      <Box style={{width: 400}}>{children}</Box>
-    </WorkspaceProvider>
+    <Box style={{width: 400}}>{children}</Box>
   </MockedProvider>
 );
 

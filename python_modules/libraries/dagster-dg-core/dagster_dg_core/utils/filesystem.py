@@ -44,7 +44,7 @@ class PathChangeHandler(FileSystemEventHandler):
         clear_screen()
         self._callback(new_hash)
         current_time = datetime.datetime.now().strftime("%H:%M:%S")
-        print(f"\nUpdated at {current_time}, watching for changes...")  # noqa: T201
+        print(f"\nUpdated at {current_time}, watching for changes...", flush=True)  # noqa: T201
 
 
 # This is a global variable that is used to signal the watcher to exit in tests
@@ -72,7 +72,10 @@ def watch_paths(
     observer = Observer()
     handler = PathChangeHandler(paths, includes, excludes, callback)
     for path in paths:
-        observer.schedule(handler, str(path), recursive=True)
+        # `hash_paths` already tolerates missing paths; mirror that here so the
+        # observer can start when an optional watched path (e.g. uv.lock) is absent.
+        if path.exists():
+            observer.schedule(handler, str(path), recursive=True)
     observer.start()
     try:
         while observer.is_alive() and not SHOULD_WATCHER_EXIT:

@@ -29,7 +29,7 @@ export const PipelineOverviewRoot = (props: Props) => {
   const history = useHistory();
   const location = useLocation();
   const params = useParams();
-  const pathStr = (params as any)['0'];
+  const pathStr = (params as Record<string, string>)['0'] ?? '';
   const explorerPath = useMemo(() => explorerPathFromString(pathStr), [pathStr]);
 
   const openInNewTab = useOpenInNewTab();

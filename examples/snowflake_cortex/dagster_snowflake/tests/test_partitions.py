@@ -2,6 +2,8 @@
 
 from unittest.mock import Mock
 
+from dagster import MaterializeResult
+
 from dagster_snowflake_ai.defs.assets.analytics import partitioned_analytics
 from dagster_snowflake_ai.defs.assets.ingestion import stories
 
@@ -22,8 +24,9 @@ class TestPartitionedStories:
         mock_cursor.fetchone.return_value = (10,)
 
         result = stories.raw_stories(mock_context, mock_snowflake_resource, Mock())
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert result.metadata["stories_in_staging"].value == 10
         assert mock_cursor.execute.called
 
@@ -46,8 +49,9 @@ class TestPartitionedAnalytics:
         result = partitioned_analytics.daily_sentiment_aggregates(
             mock_context, mock_snowflake_resource
         )
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert result.metadata["partition_date"].value == "2024-01-15"
         assert result.metadata["total_stories"].value == 100
         assert result.metadata["data_engineering_count"].value == 25
@@ -67,8 +71,9 @@ class TestPartitionedAnalytics:
         result = partitioned_analytics.daily_entity_summary(
             mock_context, mock_snowflake_resource
         )
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert result.metadata["partition_date"].value == "2024-01-15"
         assert result.metadata["total_stories"].value == 50
         assert result.metadata["stories_with_skills"].value == 25

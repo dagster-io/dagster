@@ -9,7 +9,7 @@ As with other sensors, you can directly invoke run status sensors. However, the 
 If you had written a status sensor like this (assuming you implemented the function `email_alert` elsewhere):
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensor_alert.py"
   startAfter="start_simple_success_sensor"
   endBefore="end_simple_success_sensor"
   title="src/<project_name>/defs/sensors.py"
@@ -18,7 +18,7 @@ If you had written a status sensor like this (assuming you implemented the funct
 We can first write a simple job that will succeed:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensor_alert.py"
   startAfter="start_run_status_sensor_testing_with_context_setup"
   endBefore="end_run_status_sensor_testing_with_context_setup"
   title="src/<project_name>/defs/assets.py"
@@ -27,7 +27,7 @@ We can first write a simple job that will succeed:
 Then we can execute this job and pull the attributes we need to build the `context`. We provide a function <PyObject section="schedules-sensors" module="dagster" object="build_run_status_sensor_context" /> that will return the correct context object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensor_alert.py"
   startAfter="start_run_status_sensor_testing_marker"
   endBefore="end_run_status_sensor_testing_marker"
   title="src/<project_name>/defs/sensors.py"
@@ -39,7 +39,7 @@ Then we can execute this job and pull the attributes we need to build the `conte
 We can use the same pattern to build the context for <PyObject section="schedules-sensors" module="dagster" object="run_failure_sensor" />. If we wanted to test this run failure sensor:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensor_alert.py"
   startAfter="start_simple_fail_sensor"
   endBefore="end_simple_fail_sensor"
   title="src/<project_name>/defs/sensors.py"
@@ -48,7 +48,7 @@ We can use the same pattern to build the context for <PyObject section="schedule
 We first need to make a simple job that will fail:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensor_alert.py"
   startAfter="start_failure_sensor_testing_with_context_setup"
   endBefore="end_failure_sensor_testing_with_context_setup"
   title="src/<project_name>/defs/assets.py"
@@ -57,7 +57,7 @@ We first need to make a simple job that will fail:
 Then we can execute the job and create our context:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensor_alert.py"
   startAfter="start_alert_sensor_testing_with_context_marker"
   endBefore="end_alert_sensor_testing_with_context_marker"
   title="src/<project_name>/defs/sensors.py"

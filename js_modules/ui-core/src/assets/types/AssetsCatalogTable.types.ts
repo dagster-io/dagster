@@ -31,9 +31,9 @@ export type AssetCatalogTableQuery = {
             hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
+            hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
-            pools: Array<string>;
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -52,18 +52,13 @@ export type AssetCatalogTableQuery = {
               | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
-              description: string;
               dimensionTypes: Array<{
                 __typename: 'DimensionDefinitionType';
                 type: Types.PartitionDefinitionType;
                 dynamicPartitionsDefinitionName: string | null;
               }>;
             } | null;
-            automationCondition: {
-              __typename: 'AutomationCondition';
-              label: string | null;
-              expandedLabel: Array<string>;
-            } | null;
+            automationCondition: {__typename: 'AutomationCondition'} | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
@@ -110,9 +105,9 @@ export type AssetCatalogGroupTableQuery = {
     hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
-    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -131,18 +126,13 @@ export type AssetCatalogGroupTableQuery = {
       | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
-      description: string;
       dimensionTypes: Array<{
         __typename: 'DimensionDefinitionType';
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    automationCondition: {
-      __typename: 'AutomationCondition';
-      label: string | null;
-      expandedLabel: Array<string>;
-    } | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
@@ -170,9 +160,9 @@ export type AssetCatalogGroupTableNodeFragment = {
   hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
-  pools: Array<string>;
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -191,18 +181,13 @@ export type AssetCatalogGroupTableNodeFragment = {
     | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
-    description: string;
     dimensionTypes: Array<{
       __typename: 'DimensionDefinitionType';
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
+  automationCondition: {__typename: 'AutomationCondition'} | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
@@ -215,6 +200,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = 'b9fb4b1e1639dcbd1f54b152d8c70e9522db4b57874dce2eb9d59608ac41dbb3';
+export const AssetCatalogTableQueryVersion = 'd63b140c51e18d40ed5d951c67516347c1b280d6c0c3961664792c96e02678f2';
 
-export const AssetCatalogGroupTableQueryVersion = 'e40ea9d79f47b7677feefebd934e0a32808f21f2586e3149fd930d584b135203';
+export const AssetCatalogGroupTableQueryVersion = 'a684253c157f76947ee21c5317123fd1401dea950dc93b3857b3d9b3e19f3b08';

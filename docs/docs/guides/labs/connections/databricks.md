@@ -14,18 +14,27 @@ This guide covers connecting Dagster+ to Databricks Unity Catalog to automatical
 
 To create a Databricks Connection in Dagster+, you will need to:
 
-1. Generate an authentication token with appropriate permissions.
-2. Add the authentication token as an environment variable in Dagster+.
+1. Generate authentication credentials with appropriate permissions.
+2. Add the credentials as an environment variable in Dagster+.
 3. Create the Databricks Connection in Dagster+.
 
-## Step 1: Generate an authentication token with appropriate permissions
+## Step 1: Generate authentication credentials with appropriate permissions
 
-Dagster Connections require read-only access to Databricks Unity Catalog metadata. We recommend using a dedicated service principal,
-but personal access tokens (PATs) are also supported.
+Dagster Connections require read-only access to Databricks Unity Catalog metadata. We recommend using a dedicated service principal with OAuth machine-to-machine (M2M) credentials, but personal access tokens (PATs) are also supported.
 
-### Option A: Create a Service principal (recommended for production)
+### Required API scopes
 
-Service principals provide more secure, auditable access without tying to a specific user account.
+The Databricks credentials used by the connection must be able to access the following [API scopes](https://docs.databricks.com/api/workspace/api/scopes):
+
+- **`unity-catalog`** — Read catalog, schema, table, and view metadata from Unity Catalog, and data lineage between Unity Catalog objects.
+- **`query-history`** — Read query history to surface usage information and derive table-level lineage.
+- **`sql`** — Execute lineage queries against a SQL warehouse. Only required if you [enable lineage tracking](#optional-enable-lineage-tracking).
+
+When creating a personal access token, select these scopes explicitly. Service principal OAuth credentials inherit scopes from the principal's permissions.
+
+### Option A: Service principal with OAuth (M2M) — recommended for production
+
+Service principals provide more secure, auditable access without tying to a specific user account. Dagster authenticates to the service principal using OAuth machine-to-machine (M2M) credentials — a client ID and a client secret.
 
 #### Step 1A.1: Create service principal
 
@@ -34,28 +43,30 @@ Service principals provide more secure, auditable access without tying to a spec
 3. Click **Add service principal**.
 4. Enter a name like `dagster-connection`.
 5. Click **Add**.
+6. Open the new service principal's details page and copy its **Application ID** (a UUID). You'll use this value both for Unity Catalog grants and for the connection's Client ID.
 
 #### Step 1A.2: Grant Unity Catalog permissions
 
-Grant these privileges on the catalogs and schemas you want to sync:
+In Unity Catalog, grants to a service principal must use its **Application ID**, not its display name. Run the following against each catalog and schema you want to sync, replacing `<application_id>` with the UUID from the previous step:
 
 ```sql
 -- Grant catalog access
-GRANT USE CATALOG ON CATALOG <catalog_name> TO `dagster-connection`;
+GRANT USE CATALOG ON CATALOG <catalog_name> TO `<application_id>`;
 
 -- Grant schema access
-GRANT USE SCHEMA ON SCHEMA <catalog_name>.<schema_name> TO `dagster-connection`;
+GRANT USE SCHEMA ON SCHEMA <catalog_name>.<schema_name> TO `<application_id>`;
 
 -- Grant read access to tables and views
-GRANT SELECT ON SCHEMA <catalog_name>.<schema_name> TO `dagster-connection`;
+GRANT SELECT ON SCHEMA <catalog_name>.<schema_name> TO `<application_id>`;
 ```
 
-#### Step 1A.3: Generate access token for service principal
+#### Step 1A.3: Generate an OAuth secret for the service principal
 
-1. In the Admin Console, find your `dagster-connection` service principal
-2. Click the **Generate token** button
-3. Set an expiration period (or "no expiration" for long-term use)
-4. Copy the generated token - it will only be shown once
+1. In the Admin Console, open your `dagster-connection` service principal.
+2. Navigate to the **Secrets** tab.
+3. Click **Generate secret**.
+4. Set a lifetime (or "no expiration" for long-term use).
+5. Copy the **Secret** — it will only be shown once. Combined with the Application ID from Step 1A.1, this gives you the Client ID and Client Secret used by the connection.
 
 ### Option B: Personal access token
 
@@ -81,13 +92,27 @@ Your user account needs these Unity Catalog privileges:
 8. Click **Generate**
 9. Copy the token immediately - it won't be shown again
 
-## Step 2: Store access token in Dagster+
+### Optional: Enable lineage tracking
+
+To compute table lineage from Databricks query history, additional configuration is required regardless of which authentication option you chose:
+
+- The service principal or user tied to the credentials used for the connection must have access to the metastore system tables. This typically requires one of:
+  - **Metastore admin** privileges, or
+  - **Account admin** privileges, which are required when the metastore was created by default at account creation time
+- The **warehouse ID** of a SQL warehouse that the above identity can access must be provided when configuring the connection (see [Step 3](#step-3-create-the-databricks-connection)). Lineage queries are executed against this warehouse.
+
+## Step 2: Store credentials in Dagster+
 
 1. In Dagster+, navigate to **Deployment** > **Environment variables**
 
-2. Create a new environment variable:
-   - **Name**: `DATABRICKS_CONNECTION_TOKEN` (or any name you prefer)
-   - **Value**: Paste your service principal token or PAT
+2. Create a new environment variable to hold your credential:
+
+   - If you used **Option A** (service principal with M2M OAuth):
+     - **Name:** `DATABRICKS_CONNECTION_CLIENT_SECRET` (or any name you prefer)
+     - **Value:** Paste your OAuth secret
+   - If you used **Option B** (PAT):
+     - **Name:** `DATABRICKS_CONNECTION_TOKEN` (or any name you prefer)
+     - **Value:** Paste your PAT
 
 ## Step 3: Create the Databricks Connection
 
@@ -103,7 +128,16 @@ Your user account needs these Unity Catalog privileges:
 - **Workspace URL**: Your Databricks workspace URL
   - Format: `https://dbc-1234abcd-56ef.cloud.databricks.com`
   - Find this in your browser address bar when logged into Databricks
-- **Personal access token environment variable**: Name of the Dagster+ environment variable containing your token (e.g., `DATABRICKS_CONNECTION_TOKEN`)
+- **Authentication**: Fill in the fields that match the method you chose in [Step 1](#step-1-generate-authentication-credentials-with-appropriate-permissions):
+  - If you used **Option A** (service principal with M2M OAuth):
+    - **Client ID:** The service principal's Application ID
+    - **Client secret environment variable:** Name of the Dagster+ environment variable containing your OAuth secret (e.g., `DATABRICKS_CONNECTION_CLIENT_SECRET`)
+  - If you used **Option B** (PAT):
+    - **Personal access token environment variable:** Name of the Dagster+ environment variable containing your PAT (e.g., `DATABRICKS_CONNECTION_TOKEN`)
+
+### Optional: Warehouse ID for lineage tracking
+
+- **Warehouse ID**: ID of the SQL warehouse used to execute lineage queries against the metastore system tables. Required to enable lineage tracking. For the permissions the connection identity must have, see [Enable lineage tracking](#optional-enable-lineage-tracking).
 
 ### Optional: Configure asset filtering
 

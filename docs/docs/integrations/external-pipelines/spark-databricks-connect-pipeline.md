@@ -67,7 +67,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In your Dagster project, create a file named `spark_assets.py` and paste in the following code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/spark_connect/spark_assets.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/spark_connect/spark_assets.py"
   title="src/<project_name>/spark_assets.py"
 />
 
@@ -92,7 +92,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 Add the following to a new file named `databricks_resources.py` to define a `DatabricksSession` and a <PyObject section="definitions" module="dagster" object="Definitions" /> object that binds it to our assets as a resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/spark_connect/databricks_resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/spark_connect/databricks_resources.py"
   title="src/<project_name>/databricks_resources.py"
 />
 
@@ -102,7 +102,7 @@ Add the following to a new file named `databricks_resources.py` to define a `Dat
 Add the following to a new file named `spark_resources.py` to define a `SparkSession` and a <PyObject section="definitions" module="dagster" object="Definitions" /> object that binds it to our assets as a resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/spark_connect/spark_resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/spark_connect/spark_resources.py"
   title="src/<project_name>/spark_resources.py"
 />
 

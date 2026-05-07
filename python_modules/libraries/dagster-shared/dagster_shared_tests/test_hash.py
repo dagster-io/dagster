@@ -15,7 +15,7 @@ def test_hash_collection():
     assert hash_collection(set(range(10))) == hash_collection(set(range(10)))
 
     with pytest.raises(AssertionError):
-        hash_collection(object())  # pyright: ignore[reportArgumentType]
+        hash_collection(object())  # ty: ignore[invalid-argument-type]
 
     class Foo(NamedTuple):
         a: list[int]

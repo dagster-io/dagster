@@ -36,7 +36,7 @@ def create_task(celery_app, **task_kwargs):
 
         check.dict_param(executable_dict, "executable_dict")
 
-        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)  # pyright: ignore[reportArgumentType]
+        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)  # ty: ignore[invalid-argument-type]
 
         recon_job = ReconstructableJob.from_dict(executable_dict)
         retry_mode = execute_step_args.retry_mode
@@ -44,11 +44,11 @@ def create_task(celery_app, **task_kwargs):
         dagster_run = instance.get_run_by_id(execute_step_args.run_id)
         check.invariant(dagster_run, f"Could not load run {execute_step_args.run_id}")
 
-        step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)  # pyright: ignore[reportCallIssue,reportArgumentType]
+        step_keys_str = ", ".join(execute_step_args.step_keys_to_execute or [])
 
         execution_plan = create_execution_plan(
             recon_job,
-            dagster_run.run_config,  # pyright: ignore[reportOptionalMemberAccess]
+            dagster_run.run_config,  # ty: ignore[unresolved-attribute]
             step_keys_to_execute=execute_step_args.step_keys_to_execute,
             known_state=execute_step_args.known_state,
         )
@@ -64,17 +64,17 @@ def create_task(celery_app, **task_kwargs):
                 marker_end=DELEGATE_MARKER,
             ),
             CeleryExecutor,
-            step_key=execution_plan.step_handle_for_single_step_plans().to_key(),  # pyright: ignore[reportOptionalMemberAccess]
+            step_key=execution_plan.step_handle_for_single_step_plans().to_key(),  # ty: ignore[unresolved-attribute]
         )
 
         events = [engine_event]
         for step_event in execute_plan_iterator(
             execution_plan=execution_plan,
             job=recon_job,
-            dagster_run=dagster_run,  # pyright: ignore[reportArgumentType]
+            dagster_run=dagster_run,  # ty: ignore[invalid-argument-type]
             instance=instance,
             retry_mode=retry_mode,
-            run_config=dagster_run.run_config,  # pyright: ignore[reportOptionalMemberAccess]
+            run_config=dagster_run.run_config,  # ty: ignore[unresolved-attribute]
         ):
             events.append(step_event)
 

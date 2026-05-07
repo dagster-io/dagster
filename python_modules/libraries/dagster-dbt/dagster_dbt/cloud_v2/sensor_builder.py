@@ -22,14 +22,13 @@ from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster_shared.serdes import whitelist_for_serdes
 
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.resources import DAGSTER_ADHOC_PREFIX, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.run_handler import (
     COMPLETED_AT_TIMESTAMP_METADATA_KEY,
     DbtCloudJobRunResults,
 )
 from dagster_dbt.cloud_v2.types import DbtCloudRun
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-from dagster_dbt.utils import clean_name
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS = 30
@@ -64,6 +63,16 @@ def materializations_from_batch_iter(
     client = workspace.get_client()
     workspace_data = workspace.get_or_fetch_workspace_data()
 
+    # Build a set of all adhoc job IDs to filter out Dagster-triggered runs.
+    # This includes the current adhoc job and any stale adhoc jobs from a
+    # previous naming convention that still exist in dbt Cloud.
+    adhoc_job_ids = {
+        job["id"]
+        for job in workspace_data.jobs
+        if (job.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX)
+    }
+    adhoc_job_ids.add(workspace_data.adhoc_job_id)
+
     total_processed_runs = 0
     while True:
         latest_offset = total_processed_runs + offset
@@ -79,13 +88,13 @@ def materializations_from_batch_iter(
             context.log.info("Received no runs. Breaking.")
             break
         context.log.info(
-            f"Processing {len(runs)}/{total_runs} runs for dbt Cloud workspace "
-            f"for project {workspace.project_name} and environment {workspace.environment_name}..."
+            f"Processing {len(runs)}/{total_runs} runs for dbt Cloud "
+            f"project {workspace.project_id} and environment {workspace.environment_id}..."
         )
         for i, run_details in enumerate(runs):
             run = DbtCloudRun.from_run_details(run_details=run_details)
 
-            if run.job_definition_id == workspace_data.adhoc_job_id:
+            if run.job_definition_id in adhoc_job_ids:
                 context.log.info(f"Run {run.id} was triggered by Dagster. Continuing.")
                 continue
 
@@ -120,8 +129,8 @@ def materializations_from_batch_iter(
             )
         total_processed_runs += len(runs)
         context.log.info(
-            f"Processed {total_processed_runs}/{total_runs} runs for dbt Cloud workspace "
-            f"for project {workspace.project_name} and environment {workspace.environment_name}..."
+            f"Processed {total_processed_runs}/{total_runs} runs for dbt Cloud "
+            f"project {workspace.project_id} and environment {workspace.environment_id}..."
         )
         if total_processed_runs == total_runs:
             yield None
@@ -169,12 +178,10 @@ def build_dbt_cloud_polling_sensor(
     dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
     @sensor(
-        name=clean_name(
-            f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor"
-        ),
+        name=f"dbt_cloud_{workspace.credentials.account_id}_{workspace.project_id}_{workspace.environment_id}__run_status_sensor",
         description=(
-            f"dbt Cloud polling sensor for dbt Cloud workspace for account {workspace.account_name}, "
-            f"project {workspace.project_name} and environment {workspace.environment_name}"
+            f"dbt Cloud polling sensor for account {workspace.credentials.account_id}, "
+            f"project {workspace.project_id} and environment {workspace.environment_id}"
         ),
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
@@ -182,10 +189,8 @@ def build_dbt_cloud_polling_sensor(
     def dbt_cloud_run_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
         context.log.info(
-            f"************"
-            f"Running sensor for dbt Cloud workspace for account {workspace.account_name}, "
-            f"project {workspace.project_name} and environment {workspace.environment_name}"
-            f"***********"
+            f"Running sensor for dbt Cloud account {workspace.credentials.account_id}, "
+            f"project {workspace.project_id} and environment {workspace.environment_id}"
         )
         try:
             cursor = (
@@ -241,10 +246,8 @@ def build_dbt_cloud_polling_sensor(
         context.update_cursor(serialize_value(new_cursor))
 
         context.log.info(
-            f"************"
-            f"Exiting sensor for dbt Cloud workspace for account {workspace.account_name}, "
-            f"project {workspace.project_name} and environment {workspace.environment_name}"
-            f"***********"
+            f"Exiting sensor for dbt Cloud account {workspace.credentials.account_id}, "
+            f"project {workspace.project_id} and environment {workspace.environment_id}"
         )
         return SensorResult(
             asset_events=sorted_asset_events(all_asset_events, repository_def),

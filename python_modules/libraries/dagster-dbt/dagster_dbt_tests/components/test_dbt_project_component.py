@@ -606,7 +606,7 @@ def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
             assert isinstance(component, DbtProjectComponent)
 
             # make sure assets are still loaded even though original project dir is gone
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # Verify we have the expected assets from jaffle_shop
@@ -656,7 +656,7 @@ def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
             assert isinstance(component, DbtProjectComponent)
 
             # make sure assets are still loaded even though original project dir is gone
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             assert len(specs) > 0
 
             # Verify we have the expected assets from jaffle_shop
@@ -814,7 +814,7 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     )
 
     # Get all asset specs from the definitions
-    all_specs = list(defs.get_all_asset_specs())
+    all_specs = list(defs.resolve_all_asset_specs())
     specs_by_key = {spec.key: spec for spec in all_specs}
 
     # The source has a custom asset key configured via meta.dagster.asset_key: ["raw_source_customers"]
@@ -827,7 +827,7 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     assert source_spec.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET) is True
 
     # Should have the table_name metadata from the source definition that enables remapping
-    table_name = "master_jaffle_shop.main.raw_customers"
+    table_name = "master_jaffle_shop.main.source_raw_customers"
     assert source_spec.metadata["dagster/table_name"] == table_name
 
     # Now build defs with something matching that table name and verify key is remapped
@@ -836,7 +836,7 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     )
     defs_combined = dg.Definitions.merge(defs, dg.Definitions(assets=[upstream_spec]))
 
-    all_specs_combined = list(defs_combined.get_all_asset_specs())
+    all_specs_combined = list(defs_combined.resolve_all_asset_specs())
     specs_by_key_combined = {spec.key: spec for spec in all_specs_combined}
 
     # should have been remapped, so shouldn't show up here

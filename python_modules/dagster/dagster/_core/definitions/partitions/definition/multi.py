@@ -227,7 +227,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         # in some cases, an underlying partitions definition may have keys in a format
         # that produce invalid multi-partition keys (e.g. they have a | character).
         # in these cases, we filter out the invalid keys.
-        return [key for key in keys if self._is_valid_key_format(key)]
+        return [key for key in keys if self.is_valid_key_format(key)]
 
     @public
     def get_partition_keys(
@@ -295,7 +295,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 results=partition_keys, cursor=next_cursor, has_more=iterator.has_next()
             )
 
-    def _is_valid_key_format(self, partition_key: str) -> bool:
+    def is_valid_key_format(self, partition_key: str) -> bool:
         """Checks if the given partition key is in the correct format for a multi-partition key
         of this MultiPartitionsDefinition.
         """
@@ -307,7 +307,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         }
         validated_partitions = set()
         for partition_key in partition_keys:
-            if not self._is_valid_key_format(partition_key):
+            if not self.is_valid_key_format(partition_key):
                 continue
 
             partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)

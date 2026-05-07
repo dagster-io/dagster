@@ -632,7 +632,7 @@ const Grid = styled.div`
   padding-bottom: 12px;
   border-bottom: 1px solid ${Colors.keylineDefault()};
   margin-bottom: 12px;
-  ${Subheading} {
+  .subheadingGlobal {
     padding-bottom: 4px;
     display: block;
   }

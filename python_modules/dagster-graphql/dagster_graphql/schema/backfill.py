@@ -20,7 +20,13 @@ from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemotePartitionSet
 from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import (
+    CANCELABLE_RUN_STATUSES,
+    NOT_FINISHED_STATUSES,
+    DagsterRun,
+    RunPartitionData,
+    RunsFilter,
+)
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -394,7 +400,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
 
-        self._records = None
         self._partition_run_data = None
 
         super().__init__(
@@ -427,14 +432,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return None
 
         return partition_sets[0]
-
-    def _get_records(self, graphene_info: ResolveInfo) -> Sequence[RunRecord]:
-        if self._records is None:
-            filters = RunsFilter.for_backfill(self._backfill_job.backfill_id)
-            self._records = graphene_info.context.instance.get_run_records(
-                filters=filters,
-            )
-        return self._records
 
     def _get_partition_run_data(self, graphene_info: ResolveInfo) -> Sequence[RunPartitionData]:
         if self._partition_run_data is not None:
@@ -490,22 +487,48 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def creation_timestamp(self) -> float:
         return self.timestamp
 
-    def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
+    def resolve_unfinishedRuns(
+        self, graphene_info: ResolveInfo, limit: int | None = None
+    ) -> Sequence["GrapheneRun"]:
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-        records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records if not record.dagster_run.is_finished]
+        instance = graphene_info.context.instance
+        records = instance.get_run_records(
+            filters=RunsFilter(
+                tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id),
+                statuses=NOT_FINISHED_STATUSES,
+            ),
+            limit=limit,
+        )
+        return [GrapheneRun(record) for record in records]
 
-    def resolve_cancelableRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
+    def resolve_cancelableRuns(
+        self, graphene_info: ResolveInfo, limit: int | None = None
+    ) -> Sequence["GrapheneRun"]:
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-        records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records if record.dagster_run.is_cancelable]
+        instance = graphene_info.context.instance
+        records = instance.get_run_records(
+            filters=RunsFilter(
+                tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id),
+                statuses=CANCELABLE_RUN_STATUSES,
+            ),
+            limit=limit,
+        )
+        return [GrapheneRun(record) for record in records]
 
-    def resolve_runs(self, graphene_info: ResolveInfo) -> "Sequence[GrapheneRun]":
+    def resolve_runs(
+        self, graphene_info: ResolveInfo, limit: int | None = None
+    ) -> "Sequence[GrapheneRun]":
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-        records = self._get_records(graphene_info)
+        instance = graphene_info.context.instance
+        if limit is None:
+            limit = instance.get_default_graphql_run_records_limit()
+        records = instance.get_run_records(
+            filters=RunsFilter.for_backfill(self._backfill_job.backfill_id),
+            limit=limit,
+        )
         return [GrapheneRun(record) for record in records]
 
     def resolve_tags(self, _graphene_info: ResolveInfo):

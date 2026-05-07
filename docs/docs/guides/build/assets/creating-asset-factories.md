@@ -108,6 +108,6 @@ These asset keys can then be used by other assets as dependencies to continue bu
 
 If you prefer not to use components, you can also create asset factories using pure Python. The factory pattern is essentially a function that takes configuration and returns <PyObject section="definitions" module="dagster" object="Definitions" />:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/asset-factories/python-asset-factory.py" language="python" />
 
 :::

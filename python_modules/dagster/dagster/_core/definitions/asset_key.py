@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, TypeVar, Union
 
 import dagster_shared.seven as seven
-from dagster_pipes import to_assey_key_path
+from dagster_pipes import to_asset_key_path
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -89,9 +89,14 @@ class AssetKey(IHaveNew):
     def to_escaped_user_string(self) -> str:
         r"""Similar to to_user_string, but escapes slashes in the path components with backslashes.
 
+        Produces a string that uniquely identifies the AssetKey: backslashes in components are
+        escaped as ``\\`` and slashes as ``\/`` before joining with ``/``.
+
         E.g. ["first_component", "second/component"] -> "first_component/second\/component"
         """
-        return ASSET_KEY_DELIMITER.join([part.replace("/", "\\/") for part in self.path])
+        return ASSET_KEY_DELIMITER.join(
+            part.replace("\\", "\\\\").replace("/", "\\/") for part in self.path
+        )
 
     def to_python_identifier(self, suffix: str | None = None) -> str:
         """Build a valid Python identifier based on the asset key that can be used for
@@ -111,7 +116,7 @@ class AssetKey(IHaveNew):
     @staticmethod
     def from_escaped_user_string(asset_key_string: str) -> "AssetKey":
         """Inverse of to_escaped_user_string."""
-        return AssetKey(to_assey_key_path(asset_key_string))
+        return AssetKey(to_asset_key_path(asset_key_string))
 
     @staticmethod
     def from_db_string(asset_key_string: str | None) -> Optional["AssetKey"]:

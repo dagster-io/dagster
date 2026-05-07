@@ -22,7 +22,11 @@ from buildkite_shared.utils import oss_path
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
-from dagster_buildkite.utils import connect_sibling_docker_container, network_buildkite_container
+from dagster_buildkite.utils import (
+    connect_sibling_docker_container,
+    network_buildkite_container,
+    wait_for_mysql_container,
+)
 
 _CORE_PACKAGES = [
     oss_path("python_modules/dagster"),
@@ -36,6 +40,11 @@ _INFRASTRUCTURE_PACKAGES = [
     oss_path("python_modules/automation"),
     oss_path("python_modules/dagster-test"),
 ]
+
+_DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
+_DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST = "dagster_dbt_tests/core/test_resource.py"
+_DAGSTER_DBT_CORE_MAIN_ASSET_CHECKS_TEST = "dagster_dbt_tests/core/test_asset_checks.py"
+_DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
 
 
 def _infer_package_type(directory: str | Path) -> str:
@@ -110,8 +119,6 @@ class PackageSpec:
             test environment. These must also be listed in the target toxfile under `passenv`.
             Defaults to None.
         tox_file (str, optional): The tox file to use. Defaults to {directory}/tox.ini.
-        retries (int, optional): Whether to retry these tests on failure
-            for packages of type "core" or "library", disabled for other packages.
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
@@ -130,7 +137,6 @@ class PackageSpec:
     pytest_tox_factors: list[ToxFactor] | None = None
     env_vars: list[str] | None = None
     tox_file: str | None = None
-    retries: int | None = None
     timeout_in_minutes: int | None = None
     queue: BuildkiteQueue | None = None
     run_pytest: bool = True
@@ -206,15 +212,29 @@ class PackageSpec:
                         elif callable(self.pytest_step_dependencies):
                             dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
+                    factor_pytest_args = (
+                        list(other_factor.pytest_args)
+                        if other_factor and other_factor.pytest_args
+                        else []
+                    )
+                    label_suffix = (
+                        f" {other_factor.label_suffix}"
+                        if other_factor and other_factor.label_suffix
+                        else ""
+                    )
+
                     # Generate multiple steps if splits > 1
                     for split_index in range(1, splits + 1):
                         if splits > 1:
-                            split_label = f"{base_name} ({split_index}/{splits})"
-                            pytest_args = [f"--split {split_index}/{splits}"]
+                            split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
+                            pytest_args = [
+                                f"--split {split_index}/{splits}",
+                                *factor_pytest_args,
+                            ]
                             extra_commands_pre = base_extra_commands_pre
                         else:
-                            split_label = base_name
-                            pytest_args = None
+                            split_label = f"{base_name}{label_suffix}"
+                            pytest_args = factor_pytest_args or None
                             extra_commands_pre = base_extra_commands_pre
 
                         steps.append(
@@ -230,7 +250,6 @@ class PackageSpec:
                                 tox_file=self.tox_file,
                                 timeout_in_minutes=self.timeout_in_minutes,
                                 queue=self.queue,
-                                retries=self.retries,
                                 skip_reason=skip_reason_str,
                                 pytest_args=pytest_args,
                                 concurrency=other_factor.concurrency if other_factor else None,
@@ -244,8 +263,8 @@ class PackageSpec:
         if len(steps) >= 2:
             return [
                 GroupStepBuilder(
-                    name=f"{emoji} {base_name}",
-                    key=base_name,
+                    base_name,
+                    [emoji],
                     steps=steps,
                 ).build()
             ]
@@ -360,7 +379,7 @@ airline_demo_extra_cmds = [
     f"pushd {oss_path('examples/airline_demo')}",
     # Run the postgres db. We are in docker running docker
     # so this will be a sibling container.
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+    "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit
     # Can't use host networking on buildkite and communicate via localhost
     # between these sibling containers, so pass along the ip.
     *network_buildkite_container("postgres"),
@@ -375,7 +394,7 @@ def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
     if tox_factor and tox_factor.factor.startswith("postgres"):
         return [
             f"pushd {oss_path('python_modules/dagster-graphql/dagster_graphql_tests/graphql/')}",
-            "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+            "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
             # Can't use host networking on buildkite and communicate via localhost
             # between these sibling containers, so pass along the ip.
             *network_buildkite_container("postgres"),
@@ -391,7 +410,7 @@ def dagster_graphql_extra_cmds(_, tox_factor: ToxFactor | None) -> list[str]:
 deploy_docker_example_extra_cmds = [
     f"pushd {oss_path('examples/deploy_docker/from_source')}",
     "./build.sh",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+    "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit
     *network_buildkite_container("docker_example_network"),
     *connect_sibling_docker_container(
         "docker_example_network",
@@ -409,7 +428,7 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
         f"pushd {oss_path('python_modules/libraries/dagster-celery')}",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
         *network_buildkite_container("rabbitmq"),
@@ -427,12 +446,22 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     ]
 
 
+def clickhouse_testcontainers_extra_cmds(_version: AvailablePythonVersion, _) -> list[str]:
+    """Env for testcontainers + clickhouse-driver against Docker on Buildkite agents.
+
+    Matches other library tests that talk to the host Docker daemon from inside the job container.
+    """
+    return [
+        "export DOCKER_API_VERSION=1.41",
+    ]
+
+
 ui_extra_cmds = [f"make -C {oss_path('.')} rebuild_ui"]
 
 
 mysql_extra_cmds = [
     f"pushd {oss_path('python_modules/libraries/dagster-mysql/dagster_mysql_tests/')}",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+    "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
     *network_buildkite_container("mysql"),
     *network_buildkite_container("mysql_pinned"),
     *network_buildkite_container("mysql_pinned_backcompat"),
@@ -445,6 +474,12 @@ mysql_extra_cmds = [
         "test-mysql-db-pinned-backcompat",
         "MYSQL_TEST_PINNED_BACKCOMPAT_DB_HOST",
     ),
+    # Wait for mysqld to accept connections; `docker compose up -d` returns before
+    # init is finished, which caused flaky ECONNREFUSED (111) failures on early-
+    # running tests. Placed after network setup so the two overlap with mysqld init.
+    wait_for_mysql_container("test-mysql-db"),
+    wait_for_mysql_container("test-mysql-db-pinned", port=3307),
+    wait_for_mysql_container("test-mysql-db-pinned-backcompat", port=3308),
     "popd",
 ]
 
@@ -465,6 +500,40 @@ gcp_creds_extra_cmds = (
     if not os.getenv("CI_DISABLE_INTEGRATION_TESTS")
     else []
 )
+
+
+# Heavyweight docs-snapshot tests, each pinned to its own Buildkite shard.
+# Order/contents only affect sharding; adding/removing entries is safe.
+_DOCS_SNAPSHOT_HEAVY_TESTS: list[tuple[str, str]] = [
+    (
+        "dbt-component",
+        "docs_snippets_tests/snippet_checks/guides/components/integrations/test_dbt_component.py",
+    ),
+    (
+        "dbt-component-remote",
+        "docs_snippets_tests/snippet_checks/guides/components/integrations/test_dbt_component_remote.py",
+    ),
+    (
+        "sling-component",
+        "docs_snippets_tests/snippet_checks/guides/components/integrations/test_sling_component.py",
+    ),
+    (
+        "customizing-existing-component",
+        "docs_snippets_tests/snippet_checks/guides/components/test_customizing_existing_component.py",
+    ),
+    (
+        "using-env",
+        "docs_snippets_tests/snippet_checks/guides/dg/test_using_env.py",
+    ),
+    (
+        "dg-docs-workspace",
+        "docs_snippets_tests/snippet_checks/guides/dg/test_dg_docs_workspace.py",
+    ),
+    (
+        "scaffolding-project",
+        "docs_snippets_tests/snippet_checks/guides/dg/test_scaffolding_project.py",
+    ),
+]
 
 
 # Some Dagster packages have more involved test configs or support only certain Python version;
@@ -494,7 +563,27 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_tox_factors=[
                 ToxFactor("all"),
                 ToxFactor("integrations"),
-                ToxFactor("docs_snapshot_test", splits=3),
+                # Heavyweight docs-snapshot tests get their own shard so the
+                # slowest single test bounds wall time, not the slowest cluster.
+                # Each shard pays full tox setup; this is intentional and traded
+                # off for parallelism. Residual shard runs everything else.
+                *[
+                    ToxFactor(
+                        "docs_snapshot_test",
+                        label_suffix=label_suffix,
+                        pytest_args=[test_path],
+                    )
+                    for label_suffix, test_path in _DOCS_SNAPSHOT_HEAVY_TESTS
+                ],
+                ToxFactor(
+                    "docs_snapshot_test",
+                    label_suffix="rest",
+                    splits=3,
+                    pytest_args=[
+                        "docs_snippets_tests/snippet_checks",
+                        *[f"--ignore={test_path}" for _, test_path in _DOCS_SNAPSHOT_HEAVY_TESTS],
+                    ],
+                ),
             ],
             force_run_fn=BuildkiteContext.has_dg_changes,
         ),
@@ -646,7 +735,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # test suite also installs a ton of packages in the same environment, which is liable to
             # cause dependency collisions.
             unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-            retries=0,
+            # automation validates public API consistency across all published packages,
+            # so it must run whenever any published package changes.
+            force_run_fn=BuildkiteContext.has_published_python_package_changes,
         ),
         PackageSpec(oss_path("python_modules/dagster-webserver"), pytest_extra_cmds=ui_extra_cmds),
         PackageSpec(
@@ -739,9 +830,54 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dbt"),
             pytest_tox_factors=[
-                ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
-                for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
-                for command_factor in ["cloud", "core-main", "core-derived-metadata"]
+                *[
+                    ToxFactor(f"{deps_factor}-cloud", splits=3)
+                    for deps_factor in _DAGSTER_DBT_DEPS_FACTORS
+                ],
+                *[
+                    ToxFactor(
+                        f"{deps_factor}-core-main",
+                        label_suffix="rest",
+                        splits=5,
+                        pytest_args=[
+                            f"--ignore={_DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST}",
+                            f"--ignore={_DAGSTER_DBT_CORE_MAIN_ASSET_CHECKS_TEST}",
+                            f"--ignore={_DAGSTER_DBT_CORE_MAIN_CLI_TESTS}",
+                        ],
+                    )
+                    for deps_factor in _DAGSTER_DBT_DEPS_FACTORS
+                ],
+                *[
+                    ToxFactor(
+                        f"{deps_factor}-core-main",
+                        label_suffix="test_resource",
+                        splits=2,
+                        pytest_args=[_DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST],
+                    )
+                    for deps_factor in _DAGSTER_DBT_DEPS_FACTORS
+                ],
+                *[
+                    ToxFactor(
+                        f"{deps_factor}-core-main",
+                        label_suffix="test_asset_checks",
+                        splits=2,
+                        pytest_args=[_DAGSTER_DBT_CORE_MAIN_ASSET_CHECKS_TEST],
+                    )
+                    for deps_factor in _DAGSTER_DBT_DEPS_FACTORS
+                ],
+                *[
+                    ToxFactor(
+                        f"{deps_factor}-core-main",
+                        label_suffix="cli",
+                        splits=2,
+                        pytest_args=[_DAGSTER_DBT_CORE_MAIN_CLI_TESTS],
+                    )
+                    for deps_factor in _DAGSTER_DBT_DEPS_FACTORS
+                ],
+                *[
+                    ToxFactor(f"{deps_factor}-core-derived-metadata", splits=3)
+                    for deps_factor in _DAGSTER_DBT_DEPS_FACTORS
+                ],
             ],
             # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
             # dbt-core is incompatible with Python 3.14
@@ -767,7 +903,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=[
                 "SNOWFLAKE_ACCOUNT",
                 "SNOWFLAKE_USER",
-                "SNOWFLAKE_BUILDKITE_PASSWORD",
+                "SNOWFLAKE_BUILDKITE_PRIVATE_KEY",
             ],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
@@ -778,7 +914,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=[
                 "SNOWFLAKE_ACCOUNT",
                 "SNOWFLAKE_USER",
-                "SNOWFLAKE_BUILDKITE_PASSWORD",
+                "SNOWFLAKE_DEMO_PRIVATE_KEY",
             ],
         ),
         PackageSpec(
@@ -826,17 +962,18 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dg-cli"),
             pytest_tox_factors=[
-                ToxFactor("general", splits=3),
-                ToxFactor("docs"),
+                ToxFactor("general"),
+                ToxFactor("slow", splits=4),
+                ToxFactor("serial"),
                 ToxFactor("plus"),
             ],
             env_vars=["SHELL"],
-            force_run_fn=BuildkiteContext.has_dg_or_component_integration_changes,
-            # general tests depend on dagster-dbt which does not support Python 3.14
+            force_run_fn=BuildkiteContext.has_dg_or_component_integration_or_rest_resource_changes,
+            # general/slow/serial tests depend on dagster-dbt which does not support Python 3.14
             unsupported_python_versions=(
                 lambda tox_factor: (
                     [AvailablePythonVersion.V3_14]
-                    if (tox_factor and tox_factor.factor == "general")
+                    if (tox_factor and tox_factor.factor in ("general", "slow", "serial"))
                     else []
                 )
             ),
@@ -902,6 +1039,30 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
+            oss_path("python_modules/libraries/dagster-clickhouse"),
+            queue=BuildkiteQueue.DOCKER,
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+            ],
+            pytest_extra_cmds=clickhouse_testcontainers_extra_cmds,
+        ),
+        PackageSpec(
+            oss_path("python_modules/libraries/dagster-clickhouse-pandas"),
+            queue=BuildkiteQueue.DOCKER,
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+            ],
+            pytest_extra_cmds=clickhouse_testcontainers_extra_cmds,
+        ),
+        PackageSpec(
+            oss_path("python_modules/libraries/dagster-clickhouse-polars"),
+            queue=BuildkiteQueue.DOCKER,
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_12,
+            ],
+            pytest_extra_cmds=clickhouse_testcontainers_extra_cmds,
+        ),
+        PackageSpec(
             oss_path("python_modules/libraries/dagster-pandas"),
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
@@ -916,8 +1077,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 "GCP_PROJECT_ID",
             ],
             pytest_extra_cmds=gcp_creds_extra_cmds,
-            # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-            retries=2,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-gcp-pandas"),
@@ -928,7 +1087,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 "GCP_PROJECT_ID",
             ],
             pytest_extra_cmds=gcp_creds_extra_cmds,
-            retries=2,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-gcp-pyspark"),
@@ -979,18 +1137,18 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pandas"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pyspark"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # pyspark<4 not available
             ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-polars"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-postgres"),
@@ -1001,10 +1159,15 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
         ),
         PackageSpec(
+            oss_path("python_modules/libraries/dagster-rest-resources"),
+            pytest_tox_factors=[
+                ToxFactor("default"),
+            ],
+            force_run_fn=BuildkiteContext.has_rest_resources_changes,
+        ),
+        PackageSpec(
             oss_path("python_modules/libraries/dagster-twilio"),
             env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
-            # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-            retries=2,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-wandb"),
@@ -1020,7 +1183,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("papermill1", splits=2),
                 ToxFactor("papermill2", splits=2),
             ],
-            retries=2,  # Workaround for flaky kernel issues
             unsupported_python_versions=(
                 lambda tox_factor: (
                     [

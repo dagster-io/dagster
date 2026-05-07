@@ -1,0 +1,3 @@
+dg scaffold defs dagster_clickhouse.ClickhouseQueryComponent clickhouse_connection
+
+Creating defs at /.../my-project/src/my_project/defs/clickhouse_connection.

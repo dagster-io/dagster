@@ -90,7 +90,7 @@ class DagsterOperator(BaseOperator):
     def on_kill(self):
         self.log.info("Terminating Run")
         self.hook.terminate_run(
-            run_id=self.run_id,  # pyright: ignore[reportArgumentType]
+            run_id=self.run_id,  # ty: ignore[invalid-argument-type]
         )
 
     def execute(self, context):

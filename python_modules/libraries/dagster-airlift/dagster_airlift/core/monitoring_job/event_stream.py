@@ -409,7 +409,7 @@ def _report_materialization(
 
 def _get_output_to_asset_key_map(
     context: OpExecutionContext, run: DagsterRun
-) -> dict[AssetKey, str]:
+) -> dict[str, AssetKey]:
     execution_plan_snap = context.instance.get_execution_plan_snapshot(
         check.not_none(run.execution_plan_snapshot_id)
     )

@@ -167,8 +167,8 @@ def docker_service(
 ) -> Iterator[None]:
     # Make sure the service is not already running.
     try:
-        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
-        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
+        subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "stop"])
+        subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "rm", "-f"])
     except subprocess.CalledProcessError:
         pass
 
@@ -199,13 +199,13 @@ def docker_service(
         **os.environ,
     }
     up_process = subprocess.Popen(
-        ["docker-compose", "-f", docker_compose_file, "up", "--no-start"], env=env
+        ["docker", "compose", "-f", docker_compose_file, "up", "--no-start"], env=env
     )
     up_process.wait()
     assert up_process.returncode == 0
 
     # Start the docker service
-    start_process = subprocess.Popen(["docker-compose", "-f", docker_compose_file, "start"])
+    start_process = subprocess.Popen(["docker", "compose", "-f", docker_compose_file, "start"])
     start_process.wait()
     assert start_process.returncode == 0
 
@@ -217,8 +217,8 @@ def docker_service(
         raise e
     finally:
         # Stop and clean up the service.
-        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
-        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
+        subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "stop"])
+        subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "rm", "-f"])
 
 
 @pytest.fixture(scope="session")

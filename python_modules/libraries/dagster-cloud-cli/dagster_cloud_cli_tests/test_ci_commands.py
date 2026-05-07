@@ -660,6 +660,38 @@ def test_ci_deploy_pex(
     assert wait_kwargs["url"] == f"https://some-org.dagster.cloud/{deployment_name}"
 
 
+def test_ci_notify_includes_deployment_name(
+    mocker, deployment_name: str, initialized_runner: CliRunner, project_dir: str
+) -> None:
+    """Test that notify scopes PR comments by deployment name via orig_text."""
+    mocker.patch(
+        "dagster_cloud_cli.commands.metrics.get_source",
+        return_value=CliEventTags.source.github,
+    )
+    mock_event = mocker.MagicMock()
+    mock_event.github_sha = "abc123"
+    mocker.patch(
+        "dagster_cloud_cli.commands.ci.github_context.get_github_event",
+        return_value=mock_event,
+    )
+
+    result = initialized_runner.invoke(
+        app,
+        ["ci", "notify", f"--project-dir={project_dir}"],
+        catch_exceptions=False,
+    )
+    assert not result.exit_code, result.output
+
+    mock_event.update_pr_comment.assert_called_once()
+    call_kwargs = mock_event.update_pr_comment.call_args
+    body = call_kwargs[0][0]
+    orig_text = call_kwargs[1]["orig_text"]
+
+    # The deployment name should appear in both the body and orig_text
+    assert f"Dagster Cloud (`{deployment_name}`)" in body
+    assert orig_text == f"Dagster Cloud (`{deployment_name}`)"
+
+
 def test_ci_branch_deployment(
     mocker,
     monkeypatch,

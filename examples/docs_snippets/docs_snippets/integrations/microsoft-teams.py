@@ -1,4 +1,5 @@
-# Read the docs on Resources to learn more: https://docs.dagster.io/deployment/resources
+# To learn more about Dagster resources, see https://docs.dagster.io/api/dagster/resources
+
 from dagster_msteams import Card, MSTeamsResource
 
 import dagster as dg

@@ -20,7 +20,7 @@ from dagster_pipes import PipesDefaultMessageWriter, _make_message
 
 
 class PipesFileLogReader(PipesChunkedLogReader):
-    def __init__(self, *, path: str, interval: float = 10, target_stream: TextIO):
+    def __init__(self, *, path: str, interval: float = 0.1, target_stream: TextIO):
         super().__init__(interval=interval, target_stream=target_stream)
 
         self.path = path

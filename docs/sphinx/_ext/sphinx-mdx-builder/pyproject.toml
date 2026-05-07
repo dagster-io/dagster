@@ -2,7 +2,7 @@
 name = "sphinxcontrib-mdxbuilder"
 description = "Sphinx extension tobuild MDX files"
 authors = [
-    {name = "Pedram Navid", email = "pedram@dagsterlabs.com"}
+    {name = "Dagster Labs", email = "support@dagsterlabs.com"}
 ]
 requires-python = ">=3.10"
 readme = "README.md"

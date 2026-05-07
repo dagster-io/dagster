@@ -1,5 +1,4 @@
 import json
-import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 from unittest import mock
@@ -14,8 +13,10 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._core.test_utils import ensure_dagster_tests_import
-from dagster._utils import pushd
+from dagster._utils import alter_sys_path, pushd
+from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_airlift.constants import (
     DAG_MAPPING_METADATA_KEY,
     SOURCE_CODE_METADATA_KEY,
@@ -35,15 +36,22 @@ from dagster_tests.components_tests.utils import (
 
 @pytest.fixture(autouse=True)
 def _setup() -> Iterator:
-    with instance_for_test() as instance, scoped_definitions_load_context():
+    with (
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+        instance_for_test() as instance,
+        scoped_definitions_load_context(),
+    ):
         yield instance
 
 
 @pytest.fixture
 def temp_cwd() -> Iterator[Path]:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with pushd(temp_dir):
-            yield Path.cwd()
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        alter_sys_path(to_add=[str(sandbox.project_root / "src")], to_remove=[]),
+        pushd(str(sandbox.project_root)),
+    ):
+        yield Path.cwd()
 
 
 @pytest.fixture

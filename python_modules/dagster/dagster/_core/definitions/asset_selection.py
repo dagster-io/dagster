@@ -1195,6 +1195,90 @@ class StatusAssetSelection(AssetSelection):
 
 @whitelist_for_serdes
 @record
+class AutomationTypeAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by automation type. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_automation_type: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        if self.selected_automation_type is None:
+            return "automation_type:<null>"
+        return f'automation_type:"{self.selected_automation_type}"'
+
+
+@whitelist_for_serdes
+@record
+class SensorNameAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by sensor name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_sensor: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        if self.selected_sensor is None:
+            return "sensor:<null>"
+        return f'sensor:"{self.selected_sensor}"'
+
+
+@whitelist_for_serdes
+@record
+class ScheduleNameAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by schedule name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_schedule: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        if self.selected_schedule is None:
+            return "schedule:<null>"
+        return f'schedule:"{self.selected_schedule}"'
+
+
+@whitelist_for_serdes
+@record
+class JobAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by job name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_job: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        if self.selected_job is None:
+            return "job:<null>"
+        return f'job:"{self.selected_job}"'
+
+
+@whitelist_for_serdes
+@record
 class KeysAssetSelection(AssetSelection):
     selected_keys: Sequence[AssetKey]
 

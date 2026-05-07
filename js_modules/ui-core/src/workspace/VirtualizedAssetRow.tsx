@@ -20,7 +20,7 @@ import {PartitionCountLabels, partitionCountString} from '../assets/AssetNodePar
 import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {globalAssetGraphPathForGroup} from '../assets/globalAssetGraphPathToString';
-import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
+import {AssetWorkspaceNodeFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetKind} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
@@ -33,7 +33,7 @@ const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
 
 interface AssetRowProps {
   path: string[];
-  definition: AssetTableDefinitionFragment | null;
+  definition: AssetWorkspaceNodeFragment | null;
 
   checked: boolean;
   type: 'folder' | 'asset' | 'asset_non_sda';

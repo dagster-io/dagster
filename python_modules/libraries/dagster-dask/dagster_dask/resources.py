@@ -59,7 +59,7 @@ class DaskResource:
         return self._client
 
     def close(self):
-        self.client.close()  # pyright: ignore[reportOptionalMemberAccess]
+        self.client.close()
         if self.cluster:
             self.cluster.close()
 

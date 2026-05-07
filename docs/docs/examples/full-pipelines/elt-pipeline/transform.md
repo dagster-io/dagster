@@ -99,7 +99,7 @@ Update each `defs.yaml` to reference the SQL file, declare upstream dependencies
 
 `deps` tells Dagster which upstream assets each transform reads from — the same `users`, `orders`, and `products` assets produced by the Sling component. Dagster uses this to draw edges in the asset graph, enforce materialization order, and propagate staleness when upstream data changes.
 
-`load_component_at_path('../duckdb_connection')` loads the connection component defined in the sibling folder.
+`context.load_component('../duckdb_connection')` loads the connection component defined in the sibling folder.
 
 ## Step 6: Verify and view
 

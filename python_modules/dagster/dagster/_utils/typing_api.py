@@ -2,6 +2,7 @@
 order to do metaprogramming and reflection on the built-in typing module.
 """
 
+import collections.abc
 import typing
 from types import UnionType
 from typing import get_args, get_origin
@@ -121,6 +122,30 @@ def get_dict_key_value_types(ttype):
     return get_args(ttype)
 
 
+def is_closed_python_mapping_type(ttype):
+    origin = get_origin(ttype)
+    args = get_args(ttype)
+
+    return origin is collections.abc.Mapping and args != ()
+
+
+def is_closed_python_sequence_type(ttype):
+    origin = get_origin(ttype)
+    args = get_args(ttype)
+
+    return origin is collections.abc.Sequence and args != ()
+
+
+def get_mapping_key_value_types(ttype):
+    check.param_invariant(is_closed_python_mapping_type(ttype), "ttype")
+    return get_args(ttype)
+
+
+def get_sequence_inner_type(ttype):
+    check.param_invariant(is_closed_python_sequence_type(ttype), "ttype")
+    return get_args(ttype)[0]
+
+
 def is_typing_type(ttype):
     return (
         is_closed_python_dict_type(ttype)
@@ -128,10 +153,14 @@ def is_typing_type(ttype):
         or is_closed_python_set_type(ttype)
         or is_closed_python_tuple_type(ttype)
         or is_closed_python_list_type(ttype)
+        or is_closed_python_mapping_type(ttype)
+        or is_closed_python_sequence_type(ttype)
         or ttype is typing.Tuple  # noqa: UP006
         or ttype is typing.Set  # noqa: UP006
         or ttype is typing.Dict  # noqa: UP006
         or ttype is typing.List  # noqa: UP006
+        or ttype is typing.Mapping
+        or ttype is typing.Sequence
     )
 
 

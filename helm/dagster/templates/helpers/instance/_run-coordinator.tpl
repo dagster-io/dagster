@@ -1,7 +1,7 @@
 {{- define "dagsterYaml.runCoordinator.queued" }}
 {{- $queuedRunCoordinatorConfig := .Values.dagsterDaemon.runCoordinator.config.queuedRunCoordinator }}
 {{- $concurrencyEnabled := .Values.concurrency.enabled }}
-module: dagster.core.run_coordinator
+module: dagster._core.run_coordinator
 class: QueuedRunCoordinator
 {{- if not (empty (compact (values $queuedRunCoordinatorConfig))) }}
 config:

@@ -1,18 +1,14 @@
 import os
+import subprocess
+import warnings
 from contextlib import contextmanager
 
+import pytest
 from dagstermill.test_utils import cleanup_result_notebook
 
 from dagster import execute_job
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.test_utils import instance_for_test
-
-IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-import subprocess
-import warnings
-
-import pytest
 
 
 # Dagstermill tests invoke notebooks that look for an ipython kernel called dagster -- if this is
@@ -24,9 +20,15 @@ def kernel():
         "Installing Jupyter kernel dagster. Don't worry, this is noninvasive "
         "and you can reverse it by running `jupyter kernelspec uninstall dagster`."
     )
-    subprocess.check_output(
-        ["ipython", "kernel", "install", "--name", "dagster", "--user"]
-    )
+    try:
+        subprocess.check_output(
+            ["ipython", "kernel", "install", "--name", "dagster", "--user"],
+            stderr=subprocess.STDOUT,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        pytest.skip(
+            f"Could not install Jupyter kernel 'dagster' — ipython may not be installed: {e}"
+        )
 
 
 @contextmanager
@@ -51,38 +53,26 @@ def exec_for_test(module_name, fn_name, env=None, raise_on_error=True, **kwargs)
 
 @pytest.mark.flaky(max_runs=2)
 def test_config_asset():
-    module_path = "docs_snippets.integrations.dagstermill.iris_notebook_config"
-    if not IS_BUILDKITE:
-        module_path = "examples.docs_snippets." + module_path
-
     with exec_for_test(
-        module_name=module_path,
+        module_name="docs_snippets.integrations.dagstermill.iris_notebook_config",
         fn_name="config_asset_job",
     ) as result:
-        assert result.success
+        assert result.success, [str(e) for e in result.all_node_events if e.is_failure]
 
 
 @pytest.mark.flaky(max_runs=2)
 def test_iris_classify_job():
-    module_path = "docs_snippets.integrations.dagstermill.iris_notebook_op"
-    if not IS_BUILDKITE:
-        module_path = "examples.docs_snippets." + module_path
-
     with exec_for_test(
-        module_name=module_path,
+        module_name="docs_snippets.integrations.dagstermill.iris_notebook_op",
         fn_name="iris_classify",
     ) as result:
-        assert result.success
+        assert result.success, [str(e) for e in result.all_node_events if e.is_failure]
 
 
 @pytest.mark.flaky(max_runs=2)
 def test_outputs_job():
-    module_path = "docs_snippets.integrations.dagstermill.notebook_outputs"
-    if not IS_BUILDKITE:
-        module_path = "examples.docs_snippets." + module_path
-
     with exec_for_test(
-        module_name=module_path,
+        module_name="docs_snippets.integrations.dagstermill.notebook_outputs",
         fn_name="my_job",
     ) as result:
-        assert result.success
+        assert result.success, [str(e) for e in result.all_node_events if e.is_failure]

@@ -4,6 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_component_library_foo_bar
 
 
@@ -29,6 +30,7 @@ def test_scaffold_component_acme_databricks_naming():
         )
 
 
+@pytest.mark.slow
 def test_scaffold_component_various_uppercase_patterns():
     """Test various uppercase patterns that should be handled gracefully."""
     test_cases = [

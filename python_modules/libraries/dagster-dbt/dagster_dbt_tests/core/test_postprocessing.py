@@ -1,7 +1,6 @@
 import json
 import os
 from decimal import Decimal
-from pathlib import Path
 from typing import Any, cast
 from unittest import mock
 
@@ -327,11 +326,10 @@ def test_attach_metadata(
 def test_row_count_with_relative_path_in_profile(
     test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
 ) -> None:
-    """This test verifies that adapter operations run from the correct working directory
-    (the dbt project directory) rather than the Dagster execution directory. This was
-    causing issues when users referenced relative filepaths in their profiles.yml files.
+    """This test verifies that callbacks passed to _attach_metadata receive the correct
+    project_dir via the invocation, allowing them to resolve relative file paths
+    (e.g., private_key_path in profiles.yml) against the dbt project directory.
     """
-    # Create a temporary test file with a relative path to simulate the issue
     config_dir = test_jaffle_shop_path / "config"
     config_dir.mkdir(exist_ok=True)
     test_file = config_dir / "test_relative_path_marker.txt"
@@ -346,16 +344,14 @@ def test_row_count_with_relative_path_in_profile(
             if not isinstance(event, (AssetMaterialization, Output)):
                 return None
 
-            # This simulates what happens when a dbt adapter tries to access a file
-            # specified with a relative path in profiles.yml (e.g., private_key_path: config/ci_priv.p8)
-            # The file access should work because we're in the correct working directory
-            relative_path = Path("config/test_relative_path_marker.txt")
+            # Resolve relative paths against invocation.project_dir rather than relying
+            # on os.chdir, which is process-global and not thread-safe.
+            relative_path = invocation.project_dir / "config" / "test_relative_path_marker.txt"
 
-            # This will raise FileNotFoundError if we're not in the dbt project directory
             if not relative_path.exists():
                 raise FileNotFoundError(
-                    f"Could not find {relative_path} from current directory {os.getcwd()}. "
-                    "This indicates the adapter is not running from the dbt project directory."
+                    f"Could not find {relative_path}. "
+                    "This indicates invocation.project_dir is not set correctly."
                 )
 
             return {"relative_path_test": "success"}

@@ -125,7 +125,7 @@ def deserialize_deduped(
     )
     result = context.finalize_unpack(unpacked)
 
-    if as_type is not None and not match_type(result, as_type):  # type: ignore[arg-type]
+    if as_type is not None and not match_type(result, as_type):  # ty: ignore[invalid-argument-type]
         from dagster_shared.serdes.errors import DeserializationError
 
         raise DeserializationError(
@@ -266,7 +266,7 @@ def _unpack_columnar(
 
     if isinstance(val, dict):
         if _OBJ_ID_KEY in val:
-            oid = cast("str", val[_OBJ_ID_KEY])
+            oid = cast("str", val[_OBJ_ID_KEY])  # ty: ignore[invalid-argument-type]
             if oid not in row_cache:
                 table_id_str, idx_str = oid.rsplit(":", 1)
                 table = tables[int(table_id_str)]
@@ -284,7 +284,7 @@ def _unpack_columnar(
         # _unpack_object which handles __class__ detection and passthrough.
         return _unpack_object(
             {
-                k: _unpack_columnar(v, tables, whitelist_map, context, row_cache)
+                k: _unpack_columnar(v, tables, whitelist_map, context, row_cache)  # ty: ignore[invalid-argument-type]
                 for k, v in val.items()
             },
             whitelist_map,

@@ -9,7 +9,7 @@ type WorkerMessageData =
 
 // eslint-disable-next-line import/no-default-export
 export default class MockWorker {
-  onmessage = (_: any) => {};
+  onmessage = (_: {data: unknown}) => {};
 
   // mock expects data: { } instead of e: { data: { } }
   postMessage(data: WorkerMessageData) {

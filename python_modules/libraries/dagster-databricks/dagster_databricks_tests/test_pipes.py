@@ -6,7 +6,7 @@ from typing import Any
 
 import dagster._check as check
 import pytest
-from dagster import AssetExecutionContext, asset, materialize
+from dagster import AssetExecutionContext, AssetSpec, asset, materialize, multi_asset
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster_databricks._test_utils import (
     databricks_client,  # noqa: F401
@@ -42,9 +42,9 @@ def script_fn():
     # are set, we know we are in the new cluster case and load params via the env vars.
     def is_notebook():
         try:
-            from pyspark.dbutils import DBUtils  # pyright: ignore[reportMissingImports]
+            from pyspark.dbutils import DBUtils  # ty: ignore[unresolved-import]
 
-            dbutils = DBUtils(spark)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+            dbutils = DBUtils(spark)  # ty: ignore[unresolved-reference] # noqa: F821
             dbutils.widgets.get(DAGSTER_PIPES_CONTEXT_ENV_VAR)
             return True
         except Exception:
@@ -52,7 +52,7 @@ def script_fn():
 
     def get_params_loader():
         if is_notebook():
-            return PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+            return PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets)  # ty: ignore[unresolved-reference] # noqa: F821
         elif DAGSTER_PIPES_CONTEXT_ENV_VAR in os.environ:
             return PipesEnvVarParamsLoader()
         else:
@@ -126,7 +126,7 @@ def make_submit_task_dict(
 
 
 def make_new_cluster_spec(forward_logs: bool, use_inner_objects: bool = False) -> Any:
-    cluster_spec = CLUSTER_DEFAULTS.copy()
+    cluster_spec: dict[str, Any] = dict(CLUSTER_DEFAULTS)
     databricks_host = os.getenv("DATABRICKS_HOST", "")
     if "azuredatabricks.net" in databricks_host:
         cluster_spec["node_type_id"] = "Standard_DS3_v2"
@@ -278,3 +278,87 @@ def test_nonexistent_entry_point(
             [fake],
             resources={"pipes_client": PipesDatabricksClient(databricks_client)},
         )
+
+
+def multi_task_script_fn():
+    # Executed inside the Databricks task. The first positional CLI arg is the asset key this
+    # particular writer is responsible for; the rest of the pipes bootstrap (context loader,
+    # message writer destination) is delivered through spark env vars. Each concurrent task gets
+    # its own DBFS destination via the orchestrator-side composite reader.
+    import sys
+
+    from dagster_pipes import (
+        PipesDbfsContextLoader,
+        PipesDbfsMessageWriter,
+        PipesEnvVarParamsLoader,
+        open_dagster_pipes,
+    )
+
+    asset_key = sys.argv[1]
+    with open_dagster_pipes(
+        params_loader=PipesEnvVarParamsLoader(),
+        context_loader=PipesDbfsContextLoader(),
+        message_writer=PipesDbfsMessageWriter(),
+    ) as context:
+        context.report_asset_materialization(
+            metadata={"writer": asset_key},
+            asset_key=asset_key,
+        )
+
+
+@pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
+@pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
+def test_pipes_client_run_multi_task(
+    databricks_client: WorkspaceClient,  # noqa: F811
+):
+    """End-to-end check that `run_multi_task` fans out to N independent DBFS destinations.
+
+    Two tasks run concurrently, each reporting a materialization for a distinct asset key. The
+    default (no user-supplied reader) path should wrap N `PipesDbfsMessageReader`s in a
+    `PipesCompositeMessageReader`, so neither task's chunk uploads collide with the other's.
+    """
+    asset_keys = ["multi_w0", "multi_w1"]
+
+    @multi_asset(specs=[AssetSpec(k) for k in asset_keys])
+    def multi(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
+        with ExitStack() as stack:
+            dagster_pipes_whl_path = stack.enter_context(
+                upload_dagster_pipes_whl(databricks_client)
+            )
+            file_path = stack.enter_context(
+                temp_dbfs_script(databricks_client, script_fn=multi_task_script_fn)
+            )
+            dbfs_file_path = f"dbfs:{file_path}"
+
+            tasks = []
+            for i, asset_key in enumerate(asset_keys):
+                task_dict = make_submit_task_dict(
+                    file_path=dbfs_file_path,
+                    dagster_pipes_whl_path=dagster_pipes_whl_path,
+                    forward_logs=False,
+                    task_type="spark_python_task",
+                    file_path_key="python_file",
+                )
+                # Task keys must be unique within a multi-task submit.
+                task_dict["task_key"] = f"DAGSTER_PIPES_TASK_{i}"
+                # Pass the assigned asset key to the script via spark_python_task parameters
+                # (forwarded as sys.argv). Pipes bootstrap env vars are injected separately by
+                # `_enrich_submit_task_dict`.
+                task_dict["spark_python_task"]["parameters"] = [asset_key]
+                tasks.append(jobs.SubmitTask.from_dict(task_dict))
+
+            return pipes_client.run_multi_task(context=context, tasks=tasks).get_results()
+
+    result = materialize(
+        [multi],
+        resources={"pipes_client": PipesDatabricksClient(databricks_client)},
+        raise_on_error=False,
+    )
+    assert result.success
+
+    mats = result.asset_materializations_for_node("multi")
+    # Each of the two tasks should have reported exactly one materialization for its own key.
+    labels_by_key = {
+        check.not_none(m.asset_key).to_user_string(): m.metadata["writer"].value for m in mats
+    }
+    assert labels_by_key == {"multi_w0": "multi_w0", "multi_w1": "multi_w1"}

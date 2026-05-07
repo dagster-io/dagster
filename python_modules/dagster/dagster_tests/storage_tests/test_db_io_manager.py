@@ -10,6 +10,8 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
+    escape_sql_string_literal,
+    static_where_clause,
 )
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._time import create_datetime
@@ -694,3 +696,26 @@ def test_default_load_type_determination():
         default_load_type=int,
     )
     assert manager._default_load_type == int  # noqa: SLF001
+
+
+def test_escape_sql_string_literal():
+    assert escape_sql_string_literal("normal") == "normal"
+    assert escape_sql_string_literal("it's") == "it''s"
+    assert escape_sql_string_literal("") == ""
+    assert escape_sql_string_literal("''already''") == "''''already''''"
+
+
+def test_static_where_clause_escapes_partition_values():
+    assert (
+        static_where_clause(
+            TablePartitionDimension(partition_expr="my_col", partitions=["it's a test"])
+        )
+        == "my_col in ('it''s a test')"
+    )
+
+
+def test_static_where_clause_multiple_partitions():
+    assert (
+        static_where_clause(TablePartitionDimension(partition_expr="col", partitions=["a", "b's"]))
+        == "col in ('a', 'b''s')"
+    )

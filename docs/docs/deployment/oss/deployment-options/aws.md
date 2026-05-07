@@ -15,7 +15,7 @@ To host Dagster on a bare VM or in Docker on EC2, see [Running Dagster as a serv
 
 You can use a hosted RDS PostgreSQL database for your Dagster run/events data by configuring your `dagster.yaml` file:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster-pg.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/oss/dagster-pg.yaml" />
 
 In this case, you'll want to ensure that:
 
@@ -360,11 +360,11 @@ To enable parallel computation (e.g., with the multiprocessing or Dagster celery
 
 You'll need to use <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.py" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/oss/deployment_options/aws/io_manager.py" />
 
 Then, add the following YAML block in your job's config:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/oss/deployment_options/aws/io_manager.yaml" />
 
 The resource uses `boto` under the hood. If you're accessing your private buckets, you'll need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow [one of the other boto authentication methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 

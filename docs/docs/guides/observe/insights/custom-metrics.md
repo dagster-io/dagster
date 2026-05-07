@@ -2,16 +2,16 @@
 title: Custom metrics
 description: Define custom metrics from asset metadata to track any numeric value in Dagster+ Insights, including historical aggregation and alerting.
 sidebar_label: Custom metrics
-sidebar_position: 5000
+sidebar_position: 3000
 tags: [dagster-plus-feature]
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
-import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <DagsterPlus />
 
-<EarlyAccess />
+<Beta />
 
 **Custom metrics** let you track any numeric asset metadata in Dagster+ Insights. Unlike [built-in metrics](/guides/observe/insights) such as run duration and failure counts, custom metrics are defined by you and powered by the numeric metadata your assets emit at runtime. Metric values are ingested in near real-time and displayed as time series alongside built-in metrics in the Insights UI.
 

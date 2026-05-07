@@ -43,7 +43,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
 This example creates a resource that represents a Snowflake database. Using `SnowflakeResource`, define a Dagster resource that connects to a Snowflake database:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/snowflake-resource.py" language="python" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/databases/snowflake-resource.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 ## Step 2: Use the resource in an asset \{#step-two}
 
@@ -53,9 +53,9 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 To use the resource, provide it as a parameter to an asset and define a function using <PyObject section="definitions" module="dagster" object="Definitions" decorator />:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/use-in-asset.py" language="python" startAfter="start_use_in_asset" endBefore="end_use_in_asset" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/databases/use-in-asset.py" language="python" startAfter="start_use_in_asset" endBefore="end_use_in_asset" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/use-in-asset.py" language="python" startAfter="start_use_in_asset_defs" endBefore="end_use_in_asset_defs" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/databases/use-in-asset.py" language="python" startAfter="start_use_in_asset_defs" endBefore="end_use_in_asset_defs" title="src/<project_name>/defs/resources.py" />
 
 When you materialize these assets, Dagster will provide an initialized `SnowflakeResource` to the assets' `iris_db` parameter.
 
@@ -65,9 +65,9 @@ Resources can be configured using environment variables, allowing you to connect
 
 In this example, a second instance of the Snowflake resource, named `production` has been added:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/use-envvars.py" language="python" startAfter="start_use_envvars" endBefore="end_use_envvars" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/databases/use-envvars.py" language="python" startAfter="start_use_envvars" endBefore="end_use_envvars" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/use-envvars.py" language="python" startAfter="start_use_envvars_defs" endBefore="end_use_envvars_defs" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/databases/use-envvars.py" language="python" startAfter="start_use_envvars_defs" endBefore="end_use_envvars_defs" title="src/<project_name>/defs/resources.py" />
 
 When the assets are materialized, Dagster will use the `deployment_name` environment variable to determine which Snowflake resource to use (`local` or `production`). Then, Dagster will read the values set for each resource's environment variables (ex: `DEV_SNOWFLAKE_PASSWORD`) and initialize a `SnowflakeResource` with those values.
 

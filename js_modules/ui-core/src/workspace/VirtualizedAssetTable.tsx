@@ -7,6 +7,7 @@ import {
   VirtualizedAssetRow,
 } from './VirtualizedAssetRow';
 import {buildRepoAddress} from './buildRepoAddress';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -51,8 +52,10 @@ export const VirtualizedAssetTable = (props: Props) => {
     }
     return Object.entries(groups).map(([displayKey, assets]) => {
       const path = [...prefixPath, ...JSON.parse(displayKey)];
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const isFolder = assets.length > 1 || path.join('/') !== assets[0]!.key.path.join('/');
+      const isFolder =
+        assets.length > 1 ||
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        tokenForAssetKey({path}) !== tokenForAssetKey(assets[0]!.key);
       return isFolder
         ? {type: 'folder', path, displayKey, assets}
         : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

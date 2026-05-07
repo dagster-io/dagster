@@ -7,7 +7,7 @@ title: Using resources in schedules
 This example demonstrates how to use resources in schedules. To specify a resource dependency, annotate the resource as a parameter to the schedule's function.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  path="docs_snippets/docs_snippets/guides/build/external_resources/pythonic_resources.py"
   startAfter="start_new_resource_on_schedule"
   endBefore="end_new_resource_on_schedule"
   dedent="4"
@@ -15,7 +15,7 @@ This example demonstrates how to use resources in schedules. To specify a resour
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  path="docs_snippets/docs_snippets/guides/build/external_resources/pythonic_resources.py"
   startAfter="start_new_resource_on_schedule_defs"
   endBefore="end_new_resource_on_schedule_defs"
   dedent="4"

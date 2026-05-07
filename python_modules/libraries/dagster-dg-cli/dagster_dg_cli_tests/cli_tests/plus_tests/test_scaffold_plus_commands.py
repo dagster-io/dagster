@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import responses
 import yaml
 from dagster_aws.ecs.container_context import EcsContainerContext
 from dagster_dg_core.utils import pushd
@@ -25,6 +24,10 @@ from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,
     mock_gql_response,
     mock_hybrid_response,
+)
+
+_SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR = (
+    "--build-strategy=${{ env.ENABLE_FAST_DEPLOYS == 'true' && 'python-executable' || 'docker' }}"
 )
 
 
@@ -72,7 +75,6 @@ def validate_github_actions_workflow(workflow_path: Path, *, expected_version: s
         )
 
 
-@responses.activate
 def test_scaffold_build_artifacts_container_context_no_running_agent(
     dg_plus_cli_config,
     setup_populated_git_workspace: ProxyRunner,
@@ -99,7 +101,6 @@ def test_scaffold_build_artifacts_container_context_no_running_agent(
     return
 
 
-@responses.activate
 @pytest.mark.parametrize(
     "agent_class_name, agent_platform, container_context_class",
     [
@@ -141,7 +142,6 @@ def test_scaffold_build_artifacts_container_context_platforms(
     assert container_context_class.create_from_config(yaml.safe_load(container_context_contents))
 
 
-@responses.activate
 def test_scaffold_build_artifacts_command_workspace(
     dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
 ):
@@ -203,7 +203,6 @@ def test_scaffold_build_artifacts_command_workspace(
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
 
-@responses.activate
 def test_scaffold_build_artifacts_command_project(
     dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
 ):
@@ -276,7 +275,37 @@ def setup_populated_git_workspace():
         yield runner
 
 
-@responses.activate
+def test_deploy_configure_serverless_github_default_pex_sets_python_executable_strategy(
+    dg_plus_cli_config,
+):
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+    )
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        subprocess.run(["git", "init"], check=False)
+        subprocess.run(
+            ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
+            check=False,
+        )
+        result = runner.invoke(
+            "plus",
+            "deploy",
+            "configure",
+            "serverless",
+            "--git-provider",
+            "github",
+            "--yes",
+        )
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        workflow_text = Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        assert 'ENABLE_FAST_DEPLOYS: "true"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
+
+
 @pytest.mark.parametrize(
     "version_override",
     [
@@ -294,7 +323,7 @@ def test_scaffold_github_actions_command_success_serverless(
     current_version = version.__version__
     try:
         if version_override:
-            version.__version__ = version_override
+            version.__version__ = version_override  # ty: ignore[invalid-assignment]
 
         mock_gql_response(
             query=gql.DEPLOYMENT_INFO_QUERY,
@@ -304,21 +333,24 @@ def test_scaffold_github_actions_command_success_serverless(
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+        workflow_text = workflow_path.read_text()
+        assert workflow_path.exists()
+        assert "hooli" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
         assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
+        assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
         expected_version = f"v{version_override}" if version_override else "main"
         validate_github_actions_workflow(
-            Path(".github/workflows/dagster-plus-deploy.yml"),
+            workflow_path,
             expected_version=expected_version,
         )
     finally:
         version.__version__ = current_version
 
 
-@responses.activate
 def test_scaffold_github_actions_command_success_project_serverless(
     dg_plus_cli_config,
 ):
@@ -334,14 +366,17 @@ def test_scaffold_github_actions_command_success_project_serverless(
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+        workflow_text = workflow_path.read_text()
+        assert workflow_path.exists()
+        assert "hooli" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
+        assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
-        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+        validate_github_actions_workflow(workflow_path)
 
 
-@responses.activate
 def test_scaffold_github_actions_command_no_plus_config_serverless(
     setup_populated_git_workspace,
     monkeypatch,
@@ -359,14 +394,17 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert "Dagster Plus organization name: " in result.output
-        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+        workflow_text = workflow_path.read_text()
+        assert workflow_path.exists()
+        assert "my-org" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
+        assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+        assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
-        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+        validate_github_actions_workflow(workflow_path)
 
 
-@responses.activate
 def test_scaffold_github_actions_command_no_git_root_serverless(
     dg_plus_cli_config,
 ):
@@ -395,11 +433,15 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
             result = runner.invoke("scaffold", "github-actions", "--git-root", str(Path.cwd()))
             assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-            assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-            assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+            workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
+            workflow_text = workflow_path.read_text()
+            assert workflow_path.exists()
+            assert "hooli" in workflow_text
             assert not Path("dagster_cloud.yaml").exists()
+            assert 'ENABLE_FAST_DEPLOYS: "false"' in workflow_text
+            assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
-            validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+            validate_github_actions_workflow(workflow_path)
 
 
 FAKE_ECR_URL = "10000.dkr.ecr.us-east-1.amazonaws.com"
@@ -414,7 +456,6 @@ FAKE_REGISTRY_URLS = [
 ]
 
 
-@responses.activate
 @pytest.mark.parametrize(
     "registry_url, registry_info",
     zip(FAKE_REGISTRY_URLS, REGISTRY_INFOS),
@@ -462,7 +503,6 @@ def test_scaffold_github_actions_command_success_hybrid(
     validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
-@responses.activate
 def test_scaffold_github_actions_command_success_project_hybrid(
     dg_plus_cli_config,
 ):
@@ -499,7 +539,6 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert f"python:{PYTHON_VERSION}-slim-bookworm" in Path("Dockerfile").read_text()
 
 
-@responses.activate
 def test_scaffold_github_actions_command_no_plus_config_hybrid(
     setup_populated_git_workspace,
     monkeypatch,
@@ -529,7 +568,6 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
-@responses.activate
 def test_scaffold_github_actions_git_root_above_workspace(
     dg_plus_cli_config,
 ):
@@ -568,7 +606,6 @@ def test_scaffold_github_actions_git_root_above_workspace(
         )
 
 
-@responses.activate
 def test_scaffold_github_actions_git_root_above_project(
     dg_plus_cli_config,
 ):

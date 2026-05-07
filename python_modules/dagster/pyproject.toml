@@ -75,8 +75,8 @@ Blog = "https://dagster.io/blog"
 Newsletter = "https://dagster.io/newsletter-signup"
 
 [project.scripts]
-dagster = "dagster.cli:main"
-dagster-daemon = "dagster.daemon.cli:main"
+dagster = "dagster._cli:main"
+dagster-daemon = "dagster._daemon.cli:main"
 
 [project.entry-points."dagster_dg_cli.registry_modules"]
 dagster = "dagster"
@@ -98,6 +98,7 @@ test = [
     "responses<=0.23.1",
     "syrupy>=4.0.0",
     "tox>=4",
+    "tox-uv>=1",
     "morefs[asynclocal]",
     "fsspec<2024.5.0",
     "rapidfuzz",
@@ -135,6 +136,31 @@ pyright = [
 ]
 ruff = [
     "ruff==0.15.0",
+]
+ty = [
+    ### Stub packages for type checking
+    "pandas-stubs",  # version will be resolved against pandas
+    "types-backports",  # version will be resolved against backports
+    "types-certifi",  # version will be resolved against certifi
+    "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
+    "types-cryptography",  # version will be resolved against cryptography
+    "types-mock",  # version will be resolved against mock
+    "types-paramiko",  # version will be resolved against paramiko
+    "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
+    "types-python-dateutil~=2.9.0.20240316",  # vendored python-dateutil version is 2.9.0
+    "types-PyYAML",  # version will be resolved against PyYAML
+    "types-pytz",  # version will be resolved against pytz
+    "types-requests",  # version will be resolved against requests
+    "types-simplejson",  # version will be resolved against simplejson
+    "types-six",  # needed but not specified by grpcio
+    "types-tabulate",  # version will be resolved against tabulate
+    "types-tzlocal",  # version will be resolved against tzlocal
+    "types-toml",  # version will be resolved against toml
+    ### Additional stubs for ty
+    "types-protobuf",
+    "types-redis",
+    "boto3-stubs[essential]",
+    "types-freezegun",
 ]
 
 [tool.hatch.build]

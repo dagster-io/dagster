@@ -172,4 +172,10 @@ def is_transient_task_stopped_reason(stopped_reason: str) -> bool:
     if "The Service Discovery instance could not be registered" in stopped_reason:
         return True
 
+    if "InsufficientFreeAddressesInSubnet" in stopped_reason:
+        return True
+
+    if "Task provisioning failed" in stopped_reason:
+        return True
+
     return False

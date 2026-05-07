@@ -279,6 +279,16 @@ def _read_v1_instigator_cursor(payload: str) -> AssetDaemonCursor:
     return deserialize_deduped(payload, as_type=AssetDaemonCursor)
 
 
+def _is_foreign_sensor_cursor(serialized_cursor: str) -> bool:
+    """Detects cursors that were copied into a DA sensor's state from a non-DA sensor
+    (e.g. RunStatusSensorCursor) due to a past migration bug. Those cursors
+    are stored as raw serdes-serialized JSON, which always begins with the ``{"__class__":``
+    discriminator. Valid DA cursors are always a version-digit prefix followed by base64
+    and never start with ``{``, so this check does not overlap with any legitimate format.
+    """
+    return serialized_cursor.startswith('{"__class__":')
+
+
 def asset_daemon_cursor_from_instigator_serialized_cursor(
     serialized_cursor: str | None, asset_graph: BaseAssetGraph | None
 ) -> AssetDaemonCursor:
@@ -288,15 +298,29 @@ def asset_daemon_cursor_from_instigator_serialized_cursor(
     if serialized_cursor is None:
         return AssetDaemonCursor.empty()
 
+    if _is_foreign_sensor_cursor(serialized_cursor):
+        # Specifically recover from a past bug migration bug where a non-DA sensor's
+        # cursor (e.g. RunStatusSensorCursor) was written into a default_automation_condition_sensor
+        # state. Treat as empty so the next successful tick overwrites it with a valid DA cursor.
+        # We do NOT generalize this to "any unknown version" on purpose to ensure that other
+        # unexpected states do not wipe out valid cursor state.
+        logging.getLogger(__name__).warning(
+            "Recovered foreign sensor cursor stored in an asset daemon sensor state; treating as empty. "
+            "Cursor prefix: %s",
+            serialized_cursor[:120],
+        )
+        return AssetDaemonCursor.empty()
+
     version, encoded_bytes = serialized_cursor[0], serialized_cursor[1:]
+
+    if version not in ("0", "1"):
+        raise DagsterInvariantViolationError(f"Invalid serialized cursor version: {version}")
+
     payload = _decode_instigator_cursor_payload(encoded_bytes)
 
     if version == "1":
         return _read_v1_instigator_cursor(payload)
-    if version == "0":
-        return _read_v0_instigator_cursor(payload, asset_graph)
-
-    raise DagsterInvariantViolationError(f"Invalid serialized cursor version: {version}")
+    return _read_v0_instigator_cursor(payload, asset_graph)
 
 
 class AutoMaterializeLaunchContext:
@@ -784,7 +808,7 @@ class AssetDaemon(DagsterDaemon):
         for instigator_state in all_sensor_states.values():
             # only migrate instigators with the name "default_auto_materialize_sensor" and are
             # handled by the asset daemon
-            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" and (
+            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" or not (
                 instigator_state.sensor_instigator_data
                 and instigator_state.sensor_instigator_data.sensor_type
                 and instigator_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon

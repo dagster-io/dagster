@@ -3,7 +3,6 @@ import os
 import yaml
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
-from dagster._core.definitions.external_asset import external_assets_from_specs
 
 
 def build_asset_specs_from_external_definitions():
@@ -22,6 +21,4 @@ def build_asset_specs_from_external_definitions():
     return specs
 
 
-external_asset_defs = external_assets_from_specs(
-    specs=build_asset_specs_from_external_definitions()
-)
+external_asset_specs = build_asset_specs_from_external_definitions()

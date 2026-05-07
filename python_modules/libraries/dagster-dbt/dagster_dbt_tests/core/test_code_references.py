@@ -48,11 +48,11 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: dict[str, Any])
         ) or reference.file_path.endswith(asset_key.path[-1] + ".csv")
         assert os.path.exists(reference.file_path), reference.file_path
 
-        result = dg.materialize(
-            [my_dbt_assets],
-            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
-        )
-        assert result.success
+    result = dg.materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+    )
+    assert result.success
 
 
 def test_basic_attach_code_references_no_project_dir(

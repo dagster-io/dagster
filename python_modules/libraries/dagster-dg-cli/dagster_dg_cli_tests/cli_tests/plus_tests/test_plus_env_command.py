@@ -2,7 +2,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-import responses
 from dagster_dg_cli.utils.plus import gql
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
@@ -18,7 +17,6 @@ from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 ########################################################
 
 
-@responses.activate
 def test_pull_env_command_no_auth(monkeypatch):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -35,7 +33,6 @@ def test_pull_env_command_no_auth(monkeypatch):
         )
 
 
-@responses.activate
 def test_pull_env_command_auth_err(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -58,7 +55,6 @@ def test_pull_env_command_auth_err(dg_plus_cli_config):
         assert "Unauthorized: Not authorized" in str(result.output)
 
 
-@responses.activate
 def test_pull_env_command_python_err(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -82,7 +78,6 @@ def test_pull_env_command_python_err(dg_plus_cli_config):
         assert "Error: An error has occurred" in str(result.output)
 
 
-@responses.activate
 def test_pull_env_command_project(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -131,7 +126,6 @@ def test_pull_env_command_project(dg_plus_cli_config):
         assert Path(".env").read_text().strip() == "FOO=bar\nBAZ=qux"
 
 
-@responses.activate
 def test_pull_env_command_workspace(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -188,7 +182,6 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
         assert (Path("bar") / ".env").read_text().strip() == "BAZ=qux"
 
 
-@responses.activate
 def test_pull_env_command_project_preserves_existing_env(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -230,7 +223,6 @@ def test_pull_env_command_project_preserves_existing_env(dg_plus_cli_config):
         assert "FOO=old" not in env_contents
 
 
-@responses.activate
 def test_pull_env_command_workspace_preserves_existing_env(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -297,7 +289,6 @@ def test_add_env_command_no_value_workspace(dg_plus_cli_config):
 
 
 @pytest.mark.parametrize("input_type", ["direct", "from-local-env"])
-@responses.activate
 def test_add_env_command_basic_success_workspace(dg_plus_cli_config, input_type: str):
     expected_secret_value = (
         "bar" if input_type == "direct" else ("baz" if input_type == "from-local-env" else "qux")
@@ -361,7 +352,6 @@ def test_add_env_command_basic_success_workspace(dg_plus_cli_config, input_type:
         ["branch", "full", "local"],
     ],
 )
-@responses.activate
 def test_add_env_command_scopes_workspace(dg_plus_cli_config, scopes: list[str]):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -411,7 +401,6 @@ def test_add_env_command_scopes_workspace(dg_plus_cli_config, scopes: list[str])
 
 
 @pytest.mark.parametrize("accept", [True, False])
-@responses.activate
 def test_add_env_command_warn_if_existing_workspace(dg_plus_cli_config, accept: bool):
     # Test that we warn and ask for confirmation if we are going to update any existing env vars
     with (
@@ -480,7 +469,6 @@ def test_add_env_command_no_value(dg_plus_cli_config):
 
 
 @pytest.mark.parametrize("input_type", ["direct", "from-local-env", "from-env-file"])
-@responses.activate
 def test_add_env_command_basic_success(dg_plus_cli_config, input_type: str):
     expected_secret_value = (
         "bar" if input_type == "direct" else ("baz" if input_type == "from-local-env" else "qux")
@@ -548,7 +536,6 @@ def test_add_env_command_basic_success(dg_plus_cli_config, input_type: str):
         ["branch", "full", "local"],
     ],
 )
-@responses.activate
 def test_add_env_command_scopes(dg_plus_cli_config, scopes: list[str]):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -597,7 +584,6 @@ def test_add_env_command_scopes(dg_plus_cli_config, scopes: list[str]):
         )
 
 
-@responses.activate
 def test_add_env_command_basic_success_global(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
@@ -656,7 +642,6 @@ def test_add_env_command_basic_success_global(dg_plus_cli_config):
 
 
 @pytest.mark.parametrize("accept", [True, False])
-@responses.activate
 def test_add_env_command_warn_if_global(dg_plus_cli_config, accept: bool):
     # Test that we warn and ask for confirmation if a global copy of the env var already exists
     with (
@@ -709,7 +694,6 @@ def test_add_env_command_warn_if_global(dg_plus_cli_config, accept: bool):
             )
 
 
-@responses.activate
 def test_add_env_command_exception_if_multiple_locations(dg_plus_cli_config):
     # We currently don't support updating env vars which are set in multiple locations (but not at the deployment level),
     # since this gets into a permissions minefield.
@@ -759,7 +743,6 @@ def test_add_env_command_exception_if_multiple_locations(dg_plus_cli_config):
 
 
 @pytest.mark.parametrize("accept", [True, False])
-@responses.activate
 def test_add_env_command_warn_if_existing(dg_plus_cli_config, accept: bool):
     # Test that we warn and ask for confirmation if we are going to update any existing env vars
     with (
@@ -812,7 +795,6 @@ def test_add_env_command_warn_if_existing(dg_plus_cli_config, accept: bool):
             )
 
 
-@responses.activate
 def test_add_env_command_no_confirm(dg_plus_cli_config):
     # Test that we warn and ask for confirmation if we are going to update any existing env vars
     with (

@@ -90,7 +90,7 @@ Now, you'll want to get Airbyte running locally. The full instructions can be fo
 ```
 $ git clone https://github.com/airbytehq/airbyte.git
 $ cd airbyte
-$ docker-compose up
+$ docker compose up
 ```
 
 Once you've done this, you should be able to go to http://localhost:8000, and see Airbyte's UI.

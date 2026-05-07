@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import boto3
 import dagster._check as check
@@ -83,7 +83,7 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -139,15 +139,15 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
 
         if self.pipes_params_bootstrap_method == "env":
             params["configurationOverrides"] = params.get("configurationOverrides", {})
-            params["configurationOverrides"]["applicationConfiguration"] = params[  # type: ignore
+            params["configurationOverrides"]["applicationConfiguration"] = params[  # ty: ignore[invalid-assignment]
                 "configurationOverrides"
             ].get("applicationConfiguration", [])
             # we can reuse the same method as in standard EMR
             # since configurations format is the same
-            params["configurationOverrides"]["applicationConfiguration"] = (  # type: ignore
+            params["configurationOverrides"]["applicationConfiguration"] = (
                 emr_inject_pipes_env_vars(
                     session,
-                    params["configurationOverrides"]["applicationConfiguration"],  # type: ignore
+                    params["configurationOverrides"]["applicationConfiguration"],
                     emr_flavor="containers",
                 )
             )
@@ -164,9 +164,9 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
                 for key, value in session.get_bootstrap_cli_arguments().items():
                     spark_submit_job_driver["sparkSubmitParameters"] += f" {key} {value}"
 
-            params["jobDriver"]["sparkSubmitJobDriver"] = spark_submit_job_driver  # type: ignore
+            params["jobDriver"]["sparkSubmitJobDriver"] = spark_submit_job_driver  # ty: ignore[invalid-assignment]
 
-        return cast("StartJobRunRequestTypeDef", params)
+        return params
 
     def _start(
         self,
@@ -206,9 +206,9 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
 
             time.sleep(self.waiter_config.get("Delay", 6))
 
-        if state in ["FAILED", "CANCELLED"]:  # pyright: ignore[reportPossiblyUnboundVariable]
+        if state in ["FAILED", "CANCELLED"]:
             raise RuntimeError(
-                f"EMR Containers job run {job_run_id} failed with state {state}. Reason: {response['jobRun'].get('failureReason')}, details: {response['jobRun'].get('stateDetails')}"  # pyright: ignore[reportPossiblyUnboundVariable]
+                f"EMR Containers job run {job_run_id} failed with state {state}. Reason: {response['jobRun'].get('failureReason')}, details: {response['jobRun'].get('stateDetails')}"
             )
 
         return self.client.describe_job_run(virtualClusterId=virtual_cluster_id, id=job_run_id)

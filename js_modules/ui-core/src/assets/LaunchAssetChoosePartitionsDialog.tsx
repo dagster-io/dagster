@@ -319,7 +319,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
           runConfigData,
         },
       },
-      'toast',
+      {behavior: 'toast'},
     );
 
     if (result?.__typename === 'LaunchRunSuccess') {

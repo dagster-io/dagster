@@ -396,20 +396,12 @@ def test_asset_loader_optional_spec_loading() -> None:
 def test_spec_collision():
     foo_module = build_module_fake(
         "foo",
-        {
-            "spec": dg.AssetSpec(
-                "a",
-                automation_condition=dg.AutomationCondition.newly_missing(),
-            )
-        },
+        {"spec": dg.AssetSpec("a")},
     )
     bar_module = build_module_fake(
         "bar",
         {
-            "spec": dg.AssetSpec(  # intentionally recreate a separate instance of same obj
-                "a",
-                automation_condition=dg.AutomationCondition.newly_missing(),
-            )
+            "spec": dg.AssetSpec("a")  # intentionally recreate a separate instance of same obj
         },
     )
 
@@ -418,7 +410,6 @@ def test_spec_collision():
         dg.AssetSpec(
             "a",
             group_name="default",  # added during construction
-            automation_condition=dg.AutomationCondition.newly_missing(),
         )
     ]
 
@@ -428,7 +419,6 @@ def test_spec_collision():
             "spec": dg.AssetSpec(
                 "a",
                 group_name="bad",
-                automation_condition=dg.AutomationCondition.newly_missing(),
             )
         },
     )

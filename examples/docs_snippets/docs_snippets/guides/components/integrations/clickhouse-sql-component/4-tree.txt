@@ -1,0 +1,8 @@
+tree my_project/defs
+
+my_project/defs
+├── __init__.py
+└── species_counts
+    └── defs.yaml
+
+2 directories, 2 files

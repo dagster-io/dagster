@@ -25,11 +25,11 @@ def test_blob_storage_injector_and_messagewriter(
     try:
         context_injector = PipesAzureBlobStorageContextInjector(
             container=container_name,
-            client=blob_storage_service_client,  # pyright: ignore[reportArgumentType]
+            client=blob_storage_service_client,  # ty: ignore[invalid-argument-type]
         )
         message_reader = PipesAzureBlobStorageMessageReader(
             container=container_name,
-            client=blob_storage_service_client,  # pyright: ignore[reportArgumentType]
+            client=blob_storage_service_client,  # ty: ignore[invalid-argument-type]
             interval=0.001,
         )
 

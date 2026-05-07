@@ -1,5 +1,5 @@
 .dagsterTypeName {
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 16px;
   overflow: hidden;
   text-overflow: ellipsis;

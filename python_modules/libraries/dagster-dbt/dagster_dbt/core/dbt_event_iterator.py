@@ -187,7 +187,8 @@ def _fetch_row_count_metadata(
         # some adapters do not output the column names, so we need
         # to index by position
         row_count = query_result_table[0][0]
-        return {**TableMetadataSet(row_count=row_count)}
+        adapter_type = invocation.manifest.get("metadata", {}).get("adapter_type")
+        return {**TableMetadataSet(row_count=row_count, storage_kind=adapter_type)}
 
     except Exception as e:
         logger.exception(
@@ -275,12 +276,11 @@ class DbtEventIterator(Iterator[T]):
         """
 
         def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
-            with pushd(str(self._dbt_cli_invocation.project_dir)):
-                result = fn(self._dbt_cli_invocation, event)
-                if result is None:
-                    return event
+            result = fn(self._dbt_cli_invocation, event)
+            if result is None:
+                return event
 
-                return event.with_metadata({**event.metadata, **result})
+            return event.with_metadata({**event.metadata, **result})
 
         # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
         # so that the DuckDB lock is released. This is because DuckDB does not allow for

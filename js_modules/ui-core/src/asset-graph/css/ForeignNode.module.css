@@ -3,7 +3,7 @@
   padding: 4px 0 6px 8px;
   margin-top: 6px;
   line-height: 30px;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   color: var(--color-link-default);
   align-items: center;
   font-weight: 600;

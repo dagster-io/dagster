@@ -77,11 +77,11 @@ class TestPostgresRunStorage(TestRunStorage):
                     overrides=yaml.safe_load(explicit_cfg)
                 ) as from_explicit_instance:
                     assert (
-                        from_url_instance._run_storage.postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-                        == from_explicit_instance._run_storage.postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        from_url_instance._run_storage.postgres_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
+                        == from_explicit_instance._run_storage.postgres_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                     )
                 with instance_for_test(overrides=yaml.safe_load(env_cfg)) as from_env_instance:
                     assert (
-                        from_url_instance._run_storage.postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-                        == from_env_instance._run_storage.postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        from_url_instance._run_storage.postgres_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
+                        == from_env_instance._run_storage.postgres_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                     )

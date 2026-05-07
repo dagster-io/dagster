@@ -4,10 +4,10 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from subprocess import PIPE, Popen
-from typing import cast
 
 import boto3
 import botocore
+import botocore.exceptions
 
 
 @dataclass
@@ -28,7 +28,7 @@ class SimulatedTaskRun:
 class LocalECSMockClient:
     CONTAINER_NAME = "test-container"
 
-    def __init__(self, ecs_client: boto3.client, cloudwatch_client: boto3.client):  # pyright: ignore (reportGeneralTypeIssues)
+    def __init__(self, ecs_client: boto3.client, cloudwatch_client: boto3.client):  # ty: ignore[invalid-type-form]
         self.ecs_client = ecs_client
         self.cloudwatch_client = cloudwatch_client
 
@@ -135,7 +135,7 @@ class LocalECSMockClient:
     def describe_tasks(self, cluster: str, tasks: list[str]):
         assert len(tasks) == 1, "Only 1 task is supported in tests"
 
-        simulated_task = cast("SimulatedTaskRun", self._task_runs[tasks[0]])
+        simulated_task = self._task_runs[tasks[0]]
 
         response = self.ecs_client.describe_tasks(cluster=cluster, tasks=tasks)
 
@@ -286,7 +286,7 @@ class WaiterMock:
                     return
 
                 if num_attempts >= max_attempts:
-                    raise botocore.exceptions.WaiterError(  # pyright: ignore[reportAttributeAccessIssue]
+                    raise botocore.exceptions.WaiterError(
                         name=self.waiter_name,
                         reason="Max attempts exceeded",
                         last_response=response,

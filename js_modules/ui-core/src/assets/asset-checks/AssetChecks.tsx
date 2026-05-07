@@ -10,7 +10,6 @@ import {
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
-import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState} from 'react';
 import styled from 'styled-components';
@@ -377,7 +376,7 @@ const FixedScrollContainer = ({children}: {children: React.ReactNode}) => {
   );
 };
 
-const CheckRow = styled(Row)<{$selected: boolean} & RowProps>`
+const CheckRow = styled(Row)<{$selected: boolean}>`
   padding: 5px 8px 5px 12px;
   cursor: pointer;
   border-radius: 8px;

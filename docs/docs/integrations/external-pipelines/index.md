@@ -20,12 +20,12 @@ This external code is not required to know anything about Dagster. It can even b
 In the following example, our external code is in a Python script that we invoke within a Dagster asset.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/external-systems/pipes/external_code_opaque.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/external_code_opaque.py"
   language="python"
   title="/usr/bin/external_code.py"
 />
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/external-systems/pipes/asset_wrapper.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/asset_wrapper.py"
   language="python"
   title="Asset invoking external compute using Dagster Pipes"
 />
@@ -37,7 +37,7 @@ Materializing this asset in Dagster from the UI or from a sensor/schedule will k
 Dagster Pipes also establishes a protocol for external code to optionally send back log and metadata back to Dagster. A Python client for this protocol is available as part of the [`dagster-pipes`](/api/dagster/pipes) package. To send back log and metadata back to Dagster, we can create a `PipesContext` object within our external code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/external-systems/pipes/external_code_data_passing.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/external_code_data_passing.py"
   language="python"
   title="/usr/bin/external_code.py"
 />

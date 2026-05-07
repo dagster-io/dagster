@@ -27,6 +27,8 @@ from dagster_test.dg_utils.utils import (
     standardize_box_characters,
 )
 
+pytestmark = pytest.mark.slow
+
 
 @pytest.fixture
 def capture_stderr_from_components_cli_invocations():

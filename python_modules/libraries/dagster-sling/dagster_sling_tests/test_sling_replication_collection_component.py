@@ -161,7 +161,7 @@ def test_load_from_path() -> None:
         connections = component.connections
         assert connections[0].name == "DUCKDB"
         assert connections[0].type == "duckdb"
-        assert connections[0].password == "password"
+        assert connections[0].password == "password"  # ty: ignore[unresolved-attribute]
 
         assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),

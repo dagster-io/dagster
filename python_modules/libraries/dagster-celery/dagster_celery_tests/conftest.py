@@ -5,6 +5,7 @@ import time
 from collections.abc import Iterator
 
 import docker
+import docker.errors
 import pytest
 from dagster import file_relative_path
 from dagster._core.instance import DagsterInstance
@@ -31,15 +32,17 @@ def rabbitmq():
 
     try:
         subprocess.check_output(
-            ["docker-compose", "-f", docker_compose_file, "stop", service_name],
+            ["docker", "compose", "-f", docker_compose_file, "stop", service_name],
         )
         subprocess.check_output(
-            ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
+            ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name],
         )
     except Exception:
         pass
 
-    subprocess.check_output(["docker-compose", "-f", docker_compose_file, "up", "-d", service_name])
+    subprocess.check_output(
+        ["docker", "compose", "-f", docker_compose_file, "up", "-d", service_name]
+    )
 
     print("Waiting for rabbitmq to be ready...")  # noqa: T201
     while True:
@@ -53,10 +56,10 @@ def rabbitmq():
     finally:
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "stop", service_name]
             )
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name]
             )
         except Exception:
             pass
@@ -92,7 +95,7 @@ def dagster_docker_image():
                 f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
                 f"docker rmi {docker_image}"
             )
-        except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+        except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)
 
     return docker_image

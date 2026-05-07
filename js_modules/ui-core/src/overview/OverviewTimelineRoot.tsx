@@ -5,7 +5,7 @@ import {useDeferredValue, useMemo} from 'react';
 import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
 import {groupRunsByAutomation} from './groupRunsByAutomation';
 import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
-import {RefreshState} from '../app/QueryRefresh';
+import {RefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
 import {useAutomations} from '../automation/useAutomations';
@@ -65,15 +65,12 @@ export function useTimelineRange({
     [hourWindow, now, lookaheadHours, offsetMsec],
   );
 
-  React.useEffect(() => {
-    const timer = setInterval(() => {
+  useRefreshAtInterval({
+    refresh: React.useCallback(() => {
       setNow(maxNowMs ? Math.min(maxNowMs, Date.now()) : Date.now());
-    }, POLL_INTERVAL);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [hourWindow, maxNowMs]);
+    }, [maxNowMs]),
+    intervalMs: POLL_INTERVAL,
+  });
 
   const onPageEarlier = React.useCallback(() => {
     setOffsetMsec((current) => current - hourWindowToOffset(hourWindow));

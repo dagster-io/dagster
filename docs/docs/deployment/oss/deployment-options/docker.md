@@ -77,7 +77,7 @@ version: '3.7'
 services:
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
   # and event log storage. Depending on the hardware you run this Compose on, you may be able
-  # to reduce the interval and timeout in the healthcheck to speed up your `docker-compose up` times.
+  # to reduce the interval and timeout in the healthcheck to speed up your `docker compose up` times.
   docker_example_postgresql:
     image: postgres:11
     container_name: docker_example_postgresql

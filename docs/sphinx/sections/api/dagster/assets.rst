@@ -123,6 +123,13 @@ Refer to the `Declarative Automation <https://docs.dagster.io/guides/automate/de
 
 .. autoclass:: AutomationConditionSensorDefinition
 
+Testing Declarative Automations
+===============================
+
+.. autofunction:: evaluate_automation_conditions
+
+.. autoclass:: EvaluateAutomationConditionsResult
+
 ************
 Asset values
 ************

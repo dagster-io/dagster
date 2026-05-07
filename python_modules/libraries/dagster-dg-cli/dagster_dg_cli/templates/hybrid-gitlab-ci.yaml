@@ -69,7 +69,7 @@ dagster-cloud-deploy:
     # TEMPLATE_BUILD_LOCATION_FRAGMENT
 
     # Deploy all code locations in this build session to Dagster Cloud
-    - python -m uv run dg plus deploy finish --path=$DAGSTER_PROJECT_DIR
+    - python -m uv run dg plus deploy finish
   after_script:
     # Generate a summary - this runs always() so the summary is generated on success and failure
     - pip install uv 2>/dev/null || true

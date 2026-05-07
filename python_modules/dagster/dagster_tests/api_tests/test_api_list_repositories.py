@@ -127,7 +127,7 @@ def test_sync_list_python_file_attribute_multi_repo_grpc():
 
 
 def test_sync_list_python_module_grpc():
-    module_name = "dagster.utils.test.hello_world_repository"
+    module_name = "dagster._utils.test.hello_world_repository"
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
         python_file=None,
@@ -162,7 +162,7 @@ def test_sync_list_python_module_grpc():
 
 
 def test_sync_list_python_module_attribute_grpc():
-    module_name = "dagster.utils.test.hello_world_repository"
+    module_name = "dagster._utils.test.hello_world_repository"
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
         python_file=None,
@@ -197,7 +197,7 @@ def test_sync_list_python_module_attribute_grpc():
 
 
 def test_sync_list_python_package_attribute_grpc():
-    package_name = "dagster.utils.test.hello_world_repository"
+    package_name = "dagster._utils.test.hello_world_repository"
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
         python_file=None,

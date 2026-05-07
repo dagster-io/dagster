@@ -342,6 +342,17 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             ),
         )
 
+        auto_materialize_policies_by_output_name = {}
+        for spec in specs:
+            policy = self._node_info_to_auto_materialize_policy_fn(
+                get_node(
+                    manifest_json,
+                    spec.metadata[DAGSTER_DBT_UNIQUE_ID_METADATA_KEY],
+                )
+            )
+            if policy:
+                auto_materialize_policies_by_output_name[spec.key.to_python_identifier()] = policy
+
         return AssetsDefinitionCacheableData(
             # TODO: In the future, we should allow additional upstream assets to be specified.
             keys_by_output_name={spec.key.to_python_identifier(): spec.key for spec in specs},
@@ -373,11 +384,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     for spec in specs
                 },
             },
-            auto_materialize_policies_by_output_name={
-                spec.key.to_python_identifier(): spec.auto_materialize_policy
-                for spec in specs
-                if spec.auto_materialize_policy
-            },
+            auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
         )
 
     def _build_dbt_cloud_assets_metadata(

@@ -1,6 +1,41 @@
 # ########################
+# ##### TY (Type Checker)
+# ########################
+
+# [Docs root]
+#   https://docs.astral.sh/ty/
+# [Configuration reference]
+#   https://docs.astral.sh/ty/configuration/
+
+# Note: Most ty configuration is handled dynamically by scripts/run-ty.py,
+# which passes CLI arguments for include/exclude paths and Python environment.
+# This section provides defaults for direct ty invocations.
+
+[tool.ty.environment]
+# Minimum version of Python on which code must run.
+python-version = "3.10"
+
+# Extra paths to use as module-resolution sources
+extra-paths = [
+  ".buildkite/buildkite-shared"
+]
+
+[tool.ty.src]
+
+include = [
+  # This doesn't exist but we need something here to prevent ty from
+  # complaining about an empty include list. Remove with first package added
+  # here.
+  "__placeholder__"
+]
+
+# Ignore all files that are git-ignored unless explicitly included.
+respect-ignore-files = true
+
+# ########################
 # ##### PYRIGHT
 # ########################
+
 
 # [Docs root]
 #   https://github.com/microsoft/pyright/tree/main/docs
@@ -46,11 +81,9 @@ extraPaths = [
 venv = ".venv"
 venvPath = "pyright/master"
 
-
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
 pythonVersion = "3.10"
-
 
 # Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
 # include a py.typed file). All imports from these libraries are given the `Unknown` type (i.e.
@@ -155,7 +188,6 @@ exclude = ["*.ipynb"]
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
-"examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
 # Modules where it is expected for there to be no __init.py__
 "**/*test*/**/" = ["INP001"]
@@ -169,9 +201,6 @@ exclude = ["*.ipynb"]
 "python_modules/libraries/dagster-celery/e2e/**" = ["INP001"]
 # There is an __init__.py.tmpl
 "python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
-
-[tool.ruff.format]
-exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"

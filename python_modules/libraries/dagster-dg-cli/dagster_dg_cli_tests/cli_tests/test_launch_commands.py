@@ -9,6 +9,8 @@ import yaml
 from dagster_dg_core.utils import activate_venv
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
+pytestmark = pytest.mark.slow
+
 
 def _sample_defs():
     from dagster import BackfillPolicy, DailyPartitionsDefinition, asset, schedule, sensor

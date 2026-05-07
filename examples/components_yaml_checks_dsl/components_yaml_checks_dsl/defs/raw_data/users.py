@@ -2,4 +2,4 @@ import dagster as dg
 
 
 @dg.asset(key=dg.AssetKey.from_user_string("RAW_DATA/users"))
-def users(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
+def users(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...  # ty: ignore[empty-body]

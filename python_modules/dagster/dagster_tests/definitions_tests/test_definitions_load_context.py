@@ -11,7 +11,6 @@ from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadType,
     StateBackedDefinitionsLoader,
 )
-from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -49,9 +48,8 @@ def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str
         payload = fetch_foo_integration_asset_info(workspace_id)
         serialized_payload = json.dumps(payload)
     asset_specs = [dg.AssetSpec(item["id"]) for item in payload]
-    assets = external_assets_from_specs(asset_specs)
     return dg.Definitions(
-        assets=assets,
+        assets=asset_specs,
     ).with_reconstruction_metadata({cache_key: serialized_payload})
 
 

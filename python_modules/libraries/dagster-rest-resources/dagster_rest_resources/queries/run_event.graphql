@@ -1,0 +1,49 @@
+query GetRunEvents($runId: ID!, $limit: Int, $afterCursor: String) {
+  logsForRun(runId: $runId, limit: $limit, afterCursor: $afterCursor) {
+    __typename
+    ... on EventConnection {
+      events {
+        __typename
+        ... on MessageEvent {
+          runId
+          message
+          timestamp
+          level
+          stepKey
+          eventType
+        }
+        ... on ExecutionStepFailureEvent {
+          runId
+          message
+          timestamp
+          level
+          stepKey
+          eventType
+          error {
+            message
+            className
+            stack
+            cause {
+              message
+              className
+              stack
+              cause {
+                message
+                className
+                stack
+              }
+            }
+          }
+        }
+      }
+      cursor
+      hasMore
+    }
+    ... on RunNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

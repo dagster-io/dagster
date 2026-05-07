@@ -13,7 +13,7 @@ import React, {forwardRef, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
-import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {TimeFromNow} from '../../ui/TimeFromNow';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
@@ -23,6 +23,7 @@ import {AssetRecentUpdatesTrend, EventPopover} from '../AssetRecentUpdatesTrend'
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {useAllAssets} from '../useAllAssets';
 import {useAssetRecentUpdates} from '../useAssetRecentUpdates';
+import type {SortBy} from './useAssetCatalogGroupAndSortBy';
 
 const shimmer = {shimmer: true};
 const shimmerRows = [shimmer, shimmer, shimmer, shimmer, shimmer];
@@ -52,6 +53,7 @@ export type AssetCatalogV2VirtualizedTableProps<
   checkedDisplayKeys: Set<string>;
   onToggleFactory: (id: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
   onToggleGroup: (group: T) => (checked: boolean) => void;
+  sortBy?: SortBy;
 };
 
 const AssetCatalogV2VirtualizedTableImpl = <
@@ -66,6 +68,7 @@ const AssetCatalogV2VirtualizedTableImpl = <
   checkedDisplayKeys,
   onToggleFactory,
   onToggleGroup,
+  sortBy,
 }: AssetCatalogV2VirtualizedTableProps<T, TAsset>) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -121,7 +124,7 @@ const AssetCatalogV2VirtualizedTableImpl = <
 
   return (
     <Container ref={containerRef}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         <div
           style={{
             position: 'absolute',
@@ -193,6 +196,7 @@ const AssetCatalogV2VirtualizedTableImpl = <
                 index={index}
                 checked={checkedDisplayKeys.has(tokenForAssetKey(item.key))}
                 onToggle={onToggleFactory(tokenForAssetKey(item.key))}
+                sortBy={sortBy}
               />
             );
           })}
@@ -211,16 +215,18 @@ interface RowProps<TAsset> {
   index: number;
   checked: boolean;
   onToggle: (values: {checked: boolean; shiftKey: boolean}) => void;
+  sortBy?: SortBy;
 }
 
 const AssetRow = forwardRef(
   <TAsset extends {key: {path: string[]}}>(
-    {asset, index, checked, onToggle}: RowProps<TAsset>,
+    {asset, index, checked, onToggle, sortBy: _sortBy}: RowProps<TAsset>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     const linkUrl = assetDetailsPathForKey({path: asset.key.path});
     const {recentEvents, latestInfo, loading} = useAssetRecentUpdates({asset});
     const lastEvent = recentEvents[0];
+    const showTimestamp = lastEvent?.__typename !== 'ObservationEvent';
     const latestInfoItem =
       latestInfo?.inProgressRunIds.length || latestInfo?.unstartedRunIds.length
         ? latestInfo
@@ -250,7 +256,7 @@ const AssetRow = forwardRef(
         left={
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Icon name="asset" />
-            {asset.key.path.join(' / ')}
+            {displayNameForAssetKey(asset.key)}
           </Box>
         }
         right={
@@ -264,7 +270,7 @@ const AssetRow = forwardRef(
                   ) : (
                     <>
                       <EventPopover event={lastEvent}>
-                        {lastEvent ? (
+                        {lastEvent && showTimestamp ? (
                           <HoverButton>
                             <TimeFromNow
                               unixTimestamp={Number(lastEvent.timestamp) / 1000}

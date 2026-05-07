@@ -24,6 +24,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes import serialize_value
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
+from dagster_dg_cli.cli.plus.build import get_agent_type
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.plus.deploy.configure.commands import deploy_configure_group
 from dagster_dg_cli.cli.plus.deploy.deploy_session import (
@@ -32,9 +33,7 @@ from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     init_deploy_session,
 )
 from dagster_dg_cli.cli.plus.deploy.validation import _extract_dagster_env_from_url
-from dagster_dg_cli.utils.plus.build import get_agent_type
 from dagster_dg_cli.utils.plus.gql import SECRETS_QUERY
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -532,7 +531,14 @@ def _fetch_secrets_for_location(
 
     Selects the appropriate secret scope based on whether this is a branch or full deployment.
     """
-    client = DagsterPlusGraphQLClient.from_location_state(location_state, api_token, organization)
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
+    client = DagsterPlusGraphQLClient(
+        url=location_state.url,
+        api_token=api_token,
+        organization=organization,
+        deployment=location_state.deployment_name,
+    )
 
     # Select scope based on deployment type
     if location_state.is_branch_deployment:
@@ -540,7 +546,7 @@ def _fetch_secrets_for_location(
     else:
         scopes = {"fullDeploymentScope": True}
 
-    result = client.execute(
+    result = client.execute_arbitrary(
         SECRETS_QUERY,
         variables={"onlyViewable": True, "scopes": scopes},
     )
@@ -826,11 +832,13 @@ def notify_command(project_dir: str, **global_options: object) -> None:
     source = metrics.get_source()
     if source == CliEventTags.source.github:
         event = github_context.get_github_event(project_dir)
-        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud."
+        deployment_name = location_states[0].deployment_name if location_states else None
+        deployment_label = f" (`{deployment_name}`)" if deployment_name else ""
+        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud{deployment_label}."
         event.update_pr_comment(
             msg + "\n\n" + report.markdown_report(location_states),
             orig_author="github-actions[bot]",
-            orig_text="Dagster Cloud",
+            orig_text=f"Dagster Cloud{deployment_label}",
         )
     else:
         raise click.UsageError("'dg plus deploy notify' is only available within Github actions.")

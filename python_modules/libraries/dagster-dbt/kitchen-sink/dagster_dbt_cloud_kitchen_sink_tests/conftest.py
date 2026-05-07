@@ -49,9 +49,7 @@ def ensure_cleanup(
             if job["name"]
             == get_dagster_adhoc_job_name(
                 project_id=project.id,
-                project_name=project.name,
                 environment_id=environment.id,
-                environment_name=environment.name,
             )
         }
         for job_id in adhoc_job_ids:

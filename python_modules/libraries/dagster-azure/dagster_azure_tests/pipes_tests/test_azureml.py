@@ -28,7 +28,7 @@ class MockAzureMLJob:
     def __init__(self, name: str, command: Command):
         self.name = name
         self.command = command
-        cmd_parts = self.command.component.command.split()  # pyright: ignore
+        cmd_parts = self.command.component.command.split()  # ty: ignore
         cmd_parts[0] = _PYTHON_EXECUTABLE
         env = {**self.command.environment_variables} if self.command.environment_variables else {}
 
@@ -86,11 +86,11 @@ def test_azureml_pipes(storage_account_name, container_name, external_script):
     try:
         context_injector = PipesAzureBlobStorageContextInjector(
             container=container_name,
-            client=blob_storage_service_client,  # pyright: ignore
+            client=blob_storage_service_client,  # ty: ignore
         )
         message_reader = PipesAzureBlobStorageMessageReader(
             container=container_name,
-            client=blob_storage_service_client,  # pyright: ignore[reportArgumentType]
+            client=blob_storage_service_client,  # ty: ignore[invalid-argument-type]
             interval=0.001,
         )
         azureml_client = MockAzureMLClient()
@@ -101,7 +101,7 @@ def test_azureml_pipes(storage_account_name, container_name, external_script):
         def azureml_asset(context: dg.AssetExecutionContext):
             return (
                 PipesAzureMLClient(
-                    azureml_client,  # pyright: ignore
+                    azureml_client,  # ty: ignore
                     context_injector=context_injector,
                     message_reader=message_reader,
                     poll_interval_seconds=0.1,

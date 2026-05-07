@@ -56,7 +56,13 @@ def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     packages = cast(
         "list[dict[str, Any]]", yaml.safe_load(packages_file.read_text()).get("packages", [])
     )
-    return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
+    for package in packages:
+        if package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE:
+            return True
+        local_path = package.get("local")
+        if local_path and Path(local_path).name == "dagster":
+            return True
+    return False
 
 
 class DbtCliResource(ConfigurableResource):

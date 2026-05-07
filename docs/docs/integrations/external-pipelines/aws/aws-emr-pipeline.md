@@ -102,7 +102,7 @@ spark-submit ... --files s3://your-bucket/venv.pex --conf spark.pyspark.python=.
 
 Call `open_dagster_pipes` in the EMR script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr/script.py" />
 
 :::tip
 
@@ -119,7 +119,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesEMRClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr/dagster_code.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -136,7 +136,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 Next, add the `PipesEMRClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 

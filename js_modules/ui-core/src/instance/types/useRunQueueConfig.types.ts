@@ -15,8 +15,9 @@ export type InstanceRunQueueConfigQuery = {
       maxConcurrentRuns: number;
       tagConcurrencyLimitsYaml: string | null;
       isOpConcurrencyAware: boolean | null;
+      maxConcurrentRunsAllBranchDeployments: number | null;
     } | null;
   };
 };
 
-export const InstanceRunQueueConfigVersion = '51de03303f49487cecbfbcd9a6624b8999779a88412c035aced402cb295e40c5';
+export const InstanceRunQueueConfigVersion = '5c8118738d025aa9b56439d1a142077acfc3dfbade689f3cae4d34100f740233';

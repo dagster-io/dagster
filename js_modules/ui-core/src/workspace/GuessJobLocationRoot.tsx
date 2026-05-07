@@ -26,14 +26,13 @@ export const GuessJobLocationRoot = () => {
   const entireMatch = useRouteMatch('/guess/(/?.*)');
   const location = useLocation();
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const toAppend = (entireMatch!.params as any)[0];
+  const toAppend = (entireMatch?.params as Record<string, string> | undefined)?.[0] ?? '';
   const {search} = location;
 
   const {pipelineName} = explorerPathFromString(jobPath);
   const {loading, options} = useRepositoryOptions();
 
-  if (loading) {
+  if (loading || !entireMatch) {
     return <LoadingSpinner purpose="page" />;
   }
 

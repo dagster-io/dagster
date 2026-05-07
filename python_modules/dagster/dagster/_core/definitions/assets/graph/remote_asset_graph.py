@@ -126,6 +126,10 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.code_version
 
     @property
+    def is_virtual(self) -> bool:
+        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.is_virtual
+
+    @property
     def job_names(self) -> Sequence[str]:
         # It is currently not possible to access the job names for an observation definition if a
         # materialization definition also exists. This needs to be fixed.

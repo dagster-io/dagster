@@ -135,7 +135,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             "Use this when Fivetran connectors run on Fivetran's auto-schedule."
         ),
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @cached_property
     def workspace_resource(self) -> FivetranWorkspace:
@@ -281,7 +281,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
 
 class FivetranComponentTranslator(
-    create_component_translator_cls(FivetranAccountComponent, DagsterFivetranTranslator),
+    create_component_translator_cls(FivetranAccountComponent, DagsterFivetranTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[FivetranAccountComponent],
 ):
     def __init__(self, component: "FivetranAccountComponent"):

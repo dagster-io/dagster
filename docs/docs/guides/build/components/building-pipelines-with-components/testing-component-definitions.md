@@ -27,7 +27,7 @@ def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definiti
     # Project root is two parents up from the test file
     project_root = Path(__file__).parent.parent
     tree = dg.ComponentTree.for_project(project_root)
-    component = tree.load_component_at_path(component_path)
+    component = tree.load_component(component_path)
     defs = tree.build_defs_at_path(component_path)
     return component, defs
 ```

@@ -1,5 +1,5 @@
 import os
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -17,7 +17,45 @@ def pushd(path: Path) -> Iterator[None]:
 
 
 def dump_pipeline_yaml(pipeline_dict: dict[str, object]) -> str:
+    _assert_step_keys_present_and_unique(pipeline_dict)
     return yaml.dump(pipeline_dict, default_flow_style=False, Dumper=QuotedStrDumper)
+
+
+def _assert_step_keys_present_and_unique(pipeline_dict: dict[str, object]) -> None:
+    """Raise if any step is missing a `key` or if two steps share the same `key`.
+
+    Walks top-level steps and group sub-steps.
+    """
+    seen: dict[str, str] = {}
+    for step in _iter_pipeline_steps(pipeline_dict):
+        label = step.get("label") or step.get("group") or step.get("input") or ""
+        key = step.get("key")
+        if not key:
+            raise ValueError(
+                f"Step is missing a key (label={label!r}). "
+                "Pass a key as the first argument to the StepBuilder constructor."
+            )
+        if key in seen:
+            raise ValueError(
+                f"Duplicate step key {key!r} in pipeline. "
+                f"First occurrence: {seen[key]!r}; second occurrence: {label!r}. "
+                "Each step must have a unique key — pick a distinct one."
+            )
+        seen[key] = label
+
+
+def _iter_pipeline_steps(pipeline_dict: dict[str, object]) -> Iterator[dict]:
+    raw_steps = pipeline_dict.get("steps", [])
+    if not isinstance(raw_steps, list):
+        return
+    for step in raw_steps:
+        if not isinstance(step, dict):
+            continue
+        yield step
+        if "steps" in step and isinstance(step["steps"], list):
+            for sub in step["steps"]:
+                if isinstance(sub, dict):
+                    yield sub
 
 
 class QuotedStrDumper(yaml.Dumper):
@@ -44,15 +82,26 @@ def get_image_version(image_name: str) -> str:
 
 
 BUILDKITE_TEST_IMAGE_VERSION: str = get_image_version("buildkite-test")
+RETRYABLE_INFRA_FAILURE_EXIT_CODE = 200
+
+
+# Wrap a shell command in an in-process retry loop. On persistent failure, exit
+# with RETRYABLE_INFRA_FAILURE_EXIT_CODE, which CommandStepBuilder's auto-retry
+# config re-runs as a fresh job. Use this for commands that hit infrastructure
+# outside our control: package registries, ECR, pip/uv installs, etc.
+def with_infra_retry(command: str, *, backoff_seconds: Sequence[int] = (5, 15)) -> str:
+    attempts = " || ".join(["_attempt", *(f"(sleep {s} && _attempt)" for s in backoff_seconds)])
+    return f"_attempt() {{ {command}; }}; {attempts} || exit {RETRYABLE_INFRA_FAILURE_EXIT_CODE}"
 
 
 def discover_git_repo_root() -> str:
-    # Walk up the directory tree until we find a .git directory
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Walk up the directory tree until we find a .git entry.
+    # Use Path.exists (not is_dir) because .git is a file in worktrees.
+    current_dir = Path(__file__).resolve().parent
     while True:
-        if os.path.isdir(os.path.join(current_dir, ".git")):
-            return current_dir
-        parent_dir = os.path.dirname(current_dir)
+        if (current_dir / ".git").exists():
+            return str(current_dir)
+        parent_dir = current_dir.parent
         if parent_dir == current_dir:
             raise Exception("Could not find git repository root")
         current_dir = parent_dir

@@ -289,8 +289,10 @@ def get_partition_set_partition_runs(
     from dagster_graphql.schema.partition_sets import GraphenePartitionRun
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-    run_records = graphene_info.context.instance.get_run_records(
-        RunsFilter(tags={PARTITION_SET_TAG: partition_set.name})
+    instance = graphene_info.context.instance
+    run_records = instance.get_run_records(
+        RunsFilter(tags={PARTITION_SET_TAG: partition_set.name}),
+        limit=instance.get_default_graphql_run_records_limit(),
     )
 
     by_partition = {}

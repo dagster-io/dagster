@@ -31,6 +31,7 @@ import {
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLink} from '../assets/AssetLink';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -424,10 +425,11 @@ const ResourceUses = (props: {
             </thead>
             <tbody>
               {resourceDetails.assetKeysUsing.map((assetKey) => {
+                const token = tokenForAssetKey(assetKey);
                 return (
-                  <tr key={assetKey.path.join('/')}>
+                  <tr key={token}>
                     <td>
-                      <AssetLink key={assetKey.path.join('/')} path={assetKey.path} icon="asset" />
+                      <AssetLink key={token} path={assetKey.path} icon="asset" />
                     </td>
                   </tr>
                 );

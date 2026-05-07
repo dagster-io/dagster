@@ -120,9 +120,11 @@ def test_no_local_venv_failure(spec: CommandSpec) -> None:
     ids=lambda spec: "-".join(spec.command),
 )
 def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
+    # This test mutates the venv (uninstalls dagster), so it must not share the cached venv
+    # used by other tests.
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_components_venv(runner),
+        isolated_components_venv(runner, fresh=True),
     ):
         _uninstall_dagster_from_local_venv(Path.cwd())
         result = runner.invoke(*spec.to_cli_args())

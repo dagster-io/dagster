@@ -14,6 +14,7 @@ from dagster_test.dg_utils.utils import (
 )
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_check_defs_workspace_context_success():
     dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))

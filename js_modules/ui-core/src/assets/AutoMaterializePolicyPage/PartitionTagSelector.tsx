@@ -5,7 +5,7 @@ import {
   Icon,
   MenuItem,
   MiddleTruncate,
-  TagSelectorContainer,
+  TAG_SELECTOR_CONTAINER_CLASS,
   TagSelectorDefaultTagTooltipStyle,
   TagSelectorWithSearch,
 } from '@dagster-io/ui-components';
@@ -77,7 +77,7 @@ export const PartitionTagSelector = ({
 const TagSelectorWrapper = styled.div`
   position: relative;
 
-  ${TagSelectorContainer} {
+  .${TAG_SELECTOR_CONTAINER_CLASS} {
     width: 370px;
     padding-left: 32px;
     height: 36px;

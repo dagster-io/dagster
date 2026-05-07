@@ -233,6 +233,22 @@ def has_permission_for_definition(
     return graphene_info.context.has_permission_for_owners(permission, owners)
 
 
+def has_permission_for_location_or_owners(
+    graphene_info: "ResolveInfo",
+    permission: str,
+    owners: Sequence[str],
+    location_name: str,
+) -> bool:
+    context = graphene_info.context
+    if context.has_permission(permission):
+        return True
+    if context.has_permission_for_location(permission, location_name):
+        return True
+    if not owners:
+        return False
+    return context.has_permission_for_owners(permission, owners)
+
+
 def location_name_for_remote_definition(remote_definition: RemoteDefinition) -> str:
     if isinstance(remote_definition, RemoteAssetNode):
         return (

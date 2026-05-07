@@ -16,6 +16,7 @@ from itertools import groupby
 from typing import Final, Literal, cast
 
 import tomli
+import yaml
 from typing_extensions import NotRequired, TypedDict
 
 parser = argparse.ArgumentParser(
@@ -182,25 +183,38 @@ PYRIGHT_ENV_ROOT: Final = "pyright"
 DEFAULT_REQUIREMENTS_FILE: Final = "requirements.txt"
 
 
-def get_pyspark_constraints_path():
-    return os.path.abspath(
-        os.path.join(
-            "python_modules",
-            "libraries",
-            "dagster-pyspark",
-            "build-constraints",
-        )
-    )
-
-
 def get_env_path(env: str, rel_path: str | None = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
     return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
 
 
 def load_path_file(path: str) -> Sequence[str]:
+    """Load paths from a plain include/exclude file (one path per line)."""
     with open(path, encoding="utf-8") as f:
-        return [line.strip() for line in f.readlines() if line.strip() and not line.startswith("#")]
+        paths = []
+        for raw_line in f:
+            stripped = raw_line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            pkg_path = stripped.split("#", 1)[0].strip()
+            if pkg_path:
+                paths.append(pkg_path)
+        return paths
+
+
+def load_ty_paths(env: str) -> Sequence[str]:
+    """Load paths assigned to `ty` for the given env.
+
+    Paths listed in `pyright/<env>/ty.yaml` are checked by `ty` and are
+    implicitly excluded from `pyright`. Returns an empty list if the file
+    does not exist.
+    """
+    ty_yaml_path = get_env_path(env, "ty.yaml")
+    if not os.path.exists(ty_yaml_path):
+        return []
+    with open(ty_yaml_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    return list(data.get("paths") or [])
 
 
 def get_params(args: argparse.Namespace) -> Params:
@@ -264,11 +278,12 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
     for env in os.listdir(PYRIGHT_ENV_ROOT):
         include_path = get_env_path(env, "include.txt")
         exclude_path = get_env_path(env, "exclude.txt")
+        excludes = load_path_file(exclude_path) if os.path.exists(exclude_path) else []
         env_path_specs.append(
             EnvPathSpec(
                 env=env,
                 include=load_path_file(include_path),
-                exclude=load_path_file(exclude_path) if os.path.exists(exclude_path) else [],
+                exclude=[*excludes, *load_ty_paths(env)],
             )
         )
     env_path_map: dict[str, list[str]] = {}
@@ -326,8 +341,6 @@ def normalize_env(
                         "pip",
                         "install",
                         "--no-config",
-                        "-b",
-                        get_pyspark_constraints_path(),
                         "--python",
                         python_path,
                         # editable-mode=compat ensures dagster-internal editable installs are done
@@ -464,6 +477,7 @@ def temp_pyright_config_file(env: str) -> Iterator[str]:
     config["include"] = load_path_file(include_path)
     if os.path.exists(exclude_path):
         config["exclude"] += load_path_file(exclude_path)
+    config["exclude"] += list(load_ty_paths(env))
     temp_config_path = f"pyrightconfig-{env}.json"
     print("Creating temporary pyright config file at", temp_config_path)
     try:

@@ -134,7 +134,7 @@ class CompositeYamlComponent(Component):
         ):
             defs_list.append(
                 post_process_defs(
-                    context.build_defs_at_path(component_decl.path).with_definition_metadata_update(
+                    context.build_defs(component_decl.path).with_definition_metadata_update(
                         lambda metadata: _add_defs_yaml_metadata(
                             component_yaml_path=component_yaml,
                             load_context=context,
@@ -322,7 +322,7 @@ class DefsFolderComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         child_defs = [
-            context.build_defs_at_path(child_decl.path)
+            context.build_defs(child_decl.path)
             for child_decl in context.component_decl.iterate_child_component_decls()
         ]
         return Definitions.merge(*child_defs)
@@ -423,7 +423,7 @@ class PythonFileComponent(Component):
         decl = check.inst(context.component_decl, PythonFileDecl)
         return Definitions.merge(
             *[
-                context.build_defs_at_path(child_decl.path).with_definition_metadata_update(
+                context.build_defs(child_decl.path).with_definition_metadata_update(
                     lambda metadata: _add_defs_py_metadata(
                         component=self.components[attr],
                         metadata=metadata,

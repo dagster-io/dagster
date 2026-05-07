@@ -1128,7 +1128,7 @@ class SqlEventLogStorage(EventLogStorage):
             db_result(conn, db_select([db.func.max(SqlEventLogStorageTable.c.id)])) as result,
         ):
             row = result.fetchone()
-            return row[0]  # type: ignore
+            return row[0]
 
     def _construct_asset_record_from_row(
         self,

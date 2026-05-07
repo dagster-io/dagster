@@ -1,9 +1,12 @@
+import os
 import time
 from collections import namedtuple
 from unittest import mock
 
 import kubernetes
+import kubernetes.client.rest
 import pytest
+from dagster._check import CheckError
 from dagster_k8s.client import (
     DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,
@@ -12,6 +15,7 @@ from dagster_k8s.client import (
     KubernetesWaitingReasons,
     WaitForPodState,
 )
+from dagster_k8s.utils import apply_no_proxy_env_workaround, load_kubernetes_config
 from kubernetes.client.models import (
     V1ContainerState,
     V1ContainerStateRunning,
@@ -1231,3 +1235,113 @@ def test_wait_for_ready_pod_is_deleted():
         mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert str(exc_info.value).startswith(f'Pod "{pod_name}" was unexpectedly killed')
+
+
+@pytest.fixture
+def restore_default_k8s_configuration():
+    original = kubernetes.client.Configuration.get_default_copy()
+    try:
+        yield
+    finally:
+        kubernetes.client.Configuration.set_default(original)
+
+
+_NO_PROXY_SUPPORTED = hasattr(kubernetes.client.Configuration(), "no_proxy")
+requires_no_proxy_attr = pytest.mark.skipif(
+    not _NO_PROXY_SUPPORTED,
+    reason="kubernetes client predates the Configuration.no_proxy attribute",
+)
+
+
+@requires_no_proxy_attr
+def test_apply_no_proxy_env_workaround_applies_env(restore_default_k8s_configuration):
+    with mock.patch.dict(os.environ, {"NO_PROXY": ".internal,.local"}, clear=False):
+        apply_no_proxy_env_workaround()
+        assert kubernetes.client.Configuration.get_default_copy().no_proxy == ".internal,.local"
+
+
+@requires_no_proxy_attr
+def test_apply_no_proxy_env_workaround_prefers_uppercase(restore_default_k8s_configuration):
+    with mock.patch.dict(os.environ, {"NO_PROXY": "upper", "no_proxy": "lower"}, clear=False):
+        apply_no_proxy_env_workaround()
+        assert kubernetes.client.Configuration.get_default_copy().no_proxy == "upper"
+
+
+@requires_no_proxy_attr
+def test_apply_no_proxy_env_workaround_noop_when_unset(restore_default_k8s_configuration):
+    env = {k: v for k, v in os.environ.items() if k not in ("NO_PROXY", "no_proxy")}
+    with mock.patch.dict(os.environ, env, clear=True):
+        apply_no_proxy_env_workaround()
+        # Default Configuration.no_proxy was not set (and upstream does not either, today)
+        assert kubernetes.client.Configuration.get_default_copy().no_proxy is None
+
+
+@requires_no_proxy_attr
+def test_apply_no_proxy_env_workaround_noop_when_config_already_set(
+    restore_default_k8s_configuration,
+):
+    # Simulates the post-upstream-fix world: the default Configuration already
+    # carries a no_proxy value (set by kubernetes.client itself). The workaround
+    # must not clobber it.
+    preset = kubernetes.client.Configuration.get_default_copy()
+    preset.no_proxy = "library-set"
+    kubernetes.client.Configuration.set_default(preset)
+
+    with mock.patch.dict(os.environ, {"NO_PROXY": "from-env"}, clear=False):
+        apply_no_proxy_env_workaround()
+    assert kubernetes.client.Configuration.get_default_copy().no_proxy == "library-set"
+
+
+@requires_no_proxy_attr
+def test_kubernetes_client_no_proxy_bug_canary():
+    # Canary: Configuration.__init__ reads NO_PROXY but then clobbers it to None.
+    # See https://github.com/kubernetes-client/python/issues/2520. When this
+    # assertion starts failing, the upstream bug has been fixed — delete
+    # apply_no_proxy_env_workaround and the call sites in dagster_k8s.
+    with mock.patch.dict(os.environ, {"NO_PROXY": ".internal,.local"}, clear=False):
+        assert kubernetes.client.Configuration().no_proxy is None, (
+            "kubernetes-client/python#2520 appears to be fixed — "
+            "apply_no_proxy_env_workaround is no longer needed"
+        )
+
+
+def test_load_kubernetes_config_incluster():
+    with (
+        mock.patch.object(kubernetes.config, "load_incluster_config") as load_incluster,
+        mock.patch.object(kubernetes.config, "load_kube_config") as load_kube,
+    ):
+        load_kubernetes_config(load_incluster_config=True)
+        load_incluster.assert_called_once_with()
+        load_kube.assert_not_called()
+
+
+def test_load_kubernetes_config_kubeconfig():
+    with (
+        mock.patch.object(kubernetes.config, "load_incluster_config") as load_incluster,
+        mock.patch.object(kubernetes.config, "load_kube_config") as load_kube,
+    ):
+        load_kubernetes_config(load_incluster_config=False, kubeconfig_file="/tmp/kubeconfig")
+        load_incluster.assert_not_called()
+        load_kube.assert_called_once_with(config_file="/tmp/kubeconfig")
+
+
+def test_load_kubernetes_config_invariant_kubeconfig_with_incluster():
+    with mock.patch.object(kubernetes.config, "load_incluster_config"):
+        with pytest.raises(CheckError):
+            load_kubernetes_config(load_incluster_config=True, kubeconfig_file="/tmp/kubeconfig")
+
+
+def test_load_kubernetes_config_applies_ssl_ca_cert(restore_default_k8s_configuration):
+    with mock.patch.object(kubernetes.config, "load_incluster_config"):
+        load_kubernetes_config(load_incluster_config=True, k8s_api_ssl_ca_cert_file="/etc/ca.crt")
+    assert kubernetes.client.Configuration.get_default_copy().ssl_ca_cert == "/etc/ca.crt"
+
+
+@requires_no_proxy_attr
+def test_load_kubernetes_config_applies_no_proxy(restore_default_k8s_configuration):
+    with (
+        mock.patch.object(kubernetes.config, "load_incluster_config"),
+        mock.patch.dict(os.environ, {"NO_PROXY": ".internal"}, clear=False),
+    ):
+        load_kubernetes_config(load_incluster_config=True)
+    assert kubernetes.client.Configuration.get_default_copy().no_proxy == ".internal"

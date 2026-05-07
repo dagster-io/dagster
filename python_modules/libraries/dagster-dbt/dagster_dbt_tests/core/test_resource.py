@@ -1,3 +1,10 @@
+# NOTE: this file is treated specially in our CI sharding strategy. It is the
+# dominant concentration of slow dbt-CLI subprocess tests in the `core-main`
+# tox env (e.g. test_dbt_cli_defer_args, test_dbt_profiles_dir_configuration*,
+# test_dbt_cli_failure) and disproportionately drives the wall time of
+# whichever pytest-split shard it lands on. When tuning the shard count or
+# rebalancing in `packages.py`, account for this file separately rather than
+# assuming uniform per-test cost across the suite.
 import os
 import shutil
 from dataclasses import replace

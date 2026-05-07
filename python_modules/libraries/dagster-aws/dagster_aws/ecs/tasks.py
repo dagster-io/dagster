@@ -110,7 +110,7 @@ class DagsterEcsTaskDefinitionConfig(
         )
 
     def task_definition_dict(self):
-        kwargs = dict(
+        kwargs: dict[str, Any] = dict(
             family=self.family,
             requiresCompatibilities=self.requires_compatibilities,
             networkMode="awsvpc",
@@ -154,13 +154,13 @@ class DagsterEcsTaskDefinitionConfig(
             kwargs.update(dict(taskRoleArn=self.task_role_arn))
 
         if self.runtime_platform:
-            kwargs.update(dict(runtimePlatform=self.runtime_platform))  # pyright: ignore[reportCallIssue,reportArgumentType]
+            kwargs.update(dict(runtimePlatform=self.runtime_platform))
 
         if self.ephemeral_storage:
-            kwargs.update(dict(ephemeralStorage={"sizeInGiB": self.ephemeral_storage}))  # pyright: ignore[reportCallIssue,reportArgumentType]
+            kwargs.update(dict(ephemeralStorage={"sizeInGiB": self.ephemeral_storage}))
 
         if self.volumes:
-            kwargs.update(dict(volumes=self.volumes))  # pyright: ignore[reportCallIssue,reportArgumentType]
+            kwargs.update(dict(volumes=self.volumes))
 
         return kwargs
 
@@ -393,7 +393,7 @@ class CurrentEcsTaskMetadata(
 
 
 def get_current_ecs_task_metadata() -> CurrentEcsTaskMetadata:
-    task_metadata_uri = _container_metadata_uri() + "/task"  # pyright: ignore[reportOptionalOperand]
+    task_metadata_uri = _container_metadata_uri() + "/task"
     response = requests.get(task_metadata_uri).json()
     cluster = response.get("Cluster")
     task_arn = response.get("TaskARN")
@@ -414,7 +414,7 @@ def _container_metadata_uri():
 
 
 def current_ecs_container_name():
-    return requests.get(_container_metadata_uri()).json()["Name"]  # pyright: ignore[reportArgumentType]
+    return requests.get(_container_metadata_uri()).json()["Name"]
 
 
 def get_current_ecs_task(ecs, task_arn, cluster):

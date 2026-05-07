@@ -106,6 +106,7 @@ autodoc_member_order = "groupwise"
 autodoc_mock_imports = [
     "airflow",
     "azure",
+    "clickhouse_driver",
     "coloredlogs",
     "dask",
     "databricks",

@@ -53,7 +53,7 @@ Single-asset sensors (`@asset_sensor`) monitor one upstream asset and trigger a 
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_basic_trigger.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_basic_trigger.py"
   title="sensors.py"
 />
 
@@ -61,7 +61,7 @@ Single-asset sensors (`@asset_sensor`) monitor one upstream asset and trigger a 
   <TabItem value="da" label="Declarative Automation">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_basic_trigger.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_basic_trigger.py"
   title="assets.py"
 />
 
@@ -82,7 +82,7 @@ If your `@asset_sensor` monitors an asset in a different code location, no speci
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_metadata_trigger.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_metadata_trigger.py"
   title="sensors.py"
 />
 
@@ -92,7 +92,7 @@ If your `@asset_sensor` monitors an asset in a different code location, no speci
 Automation conditions don't have access to materialization metadata directly. Instead, use an [asset check](/guides/test/asset-checks) to inspect the metadata and gate downstream execution:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_metadata_trigger.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_metadata_trigger.py"
   title="assets.py"
 />
 
@@ -113,7 +113,7 @@ How this works:
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_all_deps.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_all_deps.py"
   title="sensors.py"
 />
 
@@ -121,7 +121,7 @@ How this works:
   <TabItem value="da" label="Declarative Automation">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_all_deps.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_all_deps.py"
   title="assets.py"
 />
 
@@ -147,7 +147,7 @@ For advanced uses of `on_cron`, see the [customizing on_cron guide](/guides/auto
 If you want to trigger as soon as all dependencies have updated since the target's last materialization (no cron boundary), you might try building a custom condition using <PyObject section="assets" module="dagster" object="AutomationCondition.asset_matches" />:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_all_deps_custom.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_all_deps_custom.py"
   title="assets.py"
   startAfter="start_all_deps_custom"
   endBefore="end_all_deps_custom"
@@ -179,7 +179,7 @@ The `asset_matches` approach also requires hardcoding the target asset key in th
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_any_dep.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_any_dep.py"
   title="sensors.py"
 />
 
@@ -187,7 +187,7 @@ The `asset_matches` approach also requires hardcoding the target asset key in th
   <TabItem value="da" label="Declarative Automation">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_any_dep.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_any_dep.py"
   title="assets.py"
 />
 
@@ -202,7 +202,7 @@ The `asset_matches` approach also requires hardcoding the target asset key in th
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_partitioned.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_partitioned.py"
   title="sensors.py"
 />
 
@@ -212,14 +212,14 @@ The `asset_matches` approach also requires hardcoding the target asset key in th
 When both assets have partition definitions with a defined mapping, Declarative Automation automatically handles the partition fan-in/fan-out. Choose between <PyObject section="assets" module="dagster" object="AutomationCondition.on_missing" /> and `eager()` based on whether the downstream should re-materialize when upstream partitions re-run:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_partitioned.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_partitioned.py"
   title="assets.py"
   startAfter="start_on_missing"
   endBefore="end_on_missing"
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_partitioned.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_partitioned.py"
   title="assets.py"
   startAfter="start_eager"
   endBefore="end_eager"
@@ -236,7 +236,7 @@ For most partition fan-in use cases, `on_missing` is the better default. If you 
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_selective.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_selective.py"
   title="sensors.py"
 />
 
@@ -244,7 +244,7 @@ For most partition fan-in use cases, `on_missing` is the better default. If you 
   <TabItem value="da" label="Declarative Automation">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_selective.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_selective.py"
   title="assets.py"
 />
 
@@ -261,7 +261,7 @@ A common pattern is a sensor that queries an external system (e.g., a relational
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_external_db_tables.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_external_db_tables.py"
   title="sensors.py"
 />
 
@@ -277,7 +277,7 @@ The recommended approach splits these responsibilities:
 3. **Downstream assets use Declarative Automation** (`eager()`, `on_cron()`, etc.) to react to those updates through the normal asset graph.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_external_db_tables.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_external_db_tables.py"
   title="assets.py"
 />
 
@@ -304,7 +304,7 @@ If your sensor passes configuration derived from upstream metadata, move that lo
   <TabItem value="sensor" label="Sensor" default>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/sensor_run_config.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/sensor_run_config.py"
   title="sensors.py"
 />
 
@@ -312,7 +312,7 @@ If your sensor passes configuration derived from upstream metadata, move that lo
   <TabItem value="da" label="Declarative Automation">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_run_config.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_run_config.py"
   title="assets.py"
 />
 
@@ -326,7 +326,7 @@ This is the most common approach. The asset is self-contained and doesn't rely o
 If you need to attach fixed metadata to all runs launched by automation, use `run_tags` on the <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" />:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/migration/da_run_tags.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/migration/da_run_tags.py"
   title="definitions.py"
 />
 

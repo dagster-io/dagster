@@ -54,7 +54,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
     survives worker restarts.
     """
 
-    _instance: DagsterInstance  # pyright: ignore[reportIncompatibleMethodOverride]
+    _instance: DagsterInstance
     celery: Celery
 
     def __init__(

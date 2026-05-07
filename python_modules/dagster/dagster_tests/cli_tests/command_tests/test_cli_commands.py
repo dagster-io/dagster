@@ -374,7 +374,7 @@ def scheduler_instance(overrides=None):
             overrides=merge_dicts(
                 {
                     "scheduler": {
-                        "module": "dagster.utils.test",
+                        "module": "dagster._utils.test",
                         "class": "FilesystemTestScheduler",
                         "config": {"base_dir": temp_dir},
                     }

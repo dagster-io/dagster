@@ -9,15 +9,14 @@ import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {useShowAssetsWithoutDefinitions} from '../app/UserSettingsDialog/useShowAssetsWithoutDefinitions';
 import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
 import {AssetKey} from '../assets/types';
-import {useAllAssetsNodes} from '../assets/useAllAssets';
+import {WorkspaceAssetNode, useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {weakMapMemoize} from '../util/weakMapMemoize';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
-  hideNodesMatching?: (node: WorkspaceAssetFragment) => boolean;
+  hideNodesMatching?: (node: WorkspaceAssetNode) => boolean;
   pipelineSelector?: Pick<
     PipelineSelector,
     'pipelineName' | 'repositoryName' | 'repositoryLocationName'
@@ -266,17 +265,16 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
 const buildExternalAssetQueryItem = (asset: {
   id: string;
   key: {path: string[]};
-}): WorkspaceAssetFragment => {
+}): WorkspaceAssetNode => {
   return {
     __typename: 'AssetNode',
     changedReasons: [],
     kinds: [],
     hasMaterializePermission: false,
-    graphName: '',
-    opVersion: null,
+    hasWipePermission: false,
+    graphName: null,
     hasAssetChecks: false,
     hasReportRunlessAssetEventPermission: false,
-    pools: [],
     internalFreshnessPolicy: null,
     partitionDefinition: null,
     automationCondition: null,

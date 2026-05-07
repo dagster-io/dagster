@@ -26,7 +26,9 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.artifact", cls="ArtifactUploadResult")
+@dg_response_schema(
+    module="dagster_rest_resources.schemas.artifact", cls="DgApiArtifactUploadResult"
+)
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -45,23 +47,25 @@ def upload_artifact_command(
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to upload.
     """
-    from dagster_dg_cli.api_layer.api.artifact import DgApiArtifactApi
+    from dagster_rest_resources.api.artifact import DgApiArtifactApi
+    from dagster_rest_resources.s3_client import S3Client
 
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
 
-    api = DgApiArtifactApi(
+    client = S3Client(
         base_url=config.organization_url,
         headers={
             "Dagster-Cloud-Api-Token": api_token,
             "Dagster-Cloud-Organization": organization,
         },
     )
+    api = DgApiArtifactApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.upload(key=key, path=Path(path), deployment=deployment)
+        result = api.action_upload(key=key, path=Path(path), deployment=deployment)
         click.echo(format_artifact_upload(result, as_json=output_json))
 
 
@@ -78,9 +82,7 @@ def upload_artifact_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.artifact", cls="ArtifactDownloadResult"
-)
+@dg_response_schema(module="dagster_rest_resources.schemas.artifact", cls="ArtifactDownloadResult")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -99,23 +101,25 @@ def download_artifact_command(
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to save to.
     """
-    from dagster_dg_cli.api_layer.api.artifact import DgApiArtifactApi
+    from dagster_rest_resources.api.artifact import DgApiArtifactApi
+    from dagster_rest_resources.s3_client import S3Client
 
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
 
-    api = DgApiArtifactApi(
+    client = S3Client(
         base_url=config.organization_url,
         headers={
             "Dagster-Cloud-Api-Token": api_token,
             "Dagster-Cloud-Organization": organization,
         },
     )
+    api = DgApiArtifactApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.download(key=key, path=Path(path), deployment=deployment)
+        result = api.action_download(key=key, path=Path(path), deployment=deployment)
         click.echo(format_artifact_download(result, as_json=output_json))
 
 

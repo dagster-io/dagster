@@ -1,5 +1,163 @@
 # Changelog
 
+## 1.13.3 (core) / 0.29.3 (libraries)
+
+### New
+
+- Added an `owners` parameter to `define_asset_job`, mirroring the field on regular jobs.
+- Improved error messages when required config is missing in Dagster jobs, with clearer guidance on which fields are missing and example config to provide.
+- `LOGS_CAPTURED` event messages no longer say "Started capturing logs", since compute log managers typically upload logs on completion rather than streaming in real time.
+- [ui] Added client-side validation for the deployment settings YAML editor that warns when unknown keys are detected.
+- [ui] Op tags are now shown on the asset details page in a separate "Op tags" row, alongside the asset's own tags.
+- [ui] Redesigned the sensor dry run dialog with a stacked cursor layout, copy buttons for cursor values, and an inline run config preview.
+- [dagster-clickhouse] Added new `dagster-clickhouse`, `dagster-clickhouse-pandas`, and `dagster-clickhouse-polars` libraries with native ClickHouse resources, IO managers, and `dg` components.
+- [dagster-cloud] The `EcsUserCodeLauncher` now accepts a `repository_credentials` config option, allowing ECR credentials to be configured at the agent or deployment level instead of only per code location.
+- [dagster-postgres] Added workload identity federation (WIF) authentication for PostgreSQL via a new `auth_provider` config option (`azure_wif`, `gcp_wif`, or `aws_wif`), with optional extras `dagster-postgres[azure]`, `dagster-postgres[gcp]`, and `dagster-postgres[aws]`. The Helm chart supports WIF via `global.postgresqlAuthWifEnabled`. (Thanks, [@JohnMav](https://github.com/JohnMav)!)
+
+### Bugfixes
+
+- Fixed an error when starting a schedule whose name was previously used for a sensor (or vice versa).
+- Fixed a race condition in Pipes that could cause dynamically-added log readers to be missed.
+- [dg] Fixed bugs in the GitLab hybrid scaffolder used by `dg plus deploy configure`.
+- [ui] Fixed the open/close behavior of the partition selector in the materialization dialog.
+- [ui] Fixed false-positive syntax errors in asset selection inputs while the autocomplete dropdown was open.
+- [ui] Fixed `key:value` autocompletion in search inputs not advancing into value-suggestion context when accepting a key with the Enter key.
+- [ui] Fixed the asset catalog "Group by Owner" and "Group by Tags" views not showing assets with empty owner or tag arrays under a "None" section.
+- [ui] Fixed asset selection summary tiles with long titles visually overlapping with adjacent UI.
+- [ui] Fixed monospace text in several places that had reverted to the default font.
+- [dagster-airbyte] Fixed errors parsing timestamps from newer versions of the Airbyte API.
+- [dagster-cloud] Fixed an issue where the `--defs-state-info` argument was applied to the multipex server command but not to the gRPC server command in serverless deployments.
+- [dagster-dbt] Fixed an issue where dbt assets configured with `enable_duplicate_source_asset_keys` could emit duplicate dependency entries and ambiguous source metadata when multiple dbt sources resolved to the same asset key.
+- [dagster-k8s] Added a workaround for an upstream issue in the Kubernetes Python client where setting the `NO_PROXY` or `no_proxy` environment variable did not affect the configuration of Kubernetes API calls.
+- [dagster-snowflake] Replaced deprecated Pydantic `validator` usage with `field_validator` to eliminate Pydantic deprecation warnings.
+
+### Documentation
+
+- Added documentation for writing unit tests for declarative automation conditions.
+- Added documentation for branch deployment RBAC.
+- Added a dedicated documentation page for branch deployment concurrency settings.
+- Documented the new asset-event webhook tokens.
+- Clarified asset metric monitor behavior in the alerts documentation.
+- Added required API scopes to the Databricks connection documentation.
+- Updated the Databricks connection documentation with an OAuth flow for service principals.
+- [dg] Documented the `dg` CLI configuration option for setting a custom virtual environment path.
+
+## 1.13.2 (core) / 0.29.2 (libraries)
+
+### New
+
+- [ui] Users can now hold Cmd or Ctrl while clicking launch, materialize, re-execute, or retry buttons to open the resulting run in a new
+  browser tab instead of navigating away from the current page.
+- [ui] Added an Azure DevOps kind tag icon for assets tagged with the `azuredevops` kind.
+- [dg] The `dg utils integrations` sub-command has been removed.
+- [dagster-databricks] `DatabricksClientResource` now accepts a `credentials_strategy` argument, enabling federated and custom authentication flows via the Databricks SDK's `CredentialsStrategy` protocol. (Thanks, [@hbellur0526](https://github.com/hbellur0526)!)
+
+### Bugfixes
+
+- Fixed an issue where the asset daemon could fail when encountering foreign sensor cursors in automation condition sensor state.
+- Fixed an issue where run retries were sometimes not executed by the event log consumer daemon.
+- Fixed an issue where an invalid multi-partition key format could cause errors when computing partition statuses.
+- [dg] Fixed an issue where the `--api-token` flag was ignored when passed to `dg` CLI commands.
+- [dg] Fixed an issue in `dg api asset-checks` where the command used a non-existent top-level GraphQL resolver path.
+- [ui] Fixed incorrect font rendering caused by a CSS variable name mismatch.
+- [ui] Fixed an issue where the run config editor dialog displayed at an incorrect height.
+- [ui] Fixed an issue where clicking asset selection autocomplete suggestions could cause the input to lose focus.
+- [ui] Fixed an issue where the Users table in Org Settings did not support horizontal scrolling.
+- [dagster-cloud-cli] Fixed GitHub Enterprise authentication for branch deployment CI/CD workflows.
+- [dagster-databricks] Fixed a `TypeError` when `credentials_strategy` was `None`.
+- [dagster-dbt] Fixed a thread-safety issue in concurrent metadata fetching that could cause intermittent errors.
+- [dagster-snowflake-polars] Fixed an issue where dynamic partition keys were not properly escaped.
+
+### Dagster Plus
+
+- [ui] Branch deployments now expose run queue settings in the run queue configuration dialog.
+
+## 1.13.1 (core) / 0.29.1 (libraries)
+
+### New
+
+- Added `PipesCompositeMessageReader` (preview) to support multiple concurrent message streams in a single Pipes session.
+- Added `sensor:`, `schedule:`, and `job:` attribute support to the asset selection syntax (e.g., `sensor:my_sensor`, `job:my_job`).
+- Added `automation_type:` attribute support to the asset selection syntax, allowing queries like `automation_type:schedule` or `automation_type:sensor`.
+- State-backed integration components (e.g., `AirbyteWorkspaceComponent`, `FivetranWorkspaceComponent`) now default to `LOCAL_FILESYSTEM` state storage instead of `legacy_code_server_snapshots`.
+- [ui] Improved asset selection autocomplete performance.
+- [dagster-dbt] `DagsterDbtTranslatorSettings.enable_source_metadata` now defaults to `True`, enabling upstream asset key remapping based on dbt source table names by default.
+
+### Bugfixes
+
+- Fixed a possible SQL injection in a few IO managers when used with dynamic partition.
+- Fixed an issue where runs executed via `execute_in_process()` would sometimes fail to display the step timeline in the Dagster UI.
+- Fixed a bug where multi-asset definitions containing virtual assets would produce incorrect execution plans.
+- [ui] Fixed the tick result button for sensors using dynamic partitions.
+- [dagster-aws] `PickledObjectS3IOManager` now defaults the S3 key prefix to an empty string when none is provided. (Thanks, [@aksestok](https://github.com/aksestok)!)
+- [dagster-databricks] `PipesDatabricksClient.run_multi_task` and `PipesDatabricksServerlessClient.run_multi_task` now give each submitted task its own message destination by default, fixing chunk-file collisions between concurrent tasks.
+- [dagster-dbt] Fixed the dbt Cloud v2 polling sensor and adhoc job to use stable, ID-based identifiers, preventing naming conflicts.
+- [dagster-dbt] Fixed the dbt Cloud v2 polling sensor to correctly filter out runs from adhoc jobs.
+
+### Documentation
+
+- Added a guide for virtual assets.
+- Added documentation for partitioned asset checks.
+- Added documentation for the `free_slots_after_run_end_seconds` concurrency configuration option.
+- Clarified SCIM provisioning and SSO permission requirements in the authentication documentation.
+- Added a guide for migrating Dagster+ from the US to the EU control plane.
+
+## 1.13.0 (core) / 0.29.0 (libraries)
+
+### Major Changes Since 1.12.0
+
+- **AI-assisted development**: Released [dagster-io/skills](https://github.com/dagster-io/skills), a collection of Dagster-focused AI skills for coding agents like Claude Code, OpenAI Codex, and others. Expanded `dg api` commands for programmatic inspection of assets, runs, jobs, schedules, and more.
+- **Partitioned asset checks**: Asset checks can now target specific partitions of an upstream asset, aligning data quality logic with how partitioned data is produced and monitored.
+- **State-backed components enabled by default**: Integrations that depend on external metadata (dbt, Fivetran, Airbyte, Tableau, Looker, etc.) now use persisted local state by default, providing a more predictable code location loading experience.
+- **Virtual assets (preview)**: New `is_virtual` parameter on `@asset` and `AssetSpec` for modeling assets like database views that automatically reflect upstream changes without explicit materialization.
+- **20+ new components**: Added or expanded components for dbt Cloud, Spark, Azure (Blob Storage, ADLS2), GCP (BigQuery, GCS, Dataproc), Databricks, Tableau, Looker, Census, Polytomic, and more. Integrations gained richer observability, metadata, and operational support.
+- **Deeper integration support**: dbt Cloud supports partitioned assets; Databricks gained job-level subsetting and auto-cancel on run termination; Fivetran added polling sensors, retry-on-reschedule, and resync support; BI integrations auto-enrich assets with table metadata for cross-system lineage.
+- **Dagster+ improvements**: Organization-level timezone settings, service users for Pro accounts, more resilient code server redeploy behavior, improved agent failure recovery, and expanded insights and alerting workflows.
+
+### Breaking Changes
+
+- Removed deprecated `external_asset_from_spec` and `external_assets_from_specs`. Use `AssetSpec` inputs directly to `Definitions(...)` or `AssetsDefinition(specs=[...])` instead.
+- Removed deprecated single-`AssetKey` `deps` argument support from asset dependencies. Use a sequence of `AssetDep` objects instead.
+- Removed deprecated `get_all_asset_specs` from `Definitions`.
+- Removed deprecated `legacy_freshness_policy` parameter from `@observable_source_asset`.
+- Removed deprecated `auto_observe_interval_minutes` parameter from `@observable_source_asset`.
+- Removed deprecated `legacy_freshness_policies_by_output_name` parameter from `AssetsDefinition`.
+- Removed deprecated `load_component_at_path` from `ComponentLoadContext`. Use `context.load_component` instead.
+- Removed deprecated `build_defs_at_path` from `ComponentLoadContext`.
+- [dagster-airbyte] Removed deprecated `AirbyteState` enum (use `AirbyteJobStatusType` instead) and removed deprecated `legacy_freshness_policy` and `auto_materialize_policy` parameters from `build_airbyte_assets()`.
+- [dagster-looker] Removed deprecated `DagsterLookerResource.build_defs`, `get_asset_key`, `get_dashboard_asset_key`, `get_explore_asset_key`, `get_view_asset_key` methods, and `Type[DagsterLookerApiTranslator]` support from API helpers.
+- [dagster-powerbi] Removed deprecated `PowerBIWorkspace.build_defs()`, translator key helpers (use `get_asset_spec()` instead), and `Type[DagsterPowerBITranslator]` support in `load_powerbi_asset_specs()` (pass an instance instead).
+- [dagster-sigma] Removed deprecated `SigmaOrganization.build_defs()`, `DagsterSigmaTranslator.get_asset_key()` (use `get_asset_spec(...).key` instead), and `Type[DagsterSigmaTranslator]` support in `load_sigma_asset_specs()` (pass an instance instead).
+
+### New
+
+- (Preview) Added support for virtual assets. The `@asset` decorator and `AssetSpec` now accept an `is_virtual` parameter for defining assets that represent views or derived tables that don't need to be materialized. Virtual assets are supported in staleness calculations, execution planning, and declarative automation.
+- Job-level config defaults are now applied when partial config is provided to a run.
+- [dagster-dbt] Added `enable_dbt_views_as_virtual_assets` setting to `DbtTranslatorSettings` for automatically treating dbt views as virtual assets.
+
+### Bugfixes
+
+- Fixed an issue where a sensor targeting a job with `run_tags` and specifying an `asset_selection` in the `RunRequest` would not apply the job's `run_tags` to the resulting run.
+- Fixed a potential error in YAML config snapshot conversion when encountering `None` fields.
+- [dg] Fixed `dg plus deploy configure` generating a GitHub Action that used Docker instead of the PEX build strategy.
+- [dagster-cloud-cli] PR comments in CI are now scoped by deployment name, preventing overwrites across deployments.
+- [ui] Fixed "Missing" partition selection for time-based partitioned assets.
+- [ui] Fixed raw log display rendering after `ansi-to-react` library update.
+- [ui] "Terminate all runs" dialog now handles extremely large sets of runs more reliably.
+
+### Documentation
+
+- Added Dagster+ agent configuration page for serverless and hybrid deployments.
+- Added data portability documentation page.
+- Reorganized run isolation documentation for hybrid and serverless deployments.
+- Added ELT pipeline example with dlt and Sling.
+
+### Dagster Plus
+
+- Added SCIM Groups filter support for `members.value eq` queries.
+- Fixed an issue where the Dagster+ Kubernetes agent would emit log noise about `DAGSTER_CLOUD_RAW_GIT_URL` and `DAGSTER_CLOUD_GIT_URL` environment variables when `onlyAllowUserDefinedK8sConfigFields` was set.
+- Fixed incorrect alert type label for metrics alerts.
+
 ## 1.12.22 (core) / 0.28.22 (libraries)
 
 ### New

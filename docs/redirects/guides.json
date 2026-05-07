@@ -230,6 +230,11 @@
     "permanent": true
   },
   {
+    "source": "/guides/build/external-assets",
+    "destination": "/guides/build/assets/external-assets",
+    "permanent": true
+  },
+  {
     "source": "/concepts/automation",
     "destination": "/guides/automate",
     "permanent": true
@@ -302,6 +307,11 @@
   {
     "source": "/guides/automate/declarative-automation/customizing-automation-conditions/automation-condition-operands-and-operators",
     "destination": "/guides/automate/declarative-automation/automation-condition-reference",
+    "permanent": true
+  },
+  {
+    "source": "/guides/automate/declarative-automation/migrating-from-multi-asset-sensors",
+    "destination": "/guides/automate/declarative-automation/migrating-from-sensors",
     "permanent": true
   },
   {
@@ -556,36 +566,46 @@
   },
   {
     "source": "/dagster-plus/insights/asset-metadata",
-    "destination": "/guides/observe/insights",
+    "destination": "/guides/observe/insights/custom-metrics",
+    "permanent": true
+  },
+  {
+    "source": "/guides/observe/insights/asset-metadata",
+    "destination": "/guides/observe/insights/custom-metrics",
     "permanent": true
   },
   {
     "source": "/dagster-plus/insights/integrating-external-metrics",
-    "destination": "/guides/observe/insights",
+    "destination": "/guides/observe/insights/custom-metrics",
     "permanent": true
   },
   {
     "source": "/dagster-plus/insights/integrating-bigquery",
-    "destination": "/guides/observe/insights",
+    "destination": "/guides/observe/insights/google-bigquery",
     "permanent": true
   },
   {
     "source": "/dagster-plus/insights/integrating-bigquery-and-dbt",
-    "destination": "/guides/observe/insights",
+    "destination": "/guides/observe/insights/google-bigquery",
     "permanent": true
   },
   {
     "source": "/dagster-plus/insights/integrating-snowflake",
-    "destination": "/guides/observe/insights",
+    "destination": "/guides/observe/insights/snowflake",
     "permanent": true
   },
   {
     "source": "/dagster-plus/insights/integrating-snowflake-and-dbt",
-    "destination": "/guides/observe/insights",
+    "destination": "/guides/observe/insights/snowflake",
     "permanent": true
   },
   {
     "source": "/dagster-plus/insights/exporting-insights-metrics",
+    "destination": "/guides/observe/insights",
+    "permanent": true
+  },
+  {
+    "source": "/guides/observe/insights/export-metrics",
     "destination": "/guides/observe/insights",
     "permanent": true
   },
@@ -676,6 +696,11 @@
   },
   {
     "source": "/guides/limiting-concurrency-in-data-pipelines",
+    "destination": "/guides/operate/managing-concurrency",
+    "permanent": true
+  },
+  {
+    "source": "/guides/deploy/concurrency-control",
     "destination": "/guides/operate/managing-concurrency",
     "permanent": true
   },
@@ -960,11 +985,6 @@
     "permanent": true
   },
   {
-    "source": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
-    "destination": "/guides/build/projects",
-    "permanent": true
-  },
-  {
     "source": "/guides/deploy/code-locations/workspace-yaml",
     "destination": "/guides/build/projects/workspaces/workspace-yaml",
     "permanent": true
@@ -1115,6 +1135,11 @@
     "permanent": true
   },
   {
+    "source": "/guides/operate/run-failure-alerts",
+    "destination": "/guides/observe/alerts/alert-policy-types",
+    "permanent": true
+  },
+  {
     "source": "/guides/build/assets/asset-catalog",
     "destination": "/guides/observe/asset-catalog",
     "permanent": true
@@ -1182,6 +1207,16 @@
   {
     "source": "/guides/build/components/asset-factories-to-components",
     "destination": "/guides/build/assets/creating-asset-factories",
+    "permanent": true
+  },
+  {
+    "source": "/assets/asset-lineage",
+    "destination": "/guides/build/assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/compass-ai-assistant",
+    "destination": "/guides/labs/dagster-ai-agent",
     "permanent": true
   }
 ]

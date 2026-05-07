@@ -490,8 +490,7 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
 
       // Observe resizing
       if (element.current && 'ResizeObserver' in window) {
-        const RO = (window as any)['ResizeObserver'];
-        resizeObserverRef.current = new RO(() => {
+        resizeObserverRef.current = new ResizeObserver(() => {
           window.requestAnimationFrame(() => {
             // Force a re-render so children can update if they rely on the size
             setViewportState((prev) => ({...prev}));

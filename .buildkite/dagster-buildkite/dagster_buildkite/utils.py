@@ -12,8 +12,11 @@ def network_buildkite_container(network_name: str) -> list[str]:
         "export CONTAINER_ID=`cat /etc/hostname`",
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
-        # network to make the target containers visible...
-        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
+        # network to make the target containers visible. On Kubernetes the
+        # job runs in a pod (not a docker container), so CONTAINER_NAME is
+        # empty; the DinD sidecar shares the pod's network namespace, so the
+        # bridge is already reachable and we skip the connect step.
+        rf'if [ -n "\${{CONTAINER_NAME}}" ]; then docker network connect {network_name} \${{CONTAINER_NAME}}; fi',
     ]
 
 
@@ -27,6 +30,19 @@ def connect_sibling_docker_container(
         f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
         f"{container_name}`"
     ]
+
+
+def wait_for_mysql_container(container_name: str, port: int = 3306) -> str:
+    """Shell command that polls `mysqladmin ping` inside `container_name` until it
+    succeeds, or fails after ~120s. `docker compose up -d` returns before mysqld
+    finishes initializing, so tests that run early were hitting ECONNREFUSED (111).
+    """
+    return (
+        rf"i=0; until docker exec {container_name} mysqladmin ping -h 127.0.0.1 "
+        rf"-P {port} --silent >/dev/null 2>&1; do i=\$((i+1)); "
+        rf'if [ \$i -ge 60 ]; then echo "{container_name} not ready" >&2; exit 1; fi; '
+        r"sleep 2; done"
+    )
 
 
 # Preceding a line of BK output with "---" turns it into a section header.

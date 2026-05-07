@@ -7,12 +7,9 @@ canonicalUrl: '/guides/observe/insights'
 slug: '/guides/observe/insights'
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
-
-<Beta />
 
 Using Dagster+ Insights, you can gain visibility into historical usage and trends, such as execution time, success rate, and time to resolving failures. You can also build custom reports to compare different deployments or selections of assets against each other to quickly identify issues across your data platform.
 
@@ -20,6 +17,7 @@ With Insights, you can:
 
 - [Understand platform health with real-time Insights views](#understand-health)
 - [Compare metrics across asset selections](#compare-metrics)
+- [Track cost metrics for external services](#track-cost-metrics)
 - [Create alerts](/guides/observe/alerts) based off of Insights metrics
 
 ## Understand platform health with real-time Insights views \{#understand-health}
@@ -47,14 +45,6 @@ Insights views also features activity charts that group events by hour to help y
 
 ![Activity charts](/images/guides/observe/insights/activity-charts.png)
 
-:::info Limitations
-
-Since updated Insights views are still under active development, there are a few limitations we aim to address in upcoming releases:
-
-- Insights views do not currently show metadata metrics
-
-:::
-
 ## Compare metrics across asset selections \{#compare-metrics}
 
 Insights views allow you to compare metrics across all assets, or a chosen subset of saved asset selections.
@@ -75,15 +65,16 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 
 #### Assets and selections
 
-| Metric                       | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Materialization success rate | Average of materialization success rates for all assets in selection over the selected time range. A single asset's materialization success rate is (number of successful materializations) / (number of successful materializations + number of failed materializations) for that asset. Note that failed retries do not count towards the number of failed materializations in the denominator of the success rate calculation. |
-| Avg. time to resolution      | Average time the selected assets spent in a failed materialization state before being successfully materialized.                                                                                                                                                                                                                                                                                                                  |
-| Freshness pass rate          | Average percentage of time that assets from the selection with a defined freshness policy were passing their freshness policy.                                                                                                                                                                                                                                                                                                    |
-| Check success rate           | Average of check success rates for all assets in selection over the selected time range. A single asset's check success rate is (number of passing check executions) / (number of total check executions).                                                                                                                                                                                                                        |
-| Materialization count        | Count of successful materialization attempts. Each retry is counted as a distinct materialization attempt.                                                                                                                                                                                                                                                                                                                        |
-| Failure count                | Count of failed materialization attempts. Each retry is counted as a distinct materialization attempt.                                                                                                                                                                                                                                                                                                                            |
-| Step execution time          | Total step execution time for selected assets. Includes time spent by steps that failed to materialize an asset, steps that retried an asset, and steps that ran asset checks.                                                                                                                                                                                                                                                    |
+| Metric                              | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Materialization success rate        | Average of materialization success rates for all assets in selection over the selected time range. A single asset's materialization success rate is (number of successful materializations) / (number of successful materializations + number of failed materializations) for that asset. Note that failed retries do not count towards the number of failed materializations in the denominator of the success rate calculation. |
+| Avg. time to resolution             | Average time the selected assets spent in a failed materialization state before being successfully materialized.                                                                                                                                                                                                                                                                                                                  |
+| Freshness pass rate                 | Average percentage of time that assets from the selection with a defined freshness policy were passing their freshness policy.                                                                                                                                                                                                                                                                                                    |
+| Check success rate                  | Average of check success rates for all assets in selection over the selected time range. A single asset's check success rate is (number of passing check executions) / (number of total check executions).                                                                                                                                                                                                                        |
+| Materialization count               | Count of successful materialization attempts. Each retry is counted as a distinct materialization attempt.                                                                                                                                                                                                                                                                                                                        |
+| Failure count                       | Count of failed materialization attempts. Each retry is counted as a distinct materialization attempt.                                                                                                                                                                                                                                                                                                                            |
+| Step execution time                 | Total step execution time for selected assets. Includes time spent by steps that failed to materialize an asset, steps that retried an asset, and steps that ran asset checks.                                                                                                                                                                                                                                                    |
+| User-defined numeric asset metadata | Defined by you and powered by the numeric metadata your assets emit at runtime. For more information, see [Custom metrics](/guides/observe/insights/custom-metrics).                                                                                                                                                                                                                                                              |
 
 #### Jobs
 
@@ -110,12 +101,6 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 | Observations     | The number of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) associated with computing this object.                                                                                                        |
 | Step failures    | The number of times steps failed when computing this object. Steps that retry and succeed aren't included in this metric.                                                                                                                   |
 
-## Export metrics
+## Track cost metrics for external services \{#track-cost-metrics}
 
-:::info
-
-Support for exporting metrics is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
-
-:::
-
-Metrics in Dagster+ Insights can be exported using a [GraphQL API](/api/graphql) endpoint. For more information, see [Export metrics from Dagster+](/guides/observe/insights/export-metrics).
+With Dagster+ Insights, you can track metrics for [BigQuery](/guides/observe/insights/google-bigquery) and [Snowflake](/guides/observe/insights/snowflake), such as query runtime and billed usage, and associate them with the relevant assets or jobs.

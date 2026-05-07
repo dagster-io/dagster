@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Dict
 
 import dagster as dg
-import dspy
-from dspy.teleprompt import MIPROv2
+import dspy  # ty: ignore[unresolved-import]
+from dspy.teleprompt import MIPROv2  # ty: ignore[unresolved-import]
 from pydantic import Field
 
 from dspy_modules.connections_metrics import success_metric

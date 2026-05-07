@@ -34,7 +34,7 @@ def test_component_definition():
     )
 
     assert isinstance(defs, dg.Definitions)
-    assert len(list(defs.get_all_asset_specs())) == 1
+    assert len(list(defs.resolve_all_asset_specs())) == 1
 
 
 def test_component_execution():

@@ -1,164 +1,103 @@
-import styled from 'styled-components';
+import clsx from 'clsx';
+import * as React from 'react';
 
-import {Colors} from './Color';
-import {FontFamily} from './styles';
+import styles from './css/Text.module.css';
 
-interface TextProps {
+interface TextProps extends React.HTMLAttributes<HTMLElement> {
+  as?: React.ElementType;
   color?: string;
+  htmlFor?: string;
+  [key: string]: any;
 }
 
-const Text = styled.span<TextProps>`
-  ${({color}) => (color ? `color: ${color};` : null)}
-`;
+const Text = ({as: Component = 'span', color, style, className, ...props}: TextProps) => (
+  <Component className={className} style={color ? {...style, color} : style} {...props} />
+);
 
-export const Title = styled(Text)`
-  font-size: 32px;
-  line-height: 36px;
-  font-weight: 600;
-  -webkit-font-smoothing: antialiased;
-`;
+export const Title = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.title, className)} {...props} />
+);
 
-export const Heading = styled(Text)`
-  font-size: 20px;
-  line-height: 24px;
-  font-weight: 500;
-  -webkit-font-smoothing: antialiased;
-`;
+export const Heading = ({className, ...props}: TextProps) => (
+  <Text className={clsx('headingGlobal', styles.heading, className)} {...props} />
+);
 
-export const Headline = styled(Text)`
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 24px;
-  -webkit-font-smoothing: antialiased;
-`;
+export const Headline = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.headline, className)} {...props} />
+);
 
-export const Subheading = styled(Text)`
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  -webkit-font-smoothing: antialiased;
-`;
+export const Subheading = ({className, ...props}: TextProps) => (
+  <Text className={clsx('subheadingGlobal', styles.subheading, className)} {...props} />
+);
 
-export const Subtitle1 = styled(Text)`
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 24px;
-  -webkit-font-smoothing: antialiased;
-`;
+export const Subtitle1 = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.subtitle1, className)} {...props} />
+);
 
-export const Subtitle2 = styled(Text)`
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  -webkit-font-smoothing: antialiased;
-`;
+export const Subtitle2 = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.subtitle2, className)} {...props} />
+);
 
-export const Body = styled(Text)`
-  font-family: ${FontFamily.default};
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 400;
-`;
+export const Body = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.body, className)} {...props} />
+);
 
-export const Body1 = styled(Text)`
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 24px;
-`;
+export const Body1 = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.body1, className)} {...props} />
+);
 
-export const Body2 = styled(Text)`
-  font-family: ${FontFamily.default};
-  line-height: 20px;
-  font-size: 14px;
-  font-weight: 400;
-`;
+export const Body2 = ({className, ...props}: TextProps) => (
+  <Text className={clsx('body2Global', styles.body2, className)} {...props} />
+);
 
-//Deprecated – Use BodySmall moving forward
-export const Caption = styled(Text)`
-  font-family: ${FontFamily.default};
-  font-size: 12px;
-  line-height: 16px;
-`;
+export const Caption = ({className, ...props}: TextProps) => (
+  <Text className={clsx('captionGlobal', styles.caption, className)} {...props} />
+);
 
-export const CaptionSubtitle = styled(Text)`
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 16px;
-`;
+export const CaptionSubtitle = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.captionSubtitle, className)} {...props} />
+);
 
-export const CaptionBolded = styled(Text)`
-  font-family: ${FontFamily.default};
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 16px;
-`;
+export const CaptionBolded = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.captionBolded, className)} {...props} />
+);
 
-export const Code = styled(Text)`
-  background-color: ${Colors.backgroundBlue()};
-  border-radius: 2px;
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  font-variant-ligatures: none;
-  padding: 2px 4px;
-`;
+export const Code = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.code, className)} {...props} />
+);
 
-export const Mono = styled(Text)`
-  font-family: ${FontFamily.monospace};
-  font-variant-ligatures: none;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 400;
-`;
+export const Mono = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.mono, className)} {...props} />
+);
 
-export const CaptionMono = styled(Text)`
-  font-family: ${FontFamily.monospace};
-  font-variant-ligatures: none;
-  font-size: 12px;
-  line-height: 16px;
-`;
-export const SubtitleLarge = styled(Text)`
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 500;
-  -webkit-font-smoothing: antialiased;
-`;
+export const CaptionMono = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.captionMono, className)} {...props} />
+);
 
-export const Subtitle = styled(Text)`
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 500;
-  -webkit-font-smoothing: antialiased;
-`;
+export const SubtitleLarge = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.subtitleLarge, className)} {...props} />
+);
 
-export const SubtitleSmall = styled(Text)`
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
-`;
+export const Subtitle = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.subtitle, className)} {...props} />
+);
 
-export const BodyLarge = styled(Text)`
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 400;
-`;
+export const SubtitleSmall = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.subtitleSmall, className)} {...props} />
+);
 
-export const BodySmall = styled(Text)`
-  font-family: ${FontFamily.default};
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 400;
-`;
+export const BodyLarge = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.bodyLarge, className)} {...props} />
+);
 
-export const MonoLarge = styled(Text)`
-  font-family: ${FontFamily.monospace};
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 400;
-`;
+export const BodySmall = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.bodySmall, className)} {...props} />
+);
 
-export const MonoSmall = styled(Text)`
-  font-family: ${FontFamily.monospace};
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 400;
-`;
+export const MonoLarge = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.monoLarge, className)} {...props} />
+);
+
+export const MonoSmall = ({className, ...props}: TextProps) => (
+  <Text className={clsx(styles.monoSmall, className)} {...props} />
+);

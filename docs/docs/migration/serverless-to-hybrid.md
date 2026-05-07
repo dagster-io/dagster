@@ -76,7 +76,7 @@ You can use <PyObject section="io-managers" module="dagster" object="migrate_io_
 The example below shows a job that migrates asset data from the default IO manager (which in Serverless is Dagster-managed S3 storage) to a new S3 bucket that you control:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/migrations/migrate_io_storage.py"
+  path="docs_snippets/docs_snippets/migration/migrate_io_storage.py"
   language="python"
   startAfter="start_migrate_io_storage"
   endBefore="end_migrate_io_storage"

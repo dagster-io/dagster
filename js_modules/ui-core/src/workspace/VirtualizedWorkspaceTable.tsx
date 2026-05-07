@@ -100,7 +100,7 @@ const CaptionTextContainer = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
 
-  ${Caption} {
+  .captionGlobal {
     color: ${Colors.textLight()};
     white-space: nowrap;
   }

@@ -8,23 +8,18 @@ import {
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {ChangeEvent, useCallback, useMemo, useRef, useState} from 'react';
+import {ChangeEvent, useCallback, useContext, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {SearchableListRow} from './CodeLocationSearchableList';
-import {useQuery} from '../apollo-client';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useAssetSearch} from '../assets/useAssetSearch';
 import {Container, HeaderCell, HeaderRow, Inner, Row} from '../ui/VirtualizedTable';
-import {WORKSPACE_ASSETS_QUERY} from '../workspace/WorkspaceAssetsQuery';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {useRepository} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-import {
-  WorkspaceAssetsQuery,
-  WorkspaceAssetsQueryVariables,
-} from '../workspace/types/WorkspaceAssetsQuery.types';
 import {useFlattenedGroupedAssetList} from '../workspace/useFlattenedGroupedAssetList';
 
 const UNGROUPED_NAME = 'UNGROUPED';
@@ -39,21 +34,13 @@ export const CodeLocationAssetsList = ({repoAddress, expandAllGroups = false}: P
   const [searchValue, setSearchValue] = useState('');
 
   const repoName = repoAddressAsHumanString(repoAddress);
-  const selector = repoAddressToSelector(repoAddress);
-  const queryResultOverview = useQuery<WorkspaceAssetsQuery, WorkspaceAssetsQueryVariables>(
-    WORKSPACE_ASSETS_QUERY,
-    {
-      variables: {selector},
-    },
-  );
-  const {data, loading} = queryResultOverview;
 
-  const assetNodes = useMemo(() => {
-    if (data?.repositoryOrError.__typename === 'Repository') {
-      return data.repositoryOrError.assetNodes;
-    }
-    return [];
-  }, [data]);
+  // Asset data for every code location is already loaded by the workspace bootstrap
+  // (LocationWorkspaceAssetsQuery, gated on assetManifest in #23365). Read from the
+  // shared context instead of issuing a separate Repository.assetNodes query.
+  const {loadingAssets} = useContext(WorkspaceContext);
+  const repo = useRepository(repoAddress);
+  const assetNodes = repo?.repository.assetNodes ?? [];
 
   const filteredBySearch = useAssetSearch(searchValue, assetNodes);
   const {flattened, expandedKeys, onToggle} = useFlattenedGroupedAssetList({
@@ -78,7 +65,7 @@ export const CodeLocationAssetsList = ({repoAddress, expandAllGroups = false}: P
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   const content = () => {
-    if (loading && !data) {
+    if (loadingAssets && !repo) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} padding={32}>
           <SpinnerWithText label="Loading assets…" />

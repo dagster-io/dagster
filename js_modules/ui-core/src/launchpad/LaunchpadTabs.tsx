@@ -102,7 +102,10 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
 
   const confirm = useConfirmation();
 
-  const onApply = (mutator: any, ...args: any[]) => {
+  const onApply = <A extends unknown[]>(
+    mutator: (data: IStorageData, ...args: A) => IStorageData,
+    ...args: A
+  ) => {
     onSave(mutator(data, ...args));
   };
 

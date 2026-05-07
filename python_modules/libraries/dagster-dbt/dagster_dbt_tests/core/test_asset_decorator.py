@@ -1,3 +1,4 @@
+import copy
 import multiprocessing
 import os
 from collections.abc import Mapping, Sequence
@@ -1323,3 +1324,92 @@ def test_dbt_with_duplicate_source_asset_keys(
         AssetKey(["customers"]),
         AssetKey(["orders"]),
     }
+
+
+def test_dbt_enable_source_metadata_with_multiple_assets_defs(
+    test_asset_checks_manifest: dict[str, Any],
+) -> None:
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        select="stg_customers",
+        dagster_dbt_translator=DagsterDbtTranslator(),
+    )
+    def stg_customers_assets(): ...
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        select="stg_customers_again",
+        dagster_dbt_translator=DagsterDbtTranslator(),
+    )
+    def stg_customers_again_assets(): ...
+
+    asset_graph = Definitions(
+        assets=[stg_customers_assets, stg_customers_again_assets],
+    ).resolve_asset_graph()
+
+    # The shared source resolves to a single stub node referenced by both models.
+    raw_customers_key = AssetKey(["jaffle_shop", "raw_customers"])
+    assert raw_customers_key in asset_graph.get_all_asset_keys()
+    assert {AssetKey(["stg_customers"]), AssetKey(["stg_customers_again"])} <= {
+        child for child in asset_graph.get(raw_customers_key).child_keys
+    }
+
+
+def test_dbt_enable_source_metadata_dedupes_collapsed_sources(
+    test_duplicate_source_asset_key_manifest: dict[str, Any],
+) -> None:
+
+    manifest = copy.deepcopy(test_duplicate_source_asset_key_manifest)
+    # Make stg_customers reference all three sources, exercising the per-spec case.
+    stg_customers_id = "model.test_dagster_duplicate_source_asset_key.stg_customers"
+    manifest["nodes"][stg_customers_id]["depends_on"]["nodes"] = [
+        "source.test_dagster_duplicate_source_asset_key.jaffle_shop.raw_customers",
+        "source.test_dagster_duplicate_source_asset_key.jaffle_shop.raw_orders",
+        "source.test_dagster_duplicate_source_asset_key.jaffle_shop.raw_payments",
+    ]
+
+    class CollapseSourcesTranslator(DagsterDbtTranslator):
+        def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+            if dbt_resource_props["resource_type"] == "source":
+                return AssetKey(["raw_data"])
+            return super().get_asset_key(dbt_resource_props)
+
+    @dbt_assets(
+        manifest=manifest,
+        dagster_dbt_translator=CollapseSourcesTranslator(
+            settings=DagsterDbtTranslatorSettings(
+                enable_duplicate_source_asset_keys=True,
+                enable_source_metadata=True,
+            )
+        ),
+    )
+    def my_dbt_assets(): ...
+
+    raw_data_key = AssetKey(["raw_data"])
+
+    # (a) The three collapsed source deps within stg_customers's spec are deduped to one.
+    stg_customers_spec = next(
+        spec for spec in my_dbt_assets.specs if spec.key == AssetKey(["stg_customers"])
+    )
+    stg_customers_parents = [dep.asset_key for dep in stg_customers_spec.deps]
+    assert stg_customers_parents.count(raw_data_key) == 1
+
+    # All deps to the colliding key carry no source-specific metadata, regardless of
+    # which source produced them.
+    for spec in my_dbt_assets.specs:
+        for dep in spec.deps:
+            if dep.asset_key == raw_data_key:
+                assert not dep.metadata, (
+                    f"Expected empty metadata on dep to colliding key for spec {spec.key}, "
+                    f"got {dep.metadata}"
+                )
+
+    # (b) The full graph resolves without conflicting stub metadata across specs.
+    asset_graph = Definitions(assets=[my_dbt_assets]).resolve_asset_graph()
+    raw_data_node = asset_graph.get(raw_data_key)
+    assert {
+        AssetKey(["stg_customers"]),
+        AssetKey(["stg_orders"]),
+        AssetKey(["stg_payments"]),
+    } <= set(raw_data_node.child_keys)

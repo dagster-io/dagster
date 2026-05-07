@@ -12,11 +12,9 @@ success_canceled_run:
 
 error_run_not_found:
   command: "dg api run get nonexistent-run-id"
-  has_recording: false
 
 error_invalid_run_id:
   command: "dg api run get '' --json"
-  has_recording: false
 
 # get-events scenarios (formerly under log and run-events)
 

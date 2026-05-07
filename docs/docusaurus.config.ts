@@ -206,7 +206,6 @@ const config: Config = {
             <a href='https://www.dagster.io/terms'>Terms of Service</a>
             <a href='https://www.dagster.io/privacy/'>Privacy Policy</a>
             <a href='https://www.dagster.io/security/'>Security</a>
-            <a href='https://github.com/dagster-io/dagster/discussions/27332'>Feedback</a>
             <a onClick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Cookie Preferences</a>
           </div>
 

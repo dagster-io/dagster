@@ -1,12 +1,19 @@
 """Tests for compressed columnar packing (dagster_shared.serdes.pack)."""
 
 import json
+import logging
 import os
 import unittest.mock
 
 import dagster as dg
+import pytest
 from dagster import DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._daemon.asset_daemon import (
+    asset_daemon_cursor_from_instigator_serialized_cursor,
+    asset_daemon_cursor_to_instigator_serialized_cursor,
+)
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.serdes.pack import _TABLE_ROWS_KEY, deserialize_deduped, serialize_deduped
@@ -456,11 +463,6 @@ def test_cursor_round_trip():
 
 def test_instigator_cursor_reads_both_versions():
     """The reader handles both v0 (plain serdes) and v1 (columnar-packed) cursors."""
-    from dagster._daemon.asset_daemon import (
-        asset_daemon_cursor_from_instigator_serialized_cursor,
-        asset_daemon_cursor_to_instigator_serialized_cursor,
-    )
-
     cursor = _make_cursor(num_upstream=10)
 
     # Default writer produces version "0"
@@ -480,3 +482,32 @@ def test_instigator_cursor_reads_both_versions():
 
     assert from_v0 == cursor
     assert from_v1 == cursor
+
+
+def test_instigator_cursor_foreign_sensor_cursor_returns_empty(caplog):
+    """For a RunStatusSensorCursor JSON written into a DA sensor state due to a bug,
+    migration the reader should log a warning and return an
+    empty cursor so the next successful tick can overwrite it.
+    """
+    bad_cursor = (
+        '{"__class__": "RunStatusSensorCursor", "record_id": 1, '
+        '"record_timestamp": "2026-04-06T11:49:19.912411+00:00", "update_timestamp": null}'
+    )
+
+    with caplog.at_level(logging.WARNING, logger="dagster._daemon.asset_daemon"):
+        result = asset_daemon_cursor_from_instigator_serialized_cursor(bad_cursor, None)
+
+    assert result == AssetDaemonCursor.empty()
+    assert any("Recovered foreign sensor cursor" in record.message for record in caplog.records)
+
+
+def test_instigator_cursor_unknown_version_raises():
+    """An unknown version prefix (e.g. a hypothetical future "2" read by an older daemon after
+    rollback) must raise rather than silently returning empty; a silent empty would destroy
+    cursor state across the fleet on rollback.
+    """
+    # Valid-looking base64 payload with an unknown version byte "2"
+    future_cursor = "2" + "eJwrSS0uUShOLVGoLE5PVSjJzC1ISi0uAQCR8Qd+"
+
+    with pytest.raises(DagsterInvariantViolationError, match="Invalid serialized cursor version"):
+        asset_daemon_cursor_from_instigator_serialized_cursor(future_cursor, None)

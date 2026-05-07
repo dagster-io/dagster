@@ -2,7 +2,7 @@
   flex: 1;
   overflow: hidden;
 
-  .CodeMirror {
+  :global(.CodeMirror) {
     height: 100%;
   }
 }

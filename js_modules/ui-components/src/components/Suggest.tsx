@@ -108,7 +108,7 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef} style={{maxHeight: MAX_MENU_HEIGHT, width: menuWidth}}>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             const item = filteredItems[index];
             if (!item) {
@@ -116,7 +116,7 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
             }
 
             return (
-              <Row key={key} $height={size} $start={start}>
+              <Row key={key} height={size} start={start}>
                 {props.renderItem(item, index)}
               </Row>
             );

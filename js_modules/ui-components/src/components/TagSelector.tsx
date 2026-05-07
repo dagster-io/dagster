@@ -1,6 +1,6 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {BaseTag} from './BaseTag';
 import {Box} from './Box';
@@ -12,6 +12,7 @@ import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
 import {TextInput} from './TextInput';
 import {Inner, Row, Container as VirtualContainer} from './VirtualizedTable';
+import styles from './css/TagSelector.module.css';
 import {useViewport} from './useViewport';
 
 export type TagSelectorTagProps = {
@@ -139,7 +140,7 @@ export const TagSelector = ({
           ...dropdownStyles,
         }}
       >
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, start, end}) => {
             const tagAtIndex = allTags[index];
             if (!tagAtIndex) {
@@ -164,7 +165,7 @@ export const TagSelector = ({
             }
 
             return (
-              <Row key={tagAtIndex} $height={end - start} $start={start}>
+              <Row key={tagAtIndex} height={end - start} start={start}>
                 {content(tagAtIndex)}
               </Row>
             );
@@ -190,11 +191,9 @@ export const TagSelector = ({
     viewport.width,
   ]);
 
-  const dropdownContainer = React.useRef<HTMLDivElement>(null);
-
   const tagsContent = React.useMemo(() => {
     if (selectedTags.length === 0) {
-      return <Placeholder>{placeholder || 'Select tags'}</Placeholder>;
+      return <div className={styles.placeholder}>{placeholder || 'Select tags'}</div>;
     }
     // Only render up to MAX_RENDERED_TAGS elements to avoid performance issues
     // with large selections (e.g., 100k partitions). The renderTagList callback
@@ -225,108 +224,55 @@ export const TagSelector = ({
     <Popover
       placement="bottom-start"
       isOpen={isDropdownOpen && !disabled}
-      onInteraction={(nextOpenState, e) => {
-        const target = e?.target;
-        if (isDropdownOpen && target instanceof HTMLElement) {
-          const isClickInside = dropdownContainer.current?.contains(target);
-          if (!isClickInside) {
-            setIsDropdownOpen(nextOpenState);
-          }
-        }
-      }}
+      onInteraction={(nextOpenState) => setIsDropdownOpen(nextOpenState)}
       content={<div>{dropdown}</div>}
       targetTagName="div"
       onOpening={rowVirtualizer.measure}
       onOpened={rowVirtualizer.measure}
       usePortal={usePortal}
     >
-      <TagSelectorContainer
-        onClick={() => {
-          setIsDropdownOpen((isOpen) => !isOpen);
-        }}
-        $disabled={disabled}
+      <div
+        className={clsx(styles.tagSelectorContainer, disabled && styles.disabled)}
         {...containerProps}
       >
-        <TagSelectorTagsContainer flex={{grow: 1, gap: 6}}>{tagsContent}</TagSelectorTagsContainer>
+        <Box className={styles.tagsContainer} flex={{grow: 1, gap: 6}}>
+          {tagsContent}
+        </Box>
         <div style={{cursor: 'pointer'}}>
           <Icon
             name={isDropdownOpen ? 'expand_less' : 'expand_more'}
             color={disabled ? Colors.textDisabled() : Colors.textDefault()}
           />
         </div>
-      </TagSelectorContainer>
+      </div>
     </Popover>
   );
 };
 
-export const TagSelectorContainer = styled.div<{$disabled?: boolean}>`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+export const TAG_SELECTOR_CONTAINER_CLASS = 'tagSelectorContainerGlobal';
 
-  /* Inline TextInputStyles */
-  background-color: ${Colors.backgroundDefault()};
-  border: none;
-  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
-  outline: none;
-  border-radius: 8px;
-  color: ${Colors.textDefault()};
-  flex-grow: 1;
-  font-size: 14px;
-  line-height: 20px;
-  padding: 6px 6px 6px 12px;
-  margin: 0;
-  transition: box-shadow 150ms;
+export const TagSelectorContainer = ({
+  className,
+  disabled,
+  ...props
+}: {disabled?: boolean} & React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={clsx(
+      TAG_SELECTOR_CONTAINER_CLASS,
+      styles.tagSelectorContainer,
+      disabled && styles.disabled,
+      className,
+    )}
+    {...props}
+  />
+);
 
-  ::placeholder {
-    color: ${Colors.textLighter()};
-  }
-
-  :disabled {
-    box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
-    background-color: ${Colors.backgroundLight()};
-    color: ${Colors.textDisabled()};
-  }
-
-  :disabled::placeholder {
-    color: ${Colors.textDisabled()};
-  }
-
-  :focus {
-    box-shadow:
-      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
-      ${Colors.keylineDefault()} inset 2px 2px 1.5px,
-      ${Colors.focusRing()} 0 0 0 2px;
-    outline: none;
-  }
-
-  min-height: 32px;
-  padding: 4px 8px;
-
-  ${({$disabled}) =>
-    $disabled &&
-    `
-      box-shadow:
-      ${Colors.borderDisabled()} inset 0px 0px 0px 1px,
-      ${Colors.keylineDefault()} inset 2px 2px 1.5px;
-      background-color: ${Colors.backgroundDisabled()};
-       color: ${Colors.textDisabled()};
-    `}
-`;
-
-const Placeholder = styled.div`
-  color: ${Colors.textDisabled()};
-`;
-
-export const TagSelectorTagsContainer = styled(Box)`
-  overflow-x: auto;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-`;
+export const TagSelectorTagsContainer = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof Box>) => (
+  <Box className={clsx(styles.tagsContainer, className)} {...props} />
+);
 
 export const TagSelectorWithSearch = (
   props: Props & {

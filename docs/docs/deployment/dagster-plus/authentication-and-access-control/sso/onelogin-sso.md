@@ -64,7 +64,7 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 
 Next, you'll assign users to the Dagster+ application in OneLogin. This will allow them to log in using their OneLogin credentials with the sign in flow is initiated.
 
-1. In Okta, navigate to **Users**.
+1. In OneLogin, navigate to **Users**.
 2. Select a user.
 3. On the user's page, click **Applications**.
 4. Assign the user to Dagster+. In the following image, the user `Test D'Test` has been assigned to Dagster+:

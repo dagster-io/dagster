@@ -8,7 +8,7 @@ def _wait_k8s_job_to_delete(
     api_client: DagsterKubernetesClient, job_name: str, namespace: str
 ) -> None:
     """Wait until Kubernetes job is deleted."""
-    for _ in range(5):
+    for _ in range(12):
         try:
             api_client.batch_api.read_namespaced_job_status(job_name, namespace)
             time.sleep(5)

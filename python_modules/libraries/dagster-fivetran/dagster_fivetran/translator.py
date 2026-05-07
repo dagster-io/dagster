@@ -108,7 +108,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return max(succeeded_at, failed_at)  # pyright: ignore[reportReturnType]
+        return max(succeeded_at, failed_at)
 
     @property
     def is_last_sync_successful(self) -> bool:
@@ -121,7 +121,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return succeeded_at > failed_at  # pyright: ignore[reportOperatorIssue]
+        return succeeded_at > failed_at
 
     @property
     def is_rescheduled(self) -> bool:
@@ -131,7 +131,7 @@ class FivetranConnector:
         if not self.rescheduled_for:
             return False
         rescheduled_at = parser.parse(self.rescheduled_for)
-        return rescheduled_at > self.last_sync_completed_at  # pyright: ignore[reportOperatorIssue]
+        return rescheduled_at > self.last_sync_completed_at
 
     def validate_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that
@@ -377,6 +377,7 @@ class DagsterFivetranTranslator:
             database=props.database,
             schema=schema_name,
             table=table_name,
+            service=props.service,
         )
 
         # Detect if this table is from a custom report

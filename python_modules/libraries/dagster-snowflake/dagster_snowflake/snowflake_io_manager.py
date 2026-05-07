@@ -12,6 +12,7 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
+    static_where_clause,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
@@ -356,7 +357,7 @@ class SnowflakeDbClient(DbClient):
             if context.resource_config
             else {}
         )
-        with SnowflakeResource(schema=table_slice.schema, **no_schema_config).get_connection(  # pyright: ignore[reportArgumentType]
+        with SnowflakeResource(schema=table_slice.schema, **no_schema_config).get_connection(
             raw_conn=False
         ) as conn:
             yield conn
@@ -392,7 +393,7 @@ class SnowflakeDbClient(DbClient):
                 f"SELECT {col_str} FROM"
                 f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
-            return query + _partition_where_clause(table_slice.partition_dimensions)
+            return query + partition_where_clause(table_slice.partition_dimensions)
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
@@ -405,17 +406,17 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         query = (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
-        return query + _partition_where_clause(table_slice.partition_dimensions)
+        return query + partition_where_clause(table_slice.partition_dimensions)
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
-def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
+def partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
     return " AND\n".join(
         (
             _time_window_where_clause(partition_dimension)
             if isinstance(partition_dimension.partitions, TimeWindow)
-            else _static_where_clause(partition_dimension)
+            else static_where_clause(partition_dimension)
         )
         for partition_dimension in partition_dimensions
     )
@@ -429,8 +430,3 @@ def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
     # write this as start <= partition expr < end.
     return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
-
-
-def _static_where_clause(table_partition: TablePartitionDimension) -> str:
-    partitions = ", ".join(f"'{partition}'" for partition in table_partition.partitions)
-    return f"""{table_partition.partition_expr} in ({partitions})"""

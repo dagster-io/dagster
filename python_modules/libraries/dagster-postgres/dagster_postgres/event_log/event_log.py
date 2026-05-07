@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, ContextManager, cast  # noqa: UP035
+from typing import TYPE_CHECKING, Any, ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -36,12 +36,17 @@ from sqlalchemy.engine import Connection
 
 from dagster_postgres.utils import (
     create_pg_connection,
+    create_pg_engine,
+    get_token_provider_from_config,
     pg_alembic_config,
     pg_url_from_config,
     retry_pg_connection_fn,
     retry_pg_creation_fn,
     set_pg_statement_timeout,
 )
+
+if TYPE_CHECKING:
+    from dagster_postgres.auth import PgTokenProvider
 
 CHANNEL_NAME = "run_events"
 
@@ -56,7 +61,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     To use Postgres for all of the components of your instance storage, you can add the following
     block to your ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deployment/oss/dagster-pg.yaml
        :caption: dagster.yaml
        :lines: 1-8
        :language: YAML
@@ -65,7 +70,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     configuring your event log storage to use Postgres, you can add a block such as the following
     to your ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deployment/oss/dagster-pg-legacy.yaml
        :caption: dagster.yaml
        :lines: 12-21
        :language: YAML
@@ -80,16 +85,21 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         postgres_url: str,
         should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
+        token_provider: "PgTokenProvider | None" = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = check.str_param(postgres_url, "postgres_url")
         self.should_autocreate_tables = check.bool_param(
             should_autocreate_tables, "should_autocreate_tables"
         )
+        self._token_provider = token_provider
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
-        self._engine = create_engine(
-            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
+        self._engine = create_pg_engine(
+            self.postgres_url,
+            self._token_provider,
+            isolation_level="AUTOCOMMIT",
+            poolclass=db_pool.NullPool,
         )
         self._event_watcher: SqlPollingEventWatcher | None = None
 
@@ -116,7 +126,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self, statement_timeout: int, pool_recycle: int, max_overflow: int
     ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "isolation_level": "AUTOCOMMIT",
             "pool_size": 1,
             "pool_recycle": pool_recycle,
@@ -125,7 +135,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         existing_options = self._engine.url.query.get("options")
         if existing_options:
             kwargs["connect_args"] = {"options": existing_options}
-        self._engine = create_engine(self.postgres_url, **kwargs)
+        self._engine = create_pg_engine(self.postgres_url, self._token_provider, **kwargs)
         event.listen(
             self._engine,
             "connect",
@@ -153,6 +163,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
+            token_provider=get_token_provider_from_config(config_value),
         )
 
     @staticmethod
@@ -379,7 +390,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 ),
             ) as cursor_res,
         ):
-            return deserialize_value(cursor_res.scalar(), EventLogEntry)  # type: ignore
+            return deserialize_value(cursor_res.scalar(), EventLogEntry)
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
         if self._event_watcher:

@@ -3,6 +3,7 @@ import json
 import os
 import time
 from collections.abc import Sequence
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -345,6 +346,17 @@ GET_ASSET_DATA_VERSIONS = """
                     key
                     value
                 }
+            }
+        }
+    }
+"""
+
+GET_ASSET_NODE_DESCRIPTION = """
+    query AssetNodeDescriptionQuery($assetKey: AssetKeyInput!, $characterLimit: Int) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ... on AssetNode {
+                id
+                description(characterLimit: $characterLimit)
             }
         }
     }
@@ -789,6 +801,23 @@ GET_REPO_ASSET_GROUPS = """
     }
 """
 
+GET_REPO_ASSET_NODES_CONNECTION = """
+    query($repositorySelector: RepositorySelector!, $cursor: String, $limit: Int!) {
+        repositoryOrError(repositorySelector: $repositorySelector) {
+            ... on Repository {
+                assetNodesConnection(cursor: $cursor, limit: $limit) {
+                    nodes {
+                        id
+                        assetKey { path }
+                    }
+                    cursor
+                    hasMore
+                }
+            }
+        }
+    }
+"""
+
 GET_ASSET_OWNERS = """
     query AssetOwnersQuery($assetKeys: [AssetKeyInput!]) {
         assetNodes(assetKeys: $assetKeys) {
@@ -881,6 +910,23 @@ GET_ASSET_BACKFILL_POLICY = """
                     maxPartitionsPerRun
                     policyType
                     description
+                }
+            }
+        }
+    }
+"""
+
+
+GET_ASSET_OP_TAGS = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                assetKey {
+                    path
+                }
+                opTags {
+                    key
+                    value
                 }
             }
         }
@@ -1222,6 +1268,90 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             == AssetKey(result.data["assetsOrError"]["nodes"][limit - 1]["key"]["path"]).to_string()
         )
 
+    def test_asset_nodes_connection(self, graphql_context: WorkspaceRequestContext):
+        repository_selector = infer_repository_selector(graphql_context)
+
+        # Single big page returns everything and reports hasMore=false.
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_REPO_ASSET_NODES_CONNECTION,
+            variables={"repositorySelector": repository_selector, "limit": 10_000},
+        )
+        assert result.data
+        connection = result.data["repositoryOrError"]["assetNodesConnection"]
+        all_nodes = connection["nodes"]
+        assert len(all_nodes) > 1
+        assert connection["hasMore"] is False
+
+        all_keys = [AssetKey(n["assetKey"]["path"]).to_string() for n in all_nodes]
+        # Deterministic sort by stringified asset key.
+        assert all_keys == sorted(all_keys)
+        assert connection["cursor"] == all_keys[-1]
+
+        # Multi-page round-trip via cursor: no overlap, union equals the single-call result.
+        page_size = max(1, len(all_nodes) // 3)
+        collected: list[dict] = []
+        cursor: str | None = None
+        seen_cursors: set[str | None] = set()
+        while True:
+            assert cursor not in seen_cursors, "cursor must advance each page"
+            seen_cursors.add(cursor)
+            page_result = execute_dagster_graphql(
+                graphql_context,
+                GET_REPO_ASSET_NODES_CONNECTION,
+                variables={
+                    "repositorySelector": repository_selector,
+                    "cursor": cursor,
+                    "limit": page_size,
+                },
+            )
+            page = page_result.data["repositoryOrError"]["assetNodesConnection"]
+            assert len(page["nodes"]) <= page_size
+            collected.extend(page["nodes"])
+            if not page["hasMore"]:
+                break
+            cursor = page["cursor"]
+            assert cursor is not None
+
+        assert collected == all_nodes
+
+    def test_asset_nodes_connection_invalid_limit(self, graphql_context: WorkspaceRequestContext):
+        # limit <= 0 and limit > max must be rejected. The upper bound is configurable
+        # via DAGSTER_ASSET_NODES_CONNECTION_MAX_LIMIT.
+        from dagster._core.errors import DagsterInvariantViolationError
+
+        repository_selector = infer_repository_selector(graphql_context)
+
+        for bad_limit in (0, -1):
+            with pytest.raises(DagsterInvariantViolationError, match="limit must be between"):
+                execute_dagster_graphql(
+                    graphql_context,
+                    GET_REPO_ASSET_NODES_CONNECTION,
+                    variables={
+                        "repositorySelector": repository_selector,
+                        "limit": bad_limit,
+                    },
+                )
+
+        with mock.patch.dict(os.environ, {"DAGSTER_ASSET_NODES_CONNECTION_MAX_LIMIT": "3"}):
+            # Within the lowered max — OK.
+            ok_result = execute_dagster_graphql(
+                graphql_context,
+                GET_REPO_ASSET_NODES_CONNECTION,
+                variables={"repositorySelector": repository_selector, "limit": 3},
+            )
+            assert len(ok_result.data["repositoryOrError"]["assetNodesConnection"]["nodes"]) <= 3
+
+            # Above the lowered max — rejected.
+            with pytest.raises(
+                DagsterInvariantViolationError, match="limit must be between 1 and 3"
+            ):
+                execute_dagster_graphql(
+                    graphql_context,
+                    GET_REPO_ASSET_NODES_CONNECTION,
+                    variables={"repositorySelector": repository_selector, "limit": 4},
+                )
+
     def test_get_asset_key_materialization(
         self, graphql_context: WorkspaceRequestContext, snapshot
     ):
@@ -1550,7 +1680,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 1
         first_timestamp = int(materializations[0]["timestamp"])
 
-        as_of_timestamp = first_timestamp + 1
+        # Use +2 instead of +1 to account for a potential 1ms discrepancy between
+        # int() truncation in the GraphQL timestamp and datetime.fromtimestamp() rounding
+        # in the DB timestamp column.
+        as_of_timestamp = first_timestamp + 2
 
         time.sleep(1.1)
         _create_run(graphql_context, "asset_tag_job")
@@ -1655,7 +1788,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert len(result.data["assetNodes"]) == 1
         asset_node = result.data["assetNodes"][0]
-        assert asset_node["id"] == f'{main_repo_location_name()}.test_repo.["asset_one"]'
+        assert asset_node["id"] == f"r.{main_repo_location_name()}.test_repo.asset_one"
         assert asset_node["hasMaterializePermission"]
         assert asset_node["hasReportRunlessAssetEventPermission"]
 
@@ -1670,7 +1803,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert len(result.data["assetNodes"]) == 2
         asset_node = result.data["assetNodes"][0]
-        assert asset_node["id"] == f'{main_repo_location_name()}.test_repo.["asset_one"]'
+        assert asset_node["id"] == f"r.{main_repo_location_name()}.test_repo.asset_one"
 
     def test_asset_node_is_executable(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
@@ -1691,6 +1824,54 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert exec_asset_node["isExecutable"] is True
         unexec_asset_node = result.data["assetNodes"][1]
         assert unexec_asset_node["isExecutable"] is False
+
+    def test_asset_node_description_character_limit(self, graphql_context: WorkspaceRequestContext):
+        full_description = "A" * 100
+
+        # No characterLimit -> full description.
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODE_DESCRIPTION,
+            variables={"assetKey": {"path": ["asset_with_long_description"]}},
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["description"] == full_description
+
+        # characterLimit smaller than description -> truncated.
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODE_DESCRIPTION,
+            variables={
+                "assetKey": {"path": ["asset_with_long_description"]},
+                "characterLimit": 10,
+            },
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["description"] == full_description[:10]
+
+        # characterLimit >= description length -> full description unchanged.
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODE_DESCRIPTION,
+            variables={
+                "assetKey": {"path": ["asset_with_long_description"]},
+                "characterLimit": 1000,
+            },
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["description"] == full_description
+
+        # Asset without a description -> None regardless of characterLimit.
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODE_DESCRIPTION,
+            variables={
+                "assetKey": {"path": ["asset_without_description"]},
+                "characterLimit": 10,
+            },
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["description"] is None
 
     def test_asset_partitions_in_pipeline(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "two_assets_job")
@@ -3206,9 +3387,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
 
         fresh_diamond_bottom = [
-            a
-            for a in result.data["assetNodes"]
-            if a["id"] == f'{main_repo_location_name()}.test_repo.["fresh_diamond_bottom"]'
+            a for a in result.data["assetNodes"] if a["id"] == "w.fresh_diamond_bottom"
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
@@ -3220,10 +3399,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
 
         automation_condition_asset = [
-            a
-            for a in result.data["assetNodes"]
-            if a["id"]
-            == f'{main_repo_location_name()}.test_repo.["asset_with_automation_condition"]'
+            a for a in result.data["assetNodes"] if a["id"] == "w.asset_with_automation_condition"
         ]
         assert len(automation_condition_asset) == 1
         condition = automation_condition_asset[0]["automationCondition"]
@@ -3233,8 +3409,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         custom_automation_condition_asset = [
             a
             for a in result.data["assetNodes"]
-            if a["id"]
-            == f'{main_repo_location_name()}.test_repo.["asset_with_custom_automation_condition"]'
+            if a["id"] == "w.asset_with_custom_automation_condition"
         ]
         assert len(custom_automation_condition_asset) == 1
         condition = custom_automation_condition_asset[0]["automationCondition"]
@@ -3401,6 +3576,27 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             result.data["assetNodeOrError"]["backfillPolicy"]["description"]
             == "Backfills in multiple runs, with a maximum of 10 partitions per run"
         )
+
+    def test_get_op_tags(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OP_TAGS,
+            variables={"assetKey": {"path": ["asset_with_op_tags"]}},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["assetNodeOrError"]["assetKey"]["path"] == ["asset_with_op_tags"]
+        op_tags = {tag["key"]: tag["value"] for tag in result.data["assetNodeOrError"]["opTags"]}
+        assert op_tags == {"foo": "bar", "baz": "qux", "dagster/kind/python": ""}
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OP_TAGS,
+            variables={"assetKey": {"path": ["single_run_backfill_policy_asset"]}},
+        )
+        assert not result.errors
+        assert result.data["assetNodeOrError"]["opTags"] == []
 
     def test_get_partition_mapping(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
@@ -4163,11 +4359,7 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             CROSS_REPO_ASSET_GRAPH,
         )
         asset_nodes = result.data["assetNodes"]
-        derived_asset = next(
-            node
-            for node in asset_nodes
-            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["derived_asset"]'
-        )
+        derived_asset = next(node for node in asset_nodes if node["id"] == "w.derived_asset")
         dependent_asset_keys = [
             {"path": ["downstream_asset1"]},
             {"path": ["downstream_asset2"]},
@@ -4416,6 +4608,20 @@ def test_concurrency_assets(graphql_context: WorkspaceRequestContext):
     assert _graphql_pool(AssetKey(["concurrency_asset"])) == {"foo"}
     assert _graphql_pool(AssetKey(["concurrency_graph_asset"])) == {"bar", "baz"}
     assert _graphql_pool(AssetKey(["concurrency_multi_asset_1"])) == {"buzz"}
+
+
+def test_legacy_freshness_policy_killswitch(graphql_context: WorkspaceRequestContext, monkeypatch):
+    monkeypatch.setenv("DAGSTER_LEGACY_FRESHNESS_POLICY_KILLSWITCH", "true")
+    result = execute_dagster_graphql(graphql_context, GET_FRESHNESS_INFO)
+
+    assert result.data
+    assert result.data["assetNodes"]
+
+    fresh_diamond_bottom = next(
+        a for a in result.data["assetNodes"] if a["id"] == "w.fresh_diamond_bottom"
+    )
+    assert fresh_diamond_bottom["freshnessInfo"] is None
+    assert fresh_diamond_bottom["freshnessPolicy"] is None
 
 
 class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
@@ -4837,3 +5043,70 @@ class TestAssetsForSameStorageAddress(ExecutingGraphQLContextTestMatrix):
         assert result.data
         asset_node = result.data["assetNodeOrError"]
         assert asset_node["assetsForSameStorageAddress"] == []
+
+
+STORAGE_ADDRESS_QUERY = """
+    query StorageAddressQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            __typename
+            ... on AssetNode {
+                storageAddress {
+                    storageKind
+                    tableName
+                }
+            }
+        }
+    }
+"""
+
+
+class TestAssetNodeStorageAddress(ExecutingGraphQLContextTestMatrix):
+    def test_storage_address_lowercase(self, graphql_context: WorkspaceRequestContext):
+        # Already-lowercase table_name passes through unchanged; no kind tag -> storageKind null.
+        result = execute_dagster_graphql(
+            graphql_context,
+            STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_1"]}},
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["storageAddress"] == {
+            "storageKind": None,
+            "tableName": "db.schema.shared_table",
+        }
+
+    def test_storage_address_uppercase_normalized(self, graphql_context: WorkspaceRequestContext):
+        # Uppercase metadata is normalized to lowercase so the frontend can compare directly.
+        result = execute_dagster_graphql(
+            graphql_context,
+            STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_2"]}},
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["storageAddress"] == {
+            "storageKind": None,
+            "tableName": "db.schema.shared_table",
+        }
+
+    def test_storage_address_missing_returns_null(self, graphql_context: WorkspaceRequestContext):
+        # Asset with no table_name metadata returns null storageAddress.
+        result = execute_dagster_graphql(
+            graphql_context,
+            STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_4"]}},
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["storageAddress"] is None
+
+    def test_storage_address_with_storage_kind(self, graphql_context: WorkspaceRequestContext):
+        # Asset with the dagster/storage_kind metadata field exposes it on storageAddress so
+        # the frontend doesn't have to dig through metadata.
+        result = execute_dagster_graphql(
+            graphql_context,
+            STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_with_kind"]}},
+        )
+        assert result.data
+        assert result.data["assetNodeOrError"]["storageAddress"] == {
+            "storageKind": "snowflake",
+            "tableName": "db.schema.snowflake_table",
+        }

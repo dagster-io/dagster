@@ -593,7 +593,7 @@ def test_execute_step_verify_step():
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
             # Test trying to re-run a retry fails verify_step (case 2)
-            with mock.patch("dagster.cli.api.get_step_stats_by_key") as _step_stats_by_key:
+            with mock.patch("dagster._cli.api.get_step_stats_by_key") as _step_stats_by_key:
                 _step_stats_by_key.return_value = {
                     "do_something": RunStepKeyStatsSnapshot(
                         run_id=run.run_id, step_key="do_something", attempts=2
@@ -621,7 +621,7 @@ def test_execute_step_verify_step():
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
 
-@mock.patch("dagster.cli.api.verify_step")
+@mock.patch("dagster._cli.api.verify_step")
 def test_execute_step_verify_step_framework_error(mock_verify_step):
     with dg.instance_for_test(
         overrides={

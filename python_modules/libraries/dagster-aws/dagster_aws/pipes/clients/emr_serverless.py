@@ -84,7 +84,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -146,7 +146,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             params["jobDriver"] = {}
 
         if "sparkSubmit" not in params["jobDriver"]:
-            params["jobDriver"]["sparkSubmit"] = {}  # pyright: ignore[reportGeneralTypeIssues]
+            params["jobDriver"]["sparkSubmit"] = {}
 
         params["jobDriver"]["sparkSubmit"]["sparkSubmitParameters"] = params.get(
             "jobDriver", {}
@@ -157,7 +157,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             ]
         )
 
-        return cast("StartJobRunRequestTypeDef", params)
+        return params
 
     def _start(
         self,
@@ -177,7 +177,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self,
         context: OpExecutionContext | AssetExecutionContext,
         start_response: "StartJobRunResponseTypeDef",
-    ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
+    ) -> "GetJobRunResponseTypeDef":
         job_run_id = start_response["jobRunId"]
         application_id = start_response["applicationId"]
 

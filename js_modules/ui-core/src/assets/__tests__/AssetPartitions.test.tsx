@@ -219,11 +219,9 @@ describe('AssetPartitions', () => {
     await user.click(await screen.findByRole('menuitem', {name: /^reverse creation sort/i}));
     expect(await screen.findByTestId('asset-partition-row-WV-index-0')).toBeVisible();
 
-    await user.click(await screen.findByTestId('sort-1'));
     await user.click(await screen.findByRole('menuitem', {name: /^alphabetical sort/i}));
     expect(await screen.findByTestId('asset-partition-row-FL-index-0')).toBeVisible();
 
-    await user.click(await screen.findByTestId('sort-1'));
     await user.click(await screen.findByRole('menuitem', {name: /^reverse alphabetical sort/i}));
     expect(await screen.findByTestId('asset-partition-row-WV-index-0')).toBeVisible();
   });

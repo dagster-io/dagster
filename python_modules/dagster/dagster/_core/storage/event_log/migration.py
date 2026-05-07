@@ -128,7 +128,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                 with db_result(conn, materialization_query) as mat_result:
                     materialization_row = mat_result.fetchone()
                 if materialization_row:
-                    event = deserialize_value(materialization_row[0], NamedTuple)  # pyright: ignore[reportCallIssue,reportArgumentType]
+                    event = deserialize_value(materialization_row[0], NamedTuple)
 
             if not event:
                 # this must be a wiped asset

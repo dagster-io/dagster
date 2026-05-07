@@ -15,12 +15,19 @@ import {SyntaxError} from './CustomErrorListener';
 import {applyStaticSyntaxHighlighting} from './SelectionInputHighlighter';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
+const EMPTY_ERRORS: SyntaxError[] = [];
+
 export const useSelectionInputLintingAndHighlighting = ({
   cmInstance,
   linter,
+  suppressErrors,
 }: {
   cmInstance: React.MutableRefObject<CodeMirror.Editor | null>;
   linter: (content: string) => SyntaxError[];
+  // When true, skip all validation errors. Used while the user is choosing a
+  // value in the autocomplete dropdown — the in-progress expression would
+  // otherwise flag errors on the unfinished token and everything after it.
+  suppressErrors?: boolean;
 }) => {
   const instance = cmInstance.current;
 
@@ -32,7 +39,7 @@ export const useSelectionInputLintingAndHighlighting = ({
       if (!instance) {
         return;
       }
-      errorsRef.current = linter(instance.getValue());
+      errorsRef.current = suppressErrors ? EMPTY_ERRORS : linter(instance.getValue());
       applyStaticSyntaxHighlighting(instance, errorsRef.current);
     }, 1000);
 
@@ -41,7 +48,7 @@ export const useSelectionInputLintingAndHighlighting = ({
       if (!instance) {
         return;
       }
-      const errors = linter(instance.getValue());
+      const errors = suppressErrors ? EMPTY_ERRORS : linter(instance.getValue());
       if (!errors.length) {
         errorsRef.current = errors;
         applyStaticSyntaxHighlighting(instance, errors);
@@ -50,7 +57,7 @@ export const useSelectionInputLintingAndHighlighting = ({
         debouncedApplyErrors();
       }
     };
-  }, [linter, cmInstance]);
+  }, [linter, cmInstance, suppressErrors]);
 
   const highlighter = useCallback(
     (instance: CodeMirror.Editor) => {
@@ -70,6 +77,15 @@ export const useSelectionInputLintingAndHighlighting = ({
       instance.off('change', highlighter);
     };
   }, [highlighter, instance]);
+
+  // Re-apply highlighting when suppression toggles so squiggles appear/
+  // disappear as the autocomplete dropdown opens and closes, even if the
+  // editor content hasn't changed.
+  useLayoutEffect(() => {
+    if (instance) {
+      highlighter(instance);
+    }
+  }, [suppressErrors, highlighter, instance]);
 
   const [error, setError] = useState<{
     error: SyntaxError;

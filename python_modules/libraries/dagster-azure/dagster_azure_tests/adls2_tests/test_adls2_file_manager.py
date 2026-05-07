@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 from unittest import mock
 
 from dagster import ResourceDefinition, build_op_context, configured, op
@@ -141,7 +142,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
 def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
     did_it_run = dict(it_ran=False)
 
-    resource_config = {
+    resource_config: dict[str, Any] = {
         "storage_account": "some-storage-account",
         "credential": {
             "key": "some-key",
@@ -164,6 +165,7 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
         MockADLS2Resource.assert_called_once_with(
             storage_account=resource_config["storage_account"],
             credential=ADLS2Key(key=resource_config["credential"]["key"]),
+            endpoint_suffix="core.windows.net",
         )
 
         did_it_run["it_ran"] = True
@@ -207,6 +209,7 @@ def test_adls_file_manager_resource_defaultazurecredential(
         MockADLS2Resource.assert_called_once_with(
             storage_account=resource_config["storage_account"],
             credential=MockADLS2DefaultAzureCredential.return_value,
+            endpoint_suffix="core.windows.net",
         )
 
         did_it_run["it_ran"] = True

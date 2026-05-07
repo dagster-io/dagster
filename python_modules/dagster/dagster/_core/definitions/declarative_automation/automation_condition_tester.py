@@ -7,6 +7,7 @@ from typing import AbstractSet  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value, serialize_value
 
+from dagster._annotations import public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetKey
@@ -24,7 +25,10 @@ from dagster._core.definitions.partitions.context import (
 from dagster._core.instance import DagsterInstance
 
 
+@public
 class EvaluateAutomationConditionsResult:
+    """Returned by :py:func:`evaluate_automation_conditions`."""
+
     def __init__(
         self,
         cursor: AssetDaemonCursor,
@@ -51,21 +55,25 @@ class EvaluateAutomationConditionsResult:
             mapping[asset_partition.asset_key].add(asset_partition.partition_key)
         return mapping
 
+    @public
     @property
     def total_requested(self) -> int:
         """Returns the total number of asset partitions requested during this evaluation."""
         with partition_loading_context(new_ctx=self._partition_loading_context):
             return sum(r.true_subset.size for r in self.results)
 
+    @public
     def get_requested_partitions(self, asset_key: AssetKey) -> AbstractSet[str | None]:
         """Returns the specific partition keys requested for the given asset during this evaluation."""
         return self._requested_partitions_by_asset_key[asset_key]
 
+    @public
     def get_num_requested(self, asset_key: AssetKey) -> int:
         """Returns the number of asset partitions requested for the given asset during this evaluation."""
         return len(self.get_requested_partitions(asset_key))
 
 
+@public
 def evaluate_automation_conditions(
     defs: Definitions | Sequence[AssetsDefinition],
     instance: DagsterInstance,
@@ -73,10 +81,10 @@ def evaluate_automation_conditions(
     evaluation_time: datetime.datetime | None = None,
     cursor: AssetDaemonCursor | None = None,
 ) -> EvaluateAutomationConditionsResult:
-    """Evaluates the AutomationConditions of the provided assets, returning the results. Intended
-    for use in unit tests.
+    """Evaluates the AutomationConditions of the provided assets, returning the results as an instance
+    of :py:class:`EvaluateAutomationConditionsResult`. Intended for use in unit tests.
 
-    Params:
+    Args:
         defs (Union[Definitions, Sequence[AssetsDefinitions]]):
             The definitions to evaluate the conditions of.
         instance (DagsterInstance):
@@ -88,35 +96,95 @@ def evaluate_automation_conditions(
         cursor (Optional[AssetDaemonCursor]):
             The cursor for the computation. If you are evaluating multiple ticks within a test, this
             value should be supplied from the `cursor` property of the returned `result` object.
-        request_backfills (bool): Whether to evaluate the automation conditions under the condition of DA requesting backfills. Defaults to False.
+        request_backfills (bool): Whether to evaluate the automation conditions under the condition of
+            DA requesting backfills. Defaults to False.
 
     Examples:
-         .. code-block:: python
+        **Missing asset** — an asset with ``eager()`` that has never been materialized is
+        requested on the first tick, then not re-requested on the second:
 
-            from dagster import DagsterInstance, evaluate_automation_conditions
+        .. code-block:: python
 
-            from my_proj import defs
+            import dagster as dg
 
-            def test_my_automation_conditions() -> None:
+            @dg.asset(automation_condition=dg.AutomationCondition.eager())
+            def my_asset(): ...
 
-                instance = DagsterInstance.ephemeral()
+            def test_missing_asset():
+                instance = dg.DagsterInstance.ephemeral()
 
-                # asset starts off as missing, expect it to be requested
-                result = evaluate_automation_conditions(defs, instance)
+                result = dg.evaluate_automation_conditions(defs=[my_asset], instance=instance)
                 assert result.total_requested == 1
 
-                # don't re-request the same asset
-                result = evaluate_automation_conditions(defs, instance, cursor=cursor)
+                result = dg.evaluate_automation_conditions(
+                    defs=[my_asset], instance=instance, cursor=result.cursor
+                )
                 assert result.total_requested == 0
 
+        **Same code location** — upstream and downstream in the same ``Definitions``;
+        materialize the upstream between ticks:
 
-            from dagster import AssetExecutionContext
-            from dagster_dbt import DbtCliResource, dbt_assets
+        .. code-block:: python
 
+            import dagster as dg
 
-            @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-                yield from dbt.cli(["build"], context=context).stream()
+            @dg.asset
+            def upstream(): ...
+
+            @dg.asset(deps=[upstream], automation_condition=dg.AutomationCondition.eager())
+            def downstream(): ...
+
+            def test_eager_condition():
+                instance = dg.DagsterInstance.ephemeral()
+
+                result = dg.evaluate_automation_conditions(
+                    defs=[upstream, downstream], instance=instance
+                )
+                assert result.total_requested == 0
+
+                dg.materialize([upstream], instance=instance)
+
+                result = dg.evaluate_automation_conditions(
+                    defs=[upstream, downstream], instance=instance, cursor=result.cursor
+                )
+                assert result.total_requested == 1
+
+        **Cross-code-location** — represent an external upstream as an ``AssetSpec`` and
+        record its materialization with ``report_runless_asset_event``:
+
+        .. code-block:: python
+
+            import dagster as dg
+
+            external_upstream = dg.AssetSpec(key="external_upstream")
+
+            @dg.asset(
+                deps=[external_upstream],
+                automation_condition=dg.AutomationCondition.eager(),
+            )
+            def my_asset(): ...
+
+            def test_cross_location_condition():
+                instance = dg.DagsterInstance.ephemeral()
+
+                result = dg.evaluate_automation_conditions(
+                    defs=[external_upstream, my_asset], instance=instance
+                )
+                assert result.total_requested == 0
+
+                instance.report_runless_asset_event(
+                    dg.AssetMaterialization(asset_key="external_upstream")
+                )
+
+                result = dg.evaluate_automation_conditions(
+                    defs=[external_upstream, my_asset], instance=instance, cursor=result.cursor
+                )
+                assert result.total_requested == 1
+
+                result = dg.evaluate_automation_conditions(
+                    defs=[external_upstream, my_asset], instance=instance, cursor=result.cursor
+                )
+                assert result.total_requested == 0
     """
     if not isinstance(defs, Definitions):
         defs = Definitions(assets=defs)

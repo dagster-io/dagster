@@ -128,7 +128,7 @@ def test_simple_state_backed_component(
             scoped_definitions_load_context() as load_context,
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
 
             # the state value is set to some random number
@@ -152,7 +152,7 @@ def test_simple_state_backed_component(
             scoped_definitions_load_context() as load_context,
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             # metadata should remain the same
             assert spec.metadata["state_value"] == original_metadata_value
@@ -171,7 +171,7 @@ def test_simple_state_backed_component(
             scoped_definitions_load_context() as load_context,
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             new_metadata_value = spec.metadata["state_value"]
             assert new_metadata_value != original_metadata_value
@@ -206,7 +206,7 @@ def test_code_server_state_backed_component(instance_available: bool) -> None:
             scoped_definitions_load_context() as load_context,
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             original_metadata_value = spec.metadata["state_value"]
             # should automatically load
@@ -233,7 +233,7 @@ def test_code_server_state_backed_component(instance_available: bool) -> None:
             ),
         ):
             with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
-                specs = defs.get_all_asset_specs()
+                specs = defs.resolve_all_asset_specs()
                 spec = specs[0]
                 assert spec.metadata["state_value"] == original_metadata_value
                 assert "bar_" in spec.metadata["state_value"]
@@ -263,7 +263,7 @@ def test_local_filesystem_state_backed_component(instance_available: bool) -> No
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             # will not automatically load
             assert spec.metadata["state_value"] == "initial"
@@ -276,7 +276,7 @@ def test_local_filesystem_state_backed_component(instance_available: bool) -> No
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             new_state_value = spec.metadata["state_value"]
             # state should be updated to something random
@@ -287,7 +287,7 @@ def test_local_filesystem_state_backed_component(instance_available: bool) -> No
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
 
             # state should be the same as before
@@ -327,7 +327,7 @@ def test_dev_mode_state_backed_component(storage_location: DefsStateManagementTy
                 assert load_context.accessed_defs_state_info.info_mapping.keys() == {
                     "MyStateBackedComponent"
                 }
-                specs = defs.get_all_asset_specs()
+                specs = defs.resolve_all_asset_specs()
                 spec = specs[0]
                 metadata_value = spec.metadata["state_value"]
                 # should automatically load
@@ -358,7 +358,7 @@ def test_multiple_components() -> None:
         ):
             with sandbox.build_all_defs() as defs:
                 # Both components should still load successfully
-                assert len(defs.get_all_asset_specs()) == 2
+                assert len(defs.resolve_all_asset_specs()) == 2
 
         # now update the defs_state_key
         shutil.rmtree(second_component_path)
@@ -372,7 +372,7 @@ def test_multiple_components() -> None:
         )
 
         with sandbox.build_all_defs() as defs:
-            assert len(defs.get_all_asset_specs()) == 2
+            assert len(defs.resolve_all_asset_specs()) == 2
 
 
 def test_two_components_sharing_same_state_key() -> None:
@@ -404,7 +404,7 @@ def test_two_components_sharing_same_state_key() -> None:
         ):
             with sandbox.build_all_defs() as defs:
                 # Both components should load successfully
-                specs = defs.get_all_asset_specs()
+                specs = defs.resolve_all_asset_specs()
                 assert len(specs) == 2
                 # Verify both assets were created
                 assert any("component_a" in spec.key.to_user_string() for spec in specs)
@@ -441,7 +441,7 @@ def test_state_backed_component_migration_from_versioned_to_local_storage() -> N
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             initial_metadata_value = spec.metadata["state_value"]
             assert initial_metadata_value == "initial"
@@ -455,7 +455,7 @@ def test_state_backed_component_migration_from_versioned_to_local_storage() -> N
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             versioned_metadata_value = spec.metadata["state_value"]
             assert versioned_metadata_value != "initial"
@@ -480,7 +480,7 @@ def test_state_backed_component_migration_from_versioned_to_local_storage() -> N
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             local_metadata_value = spec.metadata["state_value"]
             assert local_metadata_value == "initial"
@@ -491,7 +491,7 @@ def test_state_backed_component_migration_from_versioned_to_local_storage() -> N
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            specs = defs.get_all_asset_specs()
+            specs = defs.resolve_all_asset_specs()
             spec = specs[0]
             dev_metadata_value = spec.metadata["state_value"]
             # Should have a non-initial value due to forced refresh in dev mode

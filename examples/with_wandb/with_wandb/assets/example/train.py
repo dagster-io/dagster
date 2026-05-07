@@ -193,6 +193,7 @@ def main():
 
                 # Print Loss
                 print(f"Iteration: {count} Loss: {loss:.2f} Accuracy: {accuracy:.2f}")
+    assert wandb.run is not None
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 

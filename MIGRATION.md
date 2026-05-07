@@ -2,6 +2,109 @@
 
 When new releases include breaking changes or deprecations, this document explains how to upgrade your projects.
 
+## Upgrading to 1.13.0
+
+### Breaking changes
+
+- The deprecated `external_asset_from_spec` and `external_assets_from_specs` helpers have been removed. Construct external assets by passing `AssetSpec` objects directly to `Definitions(...)`, or by building an `AssetsDefinition` from specs.
+
+```python
+# before
+from dagster import AssetSpec, Definitions, external_assets_from_specs
+
+defs = Definitions(assets=[*external_assets_from_specs([AssetSpec("my_asset")])])
+
+# after
+from dagster import AssetSpec, Definitions
+
+defs = Definitions(assets=[AssetSpec("my_asset")])
+```
+
+- Deprecated single-`AssetKey` `deps` argument support has been removed. If you were passing a single dependency, wrap it in a sequence. If you need dependency-level configuration such as a partition mapping, prefer `AssetDep`.
+
+```python
+# before
+from dagster import AssetKey, asset
+
+@asset(deps=AssetKey("upstream"))
+def downstream(): ...
+
+# after
+from dagster import AssetDep, asset
+
+@asset(deps=[AssetDep("upstream")])
+def downstream(): ...
+```
+
+- `Definitions.get_all_asset_specs()` has been removed. Use `Definitions.resolve_all_asset_specs()` instead.
+
+- `@observable_source_asset` no longer accepts the deprecated `legacy_freshness_policy` or `auto_observe_interval_minutes` parameters. Migrate to `automation_condition=` and schedule or sensor based automation instead.
+
+- `AssetsDefinition` no longer accepts the deprecated `legacy_freshness_policies_by_output_name` parameter.
+
+- `AssetOut` no longer accepts the deprecated `legacy_freshness_policy` parameter. If you were still passing `legacy_freshness_policy=` to `AssetOut(...)`, remove it and migrate to freshness checks or automation-based behavior instead.
+
+- The asset module loader helpers `load_assets_from_modules`, `load_assets_from_current_module`, `load_assets_from_package_module`, and `load_assets_from_package_name` no longer accept the deprecated `legacy_freshness_policy` parameter. If you were using these helpers to stamp a legacy freshness policy onto loaded assets, remove that argument and migrate to `automation_condition=` or freshness checks.
+
+- In component loading code, `ComponentLoadContext.load_component_at_path` and `ComponentLoadContext.build_defs_at_path` have been removed. Use `context.load_component(...)` and `context.build_defs(...)` instead.
+
+```python
+# before
+other_component = context.load_component_at_path("other_component")
+other_defs = context.build_defs_at_path("other_component")
+
+# after
+other_component = context.load_component("other_component")
+other_defs = context.build_defs("other_component")
+```
+
+- [dagster-airbyte] The deprecated `AirbyteState` enum has been removed. Use `AirbyteJobStatusType` instead. The deprecated `legacy_freshness_policy` and `auto_materialize_policy` parameters have also been removed from `build_airbyte_assets()`.
+
+- [dagster-looker] `DagsterLookerResource.build_defs` has been removed. Load specs with `load_looker_asset_specs(...)` and pass them to `Definitions(...)` instead. Deprecated translator key helper methods such as `get_asset_key`, `get_dashboard_asset_key`, `get_explore_asset_key`, and `get_view_asset_key` have also been removed. Custom translators should override `get_asset_spec(...)` and derive the key from the returned spec. `load_looker_asset_specs(...)` now expects a translator instance, not a translator class.
+
+```python
+# before
+looker_defs = looker_resource.build_defs(dagster_looker_translator=MyTranslator)
+
+# after
+looker_defs = Definitions(
+    assets=load_looker_asset_specs(
+        looker_resource,
+        dagster_looker_translator=MyTranslator(),
+    )
+)
+```
+
+- [dagster-powerbi] `PowerBIWorkspace.build_defs()` has been removed. Replace it with `load_powerbi_asset_specs(...)` plus `Definitions(...)`. Deprecated translator key helpers have also been removed; custom translators should implement `get_asset_spec(...)`. `load_powerbi_asset_specs(...)` now requires a translator instance rather than a translator class.
+
+```python
+# before
+defs = powerbi_workspace.build_defs(dagster_powerbi_translator=MyTranslator)
+
+# after
+defs = Definitions(
+    assets=load_powerbi_asset_specs(
+        powerbi_workspace,
+        dagster_powerbi_translator=MyTranslator(),
+    )
+)
+```
+
+- [dagster-sigma] `SigmaOrganization.build_defs()` has been removed. Replace it with `load_sigma_asset_specs(...)` plus `Definitions(...)`. Deprecated translator key helpers have also been removed; derive keys from `get_asset_spec(...)`. `load_sigma_asset_specs(...)` now requires a translator instance rather than a translator class.
+
+```python
+# before
+defs = sigma_organization.build_defs(dagster_sigma_translator=MyTranslator)
+
+# after
+defs = Definitions(
+    assets=load_sigma_asset_specs(
+        sigma_organization,
+        dagster_sigma_translator=MyTranslator(),
+    )
+)
+```
+
 ## Upgrading to 1.12.0
 
 ### Breaking changes

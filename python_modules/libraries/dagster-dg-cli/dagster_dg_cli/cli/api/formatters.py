@@ -5,16 +5,16 @@ import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
-    from dagster_dg_cli.api_layer.schemas.alert_policy import (
-        AlertPolicyDocument,
-        AlertPolicySyncResult,
+    from dagster_rest_resources.schemas.agent import DgApiAgent, DgApiAgentList
+    from dagster_rest_resources.schemas.alert_policy import (
+        DgApiAlertPolicyDocument,
+        DgApiAlertPolicySyncResult,
     )
-    from dagster_dg_cli.api_layer.schemas.artifact import (
-        ArtifactDownloadResult,
-        ArtifactUploadResult,
+    from dagster_rest_resources.schemas.artifact import (
+        DgApiArtifactDownloadResult,
+        DgApiArtifactUploadResult,
     )
-    from dagster_dg_cli.api_layer.schemas.asset import (
+    from dagster_rest_resources.schemas.asset import (
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
@@ -22,35 +22,36 @@ if TYPE_CHECKING:
         DgApiEvaluationRecordList,
         DgApiPartitionStats,
     )
-    from dagster_dg_cli.api_layer.schemas.asset_check import (
+    from dagster_rest_resources.schemas.asset_check import (
         DgApiAssetCheckExecutionList,
         DgApiAssetCheckList,
     )
-    from dagster_dg_cli.api_layer.schemas.code_location import (
+    from dagster_rest_resources.schemas.code_location import (
         DgApiAddCodeLocationResult,
         DgApiCodeLocation,
         DgApiCodeLocationList,
         DgApiDeleteCodeLocationResult,
     )
-    from dagster_dg_cli.api_layer.schemas.compute_log import (
+    from dagster_rest_resources.schemas.compute_log import (
         DgApiComputeLogLinkList,
         DgApiComputeLogList,
     )
-    from dagster_dg_cli.api_layer.schemas.deployment import (
-        Deployment,
-        DeploymentList,
-        DeploymentSettings,
+    from dagster_rest_resources.schemas.deployment import (
+        DgApiDeployment,
+        DgApiDeploymentList,
+        DgApiDeploymentSettings,
     )
-    from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
-    from dagster_dg_cli.api_layer.schemas.job import DgApiJob, DgApiJobList
-    from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
-    from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
-    from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
-    from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
-    from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
-    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
-    from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
-    from dagster_dg_cli.api_layer.schemas.tick import DgApiTickList
+    from dagster_rest_resources.schemas.issue import DgApiIssue, DgApiIssueList
+    from dagster_rest_resources.schemas.job import DgApiJob, DgApiJobList
+    from dagster_rest_resources.schemas.organization import DgApiOrganizationSettings
+    from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunList
+    from dagster_rest_resources.schemas.run_event import DgApiRunEventList
+    from dagster_rest_resources.schemas.schedule import DgApiSchedule, DgApiScheduleList
+    from dagster_rest_resources.schemas.secret import DgApiSecret, DgApiSecretList
+    from dagster_rest_resources.schemas.sensor import DgApiSensor, DgApiSensorList
+    from dagster_rest_resources.schemas.tick import DgApiTickList
+
+    from dagster_dg_cli.cli.api.schema import SamlOperationResult
 
 MAX_COL_WIDTH = 60
 
@@ -138,7 +139,7 @@ def _format_timestamp_epoch(epoch: float) -> str:
 # ---------------------------------------------------------------------------
 
 
-def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
+def format_deployments(deployments: "DgApiDeploymentList", as_json: bool) -> str:
     """Format deployment list for output."""
     if as_json:
         return deployments.model_dump_json(indent=2)
@@ -148,7 +149,7 @@ def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
     return format_table(headers, rows)
 
 
-def format_deployment(deployment: "Deployment", as_json: bool) -> str:
+def format_deployment(deployment: "DgApiDeployment", as_json: bool) -> str:
     """Format single deployment for output."""
     if as_json:
         return deployment.model_dump_json(indent=2)
@@ -162,7 +163,7 @@ def format_deployment(deployment: "Deployment", as_json: bool) -> str:
     )
 
 
-def format_deployment_settings(settings: "DeploymentSettings", as_json: bool) -> str:
+def format_deployment_settings(settings: "DgApiDeploymentSettings", as_json: bool) -> str:
     """Format deployment settings for output."""
     if as_json:
         return settings.model_dump_json(indent=2)
@@ -177,7 +178,10 @@ def format_deployment_settings(settings: "DeploymentSettings", as_json: bool) ->
 # ---------------------------------------------------------------------------
 
 
-def format_organization_settings(settings: "OrganizationSettings", as_json: bool) -> str:
+def format_organization_settings(
+    settings: "DgApiOrganizationSettings",
+    as_json: bool,
+) -> str:
     """Format organization settings for output."""
     if as_json:
         return settings.model_dump_json(indent=2)
@@ -205,7 +209,7 @@ def format_saml_result(result: "SamlOperationResult", as_json: bool) -> str:
 # ---------------------------------------------------------------------------
 
 
-def format_artifact_upload(result: "ArtifactUploadResult", as_json: bool) -> str:
+def format_artifact_upload(result: "DgApiArtifactUploadResult", as_json: bool) -> str:
     """Format artifact upload result for output."""
     if as_json:
         return result.model_dump_json(indent=2)
@@ -214,7 +218,7 @@ def format_artifact_upload(result: "ArtifactUploadResult", as_json: bool) -> str
     return f"Uploaded artifact '{result.key}' to {scope_desc}."
 
 
-def format_artifact_download(result: "ArtifactDownloadResult", as_json: bool) -> str:
+def format_artifact_download(result: "DgApiArtifactDownloadResult", as_json: bool) -> str:
     """Format artifact download result for output."""
     if as_json:
         return result.model_dump_json(indent=2)
@@ -228,7 +232,7 @@ def format_artifact_download(result: "ArtifactDownloadResult", as_json: bool) ->
 # ---------------------------------------------------------------------------
 
 
-def format_alert_policies(policies: "AlertPolicyDocument", as_json: bool) -> str:
+def format_alert_policies(policies: "DgApiAlertPolicyDocument", as_json: bool) -> str:
     """Format alert policies for output."""
     if as_json:
         return policies.model_dump_json(indent=2)
@@ -236,18 +240,18 @@ def format_alert_policies(policies: "AlertPolicyDocument", as_json: bool) -> str
     import yaml
 
     return yaml.dump(
-        {"alert_policies": policies.alert_policies},
+        {"alert_policies": policies.items},
         default_flow_style=False,
         sort_keys=False,
     ).rstrip()
 
 
-def format_alert_policy_sync_result(result: "AlertPolicySyncResult", as_json: bool) -> str:
+def format_alert_policy_sync_result(result: "DgApiAlertPolicySyncResult", as_json: bool) -> str:
     """Format alert policy sync result for output."""
     if as_json:
         return result.model_dump_json(indent=2)
 
-    return f"Synced alert policies: {', '.join(result.synced_policies)}"
+    return f"Synced alert policies: {', '.join(result.items)}"
 
 
 # ---------------------------------------------------------------------------
@@ -298,13 +302,13 @@ def _format_asset_status_lines(status) -> list[str]:
 
     # Overall health status
     if status.asset_health:
-        lines.append(f"Asset Health: {status.asset_health}")
+        lines.append(f"Asset Health: {status.asset_health.value}")
     if status.materialization_status:
-        lines.append(f"Materialization Status: {status.materialization_status}")
+        lines.append(f"Materialization Status: {status.materialization_status.value}")
     if status.freshness_status:
-        lines.append(f"Freshness Status: {status.freshness_status}")
+        lines.append(f"Freshness Status: {status.freshness_status.value}")
     if status.asset_checks_status:
-        lines.append(f"Asset Checks Status: {status.asset_checks_status}")
+        lines.append(f"Asset Checks Status: {status.asset_checks_status.value}")
 
     # Health metadata details
     if status.health_metadata:
@@ -586,7 +590,7 @@ def format_secrets(secrets: "DgApiSecretList", as_json: bool) -> str:
         scopes = _format_secret_scopes(secret)
         updated = ""
         if secret.update_timestamp:
-            updated = secret.update_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            updated = _format_timestamp(secret.update_timestamp, unit="seconds")
         rows.append([secret.name, locations, scopes, updated])
 
     return format_table(headers, rows)
@@ -651,7 +655,7 @@ def format_secret(secret: "DgApiSecret", as_json: bool, show_value: bool = False
         )
 
     if secret.update_timestamp:
-        lines.append(f"Updated: {secret.update_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append(f"Updated: {_format_timestamp(secret.update_timestamp, unit='seconds')}")
 
     return "\n".join(lines)
 
@@ -724,7 +728,7 @@ def format_runs_list(runs_list: "DgApiRunList", as_json: bool) -> str:
     return format_table(headers, rows)
 
 
-def format_logs_table(events: "RunEventList", run_id: str) -> str:
+def format_logs_table(events: "DgApiRunEventList", run_id: str) -> str:
     """Format logs as human-readable table."""
     if not events.items:
         return f"No logs found for run {run_id}"
@@ -758,14 +762,14 @@ def format_logs_table(events: "RunEventList", run_id: str) -> str:
                     lines.append(f"  {stack_line}")
             lines.append("")
 
-    lines.extend(["", f"Total log entries: {events.total}"])
+    lines.extend(["", f"Total log entries: {len(events.items)}"])
     if events.has_more:
         lines.append("Note: More logs available (use --limit to increase or --cursor to paginate)")
 
     return "\n".join(lines)
 
 
-def format_logs_json(events: "RunEventList") -> str:
+def format_logs_json(events: "DgApiRunEventList") -> str:
     """Format logs as JSON."""
     return events.model_dump_json(indent=2)
 
@@ -985,19 +989,30 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
 
 def format_issue(issue: "DgApiIssue", as_json: bool) -> str:
     """Format a single issue for output."""
+    from dagster_rest_resources.schemas.issue import DgApiIssueLinkedAsset, DgApiIssueLinkedRun
+
     if as_json:
         return issue.model_dump_json(indent=2)
 
     fields: list[tuple[str, str]] = [
         ("Title", issue.title),
         ("Status", issue.status.value),
-        ("Created By", issue.created_by_email),
+        ("Created By", issue.created_by_name),
     ]
 
-    if issue.run_id is not None:
-        fields.append(("Run ID", issue.run_id))
-    if issue.asset_key is not None:
-        fields.append(("Asset Key", str(issue.asset_key)))
+    run_ids = []
+    asset_keys = []
+    if issue.linked_objects:
+        for linked_object in issue.linked_objects:
+            if isinstance(linked_object, DgApiIssueLinkedRun):
+                run_ids.append(linked_object.run_id)
+            elif isinstance(linked_object, DgApiIssueLinkedAsset):
+                asset_keys.append(linked_object.asset_key)
+
+    if run_ids:
+        fields.append(("Run IDs", ", ".join(run_ids)))
+    if asset_keys:
+        fields.append(("Asset Keys", ", ".join(asset_keys)))
 
     fields.append(("Description", issue.description))
 
@@ -1017,7 +1032,7 @@ def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
 
     headers = ["STATUS", "TITLE", "ID", "CREATED BY"]
     rows = [
-        [issue.status.value, issue.title, issue.id, issue.created_by_email]
+        [issue.status.value, issue.title, issue.id, issue.created_by_name]
         for issue in issue_list.items
     ]
 

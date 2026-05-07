@@ -3,13 +3,14 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from dagster._annotations import beta, deprecated
+from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster_shared.serdes import whitelist_for_serdes
+from dateutil.parser import isoparse
 
 from dagster_airbyte.utils import generate_table_schema, get_airbyte_connection_table_name
 
@@ -22,17 +23,6 @@ class AirbyteJobStatusType(str, Enum):
     FAILED = "failed"
     ERROR = "error"
     INCOMPLETE = "incomplete"
-
-
-@deprecated(breaking_version="1.10", additional_warn_text="Use `AirbyteJobStatusType` instead.")
-class AirbyteState:
-    RUNNING = AirbyteJobStatusType.RUNNING
-    SUCCEEDED = AirbyteJobStatusType.SUCCEEDED
-    CANCELLED = AirbyteJobStatusType.CANCELLED
-    PENDING = AirbyteJobStatusType.PENDING
-    FAILED = AirbyteJobStatusType.FAILED
-    ERROR = AirbyteJobStatusType.ERROR
-    INCOMPLETE = AirbyteJobStatusType.INCOMPLETE
 
 
 @record
@@ -157,10 +147,8 @@ class AirbyteJob:
             status=job_details["status"],
             type=job_details["jobType"],
             connection_id=job_details.get("connectionId"),
-            start_time=datetime.fromisoformat(job_details["startTime"])
-            if "startTime" in job_details
-            else None,
-            last_updated_at=datetime.fromisoformat(job_details["lastUpdatedAt"])
+            start_time=isoparse(job_details["startTime"]) if "startTime" in job_details else None,
+            last_updated_at=isoparse(job_details["lastUpdatedAt"])
             if "lastUpdatedAt" in job_details
             else None,
             duration=job_details.get("duration"),
@@ -240,6 +228,7 @@ class DagsterAirbyteTranslator:
             **TableMetadataSet(
                 column_schema=column_schema,
                 table_name=props.fully_qualified_table_name,
+                storage_kind=props.destination_type,
             ),
             **AirbyteMetadataSet(
                 connection_id=props.connection_id,

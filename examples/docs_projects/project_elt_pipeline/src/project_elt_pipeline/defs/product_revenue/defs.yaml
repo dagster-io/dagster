@@ -4,7 +4,7 @@ attributes:
   sql_template:
     path: product_revenue.sql
 
-  connection: "{{ load_component_at_path('../duckdb_connection') }}"
+  connection: "{{ context.load_component('../duckdb_connection') }}"
 
   assets:
     - key: product_revenue

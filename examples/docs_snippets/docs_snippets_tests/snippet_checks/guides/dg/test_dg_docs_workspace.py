@@ -25,7 +25,7 @@ DG_SNIPPETS_DIR = (
     / "workspace"
 )
 MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
-MASK_USING_LOG_MESSAGE = (r"\nUsing[\s\S]*", "\n...")
+MASK_USING_LOG_MESSAGE = (r"(Running `uv sync[^`]*`\.\.\.)\n[\s\S]*", r"\1\n...")
 
 
 def test_dg_docs_workspace(update_snippets: bool) -> None:

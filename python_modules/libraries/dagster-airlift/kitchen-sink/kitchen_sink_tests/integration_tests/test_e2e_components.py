@@ -8,6 +8,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
+from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
 from dagster_airlift.core.monitoring_job.builder import MonitoringConfig, monitoring_job_op_name
@@ -26,7 +27,7 @@ def test_component_based_defs(
 ) -> None:
     """Test that component based defs load properly."""
     with instance_for_test() as instance:
-        with scoped_definitions_load_context():
+        with environ({"DAGSTER_IS_DEV_CLI": "1"}), scoped_definitions_load_context():
             from kitchen_sink.dagster_defs.component_defs import defs
 
         assert len(defs.jobs) == 21  # type: ignore

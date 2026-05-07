@@ -1,0 +1,42 @@
+query ListRepositories {
+  repositoriesOrError {
+    __typename
+    ... on RepositoryConnection {
+      nodes {
+        name
+        location {
+          name
+        }
+        jobs {
+          id
+          name
+          description
+          isAssetJob
+          tags {
+            key
+            value
+          }
+          schedules {
+            name
+            cronSchedule
+            scheduleState {
+              status
+            }
+          }
+          sensors {
+            name
+            sensorState {
+              status
+            }
+          }
+        }
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

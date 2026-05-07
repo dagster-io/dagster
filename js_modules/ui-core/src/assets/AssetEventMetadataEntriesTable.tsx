@@ -70,6 +70,7 @@ interface Props {
   displayedByDefault?: number;
   emptyState?: React.ReactNode;
   renderMetadataKeyExtra?: (label: string) => React.ReactNode | null;
+  renderMetadataValueExtra?: (entry: MetadataEntryLabelOnly) => React.ReactNode | null;
 }
 
 /**
@@ -92,6 +93,7 @@ export const AssetEventMetadataEntriesTable = ({
   emptyState,
   repoAddress,
   renderMetadataKeyExtra,
+  renderMetadataValueExtra,
 }: Props) => {
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
@@ -243,9 +245,19 @@ export const AssetEventMetadataEntriesTable = ({
                       </td>
                     )}
                     <td>
-                      <Mono>
-                        <MetadataEntry entry={entry} expandSmallValues={true} />
-                      </Mono>
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                        }}
+                      >
+                        <Mono>
+                          <MetadataEntry entry={entry} expandSmallValues={true} />
+                        </Mono>
+                        {renderMetadataValueExtra?.(entry)}
+                      </Box>
                     </td>
                     {showDescriptions && (
                       <td style={{opacity: 0.7}}>

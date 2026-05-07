@@ -118,11 +118,6 @@ class CodeLocationDeployData(IHaveNew, LegacyNamedTupleMixin):
             + (["--port", str(port)] if port else [])
             + (["--socket", str(socket)] if socket else [])
             + (["--enable-metrics"] if metrics_enabled else [])
-            + (
-                ["--defs-state-info", serialize_value(self.defs_state_info)]
-                if self.defs_state_info
-                else []
-            )
         )
 
     def get_multipex_server_env(self) -> dict[str, str]:

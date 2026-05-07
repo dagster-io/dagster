@@ -55,7 +55,7 @@ jest.mock('../../asset-selection/input/useAssetSelectionInput', () => {
     assets,
     assetsLoading,
   }: {
-    assets: any;
+    assets: any[];
     assetsLoading?: boolean;
   }) => {
     return {

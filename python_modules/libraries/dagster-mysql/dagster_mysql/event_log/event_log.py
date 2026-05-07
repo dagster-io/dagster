@@ -45,7 +45,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql-legacy.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deployment/execution/dagster-mysql-legacy.yaml
        :caption: dagster.yaml
        :start-after: start_marker_event_log
        :end-before: end_marker_event_log
@@ -114,7 +114,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return mysql_config()
 
     @classmethod
-    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_config_value(  # ty: ignore[invalid-method-override]
         cls, inst_data: ConfigurableClassData | None, config_value: MySqlStorageConfig
     ) -> "MySQLEventLogStorage":
         return MySQLEventLogStorage(

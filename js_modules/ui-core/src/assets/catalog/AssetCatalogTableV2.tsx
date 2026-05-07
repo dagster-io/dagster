@@ -466,6 +466,7 @@ const Table = React.memo(
             onToggleFactory={onToggleFactory}
             onToggleGroup={onToggleGroup}
             id={`asset-catalog-table-${groupBy}`}
+            sortBy={sortBy}
           />
         </div>
       </Box>

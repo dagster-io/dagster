@@ -1,6 +1,6 @@
 """Asset API commands following GitHub CLI patterns."""
 
-from typing import Final
+from typing import Final, Literal
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -42,7 +42,7 @@ DG_API_MAX_EVENT_LIMIT: Final = 1000
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetList")
+@dg_response_schema(module="dagster_rest_resources.schemas.asset", cls="DgApiAssetList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -63,11 +63,14 @@ def list_assets_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+    from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
+        if limit > DG_API_MAX_ASSET_LIMIT:
+            raise ValueError(f"Limit cannot exceed {DG_API_MAX_ASSET_LIMIT}")
+
         assets = api.list_assets(limit=limit, cursor=cursor)
         output = format_assets(assets, as_json=output_json)
         click.echo(output)
@@ -81,7 +84,7 @@ def list_assets_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAsset")
+@dg_response_schema(module="dagster_rest_resources.schemas.asset", cls="DgApiAsset")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -101,9 +104,9 @@ def get_asset_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+    from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         asset = api.get_asset(asset_key)
@@ -119,7 +122,7 @@ def get_asset_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetStatus")
+@dg_response_schema(module="dagster_rest_resources.schemas.asset", cls="DgApiAssetStatus")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -139,9 +142,9 @@ def get_health_asset_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+    from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         status = api.get_health(asset_key)
@@ -182,14 +185,14 @@ def get_health_asset_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiAssetEventList")
+@dg_response_schema(module="dagster_rest_resources.schemas.asset", cls="DgApiAssetEventList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
 def get_events_asset_command(
     ctx: click.Context,
     asset_key: str,
-    event_type: str | None,
+    event_type: Literal["ASSET_MATERIALIZATION", "ASSET_OBSERVATION"] | None,
     limit: int,
     before: str | None,
     partitions: tuple[str, ...],
@@ -206,14 +209,17 @@ def get_events_asset_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+    from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
+        if limit > DG_API_MAX_EVENT_LIMIT:
+            raise ValueError(f"Limit cannot exceed {DG_API_MAX_EVENT_LIMIT}")
+
         events = api.get_events(
             asset_key=asset_key,
-            event_type=event_type.upper() if event_type else None,
+            event_type=event_type,
             limit=limit,
             before=before,
             partitions=list(partitions) if partitions else None,
@@ -247,9 +253,7 @@ def get_events_asset_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiEvaluationRecordList"
-)
+@dg_response_schema(module="dagster_rest_resources.schemas.asset", cls="DgApiEvaluationRecordList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -276,11 +280,14 @@ def get_evaluations_asset_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+    from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
+        if limit > DG_API_MAX_EVENT_LIMIT:
+            raise ValueError(f"Limit cannot exceed {DG_API_MAX_EVENT_LIMIT}")
+
         evaluations = api.get_evaluations(
             asset_key=asset_key,
             limit=limit,
@@ -299,7 +306,7 @@ def get_evaluations_asset_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.asset", cls="DgApiPartitionStats")
+@dg_response_schema(module="dagster_rest_resources.schemas.asset", cls="DgApiPartitionStats")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -319,9 +326,9 @@ def get_partition_status_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
+    from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         stats = api.get_partition_status(asset_key)

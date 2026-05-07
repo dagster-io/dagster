@@ -1,0 +1,56 @@
+query ListCodeLocations {
+  workspace {
+    workspaceEntries {
+      locationName
+      serializedDeploymentMetadata
+    }
+  }
+}
+
+query GetLocationStatuses {
+  locationStatusesOrError {
+    __typename
+    ... on WorkspaceLocationStatusEntries {
+      entries {
+        name
+        loadStatus
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+mutation AddOrUpdateCodeLocation($document: GenericScalar!) {
+  addOrUpdateLocationFromDocument(document: $document) {
+    __typename
+    ... on WorkspaceEntry {
+      locationName
+    }
+    ... on InvalidLocationError {
+      errors
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+mutation DeleteCodeLocation($locationName: String!) {
+  deleteLocation(locationName: $locationName) {
+    __typename
+    ... on DeleteLocationSuccess {
+      locationName
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

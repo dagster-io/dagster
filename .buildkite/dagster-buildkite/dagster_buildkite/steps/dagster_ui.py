@@ -21,11 +21,10 @@ def skip_if_no_dagster_ui_components_changes(ctx: BuildkiteContext) -> str | Non
 
 def build_dagster_ui_components_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":typescript: dagster-ui-components")
+        CommandStepBuilder("dagster-ui-components", [":typescript:"])
         .on_test_image()
         .run(
             f"cd {oss_path('js_modules/ui-components')}",
-            "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .skip(skip_if_no_dagster_ui_components_changes(ctx))
@@ -51,11 +50,10 @@ def skip_if_no_dagster_ui_core_changes(ctx: BuildkiteContext) -> str | None:
 
 def build_dagster_ui_core_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":typescript: dagster-ui-core")
+        CommandStepBuilder("dagster-ui-core", [":typescript:"])
         .on_test_image()
         .run(
             f"cd {oss_path('js_modules')}",
-            "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .skip(skip_if_no_dagster_ui_core_changes(ctx))

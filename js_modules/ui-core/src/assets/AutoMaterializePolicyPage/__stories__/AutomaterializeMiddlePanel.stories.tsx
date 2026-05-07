@@ -8,8 +8,10 @@ import {
   buildPartitionedAssetConditionEvaluationNode,
   buildUnpartitionedAssetConditionEvaluationNode,
 } from '../../../graphql/builders';
+import {AssetViewDefinitionNodeFragment} from '../../types/AssetView.types';
 import {AutomaterializeMiddlePanel} from '../AutomaterializeMiddlePanel';
 import {Evaluations, TEST_EVALUATION_ID} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
+import {AssetConditionEvaluationRecordFragment} from '../types/GetEvaluationsQuery.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -42,7 +44,7 @@ export const WithoutPartitions = () => {
                   partitionKeys: ['testing', 'testing2'],
                 }),
               ],
-            }) as any
+            }) as unknown as AssetViewDefinitionNodeFragment
           }
           selectedEvaluation={
             buildAssetConditionEvaluationRecord({
@@ -54,7 +56,7 @@ export const WithoutPartitions = () => {
                   }),
                 ],
               }),
-            }) as any
+            }) as unknown as AssetConditionEvaluationRecordFragment
           }
           selectedEvaluationId={TEST_EVALUATION_ID}
         />
@@ -76,7 +78,7 @@ export const WithPartitions = () => {
                   partitionKeys: ['testing', 'testing2'],
                 }),
               ],
-            }) as any
+            }) as unknown as AssetViewDefinitionNodeFragment
           }
           selectedEvaluation={
             buildAssetConditionEvaluationRecord({
@@ -88,7 +90,7 @@ export const WithPartitions = () => {
                   }),
                 ],
               }),
-            }) as any
+            }) as unknown as AssetConditionEvaluationRecordFragment
           }
           selectedEvaluationId={TEST_EVALUATION_ID}
         />

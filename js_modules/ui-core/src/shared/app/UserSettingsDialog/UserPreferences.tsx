@@ -103,9 +103,9 @@ export const UserPreferences = ({
         <Checkbox checked={shortcutsEnabled} format="switch" onChange={toggleKeyboardShortcuts} />
       </Box>
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-        <Box flex={{direction: 'row', alignItems: 'center'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
           <div>Show assets without definitions in catalog</div>
-          <Tooltip content="Hide assets that lack current code definitions (typically legacy or orphaned assets with only historical materialization data) helping users focus on actively managed assets">
+          <Tooltip content="Hide assets that lack current code definitions (typically legacy or orphaned assets with only historical materialization data) to focus on actively managed assets">
             <Icon name="info" />
           </Tooltip>
         </Box>

@@ -1,0 +1,39 @@
+query GetLogsCapturedEvents($runId: ID!, $limit: Int, $afterCursor: String) {
+  logsForRun(runId: $runId, limit: $limit, afterCursor: $afterCursor) {
+    __typename
+    ... on EventConnection {
+      events {
+        __typename
+        ... on LogsCapturedEvent {
+          fileKey
+          stepKeys
+          externalStdoutUrl
+          externalStderrUrl
+        }
+      }
+      cursor
+      hasMore
+    }
+    ... on RunNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetCapturedLogs($logKey: [String!]!, $cursor: String, $limit: Int) {
+  capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit) {
+    stdout
+    stderr
+    cursor
+  }
+}
+
+query GetCapturedLogsMetadata($logKey: [String!]!) {
+  capturedLogsMetadata(logKey: $logKey) {
+    stdoutDownloadUrl
+    stderrDownloadUrl
+  }
+}

@@ -10,7 +10,7 @@ def _skip_synced_from_internal(ctx):
 core.workflow(
     name="sync-internal",
     origin = git.origin(
-        url =  "file:///workspace/build/buildkite/dagster/copybara-dagster-to-internal",
+        url =  "file:///workspace/build/buildkite",
         ref = "master",
     ),
     destination = git.destination(

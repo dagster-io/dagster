@@ -184,7 +184,7 @@ mkdir src/dagster_quickstart/defs/data && touch src/dagster_quickstart/defs/data
 In your preferred editor, copy the following data into this file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/getting-started/quickstart/sample_data.csv"
+  path="docs_snippets/docs_snippets/getting_started/quickstart/sample_data.csv"
   language="csv"
   title="src/dagster_quickstart/defs/data/sample_data.csv"
 />
@@ -194,18 +194,18 @@ In your preferred editor, copy the following data into this file:
 To define the assets for the ETL pipeline, open `src/dagster_quickstart/defs/assets.py` file in your preferred editor and copy in the following code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/getting-started/quickstart/assets.py"
+  path="docs_snippets/docs_snippets/getting_started/quickstart/assets.py"
   language="python"
   title="src/dagster_quickstart/defs/assets.py"
 />
 
 At this point, you can list the Dagster definitions in your project with [`dg list defs`](/api/clis/dg-cli/dg-cli-reference#dg-list). You should see the asset you just created:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_list_defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/getting_started/quickstart/dg_list_defs.txt" />
 
 You can also load and validate your Dagster definitions with [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check):
 
-<CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_check_defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/getting_started/quickstart/dg_check_defs.txt" />
 
 ## Step 5: Run your pipeline
 

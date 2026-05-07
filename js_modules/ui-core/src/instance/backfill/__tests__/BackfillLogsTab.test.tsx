@@ -69,7 +69,7 @@ describe('BackfillLogsTab', () => {
   it('paginates through the logs to load them all', async () => {
     render(
       <RecoilRoot>
-        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+        <AnalyticsContext.Provider value={{page: () => {}, track: () => {}}}>
           <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}?tab=logs`]}>
             <Route path="/backfills/:backfillId">
               <MockedProvider mocks={mocks}>

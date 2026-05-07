@@ -1,3 +1,4 @@
+import logging
 import sys
 import tempfile
 from abc import ABC, abstractmethod
@@ -8,6 +9,7 @@ from unittest.mock import patch
 import dagster._check as check
 import pytest
 from dagster import file_relative_path
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -84,7 +86,7 @@ def graphql_postgres_instance(
                             "config": {"postgres_url": pg_conn_string},
                         },
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -123,7 +125,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -170,7 +172,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -192,7 +194,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -217,7 +219,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -286,7 +288,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -407,7 +409,10 @@ class EnvironmentManagers:
                     ) as workspace:
                         yield workspace
                 finally:
-                    client.shutdown_server()
+                    try:
+                        client.shutdown_server()
+                    except DagsterUserCodeUnreachableError:
+                        logging.exception("Failed to shut down gRPC server during teardown")
                     server_process.wait(timeout=30)
 
         return MarkedManager(_mgr_fn, [Marks.code_server_cli_grpc_env])

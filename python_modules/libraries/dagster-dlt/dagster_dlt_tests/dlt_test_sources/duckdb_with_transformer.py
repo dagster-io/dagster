@@ -1,6 +1,8 @@
+from typing import Any
+
 import dlt
 
-MOCK_REPOS = [
+MOCK_REPOS: list[dict[str, Any]] = [
     {
         "id": 1,
         "name": "example-repo-1",

@@ -4,27 +4,17 @@
       "id": "exec-001",
       "runId": "run-abc-123",
       "status": "SUCCEEDED",
-      "timestamp": "1706745600",
-      "stepKey": "my_asset_freshness_check",
-      "evaluation": {
-        "severity": "ERROR",
-        "timestamp": 1706745600,
-        "targetMaterialization": {
-          "runId": "run-xyz-000",
-          "timestamp": 1706742000
-        },
-        "metadataEntries": [
-          {"label": "freshness_minutes"}
-        ]
-      }
+      "timestamp": 1706745600.0,
+      "partition": null,
+      "stepKey": "my_asset_freshness_check"
     },
     {
       "id": "exec-002",
       "runId": "run-def-456",
       "status": "FAILED",
-      "timestamp": "1706659200",
-      "stepKey": "my_asset_freshness_check",
-      "evaluation": null
+      "timestamp": 1706659200.0,
+      "partition": null,
+      "stepKey": "my_asset_freshness_check"
     }
   ]
 }

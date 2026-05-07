@@ -1,0 +1,84 @@
+.styledTagInput {
+  background-color: var(--color-background-default);
+  border: none;
+  border-radius: 8px;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  color: var(--color-text-default);
+  min-width: 400px;
+  max-width: 600px;
+  transition: box-shadow 150ms;
+}
+
+.fullWidth {
+  max-width: 100%;
+}
+
+.styledTagInput input {
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  font-size: 14px;
+  font-weight: 400;
+  padding-left: 4px;
+  padding-bottom: 2px;
+  padding-top: 2px;
+}
+
+.styledTagInput:global(.bp5-tag-input.bp5-active) {
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
+    var(--color-focus-ring) 0 0 0 3px;
+}
+
+.styledTagInput :global(.bp5-tag-input-values:first-child .bp5-input-ghost:first-child) {
+  padding-left: 8px;
+}
+
+.styledTagInput :global(.bp5-tag-input-values) {
+  margin-right: 4px;
+  margin-top: 4px;
+}
+
+.styledTagInput :global(.bp5-tag-input-values) > * {
+  margin-bottom: 4px;
+}
+
+.styledTagInput :global(.bp5-tag) {
+  border-radius: 6px;
+  display: inline-flex;
+  flex-direction: row;
+  font-size: 12px;
+  line-height: 16px;
+  align-items: center;
+  max-width: 400px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  user-select: none;
+}
+
+.styledTagInput :global(.bp5-tag.bp5-minimal:not([class*='bp5-intent-'])) {
+  background-color: var(--color-background-gray);
+  color: var(--color-text-default);
+}
+
+.styledTagInput :global(.bp5-tag.bp5-minimal.bp5-intent-success) {
+  background-color: var(--color-background-green);
+  color: var(--color-text-green);
+}
+
+.styledTagInput :global(.bp5-tag.bp5-minimal.bp5-intent-warning) {
+  background-color: var(--color-background-yellow);
+  color: var(--color-text-yellow);
+}
+
+.styledTagInput :global(.bp5-tag.bp5-minimal.bp5-intent-danger) {
+  background-color: var(--color-background-red);
+  color: var(--color-text-red);
+}
+
+.styledMenu {
+  width: 400px;
+}

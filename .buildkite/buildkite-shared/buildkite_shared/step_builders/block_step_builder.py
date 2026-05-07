@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Self
 
+from buildkite_shared.step_builders.slug import make_label
 from typing_extensions import NotRequired, Required, TypedDict
 
 
@@ -43,11 +44,13 @@ class BlockStepConfiguration(TypedDict, closed=True, total=False):
 class BlockStepBuilder:
     _step: BlockStepConfiguration
 
-    def __init__(self, block: str, key: str | None = None) -> None:
-        self._step: BlockStepConfiguration = {"label": block, "block": block}
-
-        if key is not None:
-            self._step["key"] = key
+    def __init__(self, key: str, label_emojis: list[str] | None = None) -> None:
+        label = make_label(key, label_emojis)
+        self._step: BlockStepConfiguration = {
+            "key": key,
+            "label": label,
+            "block": label,
+        }
 
     def with_prompt(
         self,

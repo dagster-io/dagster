@@ -85,7 +85,7 @@ def test_snowflake_component():
                 "attributes": {
                     "sql_template": "SELECT * FROM MY_TABLE;",
                     "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
-                    "connection": "{{ load_component_at_path('sql_connection_component') }}",
+                    "connection": "{{ context.load_component('sql_connection_component') }}",
                 },
             },
         )

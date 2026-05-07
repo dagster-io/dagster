@@ -116,9 +116,7 @@ class ExecutionPlanSnapshot(
 
         for step in self.steps:
             for step_input in step.inputs:
-                deps[step.key].update(
-                    [output_handle.step_key for output_handle in step_input.upstream_output_handles]
-                )
+                deps[step.key].update(step_input.upstream_step_keys)
         return deps
 
     @property
@@ -227,12 +225,19 @@ class ExecutionStepInputSnap(
             check.sequence_param(
                 upstream_output_handles, "upstream_output_handles", of_type=StepOutputHandle
             ),
-            check.opt_inst_param(source, "source", StepInputSourceUnion.__args__),  # type: ignore
+            check.opt_inst_param(source, "source", StepInputSourceUnion.__args__),
         )
 
     @property
     def upstream_step_keys(self):
-        return [output_handle.step_key for output_handle in self.upstream_output_handles]
+        from dagster._core.execution.plan.inputs import FromLoadableAsset
+
+        keys = [output_handle.step_key for output_handle in self.upstream_output_handles]
+        # FromLoadableAsset has no upstream_output_handles but may carry ordering
+        # dependencies from transitive non-view ancestors of an excluded view asset.
+        if isinstance(self.source, FromLoadableAsset):
+            keys.extend(self.source.ordering_step_keys)
+        return keys
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})

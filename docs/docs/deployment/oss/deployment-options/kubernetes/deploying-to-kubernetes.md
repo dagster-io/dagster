@@ -36,7 +36,7 @@ Next, you'll build a Docker image that contains your Dagster project and all of 
 3. Expose port 80, which we'll use to set up port-forwarding later.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/deployment/kubernetes/Dockerfile"
+  path="docs_snippets/docs_snippets/deployment/oss/deployment_options/kubernetes/Dockerfile"
   language="docker"
   title="Example Dockerfile"
 />
@@ -125,7 +125,7 @@ To deploy your project, you'll need to set the following options:
 If you are following this guide on your local machine, you will also need to set `pullPolicy: IfNotPresent`. This will use the local version of the image built in Step 1. However, in production use cases when your Docker images are pushed to image registries, this value should remain `pullPolicy: Always`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/deployment/kubernetes/minimal_values.yaml"
+  path="docs_snippets/docs_snippets/deployment/oss/deployment_options/kubernetes/minimal_values.yaml"
   language="yaml"
   title="Minimal changes to make to values.yaml"
 />

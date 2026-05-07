@@ -5,7 +5,7 @@ from pathlib import Path
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
-from buildkite_shared.step_builders.step_builder import StepConfiguration, TopLevelStepConfiguration
+from buildkite_shared.step_builders.step_builder import TopLevelStepConfiguration
 from buildkite_shared.utils import oss_path
 from dagster_buildkite.defines import (
     GCP_CREDS_FILENAME,
@@ -28,25 +28,6 @@ from dagster_buildkite.utils import (
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
 EARLIEST_TESTED_RELEASE = "0.12.8"
-
-
-def build_integration_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
-    steps: list[StepConfiguration] = []
-
-    # Shared dependency of some test suites
-    steps += PackageSpec(
-        oss_path(os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra")),
-    ).build_steps(ctx)
-
-    # test suites
-    steps += build_backcompat_suite_steps(ctx)
-    steps += build_celery_k8s_suite_steps(ctx)
-    steps += build_k8s_suite_steps(ctx)
-    steps += build_daemon_suite_steps(ctx)
-    steps += build_auto_materialize_perf_suite_steps(ctx)
-    steps += build_azure_live_test_suite_steps(ctx)
-
-    return steps
 
 
 # ########################
@@ -95,7 +76,7 @@ def backcompat_extra_cmds(_, factor: ToxFactor | None) -> list[str]:
                 user_code_definitions_file,
             ]
         ),
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         *network_buildkite_container("webserver_service_network"),
         *connect_sibling_docker_container(
             "webserver_service_network",
@@ -155,25 +136,6 @@ def build_daemon_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigur
         ctx,
         pytest_tox_factors,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
-    )
-
-
-def build_auto_materialize_perf_suite_steps(
-    ctx: BuildkiteContext,
-) -> list[TopLevelStepConfiguration]:
-    pytest_tox_factors = None
-    directory = oss_path(
-        os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
-    )
-    return build_integration_suite_steps(
-        directory,
-        ctx,
-        pytest_tox_factors,
-        unsupported_python_versions=[
-            version
-            for version in AvailablePythonVersion.get_all()
-            if version != AvailablePythonVersion.V3_12
-        ],
     )
 
 
@@ -269,7 +231,6 @@ def build_integration_suite_steps(
         pytest_extra_cmds=pytest_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=pytest_tox_factors,
-        retries=2,
         timeout_in_minutes=30,
         queue=queue,
         force_run_fn=force_run_fn,
@@ -282,7 +243,9 @@ def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) 
         "export DOCKER_API_VERSION=1.41",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-2 | sh",
+        "aws ecr get-login-password --region us-west-2 "
+        "| docker login --username AWS --password-stdin "
+        "$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com",
     ]
 
 
@@ -293,7 +256,9 @@ def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersi
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-2 | sh",
+        "aws ecr get-login-password --region us-west-2 "
+        "| docker login --username AWS --password-stdin "
+        "$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com",
     ]
 
     # If integration tests are disabled, we won't have any gcp credentials to download.
@@ -308,7 +273,7 @@ def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersi
         f"pushd {oss_path('python_modules/libraries/dagster-celery')}",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
         *network_buildkite_container("rabbitmq"),

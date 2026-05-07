@@ -151,7 +151,7 @@
         "__typename": "LogsCapturedEvent",
         "eventType": "LOGS_CAPTURED",
         "level": "DEBUG",
-        "message": "Started capturing logs in process (pid: 16).",
+        "message": "Capturing logs for process (pid: 16).",
         "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
         "stepKey": null,
         "timestamp": "1758808873570"
@@ -223,7 +223,7 @@
         "__typename": "LogsCapturedEvent",
         "eventType": "LOGS_CAPTURED",
         "level": "DEBUG",
-        "message": "Started capturing logs in process (pid: 26).",
+        "message": "Capturing logs for process (pid: 26).",
         "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
         "stepKey": null,
         "timestamp": "1758808875526"
@@ -295,7 +295,7 @@
         "__typename": "LogsCapturedEvent",
         "eventType": "LOGS_CAPTURED",
         "level": "DEBUG",
-        "message": "Started capturing logs in process (pid: 36).",
+        "message": "Capturing logs for process (pid: 36).",
         "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
         "stepKey": null,
         "timestamp": "1758808877439"

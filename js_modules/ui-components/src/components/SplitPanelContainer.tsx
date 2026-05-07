@@ -1,9 +1,7 @@
+import clsx from 'clsx';
 import {forwardRef, useCallback, useImperativeHandle, useRef, useState} from 'react';
-import styled from 'styled-components';
 
-import {Colors} from './Color';
-
-const DIVIDER_THICKNESS = 2;
+import styles from './css/SplitPanelContainer.module.css';
 
 interface SplitPanelContainerProps {
   axis?: 'horizontal' | 'vertical';
@@ -33,6 +31,8 @@ export function getFirstPanelSizeFromStorage(identifier: string, firstInitialPer
   const parsed = storedSize === null ? null : parseFloat(storedSize);
   return parsed === null || isNaN(parsed) ? firstInitialPercent : parsed;
 }
+
+const DIVIDER_THICKNESS = 2;
 
 export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPanelContainerProps>(
   (props, ref) => {
@@ -100,8 +100,15 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
       props.hideHandleWhenCollapsed && (firstSize <= 0 || firstSize >= 100) && !resizing;
 
     return (
-      <Container axis={axis} className="split-panel-container" resizing={resizing}>
-        <div className="split-panel" style={firstPaneStyles}>
+      <div
+        className={clsx(
+          styles.container,
+          axis === 'horizontal' ? styles.horizontal : styles.vertical,
+          resizing && styles.resizing,
+          'split-panel-container',
+        )}
+      >
+        <div className={styles.splitPanel} style={firstPaneStyles}>
           {first}
         </div>
         {first && second && !hideHandle ? (
@@ -113,10 +120,10 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
             onMove={onChangeSize}
           />
         ) : undefined}
-        <div className="split-panel" style={{flex: 1}}>
+        <div className={styles.splitPanel} style={{flex: 1}}>
           {second}
         </div>
-      </Container>
+      </div>
     );
   },
 );
@@ -166,79 +173,18 @@ const PanelDivider = (props: IDividerProps) => {
 
   const hitArea =
     axis === 'horizontal' ? (
-      <HorizontalDividerHitArea onMouseDown={onMouseDown} />
+      <div className={styles.horizontalHitArea} onMouseDown={onMouseDown} />
     ) : (
-      <VerticalDividerHitArea onMouseDown={onMouseDown} />
+      <div className={styles.verticalHitArea} onMouseDown={onMouseDown} />
     );
 
   return axis === 'horizontal' ? (
-    <HorizontalDividerWrapper $resizing={resizing} ref={ref}>
+    <div className={clsx(styles.horizontalDivider, resizing && styles.resizing)} ref={ref}>
       {hitArea}
-    </HorizontalDividerWrapper>
+    </div>
   ) : (
-    <VerticalDividerWrapper $resizing={resizing} ref={ref}>
+    <div className={clsx(styles.verticalDivider, resizing && styles.resizing)} ref={ref}>
       {hitArea}
-    </VerticalDividerWrapper>
+    </div>
   );
 };
-
-// Note: -1px margins here let the divider cover the last 1px of the previous box, hiding
-// any scrollbar border it might have.
-
-const HorizontalDividerWrapper = styled.div<{$resizing: boolean}>`
-  width: ${DIVIDER_THICKNESS}px;
-  z-index: 1;
-  background: ${(p) => (p.$resizing ? Colors.accentGray() : Colors.keylineDefault())};
-  margin-left: -1px;
-  overflow: visible;
-  position: relative;
-`;
-const VerticalDividerWrapper = styled.div<{$resizing: boolean}>`
-  height: ${DIVIDER_THICKNESS}px;
-  z-index: 1;
-  background: ${(p) => (p.$resizing ? Colors.accentGray() : Colors.keylineDefault())};
-  margin-top: -1px;
-  overflow: visible;
-  position: relative;
-`;
-
-const HorizontalDividerHitArea = styled.div`
-  width: 17px;
-  height: 100%;
-  z-index: 1;
-  cursor: ew-resize;
-  position: relative;
-  left: -8px;
-`;
-const VerticalDividerHitArea = styled.div`
-  height: 17px;
-  width: 100%;
-  z-index: 1;
-  cursor: ns-resize;
-  position: relative;
-  top: -8px;
-`;
-
-const Container = styled.div<{
-  axis?: 'horizontal' | 'vertical';
-  resizing: boolean;
-}>`
-  display: flex;
-  overflow: hidden;
-  flex-direction: ${({axis}) => (axis === 'vertical' ? 'column' : 'row')};
-  flex: 1 1;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-
-  .split-panel {
-    position: relative;
-    transition: ${({axis, resizing}) =>
-      resizing ? 'none' : axis === 'horizontal' ? 'width' : 'height'}
-      200ms ease-out;
-    flex-direction: column;
-    display: flex;
-    min-${({axis}) => (axis === 'vertical' ? 'height' : 'width')}: 0;
-    z-index: 0;
-  }
-`;

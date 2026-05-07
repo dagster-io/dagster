@@ -29,6 +29,7 @@ import ssl
 from datetime import datetime, timedelta
 
 import botocore
+import botocore.exceptions
 from dagster._vendored.dateutil.tz import tzutc
 
 from dagster_aws.utils.mrjob.retry import RetryWrapper
@@ -57,7 +58,7 @@ def _client_error_status(ex):
 
 def _is_retriable_client_error(ex):
     """Is the exception from a boto3 client retriable?"""
-    if isinstance(ex, botocore.exceptions.ClientError):  # pyright: ignore[reportAttributeAccessIssue]
+    if isinstance(ex, botocore.exceptions.ClientError):
         # these rarely get through in boto3
         code = _client_error_code(ex)
         # "Throttl" catches "Throttled" and "Throttling"

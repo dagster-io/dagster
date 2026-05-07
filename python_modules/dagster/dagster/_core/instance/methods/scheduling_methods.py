@@ -1,5 +1,6 @@
 """Scheduling methods implementation - consolidated from SchedulingDomain."""
 
+import logging
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Optional
 
@@ -120,6 +121,21 @@ class SchedulingMethods:
         stored_state = self.get_instigator_state(
             remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
+        # If the stored state has a different instigator type (e.g., this was a
+        # schedule with the same name), delete the invalid row so later reads
+        # don't re-hit it and we don't short-circuit on the old state's status
+        # or copy over incompatible data.
+        if stored_state and stored_state.instigator_type != InstigatorType.SENSOR:
+            logging.getLogger("dagster").warning(
+                "Deleting stored %s instigator state for %s since a sensor with the "
+                "same name is being started.",
+                stored_state.instigator_type.value,
+                remote_sensor.get_remote_origin_id(),
+            )
+            self.delete_instigator_state(
+                remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
+            )
+            stored_state = None
 
         computed_state = remote_sensor.get_current_instigator_state(stored_state)
         if computed_state.is_running:
@@ -162,6 +178,21 @@ class SchedulingMethods:
         )
 
         stored_state = self.get_instigator_state(instigator_origin_id, selector_id)
+        # If the stored state has a different instigator type (e.g., this was a
+        # schedule with the same name), delete the invalid row so later reads
+        # don't re-hit it and we don't short-circuit on the old state's status
+        # or copy over incompatible data. Only do this when we have a
+        # remote_sensor — without it we have no way to rebuild a correct state.
+        if stored_state and remote_sensor and stored_state.instigator_type != InstigatorType.SENSOR:
+            logging.getLogger("dagster").warning(
+                "Deleting stored %s instigator state for %s since a sensor with the "
+                "same name is being stopped.",
+                stored_state.instigator_type.value,
+                instigator_origin_id,
+            )
+            self.delete_instigator_state(instigator_origin_id, selector_id)
+            stored_state = None
+
         computed_state: InstigatorState
         if remote_sensor:
             computed_state = remote_sensor.get_current_instigator_state(stored_state)
@@ -199,6 +230,21 @@ class SchedulingMethods:
         stored_state = self.get_instigator_state(
             remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
+        # If the stored state has a different instigator type (e.g., this was a
+        # schedule with the same name), delete the invalid row so we add a
+        # fresh state of the correct type below.
+        if stored_state and stored_state.instigator_type != InstigatorType.SENSOR:
+            logging.getLogger("dagster").warning(
+                "Deleting stored %s instigator state for %s since a sensor with the "
+                "same name is being reset.",
+                stored_state.instigator_type.value,
+                remote_sensor.get_remote_origin_id(),
+            )
+            self.delete_instigator_state(
+                remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
+            )
+            stored_state = None
+
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:

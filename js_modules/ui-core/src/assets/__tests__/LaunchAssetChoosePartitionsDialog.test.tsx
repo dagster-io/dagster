@@ -119,13 +119,13 @@ describe('launchAssetChoosePartitionsDialog', () => {
     });
 
     const link = await screen.findByTestId('add-partition-link');
-    userEvent.click(link);
+    await userEvent.click(link);
     const partitionInput = await screen.findByTestId('partition-input');
     await userEvent.type(partitionInput, 'test2');
     expect(assetASecondQueryMockResult).not.toHaveBeenCalled();
     expect(assetBSecondQueryMockResult).not.toHaveBeenCalled();
     const savePartitionButton = screen.getByTestId('save-partition-button');
-    userEvent.click(savePartitionButton);
+    await userEvent.click(savePartitionButton);
 
     // Verify that it refreshes asset health after partition is added
     await waitFor(() => {

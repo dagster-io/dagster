@@ -44,6 +44,10 @@ const config = {
           },
         },
       },
+      define: {
+        ...config.define,
+        'process.env.STORYBOOK': JSON.stringify('true'),
+      },
       resolve: {
         ...config.resolve,
         alias: {

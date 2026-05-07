@@ -315,7 +315,7 @@ class Field:
             evr = validate_config(self.config_type, default_value)
             if not evr.success:
                 raise DagsterInvalidConfigError(
-                    "Invalid default_value for Field.",
+                    "Invalid default_value for Field. Ensure all required config entries are provided and all values match the expected types.",
                     evr.errors,
                     default_value,
                 )

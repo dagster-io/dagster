@@ -1,8 +1,9 @@
+import clsx from 'clsx';
 import * as React from 'react';
-import styled, {css} from 'styled-components';
 
-import {Colors} from './Color';
-import {FontFamily} from './styles';
+import styles from './css/Tabs.module.css';
+
+export {default as tabStyles} from './css/Tabs.module.css';
 
 export interface TabStyleProps {
   disabled?: boolean;
@@ -10,13 +11,13 @@ export interface TabStyleProps {
   count?: number | 'indeterminate' | null;
   icon?: React.ReactNode;
   title?: React.ReactNode;
-  $size?: 'small' | 'large';
+  size?: 'small' | 'large';
 }
 
 export const getTabA11yProps = (props: {selected?: boolean; disabled?: boolean}) => {
   const {selected, disabled} = props;
   return {
-    role: 'tab',
+    role: 'tab' as const,
     tabIndex: disabled ? -1 : 0,
     'aria-disabled': disabled,
     'aria-expanded': selected,
@@ -31,109 +32,79 @@ export const getTabContent = (props: TabStyleProps & {title?: React.ReactNode}) 
       {title}
       {icon}
       {count !== undefined ? (
-        <Count $disabled={!!props.disabled}>{count === 'indeterminate' ? '\u2013' : count}</Count>
+        <div className={clsx(styles.count, props.disabled && styles.disabled)}>
+          {count === 'indeterminate' ? '\u2013' : count}
+        </div>
       ) : null}
     </>
   );
 };
 
-const Count = styled.div<{$disabled: boolean}>`
-  display: inline;
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: -0.02%;
-  padding: 0 6px;
-  color: ${({$disabled}) => ($disabled ? Colors.textDisabled() : Colors.textDefault())};
-  background: ${Colors.backgroundGray()};
-  border-radius: 4px;
-`;
-
-export const tabCSS = css<TabStyleProps>`
-  background: none;
-  border: none;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-  padding: ${({$size}) => ($size === 'small' ? '10px 0' : '16px 0')};
-  box-shadow: ${({selected}) => (selected ? Colors.textDefault() : 'transparent')} 0 -2px 0 inset;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  gap: 6px;
-
-  &,
-  & a {
-    cursor: pointer;
-    user-select: none;
-    color: ${({selected, disabled}) =>
-      selected ? Colors.textDefault() : disabled ? Colors.textDisabled() : Colors.textLight()};
-  }
-
-  ${({disabled}) =>
-    disabled
-      ? css`
-          & .iconGlobal {
-            background-color: ${Colors.textDisabled()};
-          }
-        `
-      : null}
-
-  /* Focus outline only when using keyboard, not when focusing via mouse. */
-  &:focus {
-    outline: none !important;
-    box-shadow: ${({selected, disabled}) =>
-        selected ? Colors.textDefault() : disabled ? 'transparent' : Colors.accentGray()}
-      0 -2px 0 inset;
-  }
-
-  &:hover {
-    &,
-    a {
-      text-decoration: none;
-      color: ${({selected, disabled}) =>
-        selected ? Colors.textDefault() : disabled ? Colors.textDisabled() : Colors.textDefault()};
-    }
-
-    ${({disabled}) => (disabled ? `color: ${Colors.textDisabled()};` : null)}
-  }
-`;
-
 interface TabProps extends TabStyleProps, Omit<React.ComponentPropsWithoutRef<'button'>, 'title'> {}
 
-export const Tab = styled((props: TabProps) => {
-  const containerProps = getTabA11yProps(props);
-  const content = getTabContent(props);
-
-  const titleText = typeof props.title === 'string' ? props.title : undefined;
+export const Tab = ({
+  selected,
+  disabled,
+  size,
+  count,
+  icon,
+  title,
+  className,
+  ...rest
+}: TabProps) => {
+  const containerProps = getTabA11yProps({selected, disabled});
+  const content = getTabContent({selected, disabled, size, count, icon, title});
+  const titleText = typeof title === 'string' ? title : undefined;
 
   return (
-    <button {...props} {...containerProps} title={titleText} type="button">
+    <button
+      className={clsx(
+        styles.tab,
+        selected && styles.selected,
+        disabled && styles.disabled,
+        size === 'small' && styles.small,
+        className,
+      )}
+      {...containerProps}
+      disabled={disabled}
+      {...rest}
+      title={titleText}
+      type="button"
+    >
       {content}
     </button>
   );
-})<TabStyleProps>`
-  ${tabCSS}
-`;
+};
 
-interface TabsProps {
-  children: Array<React.ReactElement<TabProps>>;
+interface TabsProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+  children: React.ReactNode;
   selectedTabId?: string;
-  onChange?: (selectedTabId: string) => void;
+  onChange?: (selectedTabId: any) => void;
   size?: 'small' | 'large';
 }
 
-export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', ...rest}) => {
+export const Tabs = ({
+  selectedTabId,
+  children,
+  onChange,
+  size = 'large',
+  className,
+  ...rest
+}: TabsProps) => {
   return (
-    <div {...rest} role="tablist">
+    <div
+      className={clsx(styles.tabs, size === 'small' && styles.small, className)}
+      role="tablist"
+      {...rest}
+    >
       {React.Children.map(children, (child) =>
-        child
+        React.isValidElement<TabProps>(child)
           ? React.cloneElement(child, {
               selected: child.props.selected || child.props.id === selectedTabId,
-              $size: size,
+              size,
               ...(onChange
                 ? {
-                    onClick: () => onChange(child.props.id),
+                    onClick: () => onChange(child.props.id ?? ''),
                   }
                 : {}),
             })
@@ -141,10 +112,4 @@ export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', 
       )}
     </div>
   );
-})<TabsProps>`
-  display: flex;
-  gap: 16px;
-  font-size: ${({size}) => (size === 'small' ? '12px' : '14px')};
-  line-height: ${({size}) => (size === 'small' ? '16px' : '20px')};
-  font-weight: 600;
-`;
+};

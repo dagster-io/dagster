@@ -21,7 +21,7 @@ def small_petals(snowflake: SnowflakeResource):
     """
 
     with snowflake.get_connection() as conn:
-        conn.cursor.execute(query)  # pyright: ignore[reportFunctionMemberAccess]
+        conn.cursor.execute(query)  # ty: ignore[unresolved-attribute]
 
 
 defs = Definitions(

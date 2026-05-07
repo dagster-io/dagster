@@ -20,7 +20,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.alert_policy", cls="AlertPolicyDocument"
+    module="dagster_rest_resources.schemas.alert_policy", cls="DgApiAlertPolicyDocument"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -40,7 +40,7 @@ def list_alert_policies_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.alert_policies import DgApiAlertPolicyApi
+    from dagster_rest_resources.api.alert_policy import DgApiAlertPolicyApi
 
     api = DgApiAlertPolicyApi(client)
 
@@ -59,7 +59,7 @@ def list_alert_policies_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.alert_policy", cls="AlertPolicySyncResult"
+    module="dagster_rest_resources.schemas.alert_policy", cls="DgApiAlertPolicySyncResult"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -96,12 +96,12 @@ def sync_alert_policies_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, cli_config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.alert_policies import DgApiAlertPolicyApi
+    from dagster_rest_resources.api.alert_policy import DgApiAlertPolicyApi
 
     api = DgApiAlertPolicyApi(client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.sync_alert_policies(alert_policies)
+        result = api.action_sync_alert_policies(alert_policies)
         output = format_alert_policy_sync_result(result, as_json=output_json)
         click.echo(output)
 

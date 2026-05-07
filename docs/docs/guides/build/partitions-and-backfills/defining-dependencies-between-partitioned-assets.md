@@ -33,7 +33,7 @@ Default partition dependency rules can be overridden by providing a <PyObject se
 
 To override partition dependency rules for basic asset dependencies, you can use <PyObject section="assets" module="dagster" object="AssetDep" /> to specify the partition dependency on an upstream asset:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset_mappings.py" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioned_asset_mappings.py" title="src/<project_name>/defs/assets.py" />
 
 ### Managed-loading asset dependencies
 
@@ -41,7 +41,7 @@ To override partition dependency rules for managed-loading asset dependencies, y
 
 In the following code, we use a <PyObject section="partitions" module="dagster" object="TimeWindowPartitionMapping" /> to specify that each partition of a daily-partitioned asset should depend on the prior day's partition in an upstream asset:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_mapping.py" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partition_mapping.py" title="src/<project_name>/defs/assets.py" />
 
 For a list of available `PartitionMappings`, see the [API docs](/api/dagster/partitions#dagster.PartitionMapping). Note that custom `PartitionMapping` and overriding `PartitionMapping` outside of Dagster is not currently supported.
 
@@ -54,7 +54,7 @@ The following example creates two partitions: `daily_sales_data` and `daily_sale
 <details>
 <summary>Show example</summary>
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioning/time_based_partitioning.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 </details>
 
@@ -62,7 +62,7 @@ However, sometimes you might want to define dependencies between different time-
 
 Consider the following example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioning/time_based_partition_dependencies.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 In this example:
 

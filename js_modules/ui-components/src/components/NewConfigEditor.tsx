@@ -21,6 +21,7 @@ import {StyledRawCodeMirror} from './StyledRawCodeMirror';
 import {patchLint} from './configeditor/codemirror-yaml/lint';
 import {
   YamlModeValidateFunction,
+  YamlModeValidationError,
   YamlModeValidationResult,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
@@ -31,7 +32,12 @@ import {ConfigSchema} from './configeditor/types/ConfigSchema';
 export {isHelpContextEqual} from './configeditor/isHelpContextEqual';
 export {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
 
-export type {ConfigEditorHelpContext, ConfigSchema, YamlModeValidationResult};
+export type {
+  ConfigEditorHelpContext,
+  ConfigSchema,
+  YamlModeValidationError,
+  YamlModeValidationResult,
+};
 
 patchLint();
 

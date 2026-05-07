@@ -61,7 +61,7 @@ We will set up a few non-default Pipes components to streamline the otherwise ch
 1. Let's start by creating the asset and opening a Pipes session. We will be using S3 to pass Pipes messages from the Spark job to Dagster, so we will create `PipesS3MessageReader` and `PipesS3ContextInjector` objects. (Technically, it's not strictly required to use S3 for passing the Dagster context, but storing it there will decrease the CLI arguments size).
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/pyspark/dagster_code.py"
   startAfter="start_pipes_session_marker"
   endBefore="end_pipes_session_marker"
   title="src/<project_name>/defs/assets.py"
@@ -72,7 +72,7 @@ Notice how `PipesS3MessageReader` has `include_stdio_in_messages=True`. This set
 2. We will be using CLI arguments to pass the bootstrap information from Dagster to the Spark job. We will fetch them from the `session.get_bootstrap_cli_arguments` method. We pass these arguments to `spark-submit` along with a few other settings.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/pyspark/dagster_code.py"
   startAfter="end_pipes_session_marker"
   endBefore="start_definitions_marker"
 />
@@ -87,7 +87,7 @@ In other Pipes workflows, passing the bootstrap information from Dagster to the 
 
 First, create a new file named `script.py`, then add the following code to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/pyspark/script.py" />
 
 Note how `PipesCliArgsParamsLoader` is used to load the CLI arguments passed by Dagster. This information will be used to automatically configure `PipesS3MessageWriter` and `PipesS3ContextLoader`.
 
@@ -128,7 +128,7 @@ COPY dagster_code.py script.py ./
 
 3. Create a `docker-compose.yml`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/docker-compose.yml" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/pyspark/docker-compose.yml" />
 
 4. Start the Dagster dev instance inside Docker:
 

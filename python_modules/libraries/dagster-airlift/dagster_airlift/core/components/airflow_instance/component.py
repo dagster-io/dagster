@@ -237,7 +237,7 @@ class AirflowInstanceComponent(StateBackedComponent, Resolvable):
     mappings: Sequence[AirflowDagMapping] | None = None
     source_code_retrieval_enabled: bool | None = None
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.local_filesystem
     )
 
     @property

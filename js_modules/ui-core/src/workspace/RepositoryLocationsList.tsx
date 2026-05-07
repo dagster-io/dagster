@@ -103,7 +103,7 @@ export const RepositoryLocationsList = ({
             const hasDocs = locationsWithDocs.has(repoAddressString);
 
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <VirtualizedCodeLocationRow
                   index={index}
                   locationEntry={row.locationEntry}
@@ -122,7 +122,7 @@ export const RepositoryLocationsList = ({
           const hasDocs = locationsWithDocs.has(repoAddressString);
 
           return (
-            <Row $height={size} $start={start} key={key}>
+            <Row height={size} start={start} key={key}>
               <VirtualizedCodeLocationRepositoryRow
                 index={index}
                 locationStatus={row.locationStatus}

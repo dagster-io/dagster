@@ -1,0 +1,55 @@
+query ListAssetChecks($assetKey: AssetKeyInput!) {
+  assetNodeOrError(assetKey: $assetKey) {
+    __typename
+    ... on AssetNode {
+      assetChecksOrError {
+        __typename
+        ... on AssetChecks {
+          checks {
+            name
+            description
+            blocking
+            jobNames
+            canExecuteIndividually
+            assetKey {
+              path
+            }
+          }
+        }
+        ... on AssetCheckNeedsMigrationError {
+          message
+        }
+        ... on AssetCheckNeedsUserCodeUpgrade {
+          message
+        }
+        ... on AssetCheckNeedsAgentUpgradeError {
+          message
+        }
+      }
+    }
+    ... on AssetNotFoundError {
+      message
+    }
+  }
+}
+
+query ListAssetCheckExecutions(
+  $assetKey: AssetKeyInput!
+  $checkName: String!
+  $limit: Int!
+  $cursor: String
+) {
+  assetCheckExecutions(
+    assetKey: $assetKey
+    checkName: $checkName
+    limit: $limit
+    cursor: $cursor
+  ) {
+    id
+    runId
+    status
+    timestamp
+    partition
+    stepKey
+  }
+}

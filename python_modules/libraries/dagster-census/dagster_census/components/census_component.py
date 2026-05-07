@@ -47,7 +47,7 @@ def resolve_sync_selector(
 ) -> Callable[[CensusSync], bool] | None:
     if isinstance(model, str):
         resolved = context.resolve_value(model)
-        resolved = check.callable_param(resolved, "unknown")  # pyright: ignore[reportArgumentType]
+        resolved = check.callable_param(resolved, "unknown")
         return resolved
     if isinstance(model, CensusSyncSelectorByName.model()):
         resolved = resolve_fields(model, CensusSyncSelectorByName.model(), context)

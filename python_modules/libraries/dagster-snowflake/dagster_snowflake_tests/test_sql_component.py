@@ -75,7 +75,7 @@ def test_snowflake_sql_component2(snowflake_connect):
         "attributes": {
             "sql_template": "SELECT * FROM MY_TABLE;",
             "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
-            "connection": "{{ load_component_at_path('sql_connection_component') }}",
+            "connection": "{{ context.load_component('sql_connection_component') }}",
         },
     }
 
@@ -132,7 +132,7 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
                     "date": "2024-03-20",
                     "limit": 100,
                 },
-                "connection": "{{ load_component_at_path('sql_connection_component') }}",
+                "connection": "{{ context.load_component('sql_connection_component') }}",
             },
         }
         with setup_snowflake_component_with_external_connection(
@@ -166,7 +166,7 @@ def test_snowflake_sql_component_with_execution(snowflake_connect):
             "sql_template": "SELECT * FROM MY_TABLE;",
             "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
             "execution": {"description": "This is a test op description"},
-            "connection": "{{ load_component_at_path('sql_connection_component') }}",
+            "connection": "{{ context.load_component('sql_connection_component') }}",
         },
     }
     with setup_snowflake_component_with_external_connection(
@@ -202,7 +202,7 @@ def test_custom_snowflake_sql_component(snowflake_connect):
         "attributes": {
             "table_name": "TESTDB.TESTSCHEMA.EXTERNAL_TABLE",
             "assets": [{"key": "TESTDB/TESTSCHEMA/EXTERNAL_TABLE"}],
-            "connection": "{{ load_component_at_path('sql_connection_component') }}",
+            "connection": "{{ context.load_component('sql_connection_component') }}",
         },
     }
 

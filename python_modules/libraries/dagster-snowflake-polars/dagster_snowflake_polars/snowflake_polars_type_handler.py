@@ -5,7 +5,11 @@ from dagster import InputContext, MetadataValue, OutputContext, TableColumn, Tab
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
+from dagster_snowflake.snowflake_io_manager import (
+    SnowflakeDbClient,
+    SnowflakeIOManager,
+    partition_where_clause,
+)
 
 
 def _table_exists(table_slice: TableSlice, connection):
@@ -60,26 +64,23 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         write_mode = "replace"
 
         # Use the fully qualified table name
-        full_table_name = f"{table_slice.database.upper()}.{table_slice.schema.upper()}.{table_slice.table.upper()}"  # pyright: ignore[reportOptionalMemberAccess]
+        full_table_name = f"{table_slice.database.upper()}.{table_slice.schema.upper()}.{table_slice.table.upper()}"  # ty: ignore[unresolved-attribute]
 
         # If we're appending to a partition, we need to delete existing data for that partition first
         # Determine the write mode based on whether we're dealing with partitions
         # For partitioned assets, we should append rather than replace
         if table_slice.partition_dimensions and _table_exists(table_slice, connection):
             write_mode = "append"
-            # Build DELETE statement for the partition
-            delete_stmt = f"DELETE FROM {full_table_name} WHERE "
-            partition_conditions = []
-            for dim in table_slice.partition_dimensions:
-                partition_conditions.append(f"{dim.partition_expr} = '{dim.partitions[0]}'")
-            delete_stmt += " AND ".join(partition_conditions)
+            delete_stmt = f"DELETE FROM {full_table_name} WHERE\n" + partition_where_clause(
+                table_slice.partition_dimensions
+            )
             connection.cursor().execute(delete_stmt)
 
         # Write using Polars native write_database with ADBC
         # This is more efficient than converting to pandas
 
         with connection.cursor() as cursor:
-            cursor.execute(f"USE DATABASE {table_slice.database.upper()}")  # pyright: ignore[reportOptionalMemberAccess]
+            cursor.execute(f"USE DATABASE {table_slice.database.upper()}")  # ty: ignore[unresolved-attribute]
             cursor.execute(f"USE SCHEMA {table_slice.schema.upper()}")
 
         with_uppercase_cols.write_database(
@@ -93,9 +94,9 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
             # output object may be a slice/partition, so we output different metadata keys based on
             # whether this output represents an entire table or just a slice/partition
             **(
-                TableMetadataSet(partition_row_count=obj.shape[0])
+                TableMetadataSet(partition_row_count=obj.shape[0], storage_kind="snowflake")  # ty: ignore[unknown-argument]
                 if context.has_partition_key
-                else TableMetadataSet(row_count=obj.shape[0])
+                else TableMetadataSet(row_count=obj.shape[0], storage_kind="snowflake")  # ty: ignore[unknown-argument]
             ),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(

@@ -27,7 +27,7 @@ Every job has an executor. The default executor is the <PyObject section="execut
 An executor can be specified directly on a job by supplying an <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" />:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/deploying/executors/executors.py"
+  path="docs_snippets/docs_snippets/guides/operate/executors/executors.py"
   title="src/<project_name>/defs/jobs.py"
   startAfter="start_executor_on_job"
   endBefore="end_executor_on_job"
@@ -40,7 +40,7 @@ To specify a default executor for all jobs and assets provided to a code locatio
 If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the code location:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/deploying/executors/code_location_executor.py"
+  path="docs_snippets/docs_snippets/guides/operate/executors/code_location_executor.py"
   title="src/<project_name>/defs/executor.py"
 />
 

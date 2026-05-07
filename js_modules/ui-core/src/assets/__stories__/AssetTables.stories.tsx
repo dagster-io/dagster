@@ -1,6 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
+import {MemoryRouter} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
-import {StorybookProvider} from '../../testing/StorybookProvider';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
@@ -28,20 +29,24 @@ const MOCKS = [
 
 export const GlobalCatalogNoPrefix = () => {
   return (
-    <StorybookProvider routerProps={{initialEntries: ['/']}}>
-      <MockedProvider mocks={MOCKS}>
-        <AssetsCatalogTable prefixPath={[]} setPrefixPath={() => {}} />
-      </MockedProvider>
-    </StorybookProvider>
+    <RecoilRoot>
+      <MemoryRouter initialEntries={['/']}>
+        <MockedProvider mocks={MOCKS}>
+          <AssetsCatalogTable prefixPath={[]} setPrefixPath={() => {}} />
+        </MockedProvider>
+      </MemoryRouter>
+    </RecoilRoot>
   );
 };
 
 export const GlobalCatalogWithPrefix = () => {
   return (
-    <StorybookProvider routerProps={{initialEntries: ['/']}}>
-      <MockedProvider mocks={MOCKS}>
-        <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
-      </MockedProvider>
-    </StorybookProvider>
+    <RecoilRoot>
+      <MemoryRouter initialEntries={['/']}>
+        <MockedProvider mocks={MOCKS}>
+          <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+        </MockedProvider>
+      </MemoryRouter>
+    </RecoilRoot>
   );
 };

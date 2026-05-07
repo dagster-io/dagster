@@ -436,7 +436,7 @@ class EcsStepHandler(StepHandler):
 
         return CheckStepHealthResult.healthy()
 
-    def terminate_step(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def terminate_step(  # ty: ignore[invalid-method-override]
         self,
         step_handler_context: StepHandlerContext,
     ) -> None:

@@ -208,6 +208,7 @@ class GrapheneRunQueueConfig(graphene.ObjectType):
     maxConcurrentRuns = graphene.NonNull(graphene.Int)
     tagConcurrencyLimitsYaml = graphene.String()
     isOpConcurrencyAware = graphene.Boolean()
+    maxConcurrentRunsAllBranchDeployments = graphene.Int()
 
     class Meta:
         name = "RunQueueConfig"
@@ -218,6 +219,9 @@ class GrapheneRunQueueConfig(graphene.ObjectType):
 
     def resolve_maxConcurrentRuns(self, _graphene_info: ResolveInfo):
         return self._run_queue_config.max_concurrent_runs
+
+    def resolve_maxConcurrentRunsAllBranchDeployments(self, _graphene_info: ResolveInfo):
+        return self._run_queue_config.max_concurrent_runs_all_branch_deployments
 
     def resolve_tagConcurrencyLimitsYaml(self, _graphene_info: ResolveInfo):
         if not self._run_queue_config.tag_concurrency_limits:

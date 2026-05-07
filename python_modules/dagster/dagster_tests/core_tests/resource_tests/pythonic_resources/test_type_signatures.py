@@ -14,7 +14,9 @@ def get_pyright_reveal_type_output(filename) -> list[str]:
 
 
 def get_mypy_type_output(filename) -> list[str]:
-    stdout = subprocess.check_output(["mypy", filename]).decode("utf-8")
+    # --no-namespace-packages keeps mypy from naming the temp file's module
+    # by walking up parent dirs (e.g. tmp.tmpXXX.test instead of just test).
+    stdout = subprocess.check_output(["mypy", "--no-namespace-packages", filename]).decode("utf-8")
     match = re.findall(r'note: Revealed type is "([^"]+)"', stdout)
     assert match
     return match

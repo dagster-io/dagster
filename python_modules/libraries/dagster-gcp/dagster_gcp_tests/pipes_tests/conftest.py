@@ -23,7 +23,7 @@ def gcs_bucket() -> Iterable[str]:
 
 
 @pytest.fixture
-def gcs_client(gcs_bucket: str) -> GCSClient:
+def gcs_client(gcs_bucket: str) -> Iterable[GCSClient]:
     os.environ["STORAGE_EMULATOR_HOST"] = GCS_SERVER_URL
     client = GCSClient()
     try:

@@ -87,6 +87,31 @@ def test_compute_log_to_disk():
 @pytest.mark.skipif(
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
+def test_logs_captured_message_text():
+    """Regression test: LOGS_CAPTURED message should use neutral wording that does not
+    imply real-time streaming, since cloud compute log managers only upload on completion
+    by default (dagster-io/dagster#4341).
+    """
+    with dg.instance_for_test() as instance:
+        spew_job = define_job()
+        result = spew_job.execute_in_process(instance=instance)
+        assert result.success
+
+        capture_events = [
+            event
+            for event in result.all_events
+            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        ]
+        assert len(capture_events) == 1
+        event = capture_events[0]
+        assert event.message is not None
+        assert "Capturing logs for process (pid:" in event.message
+        assert "Started capturing" not in event.message
+
+
+@pytest.mark.skipif(
+    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+)
 def test_compute_log_to_disk_multiprocess():
     spew_job = dg.reconstructable(define_job)
     with dg.instance_for_test() as instance:

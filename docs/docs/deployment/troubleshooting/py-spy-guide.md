@@ -1,7 +1,7 @@
 ---
-title: Profiling hanging or slow code with py-spy
+title: 'Troubleshooting hanging or slow code with py-spy'
 description: Debug slow or hanging Dagster code with py-spy.
-sidebar_position: 200
+sidebar_position: 30
 ---
 
 If your Dagster code is hanging or taking longer than you expect to execute, we recommend using [py-spy](https://github.com/benfred/py-spy) to profile your code.
@@ -18,7 +18,7 @@ For slow code, `py-spy record` can produce a file that gives you a flame graph o
 
 For example, to run `py-spy` locally to understand why definitions are taking a long time to import:
 
-```
+```bash
 sudo py-spy record -f speedscope --idle -- dagster definitions validate
 ```
 
@@ -30,7 +30,7 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
     <TabItem value="oss" label="Dagster OSS">
         If you're using the Dagster Open Source Helm chart, you can configure the run launcher to launch each run with
 
-        ```
+        ```yaml
         runLauncher:
           type: K8sRunLauncher
           config:
@@ -46,29 +46,23 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
         For more information on applying this type of configuration to your Kubernetes pod in Dagster OSS, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment#instance-level-kubernetes-configuration).
     </TabItem>
     <TabItem value="hybrid" label="Dagster+ Hybrid with Kubernetes agent">
-        For example, you can set the following in your `build.yaml` file for your code location if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
+        For example, you can set the following in your `container_context.yaml` file if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
 
-        ```
-        # build.yaml
-        locations:
-        - location_name: cloud-examples
-          image: dagster/dagster-cloud-examples:latest
-          code_source:
-            package_name: dagster_cloud_examples
-          container_context:
-            k8s:
-              server_k8s_config: # Raw kubernetes config for code servers launched by the agent
-                container_config:
-                    securityContext:
-                      capabilities:
-                        add:
-                          - SYS_PTRACE
-                run_k8s_config: # Raw kubernetes config for runs launched by the agent
-                  container_config:
-                    securityContext:
-                      capabilities:
-                        add:
-                          - SYS_PTRACE
+        ```yaml
+        # container_context.yaml
+        k8s:
+          server_k8s_config:
+            container_config:
+              securityContext:
+                capabilities:
+                  add:
+                    - SYS_PTRACE
+          run_k8s_config:
+            container_config:
+              securityContext:
+                capabilities:
+                  add:
+                    - SYS_PTRACE
         ```
 
         For more information on applying this type of customization to your Kubernetes pod in Dagster+, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).
@@ -85,13 +79,13 @@ For more information on running `py-spy` in Kubernetes, see [this `py-spy` guide
 2.  Launch a run and wait until it hangs.
 3.  Check the event logs for the run to find the run pod, then `kubectl exec` into the pod to run `py-spy`:
 
-    ```
+    ```bash
     kubectl exec -it <pod name here> /bin/bash
     ```
 
 4.  Install `py-spy`, then run it:
 
-    ```
+    ```bash
     pip install py-spy
     py-spy dump --pid 1
     ```

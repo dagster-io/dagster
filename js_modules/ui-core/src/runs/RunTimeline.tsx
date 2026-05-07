@@ -852,7 +852,7 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const run = batch.runs[index]!;
               return (
-                <Row key={key} $height={size} $start={start}>
+                <Row key={key} height={size} start={start}>
                   <Box
                     key={key}
                     border={index > 0 ? 'top' : null}

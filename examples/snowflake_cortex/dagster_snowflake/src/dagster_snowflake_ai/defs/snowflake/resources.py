@@ -127,7 +127,7 @@ class SnowflakeConfig(dg.ConfigurableResource):
         else:
             resource_kwargs["password"] = self.password
 
-        return SnowflakeResource(**resource_kwargs)  # type: ignore[call-arg]
+        return SnowflakeResource(**resource_kwargs)
 
 
 class SnowflakeResourceHelper:

@@ -6,14 +6,17 @@ GraphQL client mocking or external dependencies.
 
 import json
 
-from dagster_dg_cli.api_layer.schemas.asset_check import (
+from dagster_dg_cli.cli.api.formatters import format_asset_check_executions, format_asset_checks
+from dagster_rest_resources.api.asset_check import (
     DgApiAssetCheck,
     DgApiAssetCheckExecution,
     DgApiAssetCheckExecutionList,
-    DgApiAssetCheckExecutionStatus,
     DgApiAssetCheckList,
 )
-from dagster_dg_cli.cli.api.formatters import format_asset_check_executions, format_asset_checks
+from dagster_rest_resources.schemas.enums import (
+    DgApiAssetCheckCanExecuteIndividually,
+    DgApiAssetCheckExecutionResolvedStatus,
+)
 
 
 class TestFormatAssetChecks:
@@ -28,7 +31,7 @@ class TestFormatAssetChecks:
                 description="Checks that the asset is materialized within the last 24 hours",
                 blocking=True,
                 job_names=["__ASSET_JOB_0"],
-                can_execute_individually="CAN_EXECUTE",
+                can_execute_individually=DgApiAssetCheckCanExecuteIndividually.CAN_EXECUTE,
             ),
             DgApiAssetCheck(
                 name="row_count_check",
@@ -36,7 +39,7 @@ class TestFormatAssetChecks:
                 description="Validates minimum row count",
                 blocking=False,
                 job_names=["__ASSET_JOB_0"],
-                can_execute_individually="CAN_EXECUTE",
+                can_execute_individually=DgApiAssetCheckCanExecuteIndividually.CAN_EXECUTE,
             ),
             DgApiAssetCheck(
                 name="schema_check",
@@ -44,7 +47,7 @@ class TestFormatAssetChecks:
                 description=None,
                 blocking=False,
                 job_names=[],
-                can_execute_individually="REQUIRES_MATERIALIZATION",
+                can_execute_individually=DgApiAssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION,
             ),
         ]
         return DgApiAssetCheckList(items=checks)
@@ -89,7 +92,7 @@ class TestFormatAssetCheckExecutions:
             DgApiAssetCheckExecution(
                 id="exec-001",
                 run_id="run-abc-123",
-                status=DgApiAssetCheckExecutionStatus.SUCCEEDED,
+                status=DgApiAssetCheckExecutionResolvedStatus.SUCCEEDED,
                 timestamp=1706745600.0,  # 2024-01-31T16:00:00 UTC
                 step_key="my_asset_freshness_check",
                 check_name="freshness_check",
@@ -98,7 +101,7 @@ class TestFormatAssetCheckExecutions:
             DgApiAssetCheckExecution(
                 id="exec-002",
                 run_id="run-def-456",
-                status=DgApiAssetCheckExecutionStatus.FAILED,
+                status=DgApiAssetCheckExecutionResolvedStatus.FAILED,
                 timestamp=1706659200.0,  # 2024-01-30T16:00:00 UTC
                 step_key="my_asset_freshness_check",
                 check_name="freshness_check",
@@ -107,7 +110,7 @@ class TestFormatAssetCheckExecutions:
             DgApiAssetCheckExecution(
                 id="exec-003",
                 run_id="run-ghi-789",
-                status=DgApiAssetCheckExecutionStatus.IN_PROGRESS,
+                status=DgApiAssetCheckExecutionResolvedStatus.IN_PROGRESS,
                 timestamp=1706572800.0,  # 2024-01-29T16:00:00 UTC
                 step_key="my_asset_freshness_check",
                 check_name="freshness_check",
@@ -147,65 +150,5 @@ class TestFormatAssetCheckExecutions:
         """Test formatting empty execution list as JSON."""
         execution_list = self._create_empty_executions()
         result = format_asset_check_executions(execution_list, as_json=True)
-        parsed = json.loads(result)
-        snapshot.assert_match(parsed)
-
-
-class TestAssetCheckDataProcessing:
-    """Test processing of asset check data structures."""
-
-    def test_asset_check_creation(self):
-        """Test creating an asset check with all fields."""
-        check = DgApiAssetCheck(
-            name="my_check",
-            asset_key="my/asset",
-            description="Test check",
-            blocking=True,
-            job_names=["job_1", "job_2"],
-            can_execute_individually="CAN_EXECUTE",
-        )
-        assert check.name == "my_check"
-        assert check.blocking is True
-        assert len(check.job_names) == 2
-
-    def test_asset_check_execution_all_statuses(self, snapshot):
-        """Test creating executions with all possible status values."""
-        executions = [
-            DgApiAssetCheckExecution(
-                id=f"exec-{status.value.lower()}",
-                run_id=f"run-{status.value.lower()}",
-                status=status,
-                timestamp=1706745600.0,
-                step_key="test_step",
-                check_name="test_check",
-                asset_key="my/asset",
-            )
-            for status in DgApiAssetCheckExecutionStatus
-        ]
-
-        execution_list = DgApiAssetCheckExecutionList(items=executions)
-        result = execution_list.model_dump_json(indent=2)
-        parsed = json.loads(result)
-        snapshot.assert_match(parsed)
-
-    def test_asset_check_list_serialization(self, snapshot):
-        """Test JSON serialization of asset check list."""
-        check_list = DgApiAssetCheckList(
-            items=[
-                DgApiAssetCheck(
-                    name="check_a",
-                    asset_key="my/asset",
-                    description="First check",
-                    blocking=True,
-                ),
-                DgApiAssetCheck(
-                    name="check_b",
-                    asset_key="my/asset",
-                    description=None,
-                    blocking=False,
-                ),
-            ]
-        )
-        result = check_list.model_dump_json(indent=2)
         parsed = json.loads(result)
         snapshot.assert_match(parsed)

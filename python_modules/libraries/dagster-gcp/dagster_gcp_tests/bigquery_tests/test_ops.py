@@ -133,7 +133,7 @@ def test_bad_config():
     for config_fragment, error_message in configs_and_expected_errors:
         config = {"ops": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = validate_config(env_type, config)
-        assert error_message in result.errors[0].message  # pyright: ignore[reportOptionalSubscript]
+        assert error_message in result.errors[0].message  # ty: ignore[not-subscriptable]
 
     configs_and_expected_validation_errors = [
         (
@@ -149,7 +149,7 @@ def test_bad_config():
     for config_fragment, error_message in configs_and_expected_validation_errors:
         config = {"ops": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = process_config(env_type, config)
-        assert error_message in result.errors[0].message  # pyright: ignore[reportOptionalSubscript]
+        assert error_message in result.errors[0].message  # ty: ignore[not-subscriptable]
 
 
 @pytest.mark.integration

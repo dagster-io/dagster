@@ -12,6 +12,7 @@ import {Link, useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AppContext} from '../../app/AppContext';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../../assets/globalAssetGraphPathToString';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {CopyIconButton} from '../../ui/CopyButton';
@@ -35,7 +36,7 @@ export const AssetPageHeader = ({
   const history = useHistory();
   const {basePath} = useContext(AppContext);
 
-  const copyableString = assetKey.path.join('/');
+  const copyableString = tokenForAssetKey(assetKey);
 
   const location = useLocation();
   const assetSelection = getAssetSelectionQueryString(location.search);

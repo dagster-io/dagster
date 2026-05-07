@@ -14,7 +14,7 @@ import click
 from botocore.exceptions import ClientError
 
 
-def get_s3_objects(s3_client: boto3.client, bucket: str, prefix: str) -> list[dict]:  # pyright: ignore (reportGeneralTypeIssues)
+def get_s3_objects(s3_client: boto3.client, bucket: str, prefix: str) -> list[dict]:  # ty: ignore (reportGeneralTypeIssues)
     """Get list of objects in the S3 bucket with the given prefix."""
     try:
         objects = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
@@ -24,7 +24,7 @@ def get_s3_objects(s3_client: boto3.client, bucket: str, prefix: str) -> list[di
         return []
 
 
-def delete_s3_prefix(s3_client: boto3.client, bucket: str, prefix: str) -> None:  # pyright: ignore (reportGeneralTypeIssues)
+def delete_s3_prefix(s3_client: boto3.client, bucket: str, prefix: str) -> None:  # ty: ignore (reportGeneralTypeIssues)
     """Delete all objects in the S3 bucket with the given prefix."""
     objects_to_delete = get_s3_objects(s3_client, bucket, prefix)
     if objects_to_delete:
@@ -38,7 +38,7 @@ def delete_s3_prefix(s3_client: boto3.client, bucket: str, prefix: str) -> None:
         click.echo(f"No existing contents found in s3://{bucket}/{prefix}")
 
 
-def upload_file(s3_client: boto3.client, file_path: str, bucket: str, object_name: str) -> bool:  # pyright: ignore (reportGeneralTypeIssues)
+def upload_file(s3_client: boto3.client, file_path: str, bucket: str, object_name: str) -> bool:  # ty: ignore (reportGeneralTypeIssues)
     """Upload a file to an S3 bucket."""
     try:
         s3_client.upload_file(file_path, bucket, object_name)
@@ -49,7 +49,7 @@ def upload_file(s3_client: boto3.client, file_path: str, bucket: str, object_nam
 
 
 def update_mwaa_environment(
-    mwaa_client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
+    mwaa_client: boto3.client,  # ty: ignore (reportGeneralTypeIssues)
     environment_name: str,
     s3_bucket: str,
     s3_key: str,
@@ -64,7 +64,7 @@ def update_mwaa_environment(
         )
         click.echo(f"MWAA environment {environment_name} updated successfully.")
     except ClientError as e:
-        if e.response["Error"]["Code"] == "ResourceNotFoundException":  # pyright: ignore (reportTypedDictNotRequiredAccess)
+        if e.response["Error"]["Code"] == "ResourceNotFoundException":
             click.echo(f"MWAA environment {environment_name} not found.")
             click.echo("To create a new environment, use the following information:")
             click.echo(f"S3 bucket: {s3_bucket}")

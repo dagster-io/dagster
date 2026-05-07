@@ -4,7 +4,7 @@ import frontmatter
 import markdown
 from dagster import file_relative_path
 from flask import Flask, abort, render_template_string
-from pygments.formatters import HtmlFormatter
+from pygments.formatters import HtmlFormatter  # ty: ignore[unresolved-import]
 
 app = Flask(__name__)
 

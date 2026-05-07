@@ -435,7 +435,7 @@ Dagster also supports fetching additional metadata at dbt execution time to atta
 
 Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags#source-code) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslator" />:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/code_references/with_dbt_code_references.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/with_dbt_code_references.py" />
 
 ### Customizing tags
 

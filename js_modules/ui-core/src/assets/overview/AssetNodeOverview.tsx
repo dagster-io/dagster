@@ -13,8 +13,8 @@ import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {FreshnessPolicySection} from './FreshnessPolicySection';
-import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {metadataForAssetNode} from '../AssetMetadata';
+import {WorkspaceAssetNode} from '../useAllAssets';
 import {AutomationDetailsSection} from './AutomationDetailsSection';
 import {AttributeAndValue, SectionEmptyState} from './Common';
 import {ComputeDetailsSection} from './ComputeDetailsSection';
@@ -23,7 +23,12 @@ import {FreshnessPolicyStatus} from './FreshnessPolicyStatus';
 import {LineageSection} from './LineageSection';
 import {useAssetsLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../../asset-graph/Utils';
-import {isCanonicalRowCountMetadataEntry} from '../../metadata/MetadataEntry';
+import {
+  MetadataEntryLabelOnly,
+  isCanonicalQueryCountMetadataEntry,
+  isCanonicalRowCountMetadataEntry,
+  isCanonicalSizeBytesMetadataEntry,
+} from '../../metadata/MetadataEntry';
 import {TableSchema, TableSchemaAssetContext} from '../../metadata/TableSchema';
 import {MetadataEntryFragment_IntMetadataEntry as IntMetadataEntry} from '../../metadata/types/MetadataEntryFragment.types';
 import {useRepositoryLocationForAddress} from '../../nav/useRepositoryLocationForAddress';
@@ -39,9 +44,15 @@ import {AssetChecksStatusSummary} from '../asset-checks/AssetChecksStatusSummary
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from '../globalAssetGraphPathToString';
 import {AssetKey} from '../types';
-import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {useLatestEvents} from '../useLatestEvents';
+
+const byteFormatter = new Intl.NumberFormat('en', {
+  style: 'unit',
+  unit: 'byte',
+  notation: 'compact',
+  unitDisplay: 'narrow',
+});
 
 export const AssetNodeOverview = ({
   assetKey,
@@ -54,9 +65,9 @@ export const AssetNodeOverview = ({
 }: {
   assetKey: AssetKey;
   assetNode: AssetViewDefinitionNodeFragment | undefined | null;
-  cachedAssetNode: AssetTableDefinitionFragment | undefined | null;
-  upstream: WorkspaceAssetFragment[] | null;
-  downstream: WorkspaceAssetFragment[] | null;
+  cachedAssetNode: WorkspaceAssetNode | undefined | null;
+  upstream: WorkspaceAssetNode[] | null;
+  downstream: WorkspaceAssetNode[] | null;
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
 }) => {
@@ -100,21 +111,16 @@ export const AssetNodeOverview = ({
     definitionLoadTimestamp: assetNodeLoadTimestamp,
   });
 
-  let rowCountMeta: IntMetadataEntry | undefined = materialization?.metadataEntries.find((entry) =>
-    isCanonicalRowCountMetadataEntry(entry),
-  ) as IntMetadataEntry | undefined;
+  const findCanonicalIntMeta = (
+    predicate: (entry: MetadataEntryLabelOnly) => boolean,
+  ): IntMetadataEntry | undefined =>
+    (materialization?.metadataEntries.find(predicate) ??
+      observation?.metadataEntries.find(predicate) ??
+      assetNode?.metadataEntries.find(predicate)) as IntMetadataEntry | undefined;
 
-  if (!rowCountMeta && observation) {
-    rowCountMeta = observation.metadataEntries.find((entry) =>
-      isCanonicalRowCountMetadataEntry(entry),
-    ) as IntMetadataEntry | undefined;
-  }
-
-  if (!rowCountMeta) {
-    rowCountMeta = assetNode?.metadataEntries.find((entry) =>
-      isCanonicalRowCountMetadataEntry(entry),
-    ) as IntMetadataEntry | undefined;
-  }
+  const rowCountMeta = findCanonicalIntMeta(isCanonicalRowCountMetadataEntry);
+  const sizeBytesMeta = findCanonicalIntMeta(isCanonicalSizeBytesMetadataEntry);
+  const queryCountMeta = findCanonicalIntMeta(isCanonicalQueryCountMetadataEntry);
 
   // The live data does not include a partition, but the timestamp on the live data triggers
   // an update of `observation` and `materialization`, so they should be in sync. To make sure
@@ -130,7 +136,9 @@ export const AssetNodeOverview = ({
     1,
     liveData?.assetChecks.length,
     internalFreshnessPolicy,
-    rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null,
+    rowCountMeta?.intValue != null,
+    sizeBytesMeta?.intValue != null,
+    queryCountMeta?.intValue != null,
   ].filter(Boolean).length;
 
   const renderStatusSection = () => (
@@ -172,12 +180,22 @@ export const AssetNodeOverview = ({
             freshnessPolicy={internalFreshnessPolicy}
           />
         ) : undefined}
-        {rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null ? (
-          <Box flex={{direction: 'column', gap: 6}}>
+        {rowCountMeta?.intValue != null ? (
+          <Box flex={{direction: 'column', gap: 4}}>
             <Subtitle2>Row count</Subtitle2>
-            <Box>
-              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue ?? 0)}</Tag>
-            </Box>
+            <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
+          </Box>
+        ) : undefined}
+        {sizeBytesMeta?.intValue != null ? (
+          <Box flex={{direction: 'column', gap: 4}}>
+            <Subtitle2>Storage</Subtitle2>
+            <Tag icon="database">{byteFormatter.format(sizeBytesMeta.intValue)}</Tag>
+          </Box>
+        ) : undefined}
+        {queryCountMeta?.intValue != null ? (
+          <Box flex={{direction: 'column', gap: 4}}>
+            <Subtitle2>Query count</Subtitle2>
+            <Tag icon="code_block">{numberFormatter.format(queryCountMeta.intValue)}</Tag>
           </Box>
         ) : undefined}
       </Box>

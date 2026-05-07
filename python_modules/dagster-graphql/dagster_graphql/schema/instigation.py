@@ -700,9 +700,11 @@ class GrapheneInstigationState(graphene.ObjectType):
                     REPOSITORY_LABEL_TAG: repository_label,
                 }
             )
+        instance = graphene_info.context.instance
+        limit = limit if limit is not None else instance.get_default_graphql_run_records_limit()
         return [
             GrapheneRun(record)
-            for record in graphene_info.context.instance.get_run_records(
+            for record in instance.get_run_records(
                 filters=filters,
                 limit=limit,
             )

@@ -1,0 +1,151 @@
+.title {
+  font-size: 32px;
+  line-height: 36px;
+  font-weight: 600;
+  -webkit-font-smoothing: antialiased;
+}
+
+.heading {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+.headline {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.subheading {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.subtitle1 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.subtitle2 {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.body {
+  font-family: var(--font-family-default);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.body1 {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.body2 {
+  font-family: var(--font-family-default);
+  line-height: 20px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.caption {
+  font-family: var(--font-family-default);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.captionSubtitle {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.captionBolded {
+  font-family: var(--font-family-default);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.code {
+  background-color: var(--color-background-blue);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-ligatures: none;
+  padding: 2px 4px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.captionMono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.subtitleLarge {
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+.subtitle {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+.subtitleSmall {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.bodyLarge {
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.bodySmall {
+  font-family: var(--font-family-default);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.monoLarge {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.monoSmall {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}

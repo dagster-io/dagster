@@ -51,7 +51,11 @@ from dagster_k8s.client import (
     WaitForPodState,
 )
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
-from dagster_k8s.utils import detect_current_namespace, get_common_labels
+from dagster_k8s.utils import (
+    apply_no_proxy_env_workaround,
+    detect_current_namespace,
+    get_common_labels,
+)
 
 INIT_WAIT_TIMEOUT_FOR_READY = 1800.0  # 30mins
 INIT_WAIT_TIMEOUT_FOR_TERMINATE = 10.0  # 10s
@@ -438,8 +442,10 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                 context=self.kube_context,
             )
 
+        apply_no_proxy_env_workaround()
+
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -608,7 +614,7 @@ def build_pod_body(
     base_pod_meta: Mapping[str, Any] | None,
     base_pod_spec: Mapping[str, Any] | None,
 ):
-    meta = {
+    meta: dict[str, Any] = {
         **(k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, base_pod_meta or {})),
         "name": pod_name,
     }

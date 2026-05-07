@@ -218,6 +218,7 @@ def check_connector_sync(
                 database=destination.database if destination else None,
                 schema=schema.name_in_destination,
                 table=table.name_in_destination,
+                service=destination.service if destination else None,
             )
 
             asset_events.append(

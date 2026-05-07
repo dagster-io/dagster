@@ -69,7 +69,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In your Dagster project, create a file named `dagster_databricks_pipes.py` and paste in the following code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/databricks/databricks_asset_client.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -110,7 +110,7 @@ The [`dagster-databricks`](/integrations/libraries/databricks/dagster-databricks
 Add the following to the bottom of `dagster_databricks_pipes.py` to define the resource and a <PyObject section="definitions" module="dagster" object="Definitions" /> object that binds it to the `databricks_asset`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/databricks/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 
@@ -133,7 +133,7 @@ dbfs cp my_python_script.py dbfs:/my_python_script.py
 
 Let's look at the script itself:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/databricks/databricks_script.py" />
 
 :::tip
 
@@ -159,7 +159,7 @@ For illustrative purposes, we've created a Python script from scratch. However, 
 
 One approach that can be useful is to wrap the <PyObject section="libraries" integration="pipes" object="open_dagster_pipes" module="dagster_pipes" /> context manager around an existing `main` function or entry point. You can either pass the <PyObject section="libraries" integration="pipes" object="PipesContext" module="dagster_pipes" /> down through your business logic, or simply report an asset materialization after your business logic is done:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_script_existing.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/databricks/databricks_script_existing.py" />
 
 ## Step 3: Run the Databricks job from the Dagster UI
 
@@ -196,7 +196,7 @@ While your Databricks code is running, any calls to `report_asset_materializatio
 With either option, once the <PyObject section="pipes" module="dagster" object="open_pipes_session" /> block closes, you must call `yield pipes_session.get_results()` to yield any remaining buffered results, since we cannot guarantee that all communications from Databricks have been processed until the `open_pipes_session` block closes.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_open_pipes_session.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/databricks/databricks_asset_open_pipes_session.py"
   title="src/<project_name>/defs/assets.py"
 />
 

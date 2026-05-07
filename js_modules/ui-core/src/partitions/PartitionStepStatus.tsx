@@ -246,9 +246,9 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
   const {stepRows, partitionColumns} = data;
 
   const sortPartitionSteps = (steps: MatrixStep[]) => {
-    const stepsByName = {};
-    steps.forEach((step) => ((stepsByName as any)[step.name] = step));
-    return stepRows.map((stepRow) => (stepsByName as any)[stepRow.name]);
+    const stepsByName: Record<string, MatrixStep> = {};
+    steps.forEach((step) => (stepsByName[step.name] = step));
+    return stepRows.map((stepRow) => stepsByName[stepRow.name]);
   };
 
   const visibleCount = getVisibleItemCount(viewport.width);
@@ -368,20 +368,22 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
                   </LeftLabel>
                 )}
                 <Divider />
-                {sortPartitionSteps(p.steps).map((s) => (
-                  <PartitionSquare
-                    key={s.name}
-                    step={s}
-                    runs={p.runs}
-                    runsLoaded={p.runsLoaded}
-                    minUnix={minUnix}
-                    maxUnix={maxUnix}
-                    hovered={hovered}
-                    setHovered={setHovered}
-                    setFocused={setFocused}
-                    partitionName={p.name}
-                  />
-                ))}
+                {sortPartitionSteps(p.steps)
+                  .filter((s): s is MatrixStep => !!s)
+                  .map((s) => (
+                    <PartitionSquare
+                      key={s.name}
+                      step={s}
+                      runs={p.runs}
+                      runsLoaded={p.runsLoaded}
+                      minUnix={minUnix}
+                      maxUnix={maxUnix}
+                      hovered={hovered}
+                      setHovered={setHovered}
+                      setFocused={setFocused}
+                      partitionName={p.name}
+                    />
+                  ))}
               </GridColumn>
             ))}
           </div>

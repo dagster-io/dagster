@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import cast
 from unittest import mock
 
 from dagster import (
@@ -85,7 +84,7 @@ def a():
 b_spec = AssetSpec(key="b")
 
 
-@asset_check(asset=a)  # pyright: ignore[reportArgumentType]
+@asset_check(asset=a)
 def a_check():
     pass
 
@@ -109,8 +108,8 @@ def test_defs_passthrough() -> None:
             jobs=[the_job],
             sensors=[some_sensor],
             schedules=[some_schedule],
-            loggers={"the_logger": nonstandard_logger},  # pyright: ignore[reportArgumentType]
-            executor=nonstandard_executor,  # pyright: ignore[reportArgumentType]
+            loggers={"the_logger": nonstandard_logger},
+            executor=nonstandard_executor,
         ),
     )
     assert defs.executor == nonstandard_executor
@@ -220,10 +219,12 @@ def test_transitive_asset_deps() -> None:
     }
 
     dag1_asset = repo_def.assets_defs_by_key[dag1_key]
-    assert [dep.asset_key for dep in next(iter(dag1_asset.specs)).deps] == [a_key]
+    dag1_spec = next(spec for spec in dag1_asset.specs if spec.key == dag1_key)
+    assert [dep.asset_key for dep in dag1_spec.deps] == [a_key]
 
     dag2_asset = repo_def.assets_defs_by_key[dag2_key]
-    assert [dep.asset_key for dep in next(iter(dag2_asset.specs)).deps] == [c_key]
+    dag2_spec = next(spec for spec in dag2_asset.specs if spec.key == dag2_key)
+    assert [dep.asset_key for dep in dag2_spec.deps] == [c_key]
 
     a_asset = repo_def.assets_defs_by_key[a_key]
     assert [dep.asset_key for dep in next(iter(a_asset.specs)).deps] == []
@@ -389,7 +390,7 @@ def test_cached_loading() -> None:
             assert {
                 key
                 for assets_def in reloaded_repo_def.assets_defs_by_key.values()
-                for key in cast("AssetsDefinition", assets_def).keys
+                for key in assets_def.keys
             } == {AssetKey("a"), make_test_dag_asset_key("dag")}
 
 
@@ -414,9 +415,7 @@ def test_multiple_tasks_per_asset(init_load_context: None) -> None:
     assert defs.assets
     # 3 Full assets definitions, but 4 keys
     assert len(list(defs.assets)) == 3
-    assert {
-        key for assets_def in defs.assets for key in cast("AssetsDefinition", assets_def).keys
-    } == {
+    assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
         AssetKey("a"),
         AssetKey("b"),
         make_test_dag_asset_key("dag1"),

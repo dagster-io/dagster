@@ -1,0 +1,10 @@
+.headerCell {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.headerCellClickable {
+  cursor: pointer;
+  user-select: none;
+}

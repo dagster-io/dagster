@@ -303,7 +303,7 @@ def create_defs_folder_sandbox(
     * ``defs_folder_path``: The absolute path to the ``defs`` folder. The user can inspect and load files from scaffolded components, e.g. ``(defs_folder_path / "my_component" / "defs.yaml").exists()``
     * ``project_name``: If not provided, a random name is generated.
 
-    Once the sandbox is created, you can load all definitions using the ``load`` method on :py:class:`DefsFolderSandbox`, or with the ``load_component_at_path`` method.
+    Once the sandbox is created, you can load all definitions using the ``load`` method on :py:class:`DefsFolderSandbox`, or with the ``load_component`` method.
 
     This sandbox does not provide complete environmental isolation, but does provide some isolation guarantees
     to do its best to isolate the test from and restore the environment after the test.

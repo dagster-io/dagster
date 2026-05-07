@@ -1,9 +1,14 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 
+import type {QueryResult} from '../../apollo-client';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {OpJobPartitionsViewContent} from '../OpJobPartitionsView';
 import {buildOpJobPartitionSetFragmentWithError} from '../__fixtures__/OpJobPartitionsViewContent.fixtures';
+import {
+  PartitionsStatusQuery,
+  PartitionsStatusQueryVariables,
+} from '../types/OpJobPartitionsView.types';
 
 jest.mock('../usePartitionStepQuery', () => ({
   usePartitionStepQuery: () => [],
@@ -19,10 +24,10 @@ jest.mock('../../graph/asyncGraphLayout', () => ({}));
 describe('OpJobPartitionsViewContent', () => {
   it('does not error when partition statuses are in an error state', async () => {
     const fragment = buildOpJobPartitionSetFragmentWithError();
-    const mockResult: any = {
+    const mockResult = {
       refresh: () => {},
       loading: false,
-    };
+    } as unknown as QueryResult<PartitionsStatusQuery, PartitionsStatusQueryVariables>;
 
     render(
       <MockedProvider>

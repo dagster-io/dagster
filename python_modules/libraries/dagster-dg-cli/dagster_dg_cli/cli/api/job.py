@@ -19,7 +19,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.job", cls="DgApiJobList")
+@dg_response_schema(module="dagster_rest_resources.schemas.job", cls="DgApiJobList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -38,7 +38,7 @@ def list_jobs_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.job import DgApiJobApi
+    from dagster_rest_resources.api.job import DgApiJobApi
 
     api = DgApiJobApi(client)
 
@@ -56,7 +56,7 @@ def list_jobs_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.job", cls="DgApiJob")
+@dg_response_schema(module="dagster_rest_resources.schemas.job", cls="DgApiJob")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -76,7 +76,7 @@ def get_job_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.job import DgApiJobApi
+    from dagster_rest_resources.api.job import DgApiJobApi
 
     api = DgApiJobApi(client)
 

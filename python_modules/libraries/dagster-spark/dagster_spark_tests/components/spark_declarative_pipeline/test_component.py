@@ -156,7 +156,7 @@ def test_build_defs_from_state_returns_valid_definitions_with_multi_asset() -> N
 
     assert defs is not None
     assert isinstance(defs, dg.Definitions)
-    all_assets = list(defs.get_all_asset_specs())
+    all_assets = list(defs.resolve_all_asset_specs())
     assert len(all_assets) == 2
     keys = {a.key.to_user_string() for a in all_assets}
     assert "table_a" in keys
@@ -209,7 +209,7 @@ def test_build_defs_from_state_filters_temporary_views() -> None:
 
         defs = component.build_defs_from_state(context, state_path)
 
-    all_assets = list(defs.get_all_asset_specs())
+    all_assets = list(defs.resolve_all_asset_specs())
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "table_a"
 
@@ -238,7 +238,7 @@ def test_build_defs_from_state_includes_temporary_view_when_overridden() -> None
 
         defs = component.build_defs_from_state(context, state_path)
 
-    all_assets = list(defs.get_all_asset_specs())
+    all_assets = list(defs.resolve_all_asset_specs())
     assert len(all_assets) == 2
     keys = {a.key.to_user_string() for a in all_assets}
     assert "table_a" in keys
@@ -254,4 +254,4 @@ def test_build_defs_from_state_returns_empty_when_no_state_path() -> None:
     context = MagicMock()
     defs = component.build_defs_from_state(context, None)
     assert isinstance(defs, dg.Definitions)
-    assert len(list(defs.get_all_asset_specs())) == 0
+    assert len(list(defs.resolve_all_asset_specs())) == 0

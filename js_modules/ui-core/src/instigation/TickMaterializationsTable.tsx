@@ -22,7 +22,7 @@ import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
 } from './types/TickMaterializationsTable.types';
-import {tokenForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLink} from '../assets/AssetLink';
 import {AssetKeysDialogEmptyState} from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
 import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
@@ -48,7 +48,7 @@ export const TickMaterializationsTable = ({
     () =>
       tick
         ? tick.requestedAssetKeys.filter((assetKey) =>
-            assetKey.path.join('/').includes(queryString),
+            displayNameForAssetKey(assetKey).includes(queryString),
           )
         : [],
     [tick, queryString],
@@ -99,15 +99,15 @@ export const TickMaterializationsTable = ({
           <HeaderCell>Group</HeaderCell>
           <HeaderCell>Result</HeaderCell>
         </HeaderRow>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const assetKey = filteredAssetKeys[index]!;
             return (
               <AssetDetailRow
                 key={key}
-                $height={size}
-                $start={start}
+                height={size}
+                start={start}
                 assetKey={assetKey}
                 partitionKeys={assetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -142,14 +142,14 @@ export const TickMaterializationsTable = ({
 };
 
 const AssetDetailRow = ({
-  $start,
-  $height,
+  start,
+  height,
   assetKey,
   partitionKeys,
   evaluationId,
 }: {
-  $start: number;
-  $height: number;
+  start: number;
+  height: number;
   assetKey: AssetKeyInput;
   partitionKeys?: string[];
   evaluationId: string;
@@ -174,7 +174,7 @@ const AssetDetailRow = ({
     : null;
 
   return (
-    <Row $start={$start} $height={$height}>
+    <Row start={start} height={height}>
       <RowGrid border="bottom">
         <RowCell>
           <AssetLink path={assetKey.path} icon="asset" textStyle="middle-truncate" />

@@ -64,7 +64,7 @@ dependencies:
 Call `open_dagster_pipes` in your Azure ML script to create a context that can be used to send messages to Dagster:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/train.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/azure/azureml_job/train.py"
   title="train.py"
 />
 
@@ -89,7 +89,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesAzureMLClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/azure/azureml_job/dagster_code.py"
   startAfter="start_asset_marker"
   endBefore="end_asset_marker"
   title="src/<project_name>/defs/assets.py"
@@ -102,7 +102,7 @@ This will launch the Azure ML job and wait for it to complete. If the job fails,
 Next, add the `PipesAzureMLClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/azure/azureml_job/dagster_code.py"
   startAfter="start_definitions_marker"
   endBefore="end_definitions_marker"
   title="src/<project_name>/defs/assets.py"

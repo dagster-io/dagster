@@ -33,7 +33,7 @@ dg scaffold defs dagster.assets dagster_code.py
 Next, you’ll define the asset. Copy and paste the following into the file `src/external_pipeline/defs/dagster_code.py`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/dagster_code.py"
   startAfter="start_asset_marker"
   endBefore="end_asset_marker"
   title="src/external_pipeline/defs/dagster_code.py"
@@ -44,7 +44,7 @@ Next, you’ll define the asset. Copy and paste the following into the file `src
 Before we define our asset code, we will add a standalone Python script named `external_code.py` within the directory we just scaffolded (`src/external_pipeline/defs/`). Later, we will invoke a subprocess that executes this external code from the asset using the `pipes_subprocess_client resource`. The external code looks like the following:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/external_code.py"
   startAfter="start_external_code"
   endBefore="end_external_code"
   title="src/external_pipeline/defs/external_code.py"
@@ -64,7 +64,7 @@ Here’s what we did in this code:
 Next, invoke a subprocess that executes the external code from the asset using the `pipes_subprocess_client` resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/dagster_code.py"
   startAfter="start_asset_marker"
   endBefore="end_asset_marker"
   title="src/external_pipeline/defs/dagster_code.py"
@@ -88,14 +88,14 @@ To make the subprocess resource loadable and accessible, such as the CLI, UI, an
 Copy and paste the following to the bottom of `src/external_pipeline/defs/resources.py`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/resources.py"
   title="src/external_pipeline/defs/resources.py"
 />
 
 At this point, `dagster_code.py` should look like the following:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code_finished.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/dagster_code_finished.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 

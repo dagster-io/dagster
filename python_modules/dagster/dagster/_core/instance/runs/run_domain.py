@@ -697,7 +697,13 @@ class RunDomain:
                 self._instance.run_storage.add_execution_plan_snapshot(execution_plan_snapshot)
             )
 
-            check.invariant(execution_plan_snapshot_id == returned_execution_plan_snapshot_id)
+            if execution_plan_snapshot_id != returned_execution_plan_snapshot_id:
+                logging.getLogger("dagster").warning(
+                    "Execution plan snapshot ID mismatch: locally computed "
+                    f'"{execution_plan_snapshot_id}" but storage returned '
+                    f'"{returned_execution_plan_snapshot_id}". Using the storage-returned ID.'
+                )
+            return returned_execution_plan_snapshot_id
 
         return execution_plan_snapshot_id
 

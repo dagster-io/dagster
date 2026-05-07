@@ -144,13 +144,13 @@ def test_executor_init(instance_cm: Callable[..., ContextManager[DagsterInstance
                 instance=instance,
                 executor=executor,
             )
-            run_task_kwargs = executor._step_handler._get_run_task_kwargs(  # type: ignore  # noqa: SLF001
+            run_task_kwargs = executor._step_handler._get_run_task_kwargs(  # noqa: SLF001
                 run,
                 ["my-command"],
                 "asdasd",
                 {},
                 step_handler_context,
-                executor._step_handler._get_container_context(step_handler_context),  # type: ignore  # noqa: SLF001
+                executor._step_handler._get_container_context(step_handler_context),  # noqa: SLF001
             )
 
             assert run_task_kwargs["launchType"] == "FARGATE"  # this comes from the Run Launcher
@@ -204,13 +204,13 @@ def test_executor_sanitized_step_key(instance_cm: Callable[..., ContextManager[D
                 instance=instance,
                 executor=executor,
             )
-            run_task_kwargs = executor._step_handler._get_run_task_kwargs(  # type: ignore  # noqa: SLF001
+            run_task_kwargs = executor._step_handler._get_run_task_kwargs(  # noqa: SLF001
                 run,
                 ["my-command"],
                 "foo.bar[filename_0]",
                 {},
                 step_handler_context,
-                executor._step_handler._get_container_context(step_handler_context),  # type: ignore  # noqa: SLF001
+                executor._step_handler._get_container_context(step_handler_context),  # noqa: SLF001
             )
 
             tags = {tag["key"]: tag["value"] for tag in run_task_kwargs["tags"]}
@@ -251,13 +251,13 @@ def test_executor_launch(instance_cm: Callable[..., ContextManager[DagsterInstan
             )
             from unittest.mock import MagicMock
 
-            executor._step_handler.ecs.run_task = MagicMock(  # type: ignore  # noqa: SLF001
+            executor._step_handler.ecs.run_task = MagicMock(  # noqa: SLF001
                 return_value={"tasks": [{"taskArn": "arn:123"}]}
             )
 
-            next(iter(executor._step_handler.launch_step(step_handler_context)))  # type: ignore  # noqa: SLF001
+            next(iter(executor._step_handler.launch_step(step_handler_context)))  # noqa: SLF001
 
-            run_task_kwargs = executor._step_handler.ecs.run_task.call_args[1]  # type: ignore  # noqa: SLF001
+            run_task_kwargs = executor._step_handler.ecs.run_task.call_args[1]  # noqa: SLF001
 
             # resources should come from step tags
             assert run_task_kwargs["overrides"]["cpu"] == "1024"
@@ -338,13 +338,13 @@ def test_executor_container_overrides(instance_cm: Callable[..., ContextManager[
             }
             step_tags = {"ecs/container_overrides": json.dumps(container_overrides)}
 
-            run_task_kwargs = executor._step_handler._get_run_task_kwargs(  # type: ignore  # noqa: SLF001
+            run_task_kwargs = executor._step_handler._get_run_task_kwargs(  # noqa: SLF001
                 run,
                 ["my-command"],
                 "test_step",
                 step_tags,
                 step_handler_context,
-                executor._step_handler._get_container_context(step_handler_context),  # type: ignore  # noqa: SLF001
+                executor._step_handler._get_container_context(step_handler_context),  # noqa: SLF001
             )
 
             run_container_overrides = run_task_kwargs["overrides"]["containerOverrides"][0]

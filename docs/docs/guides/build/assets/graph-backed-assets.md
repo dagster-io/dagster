@@ -12,7 +12,7 @@ To define a graph-backed asset, use the <PyObject section="assets" module="dagst
 
 In the example below, when you tell Dagster to materialize the `slack_files_table` asset, Dagster will invoke `fetch_files_from_slack` and then invoke `store_files` after `fetch_files_from_slack` has completed:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/graph_backed_asset.py" startAfter="start example" endBefore="end example" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/graph_backed_asset.py" startAfter="start example" endBefore="end example" title="src/<project_name>/defs/assets.py" />
 
 ### Defining managed-loading dependencies for graph-backed assets
 
@@ -20,7 +20,7 @@ Similar to single-op asset definitions, Dagster infers the upstream assets from 
 
 The example below includes an asset named `middle_asset`. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/graph_backed_asset.py" startAfter="start_basic_dependencies" endBefore="end_basic_dependencies" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/graph_backed_asset.py" startAfter="start_basic_dependencies" endBefore="end_basic_dependencies" title="src/<project_name>/defs/assets.py" />
 
 ### Graph-backed multi-assets
 
@@ -28,7 +28,7 @@ Using the <PyObject section="assets" module="dagster" object="graph_multi_asset"
 
 In the below example, `two_assets` accepts `upstream_asset` and outputs two assets, `first_asset` and `second_asset`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/graph_backed_asset.py" startAfter="start_basic_dependencies_2" endBefore="end_basic_dependencies_2" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/graph_backed_asset.py" startAfter="start_basic_dependencies_2" endBefore="end_basic_dependencies_2" title="src/<project_name>/defs/assets.py" />
 
 ### Advanced: Subsetting graph-backed assets
 
@@ -44,7 +44,7 @@ Because the `foo` op yields an asset output (`foo_asset`) and is an upstream dep
 
 During execution, if we select just `baz_asset` for materialization, the below implementation of `foo` will return `{"foo_2"}` for `context.selected_output_names`, preventing `foo_asset` from being materialized.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/subset_graph_backed_asset.py" startAfter="start_graph_backed_asset_foo" endBefore="end_graph_backed_asset_foo" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/subset_graph_backed_asset.py" startAfter="start_graph_backed_asset_foo" endBefore="end_graph_backed_asset_foo" />
 
 Because Dagster flattens each op graph into a flat input/output mapping between ops under the hood, any op that produces an output of the graph must be structured to yield its outputs optionally, enabling the outputs to be returned independently.
 
@@ -54,10 +54,10 @@ However, because `baz` only yields a singular output, Dagster will only run `baz
 
 We could define the asset using the code below. Notice that `can_subset` must be set to `True` in the asset definition to signify that the graph-backed asset can be subsetted.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/subset_graph_backed_asset.py" startAfter="start_graph_backed_asset_example" endBefore="end_graph_backed_asset_example" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/subset_graph_backed_asset.py" startAfter="start_graph_backed_asset_example" endBefore="end_graph_backed_asset_example" />
 
 Depending on how outputs are returned from the ops within a graph-backed asset, there could be unexpected materializations. For example, the following `foo` implementation would unexpectedly materialize `foo_asset` if `baz_asset` was the only asset selected for execution.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/subset_graph_backed_asset_unexpected_materializations.py" startAfter="start_unexpected_materialization_foo" endBefore="end_unexpected_materialization_foo" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/subset_graph_backed_asset_unexpected_materializations.py" startAfter="start_unexpected_materialization_foo" endBefore="end_unexpected_materialization_foo" />
 
 This is because the `foo` op is an upstream dependency of `baz_asset`, and this implementation of `foo` returns both the `foo_1` and `foo_2` outputs. The `foo_1` output is returned as the `foo_asset` output of the graph, causing an unexpected materialization of `foo_asset`.

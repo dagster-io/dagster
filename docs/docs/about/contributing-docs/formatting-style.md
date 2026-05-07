@@ -205,7 +205,7 @@ When referencing a subset of lines from a file, use the `startAfter` and `endBef
 
 ```sh
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/assets/multi_component_asset_key.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/multi_component_asset_key.py"
   startAfter="start_marker"
   endBefore="end_marker"
 />

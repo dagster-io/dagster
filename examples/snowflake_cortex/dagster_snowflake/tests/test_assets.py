@@ -2,6 +2,8 @@
 
 from unittest.mock import Mock
 
+from dagster import MaterializeResult
+
 from dagster_snowflake_ai.defs.assets.cortex_ai import (
     aggregations,
     entity_extraction,
@@ -27,8 +29,9 @@ class TestStoriesAsset:
         mock_cursor.fetchone.return_value = (expected_story_count,)
 
         result = stories.raw_stories(mock_context, mock_snowflake_resource, Mock())
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert result.metadata["stories_in_staging"].value == expected_story_count
         assert result.metadata["table_schema"].value.endswith(".stories")
         assert mock_cursor.execute.called
@@ -54,8 +57,9 @@ class TestSentimentAnalysisAsset:
         result = sentiment_analysis.story_sentiment_analysis(
             mock_context, mock_snowflake_resource
         )
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert result.metadata["stories_processed"].value == 10
         assert result.metadata["unique_posters"].value == 3
         assert result.metadata["avg_description_length"].value == 500.0
@@ -81,8 +85,9 @@ class TestEntityExtractionAsset:
         result = entity_extraction.entity_extraction(
             mock_context, mock_snowflake_resource
         )
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert (
             result.metadata["stories_with_entities"].value
             == expected_stories_with_entities
@@ -108,7 +113,8 @@ class TestAggregationsAsset:
         mock_cursor.fetchone.return_value = (expected_summary_count,)
 
         result = aggregations.daily_story_summary(mock_context, mock_snowflake_resource)
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert result.metadata["summary_count"].value == expected_summary_count
         assert "dagster_value" in result.metadata

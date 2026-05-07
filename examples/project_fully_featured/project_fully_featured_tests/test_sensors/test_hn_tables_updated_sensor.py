@@ -1,8 +1,12 @@
 import json
+from typing import TYPE_CHECKING, cast
 from unittest import mock
 
 from dagster import EventLogRecord, EventRecordsResult, GraphDefinition, build_sensor_context
 from dagster._core.test_utils import instance_for_test
+
+if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
 from project_fully_featured.sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 
 
@@ -18,7 +22,10 @@ def get_mock_fetch_materializations(asset_events: list[tuple[str, int]]):
         ]
         return EventRecordsResult(
             records=[
-                EventLogRecord(storage_id=event[1], event_log_entry=None)
+                EventLogRecord(
+                    storage_id=event[1],
+                    event_log_entry=cast("EventLogEntry", None),  # stub for test
+                )
                 for event in matching_events
             ],
             cursor="fake_cursor",
@@ -37,6 +44,7 @@ def test_first_events(mock_fetch_materializations):
     with instance_for_test() as instance:
         context = build_sensor_context(instance=instance)
         result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert result.run_requests is not None
         assert len(result.run_requests) == 1
         assert result.cursor == json.dumps({"comments": 1, "stories": 2})
 
@@ -52,6 +60,7 @@ def test_nothing_new(mock_fetch_materializations):
             instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
         result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert result.run_requests is not None
         assert len(result.run_requests) == 0
         assert result.cursor == json.dumps({"comments": 1, "stories": 2})
 
@@ -67,6 +76,7 @@ def test_new_comments_old_stories(mock_fetch_materializations):
             instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
         result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert result.run_requests is not None
         assert len(result.run_requests) == 0
 
 
@@ -81,6 +91,7 @@ def test_old_comments_new_stories(mock_fetch_materializations):
             instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
         result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert result.run_requests is not None
         assert len(result.run_requests) == 0
 
 
@@ -95,5 +106,6 @@ def test_both_new(mock_fetch_materializations):
             instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
         result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert result.run_requests is not None
         assert len(result.run_requests) == 1
         assert result.cursor == json.dumps({"comments": 2, "stories": 3})

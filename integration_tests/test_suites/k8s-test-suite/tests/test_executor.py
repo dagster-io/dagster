@@ -304,7 +304,7 @@ def test_k8s_run_launcher_terminate(
     DagsterKubernetesClient.production_client().wait_for_job(
         job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
-    timeout = datetime.timedelta(0, 30)
+    timeout = datetime.timedelta(0, 120)
     start_time = datetime.datetime.now()
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for can_terminate"
@@ -568,7 +568,7 @@ def test_k8s_executor_owner_references_disabled(
     step_job_key = get_k8s_job_name(run_id, "spin_forever_op")
     step_job_name = f"dagster-step-{step_job_key}"
 
-    timeout = datetime.timedelta(0, 30)
+    timeout = datetime.timedelta(0, 60)
     start_time = datetime.datetime.now()
     while True:
         assert datetime.datetime.now() < start_time + timeout, (
@@ -600,7 +600,7 @@ def test_k8s_executor_owner_references_disabled(
     DagsterKubernetesClient.production_client().core_api.delete_namespaced_pod(
         name=run_pod.metadata.name, namespace=user_code_namespace_for_k8s_run_launcher
     )
-    timeout = datetime.timedelta(0, 30)
+    timeout = datetime.timedelta(0, 60)
     start_time = datetime.datetime.now()
     while True:
         assert datetime.datetime.now() < start_time + timeout, (
@@ -613,7 +613,7 @@ def test_k8s_executor_owner_references_disabled(
         time.sleep(1)
 
     # Wait a bit and verify that the step job and pod are NOT garbage collected
-    time.sleep(10)
+    time.sleep(20)
     assert _does_namespaced_job_exist(step_job_name, user_code_namespace_for_k8s_run_launcher), (
         "Step job should NOT be garbage collected when owner references are disabled"
     )

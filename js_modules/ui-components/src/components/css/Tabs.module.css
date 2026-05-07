@@ -1,0 +1,93 @@
+.count {
+  display: inline;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02%;
+  padding: 0 6px;
+  color: var(--color-text-default);
+  background: var(--color-background-gray);
+  border-radius: 4px;
+}
+
+.count.disabled {
+  color: var(--color-text-disabled);
+}
+
+.tab {
+  background: none;
+  border: none;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  padding: 16px 0;
+  box-shadow: transparent 0 -2px 0 inset;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 6px;
+}
+
+.tab.small {
+  padding: 10px 0;
+}
+
+.tab,
+.tab a {
+  cursor: pointer;
+  user-select: none;
+  color: var(--color-text-light);
+}
+
+.tab.selected,
+.tab.selected a {
+  color: var(--color-text-default);
+  box-shadow: var(--color-text-default) 0 -2px 0 inset;
+}
+
+.tab.disabled,
+.tab.disabled a {
+  color: var(--color-text-disabled);
+}
+
+.tab.disabled :global(.iconGlobal) {
+  background-color: var(--color-text-disabled);
+}
+
+/* Focus outline only when using keyboard, not when focusing via mouse. */
+.tab:focus {
+  outline: none !important;
+  box-shadow: var(--color-accent-gray) 0 -2px 0 inset;
+}
+
+.tab.selected:focus {
+  box-shadow: var(--color-text-default) 0 -2px 0 inset;
+}
+
+.tab.disabled:focus {
+  box-shadow: transparent 0 -2px 0 inset;
+}
+
+.tab:hover,
+.tab:hover a {
+  text-decoration: none;
+  color: var(--color-text-default);
+}
+
+.tab.disabled:hover,
+.tab.disabled:hover a {
+  color: var(--color-text-disabled);
+}
+
+.tabs {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.tabs.small {
+  font-size: 12px;
+  line-height: 16px;
+}

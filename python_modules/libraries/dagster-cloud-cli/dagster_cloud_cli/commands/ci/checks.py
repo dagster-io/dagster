@@ -1,4 +1,3 @@
-import os
 import pathlib
 from dataclasses import dataclass, field
 from enum import Enum
@@ -7,7 +6,7 @@ import pydantic
 
 from dagster_cloud_cli import gql, ui
 from dagster_cloud_cli.config.models import load_dagster_cloud_yaml
-from dagster_cloud_cli.config_utils import TOKEN_ENV_VAR_NAME
+from dagster_cloud_cli.config_utils import TOKEN_ENV_VAR_NAME, get_user_token
 
 
 def get_validation_errors(validation_error: pydantic.ValidationError) -> list[str]:
@@ -121,11 +120,12 @@ def handle_result(
 
 
 def check_connect_dagster_cloud(url) -> CheckResult:
-    if TOKEN_ENV_VAR_NAME not in os.environ:
+    token = get_user_token()
+    if not token:
         return CheckResult([f"{TOKEN_ENV_VAR_NAME} not set"])
     result = CheckResult()
     result.messages.append(f"Connecting to {url} using {TOKEN_ENV_VAR_NAME}")
-    with gql.graphql_client_from_url(url, os.environ[TOKEN_ENV_VAR_NAME]) as client:
+    with gql.graphql_client_from_url(url, token) as client:
         try:
             gql.get_organization_settings(client)
             result.messages.append("Connection successful")

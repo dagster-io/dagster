@@ -124,16 +124,17 @@ const GlobalStyle = createGlobalStyle`
 
 interface Props {
   children: string;
+  softBreaks?: boolean;
 }
 
-export const MarkdownWithPlugins = (props: Props) => {
+export const MarkdownWithPlugins = ({softBreaks, ...props}: Props) => {
   return (
     <>
       <GlobalStyle />
       <ReactMarkdown
         {...props}
         className="dagster-markdown"
-        remarkPlugins={[remarkBreaks, remarkGfm]}
+        remarkPlugins={softBreaks ? [remarkBreaks, remarkGfm] : [remarkGfm]}
         rehypePlugins={[
           [rehypeHighlight, {ignoreMissing: true}],
           [rehypeSanitize, sanitizeConfig],

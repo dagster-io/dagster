@@ -53,6 +53,7 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {PipelineSelector} from '../graphql/types';
+import {isNewTabClick} from '../hooks/useOpenInNewTab';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
@@ -100,6 +101,7 @@ type Asset =
   | {
       assetKey: AssetKey;
       hasMaterializePermission?: boolean;
+      hasWipePermission?: boolean;
       partitionDefinition?: {__typename: string} | null;
       isExecutable?: boolean;
       isObservable?: boolean;
@@ -107,6 +109,7 @@ type Asset =
   | {
       assetKey: AssetKey;
       hasMaterializePermission?: boolean;
+      hasWipePermission?: boolean;
       isPartitioned?: boolean;
       isExecutable?: boolean;
       isObservable?: boolean;
@@ -257,7 +260,14 @@ export const LaunchAssetExecutionButton = ({
         : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
 
   const {menuItem: wipeMenuItem, dialog: wipeDialog} = useWipeMaterializations({
-    selected: useMemo(() => assets.map((asset) => ({key: asset.assetKey})), [assets]),
+    selected: useMemo(
+      () =>
+        assets.map((asset) => ({
+          key: asset.assetKey,
+          definitionHasWipePermission: !!asset.hasWipePermission,
+        })),
+      [assets],
+    ),
   });
 
   if (!canSeeMaterializeAction) {
@@ -497,7 +507,14 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
 
     if (next.type === 'single-run') {
-      await launchWithTelemetry({executionParams: next.executionParams}, 'toast');
+      const openInNewTab = isNewTabClick(e);
+      await launchWithTelemetry(
+        {executionParams: next.executionParams},
+        {
+          behavior: 'toast',
+          openInNewTab,
+        },
+      );
       setState({type: 'none'});
     } else {
       setState(next);

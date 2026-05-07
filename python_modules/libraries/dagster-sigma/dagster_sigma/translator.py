@@ -1,7 +1,6 @@
 from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster import AssetDep, AssetKey, AssetSpec, MetadataValue, TableSchema
-from dagster._annotations import deprecated
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import (
     JsonMetadataValue,
@@ -163,16 +162,6 @@ class DagsterSigmaTranslator:
     Subclass this class to provide custom translation logic.
     """
 
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec(...).key` instead",
-    )
-    def get_asset_key(
-        self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
-    ) -> AssetKey:
-        """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
-        return self.get_asset_spec(data).key
-
     def get_asset_spec(
         self, data: SigmaDatasetTranslatorData | SigmaWorkbookTranslatorData
     ) -> AssetSpec:
@@ -213,11 +202,11 @@ class DagsterSigmaTranslator:
                     )
 
             dataset_keys = [
-                self.get_asset_key(
+                self.get_asset_spec(
                     SigmaDatasetTranslatorData(
                         dataset=dataset, organization_data=data.organization_data
                     )
-                )
+                ).key
                 for dataset in datasets
             ]
             table_deps = [

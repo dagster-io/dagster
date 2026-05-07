@@ -22,10 +22,10 @@ class LocalGlueMockClient:
     def __init__(
         self,
         aws_endpoint_url: str,  # usually received from moto
-        s3_client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
-        glue_client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
+        s3_client: boto3.client,  # ty: ignore (reportGeneralTypeIssues)
+        glue_client: boto3.client,  # ty: ignore (reportGeneralTypeIssues)
         pipes_messages_backend: Literal["s3", "cloudwatch"],
-        cloudwatch_client: "boto3.client | None" = None,  # pyright: ignore (reportGeneralTypeIssues)
+        cloudwatch_client: "boto3.client | None" = None,  # ty: ignore (reportGeneralTypeIssues)
     ):
         """This class wraps moto3 clients for S3 and Glue, and provides a way to "run" Glue jobs locally.
         This is necessary because moto3 does not actually run anything when you start a Glue job, so we won't be able

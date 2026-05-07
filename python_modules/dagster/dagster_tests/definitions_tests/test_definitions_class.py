@@ -953,7 +953,7 @@ def test_executor_conflict_on_merge_same_value():
     assert Definitions.merge(defs1, defs2).executor == dg.in_process_executor
 
 
-def test_get_all_asset_specs():
+def test_resolve_all_asset_specs():
     @dg.asset(tags={"foo": "fooval"})
     def asset1(): ...
 

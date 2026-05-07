@@ -94,6 +94,9 @@ def test_io_manager_asset_metadata() -> None:
         assert mat.materialization.metadata["dagster/table_name"] == MetadataValue.text(
             f"{os.getenv('GCP_PROJECT_ID')}.{SCHEMA}.{table_name}"
         )
+        assert mat.materialization.metadata["dagster/storage_kind"] == MetadataValue.text(
+            "bigquery"
+        )
 
 
 @pytest.mark.skipif(
@@ -487,7 +490,7 @@ def test_dynamic_partitioned_asset(io_manager):
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -502,7 +505,7 @@ def test_dynamic_partitioned_asset(io_manager):
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],

@@ -74,7 +74,7 @@ USER hadoop
 
 Call `open_dagster_pipes` in the EMR Serverless script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-serverless/script.py" />
 
 :::tip
 
@@ -91,7 +91,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesEMRServerlessClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-serverless/dagster_code.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -106,7 +106,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 Next, add the `PipesEMRServerlessClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-serverless/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 

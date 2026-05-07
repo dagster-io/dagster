@@ -25,12 +25,6 @@ Here's an overview of the main concepts we'll be using:
 
 ## Prerequisites
 
-:::note
-
-This guide is an extension of the [Transitioning data pipelines from development to production](/guides/operate/dev-to-prod) guide, illustrating a workflow for staging deployments. We'll use the examples from that guide to build a workflow using Dagster+'s branch deployment feature.
-
-:::
-
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
@@ -61,7 +55,7 @@ To set up a branch deployment workflow to construct and test these tables, we wi
 In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, and `STORIES`. We can define these tables as assets as follows:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/assets.py"
   startAfter="start_assets"
   endBefore="end_assets"
   title="src/<project_name>/defs/assets.py"
@@ -80,7 +74,7 @@ Dagster automatically sets certain [environment variables](/deployment/dagster-p
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we'll configure a separate I/O manager for each environment:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v1.py"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/repository_v1.py"
   title="src/<project_name>/defs/resources.py"
 />
 
@@ -99,7 +93,7 @@ Additionally, we don't need asset-specific features for these tasks, like viewin
 :::
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/clone_and_drop_db.py"
   title="src/<project_name>/defs/ops.py"
 />
 
@@ -108,7 +102,7 @@ We've defined `drop_database_clone` and `clone_production_database` to utilize t
 We now need to define resources that configure our jobs to the current environment. We can modify the resource mapping by environment as follows:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/repository_v2.py"
   startAfter="start_resources"
   endBefore="end_resources"
   title="src/<project_name>/defs/resources.py"
@@ -117,7 +111,7 @@ We now need to define resources that configure our jobs to the current environme
 Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the appropriate resource to the environment and add them to our definitions:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/repository_v2.py"
   startAfter="start_repository"
   endBefore="end_repository"
   title="src/<project_name>/defs/jobs.py"
@@ -136,7 +130,7 @@ Because we want to queue a run of `clone_prod` within each deployment after it l
     <TabItem value="serverless" label="Serverless">
 
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml"
+      path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/clone_prod.yaml"
       title=".github/workflows/dagster-plus-deploy.yml"
     />
 
@@ -144,7 +138,7 @@ Because we want to queue a run of `clone_prod` within each deployment after it l
     <TabItem value="hybrid" label="Hybrid">
 
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml"
+      path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/clone_prod.yaml"
       title=".github/workflows/dagster-cloud-deploy.yml"
     />
 
@@ -168,7 +162,7 @@ We can also view our database in Snowflake to confirm that a clone exists for ea
 The `.gitlab-ci.yaml` script contains a `deploy` job that defines a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end of `deploy`. This job is triggered on when a merge request is created or updated. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.gitlab-ci.yml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/clone_prod.gitlab-ci.yml"
   title=".gitlab-ci.yml"
 />
 
@@ -195,7 +189,7 @@ Finally, we can add a step to our Dagster+ workflow file that queues a run of ou
   <TabItem value="serverless" label="Serverless">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/drop_db_clone.yaml"
   title=".github/workflows/dagster-plus-deploy.yml"
 />
 
@@ -203,7 +197,7 @@ Finally, we can add a step to our Dagster+ workflow file that queues a run of ou
   <TabItem value="hybrid" label="Hybrid">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/drop_db_clone.yaml"
   title=".github/workflows/dagster-cloud-deploy.yml"
 />
 
@@ -216,7 +210,7 @@ Finally, we can add a step to our Dagster+ workflow file that queues a run of ou
 Finally, we can add a step to our `.gitlab-ci.yml` file that queues a run of our `drop_prod_clone` job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.gitlab-ci.yml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dev_to_prod/drop_db_clone.gitlab-ci.yml"
   title=".gitlab-ci.yml"
 />
 

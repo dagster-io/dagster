@@ -1,6 +1,9 @@
+import base64
 from collections.abc import Mapping, Sequence
 
 import dagster._check as check
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
@@ -14,6 +17,40 @@ from dagster_snowflake_pyspark.constants import SNOWFLAKE_PARTNER_CONNECTION_IDE
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 
 
+def _get_snowflake_private_key(config) -> str:
+    private_key = config["private_key"].encode()
+    kwargs = {
+        "password": config["private_key_password"].encode()
+        if config.get("private_key_password")
+        else None
+    }
+
+    try:
+        p_key = serialization.load_pem_private_key(private_key, backend=default_backend(), **kwargs)
+
+    # key fails to load, possibly indicating key is base64 encoded
+    except ValueError as e:
+        try:
+            private_key = base64.b64decode(private_key)
+            p_key = serialization.load_pem_private_key(
+                private_key, backend=default_backend(), **kwargs
+            )
+        except ValueError:
+            raise ValueError(
+                "Unable to load private key. You may need to base64 encode your private key."
+                " You can retrieve the base64 encoded key with this shell command: cat"
+                " rsa_key.p8 | base64"
+            ) from e
+
+    pkb = p_key.private_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+    return base64.b64encode(pkb).decode("utf-8")
+
+
 def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]:
     check.invariant(
         config.get("warehouse", None) is not None,
@@ -23,12 +60,15 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
     conf = {
         "sfURL": f"{config['account']}.snowflakecomputing.com",
         "sfUser": config["user"],
-        "sfPassword": config["password"],
         "sfDatabase": config["database"],
         "sfSchema": table_slice.schema,
         "sfWarehouse": config["warehouse"],
         "APPLICATION": SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_PYSPARK,
     }
+    if config.get("private_key"):
+        conf["pem_private_key"] = _get_snowflake_private_key(config)
+    else:
+        conf["sfPassword"] = config["password"]
 
     return conf
 
@@ -64,7 +104,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
 
     """
 
-    def handle_output(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def handle_output(  # ty: ignore[invalid-method-override]
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_snowflake_options(context.resource_config, table_slice)
@@ -86,10 +126,10 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # ty: ignore[invalid-method-override]
         options = _get_snowflake_options(context.resource_config, table_slice)
 
-        spark = SparkSession.builder.getOrCreate()  # type: ignore
+        spark = SparkSession.builder.getOrCreate()
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return spark.createDataFrame([], StructType([]))
 
@@ -138,7 +178,7 @@ Examples:
                     "database": "my_database",
                     "warehouse": "my_warehouse", # required for snowflake_pyspark_io_manager
                     "account" : {"env": "SNOWFLAKE_ACCOUNT"},
-                    "password": {"env": "SNOWFLAKE_PASSWORD"},
+                    "private_key": {"env": "SNOWFLAKE_PRIVATE_KEY"},
                     ...
                 })
             }
@@ -232,7 +272,7 @@ class SnowflakePySparkIOManager(SnowflakeIOManager):
                         database="my_database",
                         warehouse="my_warehouse", # required for SnowflakePySparkIOManager
                         account=EnvVar("SNOWFLAKE_ACCOUNT"),
-                        password=EnvVar("SNOWFLAKE_PASSWORD"),
+                        private_key=EnvVar("SNOWFLAKE_PRIVATE_KEY"),
                         ...
                     )
                 }

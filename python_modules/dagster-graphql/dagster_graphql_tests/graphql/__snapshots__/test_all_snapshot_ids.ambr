@@ -64,48 +64,7 @@
           },
           "type_param_keys": null
         },
-        "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{}",
-              "description": null,
-              "is_required": false,
-              "name": "dummy_io_manager",
-              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": false,
-              "default_value_as_json_str": null,
-              "description": null,
-              "is_required": true,
-              "name": "hanging_asset_resource",
-              "type_key": "Shape.b13a6c5637084590cc1538f9522324bfeb4b46b3"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"config\": {}}",
-              "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
-              "is_required": false,
-              "name": "io_manager",
-              "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
-            }
-          ],
-          "given_name": null,
-          "key": "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f",
-          "kind": {
-            "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
-        "Permissive.bca7f49c1ce0315391dda73be1cabc9254c2378f": {
+        "Permissive.0983f8483ed9e0cc65fb57a328db088bccb5eb38": {
           "__class__": "ConfigTypeSnap",
           "description": null,
           "enum_values": null,
@@ -207,6 +166,33 @@
               "description": null,
               "is_required": false,
               "name": "asset_with_custom_automation_condition",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
+              "name": "asset_with_long_description",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
+              "name": "asset_with_op_tags",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
+              "name": "asset_without_description",
               "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
             },
             {
@@ -737,6 +723,15 @@
               "default_value_as_json_str": "{}",
               "description": null,
               "is_required": false,
+              "name": "table_asset_with_kind",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
               "name": "typed_asset",
               "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
             },
@@ -868,7 +863,48 @@
             }
           ],
           "given_name": null,
-          "key": "Permissive.bca7f49c1ce0315391dda73be1cabc9254c2378f",
+          "key": "Permissive.0983f8483ed9e0cc65fb57a328db088bccb5eb38",
+          "kind": {
+            "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
+        "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
+              "name": "dummy_io_manager",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": false,
+              "default_value_as_json_str": null,
+              "description": null,
+              "is_required": true,
+              "name": "hanging_asset_resource",
+              "type_key": "Shape.b13a6c5637084590cc1538f9522324bfeb4b46b3"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"config\": {}}",
+              "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+              "is_required": false,
+              "name": "io_manager",
+              "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            }
+          ],
+          "given_name": null,
+          "key": "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f",
           "kind": {
             "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
           },
@@ -1373,6 +1409,56 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
+        "Shape.3af42373c4d36c2f7b6d90864753407276a9c5b1": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"config\": {\"retries\": {\"enabled\": {}}}}",
+              "description": "Configure how steps are executed within a run.",
+              "is_required": false,
+              "name": "execution",
+              "type_key": "Shape.f07ed19fc888e3245c2ca562556397f72651e11e"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": "Configure how loggers emit messages within a run.",
+              "is_required": false,
+              "name": "loggers",
+              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"asset_1\": {}, \"asset_1_my_check\": {}, \"asset_2\": {}, \"asset_3\": {}, \"asset_3_asset_3_check\": {}, \"asset_3_asset_3_other_check\": {}, \"asset_one\": {}, \"asset_two\": {}, \"asset_with_automation_condition\": {}, \"asset_with_compute_storage_kinds\": {\"config\": {}}, \"asset_with_custom_automation_condition\": {}, \"asset_with_long_description\": {}, \"asset_with_op_tags\": {}, \"asset_without_description\": {}, \"asset_yields_observation\": {}, \"bar\": {}, \"baz\": {}, \"check_in_op_asset\": {}, \"concurrency_asset\": {}, \"concurrency_graph_asset\": {\"ops\": {\"concurrency_op_1\": {}, \"concurrency_op_2\": {}}}, \"concurrency_multi_asset\": {\"config\": {}}, \"downstream_asset\": {}, \"downstream_dynamic_partitioned_asset\": {}, \"downstream_static_partitioned_asset\": {}, \"downstream_time_partitioned_asset\": {}, \"downstream_weekly_partitioned_asset\": {}, \"dynamic_in_multipartitions_fail\": {}, \"dynamic_in_multipartitions_success\": {}, \"executable_asset\": {}, \"fail_partition_materialization\": {}, \"first_asset\": {}, \"foo\": {}, \"foo_bar\": {}, \"fresh_diamond_bottom\": {}, \"fresh_diamond_left\": {}, \"fresh_diamond_right\": {}, \"fresh_diamond_top\": {}, \"grouped_asset_1\": {}, \"grouped_asset_2\": {}, \"grouped_asset_4\": {}, \"grouping_prefix__asset_with_prefix_1\": {}, \"grouping_prefix__asset_with_prefix_2\": {}, \"grouping_prefix__asset_with_prefix_3\": {}, \"grouping_prefix__asset_with_prefix_4\": {}, \"grouping_prefix__asset_with_prefix_5\": {}, \"hanging_asset\": {}, \"hanging_graph\": {\"ops\": {\"hanging_op\": {}, \"my_op\": {}, \"never_runs_op\": {}}}, \"hanging_partition_asset\": {}, \"integers_asset\": {}, \"middle_static_partitioned_asset_1\": {}, \"middle_static_partitioned_asset_2\": {}, \"multi_asset_with_kinds\": {\"config\": {}}, \"multi_run_backfill_policy_asset\": {}, \"multipartitions_1\": {}, \"multipartitions_2\": {}, \"multipartitions_fail\": {}, \"never_runs_asset\": {}, \"no_multipartitions_1\": {}, \"not_included_asset\": {}, \"observable_asset_same_version\": {}, \"output_then_hang_asset\": {}, \"owned_asset\": {}, \"owned_asset_owned_asset_check\": {}, \"owned_partitioned_asset\": {}, \"partitioned_asset_for_checks\": {}, \"partitioned_asset_for_checks_partitioned_asset_check\": {}, \"single_run_backfill_policy_asset\": {}, \"subsettable_checked_multi_asset\": {\"config\": {}}, \"table_asset_1\": {}, \"table_asset_2\": {}, \"table_asset_3\": {}, \"table_asset_4\": {}, \"table_asset_with_kind\": {}, \"typed_asset\": {}, \"typed_multi_asset\": {\"config\": {}}, \"unconnected\": {}, \"ungrouped_asset_3\": {}, \"ungrouped_asset_5\": {}, \"unowned_asset\": {}, \"unowned_asset_unowned_asset_check\": {}, \"unowned_partitioned_asset\": {}, \"unpartitioned_upstream_of_partitioned\": {}, \"untyped_asset\": {}, \"upstream_daily_partitioned_asset\": {}, \"upstream_dynamic_partitioned_asset\": {}, \"upstream_static_partitioned_asset\": {}, \"upstream_time_partitioned_asset\": {}, \"yield_partition_materialization\": {}}",
+              "description": "Configure runtime parameters for ops or assets.",
+              "is_required": false,
+              "name": "ops",
+              "type_key": "Permissive.0983f8483ed9e0cc65fb57a328db088bccb5eb38"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": false,
+              "default_value_as_json_str": null,
+              "description": "Configure how shared resources are implemented within a run.",
+              "is_required": true,
+              "name": "resources",
+              "type_key": "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.3af42373c4d36c2f7b6d90864753407276a9c5b1",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
         "Shape.44f2a71367507edd1b8e64f739222c4312b3691b": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -1582,56 +1668,6 @@
           "fields": [],
           "given_name": null,
           "key": "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
-        "Shape.e12aac9224b57268cad5c4f9a62f60a115ecedd1": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"config\": {\"retries\": {\"enabled\": {}}}}",
-              "description": "Configure how steps are executed within a run.",
-              "is_required": false,
-              "name": "execution",
-              "type_key": "Shape.f07ed19fc888e3245c2ca562556397f72651e11e"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{}",
-              "description": "Configure how loggers emit messages within a run.",
-              "is_required": false,
-              "name": "loggers",
-              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"asset_1\": {}, \"asset_1_my_check\": {}, \"asset_2\": {}, \"asset_3\": {}, \"asset_3_asset_3_check\": {}, \"asset_3_asset_3_other_check\": {}, \"asset_one\": {}, \"asset_two\": {}, \"asset_with_automation_condition\": {}, \"asset_with_compute_storage_kinds\": {\"config\": {}}, \"asset_with_custom_automation_condition\": {}, \"asset_yields_observation\": {}, \"bar\": {}, \"baz\": {}, \"check_in_op_asset\": {}, \"concurrency_asset\": {}, \"concurrency_graph_asset\": {\"ops\": {\"concurrency_op_1\": {}, \"concurrency_op_2\": {}}}, \"concurrency_multi_asset\": {\"config\": {}}, \"downstream_asset\": {}, \"downstream_dynamic_partitioned_asset\": {}, \"downstream_static_partitioned_asset\": {}, \"downstream_time_partitioned_asset\": {}, \"downstream_weekly_partitioned_asset\": {}, \"dynamic_in_multipartitions_fail\": {}, \"dynamic_in_multipartitions_success\": {}, \"executable_asset\": {}, \"fail_partition_materialization\": {}, \"first_asset\": {}, \"foo\": {}, \"foo_bar\": {}, \"fresh_diamond_bottom\": {}, \"fresh_diamond_left\": {}, \"fresh_diamond_right\": {}, \"fresh_diamond_top\": {}, \"grouped_asset_1\": {}, \"grouped_asset_2\": {}, \"grouped_asset_4\": {}, \"grouping_prefix__asset_with_prefix_1\": {}, \"grouping_prefix__asset_with_prefix_2\": {}, \"grouping_prefix__asset_with_prefix_3\": {}, \"grouping_prefix__asset_with_prefix_4\": {}, \"grouping_prefix__asset_with_prefix_5\": {}, \"hanging_asset\": {}, \"hanging_graph\": {\"ops\": {\"hanging_op\": {}, \"my_op\": {}, \"never_runs_op\": {}}}, \"hanging_partition_asset\": {}, \"integers_asset\": {}, \"middle_static_partitioned_asset_1\": {}, \"middle_static_partitioned_asset_2\": {}, \"multi_asset_with_kinds\": {\"config\": {}}, \"multi_run_backfill_policy_asset\": {}, \"multipartitions_1\": {}, \"multipartitions_2\": {}, \"multipartitions_fail\": {}, \"never_runs_asset\": {}, \"no_multipartitions_1\": {}, \"not_included_asset\": {}, \"observable_asset_same_version\": {}, \"output_then_hang_asset\": {}, \"owned_asset\": {}, \"owned_asset_owned_asset_check\": {}, \"owned_partitioned_asset\": {}, \"partitioned_asset_for_checks\": {}, \"partitioned_asset_for_checks_partitioned_asset_check\": {}, \"single_run_backfill_policy_asset\": {}, \"subsettable_checked_multi_asset\": {\"config\": {}}, \"table_asset_1\": {}, \"table_asset_2\": {}, \"table_asset_3\": {}, \"table_asset_4\": {}, \"typed_asset\": {}, \"typed_multi_asset\": {\"config\": {}}, \"unconnected\": {}, \"ungrouped_asset_3\": {}, \"ungrouped_asset_5\": {}, \"unowned_asset\": {}, \"unowned_asset_unowned_asset_check\": {}, \"unowned_partitioned_asset\": {}, \"unpartitioned_upstream_of_partitioned\": {}, \"untyped_asset\": {}, \"upstream_daily_partitioned_asset\": {}, \"upstream_dynamic_partitioned_asset\": {}, \"upstream_static_partitioned_asset\": {}, \"upstream_time_partitioned_asset\": {}, \"yield_partition_materialization\": {}}",
-              "description": "Configure runtime parameters for ops or assets.",
-              "is_required": false,
-              "name": "ops",
-              "type_key": "Permissive.bca7f49c1ce0315391dda73be1cabc9254c2378f"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": false,
-              "default_value_as_json_str": null,
-              "description": "Configure how shared resources are implemented within a run.",
-              "is_required": true,
-              "name": "resources",
-              "type_key": "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.e12aac9224b57268cad5c4f9a62f60a115ecedd1",
           "kind": {
             "__enum__": "ConfigTypeKind.STRICT_SHAPE"
           },
@@ -2015,6 +2051,34 @@
           "is_dynamic_mapped": false,
           "solid_def_name": "asset_with_custom_automation_condition",
           "solid_name": "asset_with_custom_automation_condition",
+          "tags": {}
+        },
+        {
+          "__class__": "SolidInvocationSnap",
+          "input_dep_snaps": [],
+          "is_dynamic_mapped": false,
+          "solid_def_name": "asset_with_long_description",
+          "solid_name": "asset_with_long_description",
+          "tags": {}
+        },
+        {
+          "__class__": "SolidInvocationSnap",
+          "input_dep_snaps": [],
+          "is_dynamic_mapped": false,
+          "solid_def_name": "asset_with_op_tags",
+          "solid_name": "asset_with_op_tags",
+          "tags": {
+            "baz": "qux",
+            "dagster/kind/python": "",
+            "foo": "bar"
+          }
+        },
+        {
+          "__class__": "SolidInvocationSnap",
+          "input_dep_snaps": [],
+          "is_dynamic_mapped": false,
+          "solid_def_name": "asset_without_description",
+          "solid_name": "asset_without_description",
           "tags": {}
         },
         {
@@ -2774,6 +2838,14 @@
         },
         {
           "__class__": "SolidInvocationSnap",
+          "input_dep_snaps": [],
+          "is_dynamic_mapped": false,
+          "solid_def_name": "table_asset_with_kind",
+          "solid_name": "table_asset_with_kind",
+          "tags": {}
+        },
+        {
+          "__class__": "SolidInvocationSnap",
           "input_dep_snaps": [
             {
               "__class__": "InputDependencySnap",
@@ -3027,7 +3099,7 @@
             "name": "io_manager"
           }
         ],
-        "root_config_key": "Shape.e12aac9224b57268cad5c4f9a62f60a115ecedd1"
+        "root_config_key": "Shape.3af42373c4d36c2f7b6d90864753407276a9c5b1"
       }
     ],
     "name": "__ASSET_JOB",
@@ -3527,6 +3599,91 @@
           "description": null,
           "input_def_snaps": [],
           "name": "asset_with_custom_automation_condition",
+          "output_def_snaps": [
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Nothing",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": true,
+              "name": "result"
+            }
+          ],
+          "required_resource_keys": [],
+          "tags": {}
+        },
+        {
+          "__class__": "SolidDefSnap",
+          "config_field_snap": {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Any"
+          },
+          "description": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "input_def_snaps": [],
+          "name": "asset_with_long_description",
+          "output_def_snaps": [
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Nothing",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": true,
+              "name": "result"
+            }
+          ],
+          "required_resource_keys": [],
+          "tags": {}
+        },
+        {
+          "__class__": "SolidDefSnap",
+          "config_field_snap": {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Any"
+          },
+          "description": null,
+          "input_def_snaps": [],
+          "name": "asset_with_op_tags",
+          "output_def_snaps": [
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": true,
+              "name": "result"
+            }
+          ],
+          "required_resource_keys": [],
+          "tags": {
+            "baz": "qux",
+            "dagster/kind/python": "",
+            "foo": "bar"
+          }
+        },
+        {
+          "__class__": "SolidDefSnap",
+          "config_field_snap": {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Any"
+          },
+          "description": null,
+          "input_def_snaps": [],
+          "name": "asset_without_description",
           "output_def_snaps": [
             {
               "__class__": "OutputDefSnap",
@@ -5420,6 +5577,33 @@
           "description": null,
           "input_def_snaps": [],
           "name": "table_asset_4",
+          "output_def_snaps": [
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": true,
+              "name": "result"
+            }
+          ],
+          "required_resource_keys": [],
+          "tags": {}
+        },
+        {
+          "__class__": "SolidDefSnap",
+          "config_field_snap": {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Any"
+          },
+          "description": null,
+          "input_def_snaps": [],
+          "name": "table_asset_with_kind",
           "output_def_snaps": [
             {
               "__class__": "OutputDefSnap",
@@ -41751,7 +41935,7 @@
   'a42b76205f669056b37fd68ef75743cbb470f27e'
 # ---
 # name: test_all_snapshot_ids[1]
-  '7d0095d54cfc76c5c2d3cd1d076a2f5db9234c07'
+  '11ae819084ee915e30a985b00fc82e184d4a64ac'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -70587,6 +70771,56 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
+        "Shape.03a341824ac2d0f7e86f14643e1439cc0d126b2c": {
+          "__class__": "ConfigTypeSnap",
+          "description": "This run config schema was automatically populated with default values from `default_config`.",
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"config\": {\"retries\": {\"enabled\": {}}}}",
+              "description": "Configure how steps are executed within a run.",
+              "is_required": false,
+              "name": "execution",
+              "type_key": "Shape.f07ed19fc888e3245c2ca562556397f72651e11e"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": "Configure how loggers emit messages within a run.",
+              "is_required": false,
+              "name": "loggers",
+              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"op_with_config\": {\"config\": {\"one\": \"hullo\"}}}",
+              "description": "Configure runtime parameters for ops or assets.",
+              "is_required": false,
+              "name": "ops",
+              "type_key": "Shape.d91ca88a4c221bb1adbf4db99044844c6ec6bb81"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"io_manager\": {}}",
+              "description": "Configure how shared resources are implemented within a run.",
+              "is_required": false,
+              "name": "resources",
+              "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.03a341824ac2d0f7e86f14643e1439cc0d126b2c",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
         "Shape.081354663b9d4b8fbfd1cb8e358763912953913f": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -70665,29 +70899,6 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
-        "Shape.2826887148df509057b8bdd850d72268525729fe": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": false,
-              "default_value_as_json_str": null,
-              "description": null,
-              "is_required": true,
-              "name": "op_with_config",
-              "type_key": "Shape.3984261e8838dd039e5c0d108ad1c0ac6110ace1"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.2826887148df509057b8bdd850d72268525729fe",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
         "Shape.3984261e8838dd039e5c0d108ad1c0ac6110ace1": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -70757,56 +70968,6 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
-        "Shape.962f1d845caf6cc2ef77e0ebc07367eed4491c01": {
-          "__class__": "ConfigTypeSnap",
-          "description": "This run config schema was automatically populated with default values from `default_config`.",
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"config\": {\"retries\": {\"enabled\": {}}}}",
-              "description": "Configure how steps are executed within a run.",
-              "is_required": false,
-              "name": "execution",
-              "type_key": "Shape.f07ed19fc888e3245c2ca562556397f72651e11e"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{}",
-              "description": "Configure how loggers emit messages within a run.",
-              "is_required": false,
-              "name": "loggers",
-              "type_key": "Shape.e895d95ee6d0eff1b884c76f44a2ab7089f0c49b"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"op_with_config\": {\"config\": {\"one\": \"hullo\"}}}",
-              "description": "Configure runtime parameters for ops or assets.",
-              "is_required": false,
-              "name": "ops",
-              "type_key": "Shape.2826887148df509057b8bdd850d72268525729fe"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"io_manager\": {}}",
-              "description": "Configure how shared resources are implemented within a run.",
-              "is_required": false,
-              "name": "resources",
-              "type_key": "Shape.1578133c1c71e8e3c9cf3ad46c216eb51b48c778"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.962f1d845caf6cc2ef77e0ebc07367eed4491c01",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
         "Shape.bc52b1c43d99d0004be108b5869dde9f4a119518": {
           "__class__": "ConfigTypeSnap",
           "description": null,
@@ -70847,6 +71008,29 @@
           ],
           "given_name": null,
           "key": "Shape.c1b51cfcee4bafa04a39110cb65b6e600e4d98d3",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
+        "Shape.d91ca88a4c221bb1adbf4db99044844c6ec6bb81": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"config\": {\"one\": \"hullo\"}}",
+              "description": null,
+              "is_required": false,
+              "name": "op_with_config",
+              "type_key": "Shape.3984261e8838dd039e5c0d108ad1c0ac6110ace1"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.d91ca88a4c221bb1adbf4db99044844c6ec6bb81",
           "kind": {
             "__enum__": "ConfigTypeKind.STRICT_SHAPE"
           },
@@ -71071,7 +71255,7 @@
             "name": "io_manager"
           }
         ],
-        "root_config_key": "Shape.962f1d845caf6cc2ef77e0ebc07367eed4491c01"
+        "root_config_key": "Shape.03a341824ac2d0f7e86f14643e1439cc0d126b2c"
       }
     ],
     "name": "job_with_default_config",
@@ -71113,7 +71297,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[69]
-  'ed35672b6699fe67124125a34ac2d732ddd116df'
+  '3a3868e190ab0ead9b2fdd419908b2c9de22272c'
 # ---
 # name: test_all_snapshot_ids[6]
   '''

@@ -122,14 +122,14 @@ class PatchedApiClient(ApiClient):
             for attr, attr_type in six.iteritems(klass.openapi_types):
                 if klass.attribute_map[attr] in data:
                     value = data[klass.attribute_map[attr]]
-                    kwargs[attr] = self._ApiClient__deserialize(value, attr_type)
+                    kwargs[attr] = self._ApiClient__deserialize(value, attr_type)  # ty: ignore[unresolved-attribute]
 
         instance = klass(**kwargs)
 
         if hasattr(instance, "get_real_child_model"):
             klass_name = instance.get_real_child_model(data)
             if klass_name:
-                instance = self._ApiClient__deserialize(data, klass_name)
+                instance = self._ApiClient__deserialize(data, klass_name)  # ty: ignore[unresolved-attribute]
         return instance
 
 

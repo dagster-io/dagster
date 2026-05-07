@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dagster-rest-resources"
+version = "1!0+dev"
+description = ""
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster-shared==1!0+dev",
+    "httpx>=0.27.0",
+    "pydantic>=2.12.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-rest-resources"
+
+[project.optional-dependencies]
+codegen = [
+    "ariadne-codegen>=0.14.0",
+]
+test = [
+    "pytest>=9.0.2",
+]
+
+[tool.ariadne-codegen]
+schema_path = "../../../../dagster-cloud/js_modules/app-cloud/src/graphql/schema.graphql"
+queries_path = "dagster_rest_resources/queries"
+target_package_path = "dagster_rest_resources"
+target_package_name = "__generated__"
+async_client = false
+plugins = [
+    "ariadne_codegen.contrib.client_forward_refs.ClientForwardRefsPlugin",
+    "ariadne_codegen.contrib.no_reimports.NoReimportsPlugin",
+]
