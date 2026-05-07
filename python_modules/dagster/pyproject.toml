@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster"
-version = "1!0+dev"
+version = "1.13.4"
 description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
@@ -26,11 +30,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    # cli
     "click>=5.0,<9.0",
     "coloredlogs>=6.1,<=14.0",
     "Jinja2",
-    # core
     "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
     "grpcio>=1.66.2; python_version>='3.13'",
     "grpcio>=1.44.0; python_version<'3.13'",
@@ -50,15 +52,15 @@ dependencies = [
     "sqlalchemy>=1.0,<3",
     "toposort>=1.0",
     "watchdog>=0.8.3,<7",
-    'psutil>=1.0; platform_system=="Windows"',
-    'pywin32!=226; platform_system=="Windows"',
+    "psutil>=1.0; platform_system==\"Windows\"",
+    "pywin32!=226; platform_system==\"Windows\"",
     "docstring-parser",
     "universal_pathlib; python_version<'3.12'",
     "universal_pathlib>=0.2.0; python_version>='3.12'",
     "rich",
     "filelock",
-    "dagster-pipes==1!0+dev",
-    "dagster-shared==1!0+dev",
+    "dagster-pipes==1.13.4",
+    "dagster-shared==1.13.4",
     "antlr4-python3-runtime",
 ]
 
@@ -82,7 +84,9 @@ dagster-daemon = "dagster._daemon.cli:main"
 dagster = "dagster"
 
 [project.optional-dependencies]
-docker = ["docker"]
+docker = [
+    "docker",
+]
 test = [
     "docker",
     "grpcio-tools>=1.66.2; python_version>='3.13'",
@@ -112,10 +116,11 @@ test-components = [
     "pandas<3.0.0",
     "duckdb",
 ]
-mypy = ["mypy==1.8.0"]
+mypy = [
+    "mypy==1.8.0",
+]
 pyright = [
     "pyright==1.1.389",
-    # Stub packages
     "pandas-stubs",
     "types-backports",
     "types-certifi",
@@ -138,25 +143,23 @@ ruff = [
     "ruff==0.15.0",
 ]
 ty = [
-    ### Stub packages for type checking
-    "pandas-stubs",  # version will be resolved against pandas
-    "types-backports",  # version will be resolved against backports
-    "types-certifi",  # version will be resolved against certifi
-    "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
-    "types-cryptography",  # version will be resolved against cryptography
-    "types-mock",  # version will be resolved against mock
-    "types-paramiko",  # version will be resolved against paramiko
-    "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
-    "types-python-dateutil~=2.9.0.20240316",  # vendored python-dateutil version is 2.9.0
-    "types-PyYAML",  # version will be resolved against PyYAML
-    "types-pytz",  # version will be resolved against pytz
-    "types-requests",  # version will be resolved against requests
-    "types-simplejson",  # version will be resolved against simplejson
-    "types-six",  # needed but not specified by grpcio
-    "types-tabulate",  # version will be resolved against tabulate
-    "types-tzlocal",  # version will be resolved against tzlocal
-    "types-toml",  # version will be resolved against toml
-    ### Additional stubs for ty
+    "pandas-stubs",
+    "types-backports",
+    "types-certifi",
+    "types-chardet",
+    "types-cryptography",
+    "types-mock",
+    "types-paramiko",
+    "types-pyOpenSSL",
+    "types-python-dateutil~=2.9.0.20240316",
+    "types-PyYAML",
+    "types-pytz",
+    "types-requests",
+    "types-simplejson",
+    "types-six",
+    "types-tabulate",
+    "types-tzlocal",
+    "types-toml",
     "types-protobuf",
     "types-redis",
     "boto3-stubs[essential]",
@@ -164,7 +167,6 @@ ty = [
 ]
 
 [tool.hatch.build]
-force-include = {"dagster/_core/definitions/tags" = "dagster/_core/definitions/tags"}
 exclude = [
     "dagster/**/*.g4",
     "dagster/**/*.interp",
@@ -172,3 +174,6 @@ exclude = [
     "dagster/**/Makefile",
     "dagster/**/ruff.toml",
 ]
+
+[tool.hatch.build.force-include]
+"dagster/_core/definitions/tags" = "dagster/_core/definitions/tags"

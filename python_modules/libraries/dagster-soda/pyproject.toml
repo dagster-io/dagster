@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-soda"
-version = "1!0+dev"
+version = "0.29.4"
 description = "Package for running Soda Core data quality scans in Dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
@@ -20,7 +24,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.4",
     "soda-core>=3.0,<4",
     "pyyaml",
 ]
@@ -33,5 +37,5 @@ dagster_soda = "dagster_soda"
 
 [project.optional-dependencies]
 test = [
-    "dagster-dg-cli",
+    "dagster-dg-cli==1.13.4",
 ]
