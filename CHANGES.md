@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.13.4 (core) / 0.29.4 (libraries)
+
+### New
+
+- `typing.Mapping` and `typing.Sequence` annotations are now supported on op and asset inputs.
+- Added a `path_prefix` parameter to `DagsterGraphQLClient` to support connecting to webserver deployments behind a non-root path prefix.
+- Added a `storage_kind` field to `TableMetadataSet` to denote the storage system that backs a table (e.g., `snowflake`, `databricks`, `bigquery`).
+- `define_asset_job` now validates owner strings at definition time, producing clearer error messages for invalid owners.
+- [ui] The `schedule:` and `sensor:` selector syntax now matches assets in jobs targeted by the schedule or sensor, in addition to assets directly in the asset selection.
+- [dagster-azure] Added a configurable `endpoint_suffix` parameter to ADLS2 and Blob Storage utilities, resources, components, and compute log manager (also exposed as `endpointSuffix` in the Helm chart for `AzureBlobComputeLogManager`), enabling Azure Government Cloud, Azure China, and other sovereign cloud endpoints.
+- [dagster-dbt] Added a `translation` parameter to `DbtCloudComponent` for customizing how dbt models are translated into Dagster assets.
+- [dagster-soda] Added a new `dagster-soda` library (preview) containing the `SodaScanComponent` for executing Soda Core data quality checks.
+
+### Bugfixes
+
+- Fixed a bug where asset checks could be dropped from a job during subset selection.
+- Asset checks can now be defined on assets whose names contain dots.
+- [dg] Fixed a bug where `dg plus deploy` did not read the local config stored by `dg plus login`.
+- [ui] Fixed the "Flatten graphs" toggle in the graph query input on the Launchpad.
+- [ui] Restored CommonMark-compliant Markdown line break rendering in Markdown descriptions and docs blocks. (Thanks, [@vidiyala99](https://github.com/vidiyala99)!)
+- [dagster-airbyte] Fixed an issue where Airbyte job timestamp parsing could fail with newer Airbyte API versions due to stricter ISO format handling.
+- [dagster-aws] `InsufficientFreeAddressesInSubnet` and "Task provisioning failed" are now treated as transient ECS stop reasons, so affected runs are retried instead of marked as a permanent failure.
+- [dagster-dbt] Fixed a bug where path-based dbt selectors did not match assets correctly because absolute paths were not calculated relative to the project root.
+- [dagster-dbt] Fixed an issue where conflicting source metadata could spuriously raise an error.
+
+### Documentation
+
+- Added documentation for multi-region failover in Dagster+.
+- Renamed the DuckDB integration documentation to MotherDuck.
+- Rebranded the in-app Compass assistant as Dagster+ AI in documentation.
+
 ## 1.13.3 (core) / 0.29.3 (libraries)
 
 ### New
