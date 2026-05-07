@@ -38,6 +38,7 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_pandera.version import __version__
@@ -154,9 +155,14 @@ _LAZYFRAME_REJECTED_MSG = (
 # single class (pl.DataFrame) rather than Union because IO managers like
 # DbIOManager call issubclass() on it, which raises TypeError on Union types.
 def _resolve_typing_type(schema: object) -> type:
+    if isinstance(schema, pa_pd.DataFrameSchema):
+        return pd.DataFrame
     if pa_pl is not None and pl is not None and isinstance(schema, pa_pl.DataFrameSchema):
         return pl.DataFrame
-    return pd.DataFrame
+    raise DagsterInvalidDefinitionError(
+        f"Unsupported pandera schema backend for {type(schema).__name__!r}; "
+        "dagster-pandera currently supports pandera.pandas and pandera.polars schemas only."
+    )
 
 
 # call next() on this to generate next unique Dagster Type name for anonymous schemas
