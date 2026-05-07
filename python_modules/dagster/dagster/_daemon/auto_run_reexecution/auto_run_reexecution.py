@@ -1,7 +1,6 @@
 import logging
 import sys
 from collections.abc import Iterator, Sequence
-from typing import cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -271,7 +270,7 @@ def consume_new_runs_for_automatic_reexecution(
     retry the run again.
     """
     for run in filter_runs_to_should_retry(
-        [cast("DagsterRun", run_record.dagster_run) for run_record in run_records],
+        [run_record.dagster_run for run_record in run_records],
         workspace_process_context.instance,
     ):
         yield

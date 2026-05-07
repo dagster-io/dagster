@@ -36,8 +36,8 @@ def build_helm_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
 
     return [
         GroupStepBuilder(
-            name=":helm: helm",
-            key="helm",
+            "helm",
+            [":helm:"],
             steps=steps,
         ).build()
     ]
@@ -50,20 +50,20 @@ def _build_lint_steps(
         CommandStepBuilder("dagster-json-schema")
         .on_test_image()
         .run(
-            f"pip install -e {oss_path('helm/dagster/schema')}",
+            f"uv pip install --system -e {oss_path('helm/dagster/schema')}",
             "dagster-helm schema apply",
             "git diff --exit-code",
         )
         .skip(_get_helm_step_skip_reason(ctx) and package_spec.get_skip_reason(ctx))
         .build(),
-        CommandStepBuilder(":lint-roller: dagster")
+        CommandStepBuilder("dagster-helm-chart", [":lint-roller:"])
         .on_test_image()
         .run(
             f"helm lint {oss_path('helm/dagster')} --with-subcharts --strict",
         )
         .skip(_get_helm_step_skip_reason(ctx) or package_spec.get_skip_reason(ctx))
         .build(),
-        CommandStepBuilder("dagster dependency build")
+        CommandStepBuilder("dagster-dependency-build")
         .on_test_image()
         # https://github.com/dagster-io/dagster/issues/8167
         .run(

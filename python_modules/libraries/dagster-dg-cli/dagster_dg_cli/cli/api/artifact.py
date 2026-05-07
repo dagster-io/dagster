@@ -65,7 +65,7 @@ def upload_artifact_command(
     api = DgApiArtifactApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.upload(key=key, path=Path(path), deployment=deployment)
+        result = api.action_upload(key=key, path=Path(path), deployment=deployment)
         click.echo(format_artifact_upload(result, as_json=output_json))
 
 
@@ -119,7 +119,7 @@ def download_artifact_command(
     api = DgApiArtifactApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.download(key=key, path=Path(path), deployment=deployment)
+        result = api.action_download(key=key, path=Path(path), deployment=deployment)
         click.echo(format_artifact_download(result, as_json=output_json))
 
 

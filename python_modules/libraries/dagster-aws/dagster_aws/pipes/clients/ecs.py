@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 import botocore
+import botocore.exceptions
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
 from dagster._annotations import public
@@ -59,7 +60,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -113,13 +114,13 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             )
 
             log_configurations = {
-                container["name"]: container.get("logConfiguration")  # pyright: ignore (reportTypedDictNotRequiredAccess)
-                for container in task_definition_response["taskDefinition"]["containerDefinitions"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                container["name"]: container.get("logConfiguration")
+                for container in task_definition_response["taskDefinition"]["containerDefinitions"]
             }
 
             all_container_names = {
-                container["name"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
-                for container in task_definition_response["taskDefinition"]["containerDefinitions"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                container["name"]
+                for container in task_definition_response["taskDefinition"]["containerDefinitions"]
             }
 
             container_names_with_overrides = {
@@ -154,9 +155,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     }
                 )
 
-            run_task_params["overrides"] = (  # pyright: ignore (reportGeneralTypeIssues)
-                overrides  # assign in case overrides was created here as an empty dict
-            )
+            # assign in case overrides was created here as an empty dict
+            run_task_params["overrides"] = overrides  # ty: ignore[invalid-assignment]
 
             # inject Dagster tags
             tags = list(run_task_params.get("tags", []))
@@ -173,18 +173,18 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 )
 
             task = response["tasks"][0]
-            task_arn = task["taskArn"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+            task_arn = task["taskArn"]
             task_id = task_arn.split("/")[-1]
-            containers = task["containers"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+            containers = task["containers"]
 
             def get_cloudwatch_params(container_name: str) -> dict[str, str] | None:
                 """This will either return the log group and stream for the container, or None in case of a bad log configuration."""
                 if log_config := log_configurations.get(container_name):
                     if log_config["logDriver"] == "awslogs":
-                        log_group = log_config["options"]["awslogs-group"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                        log_group = log_config["options"]["awslogs-group"]
 
                         # stream name is combined from: prefix, container name, task id
-                        log_stream = f"{log_config['options']['awslogs-stream-prefix']}/{container_name}/{task_id}"  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                        log_stream = f"{log_config['options']['awslogs-stream-prefix']}/{container_name}/{task_id}"
 
                         return {"log_group": log_group, "log_stream": log_stream}
                     else:
@@ -210,7 +210,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     isinstance(self._message_reader, PipesCloudWatchMessageReader)
                     and len(containers) == 1
                 ):
-                    pipes_container_name = containers[0]["name"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                    pipes_container_name = containers[0]["name"]
 
                 if isinstance(self._message_reader, PipesCloudWatchMessageReader):
                     pipes_container_name = cast("str", pipes_container_name)
@@ -228,7 +228,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 # right now all logs will be mixed together, which is not very good
 
                 for container in containers:
-                    container_name = container["name"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                    container_name = container["name"]
 
                     if isinstance(self._message_reader, PipesCloudWatchMessageReader):
                         params = get_cloudwatch_params(container_name)
@@ -260,9 +260,9 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 failed_containers = {}
 
                 for task in response["tasks"]:
-                    for container in task["containers"]:  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                    for container in task["containers"]:
                         if container.get("exitCode") not in (0, None):
-                            failed_containers[container["runtimeId"]] = container.get("exitCode")  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                            failed_containers[container["runtimeId"]] = container.get("exitCode")
 
                 if failed_containers:
                     raise RuntimeError(
@@ -290,14 +290,14 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     ) -> "DescribeTasksResponseTypeDef":
         waiter = self._client.get_waiter("tasks_stopped")
 
-        params: dict[str, Any] = {"tasks": [start_response["tasks"][0]["taskArn"]]}  # pyright: ignore (reportGeneralTypeIssues)
+        params: dict[str, Any] = {"tasks": [start_response["tasks"][0]["taskArn"]]}
 
         if cluster:
             params["cluster"] = cluster
 
         waiter_params = {"WaiterConfig": waiter_config, **params} if waiter_config else params
 
-        waiter.wait(**waiter_params)
+        waiter.wait(**waiter_params)  # ty: ignore[invalid-argument-type]
 
         return self._client.describe_tasks(**params)
 
@@ -310,8 +310,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
         task = response["tasks"][0]
 
-        task_id = task["taskArn"].split("/")[-1]  # pyright: ignore (reportTypedDictNotRequiredAccess)
-        cluster = task["clusterArn"].split("/")[-1]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+        task_id = task["taskArn"].split("/")[-1]
+        cluster = task["clusterArn"].split("/")[-1]
 
         metadata["AWS ECS Task URL"] = MetadataValue.url(
             f"https://{region}.console.aws.amazon.com/ecs/v2/clusters/{cluster}/tasks/{task_id}"
@@ -329,9 +329,9 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
         try:
             self._client.stop_task(
-                cluster=cluster,  # pyright: ignore ()
-                task=wait_response["tasks"][0]["taskArn"],  # pyright: ignore (reportGeneralTypeIssues)
+                cluster=cluster,  # ty: ignore[invalid-argument-type]
+                task=wait_response["tasks"][0]["taskArn"],
                 reason="Dagster process was interrupted",
             )
-        except botocore.exceptions.ClientError as e:  # pyright: ignore (reportAttributeAccessIssue)
+        except botocore.exceptions.ClientError as e:
             context.log.warning(f"[pipes] Couldn't stop ECS task {task} in cluster {cluster}:\n{e}")

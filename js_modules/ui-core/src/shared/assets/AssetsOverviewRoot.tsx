@@ -32,7 +32,7 @@ export const AssetsOverviewRoot = ({
 
   const history = useHistory();
 
-  const currentPathStr = (params as any)['0'];
+  const currentPathStr = (params as Record<string, string>)['0'];
   const currentPath: string[] = useMemo(
     () =>
       (currentPathStr || '')

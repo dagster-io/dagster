@@ -8,7 +8,7 @@ def test_weather_assets():
 
     with instance_for_test() as instance:
         assert materialize(
-            table_assets.defs.assets,
+            list(table_assets.defs.assets or []),
             instance=instance,
             resources={"io_manager": LocalFileSystemIOManager()},
         ).success
@@ -17,9 +17,10 @@ def test_weather_assets():
 def test_spark_weather_assets():
     from assets_pandas_pyspark.local_spark_filesystem_io_manager import LocalFileSystemIOManager
 
+    assets = list(table_assets.defs.assets or [])
     with instance_for_test() as instance:
         assert materialize(
-            [*table_assets.defs.assets, spark_asset.daily_temperature_high_diffs],
+            [*list(assets), spark_asset.daily_temperature_high_diffs],
             instance=instance,
             resources={"io_manager": LocalFileSystemIOManager()},
         ).success

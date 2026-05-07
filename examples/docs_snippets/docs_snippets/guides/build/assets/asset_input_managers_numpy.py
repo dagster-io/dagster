@@ -31,7 +31,7 @@ class PandasAssetIOManager(dg.ConfigurableIOManager):
 
 
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context: dg.InputContext) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def load_input(self, context: dg.InputContext) -> np.ndarray:  # ty: ignore[invalid-method-override]
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 

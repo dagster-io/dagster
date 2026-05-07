@@ -1,6 +1,6 @@
 """Asset API commands following GitHub CLI patterns."""
 
-from typing import Final
+from typing import Final, Literal
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -65,7 +65,7 @@ def list_assets_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         if limit > DG_API_MAX_ASSET_LIMIT:
@@ -106,7 +106,7 @@ def get_asset_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         asset = api.get_asset(asset_key)
@@ -144,7 +144,7 @@ def get_health_asset_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         status = api.get_health(asset_key)
@@ -192,7 +192,7 @@ def get_health_asset_command(
 def get_events_asset_command(
     ctx: click.Context,
     asset_key: str,
-    event_type: str | None,
+    event_type: Literal["ASSET_MATERIALIZATION", "ASSET_OBSERVATION"] | None,
     limit: int,
     before: str | None,
     partitions: tuple[str, ...],
@@ -211,7 +211,7 @@ def get_events_asset_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         if limit > DG_API_MAX_EVENT_LIMIT:
@@ -219,7 +219,7 @@ def get_events_asset_command(
 
         events = api.get_events(
             asset_key=asset_key,
-            event_type=event_type.upper() if event_type else None,
+            event_type=event_type,
             limit=limit,
             before=before,
             partitions=list(partitions) if partitions else None,
@@ -282,7 +282,7 @@ def get_evaluations_asset_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         if limit > DG_API_MAX_EVENT_LIMIT:
@@ -328,7 +328,7 @@ def get_partition_status_command(
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_rest_resources.api.asset import DgApiAssetApi
 
-    api = DgApiAssetApi(client)
+    api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         stats = api.get_partition_status(asset_key)

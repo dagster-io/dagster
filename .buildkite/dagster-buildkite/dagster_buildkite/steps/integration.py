@@ -243,7 +243,9 @@ def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) 
         "export DOCKER_API_VERSION=1.41",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-2 | sh",
+        "aws ecr get-login-password --region us-west-2 "
+        "| docker login --username AWS --password-stdin "
+        "$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com",
     ]
 
 
@@ -254,7 +256,9 @@ def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersi
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-2 | sh",
+        "aws ecr get-login-password --region us-west-2 "
+        "| docker login --username AWS --password-stdin "
+        "$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com",
     ]
 
     # If integration tests are disabled, we won't have any gcp credentials to download.

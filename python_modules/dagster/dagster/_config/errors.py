@@ -93,7 +93,7 @@ ERROR_DATA_UNION: TypeAlias = (
     | FieldAliasCollisionErrorData
 )
 
-ERROR_DATA_TYPES = ERROR_DATA_UNION.__args__  # type: ignore
+ERROR_DATA_TYPES = ERROR_DATA_UNION.__args__
 
 
 @record

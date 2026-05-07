@@ -14,6 +14,12 @@ if TYPE_CHECKING:
     from .delete_code_location import DeleteCodeLocation
     from .delete_deployment import DeleteDeployment
     from .enums import InstigationTickStatus, IssueStatus, PullRequestStatus
+    from .get_asset_condition_evaluations import GetAssetConditionEvaluations
+    from .get_asset_details import GetAssetDetails
+    from .get_asset_health import GetAssetHealth
+    from .get_asset_materialization_events import GetAssetMaterializationEvents
+    from .get_asset_observation_events import GetAssetObservationEvents
+    from .get_asset_partition_status import GetAssetPartitionStatus
     from .get_captured_logs import GetCapturedLogs
     from .get_captured_logs_metadata import GetCapturedLogsMetadata
     from .get_deployment import GetDeployment
@@ -45,6 +51,7 @@ if TYPE_CHECKING:
     from .list_alert_policies import ListAlertPolicies
     from .list_asset_check_executions import ListAssetCheckExecutions
     from .list_asset_checks import ListAssetChecks
+    from .list_asset_records import ListAssetRecords
     from .list_branch_deployments import ListBranchDeployments
     from .list_code_locations import ListCodeLocations
     from .list_deployments import ListDeployments
@@ -163,6 +170,520 @@ class Client(BaseClient):
         )
         data = self.get_data(response)
         return ReconcileAlertPolicies.model_validate(data)
+
+    def list_asset_records(
+        self,
+        cursor: Union[Optional[str], "UnsetType"] = UNSET,
+        limit: Union[Optional[int], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "ListAssetRecords":
+        from .list_asset_records import ListAssetRecords
+
+        query = gql(
+            """
+            query ListAssetRecords($cursor: String, $limit: Int) {
+              assetRecordsOrError(cursor: $cursor, limit: $limit) {
+                __typename
+                ... on AssetRecordConnection {
+                  assets {
+                    id
+                    key {
+                      path
+                    }
+                  }
+                  cursor
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"cursor": cursor, "limit": limit}
+        response = self.execute(
+            query=query,
+            operation_name="ListAssetRecords",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return ListAssetRecords.model_validate(data)
+
+    def get_asset_details(
+        self, asset_keys: List["AssetKeyInput"], **kwargs: Any
+    ) -> "GetAssetDetails":
+        from .get_asset_details import GetAssetDetails
+
+        query = gql(
+            """
+            query GetAssetDetails($assetKeys: [AssetKeyInput!]!) {
+              assetsOrError(assetKeys: $assetKeys) {
+                __typename
+                ... on AssetConnection {
+                  nodes {
+                    id
+                    key {
+                      path
+                    }
+                    definition {
+                      description
+                      groupName
+                      kinds
+                      dependencyKeys {
+                        path
+                      }
+                      metadataEntries {
+                        __typename
+                        label
+                        description
+                        ... on TextMetadataEntry {
+                          text
+                        }
+                        ... on UrlMetadataEntry {
+                          url
+                        }
+                        ... on PathMetadataEntry {
+                          path
+                        }
+                        ... on JsonMetadataEntry {
+                          jsonString
+                        }
+                        ... on MarkdownMetadataEntry {
+                          mdStr
+                        }
+                        ... on PythonArtifactMetadataEntry {
+                          module
+                          name
+                        }
+                        ... on FloatMetadataEntry {
+                          floatValue
+                        }
+                        ... on IntMetadataEntry {
+                          intValue
+                        }
+                        ... on BoolMetadataEntry {
+                          boolValue
+                        }
+                      }
+                      automationCondition {
+                        label
+                        expandedLabel
+                      }
+                      partitionDefinition {
+                        description
+                      }
+                      dependencies {
+                        asset {
+                          assetKey {
+                            path
+                          }
+                        }
+                        partitionMapping {
+                          className
+                          description
+                        }
+                      }
+                      dependedByKeys {
+                        path
+                      }
+                      owners {
+                        __typename
+                        ... on UserAssetOwner {
+                          email
+                        }
+                        ... on TeamAssetOwner {
+                          team
+                        }
+                      }
+                      tags {
+                        key
+                        value
+                      }
+                      backfillPolicy {
+                        maxPartitionsPerRun
+                      }
+                      jobNames
+                    }
+                  }
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"assetKeys": asset_keys}
+        response = self.execute(
+            query=query, operation_name="GetAssetDetails", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetDetails.model_validate(data)
+
+    def get_asset_health(
+        self, asset_keys: List["AssetKeyInput"], **kwargs: Any
+    ) -> "GetAssetHealth":
+        from .get_asset_health import GetAssetHealth
+
+        query = gql(
+            """
+            query GetAssetHealth($assetKeys: [AssetKeyInput!]!) {
+              assetsOrError(assetKeys: $assetKeys) {
+                __typename
+                ... on AssetConnection {
+                  nodes {
+                    key {
+                      path
+                    }
+                    definition {
+                      freshnessInfo {
+                        currentLagMinutes
+                        currentMinutesLate
+                        latestMaterializationMinutesLate
+                      }
+                      freshnessPolicy {
+                        maximumLagMinutes
+                        cronSchedule
+                      }
+                    }
+                    assetHealth {
+                      assetHealth
+                      materializationStatus
+                      materializationStatusMetadata {
+                        __typename
+                        ... on AssetHealthMaterializationDegradedPartitionedMeta {
+                          numMissingPartitions
+                          numFailedPartitions
+                          totalNumPartitions
+                        }
+                        ... on AssetHealthMaterializationHealthyPartitionedMeta {
+                          numMissingPartitions
+                          totalNumPartitions
+                        }
+                        ... on AssetHealthMaterializationDegradedNotPartitionedMeta {
+                          failedRunId
+                        }
+                      }
+                      assetChecksStatus
+                      assetChecksStatusMetadata {
+                        __typename
+                        ... on AssetHealthCheckDegradedMeta {
+                          numFailedChecks
+                          numWarningChecks
+                          totalNumChecks
+                        }
+                        ... on AssetHealthCheckWarningMeta {
+                          numWarningChecks
+                          totalNumChecks
+                        }
+                        ... on AssetHealthCheckUnknownMeta {
+                          numNotExecutedChecks
+                          totalNumChecks
+                        }
+                      }
+                      freshnessStatus
+                      freshnessStatusMetadata {
+                        lastMaterializedTimestamp
+                      }
+                    }
+                    assetMaterializations(limit: 1) {
+                      timestamp
+                      runId
+                      partition
+                    }
+                  }
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"assetKeys": asset_keys}
+        response = self.execute(
+            query=query, operation_name="GetAssetHealth", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetHealth.model_validate(data)
+
+    def get_asset_materialization_events(
+        self,
+        asset_keys: List["AssetKeyInput"],
+        limit: Union[Optional[int], "UnsetType"] = UNSET,
+        before_timestamp_millis: Union[Optional[str], "UnsetType"] = UNSET,
+        partitions: Union[Optional[List[str]], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetAssetMaterializationEvents":
+        from .get_asset_materialization_events import GetAssetMaterializationEvents
+
+        query = gql(
+            """
+            query GetAssetMaterializationEvents($assetKeys: [AssetKeyInput!]!, $limit: Int, $beforeTimestampMillis: String, $partitions: [String!]) {
+              assetsOrError(assetKeys: $assetKeys) {
+                __typename
+                ... on AssetConnection {
+                  nodes {
+                    key {
+                      path
+                    }
+                    assetMaterializations(
+                      limit: $limit
+                      beforeTimestampMillis: $beforeTimestampMillis
+                      partitions: $partitions
+                    ) {
+                      timestamp
+                      runId
+                      partition
+                      tags {
+                        key
+                        value
+                      }
+                      metadataEntries {
+                        __typename
+                        label
+                        description
+                        ... on TextMetadataEntry {
+                          text
+                        }
+                        ... on UrlMetadataEntry {
+                          url
+                        }
+                        ... on PathMetadataEntry {
+                          path
+                        }
+                        ... on JsonMetadataEntry {
+                          jsonString
+                        }
+                        ... on MarkdownMetadataEntry {
+                          mdStr
+                        }
+                        ... on PythonArtifactMetadataEntry {
+                          module
+                          name
+                        }
+                        ... on FloatMetadataEntry {
+                          floatValue
+                        }
+                        ... on IntMetadataEntry {
+                          intValue
+                        }
+                        ... on BoolMetadataEntry {
+                          boolValue
+                        }
+                      }
+                    }
+                  }
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {
+            "assetKeys": asset_keys,
+            "limit": limit,
+            "beforeTimestampMillis": before_timestamp_millis,
+            "partitions": partitions,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetMaterializationEvents",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetMaterializationEvents.model_validate(data)
+
+    def get_asset_observation_events(
+        self,
+        asset_keys: List["AssetKeyInput"],
+        limit: Union[Optional[int], "UnsetType"] = UNSET,
+        before_timestamp_millis: Union[Optional[str], "UnsetType"] = UNSET,
+        partitions: Union[Optional[List[str]], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetAssetObservationEvents":
+        from .get_asset_observation_events import GetAssetObservationEvents
+
+        query = gql(
+            """
+            query GetAssetObservationEvents($assetKeys: [AssetKeyInput!]!, $limit: Int, $beforeTimestampMillis: String, $partitions: [String!]) {
+              assetsOrError(assetKeys: $assetKeys) {
+                __typename
+                ... on AssetConnection {
+                  nodes {
+                    key {
+                      path
+                    }
+                    assetObservations(
+                      limit: $limit
+                      beforeTimestampMillis: $beforeTimestampMillis
+                      partitions: $partitions
+                    ) {
+                      timestamp
+                      runId
+                      partition
+                      tags {
+                        key
+                        value
+                      }
+                      metadataEntries {
+                        __typename
+                        label
+                        description
+                        ... on TextMetadataEntry {
+                          text
+                        }
+                        ... on UrlMetadataEntry {
+                          url
+                        }
+                        ... on PathMetadataEntry {
+                          path
+                        }
+                        ... on JsonMetadataEntry {
+                          jsonString
+                        }
+                        ... on MarkdownMetadataEntry {
+                          mdStr
+                        }
+                        ... on PythonArtifactMetadataEntry {
+                          module
+                          name
+                        }
+                        ... on FloatMetadataEntry {
+                          floatValue
+                        }
+                        ... on IntMetadataEntry {
+                          intValue
+                        }
+                        ... on BoolMetadataEntry {
+                          boolValue
+                        }
+                      }
+                    }
+                  }
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {
+            "assetKeys": asset_keys,
+            "limit": limit,
+            "beforeTimestampMillis": before_timestamp_millis,
+            "partitions": partitions,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetObservationEvents",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetObservationEvents.model_validate(data)
+
+    def get_asset_condition_evaluations(
+        self,
+        asset_key: "AssetKeyInput",
+        limit: int,
+        cursor: Union[Optional[str], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetAssetConditionEvaluations":
+        from .get_asset_condition_evaluations import GetAssetConditionEvaluations
+
+        query = gql(
+            """
+            query GetAssetConditionEvaluations($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+              assetConditionEvaluationRecordsOrError(
+                assetKey: $assetKey
+                limit: $limit
+                cursor: $cursor
+              ) {
+                __typename
+                ... on AssetConditionEvaluationRecords {
+                  records {
+                    evaluationId
+                    timestamp
+                    numRequested
+                    runIds
+                    startTimestamp
+                    endTimestamp
+                    rootUniqueId
+                    evaluationNodes {
+                      uniqueId
+                      userLabel
+                      expandedLabel
+                      startTimestamp
+                      endTimestamp
+                      numTrue
+                      numCandidates
+                      isPartitioned
+                      childUniqueIds
+                      operatorType
+                    }
+                  }
+                }
+                ... on AutoMaterializeAssetEvaluationNeedsMigrationError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {
+            "assetKey": asset_key,
+            "limit": limit,
+            "cursor": cursor,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetConditionEvaluations",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetConditionEvaluations.model_validate(data)
+
+    def get_asset_partition_status(
+        self, asset_key: "AssetKeyInput", **kwargs: Any
+    ) -> "GetAssetPartitionStatus":
+        from .get_asset_partition_status import GetAssetPartitionStatus
+
+        query = gql(
+            """
+            query GetAssetPartitionStatus($assetKey: AssetKeyInput!) {
+              assetNodeOrError(assetKey: $assetKey) {
+                __typename
+                ... on AssetNode {
+                  partitionStats {
+                    numMaterialized
+                    numPartitions
+                    numFailed
+                    numMaterializing
+                  }
+                }
+                ... on AssetNotFoundError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"assetKey": asset_key}
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetPartitionStatus",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetPartitionStatus.model_validate(data)
 
     def list_asset_checks(
         self, asset_key: "AssetKeyInput", **kwargs: Any
@@ -704,7 +1225,14 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  __typename
+                  displayName
+                }
+                ... on ServiceUser {
+                  __typename
+                  displayName
+                }
               }
             }
             """
@@ -765,7 +1293,14 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  __typename
+                  displayName
+                }
+                ... on ServiceUser {
+                  __typename
+                  displayName
+                }
               }
             }
             """
@@ -782,14 +1317,18 @@ class Client(BaseClient):
         return ListIssues.model_validate(data)
 
     def create_issue(
-        self, title: str, description: str, **kwargs: Any
+        self,
+        title: str,
+        description: str,
+        status: Union[Optional["IssueStatus"], "UnsetType"] = UNSET,
+        **kwargs: Any
     ) -> "CreateIssue":
         from .create_issue import CreateIssue
 
         query = gql(
             """
-            mutation CreateIssue($title: String!, $description: String!) {
-              createIssue(title: $title, description: $description) {
+            mutation CreateIssue($title: String!, $description: String!, $status: IssueStatus) {
+              createIssue(title: $title, description: $description, status: $status) {
                 __typename
                 ... on CreateIssueSuccess {
                   issue {
@@ -824,12 +1363,23 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  __typename
+                  displayName
+                }
+                ... on ServiceUser {
+                  __typename
+                  displayName
+                }
               }
             }
             """
         )
-        variables: Dict[str, object] = {"title": title, "description": description}
+        variables: Dict[str, object] = {
+            "title": title,
+            "description": description,
+            "status": status,
+        }
         response = self.execute(
             query=query, operation_name="CreateIssue", variables=variables, **kwargs
         )
@@ -891,7 +1441,14 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  __typename
+                  displayName
+                }
+                ... on ServiceUser {
+                  __typename
+                  displayName
+                }
               }
             }
             """
@@ -952,7 +1509,14 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  __typename
+                  displayName
+                }
+                ... on ServiceUser {
+                  __typename
+                  displayName
+                }
               }
             }
             """
@@ -1010,7 +1574,14 @@ class Client(BaseClient):
                 }
               }
               createdBy {
-                email
+                ... on DagsterCloudUser {
+                  __typename
+                  displayName
+                }
+                ... on ServiceUser {
+                  __typename
+                  displayName
+                }
               }
             }
             """

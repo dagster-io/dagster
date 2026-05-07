@@ -28,6 +28,7 @@ import {
 } from '../assets/asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AttributeAndValue} from '../assets/overview/Common';
+import {WorkspaceAssetNode} from '../assets/useAllAssets';
 import {
   healthRefreshHintFromLiveData,
   usePartitionHealthData,
@@ -44,7 +45,6 @@ import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
 import {AnchorButton} from '../ui/AnchorButton';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -260,7 +260,7 @@ const TypeSidebarSection = ({assetType}: {assetType: DagsterTypeFragment}) => {
 };
 
 interface HeaderProps {
-  assetNode: WorkspaceAssetFragment;
+  assetNode: WorkspaceAssetNode;
   opName?: string;
   repoAddress?: RepoAddress | null;
 }

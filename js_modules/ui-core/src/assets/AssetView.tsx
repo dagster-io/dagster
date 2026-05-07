@@ -26,8 +26,8 @@ import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql} from '../apollo-client';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
-import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {WorkspaceAssetNode} from './useAllAssets';
 import {useAssetDefinition} from './useAssetDefinition';
 import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
@@ -432,6 +432,7 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
   fragment AssetViewDefinitionNode on AssetNode {
     id
     pools
+    opVersion
     groupName
     isExecutable
     automationCondition {
@@ -554,7 +555,7 @@ const AssetViewPageHeaderTags = ({
   onShowUpstream,
 }: {
   assetKey: AssetKey;
-  definition: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment | null | undefined;
+  definition: AssetViewDefinitionNodeFragment | WorkspaceAssetNode | null | undefined;
   liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
 }) => {

@@ -1,7 +1,7 @@
 ---
-title: Troubleshooting sensor timeouts
+title: 'Troubleshooting sensor timeouts'
 description: Debug and address Dagster sensor timeout issues.
-sidebar_position: 300
+sidebar_position: 40
 ---
 
 In this guide, we’ll discuss how to handle sensors that time out.
@@ -85,7 +85,7 @@ Bumping up against (1) or (2) usually manifests as increased lag times between s
 Monitoring the CPU and memory of the agent and code servers should be done using the underlying deployment service (Kubernetes, ECS, etc), but is out of the scope of this guide. If you find that increasing the sensor timeout leads to issues, necessary action to increase your resource limits should be taken:
 
 - **For k8s**, see [Resource management for pods and containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) in the Kubernetes documentation.
-- **For ECS,** we provide `AgentMemory`, `AgentCpu`, `CodeServerMemory`, and `CodeServerCPU` parameters on our Cloudformation agent template that allow you to easily configure your resource constraints.
+- **For ECS,** we provide `AgentMemory`, `AgentCpu`, `CodeServerMemory`, and `CodeServerCPU` parameters on our CloudFormation agent template that allow you to easily configure your resource constraints.
 - For general Dagster+ Hybrid performance troubleshooting, see [Dagster+ Hybrid performance optimization and troubleshooting](/deployment/troubleshooting/hybrid-optimizing-troubleshooting).
 
 ##### Exposing agent and code server metrics in Dagster+ Hybrid

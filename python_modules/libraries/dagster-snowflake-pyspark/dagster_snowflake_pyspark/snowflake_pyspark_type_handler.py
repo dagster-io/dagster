@@ -104,7 +104,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
 
     """
 
-    def handle_output(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def handle_output(  # ty: ignore[invalid-method-override]
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_snowflake_options(context.resource_config, table_slice)
@@ -126,10 +126,10 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # ty: ignore[invalid-method-override]
         options = _get_snowflake_options(context.resource_config, table_slice)
 
-        spark = SparkSession.builder.getOrCreate()  # type: ignore
+        spark = SparkSession.builder.getOrCreate()
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return spark.createDataFrame([], StructType([]))
 

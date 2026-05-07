@@ -164,7 +164,7 @@ def add_code_location_command(
             commit_hash=commit_hash,
             git_url=git_url,
         )
-        result = api.add_code_location(document)
+        result = api.create_code_location(document)
         output = format_add_code_location_result(result, as_json=output_json)
         click.echo(output)
 

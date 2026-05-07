@@ -1,13 +1,12 @@
 // eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
-import {Box, Code, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {Box, Code, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
-import {SectionHeader} from './SidebarComponents';
+import styles from './css/SidebarOpHelpers.module.css';
 import {titleOfIO} from '../app/titleOfIO';
-import {OpColumn, OpColumnContainer} from '../runs/LogsRowComponents';
+import {OpColumn} from '../runs/LogsRowComponents';
 
 type OpLinkInfo = {
   solid: {name: string};
@@ -23,18 +22,13 @@ export type OpMappingTable = {
   [key: string]: OpLinkInfo[];
 };
 
-export const ShowAllButton = styled.button`
-  background: transparent;
-  border: none;
-  color: ${Colors.accentBlue()};
-  text-decoration: underline;
-  padding-top: 10px;
-  font-size: 0.9rem;
-`;
+export const ShowAllButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+  <button {...props} className={styles.showAllButton} />
+);
 
-export const TypeWrapper = styled.div`
-  margin-bottom: 10px;
-`;
+export const TypeWrapper = ({children}: {children: React.ReactNode}) => (
+  <div className={styles.typeWrapper}>{children}</div>
+);
 
 const OpLink = (props: OpLinkInfo) => (
   <Link to={`./${props.solid.name}`}>
@@ -56,10 +50,10 @@ export const Invocation = (props: {invocation: SidebarOpInvocationInfo; onClick:
   const {handleID, pipelineName} = props.invocation;
   const handlePath = handleID.split('.');
   return (
-    <InvocationContainer onClick={props.onClick}>
+    <div className={styles.invocationContainer} onClick={props.onClick}>
       {pipelineName && <div style={{color: Colors.textBlue()}}>{pipelineName}</div>}
       <OpColumn stepKey={handlePath.join('.')} />
-    </InvocationContainer>
+    </div>
   );
 };
 
@@ -74,14 +68,18 @@ export const DependencyRow = ({
 }) => {
   return (
     <tr>
-      <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <OpLink {...from} />}</Cell>
+      <td className={styles.cell}>
+        {typeof from === 'string' ? <Code>{from}</Code> : <OpLink {...from} />}
+      </td>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
         <Box flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
           {isDynamic && <Icon name="op_dynamic" color={Colors.accentGray()} />}
           <Icon name="arrow_forward" color={Colors.accentGray()} />
         </Box>
       </td>
-      <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <OpLink {...to} />}</Cell>
+      <td className={styles.cell}>
+        {typeof to === 'string' ? <Code>{to}</Code> : <OpLink {...to} />}
+      </td>
     </tr>
   );
 };
@@ -93,59 +91,22 @@ interface DependencyHeaderRowProps {
 
 export const DependencyHeaderRow = ({label, ...rest}: DependencyHeaderRowProps) => (
   <tr>
-    <DependencyHeaderCell {...rest}>{label}</DependencyHeaderCell>
+    <td className={styles.dependencyHeaderCell} {...rest}>
+      {label}
+    </td>
   </tr>
 );
 
-export const ResourceHeader = styled(SectionHeader)`
-  font-size: 14px;
-`;
+export const ResourceHeader = ({children, ...rest}: React.HTMLAttributes<HTMLHeadingElement>) => (
+  <h4 className={styles.resourceHeader} {...rest}>
+    {children}
+  </h4>
+);
 
-const Cell = styled.td`
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-  max-width: 0;
-  width: 48%;
-`;
+export const ResourceContainer = ({children}: {children: React.ReactNode}) => (
+  <div className={styles.resourceContainer}>{children}</div>
+);
 
-export const ResourceContainer = styled.div`
-  display: flex;
-  align-items: flex-start;
-  & h4 {
-    margin-top: 0;
-  }
-  & .iconGlobal {
-    margin-right: 8px;
-  }
-`;
-
-export const DependencyTable = styled.table`
-  width: 100%;
-`;
-
-const DependencyHeaderCell = styled.td`
-  font-size: 0.7rem;
-  color: ${Colors.textLight()};
-`;
-
-const InvocationContainer = styled.div`
-  user-select: none;
-  padding: 12px 24px;
-  cursor: pointer;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background: ${Colors.backgroundLight()};
-  }
-
-  font-family: ${FontFamily.monospace};
-
-  ${OpColumnContainer} {
-    margin-left: -12px;
-  }
-`;
+export const DependencyTable = ({children}: {children: React.ReactNode}) => (
+  <table className={styles.dependencyTable}>{children}</table>
+);

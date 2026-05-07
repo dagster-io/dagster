@@ -28,7 +28,7 @@ def create_ci_api_token(description: str | None = None, **global_options: object
         deployment=config.default_deployment,
     )
 
-    token_data = gql_client.execute_generic(
+    token_data = gql_client.execute_arbitrary(
         gql.CREATE_AGENT_TOKEN_MUTATION, variables={"description": description}
     )
     click.echo(token_data["createAgentToken"]["token"])

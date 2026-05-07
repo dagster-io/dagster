@@ -121,7 +121,7 @@ def test_gcp_credentials_propagation(MockDbIOManager):
     """
     # Remove GOOGLE_APPLICATION_CREDENTIALS if set (e.g. in CI) since
     # setup_gcp_creds raises if it's present alongside gcp_credentials config.
-    with environ({"GOOGLE_APPLICATION_CREDENTIALS": None}):  # type: ignore[dict-item]
+    with environ({"GOOGLE_APPLICATION_CREDENTIALS": None}):  # ty: ignore[invalid-argument-type]
         dummy_json = json.dumps({"type": "service_account", "project_id": "test"})
         creds_value = base64.b64encode(dummy_json.encode("utf-8")).decode("utf-8")
 

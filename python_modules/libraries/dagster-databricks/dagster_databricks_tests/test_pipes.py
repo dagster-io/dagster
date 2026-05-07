@@ -42,9 +42,9 @@ def script_fn():
     # are set, we know we are in the new cluster case and load params via the env vars.
     def is_notebook():
         try:
-            from pyspark.dbutils import DBUtils  # pyright: ignore[reportMissingImports]
+            from pyspark.dbutils import DBUtils  # ty: ignore[unresolved-import]
 
-            dbutils = DBUtils(spark)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+            dbutils = DBUtils(spark)  # ty: ignore[unresolved-reference] # noqa: F821
             dbutils.widgets.get(DAGSTER_PIPES_CONTEXT_ENV_VAR)
             return True
         except Exception:
@@ -52,7 +52,7 @@ def script_fn():
 
     def get_params_loader():
         if is_notebook():
-            return PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+            return PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets)  # ty: ignore[unresolved-reference] # noqa: F821
         elif DAGSTER_PIPES_CONTEXT_ENV_VAR in os.environ:
             return PipesEnvVarParamsLoader()
         else:
@@ -126,7 +126,7 @@ def make_submit_task_dict(
 
 
 def make_new_cluster_spec(forward_logs: bool, use_inner_objects: bool = False) -> Any:
-    cluster_spec = CLUSTER_DEFAULTS.copy()
+    cluster_spec: dict[str, Any] = dict(CLUSTER_DEFAULTS)
     databricks_host = os.getenv("DATABRICKS_HOST", "")
     if "azuredatabricks.net" in databricks_host:
         cluster_spec["node_type_id"] = "Standard_DS3_v2"

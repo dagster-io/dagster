@@ -11,7 +11,6 @@ export type AssetNodeFragment = {
   jobNames: Array<string>;
   changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
-  opVersion: string | null;
   description: string | null;
   computeKind: string | null;
   isPartitioned: boolean;

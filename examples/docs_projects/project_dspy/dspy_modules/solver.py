@@ -3,7 +3,7 @@
 import time
 from typing import List
 
-import dspy
+import dspy  # ty: ignore[unresolved-import]
 
 from .puzzle import ConnectionsGameLogic, Puzzle, create_game_state
 

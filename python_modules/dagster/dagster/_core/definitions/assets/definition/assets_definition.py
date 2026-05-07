@@ -81,7 +81,7 @@ ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
 def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
-    return "_".join(asset_key.path).replace("-", "_")
+    return "_".join(asset_key.path).replace("-", "_").replace(".", "_")
 
 
 @public

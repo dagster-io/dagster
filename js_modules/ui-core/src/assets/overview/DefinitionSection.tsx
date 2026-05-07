@@ -27,8 +27,8 @@ import {buildTagString} from '../../ui/tagAsString';
 import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../../workspace/types';
 import {globalAssetGraphPathForGroup} from '../globalAssetGraphPathToString';
-import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+import {WorkspaceAssetNode} from '../useAllAssets';
 
 export const DefinitionSection = ({
   repoAddress,
@@ -39,7 +39,7 @@ export const DefinitionSection = ({
   repoAddress: RepoAddress | null;
   location: WorkspaceLocationNodeFragment | undefined;
   assetNode: AssetViewDefinitionNodeFragment | null | undefined;
-  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment;
+  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | WorkspaceAssetNode;
 }) => {
   const storageKindTag = cachedOrLiveAssetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = cachedOrLiveAssetNode.tags?.filter(

@@ -168,6 +168,7 @@ class DagsterDltResource(ConfigurableResource):
             **TableMetadataSet(
                 column_schema=table_schema,
                 table_name=table_name,
+                storage_kind=destination_name,
             ),
         }
 

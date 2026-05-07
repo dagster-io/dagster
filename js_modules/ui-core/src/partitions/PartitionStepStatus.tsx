@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   Icon,
@@ -11,8 +10,8 @@ import {
   Popover,
   useViewport,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import React, {useEffect, useMemo, useState} from 'react';
-import styled from 'styled-components';
 
 import {PartitionRunList} from './PartitionRunList';
 import {
@@ -24,6 +23,7 @@ import {
   TopLabelTilted,
   topLabelHeightForLabels,
 } from './RunMatrixUtils';
+import styles from './css/PartitionStepStatus.module.css';
 import {
   PartitionStepStatusPipelineQuery,
   PartitionStepStatusPipelineQueryVariables,
@@ -246,9 +246,9 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
   const {stepRows, partitionColumns} = data;
 
   const sortPartitionSteps = (steps: MatrixStep[]) => {
-    const stepsByName = {};
-    steps.forEach((step) => ((stepsByName as any)[step.name] = step));
-    return stepRows.map((stepRow) => (stepsByName as any)[stepRow.name]);
+    const stepsByName: Record<string, MatrixStep> = {};
+    steps.forEach((step) => (stepsByName[step.name] = step));
+    return stepRows.map((stepRow) => stepsByName[stepRow.name]);
   };
 
   const visibleCount = getVisibleItemCount(viewport.width);
@@ -268,7 +268,7 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
   );
 
   return (
-    <PartitionRunMatrixContainer>
+    <div className={styles.partitionRunMatrixContainer}>
       <Dialog
         isOpen={!!focused}
         onClose={() => setFocused(null)}
@@ -299,7 +299,7 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
           <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
             <TopLabel style={{height: topLabelHeight}} />
             {props.showLatestRun && <LeftLabel style={{paddingLeft: 24}}>Last Run</LeftLabel>}
-            <Divider />
+            <div className={styles.divider} />
             {stepRows.map((step) => (
               <LeftLabel
                 style={{paddingLeft: 8 + step.x, paddingRight: 8}}
@@ -314,8 +314,8 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
         </GridFloatingContainer>
 
         {props.offset + visibleCount < props.partitionNames.length ? (
-          <PagerControl
-            $direction="left"
+          <div
+            className={clsx(styles.pagerControl, styles.left)}
             onClick={() =>
               props.setOffset(
                 Math.max(
@@ -329,7 +329,7 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
             }
           >
             <Icon name="chevron_left" />
-          </PagerControl>
+          </div>
         ) : null}
         <div style={{flex: 1, overflow: 'hidden', position: 'relative'}} {...containerProps}>
           <div
@@ -367,71 +367,39 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
                     />
                   </LeftLabel>
                 )}
-                <Divider />
-                {sortPartitionSteps(p.steps).map((s) => (
-                  <PartitionSquare
-                    key={s.name}
-                    step={s}
-                    runs={p.runs}
-                    runsLoaded={p.runsLoaded}
-                    minUnix={minUnix}
-                    maxUnix={maxUnix}
-                    hovered={hovered}
-                    setHovered={setHovered}
-                    setFocused={setFocused}
-                    partitionName={p.name}
-                  />
-                ))}
+                <div className={styles.divider} />
+                {sortPartitionSteps(p.steps)
+                  .filter((s): s is MatrixStep => !!s)
+                  .map((s) => (
+                    <PartitionSquare
+                      key={s.name}
+                      step={s}
+                      runs={p.runs}
+                      runsLoaded={p.runsLoaded}
+                      minUnix={minUnix}
+                      maxUnix={maxUnix}
+                      hovered={hovered}
+                      setHovered={setHovered}
+                      setFocused={setFocused}
+                      partitionName={p.name}
+                    />
+                  ))}
               </GridColumn>
             ))}
           </div>
         </div>
         {props.offset > 0 ? (
-          <PagerControl
-            $direction="right"
+          <div
+            className={clsx(styles.pagerControl, styles.right)}
             onClick={() => props.setOffset(Math.max(0, props.offset - visibleCount))}
           >
             <Icon name="chevron_right" />
-          </PagerControl>
+          </div>
         ) : null}
       </div>
-    </PartitionRunMatrixContainer>
+    </div>
   );
 });
-
-const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
-  width: 30px;
-  position: absolute;
-  border: 1px solid ${Colors.keylineDefault()};
-  border-radius: 3px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  top: calc(50% - 15px);
-  bottom: calc(50% - 15px);
-  ${({$direction}) => ($direction === 'left' ? 'left: 315px;' : 'right: 0;')}
-  background: ${Colors.backgroundDefault()};
-  z-index: 10;
-
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  &:hover {
-    background: ${Colors.backgroundDefaultHover()};
-  }
-`;
-
-const PartitionRunMatrixContainer = styled.div`
-  display: block;
-`;
-
-const Divider = styled.div`
-  height: 1px;
-  width: 100%;
-  margin-top: 5px;
-  border-top: 1px solid ${Colors.keylineDefault()};
-`;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
 // in the same way we construct the explorer graph

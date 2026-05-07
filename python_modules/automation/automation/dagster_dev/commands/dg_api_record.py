@@ -24,14 +24,14 @@ class RecordingClient(IGraphQLClient):
         self.real_client = real_client
         self.recorded_responses = []
 
-    def execute_generic(
+    def execute_arbitrary(
         self,
         query: str,
         operation_name: str | None = None,
         variables: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Execute query on real client and record the response."""
-        response = self.real_client.execute_generic(query, operation_name, variables)
+        response = self.real_client.execute_arbitrary(query, operation_name, variables)
         self.recorded_responses.append(response)
         return response
 

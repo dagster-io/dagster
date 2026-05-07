@@ -39,7 +39,8 @@ from dagster_rest_resources.__generated__.set_deployment_settings import (
     SetDeploymentSettingsSetDeploymentSettingsPythonError,
     SetDeploymentSettingsSetDeploymentSettingsUnauthorizedError,
 )
-from dagster_rest_resources.api.deployments import DgApiDeploymentApi
+from dagster_rest_resources.api.deployment import DgApiDeploymentApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.deployment import DgApiDeploymentList, DgApiDeploymentSettings
 from dagster_rest_resources.schemas.exception import (
     DagsterPlusGraphqlError,
@@ -50,7 +51,7 @@ from dagster_rest_resources.schemas.exception import (
 
 class TestListDeployments:
     def test_returns_deployments(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_deployments.return_value = ListDeployments(
             fullDeployments=[
                 ListDeploymentsFullDeployments(
@@ -73,7 +74,7 @@ class TestListDeployments:
         assert result.items[1].id == 2
 
     def test_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_deployments.return_value = ListDeployments(fullDeployments=[])
 
         result = DgApiDeploymentApi(_client=client).list_deployments()
@@ -83,7 +84,7 @@ class TestListDeployments:
 
 class TestListBranchDeployments:
     def test_returns_branch_deployments(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_branch_deployments.return_value = ListBranchDeployments(
             branchDeployments=ListBranchDeploymentsBranchDeployments(
                 nodes=[
@@ -102,7 +103,7 @@ class TestListBranchDeployments:
         assert result.items[0].id == 1
 
     def test_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_branch_deployments.return_value = ListBranchDeployments(
             branchDeployments=ListBranchDeploymentsBranchDeployments(nodes=[])
         )
@@ -114,7 +115,7 @@ class TestListBranchDeployments:
 
 class TestGetDeployment:
     def test_returns_deployment(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_deployment.return_value = GetDeployment(
             deploymentByName=GetDeploymentDeploymentByNameDagsterCloudDeployment(
                 __typename="DagsterCloudDeployment",
@@ -129,7 +130,7 @@ class TestGetDeployment:
         assert result.id == 1
 
     def test_not_found_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_deployment.return_value = GetDeployment(
             deploymentByName=GetDeploymentDeploymentByNameDeploymentNotFoundError(
                 __typename="DeploymentNotFoundError",
@@ -141,7 +142,7 @@ class TestGetDeployment:
             DgApiDeploymentApi(_client=client).get_deployment("missing")
 
     def test_unauthorized_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_deployment.return_value = GetDeployment(
             deploymentByName=GetDeploymentDeploymentByNameUnauthorizedError(
                 __typename="UnauthorizedError",
@@ -153,7 +154,7 @@ class TestGetDeployment:
             DgApiDeploymentApi(_client=client).get_deployment("missing")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_deployment.return_value = GetDeployment(
             deploymentByName=GetDeploymentDeploymentByNamePythonError(
                 __typename="PythonError",
@@ -167,7 +168,7 @@ class TestGetDeployment:
 
 class TestGetDeploymentSettings:
     def test_returns_settings(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_deployment_settings.return_value = GetDeploymentSettings(
             deploymentSettings=GetDeploymentSettingsDeploymentSettings(settings={"run_queue": {}})
         )
@@ -177,7 +178,7 @@ class TestGetDeploymentSettings:
         assert result.settings == {"run_queue": {}}
 
     def test_returns_empty_when_none(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_deployment_settings.return_value = GetDeploymentSettings(deploymentSettings=None)
 
         result = DgApiDeploymentApi(_client=client).get_deployment_settings()
@@ -187,7 +188,7 @@ class TestGetDeploymentSettings:
 
 class TestUpdateDeploymentSettings:
     def test_returns_settings(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.set_deployment_settings.return_value = SetDeploymentSettings(
             setDeploymentSettings=SetDeploymentSettingsSetDeploymentSettingsDeploymentSettings(
                 __typename="DeploymentSettings",
@@ -202,7 +203,7 @@ class TestUpdateDeploymentSettings:
         assert result.settings == {"run_queue": {}}
 
     def test_deployment_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.set_deployment_settings.return_value = SetDeploymentSettings(
             setDeploymentSettings=SetDeploymentSettingsSetDeploymentSettingsDeploymentNotFoundError(
                 __typename="DeploymentNotFoundError",
@@ -215,7 +216,7 @@ class TestUpdateDeploymentSettings:
             )
 
     def test_duplicate_deployment_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.set_deployment_settings.return_value = SetDeploymentSettings(
             setDeploymentSettings=SetDeploymentSettingsSetDeploymentSettingsDuplicateDeploymentError(
                 __typename="DuplicateDeploymentError",
@@ -228,7 +229,7 @@ class TestUpdateDeploymentSettings:
             )
 
     def test_delete_final_deployment_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.set_deployment_settings.return_value = SetDeploymentSettings(
             setDeploymentSettings=SetDeploymentSettingsSetDeploymentSettingsDeleteFinalDeploymentError(
                 __typename="DeleteFinalDeploymentError",
@@ -241,7 +242,7 @@ class TestUpdateDeploymentSettings:
             )
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.set_deployment_settings.return_value = SetDeploymentSettings(
             setDeploymentSettings=SetDeploymentSettingsSetDeploymentSettingsUnauthorizedError(
                 __typename="UnauthorizedError",
@@ -255,7 +256,7 @@ class TestUpdateDeploymentSettings:
             )
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.set_deployment_settings.return_value = SetDeploymentSettings(
             setDeploymentSettings=SetDeploymentSettingsSetDeploymentSettingsPythonError(
                 __typename="PythonError",
@@ -287,7 +288,7 @@ class TestDeleteDeployment:
         )
 
     def test_deletes_branch_deployment(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         self._setup_get_deployment(client, 1, "branch", DagsterCloudDeploymentType.BRANCH)
         client.delete_deployment.return_value = DeleteDeployment(
             deleteDeployment=DeleteDeploymentDeleteDeploymentDagsterCloudDeployment(
@@ -303,14 +304,14 @@ class TestDeleteDeployment:
         assert result.id == 1
 
     def test_production_without_flag_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         self._setup_get_deployment(client, 1, "prod", DagsterCloudDeploymentType.PRODUCTION)
 
         with pytest.raises(UnconfirmedProdDeletionError, match="production deployment"):
             DgApiDeploymentApi(_client=client).delete_deployment("prod")
 
     def test_production_with_flag_succeeds(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         self._setup_get_deployment(client, 1, "prod", DagsterCloudDeploymentType.PRODUCTION)
         client.delete_deployment.return_value = DeleteDeployment(
             deleteDeployment=DeleteDeploymentDeleteDeploymentDagsterCloudDeployment(
@@ -328,7 +329,7 @@ class TestDeleteDeployment:
         assert result.id == 1
 
     def test_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         self._setup_get_deployment(client, 1, "branch", DagsterCloudDeploymentType.BRANCH)
         client.delete_deployment.return_value = DeleteDeployment(
             deleteDeployment=DeleteDeploymentDeleteDeploymentDeploymentNotFoundError(
@@ -340,7 +341,7 @@ class TestDeleteDeployment:
             DgApiDeploymentApi(_client=client).delete_deployment("branch")
 
     def test_delete_final_deployment_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         self._setup_get_deployment(client, 1, "branch", DagsterCloudDeploymentType.BRANCH)
         client.delete_deployment.return_value = DeleteDeployment(
             deleteDeployment=DeleteDeploymentDeleteDeploymentDeleteFinalDeploymentError(
@@ -352,7 +353,7 @@ class TestDeleteDeployment:
             DgApiDeploymentApi(_client=client).delete_deployment("branch")
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         self._setup_get_deployment(client, 1, "branch", DagsterCloudDeploymentType.BRANCH)
         client.delete_deployment.return_value = DeleteDeployment(
             deleteDeployment=DeleteDeploymentDeleteDeploymentUnauthorizedError(
@@ -364,7 +365,7 @@ class TestDeleteDeployment:
             DgApiDeploymentApi(_client=client).delete_deployment("branch")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         self._setup_get_deployment(client, 1, "branch", DagsterCloudDeploymentType.BRANCH)
         client.delete_deployment.return_value = DeleteDeployment(
             deleteDeployment=DeleteDeploymentDeleteDeploymentPythonError(

@@ -178,7 +178,7 @@ def _record_utilization_metrics(logger: logging.Logger) -> None:
             logger, last_cpu_measurement_time, last_cpu_measurement
         )
         for key, val in utilization_metrics.items():
-            _UTILIZATION_METRICS["container_utilization"][key] = val
+            _UTILIZATION_METRICS["container_utilization"][key] = val  # ty: ignore[invalid-key]
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -200,7 +200,7 @@ def _set_request_count(api_name: str, value: Any) -> None:
 def retrieve_metrics():
     class _MetricsRetriever:
         def __call__(self, fn: Callable[..., Any]) -> Callable:
-            api_call = fn.__name__
+            api_call = fn.__name__  # ty: ignore[unresolved-attribute]
             METRICS_RETRIEVAL_FUNCTIONS.add(api_call)
 
             def wrapper(self: "DagsterApiServer", request: Any, context: grpc.ServicerContext):
@@ -208,7 +208,7 @@ def retrieve_metrics():
                     # If metrics retrieval is disabled, short circuit to just calling the underlying function.
                     return fn(self, request, context)
                 # Only record utilization metrics on ping, so as to not over-burden with IO.
-                if fn.__name__ == "Ping":
+                if fn.__name__ == "Ping":  # ty: ignore[unresolved-attribute]
                     _update_threadpool_metrics(self._server_threadpool_executor)
                     _record_utilization_metrics(self._logger)
                 with _METRICS_LOCK:
@@ -609,7 +609,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
 
-    def ReloadCode(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ReloadCode(  # ty: ignore[invalid-method-override]
         self, _request: dagster_api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ReloadCodeReply:
         self._logger.warn(
@@ -631,7 +631,7 @@ class DagsterApiServer(DagsterApiServicer):
             else "",
         )
 
-    def StreamingPing(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def StreamingPing(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
     ) -> Iterator[dagster_api_pb2.StreamingPingEvent]:
         sequence_length = request.sequence_length
@@ -639,19 +639,19 @@ class DagsterApiServer(DagsterApiServicer):
         for sequence_number in range(sequence_length):
             yield dagster_api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
 
-    def Heartbeat(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def Heartbeat(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.PingReply:
         self.__last_heartbeat_time = time.time()
         echo = request.echo
         return dagster_api_pb2.PingReply(echo=echo)
 
-    def GetServerId(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def GetServerId(  # ty: ignore[invalid-method-override]
         self, _request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.GetServerIdReply:
         return dagster_api_pb2.GetServerIdReply(server_id=self._server_id)
 
-    def ExecutionPlanSnapshot(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExecutionPlanSnapshot(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExecutionPlanSnapshotRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExecutionPlanSnapshotReply:
         execution_plan_args = deserialize_value(
@@ -674,7 +674,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_execution_plan_snapshot=serialize_value(execution_plan_snapshot_or_error)
         )
 
-    def ListRepositories(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ListRepositories(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ListRepositoriesRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ListRepositoriesReply:
         if self._serializable_load_error:
@@ -711,7 +711,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_list_repositories_response_or_error=serialized_response
         )
 
-    def ExternalPartitionNames(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionNames(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalPartitionNamesRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalPartitionNamesReply:
         try:
@@ -737,14 +737,14 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_partition_names_or_external_partition_execution_error=serialized_response
         )
 
-    def ExternalNotebookData(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalNotebookData(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalNotebookDataRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalNotebookDataReply:
         notebook_path = request.notebook_path
         check.str_param(notebook_path, "notebook_path")
         return dagster_api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
-    def ExternalPartitionSetExecutionParams(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionSetExecutionParams(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalPartitionSetExecutionParamsRequest,
         _context: grpc.ServicerContext,
@@ -775,7 +775,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
-    def ExternalPartitionConfig(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionConfig(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalPartitionConfigRequest,
         _context: grpc.ServicerContext,
@@ -805,7 +805,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_partition_config_or_external_partition_execution_error=serialized_data
         )
 
-    def ExternalPartitionTags(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionTags(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalPartitionTagsRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalPartitionTagsReply:
         try:
@@ -835,7 +835,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
         )
 
-    def ExternalPipelineSubsetSnapshot(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPipelineSubsetSnapshot(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalPipelineSubsetSnapshotRequest,
         _context: grpc.ServicerContext,
@@ -893,7 +893,7 @@ class DagsterApiServer(DagsterApiServicer):
                 RepositoryErrorSnap(error=serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
-    def ExternalRepository(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalRepository(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalRepositoryReply:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
@@ -902,7 +902,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_repository_data=serialized_external_repository_data,
         )
 
-    def ExternalJob(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalJob(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalJobRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalJobReply:
         try:
@@ -924,7 +924,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-    def StreamingExternalRepository(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def StreamingExternalRepository(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> Iterable[dagster_api_pb2.StreamingExternalRepositoryEvent]:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
@@ -963,7 +963,7 @@ class DagsterApiServer(DagsterApiServicer):
                 serialized_chunk=serialized_data[start_index:end_index],
             )
 
-    def ExternalScheduleExecution(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalScheduleExecution(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalScheduleExecutionRequest,
         _context: grpc.ServicerContext,
@@ -972,7 +972,7 @@ class DagsterApiServer(DagsterApiServicer):
             self._external_schedule_execution(request)
         )
 
-    def SyncExternalScheduleExecution(self, request, _context: grpc.ServicerContext):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def SyncExternalScheduleExecution(self, request, _context: grpc.ServicerContext):  # ty: ignore[invalid-method-override]
         return dagster_api_pb2.ExternalScheduleExecutionReply(
             serialized_schedule_result=self._external_schedule_execution(request)
         )
@@ -1053,7 +1053,7 @@ class DagsterApiServer(DagsterApiServicer):
             self._external_sensor_execution(request)
         )
 
-    def ShutdownServer(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ShutdownServer(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ShutdownServerReply:
         try:
@@ -1076,7 +1076,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-    def CancelExecution(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def CancelExecution(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.CancelExecutionRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.CancelExecutionReply:
         success = False
@@ -1106,7 +1106,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def CanCancelExecution(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def CanCancelExecution(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.CanCancelExecutionRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.CanCancelExecutionReply:
         can_cancel_execution_request = deserialize_value(
@@ -1125,7 +1125,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def StartRun(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def StartRun(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.StartRunRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.StartRunReply:
         if self._shutdown_once_executions_finish_event.is_set():
@@ -1240,7 +1240,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def GetCurrentImage(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def GetCurrentImage(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.GetCurrentImageReply:
         return dagster_api_pb2.GetCurrentImageReply(
@@ -1251,7 +1251,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def GetCurrentRuns(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def GetCurrentRuns(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.GetCurrentRunsReply:
         with self._execution_lock:
@@ -1385,7 +1385,7 @@ class DagsterGrpcServer:
         try:
             self.server.wait_for_termination()
         finally:
-            self._api_servicer.cleanup()  # pyright: ignore[reportAttributeAccessIssue]
+            self._api_servicer.cleanup()  # ty: ignore[unresolved-attribute]
             server_termination_thread.join()
 
 

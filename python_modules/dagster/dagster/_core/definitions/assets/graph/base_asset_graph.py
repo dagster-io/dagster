@@ -236,7 +236,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
 
     @property
     def child_entity_keys(self) -> AbstractSet[EntityKey]:
-        return {self.key.asset_key}
+        return set()
 
     @property
     def partitions_def(self) -> PartitionsDefinition | None:

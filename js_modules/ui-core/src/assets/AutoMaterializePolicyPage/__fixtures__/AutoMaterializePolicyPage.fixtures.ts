@@ -52,17 +52,24 @@ export function buildQueryMock<
 }
 
 export const buildGetEvaluationsQuery = ({
-  variables,
   data,
 }: {
-  variables: GetEvaluationsQueryVariables;
+  variables?: GetEvaluationsQueryVariables;
   data: Omit<GetEvaluationsQuery, '__typename'>;
 }): MockedResponse<GetEvaluationsQuery> => {
-  return buildQueryMock({
-    query: GET_EVALUATIONS_QUERY,
-    variables,
-    data,
-  });
+  return {
+    request: {
+      query: GET_EVALUATIONS_QUERY,
+    },
+    variableMatcher: () => true,
+    maxUsageCount: Infinity,
+    result: {
+      data: {
+        __typename: 'Query',
+        ...data,
+      } as Unmasked<GetEvaluationsQuery>,
+    },
+  };
 };
 
 const ONE_MINUTE = 1000 * 60;

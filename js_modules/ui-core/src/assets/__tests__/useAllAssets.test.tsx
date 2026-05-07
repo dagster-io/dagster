@@ -22,8 +22,16 @@ import {AssetCatalogTableQueryVersion} from '../types/AssetsCatalogTable.types';
 import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
+interface MockCacheInstance {
+  has: jest.Mock;
+  get: jest.Mock;
+  set: jest.Mock;
+  delete: jest.Mock;
+  constructorArgs: unknown;
+}
+
 jest.mock('../../util/idb-lru-cache', () => {
-  const mockedCache = {
+  const mockedCacheInstance = {
     has: jest.fn(),
     get: jest.fn(),
     set: jest.fn(),
@@ -32,12 +40,15 @@ jest.mock('../../util/idb-lru-cache', () => {
   };
 
   return {
-    cache: (...args: any[]) => {
-      mockedCache.constructorArgs = args;
-      return mockedCache;
+    cache: (...args: unknown[]) => {
+      mockedCacheInstance.constructorArgs = args;
+      return mockedCacheInstance;
     },
   };
 });
+
+const getMockCacheInstance = (): MockCacheInstance =>
+  (mockedCache as unknown as (...args: unknown[]) => MockCacheInstance)();
 
 const createMock = ({
   nodes,
@@ -100,8 +111,8 @@ describe('useAllAssets', () => {
   });
 
   it('Loads from Indexeddb cache and also requests latest data', async () => {
-    (mockedCache as any)().has.mockResolvedValue(true);
-    (mockedCache as any)().get.mockResolvedValueOnce({
+    getMockCacheInstance().has.mockResolvedValue(true);
+    getMockCacheInstance().get.mockResolvedValueOnce({
       value: {
         data: [buildAssetRecord()],
         version: AssetCatalogTableQueryVersion,

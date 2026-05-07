@@ -55,7 +55,8 @@ function getSectionRows<T>(params: {
             key={i}
             padding={{
               horizontal: PADDING_HORIZONTAL,
-              bottom: tileGap as any,
+              // tileGap comes from TILE_GAP (12) which is a valid Spacing value
+              bottom: tileGap as 12,
             }}
             style={{
               rowGap: tileGap,

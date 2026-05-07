@@ -1,158 +1,132 @@
+import importlib
 import inspect
+import pkgutil
+from functools import cache
 from types import UnionType
 from typing import Union, get_args, get_origin
 
 import pytest
+from dagster_rest_resources.api.agent import DgApiAgentApi
+from dagster_rest_resources.api.alert_policy import DgApiAlertPolicyApi
+from dagster_rest_resources.api.artifact import DgApiArtifactApi
+from dagster_rest_resources.api.asset import DgApiAssetApi
+from dagster_rest_resources.api.asset_check import DgApiAssetCheckApi
+from dagster_rest_resources.api.code_location import DgApiCodeLocationApi
+from dagster_rest_resources.api.compute_log import DgApiComputeLogApi
+from dagster_rest_resources.api.deployment import DgApiDeploymentApi
+from dagster_rest_resources.api.issue import DgApiIssueApi
+from dagster_rest_resources.api.job import DgApiJobApi
+from dagster_rest_resources.api.organization import DgApiOrganizationApi
+from dagster_rest_resources.api.run import DgApiRunApi
+from dagster_rest_resources.api.run_event import DgApiRunEventApi
+from dagster_rest_resources.api.schedule import DgApiScheduleApi
+from dagster_rest_resources.api.secret import DgApiSecretApi
+from dagster_rest_resources.api.sensor import DgApiSensorApi
+from dagster_rest_resources.api.tick import DgApiTickApi
 from pydantic import BaseModel
 
-from dagster_rest_resources_tests.api_tests.rest_compliance_infrastructure import (
-    REST_PREFIXES,
-    is_allowed_type,
-    is_pydantic_model,
-)
-
-ALL_API_CLASSES = []
+ALL_API_CLASSES = [
+    DgApiAgentApi,
+    DgApiAlertPolicyApi,
+    DgApiArtifactApi,
+    DgApiAssetCheckApi,
+    DgApiAssetApi,
+    DgApiCodeLocationApi,
+    DgApiComputeLogApi,
+    DgApiDeploymentApi,
+    DgApiIssueApi,
+    DgApiJobApi,
+    DgApiOrganizationApi,
+    DgApiRunEventApi,
+    DgApiRunApi,
+    DgApiScheduleApi,
+    DgApiSecretApi,
+    DgApiSensorApi,
+    DgApiTickApi,
+]
 
 
 class TestRestCompliance:
     """Test REST compliance for API interfaces."""
 
-    def test_method_naming_conventions(self):
+    @pytest.mark.parametrize("api_class", ALL_API_CLASSES)
+    def test_method_naming_conventions(self, api_class):
         """Test that all public methods follow REST naming conventions."""
-        for api_class in ALL_API_CLASSES:
-            public_methods = [
-                method
-                for method in dir(api_class)
-                if not method.startswith("_") and callable(getattr(api_class, method))
-            ]
+        public_method_names = [
+            m for m in dir(api_class) if not m.startswith("_") and callable(getattr(api_class, m))
+        ]
 
-            # Remove __init__ and other special methods
-            public_methods = [m for m in public_methods if not m.startswith("__")]
+        for name in public_method_names:
+            is_valid_prefix = any(name.startswith(prefix) for prefix in REST_PREFIXES.keys())
+            assert is_valid_prefix, (
+                f"{api_class.__name__}.{name} doesn't follow REST naming conventions. "
+                f"Should start with one of: {', '.join(REST_PREFIXES.keys())}"
+            )
 
-            for method_name in public_methods:
-                valid_prefix = any(
-                    method_name.startswith(prefix) for prefix in REST_PREFIXES.keys()
+    @pytest.mark.parametrize("api_class", ALL_API_CLASSES)
+    def test_return_type_signatures(self, api_class):
+        """Test that methods only return Pydantic models that follow consistent patterns."""
+        public_method_names = [
+            m for m in dir(api_class) if not m.startswith("_") and callable(getattr(api_class, m))
+        ]
+
+        for name in public_method_names:
+            method = getattr(api_class, name)
+            sig = inspect.signature(method)
+
+            return_type = sig.return_annotation
+
+            assert is_pydantic_model(return_type), (
+                f"{api_class.__name__}.{name} return type {return_type} must be a Pydantic model."
+            )
+
+            if name.startswith("list_"):
+                fields = return_type.model_fields
+                assert "items" in fields, (
+                    f"{api_class.__name__}.{name} return type {return_type.__name__} "
+                    f"should have an 'items' field for list responses."
                 )
-                assert valid_prefix, (
-                    f"{api_class.__name__}.{method_name} doesn't follow REST naming conventions. "
-                    f"Should start with one of: {', '.join(REST_PREFIXES.keys())}"
-                )
-
-    def test_type_signatures(self):
-        """Test that methods only use primitives and Pydantic models."""
-        for api_class in ALL_API_CLASSES:
-            public_methods = [
-                method
-                for method in dir(api_class)
-                if not method.startswith("_") and callable(getattr(api_class, method))
-            ]
-
-            # Remove __init__ and other special methods
-            public_methods = [m for m in public_methods if not m.startswith("__")]
-
-            for method_name in public_methods:
-                method = getattr(api_class, method_name)
-                if not callable(method):
-                    continue
-
-                sig = inspect.signature(method)
-
-                # Check parameters (skip 'self')
-                for param_name, param in sig.parameters.items():
-                    if param_name == "self":
-                        continue
-
-                    if param.annotation != inspect.Parameter.empty:
-                        assert is_allowed_type(param.annotation), (
-                            f"{api_class.__name__}.{method_name} parameter '{param_name}' "
-                            f"has invalid type {param.annotation}. "
-                            f"Only primitives and Pydantic models are allowed."
-                        )
-
-                # Check return type
-                if sig.return_annotation != inspect.Signature.empty:
-                    # Return types must be Pydantic models (not primitives)
-                    assert is_pydantic_model(sig.return_annotation), (
-                        f"{api_class.__name__}.{method_name} return type {sig.return_annotation} "
-                        f"must be a Pydantic model."
-                    )
-
-    def test_response_consistency(self):
-        """Test that list methods return consistent response structures."""
-        for api_class in ALL_API_CLASSES:
-            public_methods = [
-                method
-                for method in dir(api_class)
-                if not method.startswith("_") and callable(getattr(api_class, method))
-            ]
-
-            for method_name in public_methods:
-                if not method_name.startswith("list_"):
-                    continue
-
-                method = getattr(api_class, method_name)
-                sig = inspect.signature(method)
-
-                if sig.return_annotation != inspect.Signature.empty:
-                    return_type = sig.return_annotation
-
-                    # Get the actual class if it's Optional
-                    if get_origin(return_type) in (Union, UnionType):
-                        args = get_args(return_type)
-                        non_none_args = [arg for arg in args if arg is not type(None)]
-                        if non_none_args:
-                            return_type = non_none_args[0]
-
-                    # Check that it's a Pydantic model with an 'items' field
-                    if inspect.isclass(return_type) and issubclass(return_type, BaseModel):
-                        fields = return_type.model_fields
-                        assert "items" in fields, (
-                            f"{api_class.__name__}.{method_name} return type {return_type.__name__} "
-                            f"should have an 'items' field for list responses."
-                        )
-
-    def test_parameter_patterns(self):
-        """Test that parameters follow consistent patterns."""
-        for api_class in ALL_API_CLASSES:
-            public_methods = [
-                method
-                for method in dir(api_class)
-                if not method.startswith("_") and callable(getattr(api_class, method))
-            ]
-
-            for method_name in public_methods:
-                method = getattr(api_class, method_name)
-                if not callable(method):
-                    continue
-
-                sig = inspect.signature(method)
-
-                for param_name, param in sig.parameters.items():
-                    if param_name == "self":
-                        continue
-
-                    # Check ID parameters use consistent naming
-                    if "id" in param_name.lower():
-                        # IDs should be in format resource_id (e.g., deployment_id)
-                        assert param_name.endswith("_id") or param_name == "id", (
-                            f"{api_class.__name__}.{method_name} parameter '{param_name}' "
-                            f"should follow pattern 'resource_id' (e.g., deployment_id)"
-                        )
-
-                    # Check Optional parameters have proper typing
-                    if param.default != inspect.Parameter.empty:
-                        # Parameters with defaults should be Optional or have a
-                        # non-None default (e.g. bool = False, int = 0 are fine)
-                        if param.annotation != inspect.Parameter.empty:
-                            origin = get_origin(param.annotation)
-                            is_optional = origin in (Union, UnionType) and type(None) in get_args(
-                                param.annotation
-                            )
-                            assert is_optional or param.default is not None, (
-                                f"{api_class.__name__}.{method_name} parameter '{param_name}' "
-                                f"has a default of None but is not typed as Optional"
-                            )
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+# REST method prefixes and their meanings
+REST_PREFIXES = {
+    "list_": "GET collection",
+    "get_": "GET single resource",
+    "create_": "POST resource",
+    "update_": "PUT/PATCH resource",
+    "delete_": "DELETE resource",
+    "action_": "POST custom action",
+}
+
+
+@cache
+def get_pydantic_models_from_schemas():
+    """Discover all Pydantic models from the schemas package."""
+    models = set()
+    schemas_module = importlib.import_module("dagster_rest_resources.schemas")
+
+    for _, module_name, _ in pkgutil.iter_modules(schemas_module.__path__):
+        full_module_name = f"dagster_rest_resources.schemas.{module_name}"
+        module = importlib.import_module(full_module_name)
+        for name, obj in inspect.getmembers(module):
+            if inspect.isclass(obj) and issubclass(obj, BaseModel) and obj != BaseModel:
+                models.add(name)
+
+    return frozenset(models)  # Return frozenset for hashability with @cache
+
+
+def is_pydantic_model(type_hint) -> bool:
+    """Check if a type hint is a Pydantic BaseModel subclass."""
+    # Handle string annotations (forward references)
+    if isinstance(type_hint, str):
+        return type_hint in get_pydantic_models_from_schemas()
+
+    # Handle Optional types
+    if get_origin(type_hint) in (Union, UnionType):
+        args = get_args(type_hint)
+        non_none_args = [a for a in args if a is not type(None)]
+        if len(non_none_args) == 1:
+            return is_pydantic_model(non_none_args[0])
+        return False
+
+    return inspect.isclass(type_hint) and issubclass(type_hint, BaseModel)

@@ -382,9 +382,9 @@ class AutoMaterializeLaunchContext:
 
     def __exit__(
         self,
-        exception_type: type[BaseException],
-        exception_value: Exception,
-        traceback: TracebackType,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if exception_value and isinstance(exception_value, KeyboardInterrupt):
             return

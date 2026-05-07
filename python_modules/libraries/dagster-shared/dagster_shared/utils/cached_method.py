@@ -101,10 +101,11 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
                 setattr(self, CACHED_METHOD_CACHE_FIELD, {})
 
             cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
-            if method.__name__ not in cache_dict:
-                cache_dict[method.__name__] = {}
+            method_name = method.__name__  # ty: ignore[unresolved-attribute]
+            if method_name not in cache_dict:
+                cache_dict[method_name] = {}
 
-            cache = cache_dict[method.__name__]
+            cache = cache_dict[method_name]
             if not args and not kwargs:
                 key = NO_ARGS_HASH_VALUE
             else:
@@ -126,10 +127,11 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
                 setattr(self, CACHED_METHOD_CACHE_FIELD, {})
 
             cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
-            if method.__name__ not in cache_dict:
-                cache_dict[method.__name__] = {}
+            method_name = method.__name__  # ty: ignore[unresolved-attribute]
+            if method_name not in cache_dict:
+                cache_dict[method_name] = {}
 
-            cache = cache_dict[method.__name__]
+            cache = cache_dict[method_name]
             if not args and not kwargs:
                 key = NO_ARGS_HASH_VALUE
             else:
@@ -158,7 +160,7 @@ class _HashedSeq(list):
         self[:] = tup
         self.hashvalue = hash(tup)
 
-    def __hash__(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def __hash__(self) -> int:
         return self.hashvalue
 
 

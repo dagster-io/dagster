@@ -47,7 +47,12 @@ def define_cluster_provider_fixture(additional_kind_images=None):
 
         if IS_BUILDKITE:
             print("Installing ECR credentials...")
-            check_output("aws ecr get-login --no-include-email --region us-west-2 | sh", shell=True)
+            check_output(
+                "aws ecr get-login-password --region us-west-2 "
+                "| docker login --username AWS --password-stdin "
+                "${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com",
+                shell=True,
+            )
 
         provider = request.config.getoption("--cluster-provider")
 

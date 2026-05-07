@@ -1,0 +1,44 @@
+.groupOutlineBox {
+  inset: 0;
+  top: 60px;
+  position: absolute;
+  background: var(--color-lineage-group-background);
+  width: 100%;
+  border-radius: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  pointer-events: none;
+  border: 2px solid var(--color-lineage-group-node-border);
+  border-top: 0;
+}
+
+.groupOutlineBox.minimal {
+  border-width: 4px;
+}
+
+.groupNodeHeaderBox {
+  border: 2px solid var(--color-lineage-group-node-border);
+  background: var(--color-lineage-group-node-background);
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0 12px 0 16px;
+  border-radius: 8px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  position: relative;
+  transition:
+    background 100ms linear,
+    border-color 100ms linear;
+}
+
+.groupNodeHeaderBox.minimal {
+  border-width: 4px;
+}
+
+.groupNodeHeaderBox:hover {
+  background: var(--color-lineage-group-node-background-hover);
+  border-color: var(--color-lineage-group-node-border-hover);
+}

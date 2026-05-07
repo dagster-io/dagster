@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import cast
 from unittest import mock
 
 from dagster import (
@@ -85,7 +84,7 @@ def a():
 b_spec = AssetSpec(key="b")
 
 
-@asset_check(asset=a)  # pyright: ignore[reportArgumentType]
+@asset_check(asset=a)
 def a_check():
     pass
 
@@ -109,8 +108,8 @@ def test_defs_passthrough() -> None:
             jobs=[the_job],
             sensors=[some_sensor],
             schedules=[some_schedule],
-            loggers={"the_logger": nonstandard_logger},  # pyright: ignore[reportArgumentType]
-            executor=nonstandard_executor,  # pyright: ignore[reportArgumentType]
+            loggers={"the_logger": nonstandard_logger},
+            executor=nonstandard_executor,
         ),
     )
     assert defs.executor == nonstandard_executor
@@ -391,7 +390,7 @@ def test_cached_loading() -> None:
             assert {
                 key
                 for assets_def in reloaded_repo_def.assets_defs_by_key.values()
-                for key in cast("AssetsDefinition", assets_def).keys
+                for key in assets_def.keys
             } == {AssetKey("a"), make_test_dag_asset_key("dag")}
 
 

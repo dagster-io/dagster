@@ -34,7 +34,6 @@ export type AssetCatalogTableQuery = {
             hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
-            pools: Array<string>;
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -53,18 +52,13 @@ export type AssetCatalogTableQuery = {
               | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
-              description: string;
               dimensionTypes: Array<{
                 __typename: 'DimensionDefinitionType';
                 type: Types.PartitionDefinitionType;
                 dynamicPartitionsDefinitionName: string | null;
               }>;
             } | null;
-            automationCondition: {
-              __typename: 'AutomationCondition';
-              label: string | null;
-              expandedLabel: Array<string>;
-            } | null;
+            automationCondition: {__typename: 'AutomationCondition'} | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
@@ -114,7 +108,6 @@ export type AssetCatalogGroupTableQuery = {
     hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
-    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -133,18 +126,13 @@ export type AssetCatalogGroupTableQuery = {
       | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
-      description: string;
       dimensionTypes: Array<{
         __typename: 'DimensionDefinitionType';
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    automationCondition: {
-      __typename: 'AutomationCondition';
-      label: string | null;
-      expandedLabel: Array<string>;
-    } | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
@@ -175,7 +163,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
-  pools: Array<string>;
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -194,18 +181,13 @@ export type AssetCatalogGroupTableNodeFragment = {
     | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
-    description: string;
     dimensionTypes: Array<{
       __typename: 'DimensionDefinitionType';
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
+  automationCondition: {__typename: 'AutomationCondition'} | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
@@ -218,6 +200,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '9c59a1835a976dbc4f476a8d896056b63ff40a8ab8b482f941bfb963771831e5';
+export const AssetCatalogTableQueryVersion = '1d1552f9dff528ad423ca86f37d1febd109b9aa0d051e68767cc0e8cc60d26ca';
 
-export const AssetCatalogGroupTableQueryVersion = 'f696bb1f797be58919716f04b0ef6e16daa3c030cecb9df0c09c7de47ac5f7f0';
+export const AssetCatalogGroupTableQueryVersion = '4a575a14e992618cb5912527311d7276a7b36664c15ccc943dcda7a750270ea5';

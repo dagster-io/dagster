@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Colors,
   ErrorBoundary,
   Icon,
   NonIdealState,
@@ -14,13 +13,13 @@ import {observeEnabled} from '@shared/app/observeEnabled';
 import {AssetSelectionInput} from '@shared/asset-selection/input/AssetSelectionInput';
 import {CreateCatalogViewButton} from '@shared/assets/CreateCatalogViewButton';
 import {useCatalogExtraDropdownOptions} from '@shared/assets/catalog/useCatalogExtraDropdownOptions';
+import clsx from 'clsx';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import {ParsedQs} from 'qs';
 import * as React from 'react';
 import {useCallback, useMemo, useRef, useState} from 'react';
-import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphBackgroundContextMenu} from './AssetGraphBackgroundContextMenu';
@@ -43,7 +42,10 @@ import {
   tokenForAssetKey,
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
+import styles from './css/AssetGraphExplorer.module.css';
 import {AssetGraphLayout, GroupLayout} from './layout';
+import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
+import {AssetGraphQueryItem} from './types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNavContext';
@@ -77,8 +79,6 @@ import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
 import {isIframe} from '../util/isIframe';
-import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
-import {AssetGraphQueryItem} from './types';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 type Props = {
@@ -508,7 +508,7 @@ const AssetGraphExplorerWithData = ({
       maxAutocenterZoom={1.0}
     >
       {({scale}, viewportRect) => (
-        <SVGContainer width={layout.width} height={layout.height}>
+        <svg className={styles.svgContainer} width={layout.width} height={layout.height}>
           {Object.values(layout.groups)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
             .filter((group) => group.expanded)
@@ -661,7 +661,7 @@ const AssetGraphExplorerWithData = ({
                 </foreignObject>
               );
             })}
-        </SVGContainer>
+        </svg>
       )}
     </SVGViewport>
   ) : null;
@@ -776,7 +776,13 @@ const AssetGraphExplorerWithData = ({
               </OptionsOverlay>
             )}
 
-            <TopbarWrapper $isFullScreen={isFullScreen} $viewType={viewType}>
+            <Box
+              className={clsx(
+                styles.topbarWrapper,
+                isFullScreen && viewType === AssetGraphViewType.CATALOG && styles.fullScreenCatalog,
+              )}
+              flex={{direction: 'row', alignItems: 'center', gap: 12}}
+            >
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 {isFullScreen ? <IndeterminateLoadingBar $loading={nextLayoutLoading} /> : null}
                 <Box
@@ -803,7 +809,7 @@ const AssetGraphExplorerWithData = ({
                     </>
                   ) : (
                     <>
-                      <GraphQueryInputFlexWrap>
+                      <div className={styles.graphQueryInputFlexWrap}>
                         <AssetSelectionInput
                           assets={graphQueryItems}
                           value={explorerPath.opsQuery}
@@ -814,7 +820,7 @@ const AssetGraphExplorerWithData = ({
                             }
                           }}
                         />
-                      </GraphQueryInputFlexWrap>
+                      </div>
                       <CreateCatalogViewButton />
                       <AssetLiveDataRefreshButton />
                     </>
@@ -845,7 +851,7 @@ const AssetGraphExplorerWithData = ({
                   />
                 )}
               </Box>
-            </TopbarWrapper>
+            </Box>
           </ErrorBoundary>
         )
       }
@@ -926,44 +932,6 @@ export interface AssetGroup {
   repositoryName?: string;
   repositoryLocationName?: string;
 }
-
-const SVGContainer = styled.svg`
-  overflow: visible;
-  border-radius: 0;
-
-  foreignObject.group {
-    transition: opacity 300ms linear;
-  }
-`;
-
-const TopbarWrapper = styled.div<{$isFullScreen?: boolean; $viewType: AssetGraphViewType}>`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  ${({$isFullScreen, $viewType}) => {
-    return $isFullScreen && $viewType === AssetGraphViewType.CATALOG
-      ? ''
-      : `
-        background: ${Colors.backgroundDefault()};
-        border-bottom: 1px solid ${Colors.keylineDefault()};
-      `;
-  }}
-  gap: 12px;
-  align-items: center;
-`;
-
-const GraphQueryInputFlexWrap = styled.div`
-  flex: 1;
-
-  > div {
-    > * {
-      display: block;
-      width: 100%;
-    }
-  }
-`;
 
 function layoutChangeShouldAdjustViewport(
   last: AssetGraphLayout | null,

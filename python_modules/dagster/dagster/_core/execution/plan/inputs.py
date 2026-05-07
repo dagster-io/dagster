@@ -871,4 +871,4 @@ StepInputSourceUnion: TypeAlias = (
     StepInputSource | FromDynamicCollect | FromUnresolvedStepOutput | FromPendingDynamicStepOutput
 )
 
-StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore
+StepInputSourceTypes = StepInputSourceUnion.__args__

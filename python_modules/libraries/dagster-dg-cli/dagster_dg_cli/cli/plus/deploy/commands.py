@@ -546,7 +546,7 @@ def _fetch_secrets_for_location(
     else:
         scopes = {"fullDeploymentScope": True}
 
-    result = client.execute_generic(
+    result = client.execute_arbitrary(
         SECRETS_QUERY,
         variables={"onlyViewable": True, "scopes": scopes},
     )

@@ -49,15 +49,15 @@ class DgApiSecretApi:
 
         match result.typename__:
             case "Secrets":
-                items = [self._build_secret(s) for s in result.secrets]
+                items = [self._build_secret(s) for s in result.secrets]  # ty: ignore[unresolved-attribute]
                 return DgApiSecretList(
                     items=items[:limit] if limit is not None else items,
                     total=len(items),
                 )
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error listing secrets: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error listing secrets: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing secrets: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing secrets: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -87,9 +87,9 @@ class DgApiSecretApi:
 
         match result.typename__:
             case "Secrets":
-                if not result.secrets:
+                if not result.secrets:  # ty: ignore[unresolved-attribute]
                     raise DagsterPlusGraphqlError(f"Secret '{secret_name}' not found")
-                secret = result.secrets[0]
+                secret = result.secrets[0]  # ty: ignore[unresolved-attribute]
                 return self._build_secret(
                     secret,
                     value=secret.secret_value
@@ -97,9 +97,9 @@ class DgApiSecretApi:
                     else None,
                 )
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error fetching secret: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error fetching secret: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching secret: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching secret: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

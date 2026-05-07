@@ -109,7 +109,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
         ),
         mock.patch("dagster_dg_cli.cli.plus.login.webbrowser.open", mock.Mock(return_value=True)),
         mock.patch(
-            "dagster_rest_resources.gql_client.DagsterPlusGraphQLClient.execute_generic",
+            "dagster_rest_resources.gql_client.DagsterPlusGraphQLClient.execute_arbitrary",
             return_value={
                 "fullDeployments": [
                     {"deploymentName": "hooli-dev"},

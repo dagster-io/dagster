@@ -122,12 +122,12 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
 
     root_uri: str = Field(description="Storage location where Delta tables are stored.")
     mode: WriteMode = Field(
-        default=WriteMode.overwrite.value,  # type: ignore
+        default=WriteMode.overwrite,
         description="The write mode passed to save the output.",
     )
     overwrite_schema: bool = Field(default=False)
     writer_engine: WriterEngine = Field(
-        default=WriterEngine.pyarrow.value,  # type: ignore
+        default=WriterEngine.pyarrow,
         description="Engine passed to write_deltalake.",
     )
 

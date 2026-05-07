@@ -706,6 +706,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
     local_dir = "/dir"
     prefix = "prefix"
     upload_interval = 30
+    endpoint_suffix = "core.windows.net"
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.AZURE,
@@ -720,6 +721,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                     prefix=prefix,
                     uploadInterval=upload_interval,
                     showUrlOnly=True,
+                    endpointSuffix=endpoint_suffix,
                 )
             ),
         )
@@ -742,6 +744,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
         "upload_interval": upload_interval,
         "access_key_or_sas_token": access_key_or_sas_token,
         "show_url_only": True,
+        "endpoint_suffix": endpoint_suffix,
     }
 
     # Test all config fields in configurable class

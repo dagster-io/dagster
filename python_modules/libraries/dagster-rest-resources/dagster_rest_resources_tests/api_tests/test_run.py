@@ -17,7 +17,7 @@ from dagster_rest_resources.__generated__.list_runs import (
     ListRunsRunsOrErrorRunsResults,
 )
 from dagster_rest_resources.api.run import DgApiRun, DgApiRunApi, DgApiRunList
-from dagster_rest_resources.gql_client import DagsterPlusGraphqlError
+from dagster_rest_resources.gql_client import DagsterPlusGraphqlError, IGraphQLClient
 
 
 def _make_run_result(
@@ -41,7 +41,7 @@ def _make_run_result(
 
 class TestGetRun:
     def test_returns_run(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run.return_value = GetRun(runOrError=_make_run_result())
         result = DgApiRunApi(client).get_run("run-1")
 
@@ -56,7 +56,7 @@ class TestGetRun:
         )
 
     def test_run_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run.return_value = GetRun(
             runOrError=GetRunRunOrErrorRunNotFoundError(__typename="RunNotFoundError", message="")
         )
@@ -64,7 +64,7 @@ class TestGetRun:
             DgApiRunApi(client).get_run("run-xyz")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run.return_value = GetRun(
             runOrError=GetRunRunOrErrorPythonError(__typename="PythonError", message="")
         )
@@ -92,7 +92,7 @@ def _make_list_run_result(
 
 class TestListRuns:
     def test_returns_runs(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_runs.return_value = ListRuns(
             runsOrError=ListRunsRunsOrErrorRuns(
                 __typename="Runs",
@@ -124,7 +124,7 @@ class TestListRuns:
         assert result.total == 2
 
     def test_returns_empty_list(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_runs.return_value = ListRuns(
             runsOrError=ListRunsRunsOrErrorRuns(__typename="Runs", results=[], count=0)
         )
@@ -133,7 +133,7 @@ class TestListRuns:
         assert result == DgApiRunList(items=[], total=0)
 
     def test_no_filter_when_no_statuses_or_job_name(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_runs.return_value = ListRuns(
             runsOrError=ListRunsRunsOrErrorRuns(__typename="Runs", results=[], count=0)
         )
@@ -142,7 +142,7 @@ class TestListRuns:
         client.list_runs.assert_called_once_with(filter=None, cursor=None, limit=50)
 
     def test_invalid_filter_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_runs.return_value = ListRuns(
             runsOrError=ListRunsRunsOrErrorInvalidPipelineRunsFilterError(
                 __typename="InvalidPipelineRunsFilterError",
@@ -152,7 +152,7 @@ class TestListRuns:
             DgApiRunApi(client).list_runs()
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_runs.return_value = ListRuns(
             runsOrError=ListRunsRunsOrErrorPythonError(__typename="PythonError", message="")
         )

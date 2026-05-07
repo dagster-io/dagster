@@ -3,7 +3,6 @@ import faker from 'faker';
 import {useCallback, useMemo} from 'react';
 
 import {RunStatus} from '../../graphql/types';
-import {StorybookProvider} from '../../testing/StorybookProvider';
 import {generateRunMocks} from '../../testing/generateRunMocks';
 import {RunStatusPez, RunStatusPezList} from '../RunStatusPez';
 import {RunTimeFragment} from '../types/RunUtils.types';
@@ -16,7 +15,7 @@ export default {
 
 export const Colors = () => {
   return (
-    <StorybookProvider>
+    <>
       <MetadataTable
         rows={Object.values(RunStatus).map((value: RunStatus) => ({
           key: value,
@@ -27,7 +26,7 @@ export const Colors = () => {
           ),
         }))}
       />
-    </StorybookProvider>
+    </>
   );
 };
 
@@ -49,7 +48,7 @@ export const List = () => {
   const fakeRepo = 'a_repo.py';
   const fakeId = useCallback(() => faker.datatype.uuid(), []);
   return (
-    <StorybookProvider>
+    <>
       <Box flex={{direction: 'column', gap: 8}}>
         <RunStatusPezList
           jobName={fakeRepo}
@@ -93,6 +92,6 @@ export const List = () => {
           ]}
         />
       </Box>
-    </StorybookProvider>
+    </>
   );
 };

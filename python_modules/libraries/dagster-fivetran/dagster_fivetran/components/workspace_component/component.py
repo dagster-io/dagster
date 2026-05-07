@@ -281,7 +281,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
 
 class FivetranComponentTranslator(
-    create_component_translator_cls(FivetranAccountComponent, DagsterFivetranTranslator),
+    create_component_translator_cls(FivetranAccountComponent, DagsterFivetranTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[FivetranAccountComponent],
 ):
     def __init__(self, component: "FivetranAccountComponent"):

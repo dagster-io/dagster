@@ -110,7 +110,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return mysql_config()
 
     @classmethod
-    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_config_value(  # ty: ignore[invalid-method-override]
         cls, inst_data: ConfigurableClassData | None, config_value: MySqlStorageConfig
     ) -> "MySQLScheduleStorage":
         return MySQLScheduleStorage(

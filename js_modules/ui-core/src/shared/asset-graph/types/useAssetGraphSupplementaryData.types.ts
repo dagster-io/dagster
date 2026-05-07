@@ -22,11 +22,13 @@ export type AssetInstigatorsQuery = {
               __typename: 'AssetSelection';
               assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
             } | null;
+            targets: Array<{__typename: 'Target'; pipelineName: string}> | null;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
             id: string;
             name: string;
+            pipelineName: string;
             assetSelection: {
               __typename: 'AssetSelection';
               assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
@@ -42,4 +44,4 @@ export type AssetInstigatorsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const AssetInstigatorsQueryVersion = 'ec03eb9a3677674fee93fd8a09267e274fee5d07630647ea50f7076d5f39bc1e';
+export const AssetInstigatorsQueryVersion = 'f6dc693b12e6c5160324bf0d39434f52cee09a76883b023e38546b00ebc638e1';

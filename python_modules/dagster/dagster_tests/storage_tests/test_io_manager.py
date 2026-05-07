@@ -28,7 +28,7 @@ def test_io_manager_with_config():
 
     class MyIOManager(dg.IOManager):
         def load_input(self, context):
-            assert context.upstream_output.config["some_config"] == "some_value"  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.config["some_config"] == "some_value"
             return 1
 
         def handle_output(self, context, obj):
@@ -84,7 +84,7 @@ def test_io_manager_with_required_resource_keys():
             assert context.resources.foo_resource == "foo"
             return self._prefix + "bar"
 
-        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _context, obj):  # ty: ignore[invalid-method-override]
             pass
 
     @dg.io_manager(required_resource_keys={"foo_resource"})
@@ -163,7 +163,7 @@ def test_fs_io_manager_reexecution():
             assert re_result.success
             loaded_input_events = re_result.filter_events(lambda evt: evt.is_loaded_input)
             assert len(loaded_input_events) == 1
-            assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"  # ty: ignore[unresolved-attribute]
             assert [
                 evt.step_key for evt in re_result.filter_events(lambda evt: evt.is_step_success)
             ] == ["op_b"]
@@ -372,7 +372,7 @@ def test_step_subset_with_custom_paths():
         )
         assert len(step_materialization_events) == 1
         assert os.path.join(tmpdir_path, test_metadata_dict["op_b"]["path"]) == (
-            step_materialization_events[0].event_specific_data.materialization.metadata["path"].path  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            step_materialization_events[0].event_specific_data.materialization.metadata["path"].path
         )
 
         # test reexecution via backfills (not via re-execution apis)
@@ -393,7 +393,7 @@ def test_multi_materialization():
         def __init__(self):
             self.values = {}
 
-        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, obj):
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
@@ -401,7 +401,7 @@ def test_multi_materialization():
             yield dg.AssetMaterialization(asset_key="yield_two")
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
+            keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
         def has_asset(self, context):
@@ -503,7 +503,7 @@ def test_fan_in_skip():
 
 
 def test_configured():
-    @dg.io_manager(  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(
         config_schema={"base_dir": str},
         description="abc",
         output_config_schema={"path": str},
@@ -643,7 +643,7 @@ def test_error_boundary_with_gen():
         def load_input(self, context):
             pass
 
-        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, obj):
             yield dg.AssetMaterialization(asset_key="a")
             raise ValueError("handle output error")
 
@@ -663,7 +663,7 @@ def test_error_boundary_with_gen():
     step_failure = next(
         event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
     )
-    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"  # ty: ignore[unresolved-attribute]
 
 
 def test_handle_output_exception_raised():
@@ -690,7 +690,7 @@ def test_handle_output_exception_raised():
     step_failure = next(
         event for event in result.all_node_events if event.event_type_value == "STEP_FAILURE"
     )
-    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"  # ty: ignore[unresolved-attribute]
 
 
 def test_output_identifier_dynamic_memoization():
@@ -718,7 +718,7 @@ def test_asset_key():
     class MyIOManager(dg.IOManager):
         def load_input(self, context):
             assert context.asset_key == before.key
-            assert context.upstream_output.asset_key == before.key  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.asset_key == before.key
             return 1
 
         def handle_output(self, context, obj):
@@ -742,7 +742,7 @@ def test_partition_key():
             assert context.has_partition_key
             assert context.partition_key == "2020-01-01"
 
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             assert context.has_partition_key
             assert context.partition_key == "2020-01-01"
 
@@ -771,7 +771,7 @@ def test_context_logging_user_events():
             context.log_event(dg.AssetMaterialization(asset_key="second"))
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
+            keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
     @dg.op
@@ -806,10 +806,10 @@ def test_context_logging_user_events():
         assert log.user_message == "foo bar"
 
         first = relevant_event_logs[0]
-        assert first.dagster_event.event_specific_data.materialization.label == "first"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        assert first.dagster_event.event_specific_data.materialization.label == "first"  # ty: ignore[unresolved-attribute]
 
         second = relevant_event_logs[1]
-        assert second.dagster_event.event_specific_data.materialization.label == "second"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        assert second.dagster_event.event_specific_data.materialization.label == "second"  # ty: ignore[unresolved-attribute]
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
@@ -821,7 +821,7 @@ def test_context_logging_metadata():
             def __init__(self):
                 self.values = {}
 
-            def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def handle_output(self, context, obj):
                 keys = tuple(context.get_identifier())
                 self.values[keys] = obj
 
@@ -831,7 +831,7 @@ def test_context_logging_metadata():
                 yield materialization
 
             def load_input(self, context):
-                keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
+                keys = tuple(context.upstream_output.get_identifier())
                 return self.values[keys]
 
         @dg.asset
@@ -844,18 +844,18 @@ def test_context_logging_metadata():
     assert result.success
 
     output_event = result.all_node_events[4]
-    metadata = output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    metadata = output_event.event_specific_data.metadata
     # Ensure that ordering is preserved among yields and calls to log
     assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     materialization_event = result.all_node_events[2]
-    metadata = materialization_event.event_specific_data.materialization.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    metadata = materialization_event.event_specific_data.materialization.metadata
 
     assert len(metadata) == 3
     assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     implicit_materialization_event = result.all_node_events[3]
-    metadata = implicit_materialization_event.event_specific_data.materialization.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    metadata = implicit_materialization_event.event_specific_data.materialization.metadata
     assert len(metadata) == 3
     assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
@@ -896,7 +896,7 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
     handled_output_event = next(
         event for event in result.all_node_events if event.event_type_value == "HANDLED_OUTPUT"
     )
-    assert set(handled_output_event.event_specific_data.metadata.keys()) == {  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert set(handled_output_event.event_specific_data.metadata.keys()) == {  # ty: ignore[unresolved-attribute]
         "foo",
         "bar",
     }
@@ -907,14 +907,14 @@ def test_metadata_dynamic_outputs():
         def __init__(self):
             self.values = {}
 
-        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, obj):
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
             yield {"handle_output": "I come from handle_output"}
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
+            keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
     @dg.op(out=dg.DynamicOut())
@@ -1017,7 +1017,7 @@ def test_instance_set_on_input_context():
             assert context.instance
             executed["yes"] = True
 
-        def handle_output(self, _context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _context, _obj):  # ty: ignore[invalid-method-override]
             pass
 
     @dg.op
@@ -1053,7 +1053,7 @@ def test_instance_set_on_asset_loader():
             executed["yes"] = True
             return 1
 
-        def handle_output(self, _context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _context, _obj):  # ty: ignore[invalid-method-override]
             pass
 
     @dg.asset
@@ -1082,7 +1082,7 @@ def test_instance_set_on_asset_loader():
 
 def test_telemetry_custom_io_manager():
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, obj):
             return {}
 
         def load_input(self, context):
@@ -1097,7 +1097,7 @@ def test_telemetry_custom_io_manager():
 
 def test_telemetry_dagster_io_manager():
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, obj):
             return {}
 
         def load_input(self, context):

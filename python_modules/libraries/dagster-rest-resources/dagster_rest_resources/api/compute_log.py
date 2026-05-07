@@ -107,7 +107,7 @@ class DgApiComputeLogApi:
 
             match result.typename__:
                 case "EventConnection":
-                    for event in result.events:
+                    for event in result.events:  # ty: ignore[unresolved-attribute]
                         if not isinstance(
                             event,
                             GetLogsCapturedEventsLogsForRunEventConnectionEventsLogsCapturedEvent,
@@ -117,8 +117,8 @@ class DgApiComputeLogApi:
                             continue
                         collected.append(event)
 
-                    server_has_more = result.has_more
-                    new_cursor = result.cursor
+                    server_has_more = result.has_more  # ty: ignore[unresolved-attribute]
+                    new_cursor = result.cursor  # ty: ignore[unresolved-attribute]
 
                     if server_has_more and not new_cursor:
                         break
@@ -126,9 +126,9 @@ class DgApiComputeLogApi:
                     after_cursor = new_cursor
 
                 case "RunNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error fetching logs for run: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error fetching logs for run: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error fetching logs for run: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error fetching logs for run: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 

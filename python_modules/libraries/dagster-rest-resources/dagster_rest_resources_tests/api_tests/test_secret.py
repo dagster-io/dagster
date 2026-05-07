@@ -15,6 +15,7 @@ from dagster_rest_resources.__generated__.list_secrets import (
     ListSecretsSecretsOrErrorUnauthorizedError,
 )
 from dagster_rest_resources.api.secret import DgApiSecretApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
     DagsterPlusGraphqlError,
     DagsterPlusUnauthorizedError,
@@ -54,7 +55,7 @@ def _make_secret(
 
 class TestListSecrets:
     def test_returns_secrets(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorSecrets(
                 __typename="Secrets",
@@ -72,7 +73,7 @@ class TestListSecrets:
         assert result.items[1].id == "id-2"
 
     def test_returns_empty_list(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorSecrets(
                 __typename="Secrets",
@@ -85,7 +86,7 @@ class TestListSecrets:
         assert result == DgApiSecretList(items=[], total=0)
 
     def test_none_response_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(secretsOrError=None)
 
         result = DgApiSecretApi(_client=client).list_secrets()
@@ -93,7 +94,7 @@ class TestListSecrets:
         assert result == DgApiSecretList(items=[], total=0)
 
     def test_truncates_to_limit(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorSecrets(
                 __typename="Secrets",
@@ -109,7 +110,7 @@ class TestListSecrets:
         assert result.items[1].id == "id-1"
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -120,7 +121,7 @@ class TestListSecrets:
             DgApiSecretApi(_client=client).list_secrets()
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -133,7 +134,7 @@ class TestListSecrets:
 
 class TestGetSecret:
     def test_returns_secret(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorSecrets(
                 __typename="Secrets",
@@ -173,7 +174,7 @@ class TestGetSecret:
         assert result.value is None
 
     def test_returns_secret_with_value(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_secret_with_value.return_value = GetSecretWithValue(
             secretsOrError=GetSecretWithValueSecretsOrErrorSecrets(
                 __typename="Secrets",
@@ -214,14 +215,14 @@ class TestGetSecret:
         assert result.value == "test-value"
 
     def test_none_response_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(secretsOrError=None)
 
         with pytest.raises(DagsterPlusGraphqlError, match="Secret 'none' not found"):
             DgApiSecretApi(_client=client).get_secret("none")
 
     def test_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorSecrets(
                 __typename="Secrets",
@@ -233,7 +234,7 @@ class TestGetSecret:
             DgApiSecretApi(_client=client).get_secret("missing")
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -244,7 +245,7 @@ class TestGetSecret:
             DgApiSecretApi(_client=client).get_secret("test-name")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_secrets.return_value = ListSecrets(
             secretsOrError=ListSecretsSecretsOrErrorPythonError(
                 __typename="PythonError", message=""

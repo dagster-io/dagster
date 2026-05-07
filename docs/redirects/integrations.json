@@ -111,22 +111,22 @@
   },
   {
     "source": "/_apidocs/libraries/dagster-duckdb",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb",
     "permanent": true
   },
   {
     "source": "/_apidocs/libraries/dagster-duckdb-polars",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-polars",
     "permanent": true
   },
   {
     "source": "/_apidocs/libraries/dagster-duckdb-pandas",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pandas",
     "permanent": true
   },
   {
     "source": "/_apidocs/libraries/dagster-duckdb-pyspark",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pyspark",
     "permanent": true
   },
   {
@@ -486,17 +486,57 @@
   },
   {
     "source": "/integrations/duckdb",
-    "destination": "/integrations/libraries/duckdb",
+    "destination": "/integrations/libraries/motherduck",
     "permanent": true
   },
   {
     "source": "/integrations/duckdb/using-duckdb-with-dagster",
-    "destination": "/integrations/libraries/duckdb/using-duckdb-with-dagster",
+    "destination": "/integrations/libraries/motherduck/using-duckdb-with-dagster",
     "permanent": true
   },
   {
     "source": "/integrations/duckdb/reference",
-    "destination": "/integrations/libraries/duckdb/reference",
+    "destination": "/integrations/libraries/motherduck/reference",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/duckdb",
+    "destination": "/integrations/libraries/motherduck",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/duckdb/using-duckdb-with-dagster",
+    "destination": "/integrations/libraries/motherduck/using-duckdb-with-dagster",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/duckdb/reference",
+    "destination": "/integrations/libraries/motherduck/reference",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/duckdb/dagster-duckdb",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/duckdb/dagster-duckdb-pandas",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pandas",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/duckdb/dagster-duckdb-polars",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-polars",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/libraries/duckdb/dagster-duckdb-pyspark",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/motherduck",
+    "destination": "/integrations/libraries/motherduck",
     "permanent": true
   },
   {
@@ -956,42 +996,42 @@
   },
   {
     "source": "/api/libraries/dagster-duckdb",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb",
     "permanent": true
   },
   {
     "source": "/api/libraries/dagster-duckdb-pandas",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pandas",
     "permanent": true
   },
   {
     "source": "/api/libraries/dagster-duckdb-polars",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-polars",
     "permanent": true
   },
   {
     "source": "/_modules/dagster_duckdb_pandas/duckdb_pandas_type_handler",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas#dagster_duckdb_pandas.DuckDBPandasTypeHandler",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pandas#dagster_duckdb_pandas.DuckDBPandasTypeHandler",
     "permanent": true
   },
   {
     "source": "/api/libraries/dagster-duckdb-pyspark",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pyspark",
     "permanent": true
   },
   {
     "source": "/_modules/dagster_duckdb_pyspark/duckdb_pyspark_type_handler",
-    "destination": "/integrations/libraries/duckdb/duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler",
+    "destination": "/integrations/libraries/motherduck/duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler",
     "permanent": true
   },
   {
     "source": "/_modules/dagster_duckdb/io_manager",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb#dagster_duckdb.DuckDBIOManager",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb#dagster_duckdb.DuckDBIOManager",
     "permanent": true
   },
   {
     "source": "/_modules/dagster_duckdb/resource",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb#dagster_duckdb.DuckDBResource",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb#dagster_duckdb.DuckDBResource",
     "permanent": true
   },
   {
@@ -1506,27 +1546,27 @@
   },
   {
     "source": "/api/python-api/libraries/dagster-duckdb",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb",
     "permanent": true
   },
   {
     "source": "/api/python-api/libraries/dagster-duckdb-polars",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-polars",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-polars",
     "permanent": true
   },
   {
     "source": "/api/python-api/libraries/dagster-duckdb-pandas",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pandas",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pandas",
     "permanent": true
   },
   {
     "source": "/api/python-api/libraries/dagster-duckdb-pyspark",
-    "destination": "/integrations/libraries/duckdb/dagster-duckdb-pyspark",
+    "destination": "/integrations/libraries/motherduck/dagster-duckdb-pyspark",
     "permanent": true
   },
   {
     "source": "/api/python-api/libraries/dagster-fivetran",
-    "destination": "/integrations/libraries/duckdb/dagster-fivetran",
+    "destination": "/integrations/libraries/motherduck/dagster-fivetran",
     "permanent": true
   },
   {

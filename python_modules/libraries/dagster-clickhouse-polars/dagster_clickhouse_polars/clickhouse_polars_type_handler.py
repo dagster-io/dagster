@@ -4,12 +4,15 @@ import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_clickhouse.db_client import (
+from dagster_clickhouse.db_client import (  # ty: ignore[unresolved-import]
     ClickhouseDbClient,
     _quote_ident,
     format_clickhouse_table_fqn,
 )
-from dagster_clickhouse.io_manager import ClickhouseIOManager, build_clickhouse_io_manager
+from dagster_clickhouse.io_manager import (  # ty: ignore[unresolved-import]
+    ClickhouseIOManager,
+    build_clickhouse_io_manager,
+)
 
 
 def _polars_dtype_to_clickhouse(dtype: pl.DataType) -> str:
@@ -70,9 +73,9 @@ class ClickhousePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
 
         return {
             **(
-                TableMetadataSet(partition_row_count=obj.height)
+                TableMetadataSet(partition_row_count=obj.height, storage_kind="clickhouse")
                 if context.has_partition_key
-                else TableMetadataSet(row_count=obj.height)
+                else TableMetadataSet(row_count=obj.height, storage_kind="clickhouse")
             ),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(

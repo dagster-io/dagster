@@ -12,9 +12,9 @@ from dagster import PipesBlobStoreMessageReader
 
 
 class MyCustomCloudServiceMessageReader(PipesBlobStoreMessageReader):
-    def get_params(self) -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_params(self) -> Iterator[PipesParams]:  # ty: ignore[invalid-method-override]
         # generate a random key prefix to write message chunks under on the cloud service
-        key_prefix = "".join(random.choices(string.ascii_letters, k=30))  # pyright: ignore[reportFunctionMemberAccess]
+        key_prefix = "".join(random.choices(string.ascii_letters, k=30))  # ty: ignore[unresolved-attribute]
         yield {"key_prefix": key_prefix}
 
     def download_messages_chunk(self, index: int, params: PipesParams) -> str | None:

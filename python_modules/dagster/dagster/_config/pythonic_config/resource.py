@@ -76,7 +76,7 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
     @abstractmethod
     def configurable_resource_cls(self) -> type: ...
 
-    def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:  # ty: ignore[invalid-method-override]
         for attr_name, partial_resource in self.nested_partial_resources.items():
             yield PartialResourceDependencyRequirement(
                 class_name=self.configurable_resource_cls.__name__,
@@ -163,7 +163,7 @@ class ConfigurableResourceFactoryState(NamedTuple):
     resource_context: InitResourceContext | None
 
 
-class ConfigurableResourceFactory(
+class ConfigurableResourceFactory(  # ty: ignore[conflicting-metaclass]
     Config,
     TypecheckAllowPartialResourceInitParams,
     Generic[TResValue],
@@ -490,7 +490,7 @@ class ConfigurableResourceFactory(
         from dagster._config.post_process import post_process_config
 
         post_processed_config = post_process_config(
-            self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+            self._config_schema.config_type,
             self._convert_to_config_dictionary(),
         )
 
@@ -514,7 +514,7 @@ class ConfigurableResourceFactory(
         from dagster._config.post_process import post_process_config
 
         post_processed_config = post_process_config(
-            self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+            self._config_schema.config_type,
             self._convert_to_config_dictionary(),
         )
 
@@ -929,7 +929,7 @@ def _call_resource_fn_with_default(
             )
         context = context.replace_config(cast("dict", evr.value)["config"])
 
-    if has_at_least_one_parameter(obj.resource_fn):
+    if has_at_least_one_parameter(obj.resource_fn):  # ty: ignore[invalid-argument-type]
         result = cast("ResourceFunctionWithContext", obj.resource_fn)(context)
     else:
         result = cast("ResourceFunctionWithoutContext", obj.resource_fn)()
@@ -1062,7 +1062,7 @@ def get_resource_type_name(resource: ResourceDefinition) -> str:
             else resource.resource_fn
         )
         module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
-        resource_type = f"{module_name}.{original_resource_fn.__name__}"
+        resource_type = f"{module_name}.{original_resource_fn.__name__}"  # ty: ignore[unresolved-attribute]
     # if it's a Pythonic resource, get the underlying Pythonic class name
     elif isinstance(
         resource,

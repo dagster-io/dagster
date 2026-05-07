@@ -4,6 +4,7 @@ from collections import namedtuple
 from unittest import mock
 
 import kubernetes
+import kubernetes.client.rest
 import pytest
 from dagster._check import CheckError
 from dagster_k8s.client import (

@@ -17,7 +17,7 @@ class DgApiIssue(BaseModel):
     title: str
     description: str
     status: DgApiIssueStatus
-    created_by_email: str
+    created_by_name: str
     linked_objects: list[DgApiIssueLinkedRun | DgApiIssueLinkedAsset]
     context: str | None = None
 

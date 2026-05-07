@@ -47,6 +47,7 @@ def generate_data_source_id(data_source: dict[str, Any]) -> str:
 
 class PowerBICredentials(ConfigurableResource, abc.ABC):
     @property
+    @abc.abstractmethod
     def api_token(self) -> str: ...
 
 
@@ -199,7 +200,7 @@ class PowerBIWorkspace(ConfigurableResource):
             time.sleep(self.refresh_poll_interval)
 
         if status == "Failed":
-            error = last_refresh.get("serviceExceptionJson")  # pyright: ignore[reportPossiblyUnboundVariable]
+            error = last_refresh.get("serviceExceptionJson")
             raise Failure(f"Refresh failed: {error}")
 
     @cached_method
@@ -258,7 +259,7 @@ class PowerBIWorkspace(ConfigurableResource):
             now = get_current_timestamp()
 
         if status != "Succeeded":
-            raise Failure(f"Scan not successful after {ADMIN_SCAN_TIMEOUT} seconds: {scan_details}")  # pyright: ignore[reportPossiblyUnboundVariable]
+            raise Failure(f"Scan not successful after {ADMIN_SCAN_TIMEOUT} seconds: {scan_details}")
 
         return self._fetch_json(
             endpoint=f"admin/workspaces/scanResult/{scan_id}", group_scoped=False

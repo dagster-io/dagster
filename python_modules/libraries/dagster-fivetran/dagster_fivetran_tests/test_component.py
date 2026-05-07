@@ -54,7 +54,7 @@ def setup_fivetran_component(
             yield component, defs
 
 
-BASIC_FIVETRAN_COMPONENT_BODY = {
+BASIC_FIVETRAN_COMPONENT_BODY: dict[str, Any] = {
     "type": "dagster_fivetran.FivetranAccountComponent",
     "attributes": {
         "workspace": {

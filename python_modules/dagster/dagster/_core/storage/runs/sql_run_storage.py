@@ -124,7 +124,7 @@ class SqlRunStorage(RunStorage):
         has_tags = dagster_run.tags and len(dagster_run.tags) > 0
         partition = dagster_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
         partition_set = dagster_run.tags.get(PARTITION_SET_TAG) if has_tags else None
-        values = {
+        values: dict[str, Any] = {
             "run_id": dagster_run.run_id,
             "pipeline_name": dagster_run.job_name,
             "status": dagster_run.status.value,

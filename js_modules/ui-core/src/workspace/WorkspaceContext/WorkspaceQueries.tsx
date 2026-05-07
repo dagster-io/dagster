@@ -1,6 +1,6 @@
 import {gql} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
-import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../../assets/AssetTableFragment';
+import {ASSET_BASE_NODE_FRAGMENT} from '../../assets/AssetTableFragment';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../../overview/BasicInstigationStateFragment';
 import {RESOURCE_ENTRY_FRAGMENT} from '../../resources/WorkspaceResourcesQuery';
 import {SENSOR_SWITCH_FRAGMENT} from '../../sensors/SensorSwitchFragment';
@@ -166,20 +166,21 @@ export const LOCATION_STATUS_ENTRY_FRAGMENT = gql`
   }
 `;
 
-export const WORKSPACE_ASSET_FRAGMENT = gql`
-  fragment WorkspaceAsset on AssetNode {
+// Per-repo wire shape, analogous to the server's `RemoteRepositoryAssetNode`.
+// `repository` and `dependedByKeys` are intentionally NOT requested here —
+// they're workspace-level concepts that don't make sense at the per-repo
+// granularity, and they're populated when these nodes get merged into a
+// `WorkspaceAssetNode` in `useAllAssets.tsx`.
+export const REPOSITORY_ASSET_FRAGMENT = gql`
+  fragment RepositoryAsset on AssetNode {
     id
-    ...AssetTableDefinitionFragment
+    ...AssetBaseNodeFragment
     graphName
-    opVersion
     dependencyKeys {
       path
     }
-    dependedByKeys {
-      path
-    }
   }
-  ${ASSET_TABLE_DEFINITION_FRAGMENT}
+  ${ASSET_BASE_NODE_FRAGMENT}
 `;
 
 export const WORKSPACE_ASSET_GROUP_FRAGMENT = gql`
@@ -195,13 +196,13 @@ export const WORKSPACE_REPOSITORY_ASSETS_FRAGMENT = gql`
     name
     assetNodes {
       id
-      ...WorkspaceAsset
+      ...RepositoryAsset
     }
     assetGroups {
       ...WorkspaceAssetGroup
     }
   }
-  ${WORKSPACE_ASSET_FRAGMENT}
+  ${REPOSITORY_ASSET_FRAGMENT}
   ${WORKSPACE_ASSET_GROUP_FRAGMENT}
 `;
 

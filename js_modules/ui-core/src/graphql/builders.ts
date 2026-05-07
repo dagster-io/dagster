@@ -725,6 +725,10 @@ type AssetNodeDataVersionByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
+type AssetNodeDescriptionArgs = {
+  characterLimit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 type AssetNodeLastAutoMaterializationEvaluationRecordArgs = {
   asOfEvaluationId?: InputMaybe<Scalars['ID']['input']>;
 };

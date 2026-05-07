@@ -13,7 +13,6 @@ from buildkite_shared.step_builders.group_step_builder import (
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.utils import oss_path
-from buildkite_shared.uv import UV_PIN
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import (
     build_azure_live_test_suite_steps,
@@ -29,15 +28,18 @@ from dagster_buildkite.steps.packages import (
 )
 from dagster_buildkite.steps.test_project import build_test_project_steps
 
-TEST_PROJECT_AND_DEPENDENTS_GROUP_KEY = "test-project-and-dependents"
-
 
 def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
     commands = [
         f"cd {oss_path('.')}",
         "pytest .buildkite/buildkite-shared/lints.py",
     ]
-    return [CommandStepBuilder(":lint-roller: :buildkite:").run(*commands).on_test_image().build()]
+    return [
+        CommandStepBuilder("buildkite-lints", [":lint-roller:"])
+        .run(*commands)
+        .on_test_image()
+        .build()
+    ]
 
 
 def build_repo_wide_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
@@ -109,8 +111,8 @@ def build_test_project_and_dependents_group(
 
     return [
         GroupStepBuilder(
-            name=":docker: test-project + dependents",
-            key=TEST_PROJECT_AND_DEPENDENTS_GROUP_KEY,
+            "test-project-and-dependents",
+            [":docker:"],
             steps=leaves,
         ).build()
     ]
@@ -118,7 +120,7 @@ def build_test_project_and_dependents_group(
 
 def build_repo_wide_ruff_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":zap: ruff")
+        CommandStepBuilder("ruff", [":zap:"])
         .on_test_image()
         .run(
             f"uv pip install --system -e {oss_path('python_modules/dagster')}[ruff] -e {oss_path('python_modules/dagster-pipes')} -e {oss_path('python_modules/libraries/dagster-shared')}",
@@ -131,7 +133,7 @@ def build_repo_wide_ruff_steps(ctx: BuildkiteContext) -> list[CommandStepConfigu
 
 def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":prettier: prettier", key="prettier")
+        CommandStepBuilder("prettier", [":prettier:"])
         .on_test_image()
         .run(
             f"just -f {oss_path('justfile')} install_prettier",
@@ -145,13 +147,13 @@ def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepCon
 def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     return [
         GroupStepBuilder(
-            name=":pyright: pyright",
+            "pyright-ty",
+            [":pyright:", ":ty:"],
             steps=[
-                CommandStepBuilder(":pyright: pyright")
+                CommandStepBuilder("pyright", [":pyright:"])
                 .on_test_image()
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-                    f'pip install -U "{UV_PIN}"',
                     "uv venv",
                     "source .venv/bin/activate",
                     f"just -f {oss_path('justfile')} install_pyright",
@@ -167,11 +169,10 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                 # Run on a larger instance
                 .on_queue(BuildkiteQueue.DOCKER)
                 .build(),
-                CommandStepBuilder(":pyright: rebuild_pyright_pins")
+                CommandStepBuilder("pyright-rebuild-pyright-pins", [":pyright:"])
                 .on_test_image()
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-                    f'pip install -U "{UV_PIN}"',
                     "uv venv",
                     "source .venv/bin/activate",
                     f"just -f {oss_path('justfile')} install_pyright",
@@ -184,16 +185,27 @@ def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfigurati
                     f"just -f {oss_path('justfile')} rebuild_pyright_pins",
                 )
                 .skip(_get_pyright_pin_step_skip_reason(ctx))
+                # Run on a larger instance
+                .on_queue(BuildkiteQueue.DOCKER)
+                .build(),
+                CommandStepBuilder("ty", [":ty:"])
+                .on_test_image()
+                .run(
+                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
+                    f"just -f {oss_path('justfile')} ty",
+                )
+                .skip(get_general_python_step_skip_reason(ctx, other_paths=["pyright"]))
+                # Run on a larger instance
+                .on_queue(BuildkiteQueue.DOCKER)
                 .build(),
             ],
-            key="pyright",
         ).build()
     ]
 
 
 def build_sql_schema_check_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":mysql: mysql-schema")
+        CommandStepBuilder("mysql-schema", [":mysql:"])
         .run(
             f"uv pip install --system -e {oss_path('python_modules/dagster')} -e {oss_path('python_modules/dagster-pipes')} -e {oss_path('python_modules/libraries/dagster-shared')}",
             f"python {oss_path('scripts/check_schemas.py')}",
@@ -208,7 +220,7 @@ def build_graphql_python_client_backcompat_steps(
     ctx: BuildkiteContext,
 ) -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
+        CommandStepBuilder("graphql-python-client-backcompat", [":graphql:"])
         .run(
             f"uv pip install --system -e {oss_path('python_modules/dagster')}[test] -e {oss_path('python_modules/dagster-pipes')}"
             f" -e {oss_path('python_modules/libraries/dagster-shared')} -e {oss_path('python_modules/dagster-graphql')}"

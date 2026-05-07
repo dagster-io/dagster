@@ -12,15 +12,14 @@ import {parseExpression} from '../../asset-selection/AssetSelectionSupplementary
 import {SupplementaryInformation} from '../../asset-selection/types';
 import {getSupplementaryDataKey} from '../../asset-selection/util';
 import {AssetKey} from '../../assets/types';
-import {Asset, useAllAssets} from '../../assets/useAllAssets';
+import {Asset, WorkspaceAssetNode, useAllAssets} from '../../assets/useAllAssets';
 import {AssetHealthStatus, InstigationStatus, SensorType} from '../../graphql/types';
 import {useStableReferenceByHash} from '../../hooks/useStableReferenceByHash';
-import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 const emptyObject = {} as SupplementaryInformation;
 export const useAssetGraphSupplementaryData = (
   selection: string,
-  nodes: WorkspaceAssetFragment[],
+  nodes: WorkspaceAssetNode[],
 ): {loading: boolean; data: SupplementaryInformation} => {
   const parsedFilters = useMemo(() => {
     try {
@@ -189,53 +188,110 @@ type InstigatorInfo =
   | {type: 'schedule'; name: string; status: InstigationStatus}
   | {type: 'sensor'; name: string; sensorType: SensorType};
 
-function buildAutomationTypeSupplementaryData(
+export function buildAutomationTypeSupplementaryData(
   queryData: AssetInstigatorsQuery,
-  nodes: WorkspaceAssetFragment[],
+  nodes: WorkspaceAssetNode[],
 ): Record<string, AssetKey[]> {
-  // Build a map from asset key token → instigators targeting it
+  // Index assets by (repository id, job name) so we can resolve jobs that
+  // a sensor or schedule targets back to the assets defined in them. Job
+  // names are only unique within a repository, so we scope by repo id.
+  const assetKeysByRepoAndJob = new Map<string, Map<string, AssetKey[]>>();
+  for (const node of nodes) {
+    const repoId = node.repository.id;
+    let jobMap = assetKeysByRepoAndJob.get(repoId);
+    if (!jobMap) {
+      jobMap = new Map<string, AssetKey[]>();
+      assetKeysByRepoAndJob.set(repoId, jobMap);
+    }
+    for (const jobName of node.jobNames) {
+      let keys = jobMap.get(jobName);
+      if (!keys) {
+        keys = [];
+        jobMap.set(jobName, keys);
+      }
+      keys.push(node.assetKey);
+    }
+  }
+
+  // Build a map from asset key token → instigators targeting it.
   const instigatorsByAssetToken = new Map<string, InstigatorInfo[]>();
+
+  function pushInstigator(assetKey: AssetKey, info: InstigatorInfo) {
+    const token = tokenForAssetKey(assetKey);
+    let list = instigatorsByAssetToken.get(token);
+    if (!list) {
+      list = [];
+      instigatorsByAssetToken.set(token, list);
+    }
+    list.push(info);
+  }
 
   if (queryData.repositoriesOrError.__typename === 'RepositoryConnection') {
     for (const repo of queryData.repositoriesOrError.nodes) {
+      const jobsInRepo = assetKeysByRepoAndJob.get(repo.id);
       for (const sensor of repo.sensors) {
-        if (!sensor.assetSelection) {
-          continue;
-        }
-        for (const assetKey of sensor.assetSelection.assetKeys) {
-          const token = tokenForAssetKey(assetKey);
-          let list = instigatorsByAssetToken.get(token);
-          if (!list) {
-            list = [];
-            instigatorsByAssetToken.set(token, list);
+        const info: InstigatorInfo = {
+          type: 'sensor',
+          name: sensor.name,
+          sensorType: sensor.sensorType,
+        };
+        // An explicit asset selection is authoritative. Skip targets in
+        // that case, since sensor.targets often points at the synthetic
+        // root asset job, which would pull in assets that aren't actually
+        // part of the automation's scope.
+        if (sensor.assetSelection) {
+          for (const assetKey of sensor.assetSelection.assetKeys) {
+            pushInstigator(assetKey, info);
           }
-          list.push({type: 'sensor', name: sensor.name, sensorType: sensor.sensorType});
+        } else if (sensor.targets && jobsInRepo) {
+          for (const target of sensor.targets) {
+            if (!target.pipelineName) {
+              continue;
+            }
+            const assetKeys = jobsInRepo.get(target.pipelineName);
+            if (!assetKeys) {
+              continue;
+            }
+            for (const assetKey of assetKeys) {
+              pushInstigator(assetKey, info);
+            }
+          }
         }
       }
       for (const schedule of repo.schedules) {
-        if (!schedule.assetSelection) {
-          continue;
-        }
-        for (const assetKey of schedule.assetSelection.assetKeys) {
-          const token = tokenForAssetKey(assetKey);
-          let list = instigatorsByAssetToken.get(token);
-          if (!list) {
-            list = [];
-            instigatorsByAssetToken.set(token, list);
+        const info: InstigatorInfo = {
+          type: 'schedule',
+          name: schedule.name,
+          status: schedule.scheduleState.status,
+        };
+        if (schedule.assetSelection) {
+          for (const assetKey of schedule.assetSelection.assetKeys) {
+            pushInstigator(assetKey, info);
           }
-          list.push({type: 'schedule', name: schedule.name, status: schedule.scheduleState.status});
+        } else if (jobsInRepo && schedule.pipelineName) {
+          const assetKeys = jobsInRepo.get(schedule.pipelineName);
+          if (assetKeys) {
+            for (const assetKey of assetKeys) {
+              pushInstigator(assetKey, info);
+            }
+          }
         }
       }
     }
   }
 
-  const acc: Record<string, AssetKey[]> = {};
+  // Accumulate into Sets so the same asset doesn't land in a bucket twice
+  // when the same node iteration path adds it via multiple instigators.
+  const acc: Record<string, Set<AssetKey>> = {};
 
   function addValue(field: string, value: string, key: AssetKey) {
     const supplementaryDataKey = getSupplementaryDataKey({field, value});
-    const existing = acc[supplementaryDataKey] ?? [];
-    existing.push(key);
-    acc[supplementaryDataKey] = existing;
+    let existing = acc[supplementaryDataKey];
+    if (!existing) {
+      existing = new Set<AssetKey>();
+      acc[supplementaryDataKey] = existing;
+    }
+    existing.add(key);
   }
 
   for (const node of nodes) {
@@ -274,7 +330,11 @@ function buildAutomationTypeSupplementaryData(
     }
   }
 
-  return acc;
+  const result: Record<string, AssetKey[]> = {};
+  for (const [key, value] of Object.entries(acc)) {
+    result[key] = Array.from(value);
+  }
+  return result;
 }
 
 const ASSET_INSTIGATORS_QUERY = gql`
@@ -292,10 +352,14 @@ const ASSET_INSTIGATORS_QUERY = gql`
                 path
               }
             }
+            targets {
+              pipelineName
+            }
           }
           schedules {
             id
             name
+            pipelineName
             assetSelection {
               assetKeys {
                 path

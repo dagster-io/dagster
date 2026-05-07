@@ -117,7 +117,7 @@ class UPathIOManager(IOManager):
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
-            return self._base_path._kwargs.copy()  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+            return self._base_path._kwargs.copy()  # noqa
         elif isinstance(self._base_path, Path):
             return {}
         else:

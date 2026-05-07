@@ -1,11 +1,12 @@
 import {Box, Colors, Icon, MonoSmall, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import {useEffect, useRef} from 'react';
-import styled from 'styled-components';
 
 import {AssetEventGroup} from './groupByPartition';
 import {Timestamp} from '../app/time/Timestamp';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
+import styles from './css/AssetEventList.module.css';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 
@@ -46,8 +47,9 @@ export const AssetEventList = ({
 
   return (
     <Box style={{position: 'relative', flex: 1, minHeight: 0}}>
-      <AssetListContainer
+      <Container
         ref={parentRef}
+        className={styles.assetListContainer}
         onScroll={(e) => {
           if (
             !loading &&
@@ -63,11 +65,14 @@ export const AssetEventList = ({
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const group = groups[index]!;
             return (
-              <AssetListRow
+              <Row
                 key={key}
                 $height={size}
                 $start={start}
-                $focused={group === focused}
+                className={clsx(
+                  styles.assetListRow,
+                  group === focused && styles.assetListRowFocused,
+                )}
                 ref={group === focused ? focusedRowRef : undefined}
                 onClick={(e) => {
                   // If you're interacting with something in the row, don't trigger a focus change.
@@ -87,11 +92,11 @@ export const AssetEventList = ({
                 >
                   <AssetEventListEventRow group={group} />
                 </Box>
-              </AssetListRow>
+              </Row>
             );
           })}
         </Inner>
-      </AssetListContainer>
+      </Container>
 
       {loading ? (
         <Box
@@ -113,34 +118,7 @@ export const AssetEventList = ({
   );
 };
 
-export const AssetListContainer = styled(Container)`
-  outline: none;
-  padding: 8px;
-  &:focus {
-    box-shadow: 0 -1px ${Colors.accentBlue()};
-  }
-`;
-
-export const AssetListRow = styled(Row)<{$focused: boolean}>`
-  cursor: pointer;
-  user-select: none;
-  border-radius: 8px;
-
-  :focus,
-  :active,
-  :hover {
-    outline: none;
-    background: ${Colors.backgroundLight()};
-  }
-  ${(p) =>
-    p.$focused &&
-    `background: ${Colors.backgroundBlue()};
-     color: ${Colors.textBlue()};
-     :hover {
-       background: ${Colors.backgroundBlue()};
-     }
-    `}
-`;
+export {styles as assetEventListStyles};
 
 const AssetEventListEventRow = ({group}: {group: AssetEventGroup}) => {
   const {latest, partition, timestamp} = group;

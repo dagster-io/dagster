@@ -4,7 +4,8 @@ from enum import StrEnum
 from typing import Any, Self
 
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.utils import BUILDKITE_TEST_IMAGE_VERSION
+from buildkite_shared.step_builders.slug import make_label
+from buildkite_shared.utils import BUILDKITE_TEST_IMAGE_VERSION, RETRYABLE_INFRA_FAILURE_EXIT_CODE
 from typing_extensions import NotRequired, TypedDict
 
 DEFAULT_TIMEOUT_IN_MIN = 35
@@ -13,12 +14,10 @@ DOCKER_PLUGIN = "docker#v5.10.0"
 ECR_PLUGIN = "ecr#v2.7.0"
 SM_PLUGIN = "seek-oss/aws-sm#v2.3.1"
 BASE_IMAGE_NAME = "buildkite-test"
-BASE_IMAGE_TAG = "2026-04-23T130027"
+BASE_IMAGE_TAG = "2026-05-04T142331"
 
 AWS_ACCOUNT_ID = os.getenv("AWS_ACCOUNT_ID")
 AWS_ECR_REGION = "us-west-2"
-
-ECR_LOGIN_FAILURE_EXIT_CODE = 200
 
 
 class ResourceRequests:
@@ -88,9 +87,9 @@ class CommandStepBuilder:
 
     def __init__(
         self,
-        label: str,
+        key: str,
+        label_emojis: list[str] | None = None,
         *,
-        key: str | None = None,
         timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
         retry_automatically: bool = True,
         plugins: list[dict[str, object]] | None = None,
@@ -108,7 +107,9 @@ class CommandStepBuilder:
         if retry_automatically:
             # This list contains exit codes that should map only to ephemeral infrastructure issues.
             # Normal test failures (exit code 1), make command failures (exit code 2) and the like
-            # should not be included here.
+            # should not be included here. Our shell wrappers may exit with
+            # RETRYABLE_INFRA_FAILURE_EXIT_CODE (200) to escalate a known-transient failure
+            # (e.g. ECR login, pip/uv install) to a fresh-job retry.
             retry["automatic"] = [
                 # https://buildkite.com/docs/agent/v3#exit-codes
                 {"exit_status": -1, "limit": 2},  # agent lost
@@ -126,9 +127,9 @@ class CommandStepBuilder:
                 {"exit_status": 143, "limit": 2},  # agent lost
                 {"exit_status": 255, "limit": 2},  # agent forced shut down
                 {
-                    "exit_status": ECR_LOGIN_FAILURE_EXIT_CODE,
+                    "exit_status": RETRYABLE_INFRA_FAILURE_EXIT_CODE,
                     "limit": 2,
-                },  # ecr login failed
+                },  # our shell wrappers signaling a transient infra failure
                 {
                     "exit_status": 28,
                     "limit": 2,
@@ -141,14 +142,13 @@ class CommandStepBuilder:
 
         self._step = {
             "agents": {"queue": BuildkiteQueue.MEDIUM.value},
-            "label": label,
+            "key": key,
+            "label": make_label(key, label_emojis),
             "timeout_in_minutes": timeout_in_minutes,
             "retry": retry,
             "plugins": plugins or [],
         }
         self._requires_docker = True  # used for k8s queue
-        if key is not None:
-            self._step["key"] = key
         self._resources = None
 
     def run(self, *argc: str) -> Self:
@@ -200,7 +200,7 @@ class CommandStepBuilder:
 
     def on_integration_slim_image(self, env: list[str] | None = None) -> Self:
         return self.on_python_image(
-            image="buildkite-test-image-py-slim:prod-1776274200",
+            image="buildkite-test-image-py-slim:prod-1777654800",
             env=env,
         )
 
@@ -408,6 +408,14 @@ class CommandStepBuilder:
                 {
                     "image": docker_image,
                     "command": ["dockerd-entrypoint.sh"],
+                    # Bump max-concurrent-downloads/uploads from default 3 to 10 to
+                    # parallelize layer pulls. The dockerd-entrypoint.sh of the
+                    # docker:dind image execs `dockerd` with whatever args are
+                    # passed, so these forward through cleanly.
+                    "args": [
+                        "--max-concurrent-downloads=10",
+                        "--max-concurrent-uploads=10",
+                    ],
                     "resources": {
                         "requests": {
                             "cpu": self._resources.docker_cpu if self._resources else "500m"
@@ -428,6 +436,23 @@ class CommandStepBuilder:
                     "securityContext": {
                         "privileged": True,
                         "allowPrivilegeEscalation": True,
+                    },
+                    # Block main containers from starting until dockerd is
+                    # actually responding to API calls. agent-stack-k8s only
+                    # gates main-container startup on the sidecar's "Started"
+                    # signal, which fires once dockerd's binary is running but
+                    # not necessarily once the daemon is accepting connections.
+                    # `docker info` round-trips to dockerd over the socket, so
+                    # it catches the window between bind() (where the socket
+                    # file appears) and listen()/accept() — a window that
+                    # `test -S /var/run/docker.sock` was passing through,
+                    # letting test code race ahead and hit "Cannot connect to
+                    # the Docker daemon" when invoking `docker compose up`.
+                    "startupProbe": {
+                        "exec": {"command": ["docker", "info"]},
+                        "periodSeconds": 1,
+                        "failureThreshold": 30,
+                        "timeoutSeconds": 5,
                     },
                 }
             )
@@ -501,12 +526,6 @@ class CommandStepBuilder:
                         "envFrom": [
                             {"secretRef": {"name": "buildkite-dagster-secrets"}},
                             {"secretRef": {"name": "honeycomb-api-key"}},
-                            *(
-                                [{"secretRef": {"name": "aws-creds"}}]
-                                if self._step.get("agents", {}).get("queue")
-                                == BuildkiteQueue.KUBERNETES_GKE
-                                else []
-                            ),
                             *[
                                 {"secretRef": {"name": secret_name}}
                                 for secret_name in self._k8s_secrets

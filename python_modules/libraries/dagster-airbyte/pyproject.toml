@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "dagster==1!0+dev",
+    "python-dateutil",
     "requests",
 ]
 

@@ -67,7 +67,7 @@ def migrate_metadata_asset(context: AssetExecutionContext, config: MetadataMigra
         record: EventLogRecord = result.records[0]
         dagster_event = record.event_log_entry.dagster_event
         if dagster_event is not None:
-            data = dagster_event.event_specific_data.materialization  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            data = dagster_event.event_specific_data.materialization
             partition_to_report = data.partition
             metadata_to_report = {key: value.value for key, value in data.metadata.items()}
         cursor = result.cursor
@@ -76,10 +76,10 @@ def migrate_metadata_asset(context: AssetExecutionContext, config: MetadataMigra
             new_deployment=new_deployment,
             new_dagster_cloud_api_token=new_dagster_cloud_api_token,
             asset_key=AssetKey.from_user_string(asset_key).path,
-            partition=partition_to_report,  # type: ignore
-            metadata=metadata_to_report,  # type: ignore
+            partition=partition_to_report,
+            metadata=metadata_to_report,
         )
-        print(f"Migrated asset {asset_key} for partition {partition_to_report}")  # type: ignore # noqa: T201
+        print(f"Migrated asset {asset_key} for partition {partition_to_report}")  # noqa: T201
 
 
 migrate_metadata_job = define_asset_job(

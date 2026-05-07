@@ -1,9 +1,8 @@
 import {Box, Colors} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
-import cssStyles from './VirtualizedTable.module.css';
+import styles from './css/VirtualizedTable.module.css';
 
 export const TABLE_HEADER_HEIGHT = 32;
 
@@ -38,6 +37,10 @@ export const HeaderRow = ({
   </Box>
 );
 
+export const CellBox = ({className, ...rest}: React.ComponentProps<typeof Box>) => (
+  <Box className={clsx(styles.cellBox, className)} {...rest} />
+);
+
 export const HeaderCell = ({
   children,
   className,
@@ -48,7 +51,7 @@ export const HeaderCell = ({
     <CellBox
       padding={{vertical: 8, horizontal: 12}}
       border="right"
-      className={clsx(cssStyles.headerCell, onClick && cssStyles.headerCellClickable, className)}
+      className={clsx(styles.headerCell, onClick && styles.headerCellClickable, className)}
       onClick={onClick}
       {...rest}
     >
@@ -77,47 +80,65 @@ export const RowCell = ({
   </CellBox>
 );
 
-export const CellBox = styled(Box)`
-  overflow: hidden;
-  :first-child {
-    padding-left: 24px;
-  }
+export const Container = React.forwardRef(
+  (
+    {className, children, style, ...rest}: React.HTMLAttributes<HTMLDivElement>,
+    ref: React.ForwardedRef<HTMLDivElement>,
+  ) => (
+    <div className={clsx(styles.container, className)} style={style} ref={ref} {...rest}>
+      {children}
+    </div>
+  ),
+);
 
-  :last-child {
-    padding-right: 24px;
-    box-shadow: none;
-  }
-`;
+export const Inner = React.forwardRef(
+  (
+    {
+      $totalHeight,
+      children,
+      className,
+      ...rest
+    }: {
+      $totalHeight: number;
+      children?: React.ReactNode;
+      className?: string;
+    } & React.HTMLAttributes<HTMLDivElement>,
+    ref: React.ForwardedRef<HTMLDivElement>,
+  ) => (
+    <div
+      className={clsx(styles.inner, className)}
+      style={{height: `${$totalHeight}px`}}
+      ref={ref}
+      {...rest}
+    >
+      {children}
+    </div>
+  ),
+);
 
-export const Container = styled.div`
-  height: 100%;
-  overflow: auto;
-`;
-
-type InnerProps = {
-  $totalHeight: number;
-};
-
-export const Inner = styled.div.attrs<InnerProps>(({$totalHeight}) => ({
-  style: {
-    height: `${$totalHeight}px`,
-  },
-}))<InnerProps>`
-  position: relative;
-  width: 100%;
-`;
-
-type RowProps = {$height: number; $start: number};
-
-export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
-  style: {
-    height: `${$height}px`,
-    transform: `translateY(${$start}px)`,
-  },
-}))<RowProps>`
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-  overflow: hidden;
-`;
+export const Row = React.forwardRef(
+  (
+    {
+      $height,
+      $start,
+      children,
+      className,
+      ...rest
+    }: {
+      $height: number;
+      $start: number;
+      children?: React.ReactNode;
+      className?: string;
+    } & React.HTMLAttributes<HTMLDivElement>,
+    ref: React.ForwardedRef<HTMLDivElement>,
+  ) => (
+    <div
+      className={clsx(styles.row, className)}
+      style={{height: `${$height}px`, transform: `translateY(${$start}px)`}}
+      ref={ref}
+      {...rest}
+    >
+      {children}
+    </div>
+  ),
+);

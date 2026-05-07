@@ -132,6 +132,21 @@
                     ],
                     "default": null,
                     "title": "Showurlonly"
+                },
+                "endpointSuffix": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Endpointsuffix"
                 }
             },
             "required": [

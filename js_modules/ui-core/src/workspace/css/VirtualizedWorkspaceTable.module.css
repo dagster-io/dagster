@@ -1,0 +1,10 @@
+.captionTextContainer {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.captionTextContainer .captionGlobal {
+  color: var(--color-text-light);
+  white-space: nowrap;
+}

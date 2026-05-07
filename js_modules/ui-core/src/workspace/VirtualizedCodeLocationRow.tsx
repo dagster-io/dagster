@@ -1,7 +1,6 @@
 import {Box, Colors, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
@@ -19,6 +18,7 @@ import {workspacePathFromAddress} from './workspacePath';
 import {AnchorButton} from '../ui/AnchorButton';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
+import styles from './css/VirtualizedCodeLocationRow.module.css';
 
 export type CodeLocationRowType =
   | {
@@ -52,7 +52,7 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
 
     return (
       <div ref={ref} data-index={index}>
-        <RowGrid border="bottom">
+        <Box border="bottom" className={styles.rowGrid}>
           <RowCell>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
@@ -89,7 +89,7 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
               {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
             </JoinedButtons>
           </RowCell>
-        </RowGrid>
+        </Box>
       </div>
     );
   },
@@ -113,7 +113,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
 
     return (
       <div ref={ref} data-index={index}>
-        <RowGrid border="bottom">
+        <Box border="bottom" className={styles.rowGrid}>
           <RowCell>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
@@ -153,7 +153,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
               <CodeLocationMenu locationNode={locationEntry} />
             </JoinedButtons>
           </RowCell>
-        </RowGrid>
+        </Box>
       </div>
     );
   },
@@ -170,8 +170,3 @@ export const VirtualizedCodeLocationHeader = () => {
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-`;

@@ -165,11 +165,12 @@ class StubbedEcs:
     def describe_tasks(self, **kwargs):
         cluster = self._cluster(kwargs.get("cluster"))
         arns = kwargs.get("tasks")
+        assert arns is not None
 
-        for i, arn in enumerate(arns):  # pyright: ignore[reportArgumentType]
+        for i, arn in enumerate(arns):
             if ":" not in arn:
                 # We received just a task ID, not a full ARN
-                arns[i] = self._arn("task", f"{cluster}/{arn}")  # pyright: ignore[reportOptionalSubscript]
+                arns[i] = self._arn("task", f"{cluster}/{arn}")
 
         tasks = [task for task in self.storage.tasks[cluster] if task["taskArn"] in arns]
 
@@ -283,6 +284,7 @@ class StubbedEcs:
     @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
+        assert family is not None
         # The ECS API raises an error if you make too many concurrent requests to
         # this endpoint so we've added this locking mechanism to our stub to make
         # it possible to test concurrent operations.
@@ -298,7 +300,7 @@ class StubbedEcs:
             # Sleep for long enough that we hit the lock
             time.sleep(0.2)
             # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
-            if len(family) > 255 or not re.match(r"^[\w\-]+$", family):  # pyright: ignore[reportCallIssue,reportArgumentType]
+            if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
                 self.stubber.add_client_error(
                     method="register_task_definition", expected_params={**kwargs}
                 )
@@ -506,7 +508,7 @@ class StubbedEcs:
                 service_response={},
                 expected_params={**kwargs},
             )
-            self.storage.tags[arn] = tags  # pyright: ignore[reportArgumentType]
+            self.storage.tags[arn] = tags
         else:
             self.stubber.add_client_error(method="tag_resource", expected_params={**kwargs})
 

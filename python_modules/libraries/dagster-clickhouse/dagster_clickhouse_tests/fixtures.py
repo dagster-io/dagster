@@ -10,7 +10,7 @@ import pytest
 try:
     import docker
 except ImportError:
-    docker = None
+    docker = None  # ty: ignore[invalid-assignment]
 
 
 def _docker_available() -> bool:
@@ -29,7 +29,7 @@ def clickhouse_connection():
     if not _docker_available():
         pytest.skip("Docker is not available (required for ClickHouse testcontainers)")
 
-    from testcontainers.clickhouse import ClickHouseContainer
+    from testcontainers.clickhouse import ClickHouseContainer  # ty: ignore[unresolved-import]
 
     # Pin image for reproducible CI; native protocol on 9000
     with ClickHouseContainer("clickhouse/clickhouse-server:24.8") as ch:

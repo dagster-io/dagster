@@ -8,17 +8,22 @@ jest.mock('../WorkspaceLocationDataFetcher');
 jest.mock('../WorkspaceStatusPoller');
 jest.mock('../WorkspaceLocationAssetsFetcher');
 
+interface MockSubscribable {
+  subscribe: jest.Mock;
+  destroy: jest.Mock;
+}
+
 describe('WorkspaceManager', () => {
-  let mockClient: ApolloClient<any>;
+  let mockClient: ApolloClient<unknown>;
   let mockGetData: jest.Mock;
   let mockSetData: jest.Mock;
   let mockSetCodeLocationStatusAtom: jest.Mock;
-  let mockStatusPoller: any;
-  let mockWorkspaceLocationDataFetcher: any;
-  let mockWorkspaceLocationAssetsFetcher: any;
+  let mockStatusPoller: MockSubscribable;
+  let mockWorkspaceLocationDataFetcher: MockSubscribable;
+  let mockWorkspaceLocationAssetsFetcher: MockSubscribable;
   beforeEach(() => {
     jest.clearAllMocks();
-    mockClient = {} as any;
+    mockClient = {} as unknown as ApolloClient<unknown>;
     mockGetData = jest.fn();
     mockSetData = jest.fn();
     mockSetCodeLocationStatusAtom = jest.fn();
@@ -81,19 +86,23 @@ describe('WorkspaceManager', () => {
   });
 
   it('subscribes to data fetcher and poller and updates data', () => {
-    let dataFetcherCallback: any;
-    let pollerCallback: any;
-    let assetsFetcherCallback: any;
+    let dataFetcherCallback: (data: Record<string, unknown>) => void = () => {};
+    let pollerCallback: (data: Record<string, unknown>) => void = () => {};
+    let assetsFetcherCallback: (data: Record<string, unknown>) => void = () => {};
 
-    mockWorkspaceLocationDataFetcher.subscribe.mockImplementation((cb: any) => {
-      dataFetcherCallback = cb;
-    });
-    mockStatusPoller.subscribe.mockImplementation((cb: any) => {
+    mockWorkspaceLocationDataFetcher.subscribe.mockImplementation(
+      (cb: (data: Record<string, unknown>) => void) => {
+        dataFetcherCallback = cb;
+      },
+    );
+    mockStatusPoller.subscribe.mockImplementation((cb: (data: Record<string, unknown>) => void) => {
       pollerCallback = cb;
     });
-    mockWorkspaceLocationAssetsFetcher.subscribe.mockImplementation((cb: any) => {
-      assetsFetcherCallback = cb;
-    });
+    mockWorkspaceLocationAssetsFetcher.subscribe.mockImplementation(
+      (cb: (data: Record<string, unknown>) => void) => {
+        assetsFetcherCallback = cb;
+      },
+    );
     new WorkspaceManager({
       client: mockClient,
       localCacheIdPrefix: 'prefix',

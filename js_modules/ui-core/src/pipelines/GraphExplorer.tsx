@@ -1,15 +1,8 @@
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
-import {
-  Checkbox,
-  Colors,
-  ErrorBoundary,
-  SplitPanelContainer,
-  TextInput,
-} from '@dagster-io/ui-components';
+import {Checkbox, ErrorBoundary, SplitPanelContainer, TextInput} from '@dagster-io/ui-components';
 import qs from 'qs';
-import {useEffect, useMemo, useState} from 'react';
-import styled from 'styled-components';
+import {forwardRef, useEffect, useMemo, useState} from 'react';
 
 import {
   CycleDetectedNotice,
@@ -23,6 +16,7 @@ import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
 import {gql} from '../apollo-client';
 import {OpGraphSelectionInput} from './OpGraphSelectionInput';
+import styles from './css/GraphExplorer.module.css';
 import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {Route} from '../app/Route';
@@ -209,17 +203,17 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
       first={
         <ErrorBoundary region="op graph">
           {solidsQueryEnabled ? (
-            <QueryOverlay>
+            <div className={styles.queryOverlay}>
               <OpGraphSelectionInput
                 items={solids}
                 value={explorerPath.opsQuery}
                 onChange={handleQueryChange}
               />
-            </QueryOverlay>
+            </div>
           ) : breadcrumbs.length > 1 ? (
-            <BreadcrumbsOverlay>
+            <div className={styles.breadcrumbsOverlay}>
               <Breadcrumbs currentBreadcrumbRenderer={() => <span />} items={breadcrumbs} />
-            </BreadcrumbsOverlay>
+            </div>
           ) : null}
 
           {(showAssetRenderingOption || explodeCompositesEnabled) && (
@@ -255,7 +249,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
             </OptionsOverlay>
           )}
 
-          <HighlightOverlay>
+          <div className={styles.highlightOverlay}>
             <TextInput
               name="highlighted"
               icon="search"
@@ -263,7 +257,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
               placeholder="Highlight…"
               onChange={(e) => setNameMatch(e.target.value)}
             />
-          </HighlightOverlay>
+          </div>
 
           {solids.length === 0 ? (
             <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
@@ -359,68 +353,30 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
   ${OP_GRAPH_OP_FRAGMENT}
 `;
 
-export const RightInfoPanel = styled.div`
-  // Fixes major perofmance hit. To reproduce, add enough content to
-  // the sidebar that it scrolls (via overflow-y below) and then try
-  // to pan the DAG.
-  position: relative;
+export const RightInfoPanel = forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  ({className, ...props}, ref) => (
+    <div ref={ref} className={`${styles.rightInfoPanel} ${className ?? ''}`} {...props} />
+  ),
+);
+RightInfoPanel.displayName = 'RightInfoPanel';
 
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: ${Colors.backgroundDefault()};
-`;
+export const RightInfoPanelContent = forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  ({className, ...props}, ref) => (
+    <div ref={ref} className={`${styles.rightInfoPanelContent} ${className ?? ''}`} {...props} />
+  ),
+);
+RightInfoPanelContent.displayName = 'RightInfoPanelContent';
 
-export const RightInfoPanelContent = styled.div`
-  flex: 1;
-  overflow-y: auto;
-`;
+export const OptionsOverlay = forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  ({className, ...props}, ref) => (
+    <div ref={ref} className={`${styles.optionsOverlay} ${className ?? ''}`} {...props} />
+  ),
+);
+OptionsOverlay.displayName = 'OptionsOverlay';
 
-export const OptionsOverlay = styled.div`
-  background-color: ${Colors.popoverBackground()};
-  z-index: 2;
-  padding: 15px 20px;
-  display: inline-flex;
-  align-items: stretch;
-  white-space: nowrap;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  gap: 8px;
-`;
-
-const HighlightOverlay = styled.div`
-  background-color: ${Colors.popoverBackground()};
-  z-index: 2;
-  padding: 8px 12px 0 0;
-  display: inline-flex;
-  align-items: stretch;
-  position: absolute;
-  top: 0;
-  right: 0;
-`;
-
-export const QueryOverlay = styled.div`
-  z-index: 2;
-  position: absolute;
-  top: 8px;
-  left: 24px;
-  white-space: nowrap;
-  display: flex;
-  gap: 10px;
-`;
-
-const BreadcrumbsOverlay = styled.div`
-  background-color: ${Colors.popoverBackground()};
-  z-index: 2;
-  padding: 12px 0 0 20px;
-  height: 42px;
-  max-width: calc(100% - 250px);
-  display: inline-flex;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-`;
+export const QueryOverlay = forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  ({className, ...props}, ref) => (
+    <div ref={ref} className={`${styles.queryOverlay} ${className ?? ''}`} {...props} />
+  ),
+);
+QueryOverlay.displayName = 'QueryOverlay';

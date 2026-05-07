@@ -19,17 +19,17 @@ class DgApiRunApi:
         match result.typename__:
             case "Run":
                 return DgApiRun(
-                    id=result.run_id,
-                    status=result.status,
-                    created_at=result.creation_time,
-                    started_at=result.start_time,
-                    ended_at=result.end_time,
-                    job_name=result.job_name,
+                    id=result.run_id,  # ty: ignore[unresolved-attribute]
+                    status=result.status,  # ty: ignore[unresolved-attribute]
+                    created_at=result.creation_time,  # ty: ignore[unresolved-attribute]
+                    started_at=result.start_time,  # ty: ignore[unresolved-attribute]
+                    ended_at=result.end_time,  # ty: ignore[unresolved-attribute]
+                    job_name=result.job_name,  # ty: ignore[unresolved-attribute]
                 )
             case "RunNotFoundError":
-                raise DagsterPlusGraphqlError(f"Run not found: {result.message}")
+                raise DagsterPlusGraphqlError(f"Run not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching run: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching run: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -39,7 +39,7 @@ class DgApiRunApi:
         cursor: str | None = None,
         statuses: list[RunStatus] | None = None,
         job_name: str | None = None,
-    ) -> "DgApiRunList":
+    ) -> DgApiRunList:
         run_filter = None
         if statuses or job_name:
             run_filter = RunsFilter(
@@ -61,15 +61,15 @@ class DgApiRunApi:
                             ended_at=r.end_time,
                             job_name=r.job_name,
                         )
-                        for r in result.results
+                        for r in result.results  # ty: ignore[unresolved-attribute]
                     ],
-                    total=result.count,
+                    total=result.count,  # ty: ignore[unresolved-attribute]
                 )
             case "InvalidPipelineRunsFilterError":
                 raise DagsterPlusGraphqlError(
                     f"Invalid runs filter:\n  statuses: {', '.join(statuses or [])}\n  job_name: {job_name}"
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching runs: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching runs: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)

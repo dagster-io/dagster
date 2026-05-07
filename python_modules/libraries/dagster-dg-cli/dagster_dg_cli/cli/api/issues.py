@@ -147,6 +147,13 @@ def list_issues_command(
     help="Description of the issue",
 )
 @click.option(
+    "--status",
+    type=click.Choice([e.value for e in DgApiIssueStatus], case_sensitive=False),
+    callback=lambda ctx, param, v: DgApiIssueStatus(v.upper()) if v else None,
+    default=None,
+    help="Status of the issue. Defaults to 'OPEN'",
+)
+@click.option(
     "--json",
     "output_json",
     is_flag=True,
@@ -160,6 +167,7 @@ def create_issue_command(
     ctx: click.Context,
     title: str,
     description: str,
+    status: DgApiIssueStatus | None,
     output_json: bool,
     organization: str,
     deployment: str,
@@ -178,7 +186,7 @@ def create_issue_command(
     api = DgApiIssueApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        issue = api.create_issue(title=title, description=description)
+        issue = api.create_issue(title=title, description=description, status=status)
         output = format_issue(issue, as_json=output_json)
         click.echo(output)
 
@@ -306,7 +314,7 @@ def add_link_issue_command(
     api = DgApiIssueApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        issue = api.add_link_to_issue(
+        issue = api.create_link_on_issue(
             issue_id=issue_id,
             run_id=run_id,
             asset_key=asset_key.split("/") if asset_key else None,
@@ -365,7 +373,7 @@ def remove_link_issue_command(
     api = DgApiIssueApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        issue = api.remove_link_from_issue(
+        issue = api.delete_link_from_issue(
             issue_id=issue_id,
             run_id=run_id,
             asset_key=asset_key.split("/") if asset_key else None,

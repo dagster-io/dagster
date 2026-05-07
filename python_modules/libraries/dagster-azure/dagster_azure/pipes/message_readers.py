@@ -70,7 +70,7 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
         key = f"{params['key_prefix']}/{index}.json"
         try:
             with self.client.get_blob_client(self.bucket, key) as blob_client:
-                return blob_client.download_blob().readall().decode("utf-8")
+                return blob_client.download_blob().readall().decode("utf-8")  # ty: ignore[unresolved-attribute]
         except Exception:
             return None
 

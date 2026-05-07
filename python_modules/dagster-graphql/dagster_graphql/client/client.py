@@ -62,6 +62,9 @@ class DagsterGraphQLClient:
         headers (Optional[Dict[str, str]]): Additional headers to include in the request. To use
             this client in Dagster Cloud, set the "Dagster-Cloud-Api-Token" header to a user token
             generated in the Dagster Cloud UI.
+        path_prefix (str): Optional path prefix for deployments behind a non-root path
+            (e.g., ``"/dagster"``). Must start with ``"/"`` and not end with ``"/"`` when
+            non-empty. Defaults to ``""``.
 
     Raises:
         :py:class:`~requests.exceptions.ConnectionError`: if the client cannot connect to the host.
@@ -76,14 +79,22 @@ class DagsterGraphQLClient:
         timeout: int = 300,
         headers: dict[str, str] | None = None,
         auth: AuthBase | None = None,
+        path_prefix: str = "",
     ):
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
         self._use_https = check.bool_param(use_https, "use_https")
 
+        self._path_prefix = check.str_param(path_prefix, "path_prefix")
+        if self._path_prefix:
+            if not self._path_prefix.startswith("/"):
+                raise check.CheckError(f'path_prefix must start with "/", got: {self._path_prefix}')
+            self._path_prefix = self._path_prefix.rstrip("/")
+
         self._url = (
             ("https://" if self._use_https else "http://")
             + (f"{self._hostname}:{self._port_number}" if self._port_number else self._hostname)
+            + self._path_prefix
             + "/graphql"
         )
 

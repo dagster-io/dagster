@@ -81,23 +81,24 @@ export async function makeSVGPortable(svg: SVGElement) {
     }
     const nodeStyles = window.getComputedStyle(node);
     for (const idx of Object.keys(nodeStyles)) {
-      const attrName: string = (nodeStyles as any)[idx];
-      if (!USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
+      const attrName = nodeStyles[Number(idx)];
+      if (!attrName || !USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
         continue;
       }
 
       // For any style values that are implemented with CSS vars, use the computed value.
-      const uncomputedStyleValue = (node.style as any)[attrName];
+      const uncomputedStyleValue = node.style.getPropertyValue(attrName);
       if (typeof uncomputedStyleValue === 'string' && uncomputedStyleValue.startsWith('var(--')) {
-        (node.style as any)[attrName] = (nodeStyles as any)[attrName];
+        node.style.setProperty(attrName, nodeStyles.getPropertyValue(attrName));
       }
 
       if (
-        !(node.style as any)[attrName] &&
-        (nodeStyles as any)[attrName] !== (baseStyles as any)[attrName]
+        !node.style.getPropertyValue(attrName) &&
+        nodeStyles.getPropertyValue(attrName) !== baseStyles.getPropertyValue(attrName)
       ) {
-        (node.style as any)[attrName] = await makeAttributeValuePortable(
-          (nodeStyles as any)[attrName],
+        node.style.setProperty(
+          attrName,
+          await makeAttributeValuePortable(nodeStyles.getPropertyValue(attrName)),
         );
       }
       if (node instanceof HTMLElement) {
@@ -115,12 +116,12 @@ export async function makeSVGPortable(svg: SVGElement) {
   // Apply styles inherited from the surrounding document to the base SVG element. This
   // sets things like the line-height, font smoothing, etc.
   for (const idx of Object.keys(baseStyles)) {
-    const attrName: string = (baseStyles as any)[idx];
-    if (!USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
+    const attrName = baseStyles[Number(idx)];
+    if (!attrName || !USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
       continue;
     }
-    if (!(svg.style as any)[attrName]) {
-      (svg.style as any)[attrName] = (baseStyles as any)[attrName];
+    if (!svg.style.getPropertyValue(attrName)) {
+      svg.style.setProperty(attrName, baseStyles.getPropertyValue(attrName));
     }
   }
 

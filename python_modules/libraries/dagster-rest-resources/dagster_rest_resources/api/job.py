@@ -23,7 +23,7 @@ class DgApiJobApi:
         match result.typename__:
             case "RepositoryConnection":
                 jobs: list[DgApiJob] = []
-                for repo in result.nodes:
+                for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                     location_name = repo.location.name
                     repo_name = repo.name
                     repository_origin = (
@@ -57,9 +57,9 @@ class DgApiJobApi:
                         )
                 return DgApiJobList(items=jobs, total=len(jobs))
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Repository not found: {result.message}")
+                raise DagsterPlusGraphqlError(f"Repository not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching jobs: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching jobs: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

@@ -74,6 +74,7 @@ def _build_airbyte_asset_defn_metadata(
     schema_by_table_name: Mapping[str, TableSchema] | None = None,
     legacy_freshness_policy: LegacyFreshnessPolicy | None = None,
     auto_materialize_policy: AutoMaterializePolicy | None = None,
+    destination_type: str | None = None,
 ) -> AssetsDefinitionCacheableData:
     asset_key_prefix = (
         check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
@@ -156,6 +157,7 @@ def _build_airbyte_asset_defn_metadata(
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
                         table_name=table_names.get(table),
+                        storage_kind=destination_type,
                     ),
                 }
                 for table in tables
@@ -263,6 +265,7 @@ def build_airbyte_assets(
     upstream_assets: set[AssetKey] | None = None,
     schema_by_table_name: Mapping[str, TableSchema] | None = None,
     stream_to_asset_map: Mapping[str, str] | None = None,
+    destination_type: str | None = None,
 ) -> Sequence[AssetsDefinition]:
     """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
@@ -324,6 +327,7 @@ def build_airbyte_assets(
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
                         table_name=table_names.get(table),
+                        storage_kind=destination_type,
                     ),
                 }
             ),
@@ -675,6 +679,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 table_to_asset_key_fn=table_to_asset_key,
                 legacy_freshness_policy=self._connection_to_freshness_policy_fn(connection),
                 auto_materialize_policy=self._connection_to_auto_materialize_policy_fn(connection),
+                destination_type=connection.destination.get("destinationName"),
             )
 
             asset_defn_data.append(asset_data_for_conn)
@@ -892,7 +897,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 state_file = state_files[0]
 
-            with open(os.path.join(connection_dir, cast("str", state_file)), encoding="utf-8") as f:
+            with open(os.path.join(connection_dir, state_file), encoding="utf-8") as f:
                 state = yaml.safe_load(f.read())
                 connection_id = state.get("resource_id")
 

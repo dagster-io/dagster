@@ -1,0 +1,23 @@
+@keyframes pulse {
+  from {
+    background-color: var(--color-accent-gray);
+  }
+  50% {
+    background-color: var(--color-accent-gray-hover);
+  }
+  to {
+    background-color: var(--color-accent-gray);
+  }
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 1px;
+}
+
+.loadingDot {
+  composes: dot;
+  animation: pulse 1s ease-out infinite;
+}

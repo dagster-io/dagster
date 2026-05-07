@@ -179,7 +179,7 @@ def scope_add_downstream_assets_w_deps():
         @dg.asset(deps=[dg.AssetKey("stargazers")])
         def stargazers_file(snowflake: SnowflakeResource):
             with snowflake.get_connection() as conn:
-                stargazers = conn.cursor.execute(  # pyright: ignore[reportFunctionMemberAccess]
+                stargazers = conn.cursor.execute(  # ty: ignore[unresolved-attribute]
                     "SELECT * FROM STARGAZERS"
                 ).fetch_pandas_all()
             with open("stargazers.json", "w", encoding="utf8") as f:
@@ -277,7 +277,7 @@ def scope_add_downstream_assets_cloud_with_deps():
         @dg.asset(deps=[dg.AssetKey("stargazers")])
         def stargazers_file(snowflake: SnowflakeResource):
             with snowflake.get_connection() as conn:
-                stargazers = conn.cursor.execute(  # pyright: ignore[reportFunctionMemberAccess]
+                stargazers = conn.cursor.execute(  # ty: ignore[unresolved-attribute]
                     "SELECT * FROM STARGAZERS"
                 ).fetch_pandas_all()
             with open("stargazers.json", "w", encoding="utf8") as f:

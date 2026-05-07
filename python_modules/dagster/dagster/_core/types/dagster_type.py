@@ -581,7 +581,7 @@ class PythonObjectDagsterType(DagsterType):
             self.type_str = "Union[{}]".format(
                 ", ".join(python_type.__name__ for python_type in python_type)
             )
-            typing_type = t.Union[python_type]  # pyright: ignore[reportInvalidTypeArguments]  # noqa: UP007
+            typing_type = t.Union[python_type]  # noqa: UP007
 
         else:
             self.python_type = check.class_param(python_type, "python_type")

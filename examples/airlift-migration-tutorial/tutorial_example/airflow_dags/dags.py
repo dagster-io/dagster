@@ -120,7 +120,7 @@ export_customers = ExportDuckDBToCSV(
     csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
 )
 
-load_raw_customers >> run_dbt_model >> export_customers  # type: ignore
+load_raw_customers >> run_dbt_model >> export_customers
 
 # Set this to True to begin the proxying process
 PROXYING = False

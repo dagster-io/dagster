@@ -4,9 +4,9 @@ import {getAssetsByKey} from './util';
 import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {WorkspaceAssetNode} from '../assets/useAllAssets';
 import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;
@@ -14,15 +14,15 @@ type Nullable<T> = {
 
 export type FilterableAssetDefinition = Nullable<
   Partial<
-    Pick<WorkspaceAssetFragment, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
-      repository: Pick<WorkspaceAssetFragment['repository'], 'name'> & {
-        location: Pick<WorkspaceAssetFragment['repository']['location'], 'name'>;
+    Pick<WorkspaceAssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
+      repository: Pick<WorkspaceAssetNode['repository'], 'name'> & {
+        location: Pick<WorkspaceAssetNode['repository']['location'], 'name'>;
       };
     }
   >
 >;
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 export const useAssetSelectionFiltering = <
   T extends {
@@ -57,7 +57,7 @@ export const useAssetSelectionFiltering = <
     useMemo(
       () => ({
         hideEdgesToNodesOutsideQuery: true,
-        hideNodesMatching: (node: WorkspaceAssetFragment) => {
+        hideNodesMatching: (node: WorkspaceAssetNode) => {
           return !assetsByKey.get(tokenForAssetKey(node.assetKey));
         },
         loading: !!assetsLoading,

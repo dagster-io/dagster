@@ -46,13 +46,13 @@ class DgApiSensorApi:
                             repo_location_name=repository_location_name,
                             repo_name=repository_name,
                         )
-                        for s in result.results
+                        for s in result.results  # ty: ignore[unresolved-attribute]
                     ]
                     return DgApiSensorList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
@@ -61,7 +61,7 @@ class DgApiSensorApi:
             match result.typename__:
                 case "RepositoryConnection":
                     items = []
-                    for repo in result.nodes:
+                    for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                         for s in repo.sensors:
                             items.append(
                                 self._build_sensor(
@@ -72,9 +72,9 @@ class DgApiSensorApi:
                             )
                     return DgApiSensorList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 
@@ -95,16 +95,16 @@ class DgApiSensorApi:
         match result.typename__:
             case "Sensor":
                 return self._build_sensor(
-                    result,
+                    result,  # ty: ignore[invalid-argument-type]
                     repo_location_name=repository_location_name,
                     repo_name=repository_name,
                 )
             case "SensorNotFoundError":
-                raise DagsterPlusGraphqlError(f"Sensor not found: {result.message}")
+                raise DagsterPlusGraphqlError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error fetching sensor: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error fetching sensor: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching sensor: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching sensor: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -114,7 +114,7 @@ class DgApiSensorApi:
         match result.typename__:
             case "RepositoryConnection":
                 matches: list[DgApiSensor] = []
-                for repo in result.nodes:
+                for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                     for s in repo.sensors:
                         if s.name == sensor_name:
                             matches.append(
@@ -134,9 +134,9 @@ class DgApiSensorApi:
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

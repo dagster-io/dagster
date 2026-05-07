@@ -1,6 +1,41 @@
 # ########################
+# ##### TY (Type Checker)
+# ########################
+
+# [Docs root]
+#   https://docs.astral.sh/ty/
+# [Configuration reference]
+#   https://docs.astral.sh/ty/configuration/
+
+# Note: Most ty configuration is handled dynamically by scripts/run-ty.py,
+# which passes CLI arguments for include/exclude paths and Python environment.
+# This section provides defaults for direct ty invocations.
+
+[tool.ty.environment]
+# Minimum version of Python on which code must run.
+python-version = "3.10"
+
+# Extra paths to use as module-resolution sources
+extra-paths = [
+  ".buildkite/buildkite-shared"
+]
+
+[tool.ty.src]
+
+include = [
+  # This doesn't exist but we need something here to prevent ty from
+  # complaining about an empty include list. Remove with first package added
+  # here.
+  "__placeholder__"
+]
+
+# Ignore all files that are git-ignored unless explicitly included.
+respect-ignore-files = true
+
+# ########################
 # ##### PYRIGHT
 # ########################
+
 
 # [Docs root]
 #   https://github.com/microsoft/pyright/tree/main/docs
@@ -46,11 +81,9 @@ extraPaths = [
 venv = ".venv"
 venvPath = "pyright/master"
 
-
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
 pythonVersion = "3.10"
-
 
 # Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
 # include a py.typed file). All imports from these libraries are given the `Unknown` type (i.e.

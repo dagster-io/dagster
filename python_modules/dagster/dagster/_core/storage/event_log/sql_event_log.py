@@ -932,7 +932,7 @@ class SqlEventLogStorage(EventLogStorage):
         event_records = []
         for row_id, json_str in results:
             try:
-                event_record = deserialize_value(json_str, NamedTuple)
+                event_record = deserialize_value(json_str, NamedTuple)  # ty: ignore[no-matching-overload]
                 if not isinstance(event_record, EventLogEntry):
                     logging.warning(
                         "Could not resolve event record as EventLogEntry for id `%s`.", row_id
@@ -1128,7 +1128,7 @@ class SqlEventLogStorage(EventLogStorage):
             db_result(conn, db_select([db.func.max(SqlEventLogStorageTable.c.id)])) as result,
         ):
             row = result.fetchone()
-            return row[0]  # type: ignore
+            return row[0]
 
     def _construct_asset_record_from_row(
         self,
@@ -1171,7 +1171,7 @@ class SqlEventLogStorage(EventLogStorage):
             if not asset_key:
                 continue
             event_or_materialization = (
-                deserialize_value(row["last_materialization"], NamedTuple)
+                deserialize_value(row["last_materialization"], NamedTuple)  # ty: ignore[no-matching-overload]
                 if row["last_materialization"]
                 else None
             )
@@ -1405,7 +1405,7 @@ class SqlEventLogStorage(EventLogStorage):
             should_query = bool(has_more) and bool(limit) and len(result) < cast("int", limit)
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
-        if not is_partial_query and self._can_mark_assets_as_migrated(rows):  # pyright: ignore[reportPossiblyUnboundVariable]
+        if not is_partial_query and self._can_mark_assets_as_migrated(rows):
             self.enable_secondary_index(ASSET_KEY_INDEX_COLS)
 
         return result[:limit] if limit else result
@@ -1473,7 +1473,7 @@ class SqlEventLogStorage(EventLogStorage):
                 row_by_asset_key[asset_key] = row
                 continue
             materialization_or_event_or_record = (
-                deserialize_value(cast("str", row["last_materialization"]), NamedTuple)
+                deserialize_value(cast("str", row["last_materialization"]), NamedTuple)  # ty: ignore[no-matching-overload]
                 if row["last_materialization"]
                 else None
             )
@@ -1741,22 +1741,22 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
 
-        event_or_materialization = deserialize_value(json_str, NamedTuple)
+        event_or_materialization = deserialize_value(json_str, NamedTuple)  # ty: ignore[no-matching-overload]
         if isinstance(event_or_materialization, AssetMaterialization):
             return event_or_materialization
 
         if (
             not isinstance(event_or_materialization, EventLogEntry)
             or not event_or_materialization.is_dagster_event
-            or not event_or_materialization.dagster_event.asset_key  # type: ignore
+            or not event_or_materialization.dagster_event.asset_key  # pyright: ignore[reportOptionalMemberAccess]
         ):
             return None
 
-        return event_or_materialization.dagster_event.step_materialization_data.materialization  # type: ignore
+        return event_or_materialization.dagster_event.step_materialization_data.materialization  # pyright: ignore[reportOptionalMemberAccess]
 
     def _get_asset_key_values_on_wipe(self) -> Mapping[str, Any]:
         wipe_timestamp = get_current_timestamp()
-        values = {
+        values: dict[str, Any] = {
             "asset_details": serialize_value(AssetDetails(last_wipe_timestamp=wipe_timestamp)),
             "last_run_id": None,
         }
@@ -2179,7 +2179,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     @cached_property
-    def supports_global_concurrency_limits(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def supports_global_concurrency_limits(self) -> bool:
         return self.has_table(ConcurrencySlotsTable.name)
 
     @cached_property
@@ -3380,7 +3380,7 @@ class SqlEventLogStorage(EventLogStorage):
         return infos
 
     @property
-    def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def supports_asset_checks(self):
         return self.has_table(AssetCheckExecutionsTable.name)
 
     def get_latest_planned_materialization_info(

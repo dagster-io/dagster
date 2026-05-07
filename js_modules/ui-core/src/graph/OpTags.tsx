@@ -1484,7 +1484,7 @@ export const extractIconSrc = (knownTag: KnownTag | undefined) => {
   // Storybook imports SVGs are string but nextjs imports them as object.
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
   if (typeof knownTag?.icon !== 'undefined') {
-    return typeof knownTag.icon === 'string' ? (knownTag.icon as any) : knownTag.icon?.src;
+    return typeof knownTag.icon === 'string' ? (knownTag.icon as string) : knownTag.icon?.src;
   }
   return '';
 };

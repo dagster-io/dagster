@@ -186,7 +186,7 @@ def test_translation(
 ) -> None:
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
-        body = {
+        body: dict[str, Any] = {
             "type": "dagster_powerbi.PowerBIWorkspaceComponent",
             "attributes": {
                 "workspace": {
@@ -196,9 +196,9 @@ def test_translation(
                     "workspace_id": workspace_id,
                 },
                 "use_workspace_scan": False,
+                "translation": attributes,
             },
         }
-        body["attributes"]["translation"] = attributes
         with (
             setup_powerbi_component(
                 defs_yaml_contents=body,

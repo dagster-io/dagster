@@ -1875,7 +1875,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
     instance.add_backfill(
         # Add some partitions in a "requested" state to mock that certain partitions are hanging
         backfill.with_asset_backfill_data(
-            backfill.asset_backfill_data._replace(  # pyright: ignore[reportOptionalMemberAccess]
+            backfill.asset_backfill_data._replace(
                 requested_subset=AssetGraphSubset(
                     non_partitioned_asset_keys={dg.AssetKey("daily_1")}
                 )
@@ -2747,10 +2747,11 @@ def test_error_code_location(
     )
 
     assert len(errors) == 1
+    assert errors[0] is not None
     assert (
         "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset AssetKey(['asset_a']) existed at"
         " storage-time, but no longer does. This could be because it's inside a code location"
-        " that's failing to load" in errors[0].message  # pyright: ignore[reportOptionalMemberAccess]
+        " that's failing to load" in errors[0].message
     )
     assert "Failure loading location" in caplog.text
 

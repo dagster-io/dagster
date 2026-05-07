@@ -29,6 +29,7 @@ from dagster_rest_resources.__generated__.list_schedules import (
     ListSchedulesSchedulesOrErrorSchedulesResultsScheduleState,
 )
 from dagster_rest_resources.api.schedule import DgApiScheduleApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
 from dagster_rest_resources.schemas.schedule import DgApiScheduleList
 
@@ -90,7 +91,7 @@ def _make_repos_with_schedules(
 
 class TestListSchedulesFiltered:
     def test_returns_schedules_for_repo(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_schedules.return_value = ListSchedules(
             schedulesOrError=ListSchedulesSchedulesOrErrorSchedules(
                 __typename="Schedules",
@@ -120,7 +121,7 @@ class TestListSchedulesFiltered:
         assert result.items[1].code_location_origin == "loc@repo"
 
     def test_empty_results(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_schedules.return_value = ListSchedules(
             schedulesOrError=ListSchedulesSchedulesOrErrorSchedules(
                 __typename="Schedules",
@@ -136,7 +137,7 @@ class TestListSchedulesFiltered:
         assert result == DgApiScheduleList(items=[])
 
     def test_repo_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_schedules.return_value = ListSchedules(
             schedulesOrError=ListSchedulesSchedulesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -150,7 +151,7 @@ class TestListSchedulesFiltered:
             )
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_schedules.return_value = ListSchedules(
             schedulesOrError=ListSchedulesSchedulesOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -166,7 +167,7 @@ class TestListSchedulesFiltered:
 
 class TestListSchedulesAll:
     def test_returns_all_schedules_across_repos(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = _make_repos_with_schedules(
             schedules=[("schedule-a", "id-a"), ("schedule-b", "id-b")]
         )
@@ -180,7 +181,7 @@ class TestListSchedulesAll:
         assert result.items[1].code_location_origin == "test_location@__repository__"
 
     def test_empty_repos(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = _make_repos_with_schedules(
             schedules=[]
         )
@@ -190,7 +191,7 @@ class TestListSchedulesAll:
         assert result == DgApiScheduleList(items=[])
 
     def test_repo_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = ListRepositoriesWithSchedules(
             repositoriesOrError=ListRepositoriesWithSchedulesRepositoriesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -201,7 +202,7 @@ class TestListSchedulesAll:
             DgApiScheduleApi(_client=client).list_schedules()
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = ListRepositoriesWithSchedules(
             repositoriesOrError=ListRepositoriesWithSchedulesRepositoriesOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -214,7 +215,7 @@ class TestListSchedulesAll:
 
 class TestGetSchedule:
     def test_returns_schedule(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_schedule.return_value = GetSchedule(
             scheduleOrError=GetScheduleScheduleOrErrorSchedule(
                 __typename="Schedule",
@@ -255,7 +256,7 @@ class TestGetSchedule:
         assert result.next_tick_timestamp is None
 
     def test_schedule_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_schedule.return_value = GetSchedule(
             scheduleOrError=GetScheduleScheduleOrErrorScheduleNotFoundError(
                 __typename="ScheduleNotFoundError", message=""
@@ -270,7 +271,7 @@ class TestGetSchedule:
             )
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_schedule.return_value = GetSchedule(
             scheduleOrError=GetScheduleScheduleOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -287,7 +288,7 @@ class TestGetSchedule:
 
 class TestGetScheduleByName:
     def test_finds_schedule_by_name(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = _make_repos_with_schedules(
             schedules=[("target_schedule", "id-target"), ("other_schedule", "id-other")]
         )
@@ -298,7 +299,7 @@ class TestGetScheduleByName:
         assert result.code_location_origin == "test_location@__repository__"
 
     def test_schedule_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = _make_repos_with_schedules(
             schedules=[("other_schedule", "id-other")]
         )
@@ -307,7 +308,7 @@ class TestGetScheduleByName:
             DgApiScheduleApi(_client=client).get_schedule_by_name("missing_schedule")
 
     def test_multiple_matching_schedules_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = ListRepositoriesWithSchedules(
             repositoriesOrError=ListRepositoriesWithSchedulesRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -361,7 +362,7 @@ class TestGetScheduleByName:
             DgApiScheduleApi(_client=client).get_schedule_by_name("dup_schedule")
 
     def test_repo_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = ListRepositoriesWithSchedules(
             repositoriesOrError=ListRepositoriesWithSchedulesRepositoriesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -372,7 +373,7 @@ class TestGetScheduleByName:
             DgApiScheduleApi(_client=client).get_schedule_by_name("test_schedule")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_schedules.return_value = ListRepositoriesWithSchedules(
             repositoriesOrError=ListRepositoriesWithSchedulesRepositoriesOrErrorPythonError(
                 __typename="PythonError", message=""

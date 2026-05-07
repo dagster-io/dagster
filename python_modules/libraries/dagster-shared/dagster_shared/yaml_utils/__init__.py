@@ -103,7 +103,7 @@ def merge_yamls(
         yaml_dict = load_yaml_from_path(yaml_file, loader=loader) or {}
 
         if isinstance(yaml_dict, dict):
-            merged = deep_merge_dicts(merged, yaml_dict)
+            merged = deep_merge_dicts(merged, yaml_dict)  # ty: ignore[invalid-argument-type]
         else:
             check.failed(
                 f"Expected YAML from file {yaml_file} to parse to dictionary, "

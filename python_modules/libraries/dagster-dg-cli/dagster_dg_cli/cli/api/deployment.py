@@ -59,7 +59,7 @@ def list_deployments_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
     from dagster_rest_resources.schemas.deployment import DgApiDeploymentList
 
     api = DgApiDeploymentApi(_client=client)
@@ -105,7 +105,7 @@ def get_deployment_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(_client=client)
 
@@ -149,7 +149,7 @@ def get_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(_client=client)
 
@@ -199,7 +199,7 @@ def set_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(_client=client)
 
@@ -244,7 +244,7 @@ def delete_deployment_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_rest_resources.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
     from dagster_rest_resources.schemas.exception import UnconfirmedProdDeletionError
 
     api = DgApiDeploymentApi(_client=client)

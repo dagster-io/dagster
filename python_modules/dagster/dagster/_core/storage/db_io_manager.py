@@ -196,7 +196,7 @@ class DbIOManager(IOManager):
         table_slice = self._get_table_slice(context, cast("OutputContext", context.upstream_output))
 
         with self._db_client.connect(context, table_slice) as conn:
-            return self._resolve_handler(load_type).load_input(context, table_slice, conn)  # type: ignore  # (pyright bug)
+            return self._resolve_handler(load_type).load_input(context, table_slice, conn)  # pyright: ignore[reportArgumentType]
 
     def _resolve_handler(self, obj_type: type) -> DbTypeHandler:
         return next(

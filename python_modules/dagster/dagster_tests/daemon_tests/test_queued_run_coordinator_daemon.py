@@ -792,10 +792,10 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             return original_method(
                 self,
                 origin,
-                host,  # pyright: ignore[reportArgumentType]
+                host,  # ty: ignore[invalid-argument-type]
                 port,
                 socket,
-                heartbeat,  # pyright: ignore[reportArgumentType]
+                heartbeat,  # ty: ignore[invalid-argument-type]
                 watch_server,
                 grpc_server_registry,
             )

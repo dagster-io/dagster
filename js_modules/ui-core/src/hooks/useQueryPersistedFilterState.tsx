@@ -55,12 +55,16 @@ export const useQueryPersistedFilterState = <T extends Record<string, any>>(
         fieldAsString.charAt(0).toUpperCase() + fieldAsString.slice(1)
       }` as keyof SetterType<T, Extract<keyof T, string>>;
 
-      setters[key] = ((value: any) => {
+      setters[key] = ((
+        value:
+          | T[typeof fieldAsString]
+          | ((prev: T[typeof fieldAsString]) => T[typeof fieldAsString]),
+      ) => {
         setState((prevState: T) => ({
           ...prevState,
           [fieldAsString]: value instanceof Function ? value(prevState[fieldAsString]) : value,
         }));
-      }) as any;
+      }) as SetterType<T, Extract<keyof T, string>>[typeof key];
     });
 
     return setters;

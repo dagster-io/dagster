@@ -15,9 +15,9 @@ import {
   AssetNodeLiveObservationFragment,
 } from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import type {WorkspaceAssetNode} from '../assets/WorkspaceAssetNode';
 import {ILayoutOp} from '../graph/layout';
 import {RunStatus} from '../graphql/types';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum AssetGraphViewType {
   GLOBAL = 'global',
@@ -34,7 +34,7 @@ export enum AssetGraphViewType {
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
 
-type AssetNode = WorkspaceAssetFragment;
+type AssetNode = WorkspaceAssetNode;
 type AssetKey = AssetNodeKeyFragment;
 type AssetLiveNode = AssetNodeLiveFragment & {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;

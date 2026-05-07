@@ -1,7 +1,6 @@
 import {
   Box,
   Colors,
-  FontFamily,
   Icon,
   MiddleTruncate,
   Mono,
@@ -13,11 +12,11 @@ import {
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 import * as React from 'react';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {RunStatusDot} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
@@ -25,6 +24,7 @@ import {RunTimelineRowIcon} from './RunTimelineRowIcon';
 import {RowObjectType, TimelineRow, TimelineRun} from './RunTimelineTypes';
 import {TimeElapsed} from './TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
+import styles from './css/RunTimeline.module.css';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
 import {COMMON_COLLATOR} from '../app/Util';
 import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJobTooltip';
@@ -307,27 +307,29 @@ export const RunStatusTagsWithCounts = ({
   return (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
       {inProgressCount > 0 ? (
-        <Tooltip content={<StatusSpan>{inProgressText}</StatusSpan>} placement="top">
+        <Tooltip
+          content={<span className={styles.statusSpan}>{inProgressText}</span>}
+          placement="top"
+        >
           <Tag intent="primary">{inProgressCount}</Tag>
         </Tooltip>
       ) : null}
       {succeededCount > 0 ? (
-        <Tooltip content={<StatusSpan>{succeededText}</StatusSpan>} placement="top">
+        <Tooltip
+          content={<span className={styles.statusSpan}>{succeededText}</span>}
+          placement="top"
+        >
           <Tag intent="success">{succeededCount}</Tag>
         </Tooltip>
       ) : null}
       {failedCount > 0 ? (
-        <Tooltip content={<StatusSpan>{failedText}</StatusSpan>} placement="top">
+        <Tooltip content={<span className={styles.statusSpan}>{failedText}</span>} placement="top">
           <Tag intent="danger">{failedCount}</Tag>
         </Tooltip>
       ) : null}
     </Box>
   );
 };
-
-const StatusSpan = styled.span`
-  white-space: nowrap;
-`;
 
 type DateMarker = {
   key: string;
@@ -460,10 +462,14 @@ export const TimeDividers = (props: TimeDividersProps) => {
   const msToLeft = (ms: number) => `${(((ms - start) / (end - start)) * 100).toPrecision(3)}%`;
 
   return (
-    <DividerContainer style={{height: `${height}px`, top: `-${DATE_TIME_HEIGHT}px`}}>
-      <DividerLabels>
+    <div
+      className={styles.dividerContainer}
+      style={{height: `${height}px`, top: `-${DATE_TIME_HEIGHT}px`}}
+    >
+      <div className={styles.dividerLabels}>
         {dateMarkers.map((marker) => (
-          <DateLabel
+          <div
+            className={styles.dateLabel}
             key={marker.key}
             style={{
               left: `${marker.left.toPrecision(3)}%`,
@@ -473,25 +479,39 @@ export const TimeDividers = (props: TimeDividersProps) => {
             {marker.width > MIN_DATE_WIDTH_PCT ? (
               <Box flex={{justifyContent: 'center'}}>{marker.label}</Box>
             ) : null}
-          </DateLabel>
+          </div>
         ))}
-      </DividerLabels>
-      <DividerLabels>
+      </div>
+      <div className={styles.dividerLabels}>
         {timeMarkers.map((marker) => (
-          <TimeLabel key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}}>
+          <div
+            className={styles.timeLabel}
+            key={marker.key}
+            style={{left: `${marker.left.toPrecision(3)}%`}}
+          >
             {marker.label}
-          </TimeLabel>
+          </div>
         ))}
-      </DividerLabels>
-      <DividerLines>
-        <DividerLine style={{left: 0, backgroundColor: Colors.keylineDefault()}} />
+      </div>
+      <div className={styles.dividerLines}>
+        <div
+          className={styles.dividerLine}
+          style={{left: 0, backgroundColor: Colors.keylineDefault()}}
+        />
         {timeMarkers.map((marker) => (
-          <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
+          <div
+            className={styles.dividerLine}
+            key={marker.key}
+            style={{left: `${marker.left.toPrecision(3)}%`}}
+          />
         ))}
         {now >= start && now <= end ? (
           <>
-            <TimlineMarker style={{left: msToLeft(now)}}>Now</TimlineMarker>
-            <DividerLine
+            <div className={styles.timelineMarker} style={{left: msToLeft(now)}}>
+              Now
+            </div>
+            <div
+              className={styles.dividerLine}
               style={{left: msToLeft(now), backgroundColor: Colors.accentPrimary(), zIndex: 1}}
             />
           </>
@@ -500,10 +520,11 @@ export const TimeDividers = (props: TimeDividersProps) => {
           .filter((annotation) => annotation.ms >= start && annotation.ms <= end)
           .map((annotation) => (
             <React.Fragment key={annotation.label}>
-              <TimlineMarker style={{left: msToLeft(annotation.ms)}}>
+              <div className={styles.timelineMarker} style={{left: msToLeft(annotation.ms)}}>
                 {annotation.label}
-              </TimlineMarker>
-              <DividerLine
+              </div>
+              <div
+                className={styles.dividerLine}
                 style={{
                   left: msToLeft(annotation.ms),
                   backgroundColor: Colors.accentPrimary(),
@@ -512,88 +533,10 @@ export const TimeDividers = (props: TimeDividersProps) => {
               />
             </React.Fragment>
           ))}
-      </DividerLines>
-    </DividerContainer>
+      </div>
+    </div>
   );
 };
-
-const DividerContainer = styled.div`
-  position: absolute;
-  top: 0;
-  left: ${LEFT_SIDE_SPACE_ALLOTTED}px;
-  right: 0;
-  font-family: ${FontFamily.monospace};
-  color: ${Colors.textLighter()};
-`;
-
-const DividerLabels = styled.div`
-  display: flex;
-  align-items: center;
-  box-shadow:
-    inset 1px 0 0 ${Colors.keylineDefault()},
-    inset 0 1px 0 ${Colors.keylineDefault()},
-    inset -1px 0 0 ${Colors.keylineDefault()};
-  height: ${TIME_HEADER_HEIGHT}px;
-  position: relative;
-  user-select: none;
-  font-size: 12px;
-  width: 100%;
-  overflow: hidden;
-
-  :first-child {
-    box-shadow:
-      inset 1px 0 0 ${Colors.keylineDefault()},
-      inset -1px 0 0 ${Colors.keylineDefault()};
-  }
-`;
-
-const DateLabel = styled.div`
-  position: absolute;
-  padding: 8px 0;
-  white-space: nowrap;
-
-  :not(:first-child) {
-    box-shadow: inset 1px 0 0 ${Colors.keylineDefault()};
-  }
-`;
-
-const TimeLabel = styled.div`
-  position: absolute;
-  padding: 8px;
-  box-shadow: inset 1px 0 0 ${Colors.keylineDefault()};
-  white-space: nowrap;
-`;
-
-const DividerLines = styled.div`
-  height: 100%;
-  position: relative;
-  width: 100%;
-  box-shadow:
-    inset 1px 0 0 ${Colors.keylineDefault()},
-    inset -1px 0 0 ${Colors.keylineDefault()};
-`;
-
-const DividerLine = styled.div`
-  background-color: ${Colors.keylineDefault()};
-  height: 100%;
-  position: absolute;
-  top: 0;
-  width: 1px;
-`;
-
-const TimlineMarker = styled.div`
-  background-color: ${Colors.accentPrimary()};
-  border-radius: 1px;
-  color: ${Colors.accentReversed()};
-  cursor: default;
-  font-size: 10px;
-  line-height: 12px;
-  transform: translate(-50%, 0);
-  padding: 1px 4px;
-  position: absolute;
-  top: -14px;
-  user-select: none;
-`;
 
 const MIN_CHUNK_WIDTH = 4;
 const MIN_WIDTH_FOR_MULTIPLE = 12;
@@ -634,8 +577,8 @@ const RunTimelineRow = ({
   }
 
   return (
-    <TimelineRowContainer $height={height} $start={top}>
-      <RowName>
+    <TimelineRowContainer height={height} start={top}>
+      <div className={styles.rowName}>
         <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
         <div style={{width: LABEL_WIDTH}}>
           {row.path ? (
@@ -651,7 +594,7 @@ const RunTimelineRow = ({
             </Box>
           )}
         </div>
-      </RowName>
+      </div>
       <RunChunks>
         {batched.map((batch) => {
           const {left, width, runs} = batch;
@@ -660,8 +603,8 @@ const RunTimelineRow = ({
             <RunChunk
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               key={batch.runs[0]!.id}
-              $background={mergeStatusToBackground(batch.runs)}
-              $multiple={runCount > 1}
+              background={mergeStatusToBackground(batch.runs)}
+              multiple={runCount > 1}
               style={{
                 left: `${left}px`,
                 width: `${width}px`,
@@ -677,7 +620,9 @@ const RunTimelineRow = ({
                   flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
                   style={{height: '100%'}}
                 >
-                  {runCount > 1 ? <BatchCount>{batch.runs.length}</BatchCount> : null}
+                  {runCount > 1 ? (
+                    <div className={styles.batchCount}>{batch.runs.length}</div>
+                  ) : null}
                 </Box>
               </Popover>
             </RunChunk>
@@ -733,89 +678,54 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
   );
 };
 
-type RowProps = {$height: number; $start: number};
-
-export const TimelineRowContainer = styled.div.attrs<RowProps>(({$height, $start}) => ({
-  style: {
-    height: `${$height}px`,
-    transform: `translateY(${$start}px)`,
-  },
-}))<RowProps>`
-  align-items: center;
-  box-shadow: inset 0 -1px 0 ${Colors.keylineDefault()};
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  padding: 1px 0;
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-  overflow: hidden;
-  transition: background-color 100ms linear;
-
-  :hover {
-    background-color: ${Colors.backgroundDefaultHover()};
-  }
-`;
-
-const RowName = styled.div`
-  align-items: center;
-  display: flex;
-  font-size: 13px;
-  justify-content: flex-start;
-  gap: 8px;
-  line-height: 16px;
-  overflow: hidden;
-  padding: 0 12px 0 24px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: ${LEFT_SIDE_SPACE_ALLOTTED}px;
-`;
-
-export const RunChunks = styled.div`
-  flex: 1;
-  position: relative;
-  height: ${ROW_HEIGHT}px;
-`;
-
-interface ChunkProps {
-  $background: string;
-  $multiple: boolean;
+interface TimelineRowContainerProps {
+  height: number;
+  start: number;
+  children: React.ReactNode;
 }
 
-export const RunChunk = styled.div<ChunkProps>`
-  align-items: center;
-  background: ${({$background}) => $background};
-  border-radius: 1px;
-  height: ${ROW_HEIGHT - 8}px;
-  position: absolute;
-  top: 4px;
-  ${({$multiple}) => ($multiple ? `min-width: ${MIN_WIDTH_FOR_MULTIPLE}px` : null)};
+export const TimelineRowContainer = React.forwardRef<HTMLDivElement, TimelineRowContainerProps>(
+  ({height, start, children}, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={styles.timelineRowContainer}
+        style={{
+          height: `${height}px`,
+          transform: `translateY(${start}px)`,
+        }}
+      >
+        {children}
+      </div>
+    );
+  },
+);
 
-  transition:
-    background 200ms linear,
-    opacity 200ms linear,
-    width 200ms ease-in-out;
+interface RunChunksProps {
+  children: React.ReactNode;
+}
 
-  :hover {
-    opacity: 0.7;
-  }
-  .chunk-popover-target {
-    display: block;
-    height: 100%;
-    width: 100%;
-  }
-`;
+export const RunChunks = ({children}: RunChunksProps) => {
+  return <div className={styles.runChunks}>{children}</div>;
+};
 
-const BatchCount = styled.div`
-  color: ${Colors.accentReversed()};
-  cursor: default;
-  font-family: ${FontFamily.monospace};
-  font-size: 12px;
-  font-weight: 600;
-  user-select: none;
-`;
+interface RunChunkProps {
+  background: string;
+  multiple: boolean;
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
+}
+
+export const RunChunk = ({background, multiple, style, children}: RunChunkProps) => {
+  return (
+    <div
+      className={clsx(styles.runChunk, multiple && styles.runChunkMultiple)}
+      style={{background, ...style}}
+    >
+      {children}
+    </div>
+  );
+};
 
 interface RunHoverContentProps {
   row: TimelineRow;
@@ -842,7 +752,7 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
     <Box style={{width: '300px'}}>
       <Box padding={12} border="bottom" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
-        <HoverContentRowName>{row.name}</HoverContentRowName>
+        <strong className={styles.hoverContentRowName}>{row.name}</strong>
         {row.type === 'asset' ? <HiddenAssetGroupJobTooltipIcon /> : null}
       </Box>
       <div style={{height, overflowY: 'hidden'}}>
@@ -894,11 +804,3 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
     </Box>
   );
 };
-
-const HoverContentRowName = styled.strong`
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: 100%;
-`;

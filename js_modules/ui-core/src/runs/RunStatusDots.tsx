@@ -1,10 +1,11 @@
 import {Colors, Icon, Popover, Spinner} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {memo} from 'react';
-import styled, {css, keyframes} from 'styled-components';
 
 import {RunStats} from './RunStats';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
+import styles from './css/RunStatusDots.module.css';
 import {RunStatus} from '../graphql/types';
 
 export const RunStatusWithStats = memo(
@@ -55,39 +56,22 @@ export const RunStatusIndicator = memo(({status, size}: RunStatusProps) => {
   );
 });
 
-const pulseAnimation = keyframes`
-  0% {
-    filter: brightness(1);
-  }
-
-  50% {
-    filter: brightness(0.6);
-  }
-
-  100% {
-    filter: brightness(1);
-  }
-`;
-
-export const RunStatusDot = styled.div<{
+export const RunStatusDot = ({
+  status,
+  size,
+  pulse,
+}: {
   status: RunStatus | 'SCHEDULED';
   size: number;
   pulse?: boolean;
-}>`
-  width: ${({size}) => size}px;
-  height: ${({size}) => size}px;
-  border-radius: ${({size}) => size / 2}px;
-  transition: filter 200ms linear;
-  ${({pulse}) =>
-    pulse
-      ? css`
-          animation: ${pulseAnimation} 2s infinite;
-        `
-      : null}
-
-  background: ${({status}) => RUN_STATUS_COLORS[status]};
-  &:hover {
-    animation: none;
-    filter: brightness(0.6);
-  }
-`;
+}) => (
+  <div
+    className={clsx(styles.runStatusDot, pulse && styles.pulse)}
+    style={{
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      background: RUN_STATUS_COLORS[status],
+    }}
+  />
+);

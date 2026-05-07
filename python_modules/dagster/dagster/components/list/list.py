@@ -88,7 +88,7 @@ def list_all_components_schema(
                     __config__=ConfigDict(extra="forbid"),
                 )
             )
-    union_type = Union[tuple(model_cls_list)]  # type: ignore  # noqa: UP007
+    union_type = Union[tuple(model_cls_list)]  # noqa: UP007
     return TypeAdapter(union_type).json_schema()
 
 

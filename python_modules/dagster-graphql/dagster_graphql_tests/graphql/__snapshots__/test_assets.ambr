@@ -70,10 +70,26 @@
           }),
         }),
         dict({
+          'id': '["asset_with_long_description"]',
+          'key': dict({
+            'path': list([
+              'asset_with_long_description',
+            ]),
+          }),
+        }),
+        dict({
           'id': '["asset_with_op_tags"]',
           'key': dict({
             'path': list([
               'asset_with_op_tags',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["asset_without_description"]',
+          'key': dict({
+            'path': list([
+              'asset_without_description',
             ]),
           }),
         }),
@@ -805,7 +821,17 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'w.asset_with_long_description',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'w.asset_with_op_tags',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'w.asset_without_description',
       }),
       dict({
         'freshnessInfo': None,

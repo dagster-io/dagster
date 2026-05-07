@@ -8,10 +8,11 @@ import {
   MiddleTruncate,
   Subtitle1,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/AutomaterializeLeftPanel.module.css';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 import {SensorType} from '../../graphql/types';
@@ -42,9 +43,9 @@ export const AutomaterializeLeftPanel = ({
         selectedEvaluation={selectedEvaluation}
       />
       {evaluations.length ? (
-        <PaginationWrapper>
+        <div className={styles.paginationWrapper}>
           <CursorPaginationControls {...paginationProps} />
-        </PaginationWrapper>
+        </div>
       ) : null}
     </Box>
   );
@@ -128,17 +129,20 @@ export const AutomaterializeLeftList = (props: ListProps) => {
             }
 
             return (
-              <EvaluationListItem
+              <button
                 key={`skip-${evaluation.id}`}
+                className={clsx(
+                  styles.evaluationListItem,
+                  isSelected && styles.evaluationListItemSelected,
+                )}
                 onClick={() => {
                   onSelectEvaluation(evaluation);
                 }}
-                $selected={isSelected}
               >
                 <Box flex={{direction: 'column', gap: 4}}>
                   <Box flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
                     <StatusDot
-                      $color={
+                      color={
                         evaluation.numRequested ? Colors.accentGreen() : Colors.backgroundDisabled()
                       }
                     />
@@ -148,7 +152,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
                   </Box>
                   <div style={{paddingLeft: 22}}>{status()}</div>
                 </Box>
-              </EvaluationListItem>
+              </button>
             );
           })}
         </Box>
@@ -160,55 +164,14 @@ export const AutomaterializeLeftList = (props: ListProps) => {
   );
 };
 
-const PaginationWrapper = styled.div`
-  position: sticky;
-  bottom: 0;
-  background: ${Colors.backgroundLight()};
-  border-right: 1px solid ${Colors.keylineDefault()};
-  box-shadow: inset 0 1px ${Colors.keylineDefault()};
-  margin-top: -1px;
-  padding-bottom: 16px;
-  padding-top: 16px;
-  > * {
-    margin-top: 0;
-  }
-`;
-
-interface EvaluationListItemProps {
-  $selected: boolean;
-}
-
-const EvaluationListItem = styled.button<EvaluationListItemProps>`
-  background-color: ${({$selected}) =>
-    $selected ? Colors.backgroundBlue() : Colors.backgroundDefault()};
-  border: none;
-  border-radius: 8px;
-  color: ${({$selected}) => ($selected ? Colors.textBlue() : Colors.textDefault())};
-  cursor: pointer;
-  margin: 2px 0;
-  text-align: left;
-  transition:
-    100ms background-color linear,
-    100ms color linear;
-  user-select: none;
-
-  &:hover {
-    background-color: ${({$selected}) =>
-      $selected ? Colors.backgroundBlueHover() : Colors.backgroundDefaultHover()};
-  }
-
-  &:focus,
-  &:active {
-    outline: none;
-  }
-
-  padding: 8px 12px;
-`;
-
-export const StatusDot = styled.div<{$color: string; $size?: number}>`
-  background-color: ${({$color}) => $color};
-  border-radius: 50%;
-  width: ${({$size = 10}) => $size}px;
-  height: ${({$size = 10}) => $size}px;
-  margin: ${({$size = 10}) => $size / 2}px;
-`;
+export const StatusDot = ({color, size = 10}: {color: string; size?: number}) => (
+  <div
+    className={styles.statusDot}
+    style={{
+      backgroundColor: color,
+      width: size,
+      height: size,
+      margin: size / 2,
+    }}
+  />
+);

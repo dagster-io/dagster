@@ -247,7 +247,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
         **kwargs: additional keyword arguments for `universal_pathlib.UPath`.
     """
 
-    extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.  # pyright: ignore[reportIncompatibleVariableOverride]
+    extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
 
     def __init__(self, base_dir=None, **kwargs):
         from upath import UPath
@@ -303,7 +303,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
     def _get_path(self, path: str) -> str:
         return os.path.join(self.base_dir, path)  # type: ignore  # (possible none)
 
-    def handle_output(self, context: OutputContext, obj: object):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def handle_output(self, context: OutputContext, obj: object):
         """Pickle the data and store the object to a custom file path.
 
         This method emits an AssetMaterialization event so the assets will be tracked by the

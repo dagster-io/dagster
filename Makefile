@@ -1,4 +1,4 @@
-.PHONY: pyright
+.PHONY: ty pyright
 
 export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
 
@@ -33,6 +33,18 @@ quick_pyright:
 
 unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
+
+ty:
+	just ty
+
+rebuild_ty:
+	python scripts/run-ty.py --all --rebuild
+
+rebuild_ty_pins:
+	just rebuild_ty_pins
+
+quick_ty:
+	python scripts/run-ty.py --diff
 
 ruff:
 	ruff check --fix .

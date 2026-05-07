@@ -16,6 +16,7 @@ from dagster import (
     PartitionMapping,
 )
 from dagster._annotations import beta, public
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -130,6 +131,31 @@ class DagsterDbtTranslator:
         """
         return get_node(manifest, unique_id)
 
+    def _colliding_source_keys(
+        self, manifest: Mapping[str, Any], project: Optional["DbtProject"]
+    ) -> set[AssetKey]:
+        # Set of AssetKeys that more than one dbt source in the manifest maps to.
+        # Used to suppress source-specific dep metadata for keys that have ambiguous
+        # provenance (under enable_duplicate_source_asset_keys=True).
+        if not hasattr(self, "_colliding_source_keys_cache"):
+            self._colliding_source_keys_cache: dict[int, set[AssetKey]] = {}
+
+        cache_key = id(manifest)
+        if cache_key in self._colliding_source_keys_cache:
+            return self._colliding_source_keys_cache[cache_key]
+
+        seen: set[AssetKey] = set()
+        dups: set[AssetKey] = set()
+        for source_unique_id in manifest.get("sources", {}):
+            source_spec = self.get_asset_spec(manifest, source_unique_id, project)
+            source_key = source_spec.key
+            if source_key in seen:
+                dups.add(source_key)
+            seen.add(source_key)
+
+        self._colliding_source_keys_cache[cache_key] = dups
+        return dups
+
     def get_asset_spec(
         self,
         manifest: Mapping[str, Any],
@@ -154,19 +180,33 @@ class DagsterDbtTranslator:
         # calculate the dependencies for the asset
         upstream_ids = get_upstream_unique_ids(manifest, resource_props)
         deps: list[AssetDep] = []
+        seen_dep_keys: set[AssetKey] = set()
         for upstream_id in upstream_ids:
             spec = self.get_asset_spec(manifest, upstream_id, project)
+            # Multiple dbt sources may collapse to one AssetKey when
+            # enable_duplicate_source_asset_keys is set; emit only one dep per key.
+            if spec.key in seen_dep_keys:
+                continue
+            seen_dep_keys.add(spec.key)
             partition_mapping = self.get_partition_mapping(
                 resource_props, self.get_resource_props(manifest, upstream_id)
             )
+
+            dep_metadata = None
+            if (
+                self.settings.enable_source_metadata
+                and upstream_id.startswith("source")
+                # Avoid emitting metadata in cases where multiple distinct sources map to the
+                # same AssetKey, since per-source metadata is ambiguous.
+                and spec.key not in self._colliding_source_keys(manifest, project)
+            ):
+                dep_metadata = spec.metadata
 
             deps.append(
                 AssetDep(
                     asset=spec.key,
                     partition_mapping=partition_mapping,
-                    metadata=spec.metadata
-                    if self.settings.enable_source_metadata and upstream_id.startswith("source")
-                    else None,
+                    metadata=dep_metadata,
                 )
             )
 
@@ -195,7 +235,8 @@ class DagsterDbtTranslator:
         is_virtual = (
             self.settings.enable_dbt_views_as_virtual_assets and materialization_type == "view"
         )
-        kinds = {"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")}
+        adapter_type = manifest.get("metadata", {}).get("adapter_type")
+        kinds = {"dbt", adapter_type or "dbt"}
         if is_virtual:
             kinds.add("view")
 
@@ -222,6 +263,7 @@ class DagsterDbtTranslator:
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self,
                 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: resource_props["unique_id"],
                 **({DAGSTER_DBT_PROJECT_METADATA_KEY: project} if project else {}),
+                **TableMetadataSet(storage_kind=adapter_type),
             }
         )
 

@@ -77,10 +77,10 @@ def test_compute_log_manager(mock_s3_bucket):
             assert not os.path.exists(local_path)
 
             log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
+            stdout = log_data.stdout.decode("utf-8")  # ty: ignore[unresolved-attribute]
             assert stdout == HELLO_WORLD + SEPARATOR
 
-            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
+            stderr = log_data.stderr.decode("utf-8")  # ty: ignore[unresolved-attribute]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -97,10 +97,10 @@ def test_compute_log_manager(mock_s3_bucket):
             # Re-downloads the data to the local filesystem again
             assert os.path.exists(local_path)
 
-            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
+            stdout = log_data.stdout.decode("utf-8")  # ty: ignore[unresolved-attribute]
             assert stdout == HELLO_WORLD + SEPARATOR
 
-            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
+            stderr = log_data.stderr.decode("utf-8")  # ty: ignore[unresolved-attribute]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -123,8 +123,8 @@ compute_logs:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert instance.compute_log_manager._s3_bucket == mock_s3_bucket.name  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-    assert instance.compute_log_manager._s3_prefix == s3_prefix  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert instance.compute_log_manager._s3_bucket == mock_s3_bucket.name  # noqa: SLF001  # ty: ignore[unresolved-attribute]
+    assert instance.compute_log_manager._s3_prefix == s3_prefix  # noqa: SLF001  # ty: ignore[unresolved-attribute]
 
 
 def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
@@ -199,7 +199,7 @@ def test_prefix_filter(mock_s3_bucket):
         )
         log_key = ["arbitrary", "log", "key"]
         with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
-            write_stream.write("hello hello")  # pyright: ignore[reportOptionalMemberAccess]
+            write_stream.write("hello hello")  # ty: ignore[unresolved-attribute]
 
         s3_object = mock_s3_bucket.Object(key="foo/bar/storage/arbitrary/log/key.err")
         logs = s3_object.get()["Body"].read().decode("utf-8")
@@ -219,7 +219,7 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
         def write_log_file(file_id: int, io_type: ComputeIOType):
             full_log_key = [*log_key_prefix, f"{file_id}"]
             with manager.open_log_stream(full_log_key, io_type) as f:
-                f.write("foo")  # pyright: ignore[reportOptionalMemberAccess]
+                f.write("foo")  # ty: ignore[unresolved-attribute]
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
     assert len(log_keys) == 0
@@ -228,7 +228,7 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
         write_log_file(i, ComputeIOType.STDERR)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-    assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
+    assert sorted(log_keys) == [
         [*log_key_prefix, "0"],
         [*log_key_prefix, "1"],
         [*log_key_prefix, "2"],
@@ -239,7 +239,7 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
     write_log_file(4, ComputeIOType.STDOUT)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-    assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
+    assert sorted(log_keys) == [
         [*log_key_prefix, "0"],
         [*log_key_prefix, "1"],
         [*log_key_prefix, "2"],
@@ -308,5 +308,5 @@ def test_external_compute_log_manager(mock_s3_bucket):
         )
         assert len(captured_log_entries) == 1
         entry = captured_log_entries[0]
-        assert entry.dagster_event.logs_captured_data.external_stdout_url  # pyright: ignore[reportOptionalMemberAccess]
-        assert entry.dagster_event.logs_captured_data.external_stderr_url  # pyright: ignore[reportOptionalMemberAccess]
+        assert entry.dagster_event.logs_captured_data.external_stdout_url  # ty: ignore[unresolved-attribute]
+        assert entry.dagster_event.logs_captured_data.external_stderr_url  # ty: ignore[unresolved-attribute]

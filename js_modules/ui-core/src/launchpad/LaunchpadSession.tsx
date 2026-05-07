@@ -346,11 +346,13 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                   },
                 ]
               : []),
-            ...(currentSession?.base && (currentSession?.base as any)['presetName']
+            ...(currentSession?.base &&
+            'presetName' in currentSession.base &&
+            currentSession.base.presetName
               ? [
                   {
                     key: DagsterTag.PresetName,
-                    value: (currentSession?.base as any)['presetName'],
+                    value: currentSession.base.presetName,
                   },
                 ]
               : []),
@@ -369,11 +371,11 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   };
 
   const saveTags = (tags: PipelineRunTag[]) => {
-    const tagDict = {};
+    const tagDict: Record<string, string> = {};
     const toSave: PipelineRunTag[] = [];
     tags.forEach((tag: PipelineRunTag) => {
       if (!(tag.key in tagDict)) {
-        (tagDict as any)[tag.key] = tag.value;
+        tagDict[tag.key] = tag.value;
         toSave.push(tag);
       }
     });

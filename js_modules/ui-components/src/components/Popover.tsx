@@ -30,7 +30,7 @@ export const PopoverContentStyle = css`
 `;
 
 // Overwrite arrays instead of concatting them.
-const overwriteMerge = (destination: any[], source: any[]) => source;
+const overwriteMerge = (_destination: unknown[], source: unknown[]) => source;
 
 /**
  * For hover interactions, we still use Blueprint Popover since Radix Popover

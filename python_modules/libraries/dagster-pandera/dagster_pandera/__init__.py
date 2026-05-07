@@ -27,8 +27,8 @@ try:
     import pandera.polars as pa_pl
     import polars as pl
 except ImportError:
-    pa_pl = None
-    pl = None
+    pa_pl = None  # ty: ignore[invalid-assignment]
+    pl = None  # ty: ignore[invalid-assignment]
 
 if TYPE_CHECKING:
     import pandera.pandas
@@ -254,7 +254,7 @@ def _pandera_errors_to_type_check(
 
 
 def _pandera_schema_to_table_schema(schema: DagsterPanderaSchema) -> TableSchema:
-    df_constraints = _pandera_schema_wide_checks_to_table_constraints(schema.checks)  # pyright: ignore[reportArgumentType]
+    df_constraints = _pandera_schema_wide_checks_to_table_constraints(schema.checks)  # ty: ignore[invalid-argument-type]
     columns = [_pandera_column_to_table_column(col) for k, col in schema.columns.items()]
     return TableSchema(columns=columns, constraints=df_constraints)
 
@@ -275,7 +275,9 @@ def _pandera_column_to_table_column(pa_column: DagsterPanderaColumn) -> TableCol
     constraints = TableColumnConstraints(
         nullable=pa_column.nullable,
         unique=pa_column.unique,
-        other=[_pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
+        other=[
+            _pandera_check_to_column_constraint(pa_check) for pa_check in (pa_column.checks or [])
+        ],
     )
     name = check.not_none(pa_column.name, "name")
     name = name if isinstance(name, str) else "/".join(name)

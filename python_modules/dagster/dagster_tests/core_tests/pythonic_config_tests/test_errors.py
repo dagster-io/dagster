@@ -176,7 +176,7 @@ This config type can be a:
 
 def test_annotate_with_resource_factory() -> None:
     class MyStringFactory(ConfigurableResourceFactory[str]):
-        def create_resource(self, context: None) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def create_resource(self, context: None) -> str:  # ty: ignore[invalid-method-override]
             return "hello"
 
     # https://github.com/dagster-io/dagster/issues/18017
@@ -214,7 +214,7 @@ def test_annotate_with_resource_factory() -> None:
             pass
 
     class MyUnspecifiedFactory(ConfigurableResourceFactory):
-        def create_resource(self, context: None) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def create_resource(self, context: None) -> str:  # ty: ignore[invalid-method-override]
             return "hello"
 
     with pytest.raises(
@@ -252,7 +252,7 @@ def test_annotate_with_resource_factory() -> None:
 
 def test_annotate_with_resource_factory_schedule_sensor() -> None:
     class MyStringFactory(ConfigurableResourceFactory[str]):
-        def create_resource(self, context: None) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def create_resource(self, context: None) -> str:  # ty: ignore[invalid-method-override]
             return "hello"
 
     # https://github.com/dagster-io/dagster/issues/18017

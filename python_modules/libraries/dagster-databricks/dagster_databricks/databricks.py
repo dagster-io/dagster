@@ -98,7 +98,7 @@ class WorkspaceClientFactory:
             c = Config(
                 host=host,
                 credentials_strategy=credentials_strategy,
-                **product_info,  # pyright: ignore[reportArgumentType]
+                **product_info,  # ty: ignore[invalid-argument-type]
             )
         elif auth_type == AuthTypeEnum.OAUTH_M2M:
             host = self._resolve_host(host)
@@ -107,7 +107,7 @@ class WorkspaceClientFactory:
                 client_id=oauth_client_id,
                 client_secret=oauth_client_secret,
                 credentials_strategy=oauth_service_principal,
-                **product_info,  # pyright: ignore[reportArgumentType]
+                **product_info,  # ty: ignore[invalid-argument-type]
             )
         elif auth_type == AuthTypeEnum.PAT:
             host = self._resolve_host(host)
@@ -115,7 +115,7 @@ class WorkspaceClientFactory:
                 host=host,
                 token=token,
                 credentials_strategy=pat_auth,
-                **product_info,  # pyright: ignore[reportArgumentType]
+                **product_info,  # ty: ignore[invalid-argument-type]
             )
         elif auth_type == AuthTypeEnum.AZURE_CLIENT_SECRET:
             host = self._resolve_host(host)
@@ -125,7 +125,7 @@ class WorkspaceClientFactory:
                 azure_client_secret=azure_client_secret,
                 azure_tenant_id=azure_tenant_id,
                 credentials_strategy=azure_service_principal,
-                **product_info,  # pyright: ignore[reportArgumentType]
+                **product_info,  # ty: ignore[invalid-argument-type]
             )
         elif auth_type == AuthTypeEnum.DEFAULT:
             # Can be used to automatically read credentials from environment or ~/.databrickscfg file. This is common
@@ -136,7 +136,7 @@ class WorkspaceClientFactory:
                 c = Config(
                     host=host,
                     credentials_strategy=DefaultCredentials(),  # type: ignore
-                    **product_info,  # pyright: ignore[reportArgumentType]
+                    **product_info,  # ty: ignore[invalid-argument-type]
                 )
             else:
                 # The initialization machinery in the Config object will look for the host and other auth info in the
@@ -144,7 +144,7 @@ class WorkspaceClientFactory:
                 c = Config(
                     host=host,
                     credentials_strategy=DefaultCredentials(),  # type: ignore
-                    **product_info,  # pyright: ignore[reportArgumentType]
+                    **product_info,  # ty: ignore[invalid-argument-type]
                 )
         else:
             raise ValueError(f"Unexpected auth type {auth_type}")

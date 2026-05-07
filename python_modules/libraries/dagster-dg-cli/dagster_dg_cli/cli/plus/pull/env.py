@@ -36,7 +36,7 @@ def _get_local_secrets_for_locations(
     secrets_by_location = {location_name: {} for location_name in location_names}
 
     try:
-        result = client.execute_generic(
+        result = client.execute_arbitrary(
             SECRETS_QUERY,
             variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )

@@ -113,7 +113,10 @@ class ComponentDeclLoadContext:
         """Returns the name of the python module at the given path, relative to the project root."""
         container_path = self.path.parent if self.path.is_file() else self.path
         with pushd(str(container_path)):
-            relative_path = path.resolve().relative_to(self.defs_module_path.resolve())
+            # absolute() not resolve(): under uv's symlink link mode, site-packages
+            # files are symlinks into the uv cache, and resolve()-ing through them
+            # would land `path` outside the venv tree and break relative_to().
+            relative_path = path.absolute().relative_to(self.defs_module_path.absolute())
             if path.name == "__init__.py":
                 # e.g. "a_project/defs/something/__init__.py" -> "a_project.defs.something"
                 relative_parts = relative_path.parts[:-1]

@@ -240,7 +240,7 @@ def format_alert_policies(policies: "DgApiAlertPolicyDocument", as_json: bool) -
     import yaml
 
     return yaml.dump(
-        {"alert_policies": policies.alert_policies},
+        {"alert_policies": policies.items},
         default_flow_style=False,
         sort_keys=False,
     ).rstrip()
@@ -251,7 +251,7 @@ def format_alert_policy_sync_result(result: "DgApiAlertPolicySyncResult", as_jso
     if as_json:
         return result.model_dump_json(indent=2)
 
-    return f"Synced alert policies: {', '.join(result.synced_policies)}"
+    return f"Synced alert policies: {', '.join(result.items)}"
 
 
 # ---------------------------------------------------------------------------
@@ -302,13 +302,13 @@ def _format_asset_status_lines(status) -> list[str]:
 
     # Overall health status
     if status.asset_health:
-        lines.append(f"Asset Health: {status.asset_health}")
+        lines.append(f"Asset Health: {status.asset_health.value}")
     if status.materialization_status:
-        lines.append(f"Materialization Status: {status.materialization_status}")
+        lines.append(f"Materialization Status: {status.materialization_status.value}")
     if status.freshness_status:
-        lines.append(f"Freshness Status: {status.freshness_status}")
+        lines.append(f"Freshness Status: {status.freshness_status.value}")
     if status.asset_checks_status:
-        lines.append(f"Asset Checks Status: {status.asset_checks_status}")
+        lines.append(f"Asset Checks Status: {status.asset_checks_status.value}")
 
     # Health metadata details
     if status.health_metadata:
@@ -997,7 +997,7 @@ def format_issue(issue: "DgApiIssue", as_json: bool) -> str:
     fields: list[tuple[str, str]] = [
         ("Title", issue.title),
         ("Status", issue.status.value),
-        ("Created By", issue.created_by_email),
+        ("Created By", issue.created_by_name),
     ]
 
     run_ids = []
@@ -1032,7 +1032,7 @@ def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
 
     headers = ["STATUS", "TITLE", "ID", "CREATED BY"]
     rows = [
-        [issue.status.value, issue.title, issue.id, issue.created_by_email]
+        [issue.status.value, issue.title, issue.id, issue.created_by_name]
         for issue in issue_list.items
     ]
 

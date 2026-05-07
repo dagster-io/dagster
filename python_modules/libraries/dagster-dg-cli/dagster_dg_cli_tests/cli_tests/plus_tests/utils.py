@@ -9,15 +9,15 @@ from dagster_dg_cli.utils.plus import gql
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 # Module-level
-_patch_state = {
-    # queue of pending mock responses matched by _execute_generic_side_effect.
+_patch_state: dict[str, Any] = {
+    # queue of pending mock responses matched by _execute_arbitrary_side_effect.
     "_pending_mocks": [],
-    # currently active patch of `IGraphQLClient.execute_generic`
+    # currently active patch of `IGraphQLClient.execute_arbitrary`
     "_active_patch": None,
 }
 
 
-def _execute_generic_side_effect(
+def _execute_arbitrary_side_effect(
     query: str,
     operation_name: str | None = None,
     variables: Mapping[str, Any] | None = None,
@@ -66,7 +66,7 @@ def mock_gql_response(
     expected_variables: dict[str, Any] | None = None,
     url: str = "https://dagster.cloud/hooli/graphql",  # kept for API compatibility, unused
 ) -> None:
-    # Strip the outer {"data": ...} wrapper — execute_generic returns the inner dict.
+    # Strip the outer {"data": ...} wrapper — execute_arbitrary returns the inner dict.
     inner_data = json_data.get("data", json_data)
     _patch_state["_pending_mocks"].append(
         {
@@ -79,14 +79,14 @@ def mock_gql_response(
     # Start the patch lazily on the first registered mock.
     if _patch_state["_active_patch"] is None:
         _patch_state["_active_patch"] = patch(
-            "dagster_rest_resources.gql_client.IGraphQLClient.execute_generic",
-            side_effect=_execute_generic_side_effect,
+            "dagster_rest_resources.gql_client.IGraphQLClient.execute_arbitrary",
+            side_effect=_execute_arbitrary_side_effect,
         )
         _patch_state["_active_patch"].start()
 
 
 def cleanup_gql_mocks() -> None:
-    """Stop any active IGraphQLClient.execute_generic patch and clear pending mocks.
+    """Stop any active IGraphQLClient.execute_arbitrary patch and clear pending mocks.
 
     Called automatically by the autouse fixture in conftest.py after each test.
     """

@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import cast
 
-from clickhouse_driver import Client
-from clickhouse_driver.errors import ErrorCodes, ServerException
+from clickhouse_driver import Client  # ty: ignore[unresolved-import]
+from clickhouse_driver.errors import ErrorCodes, ServerException  # ty: ignore[unresolved-import]
 from dagster import InputContext, OutputContext
 from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import DbClient, TablePartitionDimension, TableSlice

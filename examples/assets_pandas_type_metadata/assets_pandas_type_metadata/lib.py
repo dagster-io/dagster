@@ -1,5 +1,4 @@
 import os
-from typing import cast
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -13,7 +12,7 @@ from pandera.typing import Series
 # ***** TYPES ****************************************************************
 
 
-class StockPrices(pa.DataFrameModel):
+class StockPrices(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribute]
     """Open/high/low/close prices for a set of stocks by day."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -28,7 +27,7 @@ class StockPrices(pa.DataFrameModel):
 StockPricesDgType = pandera_schema_to_dagster_type(StockPrices)
 
 
-class BollingerBands(pa.DataFrameModel):
+class BollingerBands(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribute]
     """Bollinger bands for a set of stock prices."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -40,7 +39,7 @@ class BollingerBands(pa.DataFrameModel):
 BollingerBandsDgType = pandera_schema_to_dagster_type(BollingerBands)
 
 
-class AnomalousEvents(pa.DataFrameModel):
+class AnomalousEvents(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribute]
     """Anomalous price events, defined by a day on which a stock's closing price strayed above or
     below its Bollinger bands.
     """
@@ -77,7 +76,7 @@ def load_prices_csv(path: str) -> pd.DataFrame:
     `DATA_ROOT`.
     """
     path = normalize_path(path)
-    df = cast("pd.DataFrame", pd.read_csv(path, parse_dates=["date"]))
+    df = pd.read_csv(path, parse_dates=["date"])
     df = df.rename(columns={"Name": "name"})
     df = df.dropna()
     return df
@@ -116,7 +115,7 @@ def compute_bollinger_bands_multi(
     """Compute Bollinger bands for a set of stocks over time. The input dataframe can contain
     multiple timeseries grouped by the `name` column.
     """
-    odf = df.groupby("name", group_keys=False).apply(
+    odf = df.groupby("name", group_keys=False).apply(  # ty: ignore[no-matching-overload]
         lambda idf: compute_bollinger_bands(idf, dropna=False, rate=rate, sigma=sigma),
     )
     return odf.dropna().reset_index() if dropna else odf

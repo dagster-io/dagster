@@ -284,11 +284,11 @@ class SensorLaunchContext(AbstractContextManager):
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __exit__(
         self,
-        exception_type: type[BaseException],
-        exception_value: Exception,
-        traceback: TracebackType,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if exception_type and isinstance(exception_value, KeyboardInterrupt):
             return
@@ -1343,7 +1343,8 @@ def _get_or_create_sensor_run(
     existing_runs_by_key: dict[str, DagsterRun],
 ) -> DagsterRun | SkippedSensorRun:
     run_key = run_request.run_key
-    run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
+    existing_run = existing_runs_by_key.get(run_key) if run_key else None
+    run = existing_run or instance.get_run_by_id(run_id)
 
     if run:
         if run.status != DagsterRunStatus.NOT_STARTED:

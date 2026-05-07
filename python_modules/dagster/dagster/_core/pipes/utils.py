@@ -706,9 +706,7 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
         ...
         # historical reasons, keeping the original interface of PipesBlobStoreMessageReader
 
-    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, cursor: int | None, params: PipesParams
-    ) -> tuple[int, str] | None:
+    def download_messages(self, cursor: int | None, params: PipesParams) -> tuple[int, str] | None:
         # mapping new interface to the old one
         # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
         chunk = self.download_messages_chunk(self.counter, params)

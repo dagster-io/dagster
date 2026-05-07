@@ -189,7 +189,7 @@ class ConstraintWithMetadata:
         return DagsterType(
             name=self.name,
             description=f"A Pandas DataFrame with the following validation: {self.description}",
-            type_check_fn=lambda x: self.validate(x, *args),  # pyright: ignore[reportArgumentType]
+            type_check_fn=lambda x: self.validate(x, *args),  # ty: ignore[invalid-argument-type]
             **kwargs,
         )
 
@@ -525,10 +525,10 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
                     result = new_validator.validate(
                         DataFrame(data[column]), column, *args, **kwargs
                     )
-                    result_val = result.success  # pyright: ignore[reportOptionalMemberAccess]
+                    result_val = result.success
                     if result_val:
                         continue
-                    result_dict = result.metadata[CONSTRAINT_METADATA_KEY].data  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+                    result_dict = result.metadata[CONSTRAINT_METADATA_KEY].data
                     truthparam = truthparam and result_val
                     for key in result_dict.keys():
                         if "constraint" not in key:
@@ -592,7 +592,7 @@ class MultiAggregateConstraintWithMetadata(MultiColumnConstraintWithMetadata):
             fn_and_columns_dict,
             resulting_exception,
             raise_or_typecheck=raise_or_typecheck,
-            type_for_internal=ColumnAggregateConstraintWithMetadata,  # pyright: ignore[reportArgumentType]
+            type_for_internal=ColumnAggregateConstraintWithMetadata,
             name=name,
         )
 
@@ -669,7 +669,7 @@ def nonnull(func):
         nval = non_null_validation(val)
         return origval[0] and nval[0], {}
 
-    nvalidator.__doc__ += " and ensures no values are null"  # pyright: ignore[reportOperatorIssue]
+    nvalidator.__doc__ += " and ensures no values are null"  # ty: ignore[unsupported-operator]
 
     return nvalidator
 

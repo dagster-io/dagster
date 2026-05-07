@@ -116,16 +116,16 @@ class DgApiRunEventApi:
 
         match result.typename__:
             case "EventConnection":
-                events = [self._convert_event(e) for e in result.events]
+                events = [self._convert_event(e) for e in result.events]  # ty: ignore[unresolved-attribute]
                 return DgApiRunEventList(
                     items=events,
-                    cursor=result.cursor or None,
-                    has_more=result.has_more,
+                    cursor=result.cursor or None,  # ty: ignore[unresolved-attribute]
+                    has_more=result.has_more,  # ty: ignore[unresolved-attribute]
                 )
             case "RunNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching events: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching events: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching events: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching events: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

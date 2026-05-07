@@ -890,7 +890,7 @@ export const Icon = React.memo((props: IconProps) => {
 
   // Storybook imports SVGs are string but nextjs imports them as object.
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
-  const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
+  const img = typeof Icons[name] === 'string' ? (Icons[name] as string) : Icons[name].src;
 
   return <BaseIcon {...rest} img={img} name={name} color={color} />;
 });

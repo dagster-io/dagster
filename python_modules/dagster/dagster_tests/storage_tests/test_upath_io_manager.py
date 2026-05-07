@@ -3,10 +3,11 @@ import json
 import pickle
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import dagster as dg
 import fsspec
+import fsspec.implementations.local
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -57,7 +58,7 @@ def dummy_io_manager(tmp_path: Path) -> dg.IOManagerDefinition:
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return DummyIOManager(base_path=cast("UPath", base_path))
+        return DummyIOManager(base_path=base_path)
 
     io_manager_def = dummy_io_manager.configured({"base_path": str(tmp_path)})
 
@@ -82,7 +83,7 @@ def daily(start: datetime):
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
 def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     class JSONIOManager(dg.UPathIOManager):
-        extension: str = ".json"  # pyright: ignore[reportIncompatibleVariableOverride]
+        extension: str = ".json"
 
         def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
             with path.open("w") as file:
@@ -98,7 +99,7 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return JSONIOManager(base_path=cast("UPath", base_path))
+        return JSONIOManager(base_path=base_path)
 
     manager = json_io_manager(dg.build_init_resource_context(config={"base_path": str(tmp_path)}))
     context = dg.build_output_context(
@@ -139,7 +140,7 @@ def test_upath_io_manager_with_non_any_type_annotation(tmp_path: Path):
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return MyIOManager(base_path=cast("UPath", base_path))
+        return MyIOManager(base_path=base_path)
 
     manager = my_io_manager(dg.build_init_resource_context(config={"base_path": str(tmp_path)}))
 
@@ -433,7 +434,7 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return MetadataIOManager(base_path=cast("UPath", base_path))
+        return MetadataIOManager(base_path=base_path)
 
     manager = metadata_io_manager(
         dg.build_init_resource_context(config={"base_path": str(tmp_path)})
@@ -475,7 +476,7 @@ class AsyncJSONIOManager(dg.ConfigurableIOManager, dg.UPathIOManager):
             data = await file.read()
         else:
             # AsyncLocalFileSystem has this interface
-            async with fs.open_async(str(path), "rb") as file:
+            async with fs.open_async(str(path), "rb") as file:  # ty: ignore[invalid-context-manager]
                 data = await file.read()
 
         return json.loads(data)
@@ -489,12 +490,12 @@ class AsyncJSONIOManager(dg.ConfigurableIOManager, dg.UPathIOManager):
         import morefs.asyn_local
 
         if isinstance(path, UPath):
-            so = path.fs.storage_options.copy()
+            so = path.fs.storage_options.copy()  # ty: ignore[unresolved-attribute]
             cls = type(path.fs)
             if cls is fsspec.implementations.local.LocalFileSystem:
                 cls = morefs.asyn_local.AsyncLocalFileSystem
             so["asynchronous"] = True
-            return cls(**so)
+            return cls(**so)  # ty: ignore[invalid-return-type]
         elif isinstance(path, Path):
             return morefs.asyn_local.AsyncLocalFileSystem()
         else:
@@ -639,7 +640,7 @@ def test_upath_can_transition_from_non_partitioned_to_partitioned(
     my_io_manager = PickleIOManager(UPath(tmp_path))
 
     @dg.asset
-    def my_asset():  # type: ignore
+    def my_asset():  # pyright: ignore[reportRedeclaration]
         return 1
 
     assert dg.materialize([my_asset], resources={"io_manager": my_io_manager}).success

@@ -55,9 +55,9 @@ def test_fs_stores():
             result = simple.execute_in_process(instance=instance)
 
             assert run_store.has_run(result.run_id)
-            assert instance.get_run_by_id(result.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+            assert instance.get_run_by_id(result.run_id).status == DagsterRunStatus.SUCCESS  # ty: ignore[unresolved-attribute]
             assert DagsterEventType.PIPELINE_SUCCESS in [
-                event.dagster_event.event_type  # pyright: ignore[reportOptionalMemberAccess]
+                event.dagster_event.event_type  # ty: ignore[unresolved-attribute]
                 for event in event_store.get_logs_for_run(result.run_id)
                 if event.is_dagster_event
             ]
@@ -124,7 +124,7 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         run = dg.DagsterRun(job_name="foo_job", run_id="bar_run")
 
-        def _has_run(self, run_id):  # pyright: ignore[reportRedeclaration]
+        def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0602
 
@@ -134,7 +134,7 @@ def test_get_run_by_id():
             else:
                 return self._run_storage.has_run(run_id)
 
-        instance.has_run = types.MethodType(_has_run, instance)
+        instance.has_run = types.MethodType(_has_run, instance)  # ty: ignore[invalid-assignment]
 
         assert instance.get_run_by_id(run.run_id) is None
 
@@ -157,7 +157,7 @@ def test_get_run_by_id():
             else:
                 return False
 
-        instance.has_run = types.MethodType(_has_run, instance)
+        instance.has_run = types.MethodType(_has_run, instance)  # ty: ignore[invalid-assignment]
         assert instance.get_run_by_id(run.run_id) is None
 
 
@@ -194,10 +194,13 @@ def test_run_step_stats():
         assert len(step_stats) == 2
         assert step_stats[0].step_key == "should_succeed"
         assert step_stats[0].status == StepEventStatus.SUCCESS
+        assert step_stats[0].end_time is not None
+        assert step_stats[0].start_time is not None
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 1
         assert step_stats[1].step_key == "should_fail"
         assert step_stats[1].status == StepEventStatus.FAILURE
+        assert step_stats[1].end_time is not None
         assert step_stats[1].end_time > step_stats[0].start_time
         assert step_stats[1].attempts == 1
         assert not _called
@@ -240,7 +243,7 @@ def test_run_step_stats_with_retries():
         assert len(step_stats) == 1
         assert step_stats[0].step_key == "should_retry"
         assert step_stats[0].status == StepEventStatus.FAILURE
-        assert step_stats[0].end_time > step_stats[0].start_time  # pyright: ignore[reportOperatorIssue]
+        assert step_stats[0].end_time > step_stats[0].start_time  # ty: ignore[unsupported-operator]
         assert step_stats[0].attempts == 4
         assert not _called
 
@@ -286,7 +289,7 @@ def test_threadsafe_local_temp_instance():
     shared = DagsterInstance.local_temp()
 
     def _run(_):
-        shared.root_directory  # noqa: B018  # pyright: ignore[reportOptionalMemberAccess]
+        shared.root_directory  # noqa: B018  # ty: ignore[unresolved-attribute]
         with DagsterInstance.local_temp() as instance:
             instance.root_directory  # noqa: B018
         return True

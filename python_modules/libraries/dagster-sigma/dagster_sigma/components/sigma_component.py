@@ -321,7 +321,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
 
 
 class SigmaComponentTranslator(
-    create_component_translator_cls(SigmaComponent, DagsterSigmaTranslator),
+    create_component_translator_cls(SigmaComponent, DagsterSigmaTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[SigmaComponent],
 ):
     def __init__(self, component: SigmaComponent):

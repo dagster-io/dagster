@@ -709,7 +709,7 @@ type AssetNode {
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!
-  description: String
+  description(characterLimit: Int): String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
   freshnessStatusInfo: FreshnessStatusInfo

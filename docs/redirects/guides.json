@@ -1213,5 +1213,10 @@
     "source": "/assets/asset-lineage",
     "destination": "/guides/build/assets",
     "permanent": true
+  },
+  {
+    "source": "/guides/labs/compass-ai-assistant",
+    "destination": "/guides/labs/dagster-ai-agent",
+    "permanent": true
   }
 ]

@@ -30,6 +30,3 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dag
 
 [project.scripts]
 dagster-graphql = "dagster_graphql.cli:main"
-
-[project.optional-dependencies]
-test = ["dagster-test"]

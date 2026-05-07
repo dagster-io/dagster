@@ -12,8 +12,11 @@ def network_buildkite_container(network_name: str) -> list[str]:
         "export CONTAINER_ID=`cat /etc/hostname`",
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
-        # network to make the target containers visible...
-        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
+        # network to make the target containers visible. On Kubernetes the
+        # job runs in a pod (not a docker container), so CONTAINER_NAME is
+        # empty; the DinD sidecar shares the pod's network namespace, so the
+        # bridge is already reachable and we skip the connect step.
+        rf'if [ -n "\${{CONTAINER_NAME}}" ]; then docker network connect {network_name} \${{CONTAINER_NAME}}; fi',
     ]
 
 

@@ -11,13 +11,14 @@ import {
   ifPlural,
 } from '@dagster-io/ui-components';
 import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
+import clsx from 'clsx';
 import React, {useContext} from 'react';
-import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {StatusCase} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
+import cgStyles from './css/CollapsedGroupNode.module.css';
 import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
 import {CloudOSSContext} from '../app/CloudOSSContext';
@@ -100,7 +101,8 @@ export const CollapsedGroupNode = ({
   });
   return (
     <ContextMenuWrapper menu={menu} stopPropagation>
-      <CollapsedGroupNodeContainer
+      <div
+        className={cgStyles.collapsedGroupNodeContainer}
         onClick={(e) => {
           if (e.metaKey && toggleSelectAllNodes) {
             toggleSelectAllNodes(e);
@@ -110,7 +112,7 @@ export const CollapsedGroupNode = ({
           e.stopPropagation();
         }}
       >
-        <CollapsedGroupNodeBox $minimal={minimal}>
+        <div className={clsx(cgStyles.collapsedGroupNodeBox, minimal && cgStyles.minimal)}>
           <Box padding={{top: 8, bottom: 4, left: 12, right: 8}} flex={{}}>
             <GroupNodeNameAndRepo group={group} minimal={minimal} />
             <Box padding={{vertical: 4}}>
@@ -118,10 +120,10 @@ export const CollapsedGroupNode = ({
             </Box>
           </Box>
           {!minimal && <GroupNodeAssetStatusCounts group={group} />}
-        </CollapsedGroupNodeBox>
-        <GroupStackLine style={{width: '94%', marginLeft: '3%'}} />
-        <GroupStackLine style={{width: '88%', marginLeft: '6%'}} />
-      </CollapsedGroupNodeContainer>
+        </div>
+        <div className={clsx(cgStyles.groupStackLine, cgStyles.groupStackLine1)} />
+        <div className={clsx(cgStyles.groupStackLine, cgStyles.groupStackLine2)} />
+      </div>
       {dialog}
     </ContextMenuWrapper>
   );
@@ -163,7 +165,7 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
   return (
     <Box padding={{horizontal: 12, bottom: 8}} flex={{direction: 'row', gap: 4}}>
       {Object.keys(liveDataByNode).length !== assetKeys.length ? (
-        <AssetDescription $color={Colors.textLighter()}>
+        <AssetDescription color={Colors.textLighter()}>
           {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
         </AssetDescription>
       ) : (
@@ -233,7 +235,7 @@ const GroupNodeAssetStatusCountsNonAssetHealth = ({
   return (
     <Box padding={{horizontal: 12, bottom: 8}} flex={{direction: 'row', gap: 4}}>
       {Object.keys(liveDataByNode).length !== assetKeys.length ? (
-        <AssetDescription $color={Colors.textLighter()}>
+        <AssetDescription color={Colors.textLighter()}>
           {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
         </AssetDescription>
       ) : (
@@ -486,38 +488,3 @@ export const GroupNameTooltipStyle = JSON.stringify({
   border: `none`,
   borderRadius: '4px',
 });
-
-const GroupStackLine = styled.div`
-  background: transparent;
-  border-top: 2px solid ${Colors.lineageGroupNodeBorder()};
-  border-radius: 2px;
-`;
-
-const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
-  background: ${Colors.backgroundLight()};
-  border-radius: 8px;
-  position: relative;
-  margin-top: 8px;
-`;
-
-const CollapsedGroupNodeContainer = styled.div`
-  user-select: none;
-  padding: 4px;
-  transition:
-    transform linear 200ms,
-    gap linear 200ms;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-
-  &:hover {
-    transform: scale(1.03);
-    gap: 3px;
-    ${CollapsedGroupNodeBox} {
-      transition: background linear 200ms;
-      background: ${Colors.backgroundLightHover()};
-    }
-  }
-`;

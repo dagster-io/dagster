@@ -1,5 +1,6 @@
-import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
+import clsx from 'clsx';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import debounce from 'lodash/debounce';
 import React, {
@@ -11,12 +12,11 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import styled from 'styled-components';
 
 import {SyntaxError} from './CustomErrorListener';
 import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
-import {SelectionAutoCompleteInputCSS} from './SelectionInputHighlighter';
+import inputStyles from './css/SelectionInput.module.css';
 import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
 import {upgradeSyntax} from '../asset-selection/syntaxUpgrader';
@@ -443,16 +443,19 @@ export const SelectionAutoCompleteInput = ({
         targetTagName="div"
         canEscapeKeyClose={true}
       >
-        <InputDiv
-          className={className}
-          $isCommitted={innerValue === value}
-          $hasErrors={errors.length > 0}
+        <div
+          className={clsx(
+            inputStyles.inputDiv,
+            className,
+            innerValue !== value && inputStyles.uncommitted,
+            errors.length > 0 && inputStyles.hasErrors,
+            disabled && inputStyles.disabled,
+          )}
           style={{
             display: 'grid',
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
             contain: 'layout paint style',
           }}
-          $disabled={disabled}
           ref={inputRef}
           onKeyDownCapture={handleKeyDown} // Added keyboard event handler
           tabIndex={0} // Make the div focusable to capture keyboard events
@@ -480,38 +483,9 @@ export const SelectionAutoCompleteInput = ({
               </UnstyledButton>
             )}
           </Box>
-        </InputDiv>
+        </div>
       </Popover>
       {errorTooltip}
     </div>
   );
 };
-
-export const InputDiv = styled.div<{
-  $isCommitted: boolean;
-  $hasErrors: boolean;
-  $disabled: boolean;
-}>`
-  ${SelectionAutoCompleteInputCSS}
-  ${({$isCommitted}) =>
-    $isCommitted
-      ? ''
-      : `
-      background: ${Colors.backgroundLight()}; 
-      `}
-  ${({$hasErrors}) =>
-    $hasErrors
-      ? `
-      border: 1px solid ${Colors.accentRed()};
-      `
-      : ''}
-  ${({$disabled}) =>
-    $disabled
-      ? `
-        background: ${Colors.backgroundDisabled()};
-        * {
-          color: ${Colors.textLight()} !important;
-        }
-      `
-      : ''}
-`;

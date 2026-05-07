@@ -408,6 +408,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         run_id = execute_external_job_args.run_id
 
         client = self._client
+        assert client is not None
 
-        self._run_clients[run_id] = client  # pyright: ignore[reportArgumentType]
-        return client._get_response("StartRun", request)  # noqa  # pyright: ignore[reportOptionalMemberAccess]
+        self._run_clients[run_id] = client
+        return client._get_response("StartRun", request)  # noqa

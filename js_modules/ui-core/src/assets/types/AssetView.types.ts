@@ -23,6 +23,7 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           pools: Array<string>;
+          opVersion: string | null;
           groupName: string;
           isExecutable: boolean;
           hasReportRunlessAssetEventPermission: boolean;
@@ -32,7 +33,6 @@ export type AssetViewDefinitionQuery = {
           jobNames: Array<string>;
           changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
-          opVersion: string | null;
           description: string | null;
           computeKind: string | null;
           isPartitioned: boolean;
@@ -16506,6 +16506,7 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   pools: Array<string>;
+  opVersion: string | null;
   groupName: string;
   isExecutable: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -16515,7 +16516,6 @@ export type AssetViewDefinitionNodeFragment = {
   jobNames: Array<string>;
   changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
-  opVersion: string | null;
   description: string | null;
   computeKind: string | null;
   isPartitioned: boolean;
@@ -32766,4 +32766,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '577b8f0c0f253b558752ff66e5670ccdfdf640c8d8724a1efcce9306bcac0990';
+export const AssetViewDefinitionQueryVersion = '5ae1c366703cf42f0c9bb5583fbb1789981bda3853360fec897c44dd069eea40';

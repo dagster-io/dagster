@@ -2,11 +2,11 @@ import {Body2, Box, Caption} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailDialog';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT, ExecuteChecksButton} from './ExecuteChecksButton';
+import styles from './css/VirtualizedAssetCheckTable.module.css';
 import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
 import {gql} from '../../apollo-client';
@@ -74,7 +74,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
-      <RowGrid border="bottom">
+      <Box className={styles.rowGrid} border="bottom">
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
             <Link
@@ -82,7 +82,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
             >
               <Body2>{row.name}</Body2>
             </Link>
-            <CaptionEllipsed>{row.description}</CaptionEllipsed>
+            <Caption className={styles.captionEllipsed}>{row.description}</Caption>
           </Box>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -120,17 +120,10 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
             />
           </Box>
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
-
-const CaptionEllipsed = styled(Caption)`
-  text-overflow: ellipsis;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-`;
 
 export const VirtualizedAssetCheckHeader = () => {
   return (
@@ -143,12 +136,6 @@ export const VirtualizedAssetCheckHeader = () => {
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const ASSET_CHECK_TABLE_FRAGMENT = gql`
   fragment AssetCheckTableFragment on AssetCheck {

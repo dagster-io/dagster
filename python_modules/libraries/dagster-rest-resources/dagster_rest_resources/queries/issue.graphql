@@ -17,7 +17,14 @@ fragment IssueFields on Issue {
     }
   }
   createdBy {
-    email
+    ... on DagsterCloudUser {
+      __typename
+      displayName
+    }
+    ... on ServiceUser {
+      __typename
+      displayName
+    }
   }
 }
 
@@ -55,8 +62,8 @@ query ListIssues($limit: Int!, $cursor: String, $filters: IssuesFilter) {
   }
 }
 
-mutation CreateIssue($title: String!, $description: String!) {
-  createIssue(title: $title, description: $description) {
+mutation CreateIssue($title: String!, $description: String!, $status: IssueStatus) {
+  createIssue(title: $title, description: $description, status: $status) {
     __typename
     ... on CreateIssueSuccess {
       issue {

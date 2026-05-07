@@ -56,6 +56,18 @@ def test_asset_check_decorator() -> None:
     assert spec.metadata == {"foo": "bar"}
 
 
+def test_asset_check_decorator_allows_string_asset_key_with_dots() -> None:
+    @dg.asset_check(asset="bad.asset.name", name="bad_check")
+    def check1() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
+
+    spec = check1.get_spec_for_check_key(
+        dg.AssetCheckKey(dg.AssetKey(["bad.asset.name"]), "bad_check")
+    )
+    assert spec.asset_key == dg.AssetKey("bad.asset.name")
+    assert check1.keys_by_input_name == {"bad_asset_name": dg.AssetKey("bad.asset.name")}
+
+
 def test_asset_check_decorator_name() -> None:
     @dg.asset_check(asset="asset1", description="desc", name="check1")
     def _check() -> dg.AssetCheckResult:

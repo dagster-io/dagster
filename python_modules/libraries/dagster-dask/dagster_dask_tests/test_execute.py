@@ -184,8 +184,8 @@ def test_dask_terminate():
             run_config=run_config,
         )
 
-        for event in execute_run_iterator(  # pyright: ignore[reportCallIssue]
-            i_job=reconstructable(sleepy_dask_job),  # pyright: ignore[reportCallIssue]
+        for event in execute_run_iterator(
+            job=reconstructable(sleepy_dask_job),
             dagster_run=dagster_run,
             instance=instance,
         ):
@@ -195,7 +195,7 @@ def test_dask_terminate():
                 interrupt_thread.start()
 
             if event.event_type == DagsterEventType.STEP_FAILURE:
-                assert "DagsterExecutionInterruptedError" in event.event_specific_data.error.message
+                assert "DagsterExecutionInterruptedError" in event.event_specific_data.error.message  # ty: ignore[unresolved-attribute]
 
             result_types.append(event.event_type)
 

@@ -10,6 +10,7 @@ import dagster as dg
 import pytest
 import sqlalchemy
 import sqlalchemy as db
+import sqlalchemy.exc
 from dagster import DagsterInstance
 from dagster._core.events import EngineEventData, SerializableErrorInfo, StepRetryData
 from dagster._core.execution.stats import (
@@ -93,7 +94,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w", encoding="utf8"
         ) as fd:
             fd.write("some nonsense")
-        with pytest.raises(sqlalchemy.exc.DatabaseError):  # pyright: ignore[reportAttributeAccessIssue]
+        with pytest.raises(sqlalchemy.exc.DatabaseError):
             storage.get_logs_for_run("foo")
 
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):

@@ -445,7 +445,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         apply_no_proxy_env_workaround()
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -614,7 +614,7 @@ def build_pod_body(
     base_pod_meta: Mapping[str, Any] | None,
     base_pod_spec: Mapping[str, Any] | None,
 ):
-    meta = {
+    meta: dict[str, Any] = {
         **(k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, base_pod_meta or {})),
         "name": pod_name,
     }

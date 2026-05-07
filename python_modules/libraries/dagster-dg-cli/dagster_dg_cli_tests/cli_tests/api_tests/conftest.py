@@ -24,7 +24,7 @@ class ApiSnapshotExtension(AmberSnapshotExtension):
     """
 
     @classmethod
-    def get_snapshot_name(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_snapshot_name(  # ty: ignore[invalid-method-override]
         cls,
         *,
         index: "SnapshotIndex",

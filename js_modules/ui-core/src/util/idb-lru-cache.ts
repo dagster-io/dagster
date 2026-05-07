@@ -134,7 +134,7 @@ class IDBLRUCache<T> {
 
   async delete(key: string): Promise<void> {
     return this.withDB(async () => {
-      this.lruCache.put(key, undefined as any); // Using put to trigger LRU eviction
+      this.lruCache.put(key, undefined as unknown as T); // Using put to trigger LRU eviction
       this.syncToDB();
     });
   }

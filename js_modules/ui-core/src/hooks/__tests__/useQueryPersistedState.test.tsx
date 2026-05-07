@@ -1,6 +1,6 @@
 import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {useCallback, useMemo} from 'react';
+import {type SetStateAction, useCallback, useMemo} from 'react';
 import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Route} from '../../app/Route';
@@ -258,7 +258,7 @@ describe('useQueryPersistedState', () => {
 
   it('emits the same setFilters on each render if memoized options are provided, matching React.useState', async () => {
     const user = userEvent.setup();
-    let firstSetFunction: (v: any) => void;
+    let firstSetFunction: (value: SetStateAction<{isOn: boolean}>) => void;
 
     const TestWithObject = () => {
       const [_, setFilters] = useQueryPersistedState<{isOn: boolean}>(
@@ -394,7 +394,7 @@ describe('useQueryPersistedState', () => {
         );
       };
 
-      let querySearch: any;
+      let querySearch: string;
 
       render(
         <MemoryRouter initialEntries={['/page']}>
@@ -435,7 +435,7 @@ describe('useQueryPersistedState', () => {
         );
       };
 
-      let querySearch: any;
+      let querySearch = '';
 
       render(
         <MemoryRouter initialEntries={['/page']}>
@@ -474,7 +474,7 @@ describe('useQueryPersistedState', () => {
         );
       };
 
-      let querySearch: any;
+      let querySearch = '';
 
       const {findByText} = render(
         <MemoryRouter initialEntries={['/page']}>

@@ -13,7 +13,10 @@ from dagster_test.fixtures.utils import BUILDKITE
 # Hard upper bound on `docker compose up`. Set generously enough to cover cold image pulls
 # on a busy CI agent, but well below pytest-timeout so we fail with diagnostics rather than
 # being killed mid-syscall by the per-test timeout (which gives an unactionable traceback).
-_DOCKER_COMPOSE_UP_TIMEOUT = 240
+# Bumped 240s → 480s (2x) to give cold-cache image pulls comfortable headroom on
+# freshly-spun Karpenter nodes. With the retry path, worst-case fixture wallclock is
+# ~1050s (480s + 90s down + 480s retry), accommodated by pytest-timeout=1200s.
+_DOCKER_COMPOSE_UP_TIMEOUT = 480
 
 # Tear-down should be fast; if it isn't, the daemon is already wedged and we shouldn't
 # block the rest of the suite trying to clean up.
@@ -204,12 +207,51 @@ def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: 
         ["docker", "ps", "--all"],
         ["docker", "info"],
     ]
-    _run_docker(
-        compose_command,
-        env=docker_env,
-        timeout=_DOCKER_COMPOSE_UP_TIMEOUT,
-        on_timeout_dump=diagnostics,
-    )
+    # Retry once on timeout: the first attempt populates the local image cache (partial
+    # layers persist in dockerd's storage), so a second attempt typically succeeds quickly.
+    # Before retrying we explicitly run `docker compose down --volumes --remove-orphans`
+    # to clean up any containers that the first attempt partially created — `--force-recreate`
+    # alone does not handle this, because compose's recreation logic requires the existing
+    # containers to be labeled as compose-managed, and a SIGTERM mid-`up` can leave partial
+    # state that compose doesn't recognize as its own. `down` reads the YAML directly and
+    # removes by service name, so it cleans up orphans reliably.
+    # See https://github.com/dagster-io/internal/pull/23770 for the underlying analysis.
+    try:
+        _run_docker(
+            compose_command,
+            env=docker_env,
+            timeout=_DOCKER_COMPOSE_UP_TIMEOUT,
+            on_timeout_dump=diagnostics,
+        )
+    except subprocess.TimeoutExpired:
+        logging.warning(
+            "docker compose up timed out after %.0fs; cleaning up partial state and"
+            " retrying once with warm image cache",
+            _DOCKER_COMPOSE_UP_TIMEOUT,
+        )
+        # Tear down any orphans from attempt 1 so the retry has a clean slate. We use
+        # the same compose_command prefix (preserving --context, --env-file, --file) and
+        # swap `up [...]` for `down --volumes --remove-orphans`. check=False because down
+        # may itself fail if dockerd is wedged; the retry below will surface the failure.
+        up_index = compose_command.index("up")
+        down_command = compose_command[:up_index] + ["down", "--volumes", "--remove-orphans"]
+        try:
+            _run_docker(
+                down_command,
+                env=docker_env,
+                timeout=_DOCKER_COMPOSE_DOWN_TIMEOUT,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            logging.warning(
+                "docker compose down between retries also timed out; retrying up anyway"
+            )
+        _run_docker(
+            compose_command,
+            env=docker_env,
+            timeout=_DOCKER_COMPOSE_UP_TIMEOUT,
+            on_timeout_dump=diagnostics,
+        )
 
 
 def _force_disconnect_external_containers(docker_compose_yml, docker_env):

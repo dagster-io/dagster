@@ -304,7 +304,7 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
             log_readers=log_readers,
         )
 
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -448,7 +448,7 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
 
                     submit_task_dict[task_type]["parameters"] = existing_params
                     context.log.debug(
-                        f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'  # pyright: ignore[reportPossiblyUnboundVariable]
+                        f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'
                     )
                     break
 
@@ -497,7 +497,7 @@ class PipesDbfsContextInjector(PipesContextInjector):
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
         """Inject context to external environment by writing it to an automatically-generated
         DBFS temporary file as JSON and exposing the path to the file.
 
@@ -721,7 +721,7 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -878,7 +878,7 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
                     submit_task_dict[task_type]["parameters"] = existing_params
                     context.log.debug(
                         f"Passing Pipes bootstrap parameters "
-                        f'via Databricks parameters as "{key}.parameters". '  # pyright: ignore[reportPossiblyUnboundVariable]
+                        f'via Databricks parameters as "{key}.parameters". '
                         f"Make sure to use the PipesCliArgsParamsLoader in the task."
                     )
                     break
@@ -941,7 +941,7 @@ class PipesUnityCatalogVolumesContextInjector(PipesContextInjector):
         self.volume_path = volume_path
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
         """Inject context to external environment by writing it to an automatically-generated
         Unity Catalog Volumes temporary file as JSON and exposing the path to the file.
 

@@ -18,7 +18,7 @@ class ReplayClient(DagsterPlusGraphQLClient):
     """GraphQL client that replays recorded responses.
 
     Overrides execute() to return a real httpx.Response wrapping the recorded data,
-    so both execute_generic() and generated methods (which call execute() then get_data())
+    so both execute_arbitrary() and generated methods (which call execute() then get_data())
     work without needing a real HTTP client.
     """
 

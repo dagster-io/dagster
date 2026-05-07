@@ -10,7 +10,7 @@ from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
     CommandStepConfiguration,
 )
-from buildkite_shared.uv import UV_PIN
+from buildkite_shared.step_builders.slug import slugify_label
 from dagster_buildkite.utils import make_buildkite_section_header
 
 
@@ -66,7 +66,7 @@ def build_tox_step(
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
-    label = f"{emoji} {base_label} {_tox_env_to_label_suffix(tox_env)}"
+    key = slugify_label(f"{base_label} {_tox_env_to_label_suffix(tox_env)}")
     python_version = python_version or _resolve_python_version(tox_env)
 
     header_message = f"{emoji} Running tox env: {tox_env}"
@@ -88,14 +88,13 @@ def build_tox_step(
     commands = [
         *(extra_commands_pre or []),
         f"cd {root_dir}",
-        f'pip install "{UV_PIN}"',
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
         *(extra_commands_post or []),
     ]
 
     step_builder = (
-        CommandStepBuilder(label)
+        CommandStepBuilder(key, [emoji])
         .on_test_image(python_version.value, env=env_vars or [])
         .run(*commands)
         .with_timeout(timeout_in_minutes)

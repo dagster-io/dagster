@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ContextManager  # noqa: UP035
+from typing import TYPE_CHECKING, Any, ContextManager  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -118,7 +118,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self, statement_timeout: int, pool_recycle: int, max_overflow: int
     ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "isolation_level": "AUTOCOMMIT",
             "pool_size": 1,
             "pool_recycle": pool_recycle,
@@ -143,7 +143,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return pg_config()
 
     @classmethod
-    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_config_value(  # ty: ignore[invalid-method-override]
         cls, inst_data: ConfigurableClassData | None, config_value: PostgresStorageConfig
     ) -> "PostgresScheduleStorage":
         return PostgresScheduleStorage(

@@ -1,1 +1,2 @@
 pip install dagster-cloud
+pip install --group dev

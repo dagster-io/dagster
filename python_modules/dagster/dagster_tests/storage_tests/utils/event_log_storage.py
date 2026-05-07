@@ -1584,7 +1584,7 @@ class TestEventLogStorage:
         materializations = [
             e
             for e in events
-            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # pyright: ignore[reportOptionalMemberAccess]
+            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # ty: ignore[unresolved-attribute]
         ]
         storage.store_event_batch(materializations)
 
@@ -1620,7 +1620,7 @@ class TestEventLogStorage:
         materializations = [
             e
             for e in events
-            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # pyright: ignore[reportOptionalMemberAccess]
+            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # ty: ignore[unresolved-attribute]
         ]
         storage.store_event_batch(materializations)
 
@@ -1723,7 +1723,7 @@ class TestEventLogStorage:
         def _get_counts(result):
             assert isinstance(result, dg.EventRecordsResult)
             return [
-                record.asset_materialization.metadata.get("count").value  # pyright: ignore[reportOptionalMemberAccess]
+                record.asset_materialization.metadata.get("count").value
                 for record in result.records
             ]
 
@@ -1878,8 +1878,7 @@ class TestEventLogStorage:
         def _get_counts(result):
             assert isinstance(result, dg.EventRecordsResult)
             return [
-                record.asset_observation.metadata.get("count").value  # pyright: ignore[reportOptionalMemberAccess]
-                for record in result.records
+                record.asset_observation.metadata.get("count").value for record in result.records
             ]
 
         # results come in descending order, by default
@@ -2000,7 +1999,7 @@ class TestEventLogStorage:
 
     def test_asset_materialization_null_key_fails(self):
         with pytest.raises(check.CheckError):
-            dg.AssetMaterialization(asset_key=None)  # pyright: ignore[reportArgumentType]
+            dg.AssetMaterialization(asset_key=None)  # ty: ignore[invalid-argument-type]
 
     def test_asset_events_error_parsing(self, storage, instance):
         if not isinstance(storage, SqlEventLogStorage):

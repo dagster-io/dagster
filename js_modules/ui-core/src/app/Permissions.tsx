@@ -68,7 +68,7 @@ export const extractPermissions = (
 ) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
-    (permsMap as any)[item.permission] = {
+    permsMap[item.permission as keyof PermissionsFromJSON] = {
       enabled: item.value,
       disabledReason: item.disabledReason || '',
     };
@@ -76,7 +76,7 @@ export const extractPermissions = (
 
   const fallbackMap: PermissionsFromJSON = {};
   for (const item of fallback) {
-    (fallbackMap as any)[item.permission] = {
+    fallbackMap[item.permission as keyof PermissionsFromJSON] = {
       enabled: item.value,
       disabledReason: item.disabledReason || '',
     };
@@ -180,13 +180,13 @@ export const permissionResultForKey = (
 const unpackPermissions = (
   permissions: PermissionsMap,
 ): {booleans: PermissionBooleans; disabledReasons: PermissionDisabledReasons} => {
-  const booleans = {};
-  const disabledReasons = {};
-  Object.keys(permissions).forEach((key) => {
-    const {enabled, disabledReason} = (permissions as any)[key] as PermissionResult;
-    (booleans as any)[key] = enabled;
-    (disabledReasons as any)[key] = disabledReason;
-  });
+  const booleans: Record<string, boolean> = {};
+  const disabledReasons: Record<string, string> = {};
+  for (const key of Object.keys(permissions) as Array<keyof PermissionsMap>) {
+    const {enabled, disabledReason} = permissions[key];
+    booleans[key] = enabled;
+    disabledReasons[key] = disabledReason;
+  }
   return {
     booleans: booleans as PermissionBooleans,
     disabledReasons: disabledReasons as PermissionDisabledReasons,

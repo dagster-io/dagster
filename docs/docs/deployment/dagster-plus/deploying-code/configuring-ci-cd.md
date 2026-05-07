@@ -9,6 +9,7 @@ tags: [dagster-plus-feature]
 import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVersion.md';
 import GitHubPrereqs from '@site/docs/partials/_GitHubPrereqs.md';
 import GitLabPrereqs from '@site/docs/partials/_GitLabPrereqs.md';
+import PipGroupInstallNote from '@site/docs/partials/_PipGroupInstallNote.md';
 
 Follow the steps below to create a GitHub or GitLab CI/CD configuration file in your project to deploy and synchronize your code to Dagster+. You can also use other Git providers, or a local Git repository to run your own CI/CD process.
 
@@ -43,7 +44,7 @@ Pushing changes to the `main` branch of that project repository will automatical
       </TabItem>
     </Tabs>
 
-3.  Add the `dagster-cloud` package as a project dependency:
+3.  Add `dagster-cloud` as a runtime dependency and `dagster-dg-cli` as a dev dependency. `dagster-cloud` must be installed inside your production container so the Dagster+ code server can start. `dagster-dg-cli` runs only in CI (for `dg list projects` and `dg plus deploy`) and is excluded from the final image by `uv sync --no-dev`. If your project was created with `create-dagster project`, `dagster-dg-cli` is already declared as a dev dependency — skip the `--dev` command below.
 
     <Tabs groupId="package-manager">
       <TabItem value="uv" label="uv">
@@ -51,6 +52,7 @@ Pushing changes to the `main` branch of that project repository will automatical
       </TabItem>
       <TabItem value="pip" label="pip">
         <CliInvocationExample path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/ci_cd/pip-install-dagster-cloud.txt" />
+        <PipGroupInstallNote />
       </TabItem>
     </Tabs>
 
@@ -115,37 +117,49 @@ During the deployment process, environment variables configured in your Dagster+
       .venv\Scripts\activate
       ```
 
-3.  Initialize a Git repository in the project directory:
+3.  Add `dagster-cloud` as a runtime dependency and `dagster-dg-cli` as a dev dependency. `dagster-cloud` must be installed inside your production container so the Dagster+ code server can start. `dagster-dg-cli` runs only in CI (for `dg list projects` and `dg plus deploy`) and is excluded from the final image by `uv sync --no-dev`. If your project was created with `create-dagster project`, `dagster-dg-cli` is already declared as a dev dependency — skip the `--dev` command below.
+
+    <Tabs groupId="package-manager">
+      <TabItem value="uv" label="uv">
+        <CliInvocationExample path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/ci_cd/uv-add-dagster-cloud.txt" />
+      </TabItem>
+      <TabItem value="pip" label="pip">
+        <CliInvocationExample path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/ci_cd/pip-install-dagster-cloud.txt" />
+        <PipGroupInstallNote />
+      </TabItem>
+    </Tabs>
+
+4.  Initialize a Git repository in the project directory:
 
     ```shell
     git init .
     ```
 
-4.  Commit and push your changes:
+5.  Commit and push your changes:
 
     ```shell
     git add . && git commit -m "Initial commit"
     ```
 
-5.  Create a remote repository on GitLab and push your changes to it. You can either do so in the GitLab UI by navigating to the [new project creation page](https://gitlab.com/projects/new#blank_project), or on the command line by running the following command, replacing USERNAME with your GitLab username or organization workspace:
+6.  Create a remote repository on GitLab and push your changes to it. You can either do so in the GitLab UI by navigating to the [new project creation page](https://gitlab.com/projects/new#blank_project), or on the command line by running the following command, replacing USERNAME with your GitLab username or organization workspace:
 
     ```shell
     git push --set-upstream git@gitlab.com:USERNAME/$(git rev-parse --show-toplevel | xargs basename).git $(git rev-parse --abbrev-ref HEAD)
     ```
 
-6.  Use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files for your deployment type, including a GitLab CI/CD configuration file:
+7.  Use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files for your deployment type, including a GitLab CI/CD configuration file:
 
     ```shell
     dg plus deploy configure --git-provider gitlab
     ```
 
-7.  Create a Dagster Cloud API token:
+8.  Create a Dagster Cloud API token:
 
     ```shell
     dg plus create ci-api-token --description 'Used in Dagster project GitHub Actions'
     ```
 
-8.  Set the Dagster Cloud API token as a CI/CD variable in the GitLab repo:
+9.  Set the Dagster Cloud API token as a CI/CD variable in the GitLab repo:
     - Navigate to the project page in GitLab.
     - In the left sidebar, click **Settings** > **CI/CD**.
     - On the settings page, click **Variables**.

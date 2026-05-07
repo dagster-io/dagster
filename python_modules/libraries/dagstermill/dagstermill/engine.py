@@ -44,7 +44,7 @@ if is_papermill_2():
                 finally:
                     self.nb_man.cell_complete(self.nb.cells[index], cell_index=index)
 
-    class DagstermillEngine(NBClientEngine):  # type: ignore  # (papermill 1 compat)
+    class DagstermillEngine(NBClientEngine):  # (papermill 1 compat)
         @classmethod
         def execute_managed_notebook(
             cls,
@@ -74,10 +74,8 @@ if is_papermill_2():
             return DagstermillNotebookClient(nb_man, **final_kwargs).execute()
 
 else:
-    from papermill.engines import NBConvertEngine
-    from papermill.preprocess import (  # type: ignore  # (papermill 1 compat)
-        PapermillExecutePreprocessor,
-    )
+    from papermill.engines import NBConvertEngine  # ty: ignore[unresolved-import]
+    from papermill.preprocess import PapermillExecutePreprocessor  # ty: ignore[unresolved-import]
 
     class DagstermillExecutePreprocessor(PapermillExecutePreprocessor):
         # We need to finalize dagster resources here (as opposed to, e.g., in the notebook_complete

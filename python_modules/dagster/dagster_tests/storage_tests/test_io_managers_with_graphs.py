@@ -13,7 +13,7 @@ def named_io_manager(storage_dict, name):
 
             def load_input(self, context):
                 result = storage_dict[
-                    tuple(context.upstream_output.get_run_scoped_output_identifier())  # pyright: ignore[reportOptionalMemberAccess]
+                    tuple(context.upstream_output.get_run_scoped_output_identifier())
                 ]
                 return {**result, "input_manager_name": name}
 
@@ -95,14 +95,14 @@ def test_io_manager_config_inside_composite():
         class MyHardcodedIOManager(dg.IOManager):
             def handle_output(self, context, obj):
                 keys = tuple(
-                    context.get_run_scoped_output_identifier() + [context.config["output_suffix"]]  # pyright: ignore[reportOperatorIssue]
+                    context.get_run_scoped_output_identifier() + [context.config["output_suffix"]]
                 )
                 stored_dict[keys] = obj
 
             def load_input(self, context):
                 keys = tuple(
-                    context.upstream_output.get_run_scoped_output_identifier()  # pyright: ignore[reportOptionalMemberAccess]
-                    + [context.upstream_output.config["output_suffix"]]  # type: ignore
+                    context.upstream_output.get_run_scoped_output_identifier()  # pyright: ignore[reportOperatorIssue]
+                    + [context.upstream_output.config["output_suffix"]]  # pyright: ignore[reportOptionalMemberAccess]
                 )
                 return stored_dict[keys]
 

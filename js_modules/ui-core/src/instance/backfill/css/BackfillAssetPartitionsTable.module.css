@@ -1,0 +1,5 @@
+.rowGrid {
+  display: grid;
+  grid-template-columns: 60% repeat(4, 1fr);
+  height: 100%;
+}

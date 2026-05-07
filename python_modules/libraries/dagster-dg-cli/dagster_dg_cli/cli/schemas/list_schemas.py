@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from dagster_rest_resources.schemas.asset import DgApiAutomationCondition, DgAssetBase
+from dagster_rest_resources.schemas.asset import DgApiAssetBase, DgApiAutomationCondition
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ class DgRegistryModuleList(BaseModel):
 # ########################
 
 
-class DgDefAssetMetadata(DgAssetBase):
+class DgDefAssetMetadata(DgApiAssetBase):
     """Asset metadata from local definitions (extends shared base with local-only fields)."""
 
     is_executable: bool

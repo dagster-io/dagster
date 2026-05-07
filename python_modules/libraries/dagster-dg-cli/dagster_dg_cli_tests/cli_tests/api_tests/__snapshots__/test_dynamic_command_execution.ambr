@@ -264,7 +264,7 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_json]
   dict({
-    'alert_policies': list([
+    'items': list([
       dict({
         'description': 'Send email on job failure',
         'event_types': list([
@@ -301,6 +301,7 @@
         ]),
       }),
     ]),
+    'total': 2,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_text_text]
@@ -467,8 +468,8 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_partition_status_not_found_json]
   '''
-  {"error": "Error: Asset not found: nonexistent/asset"}
-  Error: dg api asset get-partition-status: Error: Asset not found: nonexistent/asset
+  {"error": "Error getting partition status: Asset not found: nonexistent/asset"}
+  Error: dg api asset get-partition-status: Error getting partition status: Asset not found: nonexistent/asset
   
   '''
 # ---
@@ -1184,8 +1185,8 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_run_id_json]
   '''
-  {"error": "Error: ''"}
-  Error: dg api run get: Error: ''
+  {"error": "Run not found: ''"}
+  Error: dg api run get: Run not found: ''
   
   '''
 # ---
@@ -1265,7 +1266,7 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_error_run_not_found_text]
   '''
-  Error: dg api run get: Error: nonexistent-run-id
+  Error: dg api run get: Run not found: nonexistent-run-id
   
   '''
 # ---

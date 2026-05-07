@@ -25,6 +25,6 @@
   min-width: 0;
   overflow-x: auto;
   white-space: pre;
-  font-family: var(--font-family-monospace);
+  font-family: var(--font-mono);
   font-size: 13px;
 }

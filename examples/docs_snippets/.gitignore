@@ -1,3 +1,4 @@
 orders
 orders.csv
 !docs_snippets/guides/build
+uv.lock

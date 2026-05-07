@@ -39,6 +39,20 @@ rebuild_pyright_pins:
     ulimit -Sn 4096
     python scripts/run-pyright.py --update-pins --skip-typecheck
 
+ty:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ulimit -Sn 4096
+    python scripts/run-ty.py --all
+
+# Skip typecheck so that this can be used to test if all requirements can successfully be resolved
+# in CI independently of typechecking.
+rebuild_ty_pins:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ulimit -Sn 4096
+    python scripts/run-ty.py --update-pins --skip-typecheck
+
 rebuild_ui:
     corepack enable
     cd js_modules && yarn install && yarn workspace @dagster-io/app-oss build

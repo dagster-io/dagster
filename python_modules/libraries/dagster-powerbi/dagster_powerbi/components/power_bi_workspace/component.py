@@ -322,7 +322,7 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
 
 
 class PowerBIComponentTranslator(
-    create_component_translator_cls(PowerBIWorkspaceComponent, DagsterPowerBITranslator),
+    create_component_translator_cls(PowerBIWorkspaceComponent, DagsterPowerBITranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[PowerBIWorkspaceComponent],
 ):
     def __init__(self, component: PowerBIWorkspaceComponent):

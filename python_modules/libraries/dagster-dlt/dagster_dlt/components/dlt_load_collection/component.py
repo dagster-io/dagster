@@ -175,7 +175,7 @@ class DltLoadCollectionComponent(Component, Resolvable):
 
 
 class DltComponentTranslator(
-    create_component_translator_cls(DltLoadCollectionComponent, DagsterDltTranslator),
+    create_component_translator_cls(DltLoadCollectionComponent, DagsterDltTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[DltLoadCollectionComponent],
 ):
     def __init__(self, component: "DltLoadCollectionComponent", load_spec: "DltLoadSpecModel"):

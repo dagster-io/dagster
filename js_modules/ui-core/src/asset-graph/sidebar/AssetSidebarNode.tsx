@@ -1,9 +1,9 @@
-import {Box, Colors, Icon, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';
+import sidebarStyles from './css/AssetSidebarNode.module.css';
 import {
   FolderNodeCodeLocationType,
   FolderNodeGroupType,
@@ -12,7 +12,7 @@ import {
 } from './util';
 import {AssetHealthSummary} from '../../assets/AssetHealthSummary';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
-import {FocusableLabelContainer, GrayOnHoverBox} from '../../ui/Sidebar/FocusableLabelContainer';
+import {FocusableLabelContainer} from '../../ui/Sidebar/FocusableLabelContainer';
 import {SidebarDisclosureTriangle} from '../../ui/Sidebar/SidebarDisclosureTriangle';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetNodeMenuProps, useAssetNodeMenu} from '../AssetNodeMenu';
@@ -48,7 +48,8 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
   return (
     <Box ref={elementRef} padding={{left: 8, right: 12}}>
       <BoxWrapper level={level}>
-        <ItemContainer
+        <Box
+          className={sidebarStyles.itemContainer}
           flex={{direction: 'row', alignItems: 'center'}}
           onClick={selectThisNode}
           onDoubleClick={(e) => !e.metaKey && toggleOpen()}
@@ -70,7 +71,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
           ) : (
             <AssetSidebarLocationLabel {...props} node={node} />
           )}
-        </ItemContainer>
+        </Box>
       </BoxWrapper>
     </Box>
   );
@@ -119,13 +120,14 @@ const AssetSidebarAssetLabel = ({
         }
         text={getDisplayName(node)}
       />
-      <ExpandMore onClick={triggerContextMenu}>
+      <button className={sidebarStyles.expandMore} onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
-      </ExpandMore>
+      </button>
       {dialog}
     </ContextMenuWrapper>
   );
 };
+
 const AssetSidebarGroupLabel = ({
   node,
   isSelected,
@@ -145,9 +147,9 @@ const AssetSidebarGroupLabel = ({
         icon={<Icon name="asset_group" />}
         text={node.groupNode.groupName}
       />
-      <ExpandMore onClick={triggerContextMenu}>
+      <button className={sidebarStyles.expandMore} onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
-      </ExpandMore>
+      </button>
       {dialog}
     </ContextMenuWrapper>
   );
@@ -192,27 +194,3 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
 
   return <>{wrapper}</>;
 };
-
-const ExpandMore = styled(UnstyledButton)`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  visibility: hidden;
-`;
-
-export const ItemContainer = styled(Box)`
-  height: 32px;
-  position: relative;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-within {
-    ${GrayOnHoverBox} {
-      background: ${Colors.backgroundLightHover()};
-    }
-
-    ${ExpandMore} {
-      visibility: visible;
-    }
-  }
-`;

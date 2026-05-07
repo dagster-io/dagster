@@ -310,7 +310,7 @@ def test_pyspark_databricks(
     reason="This test is slow and requires a Databricks cluster; run only upon explicit request",
 )
 def test_do_it_live_databricks_s3():
-    result = execute_job(  # pyright: ignore[reportCallIssue]
+    result = execute_job(  # ty: ignore[missing-argument]
         reconstructable(define_pyspark_s3_job),
         run_config={
             "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
@@ -342,7 +342,7 @@ def test_do_it_live_databricks_adls2():
         }
     }
 
-    result = execute_job(  # pyright: ignore[reportCallIssue]
+    result = execute_job(  # ty: ignore[missing-argument]
         reconstructable(define_pyspark_adls2_job),
         run_config={
             "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},

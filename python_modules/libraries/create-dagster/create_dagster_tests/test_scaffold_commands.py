@@ -360,7 +360,7 @@ def validate_pyproject_toml_with_editable(
 
 
 def test_scaffold_project_pinned_dependencies(monkeypatch) -> None:
-    monkeypatch.setattr(create_dagster.version, "__version__", "1.10.18")  # type: ignore
+    monkeypatch.setattr(create_dagster.version, "__version__", "1.10.18")
 
     with (
         ProxyRunner.test() as runner,

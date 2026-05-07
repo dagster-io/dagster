@@ -39,7 +39,7 @@ def script_fn():
     with open_dagster_pipes(
         context_loader=PipesUnityCatalogVolumesContextLoader(),
         message_writer=PipesUnityCatalogVolumesMessageWriter(),
-        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa  # pyright: ignore
+        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa  # ty: ignore
     ) as context:
         multiplier = context.get_extra("multiplier")
         value = 2 * multiplier
@@ -170,7 +170,7 @@ def multi_task_script_fn():
     # also delivered as widget params by PipesDatabricksNotebookWidgetsParamsLoader.
     import subprocess
 
-    dagster_pipes_whl = dbutils.widgets.get("dagster_pipes_whl")  # noqa  # pyright: ignore
+    dagster_pipes_whl = dbutils.widgets.get("dagster_pipes_whl")  # noqa  # ty: ignore
     subprocess.check_call(["pip", "install", dagster_pipes_whl])
 
     from dagster_pipes import (
@@ -180,11 +180,11 @@ def multi_task_script_fn():
         open_dagster_pipes,
     )
 
-    asset_key = dbutils.widgets.get("asset_key")  # noqa  # pyright: ignore
+    asset_key = dbutils.widgets.get("asset_key")  # noqa  # ty: ignore
     with open_dagster_pipes(
         context_loader=PipesUnityCatalogVolumesContextLoader(),
         message_writer=PipesUnityCatalogVolumesMessageWriter(),
-        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa  # pyright: ignore
+        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa  # ty: ignore
     ) as context:
         context.report_asset_materialization(
             metadata={"writer": asset_key},

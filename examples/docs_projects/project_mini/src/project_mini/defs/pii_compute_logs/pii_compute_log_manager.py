@@ -1,7 +1,9 @@
 from collections.abc import Sequence
 
 from dagster import Bool, Field, StringSource
-from dagster._core.storage.captured_log_manager import CapturedLogData
+from dagster._core.storage.captured_log_manager import (
+    CapturedLogData,  # ty: ignore[unresolved-import]
+)
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._serdes import ConfigurableClass, ConfigurableClassData

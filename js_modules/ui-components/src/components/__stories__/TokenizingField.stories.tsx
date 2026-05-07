@@ -56,7 +56,7 @@ export const TokenProvider = () => {
 export const TokenAndSuggestionProviders = () => {
   const [value, setValue] = useState<TokenizingFieldValue[]>([]);
 
-  const users = {
+  const users: Record<string, string> = {
     'ben@dagsterlabs.com': 'Ben Pankow',
     'dish@dagsterlabs.com': 'Isaac Hellendag',
     'marco@dagsterlabs.com': 'Marco Salazar',
@@ -70,7 +70,7 @@ export const TokenAndSuggestionProviders = () => {
       values: () => Object.keys(users),
       suggestionFilter: (typed: string, s: Suggestion) =>
         s.text.toLowerCase().includes(typed.toLowerCase()) ||
-        (users as any)[s.text].toLowerCase().includes(typed.toLowerCase()),
+        !!users[s.text]?.toLowerCase().includes(typed.toLowerCase()),
     },
   ];
 

@@ -17,6 +17,7 @@ from dagster_rest_resources.__generated__.get_logs_captured_events import (
     GetLogsCapturedEventsLogsForRunRunNotFoundError,
 )
 from dagster_rest_resources.api.compute_log import DgApiComputeLogApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.compute_log import (
     DgApiComputeLogLinkList,
     DgApiComputeLogList,
@@ -58,7 +59,7 @@ def _make_captured_event(
 
 class TestGetLogs:
     def test_returns_logs(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=_make_event_connection(
                 events=[_make_captured_event("test-step", step_keys=["test-step"])],
@@ -89,7 +90,7 @@ class TestGetLogs:
         )
 
     def test_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=_make_event_connection(events=[])
         )
@@ -100,7 +101,7 @@ class TestGetLogs:
         client.get_captured_logs.assert_not_called()
 
     def test_step_key_filter(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -119,7 +120,7 @@ class TestGetLogs:
         assert result.items[0].file_key == "step_a"
 
     def test_run_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=GetLogsCapturedEventsLogsForRunRunNotFoundError(
                 __typename="RunNotFoundError", message=""
@@ -130,7 +131,7 @@ class TestGetLogs:
             DgApiComputeLogApi(_client=client).get_logs(_RUN_ID)
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=GetLogsCapturedEventsLogsForRunPythonError(
                 __typename="PythonError", message=""
@@ -141,7 +142,7 @@ class TestGetLogs:
             DgApiComputeLogApi(_client=client).get_logs(_RUN_ID)
 
     def test_pagination(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         page1 = GetLogsCapturedEvents(
             logsForRun=_make_event_connection(
                 events=[_make_captured_event("step_a", step_keys=["step_a"])],
@@ -169,7 +170,7 @@ class TestGetLogs:
 
 class TestGetLogLinks:
     def test_uses_external_urls_when_available(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -199,7 +200,7 @@ class TestGetLogLinks:
         client.get_captured_logs_metadata.assert_not_called()
 
     def test_fetches_metadata_when_no_external_urls(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=_make_event_connection(
                 events=[_make_captured_event("test-step", step_keys=["test-step"])]
@@ -221,7 +222,7 @@ class TestGetLogLinks:
         )
 
     def test_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_logs_captured_events.return_value = GetLogsCapturedEvents(
             logsForRun=_make_event_connection(events=[])
         )

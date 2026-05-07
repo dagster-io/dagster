@@ -64,7 +64,7 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         write_mode = "replace"
 
         # Use the fully qualified table name
-        full_table_name = f"{table_slice.database.upper()}.{table_slice.schema.upper()}.{table_slice.table.upper()}"  # pyright: ignore[reportOptionalMemberAccess]
+        full_table_name = f"{table_slice.database.upper()}.{table_slice.schema.upper()}.{table_slice.table.upper()}"  # ty: ignore[unresolved-attribute]
 
         # If we're appending to a partition, we need to delete existing data for that partition first
         # Determine the write mode based on whether we're dealing with partitions
@@ -80,7 +80,7 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         # This is more efficient than converting to pandas
 
         with connection.cursor() as cursor:
-            cursor.execute(f"USE DATABASE {table_slice.database.upper()}")  # pyright: ignore[reportOptionalMemberAccess]
+            cursor.execute(f"USE DATABASE {table_slice.database.upper()}")  # ty: ignore[unresolved-attribute]
             cursor.execute(f"USE SCHEMA {table_slice.schema.upper()}")
 
         with_uppercase_cols.write_database(
@@ -94,9 +94,9 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
             # output object may be a slice/partition, so we output different metadata keys based on
             # whether this output represents an entire table or just a slice/partition
             **(
-                TableMetadataSet(partition_row_count=obj.shape[0])
+                TableMetadataSet(partition_row_count=obj.shape[0], storage_kind="snowflake")  # ty: ignore[unknown-argument]
                 if context.has_partition_key
-                else TableMetadataSet(row_count=obj.shape[0])
+                else TableMetadataSet(row_count=obj.shape[0], storage_kind="snowflake")  # ty: ignore[unknown-argument]
             ),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(

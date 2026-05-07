@@ -1,5 +1,6 @@
 from argparse import Namespace
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster_shared.check as check
@@ -38,7 +39,7 @@ def select_unique_ids(
     manifest_version = version.parse(manifest_json.get("metadata", {}).get("dbt_version", "0.0.0"))
     # dbt-core available, fastest to use the library directly
     if DBT_PYTHON_VERSION is not None:
-        return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json)
+        return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json, project)
     # dbt Fusion available, efficient(ish) to invoke the CLI for selection
     if manifest_version.major >= 2 and project is not None:
         return _select_unique_ids_from_cli(select, exclude, selector, project)
@@ -87,7 +88,11 @@ def _select_unique_ids_from_cli(
 
 
 def _select_unique_ids_from_manifest(
-    select: str, exclude: str, selector: str, manifest_json: Mapping[str, Any]
+    select: str,
+    exclude: str,
+    selector: str,
+    manifest_json: Mapping[str, Any],
+    project: Optional["DbtProject"] = None,
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
@@ -229,8 +234,26 @@ def _select_unique_ids_from_manifest(
 
     # execute this selection against the graph
     node_selector = graph_selector.NodeSelector(graph, manifest)
-    selected, _ = node_selector.select_nodes(parsed_spec)
+    with _dbt_selector_project_root(project):
+        selected, _ = node_selector.select_nodes(parsed_spec)
     return selected
+
+
+@contextmanager
+def _dbt_selector_project_root(project: Optional["DbtProject"]) -> Iterator[None]:
+    """Set dbt's project root context so path selectors can match manifest file paths."""
+    if not project:
+        yield
+        return
+
+    try:
+        from dbt_common.events.contextvars import task_contextvars
+    except ImportError:
+        yield
+        return
+
+    with task_contextvars(project_root=str(project.project_dir)):
+        yield
 
 
 def _set_flag_attrs(kvs: dict[str, Any]):

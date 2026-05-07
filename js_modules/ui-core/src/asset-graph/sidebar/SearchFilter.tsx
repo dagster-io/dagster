@@ -9,7 +9,8 @@ export const SearchFilter = <T,>({
   onSelectValue,
 }: {
   values: {label: string; value: T}[];
-  onSelectValue: (e: React.MouseEvent<any>, value: T) => void;
+
+  onSelectValue: (e: any, value: T) => void;
 }) => {
   const {viewport, containerProps} = useViewport();
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -54,7 +55,7 @@ export const SearchFilter = <T,>({
             />
           )}
           noResults={<MenuItem disabled={true} text="No results" />}
-          onItemSelect={(item, e) => onSelectValue(e as any, item.value)}
+          onItemSelect={(item, e) => onSelectValue(e, item.value)}
           selectedItem={null}
         />
       </div>

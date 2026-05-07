@@ -187,7 +187,8 @@ def _fetch_row_count_metadata(
         # some adapters do not output the column names, so we need
         # to index by position
         row_count = query_result_table[0][0]
-        return {**TableMetadataSet(row_count=row_count)}
+        adapter_type = invocation.manifest.get("metadata", {}).get("adapter_type")
+        return {**TableMetadataSet(row_count=row_count, storage_kind=adapter_type)}
 
     except Exception as e:
         logger.exception(

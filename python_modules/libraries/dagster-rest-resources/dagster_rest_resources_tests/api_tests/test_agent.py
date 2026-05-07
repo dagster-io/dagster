@@ -7,12 +7,13 @@ from dagster_rest_resources.__generated__.list_agents import (
     ListAgentsAgentsMetadata,
 )
 from dagster_rest_resources.api.agent import DgApiAgentApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.agent import DgApiAgentList
 
 
 class TestListAgents:
     def test_returns_agents(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_agents.return_value = ListAgents(
             agents=[
                 ListAgentsAgents(
@@ -34,7 +35,7 @@ class TestListAgents:
         assert result.items[0].metadata[0].value == "1.0.0"
 
     def test_returns_no_agents(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_agents.return_value = ListAgents(agents=[])
         result = DgApiAgentApi(_client=client).list_agents()
 
@@ -43,7 +44,7 @@ class TestListAgents:
 
 class TestGetAgent:
     def test_returns_matching_agent(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_agents.return_value = ListAgents(
             agents=[
                 ListAgentsAgents(
@@ -69,7 +70,7 @@ class TestGetAgent:
         assert result.status == AgentStatus.NOT_RUNNING
 
     def test_returns_none_when_no_matching_agent(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_agents.return_value = ListAgents(
             agents=[
                 ListAgentsAgents(

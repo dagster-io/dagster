@@ -13,7 +13,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import TypedDict
 
-import modal
+import modal  # ty: ignore[unresolved-import]
 
 from . import config
 
@@ -106,7 +106,7 @@ def split_silences(
     """
     import re
 
-    import ffmpeg
+    import ffmpeg  # ty: ignore[unresolved-import]
 
     silence_end_re = re.compile(
         r" silence_end: (?P<end>[0-9]+(\.?[0-9]*)) \| silence_duration: (?P<dur>[0-9]+(\.?[0-9]*))"
@@ -167,7 +167,7 @@ def transcribe_segment(
     import tempfile
     import time
 
-    import ffmpeg
+    import ffmpeg  # ty: ignore[unresolved-import]
     import torch
     import whisper  # type: ignore
 
@@ -184,7 +184,7 @@ def transcribe_segment(
         use_gpu = torch.cuda.is_available()
         device = "cuda" if use_gpu else "cpu"
         model = whisper.load_model(model.name, device=device, download_root=config.MODEL_DIR)
-        result = model.transcribe(f.name, language="en", fp16=use_gpu)  # type: ignore
+        result = model.transcribe(f.name, language="en", fp16=use_gpu)
 
     logger.info(
         f"Transcribed segment {start:.2f} to {end:.2f} ({end - start:.2f}s duration) in {time.time() - t0:.2f} seconds."

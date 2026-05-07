@@ -82,7 +82,7 @@ export function useRefreshAtInterval<T = any>({
   enabled = true,
   leading,
 }: {
-  refresh: () => Promise<T>;
+  refresh: () => T | Promise<T>;
   intervalMs: number;
   enabled?: boolean;
   leading?: boolean;

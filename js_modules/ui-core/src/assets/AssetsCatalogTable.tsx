@@ -7,7 +7,7 @@ import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 
 import {AssetTable} from './AssetTable';
-import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
+import {ASSET_TABLE_FRAGMENT, ASSET_WORKSPACE_NODE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useAllAssets} from './useAllAssets';
@@ -173,10 +173,10 @@ export const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
     assetKey {
       path
     }
-    ...AssetTableDefinitionFragment
+    ...AssetWorkspaceNodeFragment
   }
 
-  ${ASSET_TABLE_DEFINITION_FRAGMENT}
+  ${ASSET_WORKSPACE_NODE_FRAGMENT}
 `;
 
 function buildFlatProps(assets: Asset[], _: string[]) {

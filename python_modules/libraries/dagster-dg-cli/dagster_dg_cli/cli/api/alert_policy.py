@@ -101,7 +101,7 @@ def sync_alert_policies_command(
     api = DgApiAlertPolicyApi(client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.sync_alert_policies(alert_policies)
+        result = api.action_sync_alert_policies(alert_policies)
         output = format_alert_policy_sync_result(result, as_json=output_json)
         click.echo(output)
 

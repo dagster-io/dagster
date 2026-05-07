@@ -418,7 +418,7 @@ class AirbyteCloudWorkspaceComponent(AirbyteWorkspaceComponent): ...
 
 
 class AirbyteComponentTranslator(
-    create_component_translator_cls(AirbyteWorkspaceComponent, DagsterAirbyteTranslator),
+    create_component_translator_cls(AirbyteWorkspaceComponent, DagsterAirbyteTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[AirbyteWorkspaceComponent],
 ):
     def __init__(self, component: AirbyteWorkspaceComponent):

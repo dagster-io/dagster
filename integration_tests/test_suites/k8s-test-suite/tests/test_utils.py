@@ -261,16 +261,16 @@ Warning events for pod:"""
         )
 
         print(str(pod_debug_info))  # noqa
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_name}:
-
-Pod status: Pending
-Container 'pullfail' status: Waiting: ErrImagePull: rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/fakeimage:latest": failed to resolve reference "docker.io/library/fakeimage:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
-
-No logs for container 'pullfail'.
-
-Warning events for pod:"""
+        # Avoid asserting on the exact ErrImagePull line — its prefix
+        # (e.g. "rpc error: code = Unknown desc = ") varies across containerd versions.
+        assert pod_debug_info.startswith(f"Debug information for pod {pod_name}:")
+        assert "Pod status: Pending" in pod_debug_info
+        assert "Container 'pullfail' status: Waiting: ErrImagePull:" in pod_debug_info
+        assert (
+            'failed to pull and unpack image "docker.io/library/fakeimage:latest"' in pod_debug_info
         )
+        assert "No logs for container 'pullfail'." in pod_debug_info
+        assert "Warning events for pod:" in pod_debug_info
         assert "Failed: Error: ErrImagePull" in pod_debug_info
         assert "Failed: Error: ImagePullBackOff" in pod_debug_info
 

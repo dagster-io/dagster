@@ -1,0 +1,124 @@
+.inputDiv {
+  width: 100%;
+
+  /* Inline TextInputStyles */
+  background-color: var(--color-background-default);
+  border: none;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  outline: none;
+  border-radius: 8px;
+  color: var(--color-text-default);
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 6px 6px 6px 12px;
+  margin: 0;
+  transition: box-shadow 150ms;
+
+  flex-shrink: 1;
+  overflow: auto;
+}
+
+.inputDiv::placeholder {
+  color: var(--color-text-lighter);
+}
+
+.inputDiv:disabled {
+  box-shadow: var(--color-keyline-default) inset 0px 0px 0px 1px;
+  background-color: var(--color-background-light);
+  color: var(--color-text-disabled);
+}
+
+.inputDiv:disabled::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.inputDiv:focus {
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
+    var(--color-keyline-default) inset 2px 2px 1.5px,
+    var(--color-focus-ring) 0 0 0 2px;
+  outline: none;
+}
+
+.inputDiv :global(.CodeMirror-placeholder.CodeMirror-placeholder.CodeMirror-placeholder) {
+  color: var(--color-text-lighter);
+}
+
+.inputDiv :global(.CodeMirror-line) > span {
+  align-items: center;
+}
+
+.inputDiv :global(.CodeMirror-scrollbar-filler),
+.inputDiv :global(.CodeMirror-vscrollbar),
+.inputDiv :global(.CodeMirror-hscrollbar) {
+  display: none !important;
+}
+
+.inputDiv :global(.CodeMirror-cursor.CodeMirror-cursor) {
+  border-color: var(--color-text-light);
+}
+
+.inputDiv :global(.CodeMirror) {
+  background: transparent;
+  color: var(--color-text-default);
+  font-family: var(--font-mono);
+}
+
+.inputDiv :global(.selection-input-error) {
+  background: unset;
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--color-accent-red);
+}
+
+.inputDiv :global(.expression) {
+  color: var(--color-text-green);
+}
+
+.inputDiv :global(.attribute-expression) {
+  color: var(--color-text-default);
+}
+
+.inputDiv :global(.attribute-name) {
+  color: var(--color-text-lighter);
+}
+
+.inputDiv :global(.value) {
+  color: var(--color-text-blue);
+}
+
+.inputDiv :global(.function-name) {
+  color: var(--color-text-cyan);
+  font-style: italic;
+}
+
+.inputDiv :global(.traversal) {
+  color: var(--color-text-red);
+}
+
+.inputDiv :global(.CodeMirror:not(.CodeMirror-focused)) :global(.CodeMirror-sizer),
+.inputDiv :global(.CodeMirror:not(.CodeMirror-focused)) :global(.CodeMirror-lines) {
+  height: 20px !important;
+}
+
+.inputDiv :global(.CodeMirror-sizer),
+.inputDiv :global(.CodeMirror-lines) {
+  padding: 0;
+}
+
+.uncommitted {
+  background: var(--color-background-light);
+}
+
+.hasErrors {
+  border: 1px solid var(--color-accent-red);
+}
+
+.disabled {
+  background: var(--color-background-disabled);
+}
+
+.disabled * {
+  color: var(--color-text-light) !important;
+}

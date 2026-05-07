@@ -38,6 +38,10 @@ class DagsterDltTranslator:
             The :py:class:`dagster.AssetSpec` for the given dlt resource
 
         """
+        metadata = self._resolve_back_compat_method(
+            "get_metadata", self._default_metadata_fn, data.resource
+        )
+        destination_name = data.destination.destination_name if data.destination else None
         return AssetSpec(
             key=self._resolve_back_compat_method(
                 "get_asset_key", self._default_asset_key_fn, data.resource
@@ -54,9 +58,7 @@ class DagsterDltTranslator:
             group_name=self._resolve_back_compat_method(
                 "get_group_name", self._default_group_name_fn, data.resource
             ),
-            metadata=self._resolve_back_compat_method(
-                "get_metadata", self._default_metadata_fn, data.resource
-            ),
+            metadata={**metadata, **TableMetadataSet(storage_kind=destination_name)},
             owners=self._resolve_back_compat_method(
                 "get_owners", self._default_owners_fn, data.resource
             ),

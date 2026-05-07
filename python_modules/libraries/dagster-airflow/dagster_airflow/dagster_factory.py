@@ -125,12 +125,12 @@ def make_dagster_definitions_from_airflow_dags_path(
         resource_defs["airflow_db"] = make_ephemeral_airflow_db_resource(connections=connections)
 
     if (
-        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
+        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]  # ty: ignore[unresolved-attribute]
         == "AirflowEphemeralDatabase"
     ):
         AirflowEphemeralDatabase._initialize_database(connections=connections)  # noqa: SLF001
     elif (
-        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
+        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]  # ty: ignore[unresolved-attribute]
         == "AirflowPersistentDatabase"
     ):
         AirflowPersistentDatabase._initialize_database(  # noqa: SLF001

@@ -398,7 +398,7 @@ def _whitelist_for_serdes(
                 field_serializers=field_serializers,
                 kwargs_fields=kwargs_fields,
             )
-            return klass  # type: ignore  # (NamedTuple quirk)
+            return klass  # (NamedTuple quirk)
 
         elif is_dataclass(klass) and (
             serializer is None or issubclass(serializer, DataclassSerializer)
@@ -415,7 +415,7 @@ def _whitelist_for_serdes(
                 skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
-            return klass  # type: ignore
+            return klass
         else:
             # defer to the last possible moment for import performance
             from pydantic import BaseModel
@@ -435,7 +435,7 @@ def _whitelist_for_serdes(
                     skip_when_none_fields=skip_when_none_fields,
                     field_serializers=field_serializers,
                 )
-                return klass  # type: ignore
+                return klass
             else:
                 raise SerdesUsageError(
                     f"Can not whitelist class {klass} for serializer {serializer}"
@@ -480,10 +480,10 @@ class UnpackContext:
             )
         elif isinstance(obj, (list, set, frozenset)):
             for inner in obj:
-                self.assert_no_unknown_values(inner)
+                self.assert_no_unknown_values(inner)  # ty: ignore[invalid-argument-type]
         elif isinstance(obj, dict):
             for v in obj.values():
-                self.assert_no_unknown_values(v)
+                self.assert_no_unknown_values(v)  # ty: ignore[invalid-argument-type]
 
         return cast("PackableValue", obj)
 
@@ -701,7 +701,7 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
         return value._asdict()  # type: ignore
 
     @cached_property
-    def constructor_param_names(self) -> Sequence[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def constructor_param_names(self) -> Sequence[str]:
         if has_generated_new(self.klass):
             return list(get_record_annotations(self.klass).keys())
 
@@ -734,7 +734,7 @@ class DataclassSerializer(ObjectSerializer[T_Dataclass]):
         return value.__dict__
 
     @cached_property
-    def constructor_param_names(self) -> Sequence[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def constructor_param_names(self) -> Sequence[str]:
         return list(f.name for f in dataclasses.fields(self.klass))
 
 
@@ -760,7 +760,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
         return result
 
     @cached_property
-    def constructor_param_names(self) -> Sequence[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def constructor_param_names(self) -> Sequence[str]:
         return [field.alias or key for key, field in self._model_fields.items()]
 
     @cached_property
@@ -801,7 +801,7 @@ class FieldSerializer(Serializer):
 
 
 class SetToSequenceFieldSerializer(FieldSerializer):
-    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def unpack(  # ty: ignore[invalid-method-override]
         self, sequence_value: Sequence[Any] | None, **_kwargs
     ) -> AbstractSet[Any] | None:
         return set(sequence_value) if sequence_value is not None else None
@@ -1003,7 +1003,7 @@ def _transform_for_serialization(
         return {
             "__set__": [
                 _transform_for_serialization(
-                    item,
+                    item,  # ty: ignore[invalid-argument-type]
                     whitelist_map,
                     object_handler,
                     set_path,
@@ -1016,7 +1016,7 @@ def _transform_for_serialization(
         return {
             "__frozenset__": [
                 _transform_for_serialization(
-                    item,
+                    item,  # ty: ignore[invalid-argument-type]
                     whitelist_map,
                     object_handler,
                     frz_set_path,
@@ -1031,9 +1031,9 @@ def _transform_for_serialization(
 
     # handle more expensive and uncommon abc instance checks last
     if isinstance(val, collections.abc.Mapping):
-        return {
+        return {  # ty: ignore[invalid-return-type]
             key: _transform_for_serialization(
-                value,
+                value,  # ty: ignore[invalid-argument-type]
                 whitelist_map,
                 object_handler,
                 f"{descent_path}.{key}",
@@ -1043,7 +1043,7 @@ def _transform_for_serialization(
     if isinstance(val, collections.abc.Sequence):
         return [
             _transform_for_serialization(
-                item,
+                item,  # ty: ignore[invalid-argument-type]
                 whitelist_map,
                 object_handler,
                 f"{descent_path}[{idx}]",
@@ -1090,7 +1090,7 @@ class _LazySerializationWrapper(dict):
         # https://github.com/python/cpython/blob/0fb18b02c8ad56299d6a2910be0bab8ad601ef24/Modules/_json.c#L1542
         super().__init__({"__serdes": "wrapper"})
 
-    def items(self) -> Iterator[tuple[str, JsonSerializableValue]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def items(self) -> Iterator[tuple[str, JsonSerializableValue]]:  # ty: ignore[invalid-method-override]
         klass_name = self._obj.__class__.__name__
         serializer = self._whitelist_map.object_serializers[klass_name]
         yield from serializer.pack_items(
@@ -1337,7 +1337,7 @@ def inner_unpack_value(
         return [inner_unpack_value(item, whitelist_map, context) for item in val]
 
     if isinstance(val, dict):
-        unpacked_vals = {k: inner_unpack_value(v, whitelist_map, context) for k, v in val.items()}
+        unpacked_vals = {k: inner_unpack_value(v, whitelist_map, context) for k, v in val.items()}  # ty: ignore[invalid-argument-type]
         return _unpack_object(unpacked_vals, whitelist_map, context)
 
     return val

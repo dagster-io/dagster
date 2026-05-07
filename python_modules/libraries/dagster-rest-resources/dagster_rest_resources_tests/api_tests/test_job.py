@@ -24,6 +24,7 @@ from dagster_rest_resources.api.job import (
     DgApiJobSensorSummary,
     DgApiJobTag,
 )
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
 
 
@@ -98,7 +99,7 @@ def _make_sensor(
 
 class TestListJobs:
     def test_returns_jobs_from_repositories(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories.return_value = ListRepositories(
             repositoriesOrError=ListRepositoriesRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -179,7 +180,7 @@ class TestListJobs:
         ]
 
     def test_returns_empty_list_when_no_repositories(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories.return_value = ListRepositories(
             repositoriesOrError=ListRepositoriesRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -191,7 +192,7 @@ class TestListJobs:
         assert result == DgApiJobList(items=[], total=0)
 
     def test_repository_not_found_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories.return_value = ListRepositories(
             repositoriesOrError=ListRepositoriesRepositoriesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -201,7 +202,7 @@ class TestListJobs:
             DgApiJobApi(client).list_jobs()
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories.return_value = ListRepositories(
             repositoriesOrError=ListRepositoriesRepositoriesOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -213,7 +214,7 @@ class TestListJobs:
 
 class TestGetJobByName:
     def test_returns_matching_job(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories.return_value = ListRepositories(
             repositoriesOrError=ListRepositoriesRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -232,7 +233,7 @@ class TestGetJobByName:
         assert result == DgApiJob(id="j2", name="job_two", repository_origin="loc@repo")
 
     def test_raises_when_job_not_found(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories.return_value = ListRepositories(
             repositoriesOrError=ListRepositoriesRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -243,7 +244,7 @@ class TestGetJobByName:
             DgApiJobApi(client).get_job_by_name("missing-job")
 
     def test_raises_when_multiple_jobs_found(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories.return_value = ListRepositories(
             repositoriesOrError=ListRepositoriesRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",

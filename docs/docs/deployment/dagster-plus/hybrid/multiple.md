@@ -13,6 +13,7 @@ Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent ru
 - For redundancy and high availability
 - When you need to run agents in completely separate infrastructure environments or AWS accounts, with separate compute resources, volumes, and networks
 - To dedicate specific agents for [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments)
+- To support [multi-region failover](#multi-region-failover)
 
 ## Considerations
 
@@ -222,3 +223,294 @@ agent_queues:
 
 </TabItem>
 </Tabs>
+
+## Multi-region failover
+
+:::note
+
+Multi-region failover uses agent queues, which are a Dagster+ Pro feature and require agents to use version 1.6.0 or greater.
+
+:::
+
+Running agents in multiple geographic regions lets you fail over to a secondary region if your primary region becomes unavailable. The approach:
+
+1. Deploy one agent per region, each with a region-specific label and dedicated queue
+2. Assign code locations to the primary region's queue
+3. When the primary region is unavailable, update the queue assignment to point to the secondary region
+
+Failover only requires updating the queue assignment because the agent is stateless — it polls for work but holds no persistent state of its own. All run history, asset metadata, schedule and sensor state, and event logs live in the Dagster+ control plane. Switching which agent handles a code location's queue doesn't require any state migration.
+
+### Step 1: Deploy agents with region labels
+
+Deploy an agent in each region with `isolated_agents` enabled and a descriptive `agent_label` so you can identify which agent is active in the Dagster+ UI.
+
+<Tabs groupId="multiRegionLabels">
+<TabItem value="Docker" label="Docker">
+
+```yaml
+# dagster.yaml — us-east-1 agent
+isolated_agents:
+  enabled: true
+
+dagster_cloud_api:
+  # <your other config>
+  agent_label: 'us-east-1'
+```
+
+```yaml
+# dagster.yaml — eu-west-1 agent
+isolated_agents:
+  enabled: true
+
+dagster_cloud_api:
+  # <your other config>
+  agent_label: 'eu-west-1'
+```
+
+</TabItem>
+<TabItem value="Kubernetes" label="Kubernetes">
+
+```yaml
+# values-us-east-1.yaml
+isolatedAgents:
+  enabled: true
+
+dagsterCloud:
+  agentLabel: 'us-east-1'
+```
+
+```yaml
+# values-eu-west-1.yaml
+isolatedAgents:
+  enabled: true
+
+dagsterCloud:
+  agentLabel: 'eu-west-1'
+```
+
+</TabItem>
+<TabItem value="Amazon ECS" label="Amazon ECS">
+
+Set `isolated_agents` and `agent_label` in the `dagster.yaml` file for each regional agent. See the [ECS configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference) for details.
+
+</TabItem>
+</Tabs>
+
+### Step 2: Configure region-specific agent queues
+
+Configure each agent to handle only its own region's queue:
+
+<Tabs groupId="multiRegionQueues">
+<TabItem value="Docker" label="Docker">
+
+```yaml
+# dagster.yaml — us-east-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - us-east-1
+```
+
+```yaml
+# dagster.yaml — eu-west-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - eu-west-1
+```
+
+</TabItem>
+<TabItem value="Kubernetes" label="Kubernetes">
+
+```yaml
+# values-us-east-1.yaml
+dagsterCloud:
+  agentQueues:
+    includeDefaultQueue: false
+    additionalQueues:
+      - us-east-1
+```
+
+```yaml
+# values-eu-west-1.yaml
+dagsterCloud:
+  agentQueues:
+    includeDefaultQueue: false
+    additionalQueues:
+      - eu-west-1
+```
+
+</TabItem>
+<TabItem value="Amazon ECS" label="Amazon ECS">
+
+Add the queue configuration to the `dagster.yaml` for each regional agent:
+
+```yaml
+# dagster.yaml — us-east-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - us-east-1
+```
+
+```yaml
+# dagster.yaml — eu-west-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - eu-west-1
+```
+
+</TabItem>
+</Tabs>
+
+### Step 3: Assign code locations to the primary region
+
+In each code location's [`pyproject.toml`](/deployment/dagster-plus/management/build-yaml#pyprojecttoml), set `agent_queue` to the primary region:
+
+```toml
+# pyproject.toml
+[tool.dg.project]
+root_module = "my_project"
+agent_queue = "us-east-1"
+```
+
+### Performing a failover
+
+When the primary region (`us-east-1`) becomes unavailable, update `agent_queue` in each affected code location's `pyproject.toml` to the secondary region and redeploy:
+
+```toml
+# pyproject.toml
+[tool.dg.project]
+root_module = "my_project"
+agent_queue = "eu-west-1"
+```
+
+Once the updated code location is deployed, the secondary region's agent handles all requests. No changes to the agent configuration are needed.
+
+### Optional: Reduce standby costs
+
+By default, user code server TTL is disabled for full deployments, meaning code location servers run indefinitely even when idle. In a standby region that isn't handling any traffic, this means you're paying to keep servers warm that aren't doing any work.
+
+To reduce costs, set a short `server_ttl` in the standby agent's configuration. Code location servers will shut down when idle and restart on demand when the agent starts receiving requests after a failover:
+
+<Tabs groupId="multiRegionServerTTL">
+<TabItem value="Docker" label="Docker">
+
+```yaml
+# dagster.yaml — eu-west-1 standby agent
+user_code_launcher:
+  module: dagster_cloud.workspace.docker
+  class: DockerUserCodeLauncher
+  config:
+    server_ttl:
+      full_deployments:
+        enabled: true
+        ttl_seconds: 300 # shut down idle servers after 5 minutes
+```
+
+</TabItem>
+<TabItem value="Kubernetes" label="Kubernetes">
+
+```yaml
+# values-eu-west-1.yaml — standby region
+workspace:
+  serverTTL:
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 300
+```
+
+</TabItem>
+<TabItem value="Amazon ECS" label="Amazon ECS">
+
+```yaml
+# dagster.yaml — eu-west-1 standby agent
+user_code_launcher:
+  module: dagster_cloud.workspace.ecs
+  class: EcsUserCodeLauncher
+  config:
+    server_ttl:
+      full_deployments:
+        enabled: true
+        ttl_seconds: 300 # shut down idle servers after 5 minutes
+```
+
+</TabItem>
+</Tabs>
+
+The tradeoff is a brief startup delay (typically a few seconds) the first time a code location is accessed after failover, as the server initializes. For most use cases this is acceptable given the cost savings of not running idle servers in the standby region.
+
+### Optional: Active-active redundancy
+
+To eliminate the need for a manual failover, configure each agent to listen on both regional queues. With this setup, both agents share the load from all code locations, and if one region becomes unavailable the remaining agent continues processing everything automatically.
+
+<Tabs groupId="multiRegionActiveActive">
+<TabItem value="Docker" label="Docker">
+
+```yaml
+# dagster.yaml — us-east-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - us-east-1
+    - eu-west-1
+```
+
+```yaml
+# dagster.yaml — eu-west-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - us-east-1
+    - eu-west-1
+```
+
+</TabItem>
+<TabItem value="Kubernetes" label="Kubernetes">
+
+```yaml
+# values-us-east-1.yaml
+dagsterCloud:
+  agentQueues:
+    includeDefaultQueue: false
+    additionalQueues:
+      - us-east-1
+      - eu-west-1
+```
+
+```yaml
+# values-eu-west-1.yaml
+dagsterCloud:
+  agentQueues:
+    includeDefaultQueue: false
+    additionalQueues:
+      - us-east-1
+      - eu-west-1
+```
+
+</TabItem>
+<TabItem value="Amazon ECS" label="Amazon ECS">
+
+```yaml
+# dagster.yaml — us-east-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - us-east-1
+    - eu-west-1
+```
+
+```yaml
+# dagster.yaml — eu-west-1 agent
+agent_queues:
+  include_default_queue: false
+  additional_queues:
+    - us-east-1
+    - eu-west-1
+```
+
+</TabItem>
+</Tabs>
+
+The tradeoff is that both agents run at full capacity at all times. Work is still placed on the queue specified by each code location's `agent_queue` setting, but since both agents monitor all queues, either agent may process it.

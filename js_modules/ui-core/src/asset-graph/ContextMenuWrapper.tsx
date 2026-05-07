@@ -66,14 +66,14 @@ export const ContextMenuWrapper = ({
       document.body.addEventListener('click', listener);
       document.body.addEventListener('keydown', keydownListener);
       document.body.addEventListener('contextmenu', listener);
-      document.addEventListener(CONTEXT_MENU_EVENT, listener as any);
+      document.addEventListener(CONTEXT_MENU_EVENT, listener as EventListener);
     }
     return () => {
       if (node) {
         document.body.removeEventListener('click', listener);
         document.body.removeEventListener('keydown', keydownListener);
         document.body.removeEventListener('contextmenu', listener);
-        document.removeEventListener(CONTEXT_MENU_EVENT, listener as any);
+        document.removeEventListener(CONTEXT_MENU_EVENT, listener as EventListener);
       }
     };
   }, [menuVisible]);
