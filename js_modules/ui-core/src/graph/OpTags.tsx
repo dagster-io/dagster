@@ -247,8 +247,8 @@ export type KnownTagType =
   | 'airbyte'
   | 'airflow'
   | 'airliftmapped'
-  | 'alteryx'
   | 'airtable'
+  | 'alteryx'
   | 'arrow'
   | 'athena'
   | 'atlan'
@@ -613,13 +613,13 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: airflow,
     content: 'Mapped',
   },
-  alteryx: {
-    icon: alteryx,
-    content: 'Alteryx',
-  },
   airtable: {
     icon: airtable,
     content: 'Airtable',
+  },
+  alteryx: {
+    icon: alteryx,
+    content: 'Alteryx',
   },
   omni: {
     icon: omni,
