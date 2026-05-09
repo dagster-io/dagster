@@ -98,19 +98,51 @@ def execute_job_backfill_iteration(
             )
         return
 
-    partition_set = _get_partition_set(workspace_process_context, backfill)
+    partition_set = None
+    partition_set_load_error = None
     has_more = True
     while has_more:
         if backfill.status != BulkActionStatus.REQUESTED:
             break
 
-        chunk, checkpoint, has_more = _get_partitions_chunk(
-            instance,
-            logger,
-            backfill,
-            CHECKPOINT_COUNT,
-            partition_set,
-        )
+        if backfill.get_num_cancelable() > 0:
+            # Only attempt to load the partition set if we haven't already failed
+            # and haven't already loaded it successfully.
+            if partition_set is None and partition_set_load_error is None:
+                try:
+                    partition_set = _get_partition_set(workspace_process_context, backfill)
+                except DagsterBackfillFailedError as e:
+                    # The job definition is no longer present in the workspace (e.g., a
+                    # branch deploy was deleted mid-backfill). Log a warning but do NOT
+                    # cancel already-queued runs — let them proceed or fail individually.
+                    logger.warning(
+                        f"Could not load partition set for backfill {backfill.backfill_id}: {e}. "
+                        "The job may have been removed from the active code location. "
+                        "Already-queued runs will be preserved and allowed to complete or "
+                        "fail individually. No new partitions will be submitted."
+                    )
+                    partition_set_load_error = e
+
+            if partition_set_load_error is not None:
+                # Can't submit more partitions, but don't cancel what's already queued.
+                # Break out and let the unfinished_runs polling logic handle completion.
+                chunk = []
+                checkpoint = backfill.last_submitted_partition_name or ""
+                has_more = False
+            else:
+                chunk, checkpoint, has_more = _get_partitions_chunk(
+                    instance,
+                    logger,
+                    backfill,
+                    CHECKPOINT_COUNT,
+                    partition_set,
+                )
+        else:
+            # All partitions already submitted, no need to load the partition set at all.
+            chunk = []
+            checkpoint = backfill.last_submitted_partition_name or ""
+            has_more = False
+
         check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
         if chunk:
