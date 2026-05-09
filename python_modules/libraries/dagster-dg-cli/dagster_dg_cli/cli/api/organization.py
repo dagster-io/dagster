@@ -11,6 +11,13 @@ from dagster_dg_cli.cli.api.formatters import format_organization_settings, form
 from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.response_schema import dg_response_schema
 
+# Default timeout (seconds) for plain `requests.*` calls in this module.
+# `requests` defaults to *no* timeout, which causes the CLI to hang
+# indefinitely on a misconfigured organization_url or an unavailable Plus
+# instance. 30s is comfortably long enough for an idp-metadata XML upload
+# while still surfacing a hard failure to the user. See #33747.
+DG_API_REQUEST_TIMEOUT_SECONDS = 30
+
 
 @click.command(name="get", cls=DgClickCommand)
 @click.option(
@@ -134,6 +141,9 @@ def upload_saml_metadata_command(
 
     with handle_api_errors(ctx, output_json):
         with open(metadata_file_path, "rb") as f:
+            # Bound the POST so a misconfigured organization_url or an
+            # unavailable Plus instance fails fast instead of hanging forever
+            # (requests' default is no timeout). See dagster-io/dagster#33747.
             response = requests.post(
                 url=f"{config.organization_url}/upload_idp_metadata",
                 headers={
@@ -141,6 +151,7 @@ def upload_saml_metadata_command(
                     "Dagster-Cloud-Organization": organization,
                 },
                 files={"metadata.xml": f},
+                timeout=DG_API_REQUEST_TIMEOUT_SECONDS,
             )
 
         response.raise_for_status()
@@ -194,12 +205,16 @@ def remove_saml_metadata_command(
     )
 
     with handle_api_errors(ctx, output_json):
+        # Bound the POST so a misconfigured organization_url or an
+        # unavailable Plus instance fails fast instead of hanging forever
+        # (requests' default is no timeout). See dagster-io/dagster#33747.
         response = requests.post(
             url=f"{config.organization_url}/remove_idp_metadata",
             headers={
                 "Dagster-Cloud-Api-Token": api_token,
                 "Dagster-Cloud-Organization": organization,
             },
+            timeout=DG_API_REQUEST_TIMEOUT_SECONDS,
         )
 
         response.raise_for_status()
