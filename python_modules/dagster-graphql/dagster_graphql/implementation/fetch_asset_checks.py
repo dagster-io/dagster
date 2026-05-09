@@ -54,7 +54,7 @@ def check_asset_checks_support(
     | GrapheneAssetCheckNeedsAgentUpgradeError
     | None
 ):
-    asset_check_support = graphene_info.context.instance.get_asset_check_support()
+    asset_check_support = graphene_info.context.get_asset_check_support()
     if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
         return GrapheneAssetCheckNeedsMigrationError(
             message="Asset checks require an instance migration. Run `dagster instance migrate`."

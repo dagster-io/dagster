@@ -83,6 +83,7 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.permissions import (
     PermissionResult,
@@ -177,6 +178,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
     @cached_property
     def dynamic_partitions_loader(self) -> CachingDynamicPartitionsLoader:
         return CachingDynamicPartitionsLoader(self.instance)
+
+    def get_asset_check_support(self) -> AssetCheckInstanceSupport:
+        return self.instance.get_asset_check_support()
 
     @cached_property
     def stale_status_loader(self) -> CachingStaleStatusResolver:
@@ -769,6 +773,8 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         )
         self._checked_permissions: set[str] = set()
         self._loaders = {}
+        self._asset_check_support: AssetCheckInstanceSupport | None = None
+        self._asset_check_support_lock = threading.Lock()
 
     def reset_for_test(self) -> "WorkspaceRequestContext":
         return WorkspaceRequestContext(
@@ -784,6 +790,14 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def instance(self) -> DagsterInstance:
         return self._instance
+
+    def get_asset_check_support(self) -> AssetCheckInstanceSupport:
+        if self._asset_check_support is None:
+            with self._asset_check_support_lock:
+                if self._asset_check_support is None:
+                    self._asset_check_support = self.instance.get_asset_check_support()
+
+        return check.not_none(self._asset_check_support)
 
     def get_current_workspace(self) -> CurrentWorkspace:
         return self._current_workspace

@@ -1,4 +1,5 @@
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from dagster import AssetKey, DagsterEvent, DagsterEventType
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
@@ -13,6 +14,7 @@ from dagster._core.definitions.partitions.subset.default import DefaultPartition
 from dagster._core.event_api import EventLogRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -412,6 +414,48 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "assetChecksOrError": {"checks": [{"name": "unowned_asset_check"}]},
             },
         ]
+
+    def test_asset_check_support_checked_once_per_asset_nodes_query(
+        self, graphql_context: WorkspaceRequestContext, monkeypatch
+    ):
+        support_call_count = 0
+
+        def get_asset_check_support():
+            nonlocal support_call_count
+            support_call_count += 1
+            return AssetCheckInstanceSupport.SUPPORTED
+
+        monkeypatch.setattr(
+            graphql_context.instance, "get_asset_check_support", get_asset_check_support
+        )
+
+        res = execute_dagster_graphql(graphql_context, GET_ASSET_CHECK_NAMES_QUERY)
+
+        assert not res.errors
+        assert support_call_count == 1
+
+    def test_asset_check_support_request_cache_is_thread_safe(
+        self, graphql_context: WorkspaceRequestContext, monkeypatch
+    ):
+        support_call_count = 0
+
+        def get_asset_check_support():
+            nonlocal support_call_count
+            support_call_count += 1
+            time.sleep(0.05)
+            return AssetCheckInstanceSupport.SUPPORTED
+
+        monkeypatch.setattr(
+            graphql_context.instance, "get_asset_check_support", get_asset_check_support
+        )
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(
+                executor.map(lambda _: graphql_context.get_asset_check_support(), range(8))
+            )
+
+        assert results == [AssetCheckInstanceSupport.SUPPORTED] * 8
+        assert support_call_count == 1
 
     def test_asset_check_asset_node_job_selection(self, graphql_context: WorkspaceRequestContext):
         res = execute_dagster_graphql(

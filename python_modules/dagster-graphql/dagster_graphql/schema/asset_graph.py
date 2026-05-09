@@ -44,7 +44,6 @@ from dagster._core.remote_representation.external import RemoteJob, RemoteReposi
 from dagster._core.remote_representation.external_data import AssetNodeSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
-from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
@@ -69,8 +68,6 @@ from dagster_graphql.schema import external
 from dagster_graphql.schema.asset_checks import (
     AssetChecksOrErrorUnion,
     GrapheneAssetCheck,
-    GrapheneAssetCheckNeedsAgentUpgradeError,
-    GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
     GrapheneAssetCheckNotFoundError,
     GrapheneAssetCheckOrError,
@@ -1492,21 +1489,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         validation_error = check_asset_checks_support(graphene_info, self._repository_handle)
         if validation_error:
             return validation_error
-
-        asset_check_support = graphene_info.context.instance.get_asset_check_support()
-        if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
-            return GrapheneAssetCheckNeedsMigrationError(
-                message="Asset checks require an instance migration. Run `dagster instance migrate`."
-            )
-        elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
-            return GrapheneAssetCheckNeedsAgentUpgradeError(
-                "Asset checks require an agent upgrade to 1.5.0 or greater."
-            )
-        else:
-            check.invariant(
-                asset_check_support == AssetCheckInstanceSupport.SUPPORTED,
-                f"Unexpected asset check support status {asset_check_support}",
-            )
 
         library_versions = graphene_info.context.get_dagster_library_versions(
             self._repository_handle.location_name
