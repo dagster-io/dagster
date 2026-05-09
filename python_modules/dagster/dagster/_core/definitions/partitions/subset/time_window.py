@@ -53,12 +53,9 @@ def _attempt_coerce_to_time_window_subset(subset: "PartitionsSubset") -> "Partit
 
     if isinstance(subset, TimeWindowPartitionsSubset):
         return subset
-    elif isinstance(subset, TimeWindowPartitionsSubset):
-        return TimeWindowPartitionsSubset(
-            partitions_def=subset.partitions_def,
-            num_partitions=subset.num_partitions,
-            included_time_windows=subset.included_time_windows,
-        )
+    # NOTE: a second `isinstance(subset, TimeWindowPartitionsSubset)` branch
+    # used to live here, but it was unreachable — the `if` above already
+    # handles every TimeWindowPartitionsSubset. See dagster-io/dagster#33379.
     elif isinstance(subset, AllPartitionsSubset) and isinstance(
         subset.partitions_def, TimeWindowPartitionsDefinition
     ):
