@@ -22,7 +22,7 @@ ECR_LOGIN_FAILURE_EXIT_CODE = 200
 
 
 class ResourceRequests:
-    def __init__(self, cpu: str, memory: str | None, docker_cpu: str = "500m") -> None:
+    def __init__(self, cpu: str, memory: str | None, docker_cpu: str = "2000m") -> None:
         self._cpu = cpu
         self._memory = memory
         self._docker_cpu = docker_cpu
@@ -390,7 +390,7 @@ class CommandStepBuilder:
                     "command": ["dockerd-entrypoint.sh"],
                     "resources": {
                         "requests": {
-                            "cpu": self._resources.docker_cpu if self._resources else "500m"
+                            "cpu": self._resources.docker_cpu if self._resources else "2000m"
                         }
                     },
                     "env": [
