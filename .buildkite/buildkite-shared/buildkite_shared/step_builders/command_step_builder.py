@@ -304,7 +304,7 @@ class CommandStepBuilder:
         cpu = (
             self._resources.cpu
             if self._resources
-            else ("1500m" if self._requires_docker else "500m")
+            else ("1000m" if self._requires_docker else "500m")
         )
         memory = self._resources.memory if self._resources else None
         return {
