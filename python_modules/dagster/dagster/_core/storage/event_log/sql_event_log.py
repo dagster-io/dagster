@@ -101,6 +101,7 @@ from dagster._core.types.pagination import PaginatedResults, StorageIdCursor
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
+from dagster._utils.cached_method import cached_if_true_no_arg_method
 from dagster._utils.concurrency import (
     ClaimedSlotInfo,
     ConcurrencyClaimStatus,
@@ -183,8 +184,14 @@ class SqlEventLogStorage(EventLogStorage):
         """
 
     @abstractmethod
+    # @dagster._core.storage.cached_has_table_method.cached_has_table_method
     def has_table(self, table_name: str) -> bool:
-        """This method checks if a table exists in the database."""
+        """This method checks if a table exists in the database.
+
+        Concrete subclasses should apply ``@cached_has_table_method`` to this method so that
+        ``True`` results are cached for the lifetime of the instance, avoiding frequent and useless
+        schema-introspection ``db.inspect(conn).get_table_names()`` queries on hot paths.
+        """
 
     def prepare_insert_event(self, event: EventLogEntry) -> Any:
         """Helper method for preparing the event log SQL insertion statement.  Abstracted away to
@@ -232,6 +239,7 @@ class SqlEventLogStorage(EventLogStorage):
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
             return column_name in column_names
 
+    @cached_if_true_no_arg_method
     def has_asset_key_index_cols(self) -> bool:
         return self.has_asset_key_col("last_materialization_timestamp")
 
@@ -1226,9 +1234,11 @@ class SqlEventLogStorage(EventLogStorage):
                 )
         return results
 
+    @cached_if_true_no_arg_method
     def can_read_asset_status_cache(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 
+    @cached_if_true_no_arg_method
     def can_write_asset_status_cache(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 

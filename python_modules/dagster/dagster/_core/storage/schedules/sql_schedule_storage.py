@@ -48,6 +48,7 @@ from dagster._core.storage.sqlalchemy_compat import (
 from dagster._serdes import serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster._utils import PrintFn
+from dagster._utils.cached_method import cached_if_true_no_arg_method
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
@@ -165,6 +166,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def add_instigator_state(self, state: InstigatorState) -> InstigatorState:
         check.inst_param(state, "state", InstigatorState)
+        has_instigators_table = self.has_instigators_table()
         with self.connect() as conn:
             try:
                 conn.execute(
@@ -182,7 +184,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 ) from exc
 
             # try writing to the instigators table
-            if self._has_instigators_table(conn):
+            if has_instigators_table:
                 self._add_or_update_instigators_table(conn, state)
 
         return state
@@ -199,7 +201,8 @@ class SqlScheduleStorage(ScheduleStorage):
             "job_body": serialize_value(state),
             "update_timestamp": get_current_datetime(),
         }
-        if self.has_instigators_table():
+        has_instigators_table = self.has_instigators_table()
+        if has_instigators_table:
             values["selector_id"] = state.selector_id
 
         with self.connect() as conn:
@@ -208,7 +211,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 .where(JobTable.c.job_origin_id == state.instigator_origin_id)
                 .values(**values)
             )
-            if self._has_instigators_table(conn):
+            if has_instigators_table:
                 self._add_or_update_instigators_table(conn, state)
 
         return state
@@ -222,10 +225,11 @@ class SqlScheduleStorage(ScheduleStorage):
                 f"InstigatorState {origin_id} is not present in storage"
             )
 
+        has_instigators_table = self.has_instigators_table()
         with self.connect() as conn:
             conn.execute(JobTable.delete().where(JobTable.c.job_origin_id == origin_id))
 
-            if self._has_instigators_table(conn):
+            if has_instigators_table:
                 if not self._jobs_has_selector_state(conn, selector_id):
                     conn.execute(
                         InstigatorsTable.delete().where(
@@ -268,20 +272,21 @@ class SqlScheduleStorage(ScheduleStorage):
         return query
 
     @property
+    @cached_if_true_no_arg_method
     def supports_batch_queries(self) -> bool:
         return self.has_instigators_table() and self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID)
 
+    @cached_if_true_no_arg_method
     def has_instigators_table(self) -> bool:
         with self.connect() as conn:
-            return self._has_instigators_table(conn)
+            table_names = db.inspect(conn).get_table_names()
+            return "instigators" in table_names
 
-    def _has_instigators_table(self, conn: Connection) -> bool:
-        table_names = db.inspect(conn).get_table_names()
-        return "instigators" in table_names
-
-    def _has_asset_daemon_asset_evaluations_table(self, conn: Connection) -> bool:
-        table_names = db.inspect(conn).get_table_names()
-        return "asset_daemon_asset_evaluations" in table_names
+    @cached_if_true_no_arg_method
+    def _has_asset_daemon_asset_evaluations_table(self) -> bool:
+        with self.connect() as conn:
+            table_names = db.inspect(conn).get_table_names()
+            return "asset_daemon_asset_evaluations" in table_names
 
     def get_batch_ticks(
         self,
@@ -472,8 +477,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     @property
     def supports_auto_materialize_asset_evaluations(self) -> bool:
-        with self.connect() as conn:
-            return self._has_asset_daemon_asset_evaluations_table(conn)
+        return self._has_asset_daemon_asset_evaluations_table()
 
     def add_auto_materialize_asset_evaluations(
         self,
@@ -567,17 +571,20 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def wipe(self) -> None:
         """Clears the schedule storage."""
+        has_instigators_table = self.has_instigators_table()
+        has_asset_daemon_asset_evaluations_table = self._has_asset_daemon_asset_evaluations_table()
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(JobTable.delete())
             conn.execute(JobTickTable.delete())
-            if self._has_instigators_table(conn):
+            if has_instigators_table:
                 conn.execute(InstigatorsTable.delete())
-            if self._has_asset_daemon_asset_evaluations_table(conn):
+            if has_asset_daemon_asset_evaluations_table:
                 conn.execute(AssetDaemonAssetEvaluationsTable.delete())
 
     # MIGRATIONS
 
+    @cached_if_true_no_arg_method
     def has_secondary_index_table(self) -> bool:
         with self.connect() as conn:
             return "secondary_indexes" in db.inspect(conn).get_table_names()
