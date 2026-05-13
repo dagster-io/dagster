@@ -488,6 +488,20 @@ class DbtProjectComponentTranslator(
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
     ) -> dg.AssetSpec:
+        # Memoize the final (post-remap, post-translation) spec per (manifest, unique_id,
+        # project). Without this, `_remap_deps_for_overridden_keys` recursively calls
+        # `self.get_asset_spec(upstream_id)` and re-walks the upstream sub-DAG on every
+        # invocation, producing super-linear work on wide DAGs with shared ancestors.
+        # `DagsterDbtTranslator.get_asset_spec` (the `super` call below) is already
+        # memoized on its own `_resolved_specs`; this dict caches the layer added by
+        # this shim (override-remap + YAML translation) so the cost stays O(E).
+        if not hasattr(self, "_remapped_specs"):
+            self._remapped_specs = {}
+        memo_id = (id(manifest), unique_id, id(project))
+        cached = self._remapped_specs.get(memo_id)
+        if cached is not None:
+            return cached
+
         base_spec = super().get_asset_spec(manifest, unique_id, project)
         # Only rewrite deps when a subclass actually overrode get_asset_spec; without
         # an override, base_spec.deps already match the shim translator's keys (the
@@ -510,7 +524,9 @@ class DbtProjectComponentTranslator(
         else:
             dbt_props = get_node(manifest, unique_id)
             spec = self.component.translation(base_spec, dbt_props)
-        return spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
+        result = spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
+        self._remapped_specs[memo_id] = result
+        return result
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
