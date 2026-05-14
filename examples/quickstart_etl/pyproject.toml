@@ -4,36 +4,49 @@ requires-python = ">=3.10,<3.15"
 version = "0.1.0"
 dependencies = [
     "dagster",
-    "dagster-cloud",
     "boto3",
     "pandas",
     "matplotlib",
 ]
 
+# Two test groups so both factors can be locked from one pyproject:
+#   - test-source: dagster libs come from local checkouts (via [tool.uv.sources]
+#     entries gated on `group = "test-source"`).
+#   - test-pypi: same deps, but dagster libs come from PyPI. Includes
+#     dagster-cloud to exercise the released-cloud-agent install path,
+#     which the source factor can't cover (dagster-cloud's `dagster==X.Y.Z`
+#     pin doesn't reconcile with local dagster==1!0+dev).
+# [tool.uv].conflicts declares the groups mutually exclusive so uv
+# generates a separate fork of the lock per group.
 [dependency-groups]
-dev = [
-    "dagster-dg-cli>=1.11.11",
-    "dagster-webserver",
-    "pytest",
-]
-test = [
+test-source = [
     "dagster[test]",
     "dagster-pipes",
     "dagster-shared",
+    "dagster-dg-cli",
+    "dagster-webserver",
+]
+test-pypi = [
+    "dagster-cloud",
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-dg-cli",
+    "dagster-webserver",
+    "pytest",
 ]
 
 [tool.uv]
-# dagster-cloud (from PyPI) pins an exact released dagster version; without
-# this override uv can't reconcile that pin with the local
-# dagster==1!0+dev source.
-override-dependencies = ["dagster==1!0+dev"]
+conflicts = [
+    [{group = "test-source"}, {group = "test-pypi"}],
+]
 
 [tool.uv.sources]
-dagster = { path = "../../python_modules/dagster", editable = true }
-dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
-dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
-dagster-dg-cli = { path = "../../python_modules/libraries/dagster-dg-cli", editable = true }
-dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster = { path = "../../python_modules/dagster", editable = true, group = "test-source" }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true, group = "test-source" }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true, group = "test-source" }
+dagster-dg-cli = { path = "../../python_modules/libraries/dagster-dg-cli", editable = true, group = "test-source" }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true, group = "test-source" }
 
 [build-system]
 requires = ["hatchling"]

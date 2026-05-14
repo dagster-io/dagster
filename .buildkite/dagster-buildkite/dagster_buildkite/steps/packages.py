@@ -628,17 +628,16 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_10,
             ],
         ),
-        # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
         PackageSpec(
             oss_path("examples/assets_modern_data_stack"),
-            pytest_tox_factors=[ToxFactor("pypi")],
+            pytest_tox_factors=[ToxFactor("source"), ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
             ],
         ),
         PackageSpec(
             oss_path("examples/assets_dbt_python"),
-            pytest_tox_factors=[ToxFactor("pypi")],
+            pytest_tox_factors=[ToxFactor("source"), ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,  # duckdb
                 AvailablePythonVersion.V3_13,  # duckdb
@@ -655,7 +654,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("examples/quickstart_etl"),
-            pytest_tox_factors=[ToxFactor("pypi")],
+            pytest_tox_factors=[ToxFactor("source"), ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # PyO3 max supported version is 3.13
             ],

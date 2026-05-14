@@ -7,7 +7,6 @@ name = "assets_dbt_python"
 version = "1!0+dev"
 dependencies = [
     "dagster",
-    "dagster-cloud",
     "boto3",
     "dagster-dbt",
     "pandas",
@@ -17,19 +16,23 @@ dependencies = [
     "dbt-duckdb",
     "dagster-duckdb",
     "dagster-duckdb-pandas",
-    # packaging v22 has build compatibility issues with dbt as of 2022-12-07
-    "packaging<22.0",
 ]
-
-[project.optional-dependencies]
-dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "assets_dbt_python.definitions"
 code_location_name = "assets_dbt_python"
 
+# Two test groups so both factors can be locked from one pyproject:
+#   - test-source: dagster libs come from local checkouts (via [tool.uv.sources]
+#     entries gated on `group = "test-source"`).
+#   - test-pypi: same deps, but dagster libs come from PyPI. Includes
+#     dagster-cloud to exercise the released-cloud-agent install path,
+#     which the source factor can't cover (dagster-cloud's `dagster==X.Y.Z`
+#     pin doesn't reconcile with local dagster==1!0+dev).
+# [tool.uv].conflicts declares the groups mutually exclusive so uv
+# generates a separate fork of the lock per group.
 [dependency-groups]
-test = [
+test-source = [
     "dagster[test]",
     "dagster-pipes",
     "dagster-shared",
@@ -39,18 +42,30 @@ test = [
     "dagster-duckdb",
     "dagster-duckdb-pandas",
 ]
+test-pypi = [
+    "dagster-cloud",
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-pandas",
+    "dagster-dbt",
+    "dagster-duckdb",
+    "dagster-duckdb-pandas",
+    "pytest",
+]
 
 [tool.uv]
-# dagster-cloud (from PyPI) pins an exact released dagster version; without
-# this override uv can't reconcile that pin with local dagster==1!0+dev.
-override-dependencies = ["dagster==1!0+dev"]
+conflicts = [
+    [{group = "test-source"}, {group = "test-pypi"}],
+]
 
 [tool.uv.sources]
-dagster = { path = "../../python_modules/dagster", editable = true }
-dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
-dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
-dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
-dagster-pandas = { path = "../../python_modules/libraries/dagster-pandas", editable = true }
-dagster-dbt = { path = "../../python_modules/libraries/dagster-dbt", editable = true }
-dagster-duckdb = { path = "../../python_modules/libraries/dagster-duckdb", editable = true }
-dagster-duckdb-pandas = { path = "../../python_modules/libraries/dagster-duckdb-pandas", editable = true }
+dagster = { path = "../../python_modules/dagster", editable = true, group = "test-source" }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true, group = "test-source" }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true, group = "test-source" }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true, group = "test-source" }
+dagster-pandas = { path = "../../python_modules/libraries/dagster-pandas", editable = true, group = "test-source" }
+dagster-dbt = { path = "../../python_modules/libraries/dagster-dbt", editable = true, group = "test-source" }
+dagster-duckdb = { path = "../../python_modules/libraries/dagster-duckdb", editable = true, group = "test-source" }
+dagster-duckdb-pandas = { path = "../../python_modules/libraries/dagster-duckdb-pandas", editable = true, group = "test-source" }
