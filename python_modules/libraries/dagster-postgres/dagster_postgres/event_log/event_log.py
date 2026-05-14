@@ -62,6 +62,17 @@ if TYPE_CHECKING:
 
 CHANNEL_NAME = "run_events"
 
+# AssetCheckExecutionsTable bulk INSERT row cap. Each row binds 8 parameters
+# (asset_key, check_name, partition, run_id, execution_status, evaluation_event,
+# evaluation_event_timestamp, evaluation_event_storage_id), and PostgreSQL caps
+# bind parameters per statement at 65_535. floor(65_535 / 8) = 8_191; we cap at
+# 8_000 to leave headroom. The planned-event chunking in
+# `RunDomain._log_asset_planned_events` bounds by *event* count
+# (DAGSTER_PLANNED_EVENT_CHUNK_SIZE = 1024 by default), but each event can fan
+# out to many rows when `partitions_subset` is non-empty, so the storage layer
+# bounds again by row count.
+_CHECK_EXECUTION_ROWS_PER_INSERT = 8_000
+
 
 class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """Postgres-backed event log storage.
@@ -398,8 +409,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         conn: Connection,
         check_planned: Sequence[tuple[EventLogEntry, int]],
     ) -> None:
-        """Insert all AssetCheckExecutionsTable rows for ASSET_CHECK_EVALUATION_PLANNED events
-        in one statement, flattening across each event's partitions_subset.
+        """Insert AssetCheckExecutionsTable rows for ASSET_CHECK_EVALUATION_PLANNED events,
+        flattening across each event's partitions_subset.
+
+        Bounded on *row count* (not event count) because each event fans out to one row
+        per partition in its subset. At 8 columns per row Postgres allows
+        floor(65_535 / 8) = 8_191 rows in a single statement; we cap at
+        `_CHECK_EXECUTION_ROWS_PER_INSERT` and emit multiple INSERTs on the same
+        connection inside the enclosing `conn.begin()` transaction so they remain
+        all-or-nothing.
         """
         check.invariant(
             self.supports_asset_checks,
@@ -436,7 +454,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not rows:
             return
 
-        conn.execute(AssetCheckExecutionsTable.insert().values(rows))
+        for start in range(0, len(rows), _CHECK_EXECUTION_ROWS_PER_INSERT):
+            chunk = rows[start : start + _CHECK_EXECUTION_ROWS_PER_INSERT]
+            conn.execute(AssetCheckExecutionsTable.insert().values(chunk))
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)

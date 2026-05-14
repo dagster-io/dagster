@@ -102,6 +102,54 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             assert len(records) == 1
             assert records[0].asset_entry.last_run_id == second_run_id
 
+    def test_store_planned_events_batch_chunks_check_execution_rows(self, conn_string, monkeypatch):
+        """Postgres-specific: the asset_check_executions bulk INSERT fans out to one row
+        per (event x partition), so the row count can exceed PG's 65_535 bind-parameter
+        ceiling even when the *event* count is under DAGSTER_PLANNED_EVENT_CHUNK_SIZE.
+        Verify the storage layer chunks by row count and still produces the full set.
+        """
+        import dagster as dg
+        import dagster_postgres.event_log.event_log as pg_event_log
+        from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+            AssetCheckEvaluationPlanned,
+        )
+        from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+        from dagster._core.events import DagsterEvent, DagsterEventType
+        from dagster._core.events.log import EventLogEntry
+
+        # Squeeze the row cap so we don't have to allocate 8k partitions in a test.
+        monkeypatch.setattr(pg_event_log, "_CHECK_EXECUTION_ROWS_PER_INSERT", 3)
+
+        partition_keys = ["p1", "p2", "p3", "p4", "p5", "p6", "p7"]
+        partitions_def = StaticPartitionsDefinition(partition_keys)
+        partitions_subset = partitions_def.subset_with_partition_keys(partition_keys)
+
+        with _clean_storage(conn_string) as storage:
+            run_id = make_new_run_id()
+            check_key = dg.AssetCheckKey(dg.AssetKey(["pg_chunk_check"]), "c")
+            event = EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluationPlanned(
+                        asset_key=check_key.asset_key,
+                        check_name=check_key.name,
+                        partitions_subset=partitions_subset,
+                    ),
+                ),
+            )
+
+            storage.store_event_batch([event])
+
+            history = storage.get_asset_check_execution_history(check_key, limit=20)
+            assert len(history) == 7
+            assert {r.partition for r in history} == set(partition_keys)
+
     def test_store_planned_events_batch_rolls_back_on_partial_failure(self, conn_string):
         """Postgres-specific: if the asset-check-execution insert fails mid-batch, the
         wrapping transaction must roll back so that no event-log rows are committed.
