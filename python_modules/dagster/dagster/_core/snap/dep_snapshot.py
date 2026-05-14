@@ -200,9 +200,6 @@ class InputDependencySnap(
 @whitelist_for_serdes(
     storage_name="SolidInvocationSnap",
     storage_field_names={"node_name": "solid_name", "node_def_name": "solid_def_name"},
-    # `tags` was removed — emit `{}` so older readers (which require the field) can still
-    # deserialize new payloads.
-    old_fields={"tags": {}},
 )
 class NodeInvocationSnap(
     NamedTuple(
@@ -212,6 +209,10 @@ class NodeInvocationSnap(
             ("node_def_name", str),
             ("input_dep_snaps", Sequence[InputDependencySnap]),
             ("is_dynamic_mapped", bool),
+            # Kept for round-trip stability of the serialized form. Producers built from
+            # in-memory job defs leave this empty; only payloads from older Dagster versions
+            # populate it.
+            ("tags", Mapping[str, str]),
         ],
     )
 ):
@@ -221,6 +222,7 @@ class NodeInvocationSnap(
         node_def_name: str,
         input_dep_snaps: Sequence[InputDependencySnap],
         is_dynamic_mapped: bool = False,
+        tags: Mapping[str, str] | None = None,
     ):
         return super().__new__(
             cls,
@@ -230,6 +232,7 @@ class NodeInvocationSnap(
                 input_dep_snaps, "input_dep_snaps", of_type=InputDependencySnap
             ),
             is_dynamic_mapped=check.bool_param(is_dynamic_mapped, "is_dynamic_mapped"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
     @cached_property

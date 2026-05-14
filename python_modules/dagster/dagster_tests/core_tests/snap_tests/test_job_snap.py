@@ -15,6 +15,7 @@ from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
+from dagster._record import replace
 from dagster._serdes import serialize_pp, serialize_value
 from dagster_shared.serdes import deserialize_value
 
@@ -89,23 +90,47 @@ def test_noop_deps_snap():
 
 
 def test_node_invocation_snap_tags_field_backcompat():
-    # NodeInvocationSnap used to carry a `tags` field (storage name SolidInvocationSnap.tags).
-    # The field was removed; legacy serialized payloads with a populated tags dict must still
-    # deserialize (extra field is silently ignored).
+    # Producers commit to a JobSnap's identity by stamping `sha1(serialize(job_snap))`
+    # onto the ExecutionPlanSnapshot they emit. Consumers (e.g. dagster-cloud host)
+    # then deserialize the JobSnap and recompute that hash in-process — see
+    # `ensure_persisted_execution_plan_snapshot`. The recomputed hash matches iff
+    # `serialize(deserialize(payload)) == payload` byte-for-byte. NodeInvocationSnap.tags
+    # must round-trip with whatever value the producer wrote, since older Dagster versions
+    # populated it from node.tags.
     legacy_payload = (
         '{"__class__": "SolidInvocationSnap", "input_dep_snaps": [], '
         '"is_dynamic_mapped": false, "solid_def_name": "noop_op", '
         '"solid_name": "noop_op", "tags": {"dagster/compute_kind": "python"}}'
     )
     invocation = deserialize_value(legacy_payload, NodeInvocationSnap)
-    assert invocation.node_name == "noop_op"
-    assert invocation.node_def_name == "noop_op"
-    assert not hasattr(invocation, "tags")
+    assert serialize_value(invocation) == legacy_payload
 
-    # Forward-compat: newly serialized payloads must still include `tags: {}` so older
-    # readers (whose NodeInvocationSnap.__new__ required `tags` positionally) can deserialize.
-    new_payload = serialize_value(invocation)
-    assert '"tags": {}' in new_payload
+
+def test_job_snap_legacy_payload_roundtrip_and_id_stability():
+    # The JobSnap-level analog of test_node_invocation_snap_tags_field_backcompat. Pins
+    # the snapshot_id of a JobSnap that mimics what an older Dagster's producer would
+    # emit (NodeInvocationSnap.tags populated from node.tags), and asserts the wire
+    # form round-trips byte-identically.
+    #
+    # Update the pinned snapshot_id only when JobSnap's wire format is intentionally
+    # changed — and recognize that doing so will invalidate the snapshot_id of any
+    # already-persisted JobSnaps, which can break runs launched by older code servers
+    # (cf. ensure_persisted_execution_plan_snapshot).
+    fresh = JobSnap.from_job_def(get_noop_pipeline())
+    legacy = replace(
+        fresh,
+        dep_structure_snapshot=DependencyStructureSnapshot(
+            node_invocation_snaps=[
+                inv._replace(tags={"dagster/compute_kind": "python"})
+                for inv in fresh.dep_structure_snapshot.node_invocation_snaps
+            ],
+        ),
+    )
+    legacy_payload = serialize_value(legacy)
+
+    deserialized = deserialize_value(legacy_payload, JobSnap)
+    assert serialize_value(deserialized) == legacy_payload
+    assert deserialized.snapshot_id == "9c4a518cd96ce6f7230751ed3f47269e1d52b2bd"
 
 
 def test_two_invocations_deps_snap(snapshot):
