@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ContextManager, cast  # noqa: UP035
@@ -11,6 +12,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, BATCH_WRITABLE_EVENTS
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
@@ -22,6 +24,7 @@ from dagster._core.storage.event_log import (
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
+from dagster._core.storage.event_log.schema import AssetCheckExecutionsTable
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -30,7 +33,12 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlalchemy_compat import db_result, db_select
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
+from dagster._serdes import (
+    ConfigurableClass,
+    ConfigurableClassData,
+    deserialize_value,
+    serialize_value,
+)
 from sqlalchemy import event
 from sqlalchemy.engine import Connection
 
@@ -46,6 +54,10 @@ from dagster_postgres.utils import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+        AssetCheckEvaluationPlanned,
+    )
+
     from dagster_postgres.auth import PgTokenProvider
 
 CHANNEL_NAME = "run_events"
@@ -239,6 +251,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         ]
         if len(events) == 0:
             return
+        # recompute after filtering (ASSET_FAILED_TO_MATERIALIZE may have been the only type)
+        event_types = {event.get_dagster_event().event_type for event in events}
 
         if event_types == {DagsterEventType.ASSET_MATERIALIZATION} or event_types == {
             DagsterEventType.ASSET_OBSERVATION
@@ -259,8 +273,170 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
             self.store_asset_event_tags(events, event_ids)
-        else:
-            return super().store_event_batch(events)
+            return
+
+        planned_event_types = {
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+        }
+        if event_types.issubset(planned_event_types):
+            self._store_planned_events_batch(events)
+            return
+
+        return super().store_event_batch(events)
+
+    def _store_planned_events_batch(self, events: Sequence[EventLogEntry]) -> None:
+        """Bulk-write ASSET_MATERIALIZATION_PLANNED and ASSET_CHECK_EVALUATION_PLANNED events.
+
+        Replaces O(N) per-event inserts (one event-log row, one asset-key upsert, and one
+        asset-check-execution row per event) with at most three statements: one bulk INSERT
+        into the event log, one bulk upsert into the asset_keys table, and one bulk INSERT
+        into the asset_check_executions table.
+
+        Scope: this fast path is Postgres-only. `SqliteEventLogStorage`, the in-memory
+        storage, and `dagster-mysql` (`MySQLEventLogStorage`) still inherit the base
+        `EventLogStorage.store_event_batch` per-event loop. They get correct results but
+        not the speedup. Generalizing to those backends requires per-dialect upsert syntax
+        (`INSERT OR REPLACE` / `INSERT ... ON DUPLICATE KEY UPDATE`) and is intentionally
+        deferred -- see the PR description for the follow-up.
+
+        All three statements run on a single connection inside a single explicit transaction.
+        On Postgres the engine runs in AUTOCOMMIT isolation level, so a partial failure
+        without an enclosing transaction would leave the event_log rows committed while the
+        side-table rows were not. Storage callers (`DagsterInstance._store_and_notify`) then
+        fall back to per-event `store_event`, which would duplicate event_log rows and
+        `asset_check_executions` rows. Wrapping in `conn.begin()` makes the bulk path
+        all-or-nothing so that fallback is correct.
+        """
+        from dagster import DagsterEventType
+
+        insert_event_statement = self.prepare_insert_event_batch(events)
+        # Use `index_connection()` so this path honors any subclass override that points
+        # the side-table writes (asset_keys, asset_check_executions) at a separate
+        # connection/database. For PostgresEventLogStorage in OSS this aliases to
+        # `_connect()`, but the abstraction exists for sharded-index setups and the
+        # existing materialization fast path's side-table writes (via store_asset_event)
+        # go through `index_connection()`. Keeping the convention here means the bulk
+        # path doesn't silently bypass the abstraction.
+        with self.index_connection() as conn:
+            with conn.begin():
+                result = conn.execute(
+                    insert_event_statement.returning(SqlEventLogStorageTable.c.id)
+                )
+                event_ids = [cast("int", row[0]) for row in result.fetchall()]
+
+                if any(event_id is None for event_id in event_ids):
+                    raise DagsterInvariantViolationError(
+                        "Cannot store planned events with null event id."
+                    )
+
+                # Pair each event_id (returned in input order) back with its source event.
+                mat_planned: list[tuple[EventLogEntry, int]] = []
+                check_planned: list[tuple[EventLogEntry, int]] = []
+                for log_entry, event_id in zip(events, event_ids):
+                    dagster_event = log_entry.get_dagster_event()
+                    if dagster_event.is_asset_materialization_planned:
+                        mat_planned.append((log_entry, event_id))
+                    elif (
+                        dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+                    ):
+                        check_planned.append((log_entry, event_id))
+
+                if mat_planned:
+                    self._bulk_upsert_asset_keys_for_planned(conn, mat_planned)
+                if check_planned:
+                    self._bulk_insert_check_planned_evaluations(conn, check_planned)
+
+    def _bulk_upsert_asset_keys_for_planned(
+        self,
+        conn: Connection,
+        mat_planned: Sequence[tuple[EventLogEntry, int]],
+    ) -> None:
+        """Upsert AssetKeyTable rows for ASSET_MATERIALIZATION_PLANNED events in one statement.
+
+        Contract: the *last* event per asset key in input order wins, matching the per-event
+        behavior of `store_asset_event` (which writes each row sequentially so each successive
+        write overwrites the previous). Callers that resort the batch may inadvertently flip
+        which event is materialized into AssetKeyTable -- the caller in
+        `RunDomain._log_asset_planned_events` sorts by `asset_key.to_db_string()`, which is
+        deterministic but independent of this contract.
+
+        Dedup is keyed by `asset_key.to_string()` because that is the value stored in the
+        `asset_key` column. `to_db_string()` (used by the upstream sort) is a separate
+        normalization and is not interchangeable.
+        """
+        has_index_cols = self.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+        latest_by_key: OrderedDict[str, tuple[EventLogEntry, int]] = OrderedDict()
+        for log_entry, event_id in mat_planned:
+            asset_key = check.not_none(log_entry.get_dagster_event().asset_key)
+            latest_by_key[asset_key.to_string()] = (log_entry, event_id)
+
+        rows: list[dict[str, Any]] = []
+        for asset_key_str, (log_entry, event_id) in latest_by_key.items():
+            values = self._get_asset_entry_values(log_entry, event_id, has_index_cols)
+            if not values:
+                continue
+            rows.append({"asset_key": asset_key_str, **values})
+
+        if not rows:
+            return
+
+        # All rows have the same keys (values shape only depends on event type +
+        # has_index_cols), so any row's keys are representative.
+        update_cols = [key for key in rows[0].keys() if key != "asset_key"]
+
+        stmt = db_dialects.postgresql.insert(AssetKeyTable).values(rows)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[AssetKeyTable.c.asset_key],
+            set_={col: stmt.excluded[col] for col in update_cols},
+        )
+        conn.execute(stmt)
+
+    def _bulk_insert_check_planned_evaluations(
+        self,
+        conn: Connection,
+        check_planned: Sequence[tuple[EventLogEntry, int]],
+    ) -> None:
+        """Insert all AssetCheckExecutionsTable rows for ASSET_CHECK_EVALUATION_PLANNED events
+        in one statement, flattening across each event's partitions_subset.
+        """
+        check.invariant(
+            self.supports_asset_checks,
+            "Asset checks require a database schema migration. Run `dagster instance migrate`.",
+        )
+
+        rows: list[dict[str, Any]] = []
+        for log_entry, event_id in check_planned:
+            planned = cast(
+                "AssetCheckEvaluationPlanned",
+                check.not_none(log_entry.dagster_event).event_specific_data,
+            )
+            partition_keys: Sequence[str | None]
+            if planned.partitions_subset:
+                partition_keys = list(planned.partitions_subset.get_partition_keys())
+            else:
+                partition_keys = [None]
+            event_timestamp = self._event_insert_timestamp(log_entry)
+            serialized_event = serialize_value(log_entry)
+            for partition_key in partition_keys:
+                rows.append(
+                    dict(
+                        asset_key=planned.asset_key.to_string(),
+                        check_name=planned.check_name,
+                        partition=partition_key,
+                        run_id=log_entry.run_id,
+                        execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                        evaluation_event=serialized_event,
+                        evaluation_event_timestamp=event_timestamp,
+                        evaluation_event_storage_id=event_id,
+                    )
+                )
+
+        if not rows:
+            return
+
+        conn.execute(AssetCheckExecutionsTable.insert().values(rows))
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
