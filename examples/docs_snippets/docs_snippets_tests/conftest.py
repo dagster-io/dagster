@@ -3,6 +3,7 @@ import os
 import boto3
 import pytest
 from dagster_dg_core.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR
+from dagster_test.dg_utils.utils import scrub_tox_uv_project_environment
 from moto import mock_aws
 
 from dagster import file_relative_path
@@ -34,6 +35,7 @@ def pytest_configure():
     # Disable the dg update check for all tests because we don't want to bomb the PyPI API.
     # Tests that specifically want to test the update check should set this env var to "1".
     os.environ[DG_UPDATE_CHECK_ENABLED_ENV_VAR] = "0"
+    scrub_tox_uv_project_environment()
 
 
 def pytest_addoption(parser: pytest.Parser):
