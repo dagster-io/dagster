@@ -110,6 +110,8 @@ dependencies = [
     { name = "boto3" },
     { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-cloud", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../../dagster-cloud/python_modules/dagster-cloud" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster-dbt", version = "0.29.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster-dbt", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-dbt" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster-duckdb", version = "0.29.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
@@ -128,7 +130,7 @@ dependencies = [
 [package.dev-dependencies]
 test-pypi = [
     { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, extra = ["test"], marker = "extra == 'group-17-assets-dbt-python-test-pypi'" },
-    { name = "dagster-cloud" },
+    { name = "dagster-cloud", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
     { name = "dagster-dbt", version = "0.29.4", source = { registry = "https://pypi.org/simple" } },
     { name = "dagster-duckdb", version = "0.29.4", source = { registry = "https://pypi.org/simple" } },
     { name = "dagster-duckdb-pandas", version = "0.29.4", source = { registry = "https://pypi.org/simple" } },
@@ -140,6 +142,7 @@ test-pypi = [
 ]
 test-source = [
     { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, extra = ["test"], marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../../dagster-cloud/python_modules/dagster-cloud" } },
     { name = "dagster-dbt", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-dbt" } },
     { name = "dagster-duckdb", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-duckdb" } },
     { name = "dagster-duckdb-pandas", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-duckdb-pandas" } },
@@ -153,6 +156,7 @@ test-source = [
 requires-dist = [
     { name = "boto3" },
     { name = "dagster" },
+    { name = "dagster-cloud" },
     { name = "dagster-dbt" },
     { name = "dagster-duckdb" },
     { name = "dagster-duckdb-pandas" },
@@ -178,6 +182,7 @@ test-pypi = [
 ]
 test-source = [
     { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
+    { name = "dagster-cloud", editable = "../../../dagster-cloud/python_modules/dagster-cloud" },
     { name = "dagster-dbt", editable = "../../python_modules/libraries/dagster-dbt" },
     { name = "dagster-duckdb", editable = "../../python_modules/libraries/dagster-duckdb" },
     { name = "dagster-duckdb-pandas", editable = "../../python_modules/libraries/dagster-duckdb-pandas" },
@@ -303,7 +308,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -641,8 +646,8 @@ name = "cryptography"
 version = "48.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9f/a9/db8f313fdcd85d767d4973515e1db101f9c71f95fced83233de224673757/cryptography-48.0.0.tar.gz", hash = "sha256:5c3932f4436d1cccb036cb0eaef46e6e2db91035166f1ad6505c3c9d5a635920", size = 832984, upload-time = "2026-05-04T22:59:38.133Z" }
 wheels = [
@@ -716,35 +721,35 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "alembic" },
-    { name = "antlr4-python3-runtime" },
-    { name = "click" },
-    { name = "coloredlogs" },
-    { name = "dagster-pipes", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "docstring-parser" },
-    { name = "filelock" },
-    { name = "grpcio" },
-    { name = "grpcio-health-checking" },
-    { name = "jinja2" },
-    { name = "protobuf" },
+    { name = "alembic", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "antlr4-python3-runtime", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "click", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "coloredlogs", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-pipes", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "docstring-parser", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "filelock", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "grpcio", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "grpcio-health-checking", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "jinja2", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "protobuf", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "psutil", marker = "(sys_platform == 'win32' and extra == 'group-17-assets-dbt-python-test-pypi') or (sys_platform == 'win32' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
-    { name = "python-dotenv" },
-    { name = "pytz" },
+    { name = "python-dotenv", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pytz", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "pywin32", marker = "(sys_platform == 'win32' and extra == 'group-17-assets-dbt-python-test-pypi') or (sys_platform == 'win32' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
-    { name = "requests" },
-    { name = "rich" },
-    { name = "six" },
-    { name = "sqlalchemy" },
-    { name = "structlog" },
-    { name = "tabulate" },
-    { name = "tomli" },
-    { name = "toposort" },
-    { name = "tqdm" },
-    { name = "tzdata" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "rich", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "six", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "sqlalchemy", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "structlog", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tabulate", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tomli", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "toposort", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tqdm", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tzdata", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "universal-pathlib", version = "0.2.6", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi'" },
     { name = "universal-pathlib", version = "0.3.10", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source') or (extra != 'group-17-assets-dbt-python-test-pypi' and extra != 'group-17-assets-dbt-python-test-source')" },
-    { name = "watchdog" },
+    { name = "watchdog", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/99/2e/670cc41b9d669945d047a55b3c92cb267a31b802916e7492adac1ea19867/dagster-1.13.4.tar.gz", hash = "sha256:7214234c4cf257a276e01b662e770bc69ab5baeff2755487b2f494d9f1c0b532", size = 3182670, upload-time = "2026-05-07T19:39:48.083Z" }
 wheels = [
@@ -971,14 +976,20 @@ test-sqlalchemy-1-4 = [{ name = "sqlalchemy", specifier = "<2" }]
 name = "dagster-cloud"
 version = "1.13.4"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.13'",
+    "python_full_version == '3.12.*'",
+    "python_full_version == '3.11.*'",
+    "python_full_version < '3.11'",
+]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-cloud-cli" },
-    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "pex" },
-    { name = "questionary" },
-    { name = "requests" },
-    { name = "typer" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-cloud-cli", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pex", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "questionary", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8a/93/1a621185b276626f410c7d8d29b33e33cfde387c193f2085b067ff7e18b8/dagster_cloud-1.13.4.tar.gz", hash = "sha256:31f414b630b5cae9ca67b344a0999c3482bd9f03bba649a7bc027b419d687a95", size = 410716, upload-time = "2026-05-07T19:55:36.512Z" }
 wheels = [
@@ -986,26 +997,149 @@ wheels = [
 ]
 
 [[package]]
+name = "dagster-cloud"
+version = "1!0+dev"
+source = { editable = "../../../dagster-cloud/python_modules/dagster-cloud" }
+resolution-markers = [
+    "python_full_version >= '3.13'",
+    "python_full_version == '3.12.*'",
+    "python_full_version == '3.11.*'",
+    "python_full_version < '3.11'",
+]
+dependencies = [
+    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-cloud-cli", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-cloud-cli" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-shared" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "pex", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "questionary", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3", marker = "extra == 'ecs'" },
+    { name = "boto3", marker = "extra == 'pex'" },
+    { name = "boto3", marker = "extra == 'serverless'" },
+    { name = "dagster", editable = "../../python_modules/dagster" },
+    { name = "dagster-aws", marker = "extra == 'ecs'", editable = "../../python_modules/libraries/dagster-aws" },
+    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
+    { name = "dagster-dbt", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-dbt" },
+    { name = "dagster-dg-cli", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-dg-cli" },
+    { name = "dagster-docker", marker = "extra == 'docker'", editable = "../../python_modules/libraries/dagster-docker" },
+    { name = "dagster-docker", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-docker" },
+    { name = "dagster-k8s", marker = "extra == 'kubernetes'", editable = "../../python_modules/libraries/dagster-k8s" },
+    { name = "dagster-k8s", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-k8s" },
+    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
+    { name = "dbt-bigquery", marker = "extra == 'tests'", specifier = ">=1.9.0" },
+    { name = "dbt-core", marker = "extra == 'tests'" },
+    { name = "dbt-duckdb", marker = "extra == 'tests'" },
+    { name = "dbt-snowflake", marker = "extra == 'tests'" },
+    { name = "docker", marker = "extra == 'docker'" },
+    { name = "docker", marker = "extra == 'tests'" },
+    { name = "freezegun", marker = "extra == 'tests'" },
+    { name = "isort", marker = "extra == 'tests'" },
+    { name = "kubernetes", marker = "extra == 'kubernetes'" },
+    { name = "kubernetes", marker = "extra == 'tests'" },
+    { name = "moto", extras = ["all"], marker = "extra == 'tests'" },
+    { name = "mypy", marker = "extra == 'tests'" },
+    { name = "pex", specifier = ">=2.1.132,<2.60.0" },
+    { name = "pip", marker = "extra == 'tests'" },
+    { name = "psutil", marker = "extra == 'tests'" },
+    { name = "pyarrow", marker = "extra == 'insights'" },
+    { name = "pylint", marker = "extra == 'tests'" },
+    { name = "pytest", marker = "extra == 'tests'" },
+    { name = "questionary" },
+    { name = "requests" },
+    { name = "responses", marker = "extra == 'tests'" },
+    { name = "supervisor", marker = "extra == 'sandbox'" },
+    { name = "syrupy", marker = "extra == 'tests'" },
+    { name = "typer", specifier = ">=0.15.0" },
+    { name = "types-pyyaml", marker = "extra == 'tests'" },
+    { name = "types-requests", marker = "extra == 'tests'" },
+    { name = "wordcloud", marker = "extra == 'tests'" },
+]
+provides-extras = ["tests", "insights", "docker", "kubernetes", "ecs", "sandbox", "pex", "serverless"]
+
+[[package]]
 name = "dagster-cloud-cli"
 version = "1.13.4"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.13'",
+    "python_full_version == '3.12.*'",
+    "python_full_version == '3.11.*'",
+    "python_full_version < '3.11'",
+]
 dependencies = [
-    { name = "click" },
-    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "github3-py" },
-    { name = "jinja2" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "questionary" },
-    { name = "requests" },
-    { name = "setuptools" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer" },
-    { name = "validators" },
+    { name = "click", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "github3-py", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "jinja2", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "packaging", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pyyaml", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "questionary", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "setuptools", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tomli", marker = "(python_full_version < '3.11' and extra == 'group-17-assets-dbt-python-test-pypi') or (python_full_version < '3.11' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "validators", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/be/7c/af439ee5cc3dbe71d1bbe0fe40f3cba13b87b3b1de02275193c52bff9b38/dagster_cloud_cli-1.13.4.tar.gz", hash = "sha256:e44cab102edd31de889dd5664dd34572cab0cdb60f91c9a2d63696b5b1221be4", size = 109850, upload-time = "2026-05-07T19:54:51.644Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/57/03cd0d1cef1f901500e1a8f6faefc5798011d00e5b2cd23235524ceda773/dagster_cloud_cli-1.13.4-py2.py3-none-any.whl", hash = "sha256:6db3eea758b00183770b584b6d11c88e00d0a50905888c2d95e70e2ff0a37a9f", size = 118520, upload-time = "2026-05-07T19:54:50.517Z" },
+]
+
+[[package]]
+name = "dagster-cloud-cli"
+version = "1!0+dev"
+source = { editable = "../../python_modules/libraries/dagster-cloud-cli" }
+resolution-markers = [
+    "python_full_version >= '3.13'",
+    "python_full_version == '3.12.*'",
+    "python_full_version == '3.11.*'",
+    "python_full_version < '3.11'",
+]
+dependencies = [
+    { name = "click", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-shared" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "github3-py", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "jinja2", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "packaging", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "pyyaml", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "questionary", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "setuptools", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "tomli", marker = "(python_full_version < '3.11' and extra == 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "validators", marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click" },
+    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
+    { name = "github3-py" },
+    { name = "jinja2" },
+    { name = "packaging", specifier = ">=20.9" },
+    { name = "pyyaml", specifier = ">=5.1" },
+    { name = "questionary" },
+    { name = "requests" },
+    { name = "setuptools" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=1.1.0" },
+    { name = "typer", specifier = ">=0.15.0" },
+    { name = "validators" },
+]
+
+[package.metadata.requires-dev]
+test = [
+    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
+    { name = "freezegun" },
+    { name = "pex", specifier = ">=2.1.132,<2.60.0" },
+    { name = "pip" },
+    { name = "pytest", specifier = ">=8" },
+    { name = "pytest-mock", specifier = "==3.14.0" },
+    { name = "pytest-rerunfailures" },
 ]
 
 [[package]]
@@ -1019,18 +1153,18 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dbt-core" },
-    { name = "gitpython" },
-    { name = "jinja2" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dbt-core", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "gitpython", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "jinja2", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-17-assets-dbt-python-test-pypi') or (python_full_version < '3.11' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
     { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-17-assets-dbt-python-test-pypi') or (python_full_version >= '3.11' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
-    { name = "orjson" },
-    { name = "packaging" },
-    { name = "requests" },
-    { name = "rich" },
+    { name = "orjson", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "packaging", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "rich", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "sqlglot", extra = ["rs"], marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
-    { name = "typer" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/6c/126c7802cce36ee5d83ba06f1ef0d2bdfb53ea09c955a4ea7ab93a6f891c/dagster_dbt-0.29.4.tar.gz", hash = "sha256:bbbf02701d2bf4ee5a88c5c9be575bff9d7f43bc59d840c4aa493a106132ee22", size = 421264, upload-time = "2026-05-07T19:47:37.766Z" }
 wheels = [
@@ -1131,8 +1265,8 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "duckdb" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "duckdb", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/aa/5c/a42b6136a5c71a732990a1e10a058d9aadfa20bbe4f64eb7a6ada4e7dc32/dagster_duckdb-0.29.4.tar.gz", hash = "sha256:3351ed051143b5c35bd34309d479b4f690ce4701cef8b34e1e27ba34410b8412", size = 10829, upload-time = "2026-05-07T19:55:25.769Z" }
 wheels = [
@@ -1182,9 +1316,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-duckdb", version = "0.29.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "pandas" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-duckdb", version = "0.29.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pandas", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2e/d5/85c5343d53eb28725aeb240f866788762107f7f76edad0de98df206a730e/dagster_duckdb_pandas-0.29.4.tar.gz", hash = "sha256:27ee5b2ddb5213d37b80e32d120f0266fe9b04ff3b87f77747af3b094f226687", size = 11162, upload-time = "2026-05-07T19:48:09.133Z" }
 wheels = [
@@ -1380,12 +1514,12 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "packaging" },
-    { name = "platformdirs" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "tomlkit" },
-    { name = "typing-extensions" },
+    { name = "packaging", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "platformdirs", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pydantic", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pyyaml", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tomlkit", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "typing-extensions", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/04/eb/61a5841e5cced34fe247988f5276cd92ce87f80d4370c87eb046e29378e8/dagster_shared-1.13.4.tar.gz", hash = "sha256:4116acb5a78aac852027e43ebad914471e98304fead7992f04c3baec39fa0d2d", size = 95734, upload-time = "2026-05-07T19:50:17.348Z" }
 wheels = [
@@ -1806,7 +1940,7 @@ name = "github3-py"
 version = "4.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyjwt", extra = ["crypto"], marker = "extra == 'group-17-assets-dbt-python-test-pypi'" },
+    { name = "pyjwt", extra = ["crypto"] },
     { name = "python-dateutil" },
     { name = "requests" },
     { name = "uritemplate" },
@@ -3358,7 +3492,7 @@ name = "pyjwt"
 version = "2.12.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c2/27/a3b6e5bf6ff856d2509292e95c8f57f0df7017cf5394921fc4e4ef40308a/pyjwt-2.12.1.tar.gz", hash = "sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b", size = 102564, upload-time = "2026-03-13T19:27:37.25Z" }
 wheels = [

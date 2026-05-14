@@ -7,6 +7,7 @@ name = "assets_dbt_python"
 version = "1!0+dev"
 dependencies = [
     "dagster",
+    "dagster-cloud",
     "boto3",
     "dagster-dbt",
     "pandas",
@@ -25,14 +26,12 @@ code_location_name = "assets_dbt_python"
 # Two test groups so both factors can be locked from one pyproject:
 #   - test-source: dagster libs come from local checkouts (via [tool.uv.sources]
 #     entries gated on `group = "test-source"`).
-#   - test-pypi: same deps, but dagster libs come from PyPI. Includes
-#     dagster-cloud to exercise the released-cloud-agent install path,
-#     which the source factor can't cover (dagster-cloud's `dagster==X.Y.Z`
-#     pin doesn't reconcile with local dagster==1!0+dev).
+#   - test-pypi: same deps, but dagster libs come from PyPI.
 # [tool.uv].conflicts declares the groups mutually exclusive so uv
 # generates a separate fork of the lock per group.
 [dependency-groups]
 test-source = [
+    "dagster-cloud",
     "dagster[test]",
     "dagster-pipes",
     "dagster-shared",
@@ -60,6 +59,11 @@ conflicts = [
     [{group = "test-source"}, {group = "test-pypi"}],
 ]
 
+# All entries are gated on `group = "test-source"` so they apply only inside the
+# test-source lock fork. The dagster-cloud path escapes dagster-oss/ to the
+# internal repo's copy — that's fine because test-source is internal-only and
+# the pex builder skips group-qualified sources, so this never leaks into
+# production pex builds or the OSS-synced public layout.
 [tool.uv.sources]
 dagster = { path = "../../python_modules/dagster", editable = true, group = "test-source" }
 dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true, group = "test-source" }
@@ -69,3 +73,4 @@ dagster-pandas = { path = "../../python_modules/libraries/dagster-pandas", edita
 dagster-dbt = { path = "../../python_modules/libraries/dagster-dbt", editable = true, group = "test-source" }
 dagster-duckdb = { path = "../../python_modules/libraries/dagster-duckdb", editable = true, group = "test-source" }
 dagster-duckdb-pandas = { path = "../../python_modules/libraries/dagster-duckdb-pandas", editable = true, group = "test-source" }
+dagster-cloud = { path = "../../../dagster-cloud/python_modules/dagster-cloud", editable = true, group = "test-source" }

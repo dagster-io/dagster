@@ -464,10 +464,14 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
 
     # Handle [tool.uv.sources] - resolve workspace and path dependencies to local paths.
     # Match by canonical package name so version specifiers and extras in the requirement
-    # line don't defeat the lookup.
+    # line don't defeat the lookup. Skip entries gated on a `group =` qualifier: pex builds
+    # have no active group context, so group-conditional sources must not be applied
+    # (otherwise a test-only local-path override would leak into the production deps pex).
     uv_sources = pyproject_data.get("tool", {}).get("uv", {}).get("sources", {})
     if uv_sources:
-        sources_by_canonical = {canonicalize_name(name): cfg for name, cfg in uv_sources.items()}
+        sources_by_canonical = {
+            canonicalize_name(name): cfg for name, cfg in uv_sources.items() if "group" not in cfg
+        }
         resolved_lines = []
         for line in lines:
             try:
