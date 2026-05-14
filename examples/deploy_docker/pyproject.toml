@@ -11,6 +11,9 @@ dependencies = [
     "dagster-docker",
 ]
 
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
 [dependency-groups]
 test = [
     "dagster[test]",
