@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.13.5 (core) / 0.29.5 (libraries)
+
+### New
+
+- Added kinds tags for Alteryx, Boomi, and SAP.
+- Raised the SQLite `busy_timeout` default from 5s to 30s on `SqliteEventLogStorage` and `ConsolidatedSqliteEventLogStorage` to better tolerate slow or network-backed `$DAGSTER_HOME` filesystems.
+- [ui] Removed the "Scheduled" tab from the runs feed.
+- [ui] The sensor tick timeline now shows more ticks on the newest page, matching the list of ticks shown in the table below.
+- [dagster-k8s] Added a `delete_pod_on_completion` flag to `PipesK8sClient.run`, allowing callers to opt out of the automatic pod deletion at the end of a Pipes run.
+- [dagstermill] Dropped support for papermill 1.x. `dagstermill` now requires `papermill>=2.0.0`.
+
+### Bugfixes
+
+- Job backfills now retry on transient daemon errors such as code-server unreachable, matching the existing behavior for asset backfills. The `DAGSTER_MAX_ASSET_BACKFILL_RETRIES` environment variable has been renamed to `DAGSTER_MAX_BACKFILL_RETRIES`, with a fallback to the old name for backwards compatibility.
+- Fixed a bug where asset checks could be dropped from a `JobDefinition` when selected as part of a subset selection.
+- Fixed a bug where, in a partitioned-asset backfill running multiple partitions concurrently, an inline `AssetCheckResult` could record a `target_materialization` pointing to a different partition's materialization.
+- Fixed a regression introduced in 1.12.10 where `OutputContext.asset_partition_key_range` and `InputContext.asset_partition_key_range` could raise `CheckError: The instance is not available to load partitions` for assets using a `MultiPartitionsDefinition` that includes a `DynamicPartitionsDefinition`.
+- Improved the error message shown when the instance is not available to load dynamic partitions, recommending the use of `partition_loading_context`.
+- [ui] Fixed an issue where viewing the Lineage tab for an asset could cause the page header to disappear.
+- [dagster-dbt] Fixed a bug where, when a dbt asset selection grew large enough to switch from inline `--select`/`--exclude` to a temporary `selectors.yml`, runtime `--exclude` arguments were silently dropped.
+- [dagster-dbt] Fixed runtime selection arguments not being properly applied when used with `@dbt_assets` ops.
+- [dagstermill] Increased the default Jupyter kernel-startup timeout for `dagstermill` notebook ops from 60s to 120s.
+
 ## 1.13.4 (core) / 0.29.4 (libraries)
 
 ### New
