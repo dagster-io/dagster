@@ -15,7 +15,7 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
-    static_where_clause,
+    escape_sql_string_literal,
 )
 from pydantic import Field
 
@@ -242,6 +242,20 @@ class DeltaLakeDbClient(DbClient):
         yield conn
 
 
+def _quote_ident(name: str) -> str:
+    """Quote a SQL identifier with Delta Lake / Spark SQL backtick escaping."""
+    return '`' + name.replace('`', '``') + '`'
+
+
+def _static_where_clause(table_partition: TablePartitionDimension) -> str:
+    """Build a dialect-quoted static-partition WHERE clause."""
+    partition_keys = cast("Sequence[str]", table_partition.partitions)
+    partitions = ", ".join(
+        f"'{escape_sql_string_literal(p)}'" for p in partition_keys
+    )
+    return f"{_quote_ident(table_partition.partition_expr)} in ({partitions})"
+
+
 def _partition_where_clause(
     partition_dimensions: Sequence[TablePartitionDimension],
 ) -> str:
@@ -249,7 +263,7 @@ def _partition_where_clause(
         (
             _time_window_where_clause(partition_dimension)
             if isinstance(partition_dimension.partitions, TimeWindow)
-            else static_where_clause(partition_dimension)
+            else _static_where_clause(partition_dimension)
         )
         for partition_dimension in partition_dimensions
     )
@@ -260,4 +274,5 @@ def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DELTA_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DELTA_DATETIME_FORMAT)
-    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    expr = _quote_ident(table_partition.partition_expr)
+    return f"""{expr} >= '{start_dt_str}' AND {expr} < '{end_dt_str}'"""
