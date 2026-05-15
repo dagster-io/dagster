@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-dg-core"
-version = "1!0+dev"
+version = "1.13.5rc0"
 description = ""
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -18,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "Jinja2",
-    "tomlkit<0.13.3",  # bug in this version
+    "tomlkit<0.13.3",
     "click>=8,<9",
     "click-aliases",
     "typing_extensions>=4.4.0,<5",
@@ -29,31 +33,27 @@ dependencies = [
     "rich",
     "watchdog",
     "yaspin",
-    "setuptools",  # Needed to parse setup.cfg
+    "setuptools",
     "packaging",
     "python-dotenv",
     "typer>=0.15.1,<1.0",
-    "dagster-shared==1!0+dev",
-    "dagster-cloud-cli==1!0+dev",
+    "dagster-shared==1.13.5rc0",
+    "dagster-cloud-cli==1.13.5rc0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dg-core"
 
 [project.optional-dependencies]
-# Kept as a published extra because it is consumed cross-package by
-# dagster-airbyte, dagster-dlt, dagster-fivetran, dagster-polytomic,
-# dagster-powerbi, and dagster-dg-cli's test envs. Adding entries here
-# affects PyPI consumers — be deliberate.
 test = [
     "click",
-    "dagster==1!0+dev",
+    "dagster==1.13.5rc0",
     "freezegun",
     "psutil",
     "pydantic",
     "pytest",
-    "dagster-graphql==1!0+dev",
-    "create-dagster==1!0+dev",
+    "dagster-graphql==1.13.5rc0",
+    "create-dagster==1.13.5rc0",
 ]
 
 [dependency-groups]
@@ -74,16 +74,50 @@ test-plus = [
     "dagster-docker",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../../python_modules/dagster", editable = true }
-dagster-test = { path = "../../../python_modules/dagster-test", editable = true }
-dagster-graphql = { path = "../../../python_modules/dagster-graphql", editable = true }
-dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
-dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
-create-dagster = { path = "../../../python_modules/libraries/create-dagster", editable = true }
-dagster-dg-cli = { path = "../../../python_modules/libraries/dagster-dg-cli", editable = true }
-dagster-cloud-cli = { path = "../../../python_modules/libraries/dagster-cloud-cli", editable = true }
-dagster-rest-resources = { path = "../../../python_modules/libraries/dagster-rest-resources", editable = true }
-dagster-aws = { path = "../../../python_modules/libraries/dagster-aws", editable = true }
-dagster-k8s = { path = "../../../python_modules/libraries/dagster-k8s", editable = true }
-dagster-docker = { path = "../../../python_modules/libraries/dagster-docker", editable = true }
+[tool.uv.sources.dagster]
+path = "../../../python_modules/dagster"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../../../python_modules/dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-graphql]
+path = "../../../python_modules/dagster-graphql"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../../python_modules/dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../../../python_modules/libraries/dagster-shared"
+editable = true
+
+[tool.uv.sources.create-dagster]
+path = "../../../python_modules/libraries/create-dagster"
+editable = true
+
+[tool.uv.sources.dagster-dg-cli]
+path = "../../../python_modules/libraries/dagster-dg-cli"
+editable = true
+
+[tool.uv.sources.dagster-cloud-cli]
+path = "../../../python_modules/libraries/dagster-cloud-cli"
+editable = true
+
+[tool.uv.sources.dagster-rest-resources]
+path = "../../../python_modules/libraries/dagster-rest-resources"
+editable = true
+
+[tool.uv.sources.dagster-aws]
+path = "../../../python_modules/libraries/dagster-aws"
+editable = true
+
+[tool.uv.sources.dagster-k8s]
+path = "../../../python_modules/libraries/dagster-k8s"
+editable = true
+
+[tool.uv.sources.dagster-docker]
+path = "../../../python_modules/libraries/dagster-docker"
+editable = true

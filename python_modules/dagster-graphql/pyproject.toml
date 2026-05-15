@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-graphql"
-version = "1!0+dev"
+version = "1.13.5rc0"
 description = "The GraphQL API for Dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 classifiers = [
@@ -18,11 +22,11 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.5rc0",
     "graphene>=3,<4",
     "gql[requests]>=3,<5",
     "requests",
-    "starlette",  # used for run_in_threadpool utility fn
+    "starlette",
 ]
 
 [project.urls]
@@ -50,12 +54,28 @@ test-postgres = [
 
 [tool.uv]
 conflicts = [
-    [{group = "test-gql-v3"}, {group = "test-gql-v3-5"}],
+    [
+        { group = "test-gql-v3" },
+        { group = "test-gql-v3-5" },
+    ],
 ]
 
-[tool.uv.sources]
-dagster = { path = "../dagster", editable = true }
-dagster-pipes = { path = "../dagster-pipes", editable = true }
-dagster-shared = { path = "../libraries/dagster-shared", editable = true }
-dagster-test = { path = "../dagster-test", editable = true }
-dagster-postgres = { path = "../libraries/dagster-postgres", editable = true }
+[tool.uv.sources.dagster]
+path = "../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../libraries/dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-postgres]
+path = "../libraries/dagster-postgres"
+editable = true
