@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-duckdb-pandas"
-version = "0.29.5rc0"
+version = "0.29.5"
 description = "Package for storing Pandas DataFrames in DuckDB."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -19,8 +19,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.13.5rc0",
-    "dagster-duckdb==0.29.5rc0",
+    "dagster==1.13.5",
+    "dagster-duckdb==0.29.5",
     "pandas<3.0.0",
 ]
 

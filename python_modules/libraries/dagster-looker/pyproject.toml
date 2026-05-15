@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster_looker"
-version = "0.29.5rc0"
+version = "0.29.5"
 description = ""
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -21,7 +21,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.13.5rc0",
+    "dagster==1.13.5",
     "lkml",
     "looker_sdk<24.18.0",
     "sqlglot>=25.19.0",

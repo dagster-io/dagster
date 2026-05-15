@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-gcp-pyspark"
-version = "0.29.5rc0"
+version = "0.29.5"
 description = "Package for storing PySpark DataFrames in GCP"
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -18,8 +18,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.13.5rc0",
-    "dagster-gcp==0.29.5rc0",
+    "dagster==1.13.5",
+    "dagster-gcp==0.29.5",
     "pyspark>=4.1; python_version>='3.14'",
     "pyspark>=3.5,<4; python_version<'3.14'",
 ]

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-soda"
-version = "0.29.5rc0"
+version = "0.29.5"
 description = "Package for running Soda Core data quality scans in Dagster."
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -24,7 +24,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1.13.5rc0",
+    "dagster==1.13.5",
     "soda-core>=3.0,<4",
     "pyyaml",
 ]

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-dg-cli"
-version = "1.13.5rc0"
+version = "1.13.5"
 description = ""
 authors = [
     { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
@@ -21,10 +21,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster-cloud-cli==1.13.5rc0",
-    "dagster-dg-core==1.13.5rc0",
-    "dagster-rest-resources==0.29.5rc0",
-    "dagster==1.13.5rc0",
+    "dagster-cloud-cli==1.13.5",
+    "dagster-dg-core==1.13.5",
+    "dagster-rest-resources==0.29.5",
+    "dagster==1.13.5",
     "typer",
 ]
 
