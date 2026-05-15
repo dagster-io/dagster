@@ -330,9 +330,15 @@ def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimensi
     )
 
 
+def _quote_ident(name: str) -> str:
+    """Quote a SQL identifier using DuckDB double-quote escaping."""
+    return f'"{name.replace(chr(34), chr(34) * 2)}"'
+
+
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
     partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DUCKDB_DATETIME_FORMAT)
-    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    expr = _quote_ident(table_partition.partition_expr)
+    return f"""{expr} >= '{start_dt_str}' AND {expr} < '{end_dt_str}'"""

@@ -34,6 +34,14 @@ class TableSlice(NamedTuple):
     partition_dimensions: Sequence[TablePartitionDimension] | None = None
 
 
+def _quote_sql_identifier(name: str) -> str:
+    """Quote a SQL identifier (e.g. column name) using ANSI SQL double-quote escaping.
+
+    Prevents SQL injection when partition expressions are interpolated into WHERE clauses.
+    """
+    return f'"{name.replace(chr(34), chr(34) * 2)}"'
+
+
 def escape_sql_string_literal(value: str) -> str:
     """Escape a string for safe inclusion in a SQL single-quoted literal.
 
@@ -47,7 +55,7 @@ def escape_sql_string_literal(value: str) -> str:
 def static_where_clause(table_partition: TablePartitionDimension) -> str:
     """Build a SQL WHERE clause fragment for static (non-time-window) partitions.
 
-    Escapes partition key values to prevent SQL injection.
+    Escapes partition key values and quotes partition expressions to prevent SQL injection.
     """
     check.invariant(
         not isinstance(table_partition.partitions, TimeWindow),
@@ -57,7 +65,7 @@ def static_where_clause(table_partition: TablePartitionDimension) -> str:
     partitions = ", ".join(
         f"'{escape_sql_string_literal(partition)}'" for partition in partition_keys
     )
-    return f"""{table_partition.partition_expr} in ({partitions})"""
+    return f"""{_quote_sql_identifier(table_partition.partition_expr)} in ({partitions})"""
 
 
 class DbTypeHandler(ABC, Generic[T]):

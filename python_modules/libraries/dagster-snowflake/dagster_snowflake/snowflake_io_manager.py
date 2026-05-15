@@ -422,11 +422,17 @@ def partition_where_clause(partition_dimensions: Sequence[TablePartitionDimensio
     )
 
 
+def _quote_ident(name: str) -> str:
+    """Quote a SQL identifier using Snowflake double-quote escaping."""
+    return f'"{name.replace(chr(34), chr(34) * 2)}"'
+
+
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
     partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
+    expr = _quote_ident(table_partition.partition_expr)
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
     # write this as start <= partition expr < end.
-    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return f"""{expr} >= '{start_dt_str}' AND {expr} < '{end_dt_str}'"""
