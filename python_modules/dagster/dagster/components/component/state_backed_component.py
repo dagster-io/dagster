@@ -219,15 +219,19 @@ class StateBackedComponent(Component):
                 (using_dagster_dev() and self.defs_state_config.refresh_if_dev)
             ):
                 try:
-                    asyncio.get_running_loop()
+                    running_loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    running_loop = None
+
+                if running_loop is not None:
                     # Called from within a running event loop (e.g. `dg utils
-                    # refresh-defs-state`). asyncio.run() would raise RuntimeError
-                    # in this case, so delegate to a worker thread instead.
+                    # refresh-defs-state`). asyncio.run() cannot be used here, so
+                    # delegate to a worker thread that spins up its own event loop.
                     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                         version = pool.submit(
                             asyncio.run, self.refresh_state(context.project_root)
                         ).result()
-                except RuntimeError:
+                else:
                     version = asyncio.run(self.refresh_state(context.project_root))
                 defs_load_context.add_defs_state_info(key, version)
 
