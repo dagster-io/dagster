@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import contextvars
 import inspect
 import shutil
 import tempfile
@@ -227,9 +228,12 @@ class StateBackedComponent(Component):
                     # Called from within a running event loop (e.g. `dg utils
                     # refresh-defs-state`). asyncio.run() cannot be used here, so
                     # delegate to a worker thread that spins up its own event loop.
+                    # copy_context() propagates ContextVars (e.g. DefsStateStorage)
+                    # to the worker, which ThreadPoolExecutor does not do on Python <3.12.
+                    ctx = contextvars.copy_context()
                     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                         version = pool.submit(
-                            asyncio.run, self.refresh_state(context.project_root)
+                            ctx.run, asyncio.run, self.refresh_state(context.project_root)
                         ).result()
                 else:
                     version = asyncio.run(self.refresh_state(context.project_root))
