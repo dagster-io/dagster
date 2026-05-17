@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import logging
+import random
 import sys
 import threading
 from collections import defaultdict
@@ -439,7 +440,8 @@ def execute_sensor_iteration(
         yield
         return
 
-    for sensor in sensors.values():
+    # consider sensors in a random order for fairness
+    for sensor in sorted(sensors.values(), key=lambda _: random.random()):
         sensor_name = sensor.name
         sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
         sensor_state = all_sensor_states.get(sensor.selector_id)
