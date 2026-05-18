@@ -379,12 +379,11 @@ extra-paths = [
 deprecated = "ignore"                  # Deprecation warnings across dependencies
 possibly-missing-attribute = "ignore"  # High false positive rate
 possibly-missing-import = "ignore"     # Often incorrect in complex imports
-# Suppress leftover `# type: ignore` directives that no longer apply
-# (especially common in the data-platform env, which checks against
-# published dagster — directives written for editable in-repo dagster
-# may no longer match). No-op here for master since master's checked
-# code has no unused type ignores.
+# Suppress leftover `# type: ignore` / `# ty: ignore` directives that
+# no longer apply. Especially relevant for the data-platform and
+# internal envs after ty version bumps; no-op for master today.
 unused-type-ignore-comment = "ignore"
+unused-ignore-comment = "ignore"
 
 [tool.ty.src]
 
