@@ -1,5 +1,4 @@
 import shutil
-import signal
 import tempfile
 import textwrap
 from pathlib import Path
@@ -294,31 +293,22 @@ def test_dev_uses_active_venv_when_flag_set():
             # Start dev server with --use-active-venv flag and capture output
             port = find_free_port()
             with (
-                tempfile.NamedTemporaryFile(mode="w+") as stdout_file,
-                tempfile.NamedTemporaryFile(mode="w+") as stderr_file,
+                tempfile.NamedTemporaryFile() as stdout_file,
+                tempfile.NamedTemporaryFile() as stderr_file,
+                open(stdout_file.name, "w", encoding="utf-8") as stdout,
+                open(stderr_file.name, "w", encoding="utf-8") as stderr,
             ):
-                with open(stdout_file.name, "w") as stdout, open(stderr_file.name, "w") as stderr:
-                    dev_process = launch_dev_command(
-                        ["--port", str(port), "--use-active-venv"], stdout=stdout, stderr=stderr
-                    )
+                dev_process = launch_dev_command(
+                    ["--port", str(port), "--use-active-venv"], stdout=stdout, stderr=stderr
+                )
+                # The "Using active Python environment:" line is emitted before
+                # the webserver boots, so webserver readiness implies the echo
+                # has already happened.
+                assert_projects_loaded_and_exit({"test-project"}, port, dev_process)
 
-                # Give it a moment to start and log the message
-                import time
-
-                time.sleep(2)
-
-                # Read the captured output
-                with open(stdout_file.name) as f:
-                    stdout_content = f.read()
-                with open(stderr_file.name) as f:
-                    stderr_content = f.read()
-
-                # Clean up the process
-                dev_process.send_signal(signal.SIGINT)
-                dev_process.communicate()
-
-                # Verify the log message is present
-                combined_output = stdout_content + stderr_content
+                combined_output = Path(stdout_file.name).read_text(encoding="utf-8") + Path(
+                    stderr_file.name
+                ).read_text(encoding="utf-8")
                 assert "Using active Python environment:" in combined_output, (
                     f"Expected log message about using active Python environment, but got:\n{combined_output}"
                 )

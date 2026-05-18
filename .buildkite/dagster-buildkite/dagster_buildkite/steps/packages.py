@@ -1016,8 +1016,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_tox_factors=[
                 ToxFactor("general"),
                 ToxFactor("slow", splits=4, queue=BuildkiteQueue.MEDIUM),
-                # `test_dev_uses_active_venv_when_flag_set` empty-stdout capture flakes on EKS.
-                ToxFactor("serial", queue=BuildkiteQueue.MEDIUM),
+                ToxFactor("serial"),
                 ToxFactor("plus"),
             ],
             env_vars=["SHELL"],
