@@ -44,6 +44,7 @@ from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
+from dagster._utils.schedules import reverse_cron_string_iterator
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.base_asset_graph import (
@@ -518,6 +519,22 @@ class AssetGraphView(LoadingContext):
             asset_subset.key, {AssetKeyPartitionKey(asset_subset.key, pk) for pk in partition_keys}
         )
         return asset_subset.compute_intersection(keys_subset)
+
+    @cached_method
+    def compute_previous_cron_tick(self, *, cron_schedule: str, cron_timezone: str) -> datetime:
+        """Returns the most recent cron tick at or before ``effective_dt`` for the given schedule.
+
+        Cached per-instance so that multiple entities sharing the same ``(cron_schedule,
+        cron_timezone)`` within a single automation tick reuse one computation. The cache is
+        discarded with this ``AssetGraphView`` when the tick finishes.
+        """
+        return next(
+            reverse_cron_string_iterator(
+                end_timestamp=self.effective_dt.timestamp(),
+                cron_string=cron_schedule,
+                execution_timezone=cron_timezone,
+            )
+        )
 
     @use_partition_loading_context
     def compute_latest_time_window_subset(

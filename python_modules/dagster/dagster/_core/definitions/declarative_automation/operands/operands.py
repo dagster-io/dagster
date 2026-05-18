@@ -21,7 +21,6 @@ from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
-from dagster._utils.schedules import reverse_cron_string_iterator
 
 
 @whitelist_for_serdes
@@ -286,18 +285,12 @@ class CronTickPassedCondition(TimedSubsetAutomationCondition):
     def name(self) -> str:
         return f"cron_tick_passed(cron_schedule={self.cron_schedule}, cron_timezone={self.cron_timezone})"
 
-    def _get_previous_cron_tick(self, effective_dt: datetime.datetime) -> datetime.datetime:
-        previous_ticks = reverse_cron_string_iterator(
-            end_timestamp=effective_dt.timestamp(),
-            cron_string=self.cron_schedule,
-            execution_timezone=self.cron_timezone,
-        )
-        return next(previous_ticks)
-
     def compute_subset_with_timing_metadata(
         self, context: AutomationContext
     ) -> tuple[EntitySubset, TimingMetadata | None]:
-        previous_cron_tick = self._get_previous_cron_tick(context.evaluation_time)
+        previous_cron_tick = context.asset_graph_view.compute_previous_cron_tick(
+            cron_schedule=self.cron_schedule, cron_timezone=self.cron_timezone
+        )
         if (
             # no previous evaluation
             context.previous_evaluation_time is None
