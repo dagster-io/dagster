@@ -44,7 +44,7 @@ if TYPE_CHECKING:
     from dagster_rest_resources.schemas.issue import DgApiIssue, DgApiIssueList
     from dagster_rest_resources.schemas.job import DgApiJob, DgApiJobList
     from dagster_rest_resources.schemas.organization import DgApiOrganizationSettings
-    from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunList
+    from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunLaunchResult, DgApiRunList
     from dagster_rest_resources.schemas.run_event import DgApiRunEventList
     from dagster_rest_resources.schemas.schedule import DgApiSchedule, DgApiScheduleList
     from dagster_rest_resources.schemas.secret import DgApiSecret, DgApiSecretList
@@ -703,6 +703,19 @@ def format_run(run: "DgApiRun", as_json: bool) -> str:
         fields.append(("Pipeline", run.job_name))
 
     return format_detail(fields)
+
+
+def format_run_launch_result(result: "DgApiRunLaunchResult", as_json: bool) -> str:
+    """Format launch run result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return format_detail(
+        [
+            ("Run ID", result.run_id),
+            ("Status", result.status.value),
+        ]
+    )
 
 
 def format_runs_list(runs_list: "DgApiRunList", as_json: bool) -> str:

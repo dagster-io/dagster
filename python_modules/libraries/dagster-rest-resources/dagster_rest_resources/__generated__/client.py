@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from .input_types import (
         AssetKeyInput,
         DeploymentSettingsInput,
+        ExecutionParams,
         IssueLinkedObjectInput,
         IssuesFilter,
         OrganizationSettingsInput,
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
         SecretScopesInput,
         SensorSelector,
     )
+    from .launch_run import LaunchRun
     from .list_agents import ListAgents
     from .list_alert_policies import ListAlertPolicies
     from .list_asset_check_executions import ListAssetCheckExecutions
@@ -1657,6 +1659,76 @@ class Client(BaseClient):
         )
         data = self.get_data(response)
         return ListRepositories.model_validate(data)
+
+    def launch_run(
+        self, execution_params: "ExecutionParams", **kwargs: Any
+    ) -> "LaunchRun":
+        from .launch_run import LaunchRun
+
+        query = gql(
+            """
+            mutation LaunchRun($executionParams: ExecutionParams!) {
+              launchRun(executionParams: $executionParams) {
+                __typename
+                ... on LaunchRunSuccess {
+                  run {
+                    runId
+                    status
+                  }
+                }
+                ... on InvalidStepError {
+                  invalidStepKey
+                }
+                ... on InvalidOutputError {
+                  stepKey
+                  invalidOutputName
+                }
+                ... on RunConfigValidationInvalid {
+                  pipelineName
+                  errors {
+                    __typename
+                    message
+                    reason
+                  }
+                }
+                ... on PipelineNotFoundError {
+                  message
+                  pipelineName
+                  repositoryName
+                }
+                ... on RunConflict {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                }
+                ... on InvalidSubsetError {
+                  message
+                }
+                ... on PresetNotFoundError {
+                  message
+                  preset
+                }
+                ... on ConflictingExecutionParamsError {
+                  message
+                }
+                ... on NoModeProvidedError {
+                  message
+                  pipelineName
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"executionParams": execution_params}
+        response = self.execute(
+            query=query, operation_name="LaunchRun", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return LaunchRun.model_validate(data)
 
     def get_organization_settings(self, **kwargs: Any) -> "GetOrganizationSettings":
         from .get_organization_settings import GetOrganizationSettings

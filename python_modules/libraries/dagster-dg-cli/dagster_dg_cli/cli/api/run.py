@@ -1,5 +1,7 @@
 """Run API commands following GitHub CLI patterns."""
 
+import json
+import time
 from typing import Final
 
 import click
@@ -16,12 +18,16 @@ from dagster_dg_cli.cli.api.formatters import (
     format_logs_json,
     format_logs_table,
     format_run,
+    format_run_launch_result,
     format_runs_list,
 )
 from dagster_dg_cli.cli.api.shared import handle_api_errors
 from dagster_dg_cli.cli.response_schema import dg_response_schema
 
 DG_API_MAX_RUN_LIMIT: Final = 1000
+TERMINAL_RUN_STATUSES: Final = frozenset(
+    {DgApiRunStatus.SUCCESS, DgApiRunStatus.FAILURE, DgApiRunStatus.CANCELED}
+)
 
 
 @click.command(name="list", cls=DgClickCommand)
@@ -337,6 +343,160 @@ def get_logs_command(
         click.echo(output)
 
 
+@click.command(name="launch", cls=DgClickCommand)
+@click.option("--location", "-l", required=True, help="Code location name")
+@click.option(
+    "--repository",
+    "-r",
+    default="__repository__",
+    show_default=True,
+    help="Repository name in the code location",
+)
+@click.option(
+    "--job",
+    "-j",
+    "job_name",
+    default=None,
+    help="Name of the job to launch",
+)
+@click.option(
+    "--asset-key",
+    "asset_keys",
+    multiple=True,
+    help=(
+        "Asset key to materialize. Use slash-separated syntax for prefixed keys "
+        "(e.g. 'my_prefix/my_asset'). Repeatable."
+    ),
+)
+@click.option(
+    "--partition",
+    default=None,
+    help="Partition key. Partition ranges are not yet supported.",
+)
+@click.option(
+    "--tag",
+    "tag_options",
+    multiple=True,
+    help="Tag to attach to the run as 'key=value'. Repeatable.",
+)
+@click.option(
+    "--config-json",
+    default=None,
+    help="JSON string of run config to use for this run",
+)
+@click.option(
+    "--wait",
+    "-w",
+    is_flag=True,
+    help="Wait for the run to reach a terminal status before returning.",
+)
+@click.option(
+    "--interval",
+    "-i",
+    default=30,
+    show_default=True,
+    type=click.IntRange(1, 3600),
+    help="Polling interval in seconds when --wait is set.",
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output in JSON format for machine readability",
+)
+@dg_response_schema(module="dagster_rest_resources.schemas.run", cls="DgApiRunLaunchResult")
+@dg_api_options(deployment_scoped=True)
+@cli_telemetry_wrapper
+@click.pass_context
+def launch_run_command(
+    ctx: click.Context,
+    location: str,
+    repository: str,
+    job_name: str | None,
+    asset_keys: tuple[str, ...],
+    partition: str | None,
+    tag_options: tuple[str, ...],
+    config_json: str | None,
+    wait: bool,
+    interval: int,
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
+    view_graphql: bool,
+) -> None:
+    r"""Launch a run on a Dagster Plus deployment.
+
+    Use this to materialize assets or launch jobs against a deployed Dagster Plus
+    environment. For local in-process execution during development, use ``dg launch``.
+
+    Example::
+
+        $ dg api run launch --location my_location --job ingest_customers
+        Run ID: 5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        Status: STARTED
+
+        $ dg api run launch --location my_location \
+            --asset-key raw_customers --asset-key marts/dim_customers --wait
+    """
+    from dagster_rest_resources.api.run import DgApiRunApi
+
+    config = DagsterPlusCliConfig.create_for_deployment(
+        deployment=deployment,
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
+    api = DgApiRunApi(client)
+
+    with handle_api_errors(ctx, output_json):
+        if not job_name and not asset_keys:
+            raise click.UsageError("At least one of --job or --asset-key must be provided.")
+        if partition and "..." in partition:
+            raise click.UsageError(
+                "Partition ranges are not supported by `dg api run launch`. "
+                "Use a single partition key."
+            )
+
+        tags: dict[str, str] = {}
+        for raw in tag_options:
+            if "=" not in raw:
+                raise click.UsageError(f"Invalid --tag value `{raw}`. Expected `key=value`.")
+            key, value = raw.split("=", 1)
+            tags[key] = value
+
+        run_config = None
+        if config_json:
+            try:
+                run_config = json.loads(config_json)
+            except json.JSONDecodeError as e:
+                raise click.UsageError(f"--config-json is not valid JSON: {e}")
+
+        result = api.create_run(
+            location_name=location,
+            repository_name=repository,
+            job_name=job_name,
+            asset_keys=list(asset_keys) if asset_keys else None,
+            tags=tags or None,
+            run_config=run_config,
+            partition=partition,
+        )
+
+        if wait:
+            while result.status not in TERMINAL_RUN_STATUSES:
+                time.sleep(interval)
+                latest = api.get_run(result.run_id)
+                result = result.model_copy(update={"status": latest.status})
+
+        output = format_run_launch_result(result, as_json=output_json)
+        click.echo(output)
+
+        if wait and result.status != DgApiRunStatus.SUCCESS:
+            raise click.ClickException(
+                f"Run {result.run_id} finished with status {result.status.value}"
+            )
+
+
 @click.group(
     name="run",
     cls=DgClickGroup,
@@ -345,6 +505,7 @@ def get_logs_command(
         "get": get_run_command,
         "get-events": get_events_run_command,
         "get-logs": get_logs_command,
+        "launch": launch_run_command,
     },
 )
 def run_group():
