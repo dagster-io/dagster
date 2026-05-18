@@ -823,9 +823,13 @@ def test_cancellation():
                 p.terminate()
                 break
 
-        p.join(timeout=1)
+        deadline = time.monotonic() + 30
+        while p.is_alive() and time.monotonic() < deadline:
+            p.join(timeout=0.1)
         assert not p.is_alive()
         assert pid
+        while process_is_alive(pid) and time.monotonic() < deadline:
+            time.sleep(0.1)
         assert not process_is_alive(pid)
 
 

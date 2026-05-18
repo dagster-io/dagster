@@ -811,7 +811,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                     "engine_tests": BuildkiteQueue.MEDIUM,
                     "dynamic_tests": BuildkiteQueue.MEDIUM,
                     "misc_execution_tests": BuildkiteQueue.MEDIUM,
-                    "pipes_tests": BuildkiteQueue.MEDIUM,
                 },
             ),
             unsupported_python_versions=_unsupported_dagster_python_versions,
