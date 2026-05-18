@@ -410,6 +410,7 @@ class CommandStepBuilder:
         buildkite_shell = "/bin/bash -e -c"
         assert self._docker_settings
         image = str(self._docker_settings["image"])
+        # no skip
         if image == "hashicorp/terraform:light" or "/datadog-ci:" in image or "/alpine:" in image:
             buildkite_shell = "/bin/sh -e -c"
         elif "kaniko-project/executor" in image:

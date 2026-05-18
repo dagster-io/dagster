@@ -981,8 +981,21 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airbyte"),
-            pytest_tox_factors=[ToxFactor("unit"), ToxFactor("integration")],
-            queue=BuildkiteQueue.MEDIUM,
+            pytest_tox_factors=[
+                ToxFactor("unit"),
+                # 8-service Airbyte compose stack (5 JVMs + Postgres + nginx + init)
+                # OOM-kills under the dind default 2Gi / 2 vCPU.
+                ToxFactor(
+                    "integration",
+                    resources=ResourceRequests(
+                        cpu="1000m",
+                        memory="1Gi",
+                        docker_cpu="4000m",
+                        docker_memory="4Gi",
+                        docker_memory_limit="6Gi",
+                    ),
+                ),
+            ],
         ),
         # PackageSpec(
         #     "python_modules/libraries/dagster-airflow",
