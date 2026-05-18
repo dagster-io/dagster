@@ -266,6 +266,12 @@ auto_materialize_sensor_scenarios = [
 ]
 
 
+# Per-scenario daemon work (submitting many partitioned run requests through the synchronous
+# run coordinator) is CPU-bound and routinely takes >120s under EKS pod CPU contention. The
+# slowest scenario, `hourly_to_daily_partitions_never_materialized`, submits 73 partitioned
+# runs in a single tick and hits the 240s pyproject-wide pytest-timeout fallback. Widen the
+# budget for this whole test function so the safety net does not fire on legitimate work.
+@pytest.mark.timeout(600)
 @pytest.mark.parametrize(
     "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
 )

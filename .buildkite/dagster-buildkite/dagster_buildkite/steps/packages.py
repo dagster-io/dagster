@@ -769,7 +769,16 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("core_tests", queue=BuildkiteQueue.MEDIUM),
                 ToxFactor("daemon_sensor_tests", splits=2),
                 ToxFactor("daemon_tests", splits=2),
-                ToxFactor("declarative_automation_tests", splits=2, queue=BuildkiteQueue.MEDIUM),
+                # CPU-bound: `test_asset_daemon_without_sensor` parametrizes over
+                # AssetDaemonScenarios; the slowest scenario submits 73 partitioned run
+                # requests through the synchronous run coordinator in one tick and brushes
+                # the 240s pytest-timeout fallback on the EKS default 1000m budget.
+                # Bumping per-step CPU + migrating off the MEDIUM (EC2) queue.
+                ToxFactor(
+                    "declarative_automation_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="2Gi"),
+                ),
                 ToxFactor("definitions_tests"),
                 ToxFactor("general_tests", queue=BuildkiteQueue.MEDIUM),
                 ToxFactor("general_tests_old_protobuf", queue=BuildkiteQueue.MEDIUM),
