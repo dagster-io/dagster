@@ -753,11 +753,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             force_run_fn=BuildkiteContext.has_published_python_package_changes,
         ),
         PackageSpec(oss_path("python_modules/dagster-webserver"), pytest_extra_cmds=ui_extra_cmds),
-        PackageSpec(
-            oss_path("python_modules/dagit"),
-            # `test_cli_logs_to_dagit` flakes on EKS with empty captured stderr.
-            queue=BuildkiteQueue.MEDIUM,
-        ),
+        PackageSpec(oss_path("python_modules/dagit")),
         PackageSpec(
             oss_path("python_modules/dagster"),
             env_vars=["AWS_ACCOUNT_ID"],
