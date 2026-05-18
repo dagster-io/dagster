@@ -690,7 +690,7 @@ def dyn_bool():
     yield dg.DynamicOutput(True, mapping_key="yes")
 
 
-@dg.job
+@dg.job(executor_def=in_process_executor)
 def crashy_job():
     echo(dyn_bool().map(maybe_trigger).collect())
 
