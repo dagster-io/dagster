@@ -417,6 +417,9 @@ def test_cross_location_checks() -> None:
             }
             assert len(runs[0].asset_selection or []) == 0
 
+        row_count_key = dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
+        no_nulls_key = dg.AssetCheckKey(dg.AssetKey("processed_files"), "no_nulls")
+
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
             # now update the asset at the top
@@ -426,38 +429,46 @@ def test_cross_location_checks() -> None:
 
             _execute_ticks(context, executor)
 
-            # should create a single run request targeting both the downstream asset
-            # and the associated check -- the check in the other location cannot
-            # be grouped with these and will need to wait
+            # A combined run is always produced for processed_files + row_count
+            # (raw_files newly updated -> eager processed_files will-be-requested
+            # -> same-location row_count fires alongside in the same run). The
+            # no_nulls check lives in a different code location and cannot be
+            # grouped into that run.
+            #
+            # Whether no_nulls also fires in this same tick is non-deterministic:
+            # the asset daemon round-robins across code locations, and the test
+            # uses a synchronous run launcher, so if the row_count sensor is
+            # visited first its run completes (materializing processed_files)
+            # before no_nulls evaluates -- letting no_nulls see the new
+            # materialization and fire immediately. Otherwise no_nulls waits
+            # for the next tick.
             assert _get_latest_evaluation_ids(context) == {5, 6}
             runs = _get_runs_for_latest_ticks(context)
-            assert len(runs) == 1
-            run = runs[0]
-            assert run.asset_selection == {dg.AssetKey("processed_files")}
-            assert run.asset_check_selection == {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
-            }
+            combined_run = next(
+                r for r in runs if r.asset_selection == {dg.AssetKey("processed_files")}
+            )
+            assert combined_run.asset_check_selection == {row_count_key}
+            no_nulls_fired_early = any(r.asset_check_selection == {no_nulls_key} for r in runs)
+            assert len(runs) == (2 if no_nulls_fired_early else 1)
 
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
             _execute_ticks(context, executor)
 
-            # now, after processed_files gets materialized, the no_nulls check
-            # can be executed (and row_count also gets executed again because
-            # its condition has been set up poorly)
+            # row_count is always re-requested here because its condition is set
+            # up loosely (any-dep newly_updated re-fires on the just-completed
+            # processed_files materialization). no_nulls is only re-requested if
+            # it didn't already fire in the previous tick.
             assert _get_latest_evaluation_ids(context) == {7, 8}
             runs = _get_runs_for_latest_ticks(context)
-            assert len(runs) == 2
-            # in location 1
-            assert runs[1].asset_check_selection == {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
-            }
-            assert len(runs[1].asset_selection or []) == 0
-            # in location 2
-            assert runs[0].asset_check_selection == {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "no_nulls")
-            }
-            assert len(runs[0].asset_selection or []) == 0
+            row_count_run = next(r for r in runs if r.asset_check_selection == {row_count_key})
+            assert len(row_count_run.asset_selection or []) == 0
+            if no_nulls_fired_early:
+                assert len(runs) == 1
+            else:
+                assert len(runs) == 2
+                no_nulls_run = next(r for r in runs if r.asset_check_selection == {no_nulls_key})
+                assert len(no_nulls_run.asset_selection or []) == 0
 
 
 def test_default_condition() -> None:
