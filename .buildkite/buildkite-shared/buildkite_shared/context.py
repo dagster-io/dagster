@@ -235,6 +235,10 @@ class BuildkiteContext(Generic[T_Config]):
     def has_python_changes(self) -> bool:
         return any(path.suffix == ".py" for path in self.changed_files)
 
+    def has_javascript_changes(self) -> bool:
+        js_root = oss_path("js_modules")
+        return any(path.is_relative_to(js_root) for path in self.changed_files)
+
     def has_yaml_changes(self) -> bool:
         return any(path.suffix in (".yml", ".yaml") for path in self.changed_files)
 
