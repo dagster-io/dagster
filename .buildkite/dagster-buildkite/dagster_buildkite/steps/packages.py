@@ -808,8 +808,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 "execution_tests",
                 # Timing-sensitive concurrency / subprocess-lifecycle tests flake on EKS.
                 queue_overrides={
-                    "engine_tests": BuildkiteQueue.MEDIUM,
-                    "dynamic_tests": BuildkiteQueue.MEDIUM,
                     "misc_execution_tests": BuildkiteQueue.MEDIUM,
                 },
             ),

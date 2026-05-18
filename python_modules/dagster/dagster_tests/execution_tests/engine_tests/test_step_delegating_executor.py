@@ -89,8 +89,10 @@ class TestStepHandler(StepHandler):
 
     @classmethod
     def wait_for_processes(cls):
+        # Budget widened to tolerate slower subprocess cleanup on CPU-constrained
+        # CI nodes (EKS pods); the original 5s timeout assumed EC2-medium speed.
         for p in cls.processes:
-            p.wait(timeout=5)
+            p.wait(timeout=30)
 
 
 @dg.executor(
