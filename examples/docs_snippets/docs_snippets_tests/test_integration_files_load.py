@@ -175,6 +175,8 @@ EXCLUDED_FILES = {
     # FIXME: serverless pipes files require Databricks environment/credentials
     f"{snippets_folder}/databricks/dagster_code_serverless.py",
     f"{snippets_folder}/databricks/databricks_code_serverless.py",
+    f"{snippets_folder}/databricks/databricks_notebook_uc_volumes.py",
+    f"{snippets_folder}/databricks/databricks_pipes_uc_volumes.py",
     f"{snippets_folder}/iceberg/io_manager_daft.py",
     f"{snippets_folder}/iceberg/partition_field_naming_config.py",
 }

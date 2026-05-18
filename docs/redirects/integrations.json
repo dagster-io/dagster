@@ -406,7 +406,12 @@
   },
   {
     "source": "/concepts/dagster-pipes/databricks",
-    "destination": "/integrations/external-pipelines/databricks-pipeline",
+    "destination": "/integrations/libraries/databricks/pipes/classic-clusters",
+    "permanent": true
+  },
+  {
+    "source": "/integrations/external-pipelines/databricks-pipeline",
+    "destination": "/integrations/libraries/databricks/pipes/classic-clusters",
     "permanent": true
   },
   {

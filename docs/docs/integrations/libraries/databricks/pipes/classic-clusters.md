@@ -1,17 +1,21 @@
 ---
-title: Databricks pipelines with Dagster Pipes
-description: 'Learn to integrate Dagster Pipes with Databricks to launch external code from Dagster assets.'
+title: Dagster Pipes with Databricks (DBFS, classic clusters)
+description: 'Use Dagster Pipes to deploy Python scripts to DBFS and run them on classic (non-serverless) Databricks clusters.'
 sidebar_position: 20
 ---
 
 import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
 
-This article covers how to use [Dagster Pipes](/integrations/external-pipelines) with Dagster's [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.
+This article covers how to launch Databricks jobs on classic (non-serverless) clusters using DBFS with [Dagster Pipes](/integrations/external-pipelines). For more on connecting Databricks with Dagster, see the [Databricks integration](/integrations/libraries/databricks).
 
 Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr` of the driver process) and events back to Dagster. This does not require a full Dagster environment on Databricks; instead:
 
 - The Databricks environment needs to include [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored, and
 - Databricks jobs must be launched from Dagster
+
+:::note
+For serverless Databricks compute using Unity Catalog Volumes, see [Dagster Pipes with Databricks (serverless compute)](/integrations/libraries/databricks/pipes/serverless-compute).
+:::
 
 ## Prerequisites
 
@@ -181,7 +185,7 @@ In this step, you'll run the Databricks job you created in [Step 1.2](#step-12-d
 
 ## Advanced: Customization using `open_pipes_session`
 
-The <PyObject section="libraries" integration="databricks" object="PipesDatabricksClient" module="dagster_databricks" /> is a high-level API that doesn't cover all use cases. If you have existing code to launch/poll the job you do not want to change, you want to stream back materializations as they occur, or you just want more control than is permitted by <PyObject section="libraries" integration="databricks" object="PipesDatabricksClient" module="dagster_databricks" />, you can use <PyObject section="pipes" module="dagster" object="open_pipes_session" /> instead of <PyObject section="libraries" integration="databricks" object="PipesDatabricksClient" module="dagster_databricks" />.
+The <PyObject section="libraries" integration="databricks" module="dagster_databricks" object="PipesDatabricksClient" /> is a high-level API that doesn't cover all use cases. If you have existing code to launch/poll the job you do not want to change, you want to stream back materializations as they occur, or you just want more control than is permitted by <PyObject section="libraries" integration="databricks" module="dagster_databricks" object="PipesDatabricksClient" />, you can use <PyObject section="pipes" module="dagster" object="open_pipes_session" /> instead of <PyObject section="libraries" integration="databricks" module="dagster_databricks" object="PipesDatabricksClient" />.
 
 To use <PyObject section="pipes" module="dagster" object="open_pipes_session" />:
 
@@ -198,27 +202,4 @@ With either option, once the <PyObject section="pipes" module="dagster" object="
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/databricks/databricks_asset_open_pipes_session.py"
   title="src/<project_name>/defs/assets.py"
-/>
-
-## Dagster Pipes (copied)
-
-The `PipesDatabricksClient` resource enables you to launch Databricks jobs directly from Dagster assets and ops. This allows you to pass parameters to Databricks code while Dagster receives real-time events, such as logs, asset checks, and asset materializations from the initiated jobs.
-
-### All-purpose compute example
-
-<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code.py" language="python" />
-
-<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/databricks_code.py" language="python" />
-
-### Serverless compute example
-
-Using Pipes with Databricks serverless compute is slightly different. First, you can't specify library dependencies, you must instead define dagster-pipes as a dependency in the notebook environment.
-
-Second, you must use Volumes for context loading and message writing, since DBFS is incompatible with serverless compute.
-
-<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code_serverless.py" language="python" />
-
-<CodeExample
-  path="docs_snippets/docs_snippets/integrations/databricks/databricks_code_serverless.py"
-  language="python"
 />
