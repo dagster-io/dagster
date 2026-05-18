@@ -3648,6 +3648,10 @@
                             "type": "integer"
                         },
                         {
+                            "pattern": "^-?\\d+$",
+                            "type": "string"
+                        },
+                        {
                             "type": "null"
                         }
                     ],
