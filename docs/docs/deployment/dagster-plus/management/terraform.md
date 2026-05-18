@@ -2,9 +2,8 @@
 title: Managing Dagster+ with Terraform
 description: Use the Dagster+ Terraform provider to manage your organization's deployments, users, teams, secrets, and alerts as infrastructure-as-code.
 tags: [dagster-plus-feature]
-canonicalUrl: '/guides/labs/terraform'
-slug: '/guides/labs/terraform'
-sidebar_position: 50
+canonicalUrl: '/deployment/dagster-plus/management/terraform'
+sidebar_position: 9000
 ---
 
 :::info Early access preview

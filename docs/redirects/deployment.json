@@ -758,5 +758,10 @@
     "source": "/deployment/guides/ecs",
     "destination": "/deployment/oss/deployment-options/aws",
     "permanent": true
+  },
+  {
+    "source": "/guides/labs/terraform",
+    "destination": "/deployment/dagster-plus/management/terraform",
+    "permanent": true
   }
 ]
