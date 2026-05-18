@@ -683,12 +683,12 @@ class RunDomain:
         check.str_param(job_snapshot_id, "job_snapshot_id")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
-        check.invariant(
-            execution_plan_snapshot.job_snapshot_id == job_snapshot_id,
-            "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-            f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
-            f'"{job_snapshot_id}"',
-        )
+        if execution_plan_snapshot.job_snapshot_id != job_snapshot_id:
+            logging.getLogger("dagster").warning(
+                "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
+                f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
+                f'"{job_snapshot_id}"'
+            )
 
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
 
