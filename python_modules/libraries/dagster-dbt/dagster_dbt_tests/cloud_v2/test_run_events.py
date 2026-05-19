@@ -62,3 +62,9 @@ def test_default_asset_events_handles_missing_failures(
     )
 
     assert len(events) > 0
+
+    check_evals = [e for e in events if isinstance(e, AssetCheckEvaluation)]
+    skipped_evals = [e for e in check_evals if e.metadata.get("status") == "skipped"]
+
+    if skipped_evals:
+        assert "dagster_dbt/failed_row_count" not in skipped_evals[0].metadata
