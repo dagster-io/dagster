@@ -361,11 +361,6 @@ sling_decorator   = { path = "../../examples/experimental/sling_decorator",   ed
 # Minimum version of Python on which code must run.
 python-version = "3.10"
 
-# Extra paths to use as module-resolution sources.
-extra-paths = [
-  ".buildkite/buildkite-shared",
-]
-
 [tool.ty.rules]
 # Kept in lock-step with the other ty envs — the
 # `test_ty_config_consistency` lint asserts identical `[tool.ty.rules]`

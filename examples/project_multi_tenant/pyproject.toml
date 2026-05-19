@@ -19,21 +19,11 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-include = [
-    "shared",
-    "shared.*",
-    "harbor_outfitters",
-    "harbor_outfitters.*",
-    "summit_financial",
-    "summit_financial.*",
-    "beacon_hq",
-    "beacon_hq.*",
-    "tests",
-]
+[tool.hatch.build.targets.wheel]
+packages = ["shared", "harbor_outfitters", "summit_financial", "beacon_hq"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

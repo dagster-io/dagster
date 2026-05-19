@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-buildkite"
@@ -26,11 +26,6 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/.buildkite/dagster
 [project.scripts]
 dagster-buildkite = "dagster_buildkite.cli:dagster"
 dagster-buildkite-prerelease-package = "dagster_buildkite.cli:prerelease_package"
-
-[tool.setuptools.packages.find]
-exclude = [
-    "test",
-]
 
 [dependency-groups]
 test = [

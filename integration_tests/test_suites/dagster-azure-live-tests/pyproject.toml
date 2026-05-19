@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "azure-test-proj"
@@ -12,8 +12,8 @@ dependencies = [
     "dagster-azure",
 ]
 
-[project.optional-dependencies]
-[tool.setuptools.packages.find]
+[tool.hatch.build.targets.wheel]
+packages = ["azure_test_proj", "integration_tests"]
 
 [dependency-groups]
 test = [
