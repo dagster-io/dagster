@@ -1,5 +1,5 @@
 import responses
-from dagster import AssetCheckEvaluation, AssetMaterialization
+from dagster import AssetCheckEvaluation, AssetMaterialization, MetadataValue
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunResults
 
@@ -64,7 +64,11 @@ def test_default_asset_events_handles_missing_failures(
     assert len(events) > 0
 
     check_evals = [e for e in events if isinstance(e, AssetCheckEvaluation)]
-    skipped_evals = [e for e in check_evals if e.metadata.get("status") == "skipped"]
+    skipped_evals = [
+        e
+        for e in check_evals
+        if e.metadata.get("status") == MetadataValue.text("skipped")
+    ]
 
-    if skipped_evals:
-        assert "dagster_dbt/failed_row_count" not in skipped_evals[0].metadata
+    assert len(skipped_evals) > 0
+    assert "dagster_dbt/failed_row_count" not in skipped_evals[0].metadata
