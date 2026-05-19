@@ -866,7 +866,7 @@ def test_failure_backfill(
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 6
-    from_failure_filter = dg.RunsFilter(tags={BACKFILL_ID_TAG: "fromfailure"})
+    from_failure_filter = dg.RunsFilter(backfill_id="fromfailure")
     assert instance.get_runs_count(filters=from_failure_filter) == 3
 
     runs = instance.get_runs(filters=from_failure_filter)
@@ -1139,7 +1139,7 @@ def test_partial_backfill(
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 5
-    partial_filter = dg.RunsFilter(tags={BACKFILL_ID_TAG: "partial"})
+    partial_filter = dg.RunsFilter(backfill_id="partial")
     assert instance.get_runs_count(filters=partial_filter) == 3
     runs = instance.get_runs(filters=partial_filter)
     three, two, one = runs
@@ -4437,7 +4437,7 @@ def test_run_retry_not_part_of_completed_backfill(
     assert backfill.backfill_end_timestamp is not None
 
     assert retried_run.run_id not in [
-        r.run_id for r in instance.get_runs(filters=RunsFilter.for_backfill(backfill_id))
+        r.run_id for r in instance.get_runs(filters=RunsFilter(backfill_id=backfill_id))
     ]
 
 
