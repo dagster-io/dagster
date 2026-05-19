@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent, PopoverPosition} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -9,6 +7,7 @@ import {
   DialogBody,
   DialogFooter,
   Icon,
+  Intent,
   Menu,
   MenuItem,
   Popover,
@@ -27,6 +26,8 @@ import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
+
+type PopoverPosition = React.ComponentProps<typeof Popover>['position'];
 
 export interface GraphQueryInputProps {
   intent?: Intent;
