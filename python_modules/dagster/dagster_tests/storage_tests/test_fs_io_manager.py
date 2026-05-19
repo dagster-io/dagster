@@ -405,6 +405,53 @@ def test_fs_io_manager_partitioned_self_dep():
         assert result2.output_for_node("a") == 2
 
 
+@pytest.mark.parametrize(
+    "partition_key,expected_relative_subpath",
+    [
+        # leading '/' escaped to '%2F' so pathlib's '/' doesn't drop the base
+        ("/etc/passwd", ("%2Fetc", "passwd")),
+        # '..' segment escaped to '%2E%2E' so the OS doesn't traverse upward
+        # when writing the partition file.
+        ("../escape", ("%2E%2E", "escape")),
+        ("../../escape", ("%2E%2E", "%2E%2E", "escape")),
+        ("nested/../../escape", ("nested", "%2E%2E", "%2E%2E", "escape")),
+        # substrings containing dots are untouched — only whole-segment '..'
+        # gets escaped.
+        ("my..backup", ("my..backup",)),
+    ],
+)
+def test_fs_io_manager_escapes_path_operators_in_partition_keys(
+    tmp_path, partition_key, expected_relative_subpath
+):
+    """PickledObjectFilesystemIOManager escapes path operators ('..',
+    leading '/') in partition keys so they're stored as literal directory
+    names under the asset's storage directory rather than traversing the
+    filesystem or dropping the configured base path.
+    """
+    partitions_def = dg.DynamicPartitionsDefinition(name="escape_partitions")
+    io_manager_def = fs_io_manager.configured({"base_dir": str(tmp_path)})
+
+    @dg.asset(partitions_def=partitions_def)
+    def my_asset(context):
+        return context.partition_key
+
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("escape_partitions", [partition_key])
+
+    result = dg.materialize(
+        assets=[my_asset],
+        resources={"io_manager": io_manager_def},
+        partition_key=partition_key,
+        instance=instance,
+    )
+    assert result.success
+
+    expected_path = tmp_path.joinpath("my_asset", *expected_relative_subpath)
+    assert expected_path.exists(), (
+        f"Expected partition data at {expected_path}, but it was not written there."
+    )
+
+
 def test_fs_io_manager_none():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
