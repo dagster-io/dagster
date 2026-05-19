@@ -34,6 +34,7 @@ Alternatively, `AssetSpec` can be used to define a virtual asset:
 <CodeExample
   path="docs_snippets/docs_snippets/guides/build/assets/virtual_assets.py"
   startAfter="start_spec"
+  endBefore="end_spec"
   title="src/<project_name>/defs/assets.py"
 />
 
