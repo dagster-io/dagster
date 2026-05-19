@@ -1,10 +1,14 @@
+import unittest.mock
+
 import pytest
 import responses
 from dagster import AssetCheckEvaluation, AssetExecutionContext, AssetMaterialization, Failure
 from dagster._core.definitions.materialize import materialize
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.test_utils import environ
 from dagster_dbt.asset_utils import DBT_INDIRECT_SELECTION_ENV
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
+from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
 
@@ -584,3 +588,29 @@ def test_get_active_job_ids_empty_input(workspace: DbtCloudWorkspace) -> None:
         )
         == set()
     )
+
+
+def test_poll_run_cancels_on_dagster_interrupt(workspace: DbtCloudWorkspace) -> None:
+    client = workspace.get_client()
+
+    with responses.RequestsMock() as response:
+        response.add(
+            method=responses.POST,
+            url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/cancel",
+            json=get_sample_run_response(run_status=int(DbtCloudJobRunStatusType.CANCELLED)),
+            status=200,
+        )
+
+        # Patch at the class level since DbtCloudWorkspaceClient is a frozen pydantic model
+        with unittest.mock.patch.object(
+            DbtCloudWorkspaceClient,
+            "get_run_details",
+            side_effect=DagsterExecutionInterruptedError(),
+        ):
+            with pytest.raises(DagsterExecutionInterruptedError):
+                client.poll_run(TEST_RUN_ID, poll_interval=0.01)
+
+        assert len(response.calls) == 1
+        assert_rest_api_call(
+            call=response.calls[0], endpoint=f"runs/{TEST_RUN_ID}/cancel", method="POST"
+        )
