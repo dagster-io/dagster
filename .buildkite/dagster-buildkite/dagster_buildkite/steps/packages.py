@@ -761,8 +761,22 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("cli_tests", splits=2, queue=BuildkiteQueue.MEDIUM),
                 ToxFactor("components_tests"),
                 ToxFactor("core_tests", queue=BuildkiteQueue.MEDIUM),
-                ToxFactor("daemon_sensor_tests", splits=2),
-                ToxFactor("daemon_tests", splits=2),
+                # Daemon tests run a gRPC code-server subprocess plus the
+                # sensor/scheduler daemons + threadpool executors; on the EKS
+                # default 1000m CPU budget the code server's heartbeat thread
+                # gets starved and the server shuts itself down mid-test with
+                # "No heartbeat received in 20 seconds", cascading into every
+                # subsequent test in the split. Match storage_tests' bump below.
+                ToxFactor(
+                    "daemon_sensor_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
+                ToxFactor(
+                    "daemon_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
                 # CPU-bound: `test_asset_daemon_without_sensor` parametrizes over
                 # AssetDaemonScenarios; the slowest scenario submits 73 partitioned run
                 # requests through the synchronous run coordinator in one tick and brushes
@@ -779,7 +793,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("launcher_tests"),
                 ToxFactor("logging_tests"),
                 ToxFactor("model_tests"),
-                ToxFactor("scheduler_tests"),
+                # Same gRPC-code-server/CPU-starvation pattern as the daemon
+                # tests above: test_stale_request_context hits it most reliably.
+                ToxFactor("scheduler_tests", resources=ResourceRequests(cpu="2000m", memory="4Gi")),
                 # `test_threaded_concurrency` (100-thread sqlite contention)
                 # times out at 30s wall-clock on the EKS default 1000m CPU
                 # budget. Bumping per-step CPU to match what pyright/ty use

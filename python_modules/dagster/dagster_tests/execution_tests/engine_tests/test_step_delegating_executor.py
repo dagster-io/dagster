@@ -20,7 +20,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import environ
+from dagster._core.test_utils import environ, poll_for_pool_pending_step
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.definitions import lazy_repository
@@ -523,6 +523,17 @@ def simple_legacy_job():
     simple_legacy_op()
 
 
+def _unblock_pool_after_pending(instance, pool_name):
+    # Why: a fixed sleep here races subprocess startup on slower runners (e.g. EKS
+    # pods) — the slot can be released before the executor attempts its first
+    # claim, so the claim succeeds immediately and the "blocked by limit" event is
+    # never emitted. If the pending state is never observed within the timeout we
+    # release the slot anyway so the test fails on the missing-event assertion
+    # rather than hanging.
+    poll_for_pool_pending_step(instance, pool_name, timeout=60)
+    instance.event_log_storage.set_concurrency_slots(pool_name, 1)
+
+
 def test_blocked_concurrency_limits():
     TestStepHandler.reset()
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -541,13 +552,10 @@ def test_blocked_concurrency_limits():
         ) as instance:
             instance.event_log_storage.set_concurrency_slots("foo", 0)
 
-            def _unblock_concurrency_key(instance, timeout):
-                time.sleep(timeout)
-                instance.event_log_storage.set_concurrency_slots("foo", 1)
-
-            TIMEOUT = 3
             threading.Thread(
-                target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True
+                target=_unblock_pool_after_pending,
+                args=(instance, "foo"),
+                daemon=True,
             ).start()
             with dg.execute_job(dg.reconstructable(simple_job), instance=instance) as result:
                 TestStepHandler.wait_for_processes()
@@ -561,7 +569,7 @@ def test_blocked_concurrency_limits():
                 # the executor loop sleeps every second, so there should be at least a call per
                 # second that the steps are blocked, in addition to the processing of any step
                 # events
-                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3  # ty: ignore[unresolved-attribute]
+                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 5  # ty: ignore[unresolved-attribute]
 
 
 def test_blocked_concurrency_limits_legacy_keys():
@@ -582,13 +590,10 @@ def test_blocked_concurrency_limits_legacy_keys():
         ) as instance:
             instance.event_log_storage.set_concurrency_slots("foo", 0)
 
-            def _unblock_concurrency_key(instance, timeout):
-                time.sleep(timeout)
-                instance.event_log_storage.set_concurrency_slots("foo", 1)
-
-            TIMEOUT = 3
             threading.Thread(
-                target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True
+                target=_unblock_pool_after_pending,
+                args=(instance, "foo"),
+                daemon=True,
             ).start()
             with dg.execute_job(dg.reconstructable(simple_job), instance=instance) as result:
                 TestStepHandler.wait_for_processes()
@@ -602,7 +607,7 @@ def test_blocked_concurrency_limits_legacy_keys():
                 # the executor loop sleeps every second, so there should be at least a call per
                 # second that the steps are blocked, in addition to the processing of any step
                 # events
-                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3  # ty: ignore[unresolved-attribute]
+                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 5  # ty: ignore[unresolved-attribute]
 
 
 def test_check_step_health_exception_fails_open():

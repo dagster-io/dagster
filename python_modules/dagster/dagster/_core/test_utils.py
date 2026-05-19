@@ -362,6 +362,31 @@ def poll_for_subprocess_output(
     return bytes(stdout_buf), bytes(stderr_buf)
 
 
+def poll_for_pool_pending_step(
+    instance: DagsterInstance, pool_name: str, timeout: float = 60
+) -> bool:
+    """Wait until the named concurrency pool has at least one pending step.
+
+    A step becomes pending once the executor has attempted (and failed) to
+    claim a slot. Polling for this state is a more reliable synchronization
+    primitive than a fixed sleep in tests that interleave slot manipulation
+    with subprocess-based execution: subprocess startup latency on slower
+    runners (e.g. k8s pods) can cause a blind sleep to elapse before the
+    executor's first claim, hiding the blocked state the test is trying to
+    observe.
+
+    Returns True if a pending step was observed within ``timeout`` seconds,
+    False otherwise.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        info = instance.event_log_storage.get_concurrency_info(pool_name)
+        if info.pending_step_count > 0:
+            return True
+        time.sleep(0.1)
+    return False
+
+
 @contextmanager
 def new_cwd(path: str) -> Iterator[None]:
     old = os.getcwd()
