@@ -315,6 +315,18 @@ class SqlRunStorage(RunStorage):
                 )
                 query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
 
+        if filters.backfill_id:
+            if self.has_built_index(RUN_BACKFILL_ID):
+                query = query.where(RunsTable.c.backfill_id == filters.backfill_id)
+            else:
+                runs_in_backfill = db_select([RunTagsTable.c.run_id]).where(
+                    db.and_(
+                        RunTagsTable.c.key == BACKFILL_ID_TAG,
+                        RunTagsTable.c.value == filters.backfill_id,
+                    )
+                )
+                query = query.where(RunsTable.c.run_id.in_(runs_in_backfill))
+
         return query
 
     def _runs_query(

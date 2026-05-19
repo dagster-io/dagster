@@ -143,7 +143,7 @@ def execute_job_backfill_iteration(
         # All backfill runs have been submitted, check backfill status
         unfinished_runs = instance.get_runs(
             RunsFilter(
-                tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
+                backfill_id=backfill.backfill_id,
                 statuses=NOT_FINISHED_STATUSES,
             ),
             limit=1,
@@ -166,10 +166,8 @@ def execute_job_backfill_iteration(
             run
             for run in instance.get_runs(
                 filters=RunsFilter(
-                    tags={
-                        **DagsterRun.tags_for_backfill_id(backfill.backfill_id),
-                        WILL_RETRY_TAG: "true",
-                    },
+                    backfill_id=backfill.backfill_id,
+                    tags={WILL_RETRY_TAG: "true"},
                     statuses=[DagsterRunStatus.FAILURE],
                 )
             )
@@ -197,9 +195,7 @@ def execute_job_backfill_iteration(
         # Iterate oldest-first so each root_id ends up mapped to the status of the
         # newest run in its retry chain.
         backfill_runs = instance.get_runs(
-            filters=RunsFilter(
-                tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
-            ),
+            filters=RunsFilter(backfill_id=backfill.backfill_id),
             ascending=True,
         )
         latest_status_by_root: dict[str, DagsterRunStatus] = {}
@@ -282,9 +278,7 @@ def _get_partitions_chunk(
         partition_names = partition_names[index + 1 :]
 
     # for idempotence, fetch all runs with the current backfill id
-    backfill_runs = instance.get_runs(
-        RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
-    )
+    backfill_runs = instance.get_runs(RunsFilter(backfill_id=backfill_job.backfill_id))
     # fetching the partitions def of a legacy dynamic partitioned op-job will raise an error
     # so guard against it by checking if the partitions def exists first
     partitions_def = (
