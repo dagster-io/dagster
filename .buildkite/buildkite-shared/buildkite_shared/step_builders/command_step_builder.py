@@ -422,9 +422,9 @@ class CommandStepBuilder:
             queue = self._step.get("agents", {}).get("queue", "")
             is_gke = "gke" in queue
             if is_gke:
-                docker_image = "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:28.5.2-dind"
+                docker_image = "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:29.4.3-dind"
             else:
-                docker_image = "public.ecr.aws/docker/library/docker:28.5.2-dind"
+                docker_image = "public.ecr.aws/docker/library/docker:29.4.3-dind"
 
             # Bump max-concurrent-downloads/uploads from default 3 to 10 to
             # parallelize layer pulls. The dockerd-entrypoint.sh of the
