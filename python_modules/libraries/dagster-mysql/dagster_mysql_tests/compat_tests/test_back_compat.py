@@ -866,7 +866,7 @@ def test_add_backfill_end_timestamp(conn_string):
                 )
             completed_backfill_run_end_times = []
             for run in instance.get_runs(
-                filters=RunsFilter.for_backfill(completed_backfill.backfill_id)
+                filters=RunsFilter(backfill_id=completed_backfill.backfill_id)
             ):
                 dagster_event = DagsterEvent(
                     event_type_value=DagsterEventType.RUN_SUCCESS.value,
@@ -881,7 +881,7 @@ def test_add_backfill_end_timestamp(conn_string):
                 )
 
             for run in instance.get_runs(
-                filters=RunsFilter.for_backfill(in_progress_backfill.backfill_id)
+                filters=RunsFilter(backfill_id=in_progress_backfill.backfill_id)
             ):
                 dagster_event = DagsterEvent(
                     event_type_value=DagsterEventType.RUN_SUCCESS.value,

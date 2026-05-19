@@ -689,10 +689,6 @@ class RunsFilter(IHaveNew):
     ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
 
-    @staticmethod
-    def for_backfill(backfill_id: str) -> "RunsFilter":
-        return RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_id))
-
 
 class JobBucket(NamedTuple):
     job_names: list[str]
