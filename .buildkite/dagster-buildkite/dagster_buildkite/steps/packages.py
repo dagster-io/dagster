@@ -566,9 +566,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # snippets in all python versions since we are testing the core code exercised by the
             # snippets against all supported python versions.
             unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-            # `test_components_existing_project` + sibling materialize-via-subprocess
-            # snippet tests flake on EKS (cold-cache `uv run dagster asset materialize`).
-            queue=BuildkiteQueue.MEDIUM,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
             pytest_tox_factors=[
                 ToxFactor("all"),
                 ToxFactor("integrations"),
