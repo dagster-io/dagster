@@ -20,3 +20,10 @@ export AWS_ACCOUNT_ID=968703565975
 # upstream releases can break CI as soon as they land on PyPI, even though
 # the workspace lockfile is fine.
 export UV_EXCLUDE_NEWER=48h
+
+# `tox` strips host env vars via per-testenv `passenv` allowlists. Append
+# `UV_*` to every testenv's passenv via tox's CLI-override env var so the
+# UV_EXCLUDE_NEWER above (and any other UV_* knobs we add later) survive into
+# the pytest subprocess — and into any `uv sync` it spawns, including
+# scaffolded-project resolves.
+export TOX_OVERRIDE='testenv.passenv+=UV_*'

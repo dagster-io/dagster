@@ -384,6 +384,15 @@ class CommandStepBuilder:
                 "AWS_REGION",
                 "AWS_ACCOUNT_ID",
                 "UV_DEFAULT_INDEX",
+                # `uv`'s 48h-old-package cutoff, set in the buildkite pre-command
+                # hook to mirror the workspace's `[tool.uv].exclude-newer`. Has
+                # to be allowlisted here or it gets stripped at the docker
+                # boundary (`propagate-environment: False` above).
+                "UV_EXCLUDE_NEWER",
+                # `tox` CLI-override that appends `UV_*` to every testenv's
+                # passenv so the cutoff above survives into the test subprocess
+                # — same docker-boundary reason.
+                "TOX_OVERRIDE",
             ]
             + [
                 # needed by our own stuff
