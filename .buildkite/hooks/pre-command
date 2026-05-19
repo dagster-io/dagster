@@ -13,3 +13,10 @@ export STEP_SPAN_ID="$(echo $BUILDKITE_LABEL | sum | cut -f 1 -d \  )"
 # The internal pre-command hook exports the same value; OSS-context builds
 # (community PRs, oss-tests, DAGSTER_OSS_STEP=1) hit this hook instead.
 export AWS_ACCOUNT_ID=968703565975
+
+# Mirror the workspace's `[tool.uv].exclude-newer` setting so that fresh `uv`
+# resolves performed by subprocesses (e.g. `create-dagster project --uv-sync`
+# in scaffold-based pytests) inherit the same cutoff. Without this, brand-new
+# upstream releases can break CI as soon as they land on PyPI, even though
+# the workspace lockfile is fine.
+export UV_EXCLUDE_NEWER=48h
