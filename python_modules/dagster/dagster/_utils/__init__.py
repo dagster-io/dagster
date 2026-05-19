@@ -604,7 +604,7 @@ def traced(func: T_Callable) -> T_Callable:
     def inner(*args, **kwargs):
         counter = traced_counter.get()
         if counter and isinstance(counter, Counter):
-            counter.increment(func.__qualname__)
+            counter.increment(func.__qualname__)  # ty: ignore[unresolved-attribute]
 
         return func(*args, **kwargs)
 
