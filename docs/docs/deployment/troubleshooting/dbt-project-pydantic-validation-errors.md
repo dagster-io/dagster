@@ -1,6 +1,6 @@
 ---
 title: dbt project path validation errors thrown by pydantic in the Launchpad
-sidebar_position: 90
+sidebar_position: 900
 description: How to resolve pydantic validation errors for DbtCliResource project_dir paths when launching jobs from the Launchpad.
 ---
 

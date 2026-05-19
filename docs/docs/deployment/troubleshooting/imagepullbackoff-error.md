@@ -1,6 +1,6 @@
 ---
 title: ImagePullBackOff error when using GitHub Container Registry with Kubernetes
-sidebar_position: 130
+sidebar_position: 1300
 description: How to configure a Kubernetes image pull secret so your cluster can authenticate with GitHub Container Registry (ghcr.io).
 ---
 

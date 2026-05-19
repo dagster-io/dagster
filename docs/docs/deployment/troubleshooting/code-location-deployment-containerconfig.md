@@ -1,6 +1,6 @@
 ---
 title: Code location deployment fails due to container configuration
-sidebar_position: 50
+sidebar_position: 500
 description: Add the required containerConfig key to your Dagster+ agent configuration to avoid code location deployment failures.
 ---
 

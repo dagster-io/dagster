@@ -1,6 +1,6 @@
 ---
 title: DagsterExecutionInterruptedError randomly raised in GKE Autopilot clusters
-sidebar_position: 80
+sidebar_position: 800
 description: How to resolve DagsterExecutionInterruptedError caused by pod preemption during node initialization on GKE Autopilot.
 ---
 

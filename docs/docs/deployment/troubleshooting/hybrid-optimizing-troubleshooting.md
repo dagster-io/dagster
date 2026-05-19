@@ -1,7 +1,7 @@
 ---
 title: 'Troubleshooting Dagster+ deployments and optimizing performance'
 description: Configure your agent and code server container settings for optimal performance of your Dagster+ deployment.
-sidebar_position: 10
+sidebar_position: 100
 ---
 
 import HybridResources from '@site/docs/partials/_HybridResources.md';

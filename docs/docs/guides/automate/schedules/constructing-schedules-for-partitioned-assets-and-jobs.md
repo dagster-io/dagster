@@ -153,6 +153,25 @@ For example, consider an asset partitioned by hour, while the schedule is set to
   title="src/<project_name>/defs/assets.py"
 />
 
+## Looking up the last partition key for a specific time
+
+When a schedule needs to find the most recent partition key as of a particular execution time (for example, to decide which partition to trigger on a given tick), wrap the call to `get_last_partition_key` in a <PyObject section="partitions" module="dagster" object="partition_loading_context" /> with `effective_dt` set to the time you care about:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automate/schedules/schedules.py"
+  startAfter="start_partition_loading_context"
+  endBefore="end_partition_loading_context"
+  title="src/<project_name>/defs/schedules.py"
+/>
+
+`get_last_partition_key` does not accept a `current_time` argument; the partition loading context is what controls the effective time for the lookup. For the full set of options, see the <PyObject section="partitions" module="dagster" object="partition_loading_context" /> API reference.
+
+:::tip
+
+If you only need the partition key that contains a given timestamp (rather than the most recent completed one), `get_partition_key_for_timestamp` may be simpler. Note that it can return keys for partitions that don't yet exist, so additional validation may be required.
+
+:::
+
 ## APIs in this guide
 
 | Name                                                                                                   | Description                                                                                              |

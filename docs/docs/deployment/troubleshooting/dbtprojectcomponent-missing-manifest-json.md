@@ -1,6 +1,6 @@
 ---
 title: Deploying DbtProjectComponent to Dagster+ — missing manifest.json error
-sidebar_position: 100
+sidebar_position: 1000
 description: How to resolve DagsterDbtManifestNotFoundError when deploying DbtProjectComponent, plus guidance on selectors, cross-code-location dependencies, and column lineage.
 ---
 

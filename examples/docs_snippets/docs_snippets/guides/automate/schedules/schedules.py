@@ -83,3 +83,13 @@ def logs_then_skips(context):
 
 
 # end_schedule_logging
+
+
+# start_partition_loading_context
+import datetime
+
+partitions_def = dg.DailyPartitionsDefinition(start_date="2025-01-01")
+
+with dg.partition_loading_context(effective_dt=datetime.datetime(2025, 1, 2)):
+    last_key = partitions_def.get_last_partition_key()  # "2025-01-01"
+# end_partition_loading_context
