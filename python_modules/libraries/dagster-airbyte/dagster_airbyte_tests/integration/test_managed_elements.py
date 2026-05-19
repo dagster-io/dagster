@@ -148,6 +148,8 @@ def test_basic_integration(
         {
             "host": os.getenv("AIRBYTE_HOSTNAME", "localhost"),
             "port": os.getenv("AIRBYTE_PORT", "80"),
+            "request_timeout": 60,
+            "request_max_retries": 5,
         }
     )
     ab_cacheable_assets = load_assets_from_connections(
