@@ -216,8 +216,9 @@ class DbtCloudJobRunResults:
                         get_completed_at_timestamp(result=result)
                     ),
                 }
-                if result["failures"] is not None:
-                    metadata["dagster_dbt/failed_row_count"] = result["failures"]
+                failures = result.get("failures")
+                if failures is not None:
+                    metadata["dagster_dbt/failed_row_count"] = failures
 
                 asset_check_key = get_asset_check_key_for_test(
                     manifest=manifest,

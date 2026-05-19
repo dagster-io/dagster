@@ -36,3 +36,29 @@ def test_default_asset_events_from_run_results(
     first_check_eval = next(check_eval for check_eval in sorted(asset_check_evaluations))
     assert first_check_eval.check_name == "not_null_customers_customer_id"
     assert first_check_eval.asset_key.path == ["customers"]
+
+
+def test_default_asset_events_handles_missing_failures(
+    workspace: DbtCloudWorkspace,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+):
+    run_results_json = get_sample_run_results_json()
+
+    for result in run_results_json["results"]:
+        if result.get("unique_id", "").startswith("test."):
+            result.pop("failures", None)
+            result["status"] = "skipped"
+            break
+
+    run_results = DbtCloudJobRunResults.from_run_results_json(
+        run_results_json=run_results_json
+    )
+
+    events = list(
+        run_results.to_default_asset_events(
+            client=workspace.get_client(),
+            manifest=workspace.get_or_fetch_workspace_data().manifest,
+        )
+    )
+
+    assert len(events) > 0
