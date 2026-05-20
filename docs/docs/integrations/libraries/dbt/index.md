@@ -317,6 +317,24 @@ Dagster will automatically convert this configuration dictionary into the JSON-e
 
 If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.
 
+### Microbatch incremental models
+
+dbt's microbatch strategy has a different batching model than regular incremental, see [Microbatch incremental models](/integrations/libraries/dbt/dbt-patterns#microbatch-incremental-models). The key difference for `cli_args` is that you use `--event-time-start` and `--event-time-end` instead of `--vars`:
+
+:::note
+
+`--vars` only passes values into the model SQL. It does **not** control which batches the microbatch engine runs.
+
+:::
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/20b-microbatch-defs.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+The `partition_key` template variable is the string key of the active partition (e.g. `2024-01-15` for a daily partition), which matches the ISO 8601 date format expected by dbt's microbatch engine. `partition_time_window.end` provides the exclusive end of the window. Your `PartitionsDefinition` should match the model's `batch_size`, and `start_date` should match the model's `begin` config.
+
 ## Step 10: Customize manifest generation
 
 By default, `DbtProjectComponent` runs `dbt parse --quiet` to generate the manifest during development. If you need `dbt compile` instead — for example, to access `compiled_code` on your dbt nodes — you can set the `prepare_project_cli_args` option on the `project` attribute:

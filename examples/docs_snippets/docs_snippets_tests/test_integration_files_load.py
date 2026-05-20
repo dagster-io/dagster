@@ -90,6 +90,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dbt/pythonic/assets.py",
     f"{snippets_folder}/dbt/pythonic/resources.py",
     f"{snippets_folder}/dbt/pythonic/assets_incrementals.py",
+    f"{snippets_folder}/dbt/pythonic/assets_microbatch_incrementals.py",
     f"{snippets_folder}/dbt/pythonic/assets_translator.py",
     f"{snippets_folder}/dbt/pythonic/remove_assets.py",
     f"{snippets_folder}/dbt/pythonic/remove_resources.py",
