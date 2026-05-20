@@ -2001,7 +2001,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0" },
-    { name = "antlr4-python3-runtime" },
+    { name = "antlr4-python3-runtime", specifier = "<4.14" },
     { name = "boto3-stubs", extras = ["essential"], marker = "extra == 'ty'" },
     { name = "click", specifier = ">=5.0,<9.0" },
     { name = "coloredlogs", specifier = ">=6.1,<=14.0" },
@@ -2047,8 +2047,8 @@ requires-dist = [
     { name = "requests" },
     { name = "responses", marker = "extra == 'test'", specifier = "<=0.23.1" },
     { name = "rich" },
-    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.15.0" },
-    { name = "ruff", marker = "extra == 'test'", specifier = "==0.15.0" },
+    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.15.13" },
+    { name = "ruff", marker = "extra == 'test'", specifier = "==0.15.13" },
     { name = "six" },
     { name = "sqlalchemy", specifier = ">=1.0,<3" },
     { name = "structlog" },
@@ -2060,7 +2060,7 @@ requires-dist = [
     { name = "tox", marker = "extra == 'test'", specifier = ">=4.22" },
     { name = "tox-uv", marker = "extra == 'test'", specifier = ">=1.16" },
     { name = "tqdm", specifier = "<5" },
-    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.35" },
+    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.37" },
     { name = "types-backports", marker = "extra == 'pyright'" },
     { name = "types-backports", marker = "extra == 'ty'" },
     { name = "types-certifi", marker = "extra == 'pyright'" },
