@@ -35,6 +35,8 @@ class ToxFactor:
             takes precedence over the PackageSpec-level queue.
         resources: Optional Kubernetes resource requests for this factor. Only
             takes effect on Kubernetes queues; ignored on EC2 queues.
+        soft_fail: If True, this factor's steps don't fail the build when they
+            fail. Use for known-flaky suites that are temporarily quarantined.
     """
 
     factor: str
@@ -45,6 +47,7 @@ class ToxFactor:
     label_suffix: str | None = None
     queue: BuildkiteQueue | None = None
     resources: ResourceRequests | None = None
+    soft_fail: bool = False
 
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
@@ -71,6 +74,7 @@ def build_tox_step(
     concurrency: int | None = None,
     concurrency_group: str | None = None,
     resources: ResourceRequests | None = None,
+    soft_fail: bool = False,
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
@@ -124,6 +128,9 @@ def build_tox_step(
             raise ValueError("Both 'concurrency' and 'concurrency_group' must be set together")
         step_builder.concurrency(concurrency)
         step_builder.concurrency_group(concurrency_group)
+
+    if soft_fail:
+        step_builder.soft_fail()
 
     return step_builder.build()
 

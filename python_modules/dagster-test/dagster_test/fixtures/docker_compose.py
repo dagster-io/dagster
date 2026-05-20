@@ -387,32 +387,6 @@ def hostnames(network):
 def buildkite_hostnames_cm(network):
     container = current_container()
 
-    if not container:
-        # `current_container()` resolves the runner's `/etc/hostname` against
-        # `docker ps`. That works on the legacy buildkite-agent layout where
-        # the agent is itself a docker container, but returns empty on the EKS
-        # layout (kube pod + dind sidecar) where the pod's hostname is not a
-        # container name dind knows about. Without a container we can't join
-        # the compose network — and that connect call doubles as an implicit
-        # barrier that lets docker's IPAM settle before we go read each
-        # compose container's `NetworkSettings.Networks[<network>].IPAddress`
-        # below. Skipping it races IPAM: a container can be `Started` (so
-        # `docker compose up --detach` returned) but still have an empty
-        # `IPAddress` on the compose network for tens of ms, in which case
-        # `hostnames()` drops it from the returned dict and callers KeyError
-        # on the next lookup. The pod shares its network namespace with the
-        # dind sidecar, so published-port mappings on the compose services
-        # are reachable from the test process over localhost, with no IPAM
-        # dependency. Fall back to the same dict the non-BUILDKITE path
-        # yields; callers that already special-case `localhost` (e.g.
-        # dagster-airbyte's integration tests) pick up the right port.
-        logging.info(
-            "current_container() returned empty; falling back to localhost for "
-            "compose service hostnames (compose services must publish ports)."
-        )
-        yield {c: "localhost" for c in list_containers()}
-        return
-
     try:
         connect_container_to_network(container, network)
         yield hostnames(network)
