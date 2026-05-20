@@ -5712,7 +5712,9 @@ class TestEventLogStorage:
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
-        TOTAL_TIMEOUT_TIME = 30
+        # Bumped from 30s: 100 threads contending a 5-slot pool over SQLite
+        # routinely hits the budget on noisy BK agents.
+        TOTAL_TIMEOUT_TIME = 90
 
         run_id = make_new_run_id()
 
