@@ -17,9 +17,15 @@ except ImportError:
 
 
 def pytest_addoption(parser: pytest.Parser):
+    # The root internal conftest.py re-exports this hook, so when tests live
+    # under dagster-oss/ pytest applies it twice on the same Parser. Tag the
+    # parser the first time through and skip on the second.
+    if getattr(parser, "_dagster_split_registered", False):
+        return
     parser.addoption(
         "--split", action="store", default=None, help="Split test selection (e.g., 0/3)"
     )
+    parser._dagster_split_registered = True  # type: ignore[attr-defined]  # noqa: SLF001
 
 
 def pytest_configure(config):

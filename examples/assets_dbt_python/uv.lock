@@ -109,7 +109,7 @@ dependencies = [
     { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster-cloud", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
-    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../../dagster-cloud/python_modules/dagster-cloud" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../python_modules/dagster-cloud" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster-dbt", version = "0.29.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster-dbt", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-dbt" }, marker = "extra == 'group-17-assets-dbt-python-test-source'" },
     { name = "dagster-duckdb", version = "0.29.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
@@ -140,7 +140,8 @@ test-pypi = [
 ]
 test-source = [
     { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, extra = ["test"], marker = "extra == 'group-17-assets-dbt-python-test-source'" },
-    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../../dagster-cloud/python_modules/dagster-cloud" } },
+    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../python_modules/dagster-cloud" } },
+    { name = "dagster-cloud-cli", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-cloud-cli" } },
     { name = "dagster-dbt", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-dbt" } },
     { name = "dagster-duckdb", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-duckdb" } },
     { name = "dagster-duckdb-pandas", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-duckdb-pandas" } },
@@ -180,7 +181,8 @@ test-pypi = [
 ]
 test-source = [
     { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-cloud", editable = "../../../dagster-cloud/python_modules/dagster-cloud" },
+    { name = "dagster-cloud", editable = "../../python_modules/dagster-cloud" },
+    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
     { name = "dagster-dbt", editable = "../../python_modules/libraries/dagster-dbt" },
     { name = "dagster-duckdb", editable = "../../python_modules/libraries/dagster-duckdb" },
     { name = "dagster-duckdb-pandas", editable = "../../python_modules/libraries/dagster-duckdb-pandas" },
@@ -506,35 +508,35 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "alembic" },
-    { name = "antlr4-python3-runtime" },
-    { name = "click" },
-    { name = "coloredlogs" },
-    { name = "dagster-pipes", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "docstring-parser" },
-    { name = "filelock" },
+    { name = "alembic", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "antlr4-python3-runtime", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "click", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "coloredlogs", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-pipes", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "docstring-parser", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "filelock", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "grpcio", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "grpcio-health-checking", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
-    { name = "jinja2" },
-    { name = "protobuf" },
+    { name = "jinja2", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "protobuf", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "psutil", marker = "(sys_platform == 'win32' and extra == 'group-17-assets-dbt-python-test-pypi') or (sys_platform == 'win32' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
-    { name = "python-dotenv" },
-    { name = "pytz" },
+    { name = "python-dotenv", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pytz", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "pywin32", marker = "(sys_platform == 'win32' and extra == 'group-17-assets-dbt-python-test-pypi') or (sys_platform == 'win32' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
-    { name = "requests" },
-    { name = "rich" },
-    { name = "six" },
-    { name = "sqlalchemy" },
-    { name = "structlog" },
-    { name = "tabulate" },
-    { name = "tomli" },
-    { name = "toposort" },
-    { name = "tqdm" },
-    { name = "tzdata" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "rich", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "six", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "sqlalchemy", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "structlog", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tabulate", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tomli", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "toposort", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tqdm", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tzdata", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "universal-pathlib", version = "0.2.6", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi'" },
     { name = "universal-pathlib", version = "0.3.10", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source') or (extra != 'group-17-assets-dbt-python-test-pypi' and extra != 'group-17-assets-dbt-python-test-source')" },
-    { name = "watchdog" },
+    { name = "watchdog", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/99/2e/670cc41b9d669945d047a55b3c92cb267a31b802916e7492adac1ea19867/dagster-1.13.4.tar.gz", hash = "sha256:7214234c4cf257a276e01b662e770bc69ab5baeff2755487b2f494d9f1c0b532", size = 3182670, upload-time = "2026-05-07T19:39:48.083Z" }
 wheels = [
@@ -559,7 +561,7 @@ test = [
     { name = "pytest-xdist" },
     { name = "rapidfuzz" },
     { name = "responses" },
-    { name = "ruff" },
+    { name = "ruff", version = "0.15.0", source = { registry = "https://pypi.org/simple" } },
     { name = "syrupy" },
     { name = "tox" },
     { name = "tox-uv" },
@@ -622,7 +624,7 @@ test = [
     { name = "pytest-xdist" },
     { name = "rapidfuzz" },
     { name = "responses" },
-    { name = "ruff" },
+    { name = "ruff", version = "0.15.13", source = { registry = "https://pypi.org/simple" } },
     { name = "syrupy" },
     { name = "tox" },
     { name = "tox-uv" },
@@ -631,7 +633,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0" },
-    { name = "antlr4-python3-runtime" },
+    { name = "antlr4-python3-runtime", specifier = "<4.14" },
     { name = "boto3-stubs", extras = ["essential"], marker = "extra == 'ty'" },
     { name = "click", specifier = ">=5.0,<9.0" },
     { name = "coloredlogs", specifier = ">=6.1,<=14.0" },
@@ -677,8 +679,8 @@ requires-dist = [
     { name = "requests" },
     { name = "responses", marker = "extra == 'test'", specifier = "<=0.23.1" },
     { name = "rich" },
-    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.15.0" },
-    { name = "ruff", marker = "extra == 'test'", specifier = "==0.15.0" },
+    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.15.13" },
+    { name = "ruff", marker = "extra == 'test'", specifier = "==0.15.13" },
     { name = "six" },
     { name = "sqlalchemy", specifier = ">=1.0,<3" },
     { name = "structlog" },
@@ -690,7 +692,7 @@ requires-dist = [
     { name = "tox", marker = "extra == 'test'", specifier = ">=4.22" },
     { name = "tox-uv", marker = "extra == 'test'", specifier = ">=1.16" },
     { name = "tqdm", specifier = "<5" },
-    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.35" },
+    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.37" },
     { name = "types-backports", marker = "extra == 'pyright'" },
     { name = "types-backports", marker = "extra == 'ty'" },
     { name = "types-certifi", marker = "extra == 'pyright'" },
@@ -764,13 +766,13 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-cloud-cli", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "pex" },
-    { name = "questionary" },
-    { name = "requests" },
-    { name = "typer" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-cloud-cli", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pex", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "questionary", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8a/93/1a621185b276626f410c7d8d29b33e33cfde387c193f2085b067ff7e18b8/dagster_cloud-1.13.4.tar.gz", hash = "sha256:31f414b630b5cae9ca67b344a0999c3482bd9f03bba649a7bc027b419d687a95", size = 410716, upload-time = "2026-05-07T19:55:36.512Z" }
 wheels = [
@@ -780,7 +782,7 @@ wheels = [
 [[package]]
 name = "dagster-cloud"
 version = "1!0+dev"
-source = { editable = "../../../dagster-cloud/python_modules/dagster-cloud" }
+source = { editable = "../../python_modules/dagster-cloud" }
 resolution-markers = [
     "python_full_version >= '3.11'",
     "python_full_version < '3.11'",
@@ -800,16 +802,16 @@ requires-dist = [
     { name = "boto3", marker = "extra == 'ecs'" },
     { name = "boto3", marker = "extra == 'pex'" },
     { name = "boto3", marker = "extra == 'serverless'" },
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "dagster-aws", marker = "extra == 'ecs'", editable = "../../python_modules/libraries/dagster-aws" },
-    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-dbt", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-dbt" },
-    { name = "dagster-dg-cli", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-dg-cli" },
-    { name = "dagster-docker", marker = "extra == 'docker'", editable = "../../python_modules/libraries/dagster-docker" },
-    { name = "dagster-docker", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-docker" },
-    { name = "dagster-k8s", marker = "extra == 'kubernetes'", editable = "../../python_modules/libraries/dagster-k8s" },
-    { name = "dagster-k8s", marker = "extra == 'tests'", editable = "../../python_modules/libraries/dagster-k8s" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
+    { name = "dagster" },
+    { name = "dagster-aws", marker = "extra == 'ecs'" },
+    { name = "dagster-cloud-cli" },
+    { name = "dagster-dbt", marker = "extra == 'tests'" },
+    { name = "dagster-dg-cli", marker = "extra == 'tests'" },
+    { name = "dagster-docker", marker = "extra == 'docker'" },
+    { name = "dagster-docker", marker = "extra == 'tests'" },
+    { name = "dagster-k8s", marker = "extra == 'kubernetes'" },
+    { name = "dagster-k8s", marker = "extra == 'tests'" },
+    { name = "dagster-shared" },
     { name = "dbt-bigquery", marker = "extra == 'tests'", specifier = ">=1.9.0" },
     { name = "dbt-core", marker = "extra == 'tests'" },
     { name = "dbt-duckdb", marker = "extra == 'tests'" },
@@ -849,18 +851,18 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "click" },
-    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "github3-py" },
-    { name = "jinja2" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "questionary" },
-    { name = "requests" },
-    { name = "setuptools" },
+    { name = "click", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-shared", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "github3-py", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "jinja2", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "packaging", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pyyaml", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "questionary", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "setuptools", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "tomli", marker = "(python_full_version < '3.11' and extra == 'group-17-assets-dbt-python-test-pypi') or (python_full_version < '3.11' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
-    { name = "typer" },
-    { name = "validators" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "validators", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/be/7c/af439ee5cc3dbe71d1bbe0fe40f3cba13b87b3b1de02275193c52bff9b38/dagster_cloud_cli-1.13.4.tar.gz", hash = "sha256:e44cab102edd31de889dd5664dd34572cab0cdb60f91c9a2d63696b5b1221be4", size = 109850, upload-time = "2026-05-07T19:54:51.644Z" }
 wheels = [
@@ -926,18 +928,18 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dbt-core" },
-    { name = "gitpython" },
-    { name = "jinja2" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dbt-core", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "gitpython", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "jinja2", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-17-assets-dbt-python-test-pypi') or (python_full_version < '3.11' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
     { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-17-assets-dbt-python-test-pypi') or (python_full_version >= '3.11' and extra != 'group-17-assets-dbt-python-test-source') or (extra == 'group-17-assets-dbt-python-test-pypi' and extra == 'group-17-assets-dbt-python-test-source')" },
-    { name = "orjson" },
-    { name = "packaging" },
-    { name = "requests" },
-    { name = "rich" },
+    { name = "orjson", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "packaging", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "requests", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "rich", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
     { name = "sqlglot", extra = ["rs"], marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
-    { name = "typer" },
+    { name = "typer", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/6c/126c7802cce36ee5d83ba06f1ef0d2bdfb53ea09c955a4ea7ab93a6f891c/dagster_dbt-0.29.4.tar.gz", hash = "sha256:bbbf02701d2bf4ee5a88c5c9be575bff9d7f43bc59d840c4aa493a106132ee22", size = 421264, upload-time = "2026-05-07T19:47:37.766Z" }
 wheels = [
@@ -1034,8 +1036,8 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "duckdb" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "duckdb", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/aa/5c/a42b6136a5c71a732990a1e10a058d9aadfa20bbe4f64eb7a6ada4e7dc32/dagster_duckdb-0.29.4.tar.gz", hash = "sha256:3351ed051143b5c35bd34309d479b4f690ce4701cef8b34e1e27ba34410b8412", size = 10829, upload-time = "2026-05-07T19:55:25.769Z" }
 wheels = [
@@ -1081,9 +1083,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-duckdb", version = "0.29.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "pandas" },
+    { name = "dagster", version = "1.13.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "dagster-duckdb", version = "0.29.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pandas", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2e/d5/85c5343d53eb28725aeb240f866788762107f7f76edad0de98df206a730e/dagster_duckdb_pandas-0.29.4.tar.gz", hash = "sha256:27ee5b2ddb5213d37b80e32d120f0266fe9b04ff3b87f77747af3b094f226687", size = 11162, upload-time = "2026-05-07T19:48:09.133Z" }
 wheels = [
@@ -1263,12 +1265,12 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "packaging" },
-    { name = "platformdirs" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "tomlkit" },
-    { name = "typing-extensions" },
+    { name = "packaging", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "platformdirs", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pydantic", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "pyyaml", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "tomlkit", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
+    { name = "typing-extensions", marker = "extra == 'group-17-assets-dbt-python-test-pypi' or extra != 'group-17-assets-dbt-python-test-source'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/04/eb/61a5841e5cced34fe247988f5276cd92ce87f80d4370c87eb046e29378e8/dagster_shared-1.13.4.tar.gz", hash = "sha256:4116acb5a78aac852027e43ebad914471e98304fead7992f04c3baec39fa0d2d", size = 95734, upload-time = "2026-05-07T19:50:17.348Z" }
 wheels = [
@@ -2984,6 +2986,10 @@ wheels = [
 name = "ruff"
 version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.11'",
+    "python_full_version < '3.11'",
+]
 sdist = { url = "https://files.pythonhosted.org/packages/c8/39/5cee96809fbca590abea6b46c6d1c586b49663d1d2830a751cc8fc42c666/ruff-0.15.0.tar.gz", hash = "sha256:6bdea47cdbea30d40f8f8d7d69c0854ba7c15420ec75a26f463290949d7f7e9a", size = 4524893, upload-time = "2026-02-03T17:53:35.357Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bc/88/3fd1b0aa4b6330d6aaa63a285bc96c9f71970351579152d231ed90914586/ruff-0.15.0-py3-none-linux_armv6l.whl", hash = "sha256:aac4ebaa612a82b23d45964586f24ae9bc23ca101919f5590bdb368d74ad5455", size = 10354332, upload-time = "2026-02-03T17:52:54.892Z" },
@@ -3003,6 +3009,35 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6f/b0/69adf22f4e24f3677208adb715c578266842e6e6a3cc77483f48dd999ede/ruff-0.15.0-py3-none-win32.whl", hash = "sha256:238a717ef803e501b6d51e0bdd0d2c6e8513fe9eec14002445134d3907cd46c3", size = 10465945, upload-time = "2026-02-03T17:53:12.591Z" },
     { url = "https://files.pythonhosted.org/packages/51/ad/f813b6e2c97e9b4598be25e94a9147b9af7e60523b0cb5d94d307c15229d/ruff-0.15.0-py3-none-win_amd64.whl", hash = "sha256:dd5e4d3301dc01de614da3cdffc33d4b1b96fb89e45721f1598e5532ccf78b18", size = 11564657, upload-time = "2026-02-03T17:52:51.893Z" },
     { url = "https://files.pythonhosted.org/packages/f6/b0/2d823f6e77ebe560f4e397d078487e8d52c1516b331e3521bc75db4272ca/ruff-0.15.0-py3-none-win_arm64.whl", hash = "sha256:c480d632cc0ca3f0727acac8b7d053542d9e114a462a145d0b00e7cd658c515a", size = 10865753, upload-time = "2026-02-03T17:53:03.014Z" },
+]
+
+[[package]]
+name = "ruff"
+version = "0.15.13"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.11'",
+    "python_full_version < '3.11'",
+]
+sdist = { url = "https://files.pythonhosted.org/packages/24/21/a7d5c126d5b557715ef81098f3db2fe20f622a039ff2e626af28d674ab80/ruff-0.15.13.tar.gz", hash = "sha256:f9d89f17f7ba7fb2ed42921f0df75da797a9a5d71bc39049e2c687cf2baf44b7", size = 4678180, upload-time = "2026-05-14T13:44:37.869Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c6/61/11d458dc6ac22504fd8e237b29dfd40504c7fbbcc8930402cfe51a8e63ed/ruff-0.15.13-py3-none-linux_armv6l.whl", hash = "sha256:444b580fc72fd6887e650acd3e575e18cdc79dbcf42fb4030b491057921f61f8", size = 10738279, upload-time = "2026-05-14T13:44:18.7Z" },
+    { url = "https://files.pythonhosted.org/packages/86/ca/caa871ee7be718c45256fada4e16a218ee3e33f0c4a46b729a60a24912e6/ruff-0.15.13-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:6590d009e7cb7ebf36f83dbdd44a3fa48a0994ff6f1cdc1b08006abe58f98dc7", size = 11124798, upload-time = "2026-05-14T13:44:06.427Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/19/43f5f2e568dddde567fc41f8471f9432c09563e19d3e617a48cfa52f8f0a/ruff-0.15.13-py3-none-macosx_11_0_arm64.whl", hash = "sha256:1c26d2f66163deeb6e08d8b39fbbe983ce3c71cea06a6d7591cfd1421793c629", size = 10460761, upload-time = "2026-05-14T13:44:04.375Z" },
+    { url = "https://files.pythonhosted.org/packages/99/df/cf938cd6de3003178f03ad7c1ea2a6c099468c03a35037985070b37e76be/ruff-0.15.13-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9dbd6f94b434f896308e4d57fb7bfde0d02b99f7a64b3bdab0fdfa6a864203a5", size = 10804451, upload-time = "2026-05-14T13:44:25.221Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/7d/5d0973129b154ded2225729169d7068f26b467760b146493fde138415f23/ruff-0.15.13-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:bf3259f3be4d181bda591da5db2571aed6853c6a048157756448020bc6c5cd22", size = 10534285, upload-time = "2026-05-14T13:44:08.888Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/e3/6b999bbc66cd51e5f073842bc2a3995e99c5e0e72e16b15e7261f7abf57a/ruff-0.15.13-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ae9c17e5eb4430c154e76abc25d79a318190f5a997f38fb6b114416c5319ffc9", size = 11312063, upload-time = "2026-05-14T13:44:11.274Z" },
+    { url = "https://files.pythonhosted.org/packages/af/5a/642639e9f5db04f1e97fbd6e091c6fd20725bdf072fb114d00eefb9e6eb8/ruff-0.15.13-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:2e2e39bff6c341f4b577a21b801326fab0b11847f48fcaa83f00a113c9b3cb55", size = 12183079, upload-time = "2026-05-14T13:44:01.634Z" },
+    { url = "https://files.pythonhosted.org/packages/19/4c/7585735f6b53b0f12de13618b2f7d250a844f018822efc899df2e7b8295f/ruff-0.15.13-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e8d9a8e08013542e94d3220bc5b62cc3e5ef87c5f74bff367d3fac14fab013e6", size = 11440833, upload-time = "2026-05-14T13:43:59.043Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/31/bf1a0803d077e679cfeee5f2f67290a0fa79c7385b5d9a8c17b9db2c48f0/ruff-0.15.13-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cc411dfebe5eebe55ce041c6ae080eb7668955e866daa2fbb16692a784f1c4ca", size = 11434486, upload-time = "2026-05-14T13:44:27.761Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/4e/62c9b999875d4f14db80f277c030578f5e249c9852d65b7ac7ad0b43c041/ruff-0.15.13-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:768494eb08b9cee54e2fd27969966f74db5a57f6eaa7a90fcb3306af34dfc4bd", size = 11385189, upload-time = "2026-05-14T13:44:13.704Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/89/7e959047a104df3eb12863447c110140191fc5b6c4f379ea2e803fcdb0e4/ruff-0.15.13-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:fb75f9a3a7e42ffe117d734494e6c5e5cb3565d66e12612cb63d0e572a41a5b6", size = 10781380, upload-time = "2026-05-14T13:43:56.734Z" },
+    { url = "https://files.pythonhosted.org/packages/ff/52/5fd18f3b88cab63e88aa11516b3b4e1e5f720e5c330f8dbe5c26210f41f8/ruff-0.15.13-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:8cb74dd33bb2f6613faf7fc03b660053b5ac4f80e706d5788c6335e2a8048d51", size = 10540605, upload-time = "2026-05-14T13:44:20.748Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/e0/9e35f338990d3e41a82875ff7053ffe97541dae81c9d02143177f381d572/ruff-0.15.13-py3-none-musllinux_1_2_i686.whl", hash = "sha256:7ef823f817fcd191dc934e984be9cf4094f808effa16f2542ad8e821ba02bbf2", size = 11036554, upload-time = "2026-05-14T13:44:16.256Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/13/070fb048c24080fba188f66371e2a92785be257ad02242066dc7255ac6e9/ruff-0.15.13-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:f345a13937bd7f09f6f5d19fa0721b0c103e00e7f62bc67089a8e5e037719e0b", size = 11528133, upload-time = "2026-05-14T13:44:22.808Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/8c/b1e1666aef7fc6555094d73ae6cd981701781ae85b97ceefc0eebd0b4668/ruff-0.15.13-py3-none-win32.whl", hash = "sha256:4044f94208b3b05ba0fc4a4abd0558cf4d6459bd18325eead7fd8cc66f909b41", size = 10721455, upload-time = "2026-05-14T13:44:35.697Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/a6/870a3e8a50590bb92be184ad928c2922f088b00d9dc5c5ec7b924ee08c22/ruff-0.15.13-py3-none-win_amd64.whl", hash = "sha256:7064884d442b7d477b4e7473d12da7f08851d2b1982763c5d3f388a19468a1a4", size = 11900409, upload-time = "2026-05-14T13:44:30.389Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/36/9c015cd052fca743dae8cb2aeb16b551444787467db42ceab0fc968865af/ruff-0.15.13-py3-none-win_arm64.whl", hash = "sha256:2471da9bd1068c8c064b5fd9c0c4b6dddffd6369cb1cd68b29993b1709ff1b21", size = 11179336, upload-time = "2026-05-14T13:44:33.026Z" },
 ]
 
 [[package]]

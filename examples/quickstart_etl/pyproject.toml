@@ -19,6 +19,7 @@ dependencies = [
 [dependency-groups]
 test-source = [
     "dagster-cloud",
+    "dagster-cloud-cli",
     "dagster[test]",
     "dagster-pipes",
     "dagster-shared",
@@ -41,17 +42,15 @@ conflicts = [
 ]
 
 # All entries are gated on `group = "test-source"` so they apply only inside the
-# test-source lock fork. The dagster-cloud path escapes dagster-oss/ to the
-# internal repo's copy — that's fine because test-source is internal-only and
-# the pex builder skips group-qualified sources, so this never leaks into
-# production pex builds or the OSS-synced public layout.
+# test-source lock fork.
 [tool.uv.sources]
 dagster = { path = "../../python_modules/dagster", editable = true, group = "test-source" }
 dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true, group = "test-source" }
 dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true, group = "test-source" }
 dagster-dg-cli = { path = "../../python_modules/libraries/dagster-dg-cli", editable = true, group = "test-source" }
 dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true, group = "test-source" }
-dagster-cloud = { path = "../../../dagster-cloud/python_modules/dagster-cloud", editable = true, group = "test-source" }
+dagster-cloud = { path = "../../python_modules/dagster-cloud", editable = true, group = "test-source" }
+dagster-cloud-cli = { path = "../../python_modules/libraries/dagster-cloud-cli", editable = true, group = "test-source" }
 
 [build-system]
 requires = ["hatchling"]

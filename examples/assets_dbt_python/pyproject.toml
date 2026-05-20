@@ -33,6 +33,7 @@ code_location_name = "assets_dbt_python"
 [dependency-groups]
 test-source = [
     "dagster-cloud",
+    "dagster-cloud-cli",
     "dagster[test]",
     "dagster-pipes",
     "dagster-shared",
@@ -61,10 +62,7 @@ conflicts = [
 ]
 
 # All entries are gated on `group = "test-source"` so they apply only inside the
-# test-source lock fork. The dagster-cloud path escapes dagster-oss/ to the
-# internal repo's copy — that's fine because test-source is internal-only and
-# the pex builder skips group-qualified sources, so this never leaks into
-# production pex builds or the OSS-synced public layout.
+# test-source lock fork.
 [tool.uv.sources]
 dagster = { path = "../../python_modules/dagster", editable = true, group = "test-source" }
 dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true, group = "test-source" }
@@ -74,4 +72,5 @@ dagster-pandas = { path = "../../python_modules/libraries/dagster-pandas", edita
 dagster-dbt = { path = "../../python_modules/libraries/dagster-dbt", editable = true, group = "test-source" }
 dagster-duckdb = { path = "../../python_modules/libraries/dagster-duckdb", editable = true, group = "test-source" }
 dagster-duckdb-pandas = { path = "../../python_modules/libraries/dagster-duckdb-pandas", editable = true, group = "test-source" }
-dagster-cloud = { path = "../../../dagster-cloud/python_modules/dagster-cloud", editable = true, group = "test-source" }
+dagster-cloud = { path = "../../python_modules/dagster-cloud", editable = true, group = "test-source" }
+dagster-cloud-cli = { path = "../../python_modules/libraries/dagster-cloud-cli", editable = true, group = "test-source" }

@@ -75,6 +75,7 @@ def build_tox_step(
     concurrency_group: str | None = None,
     resources: ResourceRequests | None = None,
     soft_fail: bool = False,
+    ecr_passthru: bool = False,
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
@@ -131,6 +132,9 @@ def build_tox_step(
 
     if soft_fail:
         step_builder.soft_fail()
+
+    if ecr_passthru:
+        step_builder.with_ecr_passthru()
 
     return step_builder.build()
 
