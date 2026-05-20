@@ -148,3 +148,14 @@ dbt clean && dbt deps
 ```
 
 Then re-run the snapshots. To prevent recurrence, pin package versions in `packages.yml` rather than letting them float, and test snapshots in a development environment after any package upgrade before promoting to production.
+
+## Recovering from infrastructure interruptions
+
+To gracefully recover from infrastructure interruptions, such as a Kubernetes node eviction or a pod termination, use the `FROM_ASSET_FAILURE` run retry strategy with a `dagster/retry_on_asset_or_op_failure` setting value of `false` to use persisted asset materialization records from the event log and automatically exclude already-materialized assets during retry. This enables recovering without requiring persisted dbt artifacts. See [Configuring run retries](/deployment/execution/run-retries).
+
+<CodeExample
+  path="docs_snippets/docs_snippets/deployment/execution/asset_job_from_asset_failure_retries.py"
+  startAfter="start_from_asset_failure_job"
+  endBefore="end_from_asset_failure_job"
+  title="src/my_project/jobs.py"
+/>
