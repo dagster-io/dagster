@@ -309,7 +309,7 @@ class ScheduleEvaluationContext:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
             )
-        return cast("DagsterInstance", self._instance)
+        return self._instance
 
     @property
     def instance_ref(self) -> InstanceRef | None:
@@ -757,8 +757,8 @@ class ScheduleDefinition(IHasInternalInit):
                 ):
                     _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
-                        _run_config_fn(context)
-                        if has_at_least_one_parameter(_run_config_fn)
+                        _run_config_fn(context)  # ty: ignore[too-many-positional-arguments]
+                        if has_at_least_one_parameter(_run_config_fn)  # ty: ignore[invalid-argument-type]
                         else _run_config_fn()  # type: ignore  # (strict type guard)
                     )
 
@@ -1008,9 +1008,7 @@ class ScheduleDefinition(IHasInternalInit):
                 run_requests = []
                 skip_message = item.skip_message
         else:
-            # NOTE: mypy is not correctly reading this cast-- not sure why
-            # (pyright reads it fine). Hence the type-ignores below.
-            result = cast("list[RunRequest]", check.is_list(result, of_type=RunRequest))
+            result = check.is_list(result, of_type=RunRequest)
             check.invariant(
                 not any(not request.run_key for request in result),
                 "Schedules that return multiple RunRequests must specify a run_key in each"

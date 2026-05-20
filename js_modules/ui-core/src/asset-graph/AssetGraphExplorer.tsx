@@ -39,6 +39,7 @@ import {
   GraphNode,
   groupIdForNode,
   isGroupId,
+  isHiddenAssetGroupJob,
   tokenForAssetKey,
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
@@ -828,6 +829,13 @@ const AssetGraphExplorerWithData = ({
                   {isIframe() ? null : (
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
+                      pipelineSelector={
+                        viewType === AssetGraphViewType.JOB &&
+                        fetchOptions.pipelineSelector &&
+                        !isHiddenAssetGroupJob(fetchOptions.pipelineSelector.pipelineName)
+                          ? fetchOptions.pipelineSelector
+                          : undefined
+                      }
                       scope={
                         nextLayoutLoading
                           ? {all: []}

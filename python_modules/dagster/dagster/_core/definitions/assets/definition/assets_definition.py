@@ -1277,7 +1277,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             ) -> None:
                 if isinstance(new_value, Mapping):
                     if key in new_value:
-                        replace_dict[attr_name] = new_value[key]
+                        replace_dict[attr_name] = new_value[key]  # ty: ignore[invalid-argument-type]
                 elif new_value:
                     replace_dict[attr_name] = new_value
 
@@ -1397,7 +1397,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             selected_asset_keys, selected_asset_check_keys
         )
         return self.__class__.dagster_internal_init(
-            **{
+            **{  # ty: ignore[invalid-argument-type]
                 **self.get_attributes_dict(),
                 "node_def": subsetted_computation.node_def,
                 "selected_asset_keys": subsetted_computation.selected_asset_keys,
@@ -1988,7 +1988,7 @@ def replace_specs_on_asset(
     # If there are no changes to the dependency structure, we don't need to make any changes to the underlying node.
     if not assets_def.is_executable or (not added_dep_keys and not removed_dep_keys):
         return assets_def.__class__.dagster_internal_init(
-            **{**assets_def.get_attributes_dict(), "specs": replaced_specs}
+            **{**assets_def.get_attributes_dict(), "specs": replaced_specs}  # ty: ignore[invalid-argument-type]
         )
 
     # Otherwise, there are changes to the dependency structure. We need to update the node_def.
@@ -2023,7 +2023,7 @@ def replace_specs_on_asset(
     )
 
     return assets_def.__class__.dagster_internal_init(
-        **{
+        **{  # ty: ignore[invalid-argument-type]
             **assets_def.get_attributes_dict(),
             "node_def": assets_def.op.with_replaced_properties(
                 name=assets_def.op.name, ins=all_ins

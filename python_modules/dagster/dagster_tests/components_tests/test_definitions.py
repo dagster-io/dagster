@@ -57,7 +57,7 @@ def test_definitions_decorator_invalid_signature():
 def test_definitions_decorator_return_type():
     """Test that the decorator enforces correct return types."""
 
-    @dg.definitions  # type: ignore
+    @dg.definitions
     def invalid_return():
         return "not a definitions object"
 

@@ -7,6 +7,6 @@ def my_asset():
     return dg.MaterializeResult(
         metadata={
             # file_size_kb will be rendered as a time series
-            "file_size_kb": dg.MetadataValue.int(...)
+            "file_size_kb": dg.MetadataValue.int(...)  # ty: ignore[invalid-argument-type]
         }
     )

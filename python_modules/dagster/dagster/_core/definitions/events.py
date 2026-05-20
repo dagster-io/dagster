@@ -179,7 +179,7 @@ class Output(Generic[T], EventWithMetadata):
             tags=self.tags,
         )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
 
 class DynamicOutput(Generic[T]):
@@ -251,7 +251,7 @@ class DynamicOutput(Generic[T]):
             and self.metadata == other.metadata
         )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
 
 @whitelist_for_serdes
@@ -824,8 +824,8 @@ class ObjectStoreOperation(
     @classmethod
     def serializable(cls, inst, **kwargs):
         return cls(
-            **dict(
-                {  # pyright: ignore[reportArgumentType]
+            **dict(  # ty: ignore[invalid-argument-type]
+                {
                     "op": inst.op.value,
                     "key": inst.key,
                     "dest_key": inst.dest_key,
@@ -855,7 +855,7 @@ class HookExecutionResult(
         return super().__new__(
             cls,
             hook_name=check.str_param(hook_name, "hook_name"),
-            is_skipped=cast("bool", check.opt_bool_param(is_skipped, "is_skipped", default=False)),
+            is_skipped=check.opt_bool_param(is_skipped, "is_skipped", default=False),
         )
 
 

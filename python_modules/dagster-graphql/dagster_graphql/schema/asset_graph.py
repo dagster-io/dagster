@@ -828,7 +828,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return [
             GrapheneAssetStaleCause(
-                GrapheneAssetKey(path=cause.asset_key.path),
+                GrapheneAssetKey(path=cause.asset_key.path),  # ty: ignore[too-many-positional-arguments]
                 cause.partition_key,
                 cause.category,
                 cause.reason,
@@ -1240,7 +1240,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         if address is None:
             return None
         return GrapheneStorageAddress(
-            storageKind=address.storage_kind, tableName=address.table_name
+            storageKind=address.storage_kind,
+            tableName=address.table_name,
         )
 
     def resolve_isAutoCreatedStub(self, _graphene_info: ResolveInfo) -> bool:
@@ -1455,7 +1456,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> GrapheneAssetCheckOrError:
         validation_error = check_asset_checks_support(graphene_info, self._repository_handle)
         if validation_error:
-            return validation_error
+            return validation_error  # ty: ignore[invalid-return-type]
 
         remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
             self._asset_node_snap.asset_key
@@ -1472,10 +1473,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             None,
         )
         if not matching_node:
-            return GrapheneAssetCheckNotFoundError(
+            return GrapheneAssetCheckNotFoundError(  # ty: ignore[invalid-return-type]
                 message=f"Asset check '{checkName}' not found for asset '{self._asset_node_snap.asset_key.to_user_string()}'"
             )
-        return GrapheneAssetCheck(matching_node)
+        return GrapheneAssetCheck(matching_node)  # ty: ignore[invalid-return-type]
 
     def resolve_assetChecksOrError(
         self,
@@ -1500,7 +1501,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
             return GrapheneAssetCheckNeedsAgentUpgradeError(
-                "Asset checks require an agent upgrade to 1.5.0 or greater."
+                "Asset checks require an agent upgrade to 1.5.0 or greater."  # ty: ignore[too-many-positional-arguments]
             )
         else:
             check.invariant(

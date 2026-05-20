@@ -5,7 +5,7 @@ import pandas as pd
 
 import dagster as dg
 
-from .asset_input_managers import (
+from .asset_input_managers import (  # ty: ignore[unresolved-import]
     load_numpy_array,
     load_pandas_dataframe,
     store_pandas_dataframe,

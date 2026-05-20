@@ -62,7 +62,7 @@ def test_op_invocation_lifecycle():
         pass
 
     # Verify dispose was called on the instance
-    assert context.instance.run_storage._held_conn.closed  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+    assert context.instance.run_storage._held_conn.closed  # noqa
 
 
 def test_op_invocation_context_arg():
@@ -1320,9 +1320,9 @@ def test_async_assets_with_shared_context():
     ctx = dg.build_asset_context()
 
     async def main():
-        return await asyncio.gather(
-            async_asset_one(ctx),  # type: ignore
-            async_asset_two(ctx),  # type: ignore
+        return await asyncio.gather(  # ty: ignore[no-matching-overload]
+            async_asset_one(ctx),
+            async_asset_two(ctx),
         )
 
     with pytest.raises(
@@ -1408,15 +1408,15 @@ def test_context_bound_state_async():
 
     ctx = dg.build_asset_context()
 
-    result = asyncio.run(async_asset(ctx))  # pyright: ignore[reportArgumentType]
+    result = asyncio.run(async_asset(ctx))  # ty: ignore[invalid-argument-type]
     assert result == "one"
-    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
-    assert_execution_properties_exist(ctx)  # pyright: ignore[reportArgumentType]
+    assert_context_unbound(ctx)  # ty: ignore[invalid-argument-type]
+    assert_execution_properties_exist(ctx)  # ty: ignore[invalid-argument-type]
 
-    result = asyncio.run(async_asset(ctx))  # pyright: ignore[reportArgumentType]
+    result = asyncio.run(async_asset(ctx))  # ty: ignore[invalid-argument-type]
     assert result == "one"
-    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
-    assert_execution_properties_exist(ctx)  # pyright: ignore[reportArgumentType]
+    assert_context_unbound(ctx)  # ty: ignore[invalid-argument-type]
+    assert_execution_properties_exist(ctx)  # ty: ignore[invalid-argument-type]
 
 
 def test_context_bound_state_async_generator():
@@ -1461,7 +1461,7 @@ def test_bound_state_with_error_assets():
     with pytest.raises(dg.Failure):
         throws_error(ctx)
 
-    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
+    assert_context_unbound(ctx)  # ty: ignore[invalid-argument-type]
 
     @dg.asset
     def no_error(context):
@@ -1502,16 +1502,16 @@ def test_context_bound_state_with_error_generator():
 def test_context_bound_state_with_error_async():
     @dg.asset
     async def async_asset(context):
-        assert_context_bound(ctx)  # pyright: ignore[reportArgumentType]
+        assert_context_bound(ctx)  # ty: ignore[invalid-argument-type]
         await asyncio.sleep(0.01)
         raise dg.Failure("something bad happened!")
 
     ctx = dg.build_asset_context()
 
     with pytest.raises(dg.Failure):
-        asyncio.run(async_asset(ctx))  # pyright: ignore[reportArgumentType]
+        asyncio.run(async_asset(ctx))  # ty: ignore[invalid-argument-type]
 
-    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
+    assert_context_unbound(ctx)  # ty: ignore[invalid-argument-type]
 
 
 def test_context_bound_state_with_error_async_generator():

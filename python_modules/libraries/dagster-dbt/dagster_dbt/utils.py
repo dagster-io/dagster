@@ -141,7 +141,7 @@ def _select_unique_ids_from_manifest(
 
     functions = {}
     if DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION >= version.parse("1.11.0"):
-        from dbt.contracts.graph.nodes import FunctionNode  # pyright: ignore
+        from dbt.contracts.graph.nodes import FunctionNode  # ty: ignore
 
         functions = (
             {
@@ -155,18 +155,15 @@ def _select_unique_ids_from_manifest(
         )
 
     manifest = Manifest(
-        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
-        sources={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["sources"].items()  # type: ignore
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},  # ty: ignore[invalid-argument-type]
+        sources={  # ty: ignore[invalid-argument-type]
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
         },
-        metrics={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+        metrics={  # ty: ignore[invalid-argument-type]
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
         },
-        exposures={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+        exposures={  # ty: ignore[invalid-argument-type]
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()
         },
         **(  # type: ignore
             {

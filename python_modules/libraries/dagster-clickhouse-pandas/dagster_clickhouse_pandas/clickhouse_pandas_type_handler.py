@@ -4,15 +4,12 @@ import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_clickhouse.db_client import (  # ty: ignore[unresolved-import]
+from dagster_clickhouse.db_client import (
     ClickhouseDbClient,
     _quote_ident,
     format_clickhouse_table_fqn,
 )
-from dagster_clickhouse.io_manager import (  # ty: ignore[unresolved-import]
-    ClickhouseIOManager,
-    build_clickhouse_io_manager,
-)
+from dagster_clickhouse.io_manager import ClickhouseIOManager, build_clickhouse_io_manager
 
 
 def _pandas_dtype_to_clickhouse(dtype) -> str:

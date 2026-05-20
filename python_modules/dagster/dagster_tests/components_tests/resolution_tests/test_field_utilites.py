@@ -41,7 +41,7 @@ def test_override_dataclass() -> None:
 
     @dataclass
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
 
     annotations = _get_annotations(Derived)
     assert "value" in annotations
@@ -57,7 +57,7 @@ def test_override_pydantic() -> None:
     class CustomResolver(dg.Resolver): ...
 
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
 
     annotations = _get_annotations(Derived)
     assert "value" in annotations

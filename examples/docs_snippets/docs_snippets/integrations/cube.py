@@ -1,4 +1,4 @@
-from dagster_cube import CubeResource
+from dagster_cube import CubeResource  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

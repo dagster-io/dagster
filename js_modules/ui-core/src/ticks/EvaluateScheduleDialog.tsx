@@ -156,6 +156,11 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
           title: 'Schedule not found',
           body: `Could not find a schedule named: ${name}`,
         });
+      } else if (data?.__typename === 'UnauthorizedError') {
+        showCustomAlert({
+          title: 'Unauthorized',
+          body: 'You do not have permission to dry run this schedule.',
+        });
       } else {
         setScheduleExecutionError(data);
       }

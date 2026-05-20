@@ -1,5 +1,4 @@
-import {useState} from 'react';
-import styled from 'styled-components';
+import React, {useState} from 'react';
 
 import {Box} from '../Box';
 import {Checkbox} from '../Checkbox';
@@ -114,14 +113,18 @@ export const Styled = () => {
   );
 };
 
-const StyledIcon = styled(Icon)`
-  font-weight: 500;
-`;
+const StyledIcon = (props: React.ComponentProps<typeof Icon>) => (
+  <Icon {...props} style={{fontWeight: 500, ...props.style}} />
+);
 
-const Dot = styled.div<{color: string}>`
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background-color: ${({color}) => color};
-  display: inline-block;
-`;
+const Dot = ({color}: {color: string}) => (
+  <div
+    style={{
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: color,
+      display: 'inline-block',
+    }}
+  />
+);

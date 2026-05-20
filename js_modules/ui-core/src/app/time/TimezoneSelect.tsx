@@ -1,4 +1,4 @@
-import {Box, Menu, MenuDivider, MenuItem, Select} from '@dagster-io/ui-components';
+import {MenuItem, Select} from '@dagster-io/ui-components';
 import {ComponentProps, useMemo} from 'react';
 
 import {
@@ -137,11 +137,6 @@ export const TimezoneSelect = ({
             offsetLabel: localOffsetLabel(),
             offset: 0,
           },
-          {
-            key: 'divider-1',
-            offsetLabel: '',
-            offset: 0,
-          },
         ]
       : [];
 
@@ -157,21 +152,7 @@ export const TimezoneSelect = ({
           ]
         : []),
       ...allTimezoneItems.filter((tz) => POPULAR_TIMEZONES.has(tz.key)),
-      ...(timezonesForLocale.length
-        ? [
-            {
-              key: 'divider-2',
-              offsetLabel: '',
-              offset: 0,
-            },
-            ...timezonesForLocale,
-          ]
-        : []),
-      {
-        key: 'divider-3',
-        offsetLabel: '',
-        offset: 0,
-      },
+      ...timezonesForLocale,
       ...allTimezoneItems.filter(
         (tz) => !POPULAR_TIMEZONES.has(tz.key) && !timezonesForLocaleSet.has(tz.key),
       ),
@@ -189,27 +170,16 @@ export const TimezoneSelect = ({
       inputProps={{style: {width: '300px'}}}
       items={allTimezoneItems}
       itemPredicate={(query, tz) => (tz.text ?? tz.key).toLowerCase().includes(query.toLowerCase())}
-      itemRenderer={(tz, props) =>
-        tz.key.startsWith('divider') ? (
-          <MenuDivider key={tz.key} />
-        ) : (
-          <MenuItem
-            active={props.modifiers.active}
-            onClick={props.handleClick}
-            right={tz.offsetLabel}
-            key={tz.key}
-            text={tz.text ?? tz.key}
-          />
-        )
-      }
-      itemListRenderer={({renderItem, filteredItems}) => {
-        const renderedItems = filteredItems.map(renderItem).filter(Boolean);
-        return (
-          <Menu style={{maxHeight: '300px', overflowY: 'auto'}}>
-            <Box padding={{vertical: 4}}>{renderedItems}</Box>
-          </Menu>
-        );
-      }}
+      itemRenderer={(tz, props) => (
+        <MenuItem
+          active={props.modifiers.active}
+          onClick={props.handleClick}
+          right={tz.offsetLabel}
+          key={tz.key}
+          text={tz.text ?? tz.key}
+        />
+      )}
+      menuWidth={300}
       noResults={<MenuItem disabled text="No results." />}
       onItemSelect={(tz) => setTimezone(tz.key)}
     >

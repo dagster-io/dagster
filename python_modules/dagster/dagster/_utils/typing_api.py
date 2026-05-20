@@ -179,4 +179,4 @@ def _flatten_unions_inner(ttype: type | UnionType) -> typing.Iterable[type]:
         for arg in get_args(ttype):
             yield from flatten_unions(arg)
     else:
-        yield ttype  # pyright: ignore[reportReturnType]
+        yield ttype

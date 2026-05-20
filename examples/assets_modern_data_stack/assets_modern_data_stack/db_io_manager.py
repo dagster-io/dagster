@@ -14,7 +14,7 @@ class DbIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
         if isinstance(obj, pd.DataFrame):
             # write df to table
-            obj.to_sql(name=context.asset_key.path[-1], con=self._con, if_exists="replace")
+            obj.to_sql(name=context.asset_key.path[-1], con=self._con, if_exists="replace")  # ty: ignore[unresolved-attribute]
         elif obj is None:
             # dbt has already written the data to this table
             pass

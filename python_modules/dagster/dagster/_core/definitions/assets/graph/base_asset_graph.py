@@ -436,7 +436,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get_partition_mapping(
         self, key: T_EntityKey, parent_asset_key: EntityKey
     ) -> PartitionMapping:
-        node = self.get(key)
+        node = self.get(key)  # ty: ignore[no-matching-overload]
         return infer_partition_mapping(
             node.partition_mappings.get(parent_asset_key),
             node.partitions_def,
@@ -456,9 +456,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         Virtual assets are excluded from the result; their upstream parents are walked instead.
         """
-        frontier: set[AssetKey] = set(
-            cast("AbstractSet[AssetKey]", self.get(key).parent_entity_keys)
-        )
+        frontier: set[AssetKey] = set(self.get(key).parent_entity_keys)
         resolved: set[AssetKey] = set()
         while frontier:
             current = frontier.pop()

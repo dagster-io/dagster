@@ -121,7 +121,7 @@ def schedule(
         check.callable_param(fn, "fn")
         validate_resource_annotated_function(fn)
 
-        schedule_name = name or fn.__name__
+        schedule_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         validated_tags = None
 
@@ -184,8 +184,8 @@ def schedule(
                     )
                     yield RunRequest(
                         run_key=None,
-                        run_config=evaluated_run_config,
-                        tags=evaluated_tags,
+                        run_config=evaluated_run_config,  # ty: ignore[invalid-argument-type]
+                        tags=evaluated_tags,  # ty: ignore[invalid-argument-type]
                     )
                 elif isinstance(result, list):
                     yield from cast("list[RunRequest]", result)

@@ -3,7 +3,7 @@
 # start
 import dagster as dg
 
-from .resources import SomeResource
+from .resources import SomeResource  # ty: ignore[unresolved-import]
 
 
 @dg.asset

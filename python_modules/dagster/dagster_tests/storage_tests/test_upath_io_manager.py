@@ -22,6 +22,7 @@ from dagster._core.definitions.partitions.definition import (
     HourlyPartitionsDefinition,
 )
 from dagster._core.events import HandledOutputData
+from dagster._core.storage.upath_io_manager import coerce_to_relative_parts
 from fsspec.asyn import AsyncFileSystem
 from pydantic import (
     Field as PydanticField,
@@ -343,6 +344,111 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
     assert ".ext" == dumped_path.suffix
 
 
+def test_upath_io_manager_absolute_partition_key_lands_under_base(tmp_path: Path):
+    """An absolute partition key has its leading '/' escaped so the
+    storage path stays under the base path. Universal behavior on
+    UPathIOManager; subclasses backed by hierarchical filesystems layer
+    on additional escaping of '.' and '..' path segments.
+    """
+    partitions_def = dg.DynamicPartitionsDefinition(name="absolute_partition_test")
+
+    dumped_path: UPath | None = None
+
+    class TrackingIOManager(dg.UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
+            nonlocal dumped_path
+            dumped_path = path
+
+        def load_from_path(self, context: InputContext, path: UPath) -> Any:
+            return None
+
+    io_manager = TrackingIOManager(base_path=UPath(tmp_path))
+
+    @dg.asset(partitions_def=partitions_def)
+    def my_asset(context: AssetExecutionContext) -> list:
+        return [context.partition_key]
+
+    instance = dg.DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("absolute_partition_test", ["/etc/passwd"])
+
+    result = dg.materialize(
+        assets=[my_asset],
+        resources={"io_manager": io_manager},
+        partition_key="/etc/passwd",
+        instance=instance,
+    )
+    assert result.success
+    assert dumped_path is not None
+    assert dumped_path == UPath(tmp_path) / "my_asset" / "%2Fetc" / "passwd"
+
+
+def test_coerce_to_relative_parts_escapes_absolute_paths():
+    """An absolute UPath is reshaped to relative parts with the leading
+    '/' encoded on the first component, so distinct absolute and relative
+    inputs map to distinct results.
+    """
+    assert coerce_to_relative_parts(UPath("/etc/passwd")) == ("%2Fetc", "passwd")
+    assert coerce_to_relative_parts(UPath("etc/passwd")) == ("etc", "passwd")
+    assert coerce_to_relative_parts(UPath("/foo")) == ("%2Ffoo",)
+    assert coerce_to_relative_parts(UPath("foo")) == ("foo",)
+    # absolute and relative inputs map to distinct results
+    assert coerce_to_relative_parts(UPath("/foo")) != coerce_to_relative_parts(UPath("foo"))
+
+
+@pytest.mark.parametrize(
+    "partition_key,expected_partition_suffix",
+    [
+        ("../escape", ("..", "escape")),
+        ("a/../b", ("a", "..", "b")),
+    ],
+)
+def test_upath_io_manager_base_class_passes_dot_segments_through(
+    tmp_path: Path, partition_key: str, expected_partition_suffix: tuple[str, ...]
+):
+    """The base UPathIOManager does not escape '..' path segments — only
+    subclasses backed by hierarchical filesystems override
+    make_safe_partition_path to add that escaping. On a base-class
+    subclass (proxy for a flat-keyspace IO manager) the joined path
+    handed to dump_to_path contains the segments verbatim.
+    """
+    dumped_path: UPath | None = None
+
+    class TrackingIOManager(dg.UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
+            nonlocal dumped_path
+            dumped_path = path
+
+        def load_from_path(self, context: InputContext, path: UPath) -> Any:
+            return None
+
+        def make_directory(self, path: UPath) -> None:
+            pass
+
+    partitions_def = dg.DynamicPartitionsDefinition(name="base_class_partitions")
+    io_manager = TrackingIOManager(base_path=UPath(tmp_path))
+
+    @dg.asset(partitions_def=partitions_def)
+    def my_asset(context: AssetExecutionContext) -> list:
+        return [context.partition_key]
+
+    instance = dg.DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("base_class_partitions", [partition_key])
+
+    result = dg.materialize(
+        assets=[my_asset],
+        resources={"io_manager": io_manager},
+        partition_key=partition_key,
+        instance=instance,
+    )
+    assert result.success
+    assert dumped_path is not None
+    # The literal '..' segment is present in .parts — base class does not
+    # escape it to '%2E%2E' (which is what PickledObjectFilesystemIOManager
+    # would do).
+    assert dumped_path.parts[-len(expected_partition_suffix) :] == expected_partition_suffix
+    assert ".." in dumped_path.parts
+
+
 def test_partitioned_io_manager_preserves_single_partition_dependency(
     daily: DailyPartitionsDefinition, dummy_io_manager: DummyIOManager
 ):
@@ -640,7 +746,7 @@ def test_upath_can_transition_from_non_partitioned_to_partitioned(
     my_io_manager = PickleIOManager(UPath(tmp_path))
 
     @dg.asset
-    def my_asset():  # pyright: ignore[reportRedeclaration]
+    def my_asset():
         return 1
 
     assert dg.materialize([my_asset], resources={"io_manager": my_io_manager}).success

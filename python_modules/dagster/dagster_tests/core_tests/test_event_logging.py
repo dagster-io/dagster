@@ -45,7 +45,7 @@ def test_empty_job():
     def _event_callback(record):
         assert isinstance(record, dg.EventLogEntry)
         if record.is_dagster_event:
-            events[record.dagster_event.event_type].append(record)  # pyright: ignore[reportOptionalMemberAccess]
+            events[record.dagster_event.event_type].append(record)
 
     job_def = dg.JobDefinition(
         graph_def=dg.GraphDefinition(
@@ -89,22 +89,22 @@ def test_single_op_job_success():
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.job_name == "single_op_job"
-    assert start_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
+    assert start_event.dagster_event.node_name == "op_one"  # ty: ignore[unresolved-attribute]
 
     # persisted logging tags contain pipeline_name but not pipeline_tags
-    assert start_event.dagster_event.logging_tags["job_name"] == "single_op_job"  # pyright: ignore[reportAttributeAccessIssue]
-    assert "pipeline_tags" not in start_event.dagster_event.logging_tags  # pyright: ignore[reportAttributeAccessIssue]
+    assert start_event.dagster_event.logging_tags["job_name"] == "single_op_job"  # ty: ignore[unresolved-attribute]
+    assert "pipeline_tags" not in start_event.dagster_event.logging_tags  # ty: ignore[unresolved-attribute]
 
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
     assert output_event
-    assert output_event.dagster_event.step_output_data.output_name == "result"  # pyright: ignore[reportAttributeAccessIssue]
+    assert output_event.dagster_event.step_output_data.output_name == "result"  # ty: ignore[unresolved-attribute]
 
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)
     assert success_event.job_name == "single_op_job"
-    assert success_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
+    assert success_event.dagster_event.node_name == "op_one"  # ty: ignore[unresolved-attribute]
 
-    assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)  # pyright: ignore[reportAttributeAccessIssue]
-    assert success_event.dagster_event.step_success_data.duration_ms > 0.0  # pyright: ignore[reportAttributeAccessIssue]
+    assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)  # ty: ignore[unresolved-attribute]
+    assert success_event.dagster_event.step_success_data.duration_ms > 0.0  # ty: ignore[unresolved-attribute]
 
 
 def test_single_op_job_failure():
@@ -132,14 +132,14 @@ def test_single_op_job_failure():
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.job_name == "single_op_job"
 
-    assert start_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
-    assert start_event.level == logging.DEBUG  # pyright: ignore[reportAttributeAccessIssue]
+    assert start_event.dagster_event.node_name == "op_one"  # ty: ignore[unresolved-attribute]
+    assert start_event.level == logging.DEBUG  # ty: ignore[unresolved-attribute]
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
     assert failure_event.job_name == "single_op_job"
 
-    assert failure_event.dagster_event.node_name == "op_one"  # pyright: ignore[reportAttributeAccessIssue]
-    assert failure_event.level == logging.ERROR  # pyright: ignore[reportAttributeAccessIssue]
+    assert failure_event.dagster_event.node_name == "op_one"  # ty: ignore[unresolved-attribute]
+    assert failure_event.level == logging.ERROR  # ty: ignore[unresolved-attribute]
 
 
 def define_simple():
@@ -189,7 +189,7 @@ def test_event_forward_compat_with_event_specific_data():
     assert result.step_key == "future_step"
     assert (
         'Attempted to deserialize class "FutureEventData" which is not in the whitelist.'
-        in result.event_specific_data.error.message  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        in result.event_specific_data.error.message  # ty: ignore[unresolved-attribute]
     )
 
 
@@ -208,7 +208,7 @@ def test_event_forward_compat_without_event_specific_data():
     assert result.step_key == "future_step"
     assert (
         "'EVENT_TYPE_FROM_THE_FUTURE' is not a valid DagsterEventType"
-        in result.event_specific_data.error.message  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        in result.event_specific_data.error.message  # ty: ignore[unresolved-attribute]
     )
 
 

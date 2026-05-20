@@ -39,8 +39,7 @@
     "react-dom": "^18.3.1",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
-    "react-router-dom-v5-compat": "^6.30.3",
-    "styled-components": "^5.3.3"
+    "react-router-dom-v5-compat": "^6.30.3"
   },
   "dependencies": {
     "@koale/useworker": "^4.1.2",
@@ -143,7 +142,6 @@
     "@types/react-router": "^5.1.17",
     "@types/react-router-dom": "^5.3.3",
     "@types/spark-md5": "^3.0.5",
-    "@types/styled-components": "^5.1.26",
     "@types/testing-library__jest-dom": "^5.14.2",
     "@types/ws": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
@@ -176,7 +174,6 @@
     "react-router-dom-v5-compat": "^6.30.3",
     "resize-observer-polyfill": "^1.5.1",
     "storybook": "^10.2.10",
-    "styled-components": "^5.3.3",
     "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
     "typescript": "5.9.2",

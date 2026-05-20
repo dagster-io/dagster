@@ -4218,9 +4218,17 @@ enum ReexecutionStrategy {
   ALL_STEPS
 }
 
-union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
+union SensorDryRunResult =
+  | PythonError
+  | SensorNotFoundError
+  | UnauthorizedError
+  | DryRunInstigationTick
 
-union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
+union ScheduleDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | ScheduleNotFoundError
+  | UnauthorizedError
 
 union TerminateRunsResultOrError = TerminateRunsResult | PythonError
 

@@ -264,7 +264,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         # of self._per_invocation_properties without causing pyright errors
         return self._per_invocation_properties
 
-    def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def bind(
         self,
         op_def: OpDefinition,
         pending_invocation: PendingNodeInvocation[OpDefinition] | None,
@@ -486,7 +486,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         per_invocation_properties = self._check_bound_to_invocation(
             fn_name="op_def", fn_type="property"
         )
-        return cast("OpDefinition", per_invocation_properties.op_def)
+        return per_invocation_properties.op_def
 
     @property
     def has_assets_def(self) -> bool:
@@ -565,7 +565,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         per_invocation_properties = self._check_bound_to_invocation(
             fn_name="alias", fn_type="property"
         )
-        return cast("str", per_invocation_properties.alias)
+        return per_invocation_properties.alias
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "method"))
@@ -764,7 +764,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
             self._execution_properties.output_metadata[output_name][mapping_key] = metadata
 
         else:
-            self._execution_properties.output_metadata[output_name] = metadata  # pyright: ignore[reportArgumentType]
+            self._execution_properties.output_metadata[output_name] = metadata  # ty: ignore[invalid-assignment]
 
     # In bound mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.
@@ -780,17 +780,19 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         )
         return self._execution_properties.typed_event_stream_error_message
 
-    def set_requires_typed_event_stream(self, *, error_message: str | None) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def set_requires_typed_event_stream(self, *, error_message: str | None) -> None:  # ty: ignore[invalid-method-override]
         self._check_bound_to_invocation(fn_name="set_requires_typed_event_stream", fn_type="method")
         self._execution_properties.requires_typed_event_stream = True
         self._execution_properties.typed_event_stream_error_message = error_message
 
 
 class DirectAssetCheckExecutionContext(AssetCheckExecutionContext, BaseDirectExecutionContext):
+    _op_execution_context: DirectOpExecutionContext
+
     def __init__(self, op_execution_context: DirectOpExecutionContext):
         self._op_execution_context = op_execution_context
 
-    def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def bind(
         self,
         op_def: OpDefinition,
         pending_invocation: PendingNodeInvocation[OpDefinition] | None,
@@ -850,6 +852,8 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
     being invoked directly. Can also be used as a context manager.
     """
 
+    _op_execution_context: DirectOpExecutionContext
+
     def __init__(self, op_execution_context: DirectOpExecutionContext):
         self._op_execution_context = op_execution_context
 
@@ -867,7 +871,7 @@ class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionCont
         if not self._op_execution_context._per_invocation_properties:  # noqa: SLF001
             raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
 
-    def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def bind(
         self,
         op_def: OpDefinition,
         pending_invocation: PendingNodeInvocation[OpDefinition] | None,

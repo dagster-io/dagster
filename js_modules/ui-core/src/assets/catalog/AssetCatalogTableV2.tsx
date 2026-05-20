@@ -2,6 +2,7 @@ import {
   Body,
   Box,
   Button,
+  Checkbox,
   Colors,
   Icon,
   MenuItem,
@@ -29,6 +30,7 @@ import {useSetRecoilState} from 'recoil';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetCatalogTableSidebar} from './AssetCatalogTableSidebar';
+import styles from './AssetCatalogTableV2.module.css';
 import {
   AssetCatalogV2VirtualizedTable,
   AssetCatalogV2VirtualizedTableProps,
@@ -36,6 +38,7 @@ import {
 import {AssetHealthGroupBy, GROUP_BY_ITEMS} from './AttributeStatusHeaderRow';
 import {SelectedAssetsPopoverContent} from './SelectedAssetsPopoverContent';
 import {isHealthGroupBy, useAssetCatalogGroupAndSortBy} from './useAssetCatalogGroupAndSortBy';
+import {useConnectionLocationNames} from './useConnectionLocationNames';
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {currentPageAtom, useTrackEvent} from '../../app/analytics';
@@ -45,6 +48,7 @@ import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelect
 import {useAllAssets} from '../../assets/AssetsCatalogTable';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../../hooks/useSelectionReducer';
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {SyntaxError} from '../../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../../ui/IndeterminateLoadingBar';
@@ -52,6 +56,7 @@ import {numberFormatter} from '../../ui/formatters';
 import {AssetsEmptyState} from '../AssetsEmptyState';
 import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
+import {filterConnectionDuplicates} from '../overview/useLinkedAsset';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 const SPLIT_PANEL_IDENTIFIER = 'asset-catalog-table';
@@ -70,6 +75,21 @@ export const AssetCatalogTableV2 = React.memo(() => {
     return (assets ?? []).filter((asset) => favorites.has(tokenForAssetKey(asset.key)));
   }, [favorites, assets]);
 
+  const connectionLocationNames = useConnectionLocationNames();
+
+  const [hideConnectionAssets, setHideConnectionAssets] = useStateWithStorage<boolean>(
+    'dagster.hide-connection-assets',
+    (v) => v ?? true,
+  );
+
+  const assetsAfterConnectionFilter = useMemo(() => {
+    if (!hideConnectionAssets || !connectionLocationNames.size) {
+      return penultimateAssets;
+    }
+
+    return filterConnectionDuplicates(penultimateAssets, connectionLocationNames);
+  }, [penultimateAssets, hideConnectionAssets, connectionLocationNames]);
+
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
 
   const {
@@ -79,7 +99,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
     setAssetSelection,
     assetSelection,
   } = useAssetSelectionInput<AssetTableFragment>({
-    assets: penultimateAssets,
+    assets: assetsAfterConnectionFilter,
     assetsLoading: !assets && (assetsLoading || favoritesLoading),
     onErrorStateChange: useCallback(
       (errors: SyntaxError[]) => {
@@ -251,6 +271,9 @@ export const AssetCatalogTableV2 = React.memo(() => {
             allGroups={allGroups}
             SORT_ITEMS={SORT_ITEMS}
             ITEMS_BY_KEY={ITEMS_BY_KEY}
+            hideConnectionAssets={hideConnectionAssets}
+            setHideConnectionAssets={setHideConnectionAssets}
+            connectionLocationNames={connectionLocationNames}
           />
         );
     }
@@ -301,6 +324,9 @@ type TableProps<T extends string, TAsset extends {key: {path: string[]}}> = {
   allGroups?: T[];
   SORT_ITEMS: ReturnType<typeof useAssetCatalogGroupAndSortBy>['SORT_ITEMS'];
   ITEMS_BY_KEY: ReturnType<typeof useAssetCatalogGroupAndSortBy>['ITEMS_BY_KEY'];
+  hideConnectionAssets: boolean;
+  setHideConnectionAssets: (value: boolean) => void;
+  connectionLocationNames: Set<string>;
 };
 
 const Table = React.memo(
@@ -323,6 +349,9 @@ const Table = React.memo(
     allGroups: _allGroups,
     SORT_ITEMS,
     ITEMS_BY_KEY,
+    hideConnectionAssets,
+    setHideConnectionAssets,
+    connectionLocationNames,
   }: TableProps<T, TAsset>) => {
     const splitContainerRef = useRef<SplitPanelContainerHandle>(null);
 
@@ -389,8 +418,18 @@ const Table = React.memo(
             ) : null}
           </Box>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+            {connectionLocationNames.size > 0 ? (
+              <Checkbox
+                format="switch"
+                checked={hideConnectionAssets}
+                onChange={() => setHideConnectionAssets(!hideConnectionAssets)}
+                label="Hide linked assets loaded by connection"
+              />
+            ) : null}
             <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <Body color={Colors.textLight()}>Group by</Body>
+              <Body color={Colors.textLight()} className={styles.noWrap}>
+                Group by
+              </Body>
               <Select<(typeof GROUP_BY_ITEMS)[number]>
                 popoverProps={{
                   position: 'bottom-right',
@@ -419,7 +458,9 @@ const Table = React.memo(
               </Select>
             </Box>
             <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <Body color={Colors.textLight()}>Sort by</Body>
+              <Body color={Colors.textLight()} className={styles.noWrap}>
+                Sort by
+              </Body>
               <Select<(typeof SORT_ITEMS)[number]>
                 popoverProps={{
                   position: 'bottom-right',
@@ -467,6 +508,7 @@ const Table = React.memo(
             onToggleGroup={onToggleGroup}
             id={`asset-catalog-table-${groupBy}`}
             sortBy={sortBy}
+            connectionLocationNames={connectionLocationNames}
           />
         </div>
       </Box>

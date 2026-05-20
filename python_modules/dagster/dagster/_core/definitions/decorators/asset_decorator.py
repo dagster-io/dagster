@@ -383,7 +383,7 @@ def resolve_asset_key_and_name_for_decorator(
         )
     key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
     key = AssetKey.from_coercible(key) if key else None
-    assigned_name = name or fn.__name__
+    assigned_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
     return (
         (
             # the filter here appears unnecessary per typing, but this exists
@@ -901,8 +901,8 @@ def graph_asset(
     only_allow_hidden_params_in_kwargs(graph_asset, kwargs)
 
     if compose_fn is None:
-        return lambda fn: graph_asset(
-            fn,  # type: ignore
+        return lambda fn: graph_asset(  # ty: ignore[no-matching-overload]
+            fn,
             name=name,
             description=description,
             ins=ins,
@@ -1115,7 +1115,7 @@ def graph_multi_asset(
         }
 
         op_graph = graph(
-            name=name or fn.__name__,
+            name=name or fn.__name__,  # ty: ignore[unresolved-attribute]
             out=combined_outs_by_output_name,
             config=config,
             ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},

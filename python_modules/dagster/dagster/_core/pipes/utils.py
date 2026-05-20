@@ -89,7 +89,7 @@ class PipesTempFileContextInjector(PipesContextInjector):
     """
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
         """Inject context to external environment by writing it to an automatically-generated
         temporary file as JSON and exposing the path to the file.
 
@@ -155,7 +155,7 @@ class PipesFileMessageReader(PipesMessageReader):
         )
         self._cleanup_file = cleanup_file
 
-    def on_launched(self, params: PipesLaunchedData) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def on_launched(self, params: PipesLaunchedData) -> None:  # ty: ignore[invalid-method-override]
         self.launched_payload = params
 
     @contextmanager
@@ -320,7 +320,7 @@ class PipesCompositeMessageReader(PipesMessageReader):
             per_writer_params = [
                 stack.enter_context(
                     reader.read_messages(
-                        _ChildMessageHandler(handler, reader)  # type: ignore[arg-type]
+                        _ChildMessageHandler(handler, reader)  # ty: ignore[invalid-argument-type]
                     )
                 )
                 for reader in self._readers

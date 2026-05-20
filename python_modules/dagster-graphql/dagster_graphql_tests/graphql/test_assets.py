@@ -1151,7 +1151,7 @@ def _get_sorted_materialization_events(
             for event in graphql_context.instance.all_logs(run_id=run_id)
             if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
         ],
-        key=lambda event: event.get_dagster_event().asset_key,  # type: ignore  # (possible none)
+        key=lambda event: event.get_dagster_event().asset_key,  # (possible none)
     )
 
 
@@ -4451,7 +4451,7 @@ def get_partitioned_asset_repo():
 
 def test_1d_subset_backcompat():
     with instance_for_test(synchronous_run_coordinator=True) as instance:
-        instance.can_read_asset_status_cache = lambda: False
+        instance.can_read_asset_status_cache = lambda: False  # ty: ignore[invalid-assignment]
         assert instance.can_read_asset_status_cache() is False
 
         with define_out_of_process_context(
@@ -4534,7 +4534,7 @@ def test_1d_subset_backcompat():
 
 def test_2d_subset_backcompat():
     with instance_for_test(synchronous_run_coordinator=True) as instance:
-        instance.can_read_asset_status_cache = lambda: False
+        instance.can_read_asset_status_cache = lambda: False  # ty: ignore[invalid-assignment]
         assert instance.can_read_asset_status_cache() is False
 
         with define_out_of_process_context(

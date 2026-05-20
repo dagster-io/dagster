@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Literal, cast, overload
+from typing import Any, Literal, overload
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
@@ -48,17 +48,18 @@ def mock_io_manager():
 def get_mat_from_result(result: ExecuteInProcessResult, node_str: str) -> AssetMaterialization:
     mats = result.asset_materializations_for_node(node_str)
     assert all(isinstance(m, AssetMaterialization) for m in mats)
-    return cast("AssetMaterialization", mats[0])
+    return mats[0]
 
 
 def get_mats_from_result(
-    result: ExecuteInProcessResult, assets: Sequence[AssetsDefinition]
+    result: ExecuteInProcessResult,
+    assets: Sequence[AssetsDefinition | SourceAsset],
 ) -> MaterializationTable:
     mats: dict[AssetKey, AssetMaterialization] = {}
     for asset_def in assets:
         node_str = asset_def.node_def.name if asset_def.node_def else asset_def.key.path[-1]
         for mat in result.asset_materializations_for_node(node_str):
-            mats[mat.asset_key] = cast("AssetMaterialization", mat)
+            mats[mat.asset_key] = mat
     return MaterializationTable(mats)
 
 
@@ -183,7 +184,7 @@ def materialize_asset(
 
 
 def materialize_assets(
-    assets: Sequence[AssetsDefinition],
+    assets: Sequence[AssetsDefinition | SourceAsset],
     instance: DagsterInstance,
     partition_key: str | None = None,
     run_config: Mapping[str, Any] | None = None,

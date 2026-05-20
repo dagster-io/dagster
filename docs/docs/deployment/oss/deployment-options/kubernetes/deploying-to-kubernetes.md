@@ -46,15 +46,15 @@ Next, you'll build a Docker image that contains your Dagster project and all of 
 To build your Docker image, run the following command from the directory where your Dockerfile is located:
 
 ```bash
-docker build . -t iris_analysis:1
+docker build . -t deploy_k8s:1
 ```
 
-This builds the Docker image from Step 1.1 and gives it the name `iris_analysis` and tag `1`. You can set custom values for both the name and the tag. We recommend that each time you rebuild your Docker image, you assign a new value for the tag to ensure that the correct image is used when running your code.
+This builds the Docker image from Step 1.1 and gives it the name `deploy_k8s` and tag `1`. You can set custom values for both the name and the tag. We recommend that each time you rebuild your Docker image, you assign a new value for the tag to ensure that the correct image is used when running your code.
 
 If you are using a Docker image registry, push the image to your registry. If you are following along on your local machine, you can skip this command.
 
 ```bash
-docker push iris_analysis:1
+docker push deploy_k8s:1
 ```
 
 If you are pushing your image to an image registry, you can find more information about this process in your registry's documentation:
@@ -130,7 +130,7 @@ If you are following this guide on your local machine, you will also need to set
   title="Minimal changes to make to values.yaml"
 />
 
-In this example, the image `repository` and `tag` are set to `iris_analysis` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/iris_analysis/definitions.py` are set for `dagsterApiGrpcArgs`.
+In this example, the image `repository` and `tag` are set to `deploy_k8s` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/deploy_k8s/definitions.py` are set for `dagsterApiGrpcArgs`.
 
 ## Step 5: Install the Helm chart
 

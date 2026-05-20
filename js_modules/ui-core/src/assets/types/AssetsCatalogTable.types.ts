@@ -64,6 +64,11 @@ export type AssetCatalogTableQuery = {
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -137,6 +142,11 @@ export type AssetCatalogGroupTableQuery = {
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -192,6 +202,11 @@ export type AssetCatalogGroupTableNodeFragment = {
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  storageAddress: {
+    __typename: 'StorageAddress';
+    storageKind: string | null;
+    tableName: string;
+  } | null;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -200,6 +215,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '1d1552f9dff528ad423ca86f37d1febd109b9aa0d051e68767cc0e8cc60d26ca';
+export const AssetCatalogTableQueryVersion = '67bd29bba7f7d1ddc9c2d3e7bd5a1b3fe26d36875ba9dea6052c799ab4c98955';
 
-export const AssetCatalogGroupTableQueryVersion = '4a575a14e992618cb5912527311d7276a7b36664c15ccc943dcda7a750270ea5';
+export const AssetCatalogGroupTableQueryVersion = '2a2ce4dd539e52f1a5c95072d6c41e61fd0939380ed25f5e0700188b1e6edd20';

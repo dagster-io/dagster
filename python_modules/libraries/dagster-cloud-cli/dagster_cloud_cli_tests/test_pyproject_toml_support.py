@@ -612,6 +612,64 @@ build-backend = "hatchling.build"
     )
 
 
+def test_get_deps_requirements_uv_sources_path_with_version_specifier(tmp_path):
+    """[tool.uv.sources] entries must resolve even when the dependency line carries a
+    version specifier or extras (e.g. `pkg==1.0.0`, `pkg[test]`).
+    """
+    python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
+
+    app_dir = tmp_path / "my-app"
+    app_dir.mkdir()
+    (app_dir / "my_app").mkdir()
+    (app_dir / "my_app" / "__init__.py").write_text("")
+    (app_dir / "pyproject.toml").write_text("""
+[project]
+name = "my-app"
+version = "0.1.0"
+dependencies = [
+    "local-utils==1!0+dev",
+    "Local-Utils-Extras[test]",
+]
+
+[tool.uv.sources]
+local-utils = { path = "../local-utils" }
+local-utils-extras = { path = "../local-utils-extras" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    for name in ("local-utils", "local-utils-extras"):
+        d = tmp_path / name
+        d.mkdir()
+        (d / name.replace("-", "_")).mkdir()
+        (d / name.replace("-", "_") / "__init__.py").write_text("")
+        (d / "pyproject.toml").write_text(f"""
+[project]
+name = "{name}"
+version = "0.1.0"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    local_packages, deps_requirements = deps.get_deps_requirements(str(app_dir), python_version)
+    deps_lines = [
+        line.strip()
+        for line in deps_requirements.requirements_txt.strip().split("\n")
+        if line.strip()
+    ]
+
+    assert str(tmp_path / "local-utils") in local_packages.local_package_paths
+    assert str(tmp_path / "local-utils-extras") in local_packages.local_package_paths
+    assert not any("local-utils" in dep for dep in deps_lines), (
+        f"local-utils* should resolve to local paths, not deps: {deps_lines}"
+    )
+
+
 def test_get_deps_requirements_uv_workspace(tmp_path):
     """Test get_deps_requirements correctly handles uv workspace local dependencies.
 

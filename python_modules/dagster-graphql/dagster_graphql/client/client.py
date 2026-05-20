@@ -204,7 +204,7 @@ class DagsterGraphQLClient:
                 for coercible in asset_selection
             ]
 
-        variables: dict[str, Any] = {
+        variables: dict[str, dict[str, Any]] = {
             "executionParams": {
                 "selector": {
                     "repositoryLocationName": repository_location_name,

@@ -8,6 +8,7 @@ from contextlib import contextmanager
 
 import dagster._check as check
 import docker
+import docker.errors
 import kubernetes
 import psycopg2
 import pytest
@@ -76,7 +77,7 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                             f"Found existing image tagged {docker_image}, skipping image build. To rebuild,"
                             f" first run: docker rmi {docker_image}"
                         )
-                    except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+                    except docker.errors.ImageNotFound:
                         build_and_tag_test_image(docker_image)
                     kind_load_images(
                         cluster_name=cluster_config.name,
@@ -236,7 +237,7 @@ def check_export_runs(instance):
 
     # example PYTEST_CURRENT_TEST: test_user_code_deployments.py::test_execute_on_celery_k8s (teardown)
     current_test = (
-        os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")  # pyright: ignore[reportOptionalMemberAccess]
+        os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")  # ty: ignore[unresolved-attribute]
     )
 
     for run in instance.get_runs():

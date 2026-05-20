@@ -28,8 +28,8 @@ DATE_FORMAT = "%Y-%m-%d"
 
 def time_window(start: str, end: str) -> dg.TimeWindow:
     return dg.TimeWindow(
-        cast("datetime", parse_time_string(start)),
-        cast("datetime", parse_time_string(end)),
+        parse_time_string(start),
+        parse_time_string(end),
     )
 
 
@@ -1901,7 +1901,7 @@ def test_time_window_partitions_def_serialization(partitions_def):
     )
     deserialized = dg.deserialize_value(dg.serialize_value(time_window_partitions_def))
     assert deserialized == time_window_partitions_def
-    assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo  # ty: ignore[unresolved-attribute]
 
 
 def test_pickle_time_window_partitions_def():

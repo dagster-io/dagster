@@ -12,7 +12,7 @@ _ROOT = Path(__file__).resolve().parent.parent.parent / "dagster-clickhouse"
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from dagster_clickhouse_tests.fixtures import clickhouse_connection  # ty: ignore[unresolved-import]
+from dagster_clickhouse_tests.fixtures import clickhouse_connection
 
 __all__ = ["clickhouse_connection"]
 

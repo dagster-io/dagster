@@ -12,7 +12,7 @@ from pandera.typing import Series
 # ***** TYPES ****************************************************************
 
 
-class StockPrices(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribute]
+class StockPrices(pa.DataFrameModel):
     """Open/high/low/close prices for a set of stocks by day."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -27,7 +27,7 @@ class StockPrices(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribute]
 StockPricesDgType = pandera_schema_to_dagster_type(StockPrices)
 
 
-class BollingerBands(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribute]
+class BollingerBands(pa.DataFrameModel):
     """Bollinger bands for a set of stock prices."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -39,7 +39,7 @@ class BollingerBands(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribut
 BollingerBandsDgType = pandera_schema_to_dagster_type(BollingerBands)
 
 
-class AnomalousEvents(pa.DataFrameModel):  # ty: ignore[possibly-missing-attribute]
+class AnomalousEvents(pa.DataFrameModel):
     """Anomalous price events, defined by a day on which a stock's closing price strayed above or
     below its Bollinger bands.
     """
@@ -115,7 +115,7 @@ def compute_bollinger_bands_multi(
     """Compute Bollinger bands for a set of stocks over time. The input dataframe can contain
     multiple timeseries grouped by the `name` column.
     """
-    odf = df.groupby("name", group_keys=False).apply(  # ty: ignore[no-matching-overload]
+    odf = df.groupby("name", group_keys=False).apply(
         lambda idf: compute_bollinger_bands(idf, dropna=False, rate=rate, sigma=sigma),
     )
     return odf.dropna().reset_index() if dropna else odf

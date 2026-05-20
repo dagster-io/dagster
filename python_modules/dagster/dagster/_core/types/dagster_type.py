@@ -9,7 +9,6 @@ from typing import (
     AnyStr,
     Mapping,
     Sequence,
-    cast,
 )
 from typing import (
     Iterator as TypingIterator,
@@ -223,7 +222,7 @@ class DagsterType:
     @property
     def display_name(self) -> str:
         """Either the name or key (if name is `None`) of the type, overridden in many subclasses."""
-        return cast(str, self._name or self.key)
+        return self._name or self.key
 
     @public
     @property
@@ -349,7 +348,7 @@ class BuiltinScalarDagsterType(DagsterType):
         return self.type_check_scalar_value(value)
 
     @abstractmethod
-    def type_check_scalar_value(self, _value) -> TypeCheck:
+    def type_check_scalar_value(self, value) -> TypeCheck:
         raise NotImplementedError()
 
 
@@ -585,7 +584,7 @@ class PythonObjectDagsterType(DagsterType):
 
         else:
             self.python_type = check.class_param(python_type, "python_type")
-            self.type_str = cast(str, python_type.__name__)
+            self.type_str = python_type.__name__
             typing_type = self.python_type
         name = check.opt_str_param(name, "name", self.type_str)
         key = check.opt_str_param(key, "key", name)
@@ -638,7 +637,7 @@ class OptionalType(DagsterType):
                 "Type Nothing can not be wrapped in List or Optional"
             )
 
-        key = "Optional." + cast(str, inner_type.key)
+        key = "Optional." + inner_type.key
         self.inner_type = inner_type
         super(OptionalType, self).__init__(
             key=key,
@@ -663,7 +662,7 @@ class OptionalType(DagsterType):
 
     @property
     def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types  # pyright: ignore[reportOperatorIssue]
+        return [self.inner_type] + self.inner_type.inner_types  # ty: ignore[unsupported-operator]
 
     @property
     def type_param_keys(self):
@@ -734,7 +733,7 @@ class ListType(DagsterType):
 
     @property
     def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types  # pyright: ignore[reportOperatorIssue]
+        return [self.inner_type] + self.inner_type.inner_types  # ty: ignore[unsupported-operator]
 
     @property
     def type_param_keys(self):
@@ -1031,8 +1030,10 @@ def construct_dagster_type_dictionary(
 ) -> Mapping[str, DagsterType]:
     from dagster._core.definitions.graph_definition import GraphDefinition
 
-    type_dict_by_name = {t.unique_name: t for t in ALL_RUNTIME_BUILTINS}
-    type_dict_by_key = {t.key: t for t in ALL_RUNTIME_BUILTINS}
+    type_dict_by_name: dict[str | None, DagsterType] = {
+        t.unique_name: t for t in ALL_RUNTIME_BUILTINS
+    }
+    type_dict_by_key: dict[str, DagsterType] = {t.key: t for t in ALL_RUNTIME_BUILTINS}
 
     def process_node_def(node_def: "NodeDefinition"):
         input_output_types = list(node_def.all_input_output_types())

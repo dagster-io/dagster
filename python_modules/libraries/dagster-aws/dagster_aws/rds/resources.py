@@ -70,9 +70,9 @@ class RDSResource(ResourceWithBoto3Configuration):
         )
 
     @contextmanager
-    def get_rds_client(self) -> Generator["botocore.client.rds", None, None]:  # pyright: ignore (reportAttributeAccessIssue)
+    def get_rds_client(self) -> Generator["botocore.client.rds", None, None]:  # ty: ignore[unresolved-attribute]
         yield self._create_rds_client("rds")
 
     @contextmanager
-    def get_data_client(self) -> Generator["botocore.client.rds_data", None, None]:  # pyright: ignore (reportAttributeAccessIssue)
+    def get_data_client(self) -> Generator["botocore.client.rds_data", None, None]:  # ty: ignore[unresolved-attribute]
         yield self._create_rds_client("rds-data")

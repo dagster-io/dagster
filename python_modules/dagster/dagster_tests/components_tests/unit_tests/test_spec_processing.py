@@ -138,7 +138,7 @@ def test_render_attributes_custom_context() -> None:
     ],
 )
 def test_load_attributes(python, expected) -> None:
-    loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])
+    loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])  # ty: ignore[invalid-type-form]
     assert len(loaded) == 1
     assert loaded[0] == expected
 

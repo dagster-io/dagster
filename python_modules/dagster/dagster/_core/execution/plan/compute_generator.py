@@ -263,7 +263,7 @@ def validate_and_coerce_op_result_to_iterator(
 ) -> Iterator[Any]:
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
-        yield from result
+        yield from result  # ty: ignore[invalid-yield]
     elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "

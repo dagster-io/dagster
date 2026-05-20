@@ -37,19 +37,19 @@ class EntityMatchesCondition(
 
     @property
     def name(self) -> str:
-        return self.key.to_user_string()
+        return self.key.to_user_string()  # ty: ignore[invalid-argument-type]
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
         return [self.operand]
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # if the key we're mapping to is a child of the key we're mapping from and is not
         # self-dependent, use the downstream mapping function, otherwise use upstream
         if (
-            self.key in context.asset_graph.get(context.key).child_entity_keys
+            self.key in context.asset_graph.get(context.key).child_entity_keys  # ty: ignore[no-matching-overload]
             and self.key != context.key
         ):
             to_direction, from_direction = "down", "up"
@@ -192,7 +192,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         dep_keys = (
             set(asset_graph.get_non_virtual_ancestor_keys(key))
             if self.resolves_virtual_deps
-            else set(asset_graph.get(key).parent_entity_keys)
+            else set(asset_graph.get(key).parent_entity_keys)  # ty: ignore[no-matching-overload]
         )
         if self.allow_selection is not None:
             dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
@@ -243,7 +243,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def operator_type(self) -> OperatorType:
         return "or"
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []
@@ -256,7 +256,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
                     None,
                     i,
                 ],
-                candidate_subset=context.candidate_subset,
+                candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
             true_subset = true_subset.compute_union(dep_result.true_subset)
@@ -281,7 +281,7 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def operator_type(self) -> OperatorType:
         return "and"
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []
@@ -294,7 +294,7 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
                     None,
                     i,
                 ],
-                candidate_subset=context.candidate_subset,
+                candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
             true_subset = true_subset.compute_intersection(dep_result.true_subset)

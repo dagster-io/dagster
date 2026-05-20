@@ -5,4 +5,4 @@ import dagster as dg
     asset="upstream",
     automation_condition=dg.AutomationCondition.on_cron("@hourly"),
 )
-def on_cron_asset_check() -> dg.AssetCheckResult: ...
+def on_cron_asset_check() -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]

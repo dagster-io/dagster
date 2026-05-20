@@ -16,12 +16,12 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
 
 @pytest.mark.skip(reason="no longer supporting dynamic output asset keys")
 def test_dynamic_output_definition_single_partition_materialization():
-    @dg.op(out={"output1": dg.Out(asset_key=dg.AssetKey("table1"))})  # pyright: ignore[reportCallIssue]  # ty: ignore[unknown-argument]
+    @dg.op(out={"output1": dg.Out(asset_key=dg.AssetKey("table1"))})  # ty: ignore[unknown-argument]
     def op1(_):
         return dg.Output(None, "output1", metadata={"nrows": 123})
 
     @dg.op(
-        out={"output2": dg.DynamicOut(asset_key=lambda context: dg.AssetKey(context.mapping_key))}  # pyright: ignore[reportCallIssue]  # ty: ignore[unknown-argument]
+        out={"output2": dg.DynamicOut(asset_key=lambda context: dg.AssetKey(context.mapping_key))}  # ty: ignore[unknown-argument]
     )
     def op2(_, _input1):
         for i in range(4):

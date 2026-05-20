@@ -6,7 +6,7 @@ import dagster as dg
 @dg.asset
 def my_table(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
-        return conn.cursor().execute_query("SELECT * FROM foo")
+        return conn.cursor().execute_query("SELECT * FROM foo")  # ty: ignore[unresolved-attribute]
 
 
 defs = dg.Definitions(

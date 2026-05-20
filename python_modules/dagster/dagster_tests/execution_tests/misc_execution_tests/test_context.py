@@ -151,7 +151,7 @@ def test_context_provided_to_op():
 
 def test_context_provided_to_multi_asset():
     @dg.multi_asset(
-        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
+        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # ty: ignore[invalid-argument-type]
     )
     def no_annotation(context):
         assert isinstance(context, dg.AssetExecutionContext)
@@ -160,7 +160,7 @@ def test_context_provided_to_multi_asset():
     dg.materialize([no_annotation])
 
     @dg.multi_asset(
-        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
+        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # ty: ignore[invalid-argument-type]
     )
     def asset_annotation(context: AssetExecutionContext):
         assert isinstance(context, dg.AssetExecutionContext)
@@ -169,7 +169,7 @@ def test_context_provided_to_multi_asset():
     dg.materialize([asset_annotation])
 
     @dg.multi_asset(
-        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
+        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # ty: ignore[invalid-argument-type]
     )
     def op_annotation(context: OpExecutionContext):
         assert isinstance(context, dg.OpExecutionContext)
@@ -240,7 +240,7 @@ def test_context_provided_to_graph_multi_asset():
         return 1
 
     @dg.graph_multi_asset(
-        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
+        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # ty: ignore[invalid-argument-type]
     )
     def no_annotation_asset():
         return layered_op(no_annotation_op()), layered_op(no_annotation_op())
@@ -253,7 +253,7 @@ def test_context_provided_to_graph_multi_asset():
         return 1
 
     @dg.graph_multi_asset(
-        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
+        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # ty: ignore[invalid-argument-type]
     )
     def asset_annotation_asset():
         return layered_op(asset_annotation_op()), layered_op(asset_annotation_op())
@@ -268,7 +268,7 @@ def test_context_provided_to_graph_multi_asset():
         return 1
 
     @dg.graph_multi_asset(
-        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
+        outs={"out1": dg.AssetOut(dagster_type=None), "out2": dg.AssetOut(dagster_type=None)}  # ty: ignore[invalid-argument-type]
     )
     def op_annotation_asset():
         return layered_op(op_annotation_op()), layered_op(op_annotation_op())
@@ -332,7 +332,7 @@ def test_context_provided_to_asset_check():
     def to_check():
         return 1
 
-    @dg.asset_check(asset=to_check)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=to_check)
     def no_annotation(context):
         assert isinstance(context, dg.AssetCheckExecutionContext)
         assert context.check_specs == [
@@ -344,7 +344,7 @@ def test_context_provided_to_asset_check():
 
     execute_assets_and_checks(assets=[to_check], asset_checks=[no_annotation])
 
-    @dg.asset_check(asset=to_check)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=to_check)
     def asset_annotation(context: AssetExecutionContext):
         pass
 
@@ -354,7 +354,7 @@ def test_context_provided_to_asset_check():
     ):
         execute_assets_and_checks(assets=[to_check], asset_checks=[asset_annotation])
 
-    @dg.asset_check(asset=to_check)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=to_check)
     def op_annotation(context: OpExecutionContext):
         assert isinstance(context, dg.OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check

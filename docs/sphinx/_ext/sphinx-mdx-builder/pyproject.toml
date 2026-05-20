@@ -30,4 +30,24 @@ dependencies = [
 sphinx-builder-mdx = "sphinxcontrib.mdxbuilder.__main__:main"
 
 [project.optional-dependencies]
-test = ["pytest", "tox", "tox-uv", "ruff"]
+
+[dependency-groups]
+test = [
+    "pytest",
+    "tox",
+    "tox-uv",
+    "ruff",
+]
+test-sphinx7 = [
+    "Sphinx>=7,<8",
+]
+test-sphinx8 = [
+    "Sphinx>=8,<9",
+]
+
+[tool.uv]
+conflicts = [
+    [{group = "test-sphinx7"}, {group = "test-sphinx8"}],
+]
+
+[tool.uv.sources]

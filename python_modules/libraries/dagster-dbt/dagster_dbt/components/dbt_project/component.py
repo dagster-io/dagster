@@ -453,7 +453,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
 
 class DbtProjectComponentTranslator(
-    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),
+    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[DbtProjectComponent],
 ):
     def __init__(

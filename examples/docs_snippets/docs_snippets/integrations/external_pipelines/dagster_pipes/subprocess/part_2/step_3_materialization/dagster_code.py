@@ -12,5 +12,6 @@ def subprocess_asset(
         dg.file_relative_path(__file__, "external_code.py"),
     ]
     return pipes_subprocess_client.run(
-        command=cmd, context=context
+        command=cmd,
+        context=context,  # ty: ignore[invalid-argument-type]
     ).get_materialize_result()

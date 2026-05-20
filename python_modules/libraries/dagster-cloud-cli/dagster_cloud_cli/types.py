@@ -9,13 +9,15 @@ class CliEventType(Enum):
 
 
 AgentStrategyTags = Enum(
-    "agent-strategy", {"hybrid": "agent-strategy:hybrid", "serverless": "agent-strategy:serverless"}
+    "agent-strategy",  # ty: ignore[mismatched-type-name]
+    {"hybrid": "agent-strategy:hybrid", "serverless": "agent-strategy:serverless"},
 )
 ServerStrategyTags = Enum(
-    "server-strategy", {"docker": "server-strategy:docker", "pex": "server-strategy:pex"}
+    "server-strategy",  # ty: ignore[mismatched-type-name]
+    {"docker": "server-strategy:docker", "pex": "server-strategy:pex"},
 )
 SourceTags = Enum(
-    "source",
+    "source",  # ty: ignore[mismatched-type-name]
     {
         "bitbucket": "source:bitbucket",
         "buildkite": "source:buildkite",
@@ -30,7 +32,7 @@ SourceTags = Enum(
     },
 )
 SubcommandTags = Enum(
-    "subcommand",
+    "subcommand",  # ty: ignore[mismatched-type-name]
     {
         "dagster_cloud_ci": "subcommand:dagster-cloud-ci",
         "dagster_cloud_serverless": "subcommand:dagster-cloud-serverless",

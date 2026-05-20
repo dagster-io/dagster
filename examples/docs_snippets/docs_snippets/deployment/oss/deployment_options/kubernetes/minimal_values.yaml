@@ -4,7 +4,7 @@ dagster-user-deployments:
   deployments:
     - name: "iris-analysis" # set to the name of your deployment
       image:
-        repository: "iris_analysis" # set to the name of your Docker image
+        repository: "deploy_k8s" # set to the name of your Docker image
         # When a tag is not supplied, it will default as the Helm chart version.
         tag: 1 # set to the tag of your Docker image
 
@@ -15,6 +15,6 @@ dagster-user-deployments:
 
       dagsterApiGrpcArgs:
         - "--python-file"
-        - "/iris_analysis/definitions.py"
+        - "/deploy_k8s/definitions.py"
 
 ... # Following configuration omitted for brevity

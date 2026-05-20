@@ -329,7 +329,7 @@ class SensorEvaluationContext:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
             )
-        return cast("DagsterInstance", self._instance)
+        return self._instance
 
     @property
     def instance_ref(self) -> InstanceRef | None:
@@ -737,7 +737,7 @@ class SensorDefinition(IHasInternalInit):
         if name:
             self._name = check_valid_name(name)
         else:
-            self._name = evaluation_fn.__name__
+            self._name = evaluation_fn.__name__  # ty: ignore[unresolved-attribute]
 
         self._raw_fn: RawSensorEvaluationFunction = check.callable_param(
             evaluation_fn, "evaluation_fn"
@@ -1147,7 +1147,7 @@ class SensorDefinition(IHasInternalInit):
                     "RunRequest must have an asset_graph_subset to launch a backfill.",
                 )
 
-            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(  # pyright: ignore[reportPossiblyUnboundVariable]
+            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
                 check.not_none(context.repository_def).asset_graph
             )
             if unexpected_asset_keys:
@@ -1414,9 +1414,9 @@ def get_or_create_sensor_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    context = (
-        get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
-        or build_sensor_context()
+    maybe_context = get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
+    context: SensorEvaluationContext = (  # ty: ignore[invalid-assignment]
+        maybe_context if maybe_context is not None else build_sensor_context()
     )
     resource_args_from_kwargs = {}
 

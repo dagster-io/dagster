@@ -249,7 +249,7 @@ export const AssetEventMetadataEntriesTable = ({
                         flex={{
                           direction: 'row',
                           justifyContent: 'space-between',
-                          alignItems: 'flex-start',
+                          alignItems: 'center',
                           gap: 8,
                         }}
                       >

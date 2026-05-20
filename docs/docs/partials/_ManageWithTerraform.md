@@ -1,5 +1,5 @@
 :::tip
 
-You can manage this with the [Dagster+ Terraform provider](/guides/labs/terraform) as part of an infrastructure-as-code workflow.
+You can manage this as part of an infrastructure-as-code workflow with the [Dagster+ Terraform provider](/deployment/dagster-plus/management/terraform).
 
 :::

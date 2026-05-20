@@ -63,7 +63,7 @@ def test_materialize_result_asset():
 
     # direct invocation
     direct_results = ret_two()
-    assert len(direct_results) == 2  # pyright: ignore[reportArgumentType]
+    assert len(direct_results) == 2  # ty: ignore[invalid-argument-type]
 
 
 def test_return_materialization_with_asset_checks():
@@ -156,8 +156,8 @@ def test_multi_asset():
     assert dg.materialize([outs_multi_asset]).success
 
     res = outs_multi_asset()
-    assert res[0].metadata["foo"] == "bar"  # pyright: ignore[reportIndexIssue]
-    assert res[1].metadata["baz"] == "qux"  # pyright: ignore[reportIndexIssue]
+    assert res[0].metadata["foo"] == "bar"  # ty: ignore[not-subscriptable]
+    assert res[1].metadata["baz"] == "qux"  # ty: ignore[not-subscriptable]
 
     @dg.multi_asset(specs=[dg.AssetSpec(["prefix", "one"]), dg.AssetSpec(["prefix", "two"])])
     def specs_multi_asset():
@@ -168,8 +168,8 @@ def test_multi_asset():
     assert dg.materialize([specs_multi_asset]).success
 
     res = specs_multi_asset()
-    assert res[0].metadata["foo"] == "bar"  # pyright: ignore[reportIndexIssue]
-    assert res[1].metadata["baz"] == "qux"  # pyright: ignore[reportIndexIssue]
+    assert res[0].metadata["foo"] == "bar"  # ty: ignore[not-subscriptable]
+    assert res[1].metadata["baz"] == "qux"  # ty: ignore[not-subscriptable]
 
 
 def test_return_materialization_multi_asset():
@@ -195,7 +195,7 @@ def test_return_materialization_multi_asset():
     assert "two" in mats[1].metadata
     assert mats[1].tags
 
-    direct_results = list(multi())  # pyright: ignore[reportArgumentType]
+    direct_results = list(multi())  # ty: ignore[invalid-argument-type]
     assert len(direct_results) == 2
 
     #
@@ -221,7 +221,7 @@ def test_return_materialization_multi_asset():
         dg.DagsterInvariantViolationError,
         match='Invocation of op "missing" did not return an output for non-optional output "two"',
     ):
-        list(missing())  # pyright: ignore[reportArgumentType]
+        list(missing())  # ty: ignore[invalid-argument-type]
 
     #
     # missing asset_key
@@ -251,7 +251,7 @@ def test_return_materialization_multi_asset():
             " asset_key, options are:"
         ),
     ):
-        list(no_key())  # pyright: ignore[reportArgumentType]
+        list(no_key())  # ty: ignore[invalid-argument-type]
 
     #
     # return tuple success
@@ -278,7 +278,7 @@ def test_return_materialization_multi_asset():
     assert mats[1].tags
 
     res = ret_multi()
-    assert len(res) == 2  # pyright: ignore[reportArgumentType]
+    assert len(res) == 2  # ty: ignore[invalid-argument-type]
 
     #
     # return list error
@@ -435,7 +435,7 @@ def test_materialize_result_no_output_typing_does_not_call_io():
             self.handle_output_calls += 1
 
         def load_input(self, context):
-            self.load_input_calls += 1  # pyright: ignore[reportAttributeAccessIssue]
+            self.load_input_calls += 1  # ty: ignore[unresolved-attribute]
 
         def reset(self):
             self.handle_output_calls = 0
@@ -493,7 +493,7 @@ def test_materialize_result_no_output_typing_does_not_call_io():
         yield dg.MaterializeResult(metadata={"foo": "bar"})
 
     _exec_asset(generator_asset, resources={"io_manager": io_mgr})
-    io_mgr.handle_output_calls == 0  # pyright: ignore[reportUnusedExpression]
+    io_mgr.handle_output_calls == 0
 
 
 def test_materialize_result_implicit_output_typing():
@@ -558,9 +558,9 @@ def test_materialize_result_generators():
     assert len(res) == 1
     assert res[0].metadata["foo"].value == "bar"
 
-    res = list(generator_asset())  # pyright: ignore[reportArgumentType]
+    res = list(generator_asset())  # ty: ignore[invalid-argument-type]
     assert len(res) == 1
-    assert res[0].metadata["foo"] == "bar"
+    assert res[0].metadata["foo"] == "bar"  # ty: ignore[unresolved-attribute]
 
     @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def generator_specs_multi_asset():
@@ -572,10 +572,10 @@ def test_materialize_result_generators():
     assert res[0].metadata["foo"].value == "bar"
     assert res[1].metadata["baz"].value == "qux"
 
-    res = list(generator_specs_multi_asset())  # pyright: ignore[reportArgumentType]
+    res = list(generator_specs_multi_asset())  # ty: ignore[invalid-argument-type]
     assert len(res) == 2
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    assert res[0].metadata["foo"] == "bar"  # ty: ignore[unresolved-attribute]
+    assert res[1].metadata["baz"] == "qux"  # ty: ignore[unresolved-attribute]
 
     @dg.multi_asset(outs={"one": dg.AssetOut(), "two": dg.AssetOut()})
     def generator_outs_multi_asset():
@@ -587,10 +587,10 @@ def test_materialize_result_generators():
     assert res[0].metadata["foo"].value == "bar"
     assert res[1].metadata["baz"].value == "qux"
 
-    res = list(generator_outs_multi_asset())  # pyright: ignore[reportArgumentType]
+    res = list(generator_outs_multi_asset())  # ty: ignore[invalid-argument-type]
     assert len(res) == 2
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    assert res[0].metadata["foo"] == "bar"  # ty: ignore[unresolved-attribute]
+    assert res[1].metadata["baz"] == "qux"  # ty: ignore[unresolved-attribute]
 
     @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     async def async_specs_multi_asset():
@@ -603,7 +603,7 @@ def test_materialize_result_generators():
     assert res[0].metadata["foo"].value == "bar"
     assert res[1].metadata["baz"].value == "qux"
 
-    res = asyncio.run(async_specs_multi_asset())  # pyright: ignore[reportArgumentType]
+    res = asyncio.run(async_specs_multi_asset())  # ty: ignore[invalid-argument-type]
     assert len(res) == 2
     assert res[0].metadata["foo"] == "bar"
     assert res[1].metadata["baz"] == "qux"
@@ -620,7 +620,7 @@ def test_materialize_result_generators():
 
     async def _run_async_gen():
         results = []
-        async for result in async_gen_specs_multi_asset():  # pyright: ignore[reportGeneralTypeIssues]
+        async for result in async_gen_specs_multi_asset():  # ty: ignore[not-iterable]
             results.append(result)
         return results
 
@@ -648,7 +648,7 @@ def test_materialize_result_with_partitions_direct_invocation():
     context = dg.build_asset_context(partition_key="red")
 
     res = partitioned_asset(context)
-    assert res.metadata["key"] == "red"  # pyright: ignore[reportAttributeAccessIssue]
+    assert res.metadata["key"] == "red"  # ty: ignore[unresolved-attribute]
 
 
 def test_materialize_result_value():
@@ -717,7 +717,7 @@ def test_materialize_result_value_annotated_incorrect_type():
 def test_materialize_result_value_annotated_no_value():
     @dg.asset
     def asset_with_value() -> dg.MaterializeResult[int]:
-        return dg.MaterializeResult()  # type: ignore
+        return dg.MaterializeResult()
 
     with pytest.raises(dg.DagsterTypeCheckDidNotPass):
         dg.materialize([asset_with_value])

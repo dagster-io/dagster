@@ -152,6 +152,11 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           title: 'Sensor not found',
           body: `Could not find a sensor named: ${name}`,
         });
+      } else if (data?.__typename === 'UnauthorizedError') {
+        showCustomAlert({
+          title: 'Unauthorized',
+          body: 'You do not have permission to dry run this sensor.',
+        });
       } else {
         setError(data);
       }

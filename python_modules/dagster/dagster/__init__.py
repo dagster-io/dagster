@@ -747,7 +747,7 @@ def __getattr__(name: str) -> TypingAny:
         value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
         deprecation_warning(
-            value.__name__,
+            getattr(value, "__name__", name),
             breaking_version,
             additional_warn_text=f"Use `{name}` instead.",
             stacklevel=stacklevel,

@@ -372,7 +372,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     with dg.instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            record.event_log_entry.dagster_event.event_specific_data.asset_key  # ty: ignore[unresolved-attribute]
             for record in instance.get_records_for_run(
                 run_id=result.run_id,
                 of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,

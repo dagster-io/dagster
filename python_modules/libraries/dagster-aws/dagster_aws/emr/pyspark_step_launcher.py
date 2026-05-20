@@ -363,13 +363,13 @@ class EmrPySparkStepLauncher(StepLauncher):
 
                 all_events_new = self.read_events(s3, run_id, step_key)
 
-            if len(all_events_new) > len(all_events):  # pyright: ignore[reportArgumentType]
-                for i in range(len(all_events), len(all_events_new)):  # pyright: ignore[reportArgumentType]
-                    event = all_events_new[i]  # pyright: ignore[reportOptionalSubscript,reportArgumentType,reportIndexIssue]
+            if len(all_events_new) > len(all_events):
+                for i in range(len(all_events), len(all_events_new)):
+                    event = all_events_new[i]
                     # write each event from the EMR instance to the local instance
                     step_context.instance.handle_new_event(event)
-                    if event.is_dagster_event:  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-                        yield event.dagster_event  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                    if event.is_dagster_event:
+                        yield event.dagster_event
                 all_events = all_events_new
 
     def read_events(self, s3, run_id, step_key):
@@ -382,7 +382,7 @@ class EmrPySparkStepLauncher(StepLauncher):
             return deserialize_value(pickle.loads(events_data))
         except ClientError as ex:
             # The file might not be there yet, which is fine
-            if ex.response["Error"]["Code"] == "NoSuchKey":  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            if ex.response["Error"]["Code"] == "NoSuchKey":
                 return []
             else:
                 raise ex

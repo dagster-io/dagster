@@ -41,7 +41,7 @@ class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
                         subsets_by_key
                     )
 
-        return value._replace(**replaced_value_by_field_name)
+        return value._replace(**replaced_value_by_field_name)  # ty: ignore[invalid-return-type]
 
 
 @whitelist_for_serdes(serializer=PartitionsSubsetMappingNamedTupleSerializer)
@@ -98,7 +98,7 @@ class AssetGraphSubset(NamedTuple):
         for asset_key in self.asset_keys:
             yield check.not_none(self.get_asset_subset(asset_key))
 
-    def __contains__(self, asset: AssetKey | AssetKeyPartitionKey) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __contains__(self, asset: AssetKey | AssetKeyPartitionKey) -> bool:  # ty: ignore[invalid-method-override]
         """If asset is an AssetKeyPartitionKey, check if the given AssetKeyPartitionKey is in the
         subset. If asset is an AssetKey, check if any of partitions of the given AssetKey are in
         the subset.
@@ -210,7 +210,7 @@ class AssetGraphSubset(NamedTuple):
     def __ne__(self, other) -> bool:
         return not self.__eq__(other)
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
     def __repr__(self) -> str:
         return (

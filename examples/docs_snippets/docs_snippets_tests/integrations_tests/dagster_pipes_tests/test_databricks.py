@@ -52,7 +52,7 @@ def test_databricks_asset(capsys):
             script_file=script_file,
             dbfs_path="dbfs:/my_python_script.py",
         ) as script_file:
-            job_def = databricks_asset_defs.get_implicit_job_def_for_assets(
+            job_def = databricks_asset_defs.get_implicit_job_def_for_assets(  # ty: ignore[unresolved-attribute]
                 [AssetKey("databricks_asset")],
             )
             assert job_def

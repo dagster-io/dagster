@@ -125,3 +125,23 @@ Never commit private keys to version control. Always store them as environment v
 ### Optional: Configure asset filtering
 
 Use filtering to control which databases, schemas, and tables are synced. Patterns use regular expressions.
+
+## Connection freshness
+
+Once a Snowflake Connection is created, Dagster automatically tracks changes to your Snowflake tables and emits a materialization on the corresponding Connection asset each time the underlying table is updated in Snowflake. As a result, your Connection assets reflect the most recent state of the Snowflake tables without needing to define a sensor or schedule.
+
+### Prerequisites
+
+Connection freshness for Snowflake reuses the warehouse, role, and credentials already configured on the Connection — no additional setup is required. Under the hood, Dagster polls `INFORMATION_SCHEMA.TABLES.LAST_ALTERED` for the synced databases via the Snowflake SQL API.
+
+The privileges granted in [Step 1.1: Create role and user to use with Dagster Connections](#step-11-create-role-and-user-to-use-with-dagster-connections) (`USAGE` on databases and schemas, `REFERENCES` on tables and views) are sufficient for the role to see rows in `INFORMATION_SCHEMA.TABLES` for the objects it has access to.
+
+### Triggering downstream assets
+
+Each detected change produces a standard Dagster materialization event on the Connection asset, so code-defined assets can depend on a Connection asset like any other upstream. Combine that with an [Automation Condition](/guides/automate/declarative-automation) to materialize a downstream asset whenever its Snowflake parent changes:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/labs/connections/snowflake/connection_freshness_downstream.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>

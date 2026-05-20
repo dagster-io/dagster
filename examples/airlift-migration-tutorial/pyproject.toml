@@ -6,8 +6,9 @@ build-backend = "hatchling.build"
 packages = ["tutorial_example"]
 
 [project]
-name = "tutorial-example"
+name = "airlift-migration-tutorial"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.12"
 dependencies = [
     "dagster",
     "dagster-webserver",
@@ -17,7 +18,29 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest"]
-
 [tool.dagster]
 module_name = "tutorial_example.definitions"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-webserver",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-graphql",
+    "dagster-dbt",
+    "dagster-airlift[core,test,in-airflow]",
+    "pandas",
+    "pytest",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-test = { path = "../../python_modules/dagster-test", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-dbt = { path = "../../python_modules/libraries/dagster-dbt", editable = true }
+dagster-airlift = { path = "../../python_modules/libraries/dagster-airlift", editable = true }

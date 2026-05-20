@@ -1,6 +1,6 @@
 ---
 title: Deployment fails with bad git executable error in branch deployment code locations
-sidebar_position: 110
+sidebar_position: 1100
 description: Resolve "Bad git executable" DagsterImportError that affects dagster-dbt in branch deployment code locations.
 ---
 

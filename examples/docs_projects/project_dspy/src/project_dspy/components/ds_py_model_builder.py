@@ -72,7 +72,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 raise FileNotFoundError(f"Connections data not found at: {data_path}")
 
             # Load puzzles
-            puzzles = load_puzzles_from_csv(str(data_path))
+            puzzles = load_puzzles_from_csv(data_path)
             context.log.info(f"Loaded {len(puzzles)} puzzles")
 
             # Split data
@@ -182,7 +182,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
             if not data_path.is_absolute():
                 data_path = Path.cwd() / data_path
 
-            puzzles = load_puzzles_from_csv(str(data_path))
+            puzzles = load_puzzles_from_csv(data_path)
             _, test_puzzles = shuffle_and_split_puzzles(puzzles, self.train_test_split)
             eval_puzzles = test_puzzles[: self.eval_subset_size]
 
@@ -270,7 +270,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 if not data_path.is_absolute():
                     data_path = Path.cwd() / data_path
 
-                puzzles = load_puzzles_from_csv(str(data_path))
+                puzzles = load_puzzles_from_csv(data_path)
                 train_puzzles, _ = shuffle_and_split_puzzles(
                     puzzles, self.train_test_split
                 )
@@ -376,7 +376,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 if not data_path.is_absolute():
                     data_path = Path.cwd() / data_path
 
-                puzzles = load_puzzles_from_csv(str(data_path))
+                puzzles = load_puzzles_from_csv(data_path)
                 _, test_puzzles = shuffle_and_split_puzzles(
                     puzzles, self.train_test_split
                 )

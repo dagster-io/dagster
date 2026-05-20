@@ -142,3 +142,26 @@ To compute table lineage from Databricks query history, additional configuration
 ### Optional: Configure asset filtering
 
 Use filtering to control which catalogs, schemas, tables, views, and notebooks are synced. Patterns use regular expressions.
+
+## Connection freshness
+
+When the Databricks Connection has a SQL warehouse configured, Dagster automatically tracks changes to your Unity Catalog tables and emits a materialization on the corresponding Connection asset each time the underlying table is updated in Databricks. As a result, your Connection assets reflect the most recent state of the Databricks tables without needing to define a sensor or schedule.
+
+### Prerequisites
+
+Connection freshness for Databricks shares the same configuration as lineage tracking:
+
+- A **Warehouse ID** is set on the Connection ([Warehouse ID for lineage tracking](#optional-warehouse-id-for-lineage-tracking)).
+- The connection identity has access to the Unity Catalog metastore ([Enable lineage tracking](#optional-enable-lineage-tracking)).
+
+If no warehouse is configured, freshness signals are not emitted.
+
+### Triggering downstream assets
+
+Each detected change produces a standard Dagster materialization event on the Connection asset, so code-defined assets can depend on a Connection asset like any other upstream. Combine that with an [Automation Condition](/guides/automate/declarative-automation) to materialize a downstream asset whenever its Databricks parent changes:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/labs/connections/databricks/connection_freshness_downstream.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>

@@ -71,7 +71,7 @@ class S3ModelStoreResource(ModelStoreResource):
     bucket_name: str
     models_prefix: str = "models/"
 
-    def save_model(self, model, model_name: str):
+    def save_model(self, model, model_name: str):  # ty: ignore[invalid-method-override]
         # Create a buffer to store the model
         buffer = io.BytesIO()
         torch.save(model.state_dict(), buffer)

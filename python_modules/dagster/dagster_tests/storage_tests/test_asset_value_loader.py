@@ -24,7 +24,7 @@ def test_single_asset():
 
     happenings = set()
 
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]  # ty: ignore[no-matching-overload]
+    @dg.io_manager  # ty: ignore[no-matching-overload]
     @contextmanager
     def my_io_manager():
         try:
@@ -66,7 +66,7 @@ def test_source_asset():
 
     happenings = set()
 
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]  # ty: ignore[no-matching-overload]
+    @dg.io_manager  # ty: ignore[no-matching-overload]
     @contextmanager
     def my_io_manager():
         try:

@@ -156,7 +156,7 @@ async def create_execution_params(graphene_info, graphql_execution_params):
 def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
         selector=pipeline_selector_from_graphql(graphql_execution_params.get("selector")),
-        run_config=parse_run_config_input(  # pyright: ignore[reportArgumentType]
+        run_config=parse_run_config_input(
             graphql_execution_params.get("runConfigData") or {},
             raise_on_error=True,
         ),
@@ -354,7 +354,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
 
         for execution_params in executionParamsList:
             result = await GrapheneLaunchRunMutation.mutate(
-                None,  # type: ignore
+                None,
                 graphene_info,
                 executionParams=execution_params,
             )
@@ -828,7 +828,7 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
             Permissions.WIPE_ASSETS,
         )
 
-        return wipe_assets(graphene_info, normalized_ranges)
+        return wipe_assets(graphene_info, normalized_ranges)  # ty: ignore[invalid-return-type]
 
 
 class GrapheneReportRunlessAssetEventsSuccess(graphene.ObjectType):
@@ -996,7 +996,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
     def mutate(
         self, graphene_info: ResolveInfo, action: str, clientTime: str, clientId: str, metadata: str
     ):
-        action = log_ui_telemetry_event(
+        action = log_ui_telemetry_event(  # ty: ignore[invalid-assignment]
             graphene_info,
             action=action,
             client_time=clientTime,

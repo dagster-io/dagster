@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 
-T = TypeVar("T")
+T = TypeVar("T", bound="Component")
 
 
 @public
@@ -184,7 +184,9 @@ class ComponentDeclLoadContext:
         self.component_tree.mark_component_load_dependency(
             from_path=self.component_path, to_path=resolved_path
         )
-        return self.component_tree.load_component(resolved_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
+        if expected_type is not None:
+            return self.component_tree.load_component(resolved_path, expected_type)
+        return self.component_tree.load_component(resolved_path)
 
     def load_structural_component_at_path(
         self, defs_path: "ResolvableToComponentPath"

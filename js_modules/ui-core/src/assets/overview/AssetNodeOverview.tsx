@@ -181,19 +181,19 @@ export const AssetNodeOverview = ({
           />
         ) : undefined}
         {rowCountMeta?.intValue != null ? (
-          <Box flex={{direction: 'column', gap: 4}}>
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
             <Subtitle2>Row count</Subtitle2>
             <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
           </Box>
         ) : undefined}
         {sizeBytesMeta?.intValue != null ? (
-          <Box flex={{direction: 'column', gap: 4}}>
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
             <Subtitle2>Storage</Subtitle2>
             <Tag icon="database">{byteFormatter.format(sizeBytesMeta.intValue)}</Tag>
           </Box>
         ) : undefined}
         {queryCountMeta?.intValue != null ? (
-          <Box flex={{direction: 'column', gap: 4}}>
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
             <Subtitle2>Query count</Subtitle2>
             <Tag icon="code_block">{numberFormatter.format(queryCountMeta.intValue)}</Tag>
           </Box>
@@ -289,6 +289,7 @@ export const AssetNodeOverview = ({
               location={location}
               assetNode={assetNode}
               cachedOrLiveAssetNode={cachedOrLiveAssetNode}
+              storageAddress={cachedAssetNode?.storageAddress ?? null}
             />
           </LargeCollapsibleSection>
           <LargeCollapsibleSection header="Automation details" icon="automation_condition">

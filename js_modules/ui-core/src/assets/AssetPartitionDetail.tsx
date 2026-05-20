@@ -66,9 +66,14 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
       };
     }
 
-    const events = [...(result.data.assetOrError.assetEventHistory?.results || [])].sort(
-      (a, b) => Number(b.timestamp) - Number(a.timestamp),
-    );
+    const events = [
+      ...(result.data.assetOrError.assetEventHistory?.results.filter(
+        (e) =>
+          e.__typename === 'MaterializationEvent' ||
+          e.__typename === 'ObservationEvent' ||
+          e.__typename === 'FailedToMaterializeEvent',
+      ) || []),
+    ].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
 
     const materializations = events.filter((e) => e.__typename === 'MaterializationEvent');
     const hasLineage = materializations.some((m) => m.assetLineage.length > 0);

@@ -1748,11 +1748,11 @@ class SqlEventLogStorage(EventLogStorage):
         if (
             not isinstance(event_or_materialization, EventLogEntry)
             or not event_or_materialization.is_dagster_event
-            or not event_or_materialization.dagster_event.asset_key  # pyright: ignore[reportOptionalMemberAccess]
+            or not event_or_materialization.dagster_event.asset_key
         ):
             return None
 
-        return event_or_materialization.dagster_event.step_materialization_data.materialization  # pyright: ignore[reportOptionalMemberAccess]
+        return event_or_materialization.dagster_event.step_materialization_data.materialization
 
     def _get_asset_key_values_on_wipe(self) -> Mapping[str, Any]:
         wipe_timestamp = get_current_timestamp()

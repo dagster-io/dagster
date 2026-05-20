@@ -644,7 +644,8 @@ def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
             assert result.exit_code == 0
         # a side effect of running refresh-defs-state in process is that DAGSTER_IS_DEV_CLI is set to 1,
         # so avoid that by restoring the original environment
-        os.environ = original_env
+        os.environ.clear()
+        os.environ.update(original_env)
 
         # delete the original dbt project directory entirely to simulate a PEX deploy
         shutil.rmtree(tmp_dbt_path)

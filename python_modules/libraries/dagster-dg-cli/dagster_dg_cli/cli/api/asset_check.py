@@ -38,7 +38,16 @@ def list_asset_checks_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List asset checks for an asset."""
+    """List asset checks for an asset.
+
+    Example::
+
+        $ dg api asset-check list --asset-key dim_customers
+        NAME                BLOCKING  DESCRIPTION
+        not_null            Yes       Customer ID must not be null
+        unique_customer_id  Yes       Customer ID must be unique
+        valid_email         No        Email must match RFC 5322
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -103,7 +112,16 @@ def get_asset_check_executions_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get execution history for an asset check."""
+    """Get execution history for an asset check.
+
+    Example::
+
+        $ dg api asset-check get-executions --asset-key dim_customers --check-name not_null --limit 3
+        STATUS    RUN_ID                                TIMESTAMP                PARTITION
+        SUCCEEDED 5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a  2026-05-06 18:00:14 UTC
+        SUCCEEDED 2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a  2026-05-05 18:00:09 UTC
+        FAILED    8c4d2e7f-1a9b-4e3d-7c5b-9f2a1d8e3b6c  2026-05-04 18:00:16 UTC
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,

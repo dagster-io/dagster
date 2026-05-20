@@ -2,8 +2,8 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 
 from dagster import Bool, Field, StringSource
-from dagster._core.storage.captured_log_manager import (
-    CapturedLogContext,  # ty: ignore[unresolved-import]
+from dagster._core.storage.captured_log_manager import (  # ty: ignore[unresolved-import]
+    CapturedLogContext,
 )
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -72,7 +72,7 @@ class PIIComputeLogManagerWrite(LocalComputeLogManager, ConfigurableClass):
         }
 
     @classmethod
-    def from_config_value(cls, inst_data: ConfigurableClassData, config_value):
+    def from_config_value(cls, inst_data: ConfigurableClassData | None, config_value):
         return cls(inst_data=inst_data, **config_value)
 
     # highlight-start
@@ -82,11 +82,11 @@ class PIIComputeLogManagerWrite(LocalComputeLogManager, ConfigurableClass):
         with super().capture_logs(log_key) as context:
             if self.redact_on_write:
                 # Wrap the output streams with PII-redacting wrappers
-                original_out = context.out_fd
-                original_err = context.err_fd
+                original_out = context.out_fd  # ty: ignore[unresolved-attribute]
+                original_err = context.err_fd  # ty: ignore[unresolved-attribute]
 
-                context._out_fd = PIIRedactingStream(original_out)  # noqa: SLF001
-                context._err_fd = PIIRedactingStream(original_err)  # noqa: SLF001
+                context._out_fd = PIIRedactingStream(original_out)  # noqa: SLF001  # ty: ignore[unresolved-attribute]
+                context._err_fd = PIIRedactingStream(original_err)  # noqa: SLF001  # ty: ignore[unresolved-attribute]
 
             yield context
 

@@ -38,7 +38,16 @@ def list_schedules_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List schedules in the deployment."""
+    """List schedules in the deployment.
+
+    Example::
+
+        $ dg api schedule list
+        NAME                       STATUS   CRON           PIPELINE
+        daily_customer_ingest      RUNNING  0 6 * * *      ingest_customers
+        hourly_event_aggregation   RUNNING  0 * * * *      aggregate_events
+        weekly_model_retrain       STOPPED  0 9 * * MON    retrain_recommendation_model
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -88,7 +97,19 @@ def get_schedule_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get specific schedule details."""
+    """Get specific schedule details.
+
+    Example::
+
+        $ dg api schedule get daily_customer_ingest
+        Name:          daily_customer_ingest
+        Status:        RUNNING
+        Cron Schedule: 0 6 * * *
+        Pipeline:      ingest_customers
+        Description:   Daily customer ingest at 06:00 UTC
+        Timezone:      UTC
+        Next Tick:     2026-05-07 06:00:00 UTC
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -144,7 +165,18 @@ def get_schedule_ticks_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get tick history for a specific schedule."""
+    """Get tick history for a specific schedule.
+
+    Example::
+
+        $ dg api schedule get-ticks daily_customer_ingest --limit 3
+        TIMESTAMP                STATUS    RUN IDS                               SKIP REASON
+        2026-05-06 06:00:00 UTC  SUCCESS   5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        2026-05-05 06:00:00 UTC  SUCCESS   2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a
+        2026-05-04 06:00:00 UTC  FAILURE   8c4d2e7f-1a9b-4e3d-7c5b-9f2a1d8e3b6c
+
+        Total ticks: 3
+    """
     from dagster_rest_resources.api.tick import DgApiTickApi
 
     config = DagsterPlusCliConfig.create_for_deployment(

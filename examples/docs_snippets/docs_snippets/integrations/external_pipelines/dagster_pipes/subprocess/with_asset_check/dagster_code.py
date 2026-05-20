@@ -18,7 +18,8 @@ def no_empty_order_check(
     ]
 
     results = pipes_subprocess_client.run(
-        command=cmd, context=context.op_execution_context
+        command=cmd,
+        context=context.op_execution_context,  # ty: ignore[invalid-argument-type]
     ).get_results()
 
     if not results:

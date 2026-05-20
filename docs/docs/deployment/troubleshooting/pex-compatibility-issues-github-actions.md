@@ -1,6 +1,6 @@
 ---
 title: Compatible Python interpreter and wheel dependency errors in GitHub Actions for Dagster+
-sidebar_position: 60
+sidebar_position: 600
 description: How to fix PEX and cryptography wheel incompatibilities in GitHub Actions workflows for Dagster+.
 ---
 

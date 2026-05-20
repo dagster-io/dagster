@@ -742,10 +742,10 @@ def test_required_assets_and_checks_by_key_check_decorator(
     @dg.asset
     def asset0(): ...
 
-    @dg.asset_check(asset=asset0)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=asset0)
     def check0(): ...
 
-    @dg.asset_check(  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(
         asset=asset0,
         blocking=True,
         automation_condition=AutomationCondition.cron_tick_passed("*/15 * * * *"),
@@ -782,10 +782,10 @@ def test_toposort(
     @dg.asset(deps=[A])
     def B(): ...
 
-    @dg.asset_check(asset=A)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=A)
     def Ac(): ...
 
-    @dg.asset_check(asset=B)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=B)
     def Bc(): ...
 
     asset_graph = asset_graph_from_assets([A, B, Ac, Bc])
@@ -807,7 +807,7 @@ def test_required_assets_and_checks_by_key_asset_decorator(
     @dg.asset(check_specs=[foo_check, bar_check])
     def asset0(): ...
 
-    @dg.asset_check(asset=asset0)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=asset0)
     def check0(): ...
 
     asset_graph = asset_graph_from_assets([asset0, check0])
@@ -994,7 +994,7 @@ def test_serdes() -> None:
     @dg.asset
     def a(): ...
 
-    @dg.asset_check(asset=a)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=a)
     def c(): ...
 
     @dg.repository

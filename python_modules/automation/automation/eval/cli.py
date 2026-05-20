@@ -154,7 +154,7 @@ def evaluate_sessions(
 
     # Run evaluation
     click.echo(f"Evaluating {len(test_cases)} sessions for metric '{metric.id}'...")
-    results = evaluate(test_cases=test_cases, metrics=[metric.geval])
+    results = evaluate(test_cases=test_cases, metrics=[metric.geval])  # ty: ignore[call-non-callable]
 
     # Update cache with new results
     new_cache = dict(cached_results)

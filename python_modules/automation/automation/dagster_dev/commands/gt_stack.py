@@ -17,8 +17,8 @@ def parse_gt_log_output(output: str) -> list[dict[str, Any]]:
     Returns:
         List of dictionaries containing branch information
     """
-    branches = []
-    current_branch = None
+    branches: list[dict[str, Any]] = []
+    current_branch: dict[str, Any] | None = None
 
     lines = output.strip().split("\n")
 

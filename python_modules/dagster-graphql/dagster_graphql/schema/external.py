@@ -115,7 +115,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
         )
 
     def resolve_id(self, _) -> str:
-        return self.name
+        return self.name  # ty: ignore[invalid-return-type]
 
     def get_location(self, graphene_info: ResolveInfo) -> CodeLocation:
         if self._location is None:
@@ -133,7 +133,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
         if libs is None:
             return None
 
-        return [GrapheneDagsterLibraryVersion(name, ver) for name, ver in libs.items()]
+        return [GrapheneDagsterLibraryVersion(name, ver) for name, ver in libs.items()]  # ty: ignore[too-many-positional-arguments]
 
     def resolve_server_id(self, graphene_info: ResolveInfo):
         location = self.get_location(graphene_info)
@@ -517,7 +517,7 @@ class GrapheneRepository(graphene.ObjectType):
 
         return [
             GrapheneAssetGroup(
-                f"{self._handle.location_name}-{self._handle.repository_name}-{group_name}",
+                f"{self._handle.location_name}-{self._handle.repository_name}-{group_name}",  # ty: ignore[too-many-positional-arguments]
                 group_name,
                 [external_node.asset_key for external_node in asset_node_snaps],
             )
@@ -690,9 +690,11 @@ class GrapheneDefsStateInfo(graphene.ObjectType):
         super().__init__(
             keyStateInfo=[
                 GrapheneDefsKeyStateInfoEntry(
-                    key,
+                    key,  # ty: ignore[too-many-positional-arguments]
                     GrapheneDefsKeyStateInfo(
-                        info.version, info.create_timestamp, info.management_type
+                        info.version,  # ty: ignore[too-many-positional-arguments]
+                        info.create_timestamp,
+                        info.management_type,
                     )
                     if info
                     else None,

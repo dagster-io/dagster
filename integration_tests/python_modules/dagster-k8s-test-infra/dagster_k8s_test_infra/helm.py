@@ -9,6 +9,7 @@ from pathlib import Path
 
 import dagster._check as check
 import kubernetes
+import kubernetes.client.rest
 import pytest
 import requests
 import yaml
@@ -31,6 +32,18 @@ TEST_CONFIGMAP_NAME = "test-env-configmap"
 TEST_OTHER_CONFIGMAP_NAME = "test-other-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
 TEST_OTHER_SECRET_NAME = "test-other-env-secret"
+
+# Pin to a non-:latest tag so kubelet defaults imagePullPolicy to IfNotPresent
+# and uses the copy pre-loaded into the kind cluster, avoiding docker.io flakes
+# at test time. The kind pre-load list (`additional_kind_images` in the suite
+# conftest) must include this exact tag.
+LOCALSTACK_IMAGE = "localstack/localstack:3.8.1"
+
+# Poll interval for fixture pod-readiness waits. The library default
+# (DEFAULT_WAIT_BETWEEN_ATTEMPTS) is 10s, which leaves ~5-8s on the floor per
+# wait when pods reconcile in 1-3s. Tests run against a local kind cluster
+# where the API server is fast; a shorter interval is safe.
+_FIXTURE_WAIT_INTERVAL = 2.0
 
 # Secret that is set on the deployment only
 TEST_DEPLOYMENT_SECRET_NAME = "test-deployment-env-secret"
@@ -123,7 +136,7 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
     # w/ a kind cluster
     if should_cleanup:
         print(f"Deleting namespace {namespace}")
-        kube_api.delete_namespace(name=namespace)  # pyright: ignore[reportPossiblyUnboundVariable]
+        kube_api.delete_namespace(name=namespace)
 
 
 @contextmanager
@@ -208,7 +221,7 @@ def aws_configmap(namespace, should_cleanup):
     yield TEST_AWS_CONFIGMAP_NAME
 
     if should_cleanup and not IS_BUILDKITE:
-        kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)  # pyright: ignore[reportPossiblyUnboundVariable]
+        kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)
 
 
 @pytest.fixture(scope="session")
@@ -485,7 +498,11 @@ def _helm_chart_helper(
                 pod_names = [p.metadata.name for p in pods.items if "webserver" in p.metadata.name]
                 if pod_names:
                     webserver_pod = pod_names[0]
-                    api_client.wait_for_pod(webserver_pod, namespace=namespace)
+                    api_client.wait_for_pod(
+                        webserver_pod,
+                        namespace=namespace,
+                        wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                    )
                     break
                 time.sleep(1)
 
@@ -499,7 +516,11 @@ def _helm_chart_helper(
                 pod_names = [p.metadata.name for p in pods.items if "daemon" in p.metadata.name]
                 if pod_names:
                     daemon_pod = pod_names[0]
-                    api_client.wait_for_pod(daemon_pod, namespace=namespace)
+                    api_client.wait_for_pod(
+                        daemon_pod,
+                        namespace=namespace,
+                        wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                    )
                     break
                 time.sleep(1)
 
@@ -546,7 +567,11 @@ def _helm_chart_helper(
                 print("Waiting for celery workers")
                 for pod_name in pod_names:
                     print(f"Waiting for Celery worker pod {pod_name}")
-                    api_client.wait_for_pod(pod_name, namespace=namespace)
+                    api_client.wait_for_pod(
+                        pod_name,
+                        namespace=namespace,
+                        wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                    )
 
                 rabbitmq_enabled = "rabbitmq" in helm_config and helm_config["rabbitmq"].get(
                     "enabled"
@@ -568,7 +593,11 @@ def _helm_chart_helper(
                             assert len(pod_names) == 1
                             print("Waiting for rabbitmq pod to be ready: " + str(pod_names[0]))
 
-                            api_client.wait_for_pod(pod_names[0], namespace=namespace)
+                            api_client.wait_for_pod(
+                                pod_names[0],
+                                namespace=namespace,
+                                wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                            )
                             break
                         time.sleep(1)
 
@@ -586,7 +615,11 @@ def _helm_chart_helper(
                         if pod_names and len(pod_names) >= 1:
                             for pod_name in pod_names:
                                 print("Waiting for redis pod to be ready: " + str(pod_name))
-                                api_client.wait_for_pod(pod_name, namespace=namespace)
+                                api_client.wait_for_pod(
+                                    pod_name,
+                                    namespace=namespace,
+                                    wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                                )
                             break
                         time.sleep(5)
 
@@ -608,7 +641,11 @@ def _helm_chart_helper(
             ]
             for pod_name in pod_names:
                 print(f"Waiting for user code deployment pod {pod_name}")
-                api_client.wait_for_pod(pod_name, namespace=namespace)
+                api_client.wait_for_pod(
+                    pod_name,
+                    namespace=namespace,
+                    wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                )
 
         print(f"Helm chart successfully installed in namespace {namespace}")
         yield
@@ -619,7 +656,7 @@ def _helm_chart_helper(
         if should_cleanup:
             print("Uninstalling helm chart")
             check_output(
-                ["helm", "uninstall", release_name, "--namespace", namespace],  # pyright: ignore[reportPossiblyUnboundVariable]
+                ["helm", "uninstall", release_name, "--namespace", namespace],
                 cwd=discover_oss_root(Path(__file__)),
             )
 
@@ -969,7 +1006,7 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
                             "containers": [
                                 {
                                     "name": "s3",
-                                    "image": "localstack/localstack:latest",
+                                    "image": LOCALSTACK_IMAGE,
                                     "ports": [{"containerPort": 4566}],
                                     "env": [
                                         {"name": "SERVICES", "value": "s3"},

@@ -32,7 +32,15 @@ def get_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get settings for the organization."""
+    """Get settings for the organization.
+
+    Example::
+
+        $ dg api organization settings get
+        sso_default_role: VIEWER
+        domain_allowlist:
+        - example.com
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -70,7 +78,15 @@ def set_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Set organization settings from a YAML file."""
+    """Set organization settings from a YAML file.
+
+    Example::
+
+        $ dg api organization settings set organization-settings.yaml
+        sso_default_role: EDITOR
+        domain_allowlist:
+        - example.com
+    """
     import yaml
 
     with open(file_path) as f:
@@ -116,7 +132,13 @@ def upload_saml_metadata_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Upload identity provider SAML metadata to enable SSO."""
+    """Upload identity provider SAML metadata to enable SSO.
+
+    Example::
+
+        $ dg api organization saml upload idp-metadata.xml
+        The identity provider metadata was successfully uploaded.
+    """
     import requests
 
     if not api_token:
@@ -177,7 +199,13 @@ def remove_saml_metadata_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Remove identity provider SAML metadata to disable SSO."""
+    """Remove identity provider SAML metadata to disable SSO.
+
+    Example::
+
+        $ dg api organization saml remove
+        The identity provider metadata was successfully removed.
+    """
     import requests
 
     if not api_token:

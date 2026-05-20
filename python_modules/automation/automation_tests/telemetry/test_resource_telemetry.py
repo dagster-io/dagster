@@ -64,7 +64,7 @@ def test_resource_telemetry():
                 SnowflakeIOManager,
                 DuckDBIOManager,
                 BigQueryIOManager,
-            ]
+            ]  # ty: ignore[invalid-argument-type]
         )
 
     for library in libraries:

@@ -9,7 +9,9 @@ class Permissions(str, Enum):
     LAUNCH_PIPELINE_REEXECUTION = "launch_pipeline_reexecution"
     START_SCHEDULE = "start_schedule"
     STOP_RUNNING_SCHEDULE = "stop_running_schedule"
+    SCHEDULE_DRY_RUN = "schedule_dry_run"
     EDIT_SENSOR = "edit_sensor"
+    SENSOR_DRY_RUN = "sensor_dry_run"
     UPDATE_SENSOR_CURSOR = "update_sensor_cursor"
     TERMINATE_PIPELINE_EXECUTION = "terminate_pipeline_execution"
     DELETE_PIPELINE_RUN = "delete_pipeline_run"
@@ -32,7 +34,9 @@ VIEWER_PERMISSIONS: dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
     Permissions.START_SCHEDULE: False,
     Permissions.STOP_RUNNING_SCHEDULE: False,
+    Permissions.SCHEDULE_DRY_RUN: False,
     Permissions.EDIT_SENSOR: False,
+    Permissions.SENSOR_DRY_RUN: False,
     Permissions.UPDATE_SENSOR_CURSOR: False,
     Permissions.TERMINATE_PIPELINE_EXECUTION: False,
     Permissions.DELETE_PIPELINE_RUN: False,
@@ -52,7 +56,9 @@ EDITOR_PERMISSIONS: dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION: True,
     Permissions.START_SCHEDULE: True,
     Permissions.STOP_RUNNING_SCHEDULE: True,
+    Permissions.SCHEDULE_DRY_RUN: True,
     Permissions.EDIT_SENSOR: True,
+    Permissions.SENSOR_DRY_RUN: True,
     Permissions.UPDATE_SENSOR_CURSOR: True,
     Permissions.TERMINATE_PIPELINE_EXECUTION: True,
     Permissions.DELETE_PIPELINE_RUN: True,
@@ -72,7 +78,9 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION,
     Permissions.START_SCHEDULE,
     Permissions.STOP_RUNNING_SCHEDULE,
+    Permissions.SCHEDULE_DRY_RUN,
     Permissions.EDIT_SENSOR,
+    Permissions.SENSOR_DRY_RUN,
     Permissions.UPDATE_SENSOR_CURSOR,
     Permissions.TERMINATE_PIPELINE_EXECUTION,
     Permissions.DELETE_PIPELINE_RUN,

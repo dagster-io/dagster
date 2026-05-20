@@ -17,7 +17,7 @@ def orders_id_has_no_nulls():
 
 
 def test_orders_check():
-    assert orders_id_has_no_nulls().passed
+    assert orders_id_has_no_nulls().passed  # ty: ignore[unresolved-attribute]
 
 
 # end

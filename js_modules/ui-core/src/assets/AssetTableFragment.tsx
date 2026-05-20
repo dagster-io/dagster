@@ -49,6 +49,10 @@ export const ASSET_BASE_NODE_FRAGMENT = gql`
       key
       value
     }
+    storageAddress {
+      storageKind
+      tableName
+    }
     jobNames
     kinds
   }

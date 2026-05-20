@@ -29,7 +29,7 @@ def clickhouse_connection():
     if not _docker_available():
         pytest.skip("Docker is not available (required for ClickHouse testcontainers)")
 
-    from testcontainers.clickhouse import ClickHouseContainer  # ty: ignore[unresolved-import]
+    from testcontainers.clickhouse import ClickHouseContainer
 
     # Pin image for reproducible CI; native protocol on 9000
     with ClickHouseContainer("clickhouse/clickhouse-server:24.8") as ch:

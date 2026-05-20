@@ -19,8 +19,8 @@ def daily_regional_sales_data(context: dg.AssetExecutionContext) -> None:
     # partition_key looks like "2024-01-01|us"
     keys_by_dimension: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
 
-    date = keys_by_dimension["date"]
-    region = keys_by_dimension["region"]
+    date = keys_by_dimension["date"]  # ty: ignore[invalid-argument-type]
+    region = keys_by_dimension["region"]  # ty: ignore[invalid-argument-type]
 
     # Simulate fetching daily sales data
     df = pd.DataFrame(
@@ -46,8 +46,8 @@ def daily_regional_sales_summary(context):
     # partition_key looks like "2024-01-01|us"
     keys_by_dimension: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
 
-    date = keys_by_dimension["date"]
-    region = keys_by_dimension["region"]
+    date = keys_by_dimension["date"]  # ty: ignore[invalid-argument-type]
+    region = keys_by_dimension["region"]  # ty: ignore[invalid-argument-type]
 
     filename = f"data/daily_regional_sales/sales_{context.partition_key}.csv"
     df = pd.read_csv(filename)

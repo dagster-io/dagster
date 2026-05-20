@@ -695,7 +695,7 @@ def test_column_lineage_integration(
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": dbt},
-        selection=asset_key_selection and AssetSelection.assets(asset_key_selection),
+        selection=AssetSelection.assets(asset_key_selection) if asset_key_selection else None,
     )
 
     # Check that the warning is printed only when using log_column_level_metadata

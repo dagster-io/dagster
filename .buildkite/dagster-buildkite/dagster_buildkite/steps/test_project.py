@@ -1,7 +1,7 @@
 import os
 
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
+from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, CommandStepBuilder
 from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
     GroupStepBuilder,
@@ -81,9 +81,10 @@ def build_test_project_steps() -> list[GroupStepConfiguration]:
                 ],
             )
             .with_ecr_login()
+            .with_docker()  # build.sh runs `docker build`; final step `docker push`
+            .on_queue(BuildkiteQueue.MEDIUM)
             .build()
         )
-
     return [
         GroupStepBuilder(
             "test-project-image",

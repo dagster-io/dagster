@@ -35,7 +35,6 @@ def build_node_invocation_snap(graph_def: GraphDefinition, node: Node) -> "NodeI
     return NodeInvocationSnap(
         node_name=node.name,
         node_def_name=node.definition.name,
-        tags=node.tags,
         input_dep_snaps=input_def_snaps,
         is_dynamic_mapped=dep_structure.is_dynamic_mapped(node.name),
     )
@@ -208,9 +207,12 @@ class NodeInvocationSnap(
         [
             ("node_name", str),
             ("node_def_name", str),
-            ("tags", Mapping[str, str]),
             ("input_dep_snaps", Sequence[InputDependencySnap]),
             ("is_dynamic_mapped", bool),
+            # Kept for round-trip stability of the serialized form. Producers built from
+            # in-memory job defs leave this empty; only payloads from older Dagster versions
+            # populate it.
+            ("tags", Mapping[str, str]),
         ],
     )
 ):
@@ -218,19 +220,19 @@ class NodeInvocationSnap(
         cls,
         node_name: str,
         node_def_name: str,
-        tags: Mapping[str, str],
         input_dep_snaps: Sequence[InputDependencySnap],
         is_dynamic_mapped: bool = False,
+        tags: Mapping[str, str] | None = None,
     ):
         return super().__new__(
             cls,
             node_name=check.str_param(node_name, "node_name"),
             node_def_name=check.str_param(node_def_name, "node_def_name"),
-            tags=check.mapping_param(tags, "tags", key_type=str, value_type=str),
             input_dep_snaps=check.sequence_param(
                 input_dep_snaps, "input_dep_snaps", of_type=InputDependencySnap
             ),
             is_dynamic_mapped=check.bool_param(is_dynamic_mapped, "is_dynamic_mapped"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
     @cached_property

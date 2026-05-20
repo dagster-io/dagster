@@ -83,9 +83,9 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"API server starting on {args.host}:{args.port}")  # noqa: T201
-    print(f"Sample data: {len(app.config['SAMPLE_DATA'])} records available")  # noqa: T201
-    print(f"Get records: GET http://localhost:{args.port}/records")  # noqa: T201
+    print(f"API server starting on {args.host}:{args.port}")
+    print(f"Sample data: {len(app.config['SAMPLE_DATA'])} records available")
+    print(f"Get records: GET http://localhost:{args.port}/records")
 
     app.run(host=args.host, port=args.port, debug=False)
 

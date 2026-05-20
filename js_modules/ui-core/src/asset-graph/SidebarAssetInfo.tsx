@@ -67,11 +67,13 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
-  const recentEvents = useRecentAssetEvents(asset?.assetKey, 1, [
+  const eventTypeSelectors = [
     definition.isObservable
       ? AssetEventHistoryEventTypeSelector.OBSERVATION
       : AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-  ]);
+  ];
+
+  const recentEvents = useRecentAssetEvents(asset?.assetKey, 1, eventTypeSelectors);
 
   if (!asset) {
     return (
@@ -221,7 +223,11 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
           <TableSchemaAssetContext.Provider
             value={{
               assetKey,
-              materializationMetadataEntries: recentEvents.events[0]?.metadataEntries,
+              materializationMetadataEntries:
+                recentEvents.events[0]?.__typename === 'MaterializationEvent' ||
+                recentEvents.events[0]?.__typename === 'ObservationEvent'
+                  ? recentEvents.events[0]?.metadataEntries
+                  : [],
               definitionMetadataEntries: assetMetadata,
             }}
           >

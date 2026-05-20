@@ -89,7 +89,10 @@ export const AssetSidebarActivitySummary = ({
       {isPartitionedAsset ? null : (
         <>
           <SidebarSection title={!isObservable ? 'Latest materialization' : 'Latest observation'}>
-            {displayedEvent ? (
+            {displayedEvent &&
+            (displayedEvent.__typename === 'MaterializationEvent' ||
+              displayedEvent.__typename === 'ObservationEvent' ||
+              displayedEvent.__typename === 'FailedToMaterializeEvent') ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
                 <LatestMaterializationMetadata
                   assetKey={asset.assetKey}
@@ -115,7 +118,10 @@ export const AssetSidebarActivitySummary = ({
             title={!isObservable ? 'Materialization tags' : 'Observation tags'}
             collapsedByDefault
           >
-            {displayedEvent ? (
+            {displayedEvent &&
+            (displayedEvent.__typename === 'MaterializationEvent' ||
+              displayedEvent.__typename === 'ObservationEvent' ||
+              displayedEvent.__typename === 'FailedToMaterializeEvent') ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
                 <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
               </div>

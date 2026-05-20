@@ -105,7 +105,7 @@ def sensor(
         check.callable_param(fn, "fn")
 
         sensor_def = SensorDefinition.dagster_internal_init(
-            name=name or fn.__name__,
+            name=name or fn.__name__,  # ty: ignore[unresolved-attribute]
             job_name=job_name,
             evaluation_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,
@@ -209,7 +209,7 @@ def asset_sensor(
 
     def inner(fn: AssetMaterializationFunction) -> AssetSensorDefinition:
         check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
+        sensor_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         def _wrapped_fn(*args, **kwargs) -> Any:
             result = fn(*args, **kwargs)
@@ -237,7 +237,7 @@ def asset_sensor(
 
         # Preserve any resource arguments from the underlying function, for when we inspect the
         # wrapped function later on
-        _wrapped_fn = update_wrapper(_wrapped_fn, wrapped=fn)
+        _wrapped_fn = update_wrapper(_wrapped_fn, wrapped=fn)  # ty: ignore[invalid-assignment]
 
         return AssetSensorDefinition(
             name=sensor_name,
@@ -327,7 +327,7 @@ def multi_asset_sensor(
 
     def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
         check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
+        sensor_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         sensor_def = MultiAssetSensorDefinition(
             name=sensor_name,

@@ -1,5 +1,6 @@
 from collections.abc import Mapping, Sequence, Set
 from functools import cached_property, partial
+from typing import TypeVar
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -247,9 +248,10 @@ def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
     )
 
 
-def _by_name(
-    snap: InputDefSnap | OutputDefSnap,
-) -> str:
+_T_NamedSnap = TypeVar("_T_NamedSnap", "InputDefSnap", "OutputDefSnap")
+
+
+def _by_name(snap: _T_NamedSnap) -> str:
     return snap.name
 
 

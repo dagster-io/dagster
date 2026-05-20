@@ -5,15 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-airlift"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.12"
 description = "A toolkit for observing integration and migration between Apache Airflow and Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Operating System :: OS Independent",
-]
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift"
@@ -59,6 +54,10 @@ tutorial = [
 mwaa = [
     "boto3>=1.18.0",  # confirms mwaa is available in the environment
 ]
+# Kept as a published extra because it is consumed cross-package by the
+# airlift example/tutorial ecosystem (kitchen-sink, perf-harness,
+# docs_snippets, starlift-demo, airlift-federation-tutorial,
+# airlift-migration-tutorial). Adding entries here affects those test envs.
 test = [
     "pytest",
     "dagster-dbt==1!0+dev",
@@ -76,3 +75,34 @@ test = [
     "click",
     "structlog",
 ]
+
+[dependency-groups]
+test = [
+    "dagster[test,test-components]",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-dbt",
+    "dagster-k8s",
+    "dagster-dg-cli",
+    "dagster-dg-core",
+    "dagster-cloud-cli",
+    "dagster-rest-resources",
+    "dbt-duckdb",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../../python_modules/dagster", editable = true }
+dagster-test = { path = "../../../python_modules/dagster-test", editable = true }
+dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
+dagster-webserver = { path = "../../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../../python_modules/dagster-graphql", editable = true }
+dagster-dbt = { path = "../dagster-dbt", editable = true }
+dagster-k8s = { path = "../dagster-k8s", editable = true }
+dagster-dg-cli = { path = "../dagster-dg-cli", editable = true }
+dagster-dg-core = { path = "../dagster-dg-core", editable = true }
+dagster-cloud-cli = { path = "../dagster-cloud-cli", editable = true }
+dagster-rest-resources = { path = "../dagster-rest-resources", editable = true }

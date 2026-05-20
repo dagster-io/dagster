@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from os import PathLike
-from typing import Any, Generic, Union
+from typing import Any, Generic
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.serdes.serdes import (
@@ -232,7 +232,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
             value (Callable): The python class or function for a metadata entry.
         """
         check.callable_param(python_artifact, "python_artifact")
-        return PythonArtifactMetadataValue(python_artifact.__module__, python_artifact.__name__)
+        return PythonArtifactMetadataValue(python_artifact.__module__, python_artifact.__name__)  # ty: ignore[unresolved-attribute]
 
     @public
     @staticmethod
@@ -308,7 +308,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def timestamp(value: Union["float", datetime]) -> "TimestampMetadataValue":
+    def timestamp(value: "float | datetime") -> "TimestampMetadataValue":  # ty: ignore[invalid-type-form]
         """Static constructor for a metadata value wrapping a UNIX timestamp as a
         :py:class:`TimestampMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events.
@@ -537,7 +537,7 @@ class TextMetadataValue(MetadataValue[str]):
         text (Optional[str]): The text data.
     """
 
-    text: PublicAttr[str | None] = ""  # type: ignore
+    text: PublicAttr[str | None] = ""
 
     @public
     @property
@@ -556,7 +556,7 @@ class UrlMetadataValue(MetadataValue[str]):
         url (Optional[str]): The URL as a string.
     """
 
-    url: PublicAttr[str | None] = ""  # type: ignore
+    url: PublicAttr[str | None] = ""
 
     @public
     @property
@@ -592,7 +592,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
 
     @public
     @property
-    def path(self) -> str:  # type: ignore
+    def path(self) -> str:
         return self.fspath
 
 
@@ -623,7 +623,7 @@ class NotebookMetadataValue(MetadataValue[str], IHaveNew):
 
     @public
     @property
-    def path(self) -> str:  # type: ignore
+    def path(self) -> str:
         return self.fspath
 
 
@@ -637,7 +637,7 @@ class JsonDataFieldSerializer(FieldSerializer):
         # return the json serializable data field as is
         return mapping
 
-    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def unpack(  # ty: ignore[invalid-method-override]
         self,
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,
@@ -736,7 +736,7 @@ class FloatMetadataValue(MetadataValue[float | None]):
         value (Optional[float]): The float value.
     """
 
-    value: PublicAttr[float | None]  # type: ignore
+    value: PublicAttr[float | None]
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
@@ -749,7 +749,7 @@ class IntMetadataValue(MetadataValue[int | None]):
         value (Optional[int]): The int value.
     """
 
-    value: PublicAttr[int | None]  # type: ignore
+    value: PublicAttr[int | None]
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
@@ -761,7 +761,7 @@ class BoolMetadataValue(MetadataValue[bool | None]):
         value (Optional[bool]): The bool value.
     """
 
-    value: PublicAttr[bool | None]  # type: ignore
+    value: PublicAttr[bool | None]
 
 
 @public
@@ -774,7 +774,7 @@ class TimestampMetadataValue(MetadataValue[float]):
         value (float): Seconds since the unix epoch.
     """
 
-    value: PublicAttr[float]  # type: ignore
+    value: PublicAttr[float]
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
@@ -963,7 +963,7 @@ class TableColumnLineageMetadataValue(
 
     @public
     @property
-    def column_lineage(self) -> TableColumnLineage:  # type: ignore
+    def column_lineage(self) -> TableColumnLineage:
         return self.lineage
 
 
@@ -1018,7 +1018,7 @@ class PoolMetadataValue(
 
     @public
     @property
-    def pool(self) -> str:  # type: ignore
+    def pool(self) -> str:
         return self.name
 
 

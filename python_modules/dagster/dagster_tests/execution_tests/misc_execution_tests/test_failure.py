@@ -18,10 +18,10 @@ def test_failure():
     assert not result.success
     failure_data = result.failure_data_for_node("throw")
     assert failure_data
-    assert failure_data.error.cls_name == "Failure"  # pyright: ignore[reportOptionalMemberAccess]
+    assert failure_data.error.cls_name == "Failure"  # ty: ignore[unresolved-attribute]
 
     # hard coded
-    assert failure_data.user_failure_data.label == "intentional-failure"  # pyright: ignore[reportOptionalMemberAccess]
+    assert failure_data.user_failure_data.label == "intentional-failure"  # ty: ignore[unresolved-attribute]
     # from Failure
-    assert failure_data.user_failure_data.description == "it Failure"  # pyright: ignore[reportOptionalMemberAccess]
-    assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")  # pyright: ignore[reportOptionalMemberAccess]
+    assert failure_data.user_failure_data.description == "it Failure"  # ty: ignore[unresolved-attribute]
+    assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")  # ty: ignore[unresolved-attribute]

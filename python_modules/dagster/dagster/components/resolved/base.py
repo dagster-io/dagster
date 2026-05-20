@@ -212,7 +212,7 @@ def derive_model_type(
 
             # make all fields injectable
             if field_type != str:
-                field_type = field_type | str
+                field_type = field_type | str  # ty: ignore[unsupported-operator]
 
             model_fields[field_name] = (
                 field_type,
@@ -357,7 +357,7 @@ def _get_init_kwargs(
 
 def resolve_fields(
     model: BaseModel,
-    resolved_cls: type,
+    resolved_cls: type[Resolvable],
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""

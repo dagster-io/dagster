@@ -78,7 +78,7 @@ def test_asset_check_decorator_name() -> None:
 
 
 def test_asset_check_decorator_docstring_description() -> None:
-    @dg.asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset="asset1")
     def check1():
         """Docstring."""
         pass
@@ -92,7 +92,7 @@ def test_asset_check_decorator_docstring_description() -> None:
 
 
 def test_asset_check_decorator_parameter_description() -> None:
-    @dg.asset_check(asset="asset1", description="parameter")  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset="asset1", description="parameter")
     def check1():
         """Docstring."""
 
@@ -540,7 +540,7 @@ def test_error_severity_with_source_asset_success() -> None:
 def test_definitions_conflicting_checks() -> None:
     def make_check() -> dg.AssetChecksDefinition:
         @dg.asset_check(asset="asset1")
-        def check1(context) -> dg.AssetCheckResult: ...
+        def check1(context) -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
         return check1
 
@@ -689,7 +689,7 @@ def test_asset_not_provided() -> None:
     with pytest.raises(Exception):
         # testing case that fails typechecking
         @dg.asset_check(description="desc")  # type: ignore
-        def check1() -> dg.AssetCheckResult: ...
+        def check1() -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
 
 def test_managed_input() -> None:
@@ -736,7 +736,7 @@ def test_multiple_managed_inputs() -> None:
     ):
 
         @dg.asset_check(asset="asset1", description="desc")
-        def check1(asset1, asset2) -> dg.AssetCheckResult: ...
+        def check1(asset1, asset2) -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
 
 def test_managed_input_with_context() -> None:
@@ -1036,7 +1036,7 @@ def test_direct_invocation_with_inputs() -> None:
     result = list(multi_check(4, 5))  # type: ignore
     assert len(result) == 2
     assert all(isinstance(r, dg.AssetCheckResult) for r in result)
-    assert all(r.passed for r in result)
+    assert all(r.passed for r in result)  # ty: ignore[unresolved-attribute]
 
 
 def test_direct_invocation_remapped_inputs() -> None:
@@ -1062,7 +1062,7 @@ def test_direct_invocation_remapped_inputs() -> None:
     result = list(multi_check(4, 5))  # type: ignore
     assert len(result) == 2
     assert all(isinstance(r, dg.AssetCheckResult) for r in result)
-    assert all(r.passed for r in result)
+    assert all(r.passed for r in result)  # ty: ignore[unresolved-attribute]
 
 
 def test_multi_check_asset_with_inferred_inputs() -> None:
@@ -1309,7 +1309,7 @@ def test_asset_check_pool() -> None:
         return 5
 
     @dg.asset_check(asset=asset1, pool="my_pool")
-    def my_check1(asset1: int) -> dg.AssetCheckResult: ...
+    def my_check1(asset1: int) -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
     assert my_check1.op.pool == "my_pool"
 
@@ -1320,7 +1320,7 @@ def test_multi_asset_check_pool() -> None:
         return 5
 
     @dg.multi_asset_check(specs=[dg.AssetCheckSpec("check1", asset=asset1)], pool="my_pool")
-    def my_check1(asset1: int) -> dg.AssetCheckResult: ...
+    def my_check1(asset1: int) -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
     assert my_check1.op.pool == "my_pool"
 

@@ -388,6 +388,11 @@ export type RepositoryAssetFragment = {
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  storageAddress: {
+    __typename: 'StorageAddress';
+    storageKind: string | null;
+    tableName: string;
+  } | null;
 };
 
 export type WorkspaceAssetGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
@@ -444,6 +449,11 @@ export type WorkspaceRepositoryAssetsFragment = {
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
 };
@@ -504,6 +514,11 @@ export type WorkspaceLocationAssetsFragment = {
         {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
       >;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      storageAddress: {
+        __typename: 'StorageAddress';
+        storageKind: string | null;
+        tableName: string;
+      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
   }>;
@@ -637,6 +652,11 @@ export type WorkspaceLocationFragment = {
         {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
       >;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      storageAddress: {
+        __typename: 'StorageAddress';
+        storageKind: string | null;
+        tableName: string;
+      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -719,6 +739,11 @@ export type WorkspaceLocationAssetsEntryFragment = {
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
         }>;
@@ -968,6 +993,11 @@ export type LocationWorkspaceAssetsQuery = {
                     | {__typename: 'UserAssetOwner'; email: string}
                   >;
                   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  storageAddress: {
+                    __typename: 'StorageAddress';
+                    storageKind: string | null;
+                    tableName: string;
+                  } | null;
                 }>;
                 assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
               }>;
@@ -1207,6 +1237,11 @@ export type WorkspaceLocationNodeFragment = {
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1344,6 +1379,11 @@ export type WorkspaceRepositoryLocationFragment = {
         {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
       >;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      storageAddress: {
+        __typename: 'StorageAddress';
+        storageKind: string | null;
+        tableName: string;
+      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1473,6 +1513,11 @@ export type WorkspaceRepositoryFragment = {
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1483,6 +1528,6 @@ export const LocationWorkspaceQueryVersion = '13d0e674c559c7506419e36c9f30ecc793
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
-export const LocationWorkspaceAssetsQueryVersion = 'ac6da45c2b6f5e448ef92e906b1531165822e9fbe379945a0578c81598d58b4c';
+export const LocationWorkspaceAssetsQueryVersion = '33552d752f313cc8beb047ec9ffedacc56452109f95c9279e324a46d0bfbd688';
 
 export const LocationWorkspaceAssetsManifestQueryVersion = '26f05a136fa06937c3c7c0536f69f2c5dde1956750e8de4eec7fcaf9dd684d94';

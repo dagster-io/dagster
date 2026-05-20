@@ -2,6 +2,7 @@
 
 
 import os
+import subprocess
 import time
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
@@ -102,12 +103,34 @@ def empty_airbyte_instance_fixture(docker_compose_airbyte_instance):
 @pytest.fixture(name="airbyte_source_files")
 def airbyte_source_files_fixture():
     FILES = ["sample_file.json", "different_sample_file.json"]
-
     for file in FILES:
         with open(file_relative_path(__file__, file), encoding="utf8") as f:
             contents = f.read()
-        with open(os.path.join("/tmp/airbyte_local", file), "w", encoding="utf8") as f:
-            f.write(contents)
+        # The Airbyte file-source connector reads /tmp/airbyte_local on the
+        # docker host. In K8s/dind that host is the dind sidecar, whose /tmp
+        # isn't shared with the test container — writing via `open()` would
+        # land the file on the wrong filesystem. Write through `docker run`
+        # so the bind-mount source is resolved by the dind daemon, putting
+        # the file where airbyte-worker (and the connectors it spawns) will
+        # actually see it. On the single-docker-host MEDIUM queue this also
+        # works because the bind mount source resolves to the same /tmp.
+        subprocess.run(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "-i",
+                "-v",
+                "/tmp/airbyte_local:/tmp/airbyte_local",
+                "alpine:3",
+                "sh",
+                "-c",
+                f"cat > /tmp/airbyte_local/{file}",
+            ],
+            input=contents,
+            text=True,
+            check=True,
+        )
 
 
 def _calls_to(rm: requests_mock.Mocker, url_suffix: str) -> int:
@@ -125,6 +148,8 @@ def test_basic_integration(
         {
             "host": os.getenv("AIRBYTE_HOSTNAME", "localhost"),
             "port": os.getenv("AIRBYTE_PORT", "80"),
+            "request_timeout": 60,
+            "request_max_retries": 5,
         }
     )
     ab_cacheable_assets = load_assets_from_connections(
@@ -348,7 +373,7 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
         assert ManagedElementDiff() != check_result
 
 
-@pytest.mark.flaky(max_runs=1)
+@pytest.mark.flaky(reruns=1)
 def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
     # Set up example element and ensure no diff
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")

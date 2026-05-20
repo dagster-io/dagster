@@ -83,7 +83,7 @@ def test_multi_out():
 
     @dg.graph
     def my_graph():
-        one, two = composite_return_mult()  # pyright: ignore[reportGeneralTypeIssues]
+        one, two = composite_return_mult()  # ty: ignore[not-iterable]
         echo(one, two)
 
     result = composite_return_mult.execute_in_process()

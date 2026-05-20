@@ -44,6 +44,7 @@ from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
+from dagster._utils.schedules import reverse_cron_string_iterator
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.base_asset_graph import (
@@ -113,6 +114,7 @@ class AssetGraphView(LoadingContext):
         temporal_context: TemporalContext,
         instance: "DagsterInstance",
         asset_graph: "BaseAssetGraph",
+        enforce_event_id_upper_bound: bool = False,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -120,6 +122,11 @@ class AssetGraphView(LoadingContext):
         self._instance = instance
         self._loaders = {}
         self._asset_graph = asset_graph
+        # When true, queries that look up "events updated since a cursor" treat
+        # `temporal_context.last_event_id` as a hard upper bound. Lets callers (e.g. the
+        # automation daemon) enforce a fixed view of the event log even if asset_records
+        # has been updated by in-flight transactions that committed after the snapshot.
+        self._enforce_event_id_upper_bound = enforce_event_id_upper_bound
 
         self._queryer = CachingInstanceQueryer(
             instance=instance,
@@ -140,7 +147,7 @@ class AssetGraphView(LoadingContext):
         return self._instance
 
     @property
-    def loaders(self) -> dict[type, DataLoader]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def loaders(self) -> dict[type, DataLoader]:
         return self._loaders
 
     @property
@@ -163,7 +170,7 @@ class AssetGraphView(LoadingContext):
         return self._queryer
 
     def _get_partitions_def(self, key: T_EntityKey) -> Optional["PartitionsDefinition"]:
-        return self.asset_graph.get(key).partitions_def
+        return self.asset_graph.get(key).partitions_def  # ty: ignore[no-matching-overload]
 
     @cached_method
     @use_partition_loading_context
@@ -313,7 +320,7 @@ class AssetGraphView(LoadingContext):
         for asset_key in asset_graph_subset.asset_keys:
             yield self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, asset_key)
 
-    @use_partition_loading_context
+    @use_partition_loading_context  # ty: ignore[invalid-argument-type]
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
     ) -> EntitySubset[T_EntityKey] | None:
@@ -387,7 +394,7 @@ class AssetGraphView(LoadingContext):
         self, parent_key, subset: EntitySubset[T_EntityKey]
     ) -> tuple[EntitySubset[AssetKey], EntitySubset[AssetKey]]:
         check.invariant(
-            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
+            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,  # ty: ignore[no-matching-overload]
         )
         to_key = parent_key
         to_partitions_def = self.asset_graph.get(to_key).partitions_def
@@ -420,7 +427,7 @@ class AssetGraphView(LoadingContext):
         self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]
     ) -> EntitySubset[AssetKey]:
         check.invariant(
-            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
+            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,  # ty: ignore[no-matching-overload]
         )
         return self.compute_mapped_subset(parent_key, subset, direction="up")
 
@@ -429,7 +436,7 @@ class AssetGraphView(LoadingContext):
         self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
     ) -> EntitySubset[T_EntityKey]:
         check.invariant(
-            child_key in self.asset_graph.get(subset.key).child_entity_keys,
+            child_key in self.asset_graph.get(subset.key).child_entity_keys,  # ty: ignore[no-matching-overload]
         )
         return self.compute_mapped_subset(child_key, subset, direction="down")
 
@@ -440,7 +447,7 @@ class AssetGraphView(LoadingContext):
         parent_key = to_key
         partition_mapping = self.asset_graph.get_partition_mapping(from_key, parent_key)
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
-        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def  # ty: ignore[no-matching-overload]
 
         return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset=from_subset.get_internal_subset_value()
@@ -456,7 +463,7 @@ class AssetGraphView(LoadingContext):
     ) -> EntitySubset[T_EntityKey]:
         from_key = from_subset.key
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
-        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def  # ty: ignore[no-matching-overload]
 
         if direction == "down":
             if from_partitions_def is None or to_partitions_def is None:
@@ -512,6 +519,22 @@ class AssetGraphView(LoadingContext):
             asset_subset.key, {AssetKeyPartitionKey(asset_subset.key, pk) for pk in partition_keys}
         )
         return asset_subset.compute_intersection(keys_subset)
+
+    @cached_method
+    def compute_previous_cron_tick(self, *, cron_schedule: str, cron_timezone: str) -> datetime:
+        """Returns the most recent cron tick at or before ``effective_dt`` for the given schedule.
+
+        Cached per-instance so that multiple entities sharing the same ``(cron_schedule,
+        cron_timezone)`` within a single automation tick reuse one computation. The cache is
+        discarded with this ``AssetGraphView`` when the tick finishes.
+        """
+        return next(
+            reverse_cron_string_iterator(
+                end_timestamp=self.effective_dt.timestamp(),
+                cron_string=cron_schedule,
+                execution_timezone=cron_timezone,
+            )
+        )
 
     @use_partition_loading_context
     def compute_latest_time_window_subset(
@@ -917,10 +940,20 @@ class AssetGraphView(LoadingContext):
     async def _compute_updated_since_cursor_subset(
         self, key: AssetKey, cursor: int | None, require_data_version_update: bool = False
     ) -> EntitySubset[AssetKey]:
+        # When `_enforce_event_id_upper_bound` is set, use this view's captured
+        # `last_event_id` as an upper bound on the events we'll consider. Events that committed
+        # *after* this view was constructed (e.g. during the automation daemon's settle-delay
+        # sleep) are above this bound and deferred to a later tick — this makes the cursor
+        # "exactly once": each event falls into exactly one tick's window. Off by default so
+        # non-automation callers preserve prior behavior.
+        before_cursor = (
+            self._temporal_context.last_event_id if self._enforce_event_id_upper_bound else None
+        )
         value = self._queryer.get_asset_subset_updated_after_cursor(
             asset_key=key,
             after_cursor=cursor,
             require_data_version_update=require_data_version_update,
+            before_cursor=before_cursor,
         ).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 

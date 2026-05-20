@@ -512,7 +512,7 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
     const dotsize = Math.max(7, 22 * scale);
 
     const focusViewport = useCallback(() => {
-      element.current?.focus();
+      element.current?.focus({preventScroll: true});
     }, []);
 
     const getScale = useCallback(() => scale, [scale]);
@@ -678,10 +678,6 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
     );
   },
 );
-/*
-BG: Not using styled-components here because I need a `ref` to an actual DOM element.
-Styled-component with a ref returns a React component we need to findDOMNode to use.
-*/
 const SVGViewportStyles: React.CSSProperties = {
   width: '100%',
   height: '100%',

@@ -84,7 +84,7 @@ from dagster._core.utils import (
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
 from dagster._daemon.sensor import get_elapsed, is_under_min_interval, mark_sensor_state_for_tick
-from dagster._daemon.utils import DaemonErrorCapture
+from dagster._daemon.utils import DaemonErrorCapture, shuffled_round_robin_by_key
 from dagster._serdes import serialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
@@ -642,7 +642,12 @@ class AssetDaemon(DagsterDaemon):
 
                 self._checked_migrations = True
 
-            for sensor, repo in eligible_sensors_and_repos:
+            # Round-robin across code locations so a single code location with many sensors
+            # cannot consistently push sensors from other code locations to the back of the
+            # thread pool queue.
+            for sensor, repo in shuffled_round_robin_by_key(
+                eligible_sensors_and_repos, key=lambda sr: sr[0].handle.location_name
+            ):
                 selector_id = sensor.selector_id
                 if sensor.get_current_instigator_state(
                     all_sensor_states.get(selector_id)

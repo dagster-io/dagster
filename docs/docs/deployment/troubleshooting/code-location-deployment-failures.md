@@ -1,6 +1,6 @@
 ---
 title: Permission denied error with dagster_cloud_pre_install.sh in serverless deployments
-sidebar_position: 150
+sidebar_position: 1600
 description: Fix "Permission denied" errors that occur when Dagster+ Serverless runs dagster_cloud_pre_install.sh during the Docker build.
 ---
 

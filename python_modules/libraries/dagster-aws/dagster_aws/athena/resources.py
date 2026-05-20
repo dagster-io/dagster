@@ -81,7 +81,7 @@ class AthenaClient:
             raise AthenaTimeout()
 
         if state != "SUCCEEDED":
-            raise AthenaError(execution["Status"]["StateChangeReason"])  # pyright: ignore[reportPossiblyUnboundVariable]
+            raise AthenaError(execution["Status"]["StateChangeReason"])
 
     def _results(self, execution_id):
         execution = self.client.get_query_execution(QueryExecutionId=execution_id)["QueryExecution"]

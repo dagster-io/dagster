@@ -366,14 +366,14 @@ def run_config_option(*, name: str, command_name: str) -> Callable[[T_Callable],
 
 def job_name_option(f: T_Callable | None = None, *, name: str) -> T_Callable:
     if f is None:
-        return lambda f: job_name_option(f, name=name)  # type: ignore
+        return lambda f: job_name_option(f, name=name)
     else:
         return apply_click_params(f, _generate_job_name_option(name))
 
 
 def repository_name_option(f: T_Callable | None = None, *, name: str) -> T_Callable:
     if f is None:
-        return lambda f: repository_name_option(f, name=name)  # type: ignore
+        return lambda f: repository_name_option(f, name=name)
     else:
         return apply_click_params(f, _generate_repository_name_option(name))
 

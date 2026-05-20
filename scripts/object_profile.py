@@ -1,4 +1,3 @@
-# ruff: noqa: T201
 import cProfile
 import subprocess
 import timeit

@@ -117,10 +117,10 @@ def parse_time_string(datetime_str) -> datetime:
     """
     dt = parser.parse(datetime_str)
 
-    if not dt.tzinfo:  # pyright: ignore[reportAttributeAccessIssue]
-        dt = dt.replace(tzinfo=timezone.utc)  # pyright: ignore[reportAttributeAccessIssue]
+    if not dt.tzinfo:
+        dt = dt.replace(tzinfo=timezone.utc)
 
-    return dt  # pyright: ignore[reportReturnType]
+    return dt
 
 
 def is_second_ambiguous_time(dt: datetime, tz: str):

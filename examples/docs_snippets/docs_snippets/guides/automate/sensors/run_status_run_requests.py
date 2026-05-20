@@ -10,7 +10,7 @@ status_reporting_job = None
 )
 def report_status_sensor(context: dg.RunStatusSensorContext):
     # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
-    if context.dagster_run.job_name != status_reporting_job.name:
+    if context.dagster_run.job_name != status_reporting_job.name:  # ty: ignore[unresolved-attribute]
         run_config = {
             "ops": {
                 "status_report": {"config": {"job_name": context.dagster_run.job_name}}

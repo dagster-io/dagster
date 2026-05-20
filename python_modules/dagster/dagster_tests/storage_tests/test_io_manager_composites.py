@@ -101,7 +101,7 @@ def test_io_manager_config_inside_composite():
 
             def load_input(self, context):
                 keys = tuple(
-                    context.upstream_output.get_run_scoped_output_identifier()  # pyright: ignore[reportOperatorIssue,reportOptionalMemberAccess]
+                    context.upstream_output.get_run_scoped_output_identifier()
                     + [context.upstream_output.config["output_suffix"]]
                 )
                 return stored_dict[keys]

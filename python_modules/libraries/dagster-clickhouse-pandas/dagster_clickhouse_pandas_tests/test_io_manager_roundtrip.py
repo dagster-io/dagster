@@ -2,7 +2,7 @@
 
 import pandas as pd
 import pytest
-from clickhouse_driver import Client  # ty: ignore[unresolved-import]
+from clickhouse_driver import Client
 from dagster import AssetKey, Definitions, MetadataValue, asset, materialize
 from dagster_clickhouse_pandas import ClickhousePandasIOManager
 

@@ -268,7 +268,7 @@ def test_snapshot_id(
     assert len(set(results)) == 1
 
     # this should only update if the dbt project or asset producing code changes
-    assert results[0] == "4712da99dfd67a3964ed52a0b7852af831b55b20"
+    assert results[0] == "78112ce4276eb84a307025227c30985b5f78b206"
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
@@ -587,7 +587,7 @@ def test_with_description_replacements(test_jaffle_shop_manifest: dict[str, Any]
     expected_description = "customized description"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_description(self, _: Mapping[str, Any]) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_description(self, _: Mapping[str, Any]) -> str:  # ty: ignore[invalid-method-override]
             return expected_description
 
     expected_specs_by_key = {
@@ -627,7 +627,7 @@ def test_with_metadata_replacements(test_jaffle_shop_manifest: dict[str, Any]) -
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_metadata(self, _: Mapping[str, Any]) -> Mapping[str, Any]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_metadata(self, _: Mapping[str, Any]) -> Mapping[str, Any]:  # ty: ignore[invalid-method-override]
             return expected_metadata
 
     expected_specs_by_key = {
@@ -652,7 +652,7 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> Non
     expected_tags = {"customized": "tag"}
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:  # ty: ignore[invalid-method-override]
             return expected_tags
 
     expected_specs_by_key = {
@@ -677,7 +677,7 @@ def test_with_owner_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_owners(self, _: Mapping[str, Any]) -> Sequence[str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_owners(self, _: Mapping[str, Any]) -> Sequence[str] | None:  # ty: ignore[invalid-method-override]
             return expected_owners
 
     expected_specs_by_key = {
@@ -702,7 +702,7 @@ def test_with_group_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_group = "customized_group"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_group_name(self, _: Mapping[str, Any]) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_group_name(self, _: Mapping[str, Any]) -> str | None:  # ty: ignore[invalid-method-override]
             return expected_group
 
     expected_specs_by_key = {
@@ -728,7 +728,7 @@ def test_with_code_version_replacements(test_jaffle_shop_manifest: dict[str, Any
     expected_code_version = "customized_code_version"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_code_version(self, _: Mapping[str, Any]) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_code_version(self, _: Mapping[str, Any]) -> str | None:  # ty: ignore[invalid-method-override]
             return expected_code_version
 
     @dbt_assets(
@@ -758,7 +758,7 @@ def test_with_auto_materialize_policy_replacements(
     expected_auto_materialize_policy = AutoMaterializePolicy.eager()
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_auto_materialize_policy(  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_auto_materialize_policy(  # ty: ignore[invalid-method-override]
             self, _: Mapping[str, Any]
         ) -> AutoMaterializePolicy | None:
             return expected_auto_materialize_policy
@@ -791,7 +791,7 @@ def test_with_automation_condition_replacements(test_jaffle_shop_manifest: dict[
     expected_automation_condition = AutomationCondition.eager()
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_automation_condition(self, _: Mapping[str, Any]) -> AutomationCondition | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_automation_condition(self, _: Mapping[str, Any]) -> AutomationCondition | None:  # ty: ignore[invalid-method-override]
             return expected_automation_condition
 
     expected_specs_by_key = {
@@ -1163,7 +1163,7 @@ def test_dbt_with_semantic_models_and_saved_queries(
 
 
 @pytest.mark.skipif(
-    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.8.0"),
+    DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION < version.parse("1.8.0"),
     reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
 )
 @pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
@@ -1183,7 +1183,7 @@ def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: dict[str, Any], selec
 
 
 @pytest.mark.skipif(
-    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.11.0"),
+    DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION < version.parse("1.11.0"),
     reason="dbt udf support is only available in `dbt-core>=1.11.0`",
 )
 @pytest.mark.parametrize("select", ["fqn:*", "tag:test"])

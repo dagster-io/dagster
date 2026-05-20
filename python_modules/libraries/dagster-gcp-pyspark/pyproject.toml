@@ -9,10 +9,6 @@ description = "Package for storing PySpark DataFrames in GCP"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
     "dagster-gcp==1!0+dev",
@@ -24,6 +20,22 @@ dependencies = [
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp-pyspark"
 
 [project.optional-dependencies]
+
+[dependency-groups]
 test = [
+    "dagster[test]",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-pandas",
+    "dagster-gcp",
     "pandas-gbq",
 ]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-test = { path = "../../dagster-test", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-pandas = { path = "../dagster-pandas", editable = true }
+dagster-gcp = { path = "../dagster-gcp", editable = true }

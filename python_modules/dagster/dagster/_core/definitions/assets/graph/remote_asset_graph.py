@@ -105,7 +105,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.partitions is not None
 
     @cached_property
-    def partitions_def(self) -> PartitionsDefinition | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def partitions_def(self) -> PartitionsDefinition | None:
         partitions_snap = self.resolve_to_singular_repo_scoped_node().asset_node_snap.partitions
         return partitions_snap.get_partitions_definition() if partitions_snap else None
 
@@ -152,8 +152,8 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
     ]
     parent_keys: AbstractSet[AssetKey]
     child_keys: AbstractSet[AssetKey]
-    check_keys: AbstractSet[AssetCheckKey]  # pyright: ignore[reportIncompatibleMethodOverride]
-    execution_set_entity_keys: AbstractSet[EntityKey]  # pyright: ignore[reportIncompatibleMethodOverride]
+    check_keys: AbstractSet[AssetCheckKey]
+    execution_set_entity_keys: AbstractSet[EntityKey]
 
     def __hash__(self):
         # we create sets of these objects in the context of asset graphs but don't want to
@@ -173,7 +173,7 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         return self
 
     @property
-    def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def key(self) -> AssetKey:
         return self.asset_node_snap.asset_key
 
     @property
@@ -193,7 +193,7 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         return self.asset_node_snap.is_executable
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return {
             dep.parent_asset_key: dep.partition_mapping
             for dep in self.asset_node_snap.parent_edges
@@ -252,12 +252,12 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
 
     ##### COMMON ASSET NODE INTERFACE
     @cached_property
-    def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def key(self) -> AssetKey:
         return self.repo_scoped_asset_infos[0].asset_node.asset_node_snap.asset_key
 
     ### KEEP THIS IN SYNC WITH THE JS CODE THAT MERGES THE SDA DEFINITIONS: https://github.com/dagster-io/dagster/blob/22e79ea7024bd13b197e3a2f66401197badceb75/js_modules/dagster-ui/packages/ui-core/src/assets/useAllAssets.tsx#L239-L256
     @property
-    def parent_keys(self) -> AbstractSet[AssetKey]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def parent_keys(self) -> AbstractSet[AssetKey]:
         # combine deps from all nodes
         keys = set()
         for info in self.repo_scoped_asset_infos:
@@ -265,7 +265,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         return keys
 
     @property
-    def child_keys(self) -> AbstractSet[AssetKey]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def child_keys(self) -> AbstractSet[AssetKey]:
         # combine deps from all nodes
         keys = set()
         for info in self.repo_scoped_asset_infos:
@@ -287,30 +287,30 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         return self.resolve_to_singular_repo_scoped_node().execution_set_entity_keys
 
     @cached_property
-    def is_materializable(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def is_materializable(self) -> bool:
         return any(info.asset_node.is_materializable for info in self.repo_scoped_asset_infos)
 
     @cached_property
-    def is_observable(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def is_observable(self) -> bool:
         return any(info.asset_node.is_observable for info in self.repo_scoped_asset_infos)
 
     @cached_property
-    def is_external(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def is_external(self) -> bool:
         return all(info.asset_node.is_external for info in self.repo_scoped_asset_infos)
 
     @cached_property
-    def is_executable(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def is_executable(self) -> bool:
         return any(node.asset_node.is_executable for node in self.repo_scoped_asset_infos)
 
     @cached_property
-    def pools(self) -> set[str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def pools(self) -> set[str] | None:
         pools = set()
         for info in self.repo_scoped_asset_infos:
             pools.update(info.asset_node.pools or set())
         return pools
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         if self.is_materializable:
             return {
                 dep.parent_asset_key: dep.partition_mapping
@@ -483,13 +483,13 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 
     ##### COMMON ASSET GRAPH INTERFACE
     @cached_property
-    def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:
         return {
             k: self._get_asset_check_node_from_remote_asset_check_node(v)
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 
-    def get_execution_set_asset_and_check_keys(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_execution_set_asset_and_check_keys(  # ty: ignore[invalid-method-override]
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
@@ -571,7 +571,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         )
 
     @cached_property
-    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return set(self.remote_asset_check_nodes_by_key.keys())
 
     def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
@@ -610,11 +610,11 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 
 @record
 class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
-    remote_asset_nodes_by_key: Mapping[AssetKey, RemoteRepositoryAssetNode]  # pyright: ignore[reportIncompatibleMethodOverride]
-    remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode]  # pyright: ignore[reportIncompatibleMethodOverride]
+    remote_asset_nodes_by_key: Mapping[AssetKey, RemoteRepositoryAssetNode]
+    remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode]
 
     @property
-    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteRepositoryAssetNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteRepositoryAssetNode]:
         return self.remote_asset_nodes_by_key
 
     @classmethod
@@ -711,7 +711,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return self._remote_asset_check_nodes_by_key
 
     @property
-    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:
         return self.remote_asset_nodes_by_key
 
     @property

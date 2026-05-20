@@ -6,7 +6,7 @@ import dspy  # ty: ignore[unresolved-import]
 from dagster import ConfigurableResource, get_dagster_logger
 from pydantic import Field
 
-from config import settings  # ty: ignore[unresolved-import]
+from config import settings
 
 logger = get_dagster_logger()
 

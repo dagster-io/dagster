@@ -34,7 +34,7 @@ def my_other_asset():
 
     columns = [
         dg.TableColumn(name, column_type)
-        for name, column_type in zip(column_names, column_types)
+        for name, column_type in zip(column_names, column_types)  # ty: ignore[invalid-argument-type, not-iterable]
     ]
 
     return dg.MaterializeResult(

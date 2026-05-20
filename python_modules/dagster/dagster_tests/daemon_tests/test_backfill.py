@@ -32,6 +32,7 @@ from dagster._core.execution.asset_backfill import (
     get_asset_backfill_run_chunk_size,
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.job_backfill import create_backfill_run, submit_backfill_runs
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
@@ -1310,6 +1311,249 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             updated_backfill = instance.get_backfill(backfill_id)
             assert updated_backfill.status == BulkActionStatus.FAILED
             assert updated_backfill.backfill_end_timestamp is not None
+
+
+def test_job_backfill_retryable_error(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    backfill_id = "job_backfill_retryable_error"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    def raise_retryable_error(*args, **kwargs):
+        raise Exception("This is transient because it is not a DagsterError or a CheckError")
+
+    with mock.patch(
+        "dagster._core.execution.job_backfill.submit_backfill_runs",
+        side_effect=raise_retryable_error,
+    ):
+        with environ({"DAGSTER_MAX_BACKFILL_RETRIES": "2"}):
+            errors = [
+                error
+                for error in list(
+                    execute_backfill_iteration(
+                        workspace_context, get_default_daemon_logger("BackfillDaemon")
+                    )
+                )
+                if error
+            ]
+            assert len(errors) == 1
+            assert "This is transient because it is not a DagsterError or a CheckError" in str(
+                errors[0]
+            )
+
+            # No runs launched, backfill stays REQUESTED and failure_count is incremented.
+            assert instance.get_runs_count() == 0
+            updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+            assert updated_backfill.status == BulkActionStatus.REQUESTED
+            assert updated_backfill.failure_count == 1
+
+            errors = [
+                error
+                for error in list(
+                    execute_backfill_iteration(
+                        workspace_context, get_default_daemon_logger("BackfillDaemon")
+                    )
+                )
+                if error
+            ]
+            assert len(errors) == 1
+
+            updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+            assert updated_backfill.status == BulkActionStatus.REQUESTED
+            assert updated_backfill.failure_count == 2
+
+            # Exceeds DAGSTER_MAX_BACKFILL_RETRIES retries — move to FAILING.
+            errors = [
+                error
+                for error in list(
+                    execute_backfill_iteration(
+                        workspace_context, get_default_daemon_logger("BackfillDaemon")
+                    )
+                )
+                if error
+            ]
+            assert len(errors) == 1
+
+            updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+            assert updated_backfill.status == BulkActionStatus.FAILING
+            assert updated_backfill.failure_count == 3
+            assert isinstance(updated_backfill.error, SerializableErrorInfo)
+
+    # One more iteration to finalize as FAILED.
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert updated_backfill.status == BulkActionStatus.FAILED
+
+
+def test_job_backfill_code_server_unreachable_retry(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    backfill_id = "job_backfill_unreachable_retry"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    counter = 0
+
+    def raise_then_succeed(*args, **kwargs):
+        nonlocal counter
+        if counter == 0:
+            counter += 1
+            raise DagsterUserCodeUnreachableError("Unreachable!")
+        return submit_backfill_runs(*args, **kwargs)
+
+    with mock.patch(
+        "dagster._core.execution.job_backfill.submit_backfill_runs",
+        side_effect=raise_then_succeed,
+    ):
+        errors = [
+            error
+            for error in list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+            if error
+        ]
+        assert len(errors) == 1
+        assert "Unable to reach the code server" in str(errors[0])
+
+        # Stays REQUESTED — code server outages don't consume the retry budget.
+        updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+        assert updated_backfill.status == BulkActionStatus.REQUESTED
+        assert updated_backfill.failure_count == 0
+        assert instance.get_runs_count() == 0
+
+        # Next iteration: code server reachable, backfill submits all runs and completes.
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    assert instance.get_runs_count() == 3
+    updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+    # Backfill completed successfully because the runs execute in-process during the iteration.
+    assert updated_backfill.status in (
+        BulkActionStatus.REQUESTED,
+        BulkActionStatus.COMPLETED_SUCCESS,
+    )
+    # failure_count remained 0 the whole time — code server errors never increment it.
+    assert updated_backfill.failure_count == 0
+
+
+def test_job_backfill_does_not_relaunch_existing_runs_on_retry(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    """A transient DagsterUserCodeUnreachableError partway through a chunk submission must
+    pause the backfill (stay REQUESTED, no failure_count increment) and the next daemon
+    iteration must resume by submitting only the partitions that don't already have a run.
+
+    Patches `create_backfill_run` (called once per partition inside the chunk submission
+    loop) so the first partition's run is created normally and the second partition's
+    create raises. The third partition is never reached.
+    """
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    backfill_id = "job_backfill_no_relaunch"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    create_calls = 0
+
+    def fail_on_second_partition_create(*args, **kwargs):
+        nonlocal create_calls
+        create_calls += 1
+        if create_calls == 2:
+            raise DagsterUserCodeUnreachableError("Code server unreachable mid-chunk")
+        return create_backfill_run(*args, **kwargs)
+
+    with mock.patch(
+        "dagster._core.execution.job_backfill.create_backfill_run",
+        side_effect=fail_on_second_partition_create,
+    ):
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
+    # The first partition got a run; the second's create raised; the third was never reached.
+    assert instance.get_runs_count() == 1
+    first_partition = instance.get_runs()[0].tags[PARTITION_NAME_TAG]
+    updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert updated_backfill.status == BulkActionStatus.REQUESTED
+    # Code server errors don't consume the retry budget.
+    assert updated_backfill.failure_count == 0
+
+    # Spy on create_backfill_run during the recovery iteration to verify the previously-
+    # submitted partition is never passed back through.
+    recovery_partitions: list[str] = []
+
+    def capture_partition(*args, **kwargs):
+        run = create_backfill_run(*args, **kwargs)
+        if run is not None:
+            recovery_partitions.append(run.tags[PARTITION_NAME_TAG])
+        return run
+
+    with mock.patch(
+        "dagster._core.execution.job_backfill.create_backfill_run",
+        side_effect=capture_partition,
+    ):
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
+    # All 3 partitions now have a run, and the first partition's run was NOT recreated.
+    assert instance.get_runs_count() == 3
+    all_partitions = {run.tags[PARTITION_NAME_TAG] for run in instance.get_runs()}
+    assert all_partitions == {"one", "two", "three"}
+    assert first_partition not in recovery_partitions
+
+    # Backfill resumed after the transient failure and reached a terminal success state.
+    updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert updated_backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 def test_unloadable_backfill_retry(

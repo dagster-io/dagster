@@ -1,6 +1,6 @@
 ---
 title: PagerDuty alerts are less than the number of degraded assets in Dagster+
-sidebar_position: 140
+sidebar_position: 1500
 description: Explain why PagerDuty alert counts don't match the number of degraded assets, and how to configure policies for better alert distribution.
 ---
 

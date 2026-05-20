@@ -62,6 +62,11 @@ KNOWN_DAGSTER_INBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
     # intentionally reverted by "fix: revert trigger cluster_id + add queue to dogfood
     # gate steps (#23396)", so the current state is consistent.
     "e3554b46b14c77826141314ee2086be3ae04b71c",
+    # Adds kinds tags for Alteryx, Boomi, and SAP (#33807) -- inbound sync carried an
+    # extra revert of examples/docs_projects/project_components_pdf_extraction/pyproject.toml
+    # from a concurrent outbound (#24193). The pdf_extraction change was re-applied by
+    # a later inbound, so current state is consistent.
+    "3a0727013a194d4c9c44fec38aae69328f58e05b",
 ]
 
 KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
@@ -120,6 +125,15 @@ KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
     # and reverted Joe Braha's cluster_id. Joe's cluster_id was later intentionally
     # reverted internally by #23396, so current state is consistent.
     "4ad89db4436a3ea6bc0804676093fb604ea2ff3a",
+    # remove dagster-test reference from example docs project (#24193) -- outbound sync
+    # to OSS reverted OSS PR #33807's kinds tags (8 files: _KindsTags.md, OpTags.tsx,
+    # alteryx/boomi/sap svgs in two locations). Kinds tags were re-applied by a later
+    # inbound sync, so current state is consistent.
+    "6893ae16f14335789804f736efaa4a2927dc922d",
+    # Exclude `_vendored` from ty (#24210) -- outbound sync to OSS reverted OSS PR #33807's
+    # kinds tags plus #24193's pdf_extraction pyproject.toml change (9 files). Both were
+    # re-applied by later syncs, so current state is consistent.
+    "da5b67754949bb4fef00b549568f0dee298d58b2",
 ]
 
 KNOWN_SKILLS_INBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [

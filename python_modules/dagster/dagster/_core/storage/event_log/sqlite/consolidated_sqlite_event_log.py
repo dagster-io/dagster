@@ -26,7 +26,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._core.storage.sqlite import create_db_conn_string
+from dagster._core.storage.sqlite import SQLITE_BUSY_TIMEOUT_SECONDS, create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
 
@@ -84,7 +84,11 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def _init_db(self):
         mkdir_p(self._base_dir)
-        engine = create_engine(self._conn_string, poolclass=NullPool)
+        engine = create_engine(
+            self._conn_string,
+            poolclass=NullPool,
+            connect_args={"timeout": SQLITE_BUSY_TIMEOUT_SECONDS},
+        )
         alembic_config = get_alembic_config(__file__)
 
         should_mark_indexes = False
@@ -103,7 +107,11 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @contextmanager
     def _connect(self):
-        engine = create_engine(self._conn_string, poolclass=NullPool)
+        engine = create_engine(
+            self._conn_string,
+            poolclass=NullPool,
+            connect_args={"timeout": SQLITE_BUSY_TIMEOUT_SECONDS},
+        )
         with engine.connect() as conn:
             with conn.begin():
                 yield conn
@@ -115,7 +123,11 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return self._connect()
 
     def has_table(self, table_name: str) -> bool:
-        engine = create_engine(self._conn_string, poolclass=NullPool)
+        engine = create_engine(
+            self._conn_string,
+            poolclass=NullPool,
+            connect_args={"timeout": SQLITE_BUSY_TIMEOUT_SECONDS},
+        )
         with engine.connect() as conn:
             has_table = bool(engine.dialect.has_table(conn, table_name))
         return has_table

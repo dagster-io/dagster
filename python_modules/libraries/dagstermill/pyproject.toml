@@ -9,11 +9,6 @@ description = "run notebooks using the Dagster tools"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
     # ipykernel 5.4.0 and 5.4.1 broke papermill
@@ -28,7 +23,7 @@ dependencies = [
     # a workaround we need to manually specify it here
     "ipython_genutils>=0.2.0",
     "packaging>=20.9",
-    "papermill>=1.0.0",
+    "papermill>=2.0.0",
     "scrapbook>=0.5.0",
     "nbconvert",
     "jupyter-client<8",  # jupyter-client 8 causing test hangs
@@ -37,9 +32,19 @@ dependencies = [
 [project.scripts]
 dagstermill = "dagstermill.cli:main"
 
-[project.optional-dependencies]
+[dependency-groups]
 test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-pandas",
     "matplotlib",
     "scikit-learn>=0.19.0",
     "tqdm",
 ]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-pandas = { path = "../dagster-pandas", editable = true }

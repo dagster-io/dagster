@@ -78,7 +78,7 @@ class _Op:
         validate_resource_annotated_function(fn)
 
         if not self.name:
-            self.name = fn.__name__
+            self.name = fn.__name__  # ty: ignore[unresolved-attribute]
 
         compute_fn = (
             DecoratedOpFunction(decorated_fn=fn)
@@ -280,7 +280,7 @@ class DecoratedOpFunction(NamedTuple):
 
     @property
     def name(self):
-        return self.decorated_fn.__name__
+        return self.decorated_fn.__name__  # ty: ignore[unresolved-attribute]
 
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:

@@ -10,12 +10,48 @@ dependencies = [
     "matplotlib",
 ]
 
+# Two test groups so both factors can be locked from one pyproject:
+#   - test-source: dagster libs come from local checkouts (via [tool.uv.sources]
+#     entries gated on `group = "test-source"`).
+#   - test-pypi: same deps, but dagster libs come from PyPI.
+# [tool.uv].conflicts declares the groups mutually exclusive so uv
+# generates a separate fork of the lock per group.
 [dependency-groups]
-dev = [
-    "dagster-dg-cli>=1.11.11",
+test-source = [
+    "dagster-cloud",
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-dg-cli",
+    "dagster-webserver",
+]
+test-pypi = [
+    "dagster-cloud",
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-dg-cli",
     "dagster-webserver",
     "pytest",
 ]
+
+[tool.uv]
+conflicts = [
+    [{group = "test-source"}, {group = "test-pypi"}],
+]
+
+# All entries are gated on `group = "test-source"` so they apply only inside the
+# test-source lock fork. The dagster-cloud path escapes dagster-oss/ to the
+# internal repo's copy — that's fine because test-source is internal-only and
+# the pex builder skips group-qualified sources, so this never leaks into
+# production pex builds or the OSS-synced public layout.
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true, group = "test-source" }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true, group = "test-source" }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true, group = "test-source" }
+dagster-dg-cli = { path = "../../python_modules/libraries/dagster-dg-cli", editable = true, group = "test-source" }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true, group = "test-source" }
+dagster-cloud = { path = "../../../dagster-cloud/python_modules/dagster-cloud", editable = true, group = "test-source" }
 
 [build-system]
 requires = ["hatchling"]

@@ -26,10 +26,10 @@ def test():
                 with build_sensor_context(instance=instance) as context:
                     result = image_sensor(context)
                     assert isinstance(result, SensorResult)
-                    assert len(result.run_requests) == 1
-                    assert result.run_requests[0].partition_key == partition_key
-                    assert len(result.dynamic_partitions_requests) == 1
-                    assert result.dynamic_partitions_requests[0].partition_keys == [
+                    assert len(result.run_requests) == 1  # ty: ignore[invalid-argument-type]
+                    assert result.run_requests[0].partition_key == partition_key  # ty: ignore[not-subscriptable]
+                    assert len(result.dynamic_partitions_requests) == 1  # ty: ignore[invalid-argument-type]
+                    assert result.dynamic_partitions_requests[0].partition_keys == [  # ty: ignore[not-subscriptable]
                         partition_key
                     ]
 

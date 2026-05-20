@@ -304,7 +304,7 @@ def test_load_with_resources() -> None:
 
 def test_load_with_logger_defs() -> None:
     @dg.logger(config_schema={})
-    def my_logger(init_context) -> logging.Logger: ...
+    def my_logger(init_context) -> logging.Logger: ...  # ty: ignore[empty-body]
 
     module_fake = build_module_fake("foo", {"my_logger": my_logger})
     defs = dg.load_definitions_from_module(module_fake)
@@ -316,7 +316,7 @@ def test_load_with_logger_defs() -> None:
 
 def test_load_with_executor() -> None:
     @dg.executor(name="my_executor")
-    def my_executor(init_context) -> dg.Executor: ...
+    def my_executor(init_context) -> dg.Executor: ...  # ty: ignore[empty-body]
 
     module_fake = build_module_fake("foo", {"my_executor": my_executor})
     defs = dg.load_definitions_from_module(module_fake)

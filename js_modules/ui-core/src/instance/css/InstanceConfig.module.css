@@ -1,0 +1,10 @@
+.configEditor :global(.CodeMirror.cm-s-instance-config.cm-s-instance-config) {
+  background-color: var(--color-background-default);
+  box-shadow: 0 1px 0 var(--color-keyline-default);
+  color: var(--color-text-default);
+  height: 100%;
+}
+
+.configEditor :global(.CodeMirror.cm-s-instance-config .config-highlight.config-highlight) {
+  background-color: var(--color-background-lime-hover);
+}

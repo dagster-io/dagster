@@ -23,7 +23,7 @@ records = [
     {"column1": "bar", "column2": 2},
 ]
 # Then, when reporting the asset materialization:
-context.report_asset_materialization(
+context.report_asset_materialization(  # ty: ignore[unresolved-attribute]
     asset_key="foo",
     metadata={
         "table_meta": {

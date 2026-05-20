@@ -11,7 +11,7 @@ from dagster._core.execution.api import execute_run_iterator
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import poll_for_finished_run
+from dagster._core.test_utils import poll_for_finished_run, poll_for_pool_pending_step
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
@@ -419,19 +419,23 @@ def test_multiprocess_simple_job_has_blocked_message(instance):
     assert foo_info.slot_count == 0
     run = instance.create_run_for_job(define_simple_job())
 
-    def _unblock_concurrency_key(instance, timeout):
-        time.sleep(timeout)
+    def _unblock_after_pending(instance):
+        # See poll_for_pool_pending_step's docstring for why we poll for pending
+        # state rather than sleep blindly here. If pending state never appears,
+        # release the slot anyway so the test fails on the missing-event assertion
+        # rather than hanging in execute_run_iterator.
+        poll_for_pool_pending_step(instance, "foo", timeout=60)
         instance.event_log_storage.set_concurrency_slots("foo", 1)
 
     start = time.time()
     has_blocked_message = False
     timed_out = False
 
-    TIMEOUT = 5
-    threading.Thread(target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True).start()
+    TIMEOUT = 30
+    threading.Thread(target=_unblock_after_pending, args=(instance,), daemon=True).start()
 
     for event in execute_run_iterator(recon_simple_job, run, instance=instance):
-        if "blocked by limit for pool foo" in event.message:  # pyright: ignore[reportOperatorIssue]
+        if "blocked by limit for pool foo" in (event.message or ""):
             has_blocked_message = True
             break
         if time.time() - start > TIMEOUT:

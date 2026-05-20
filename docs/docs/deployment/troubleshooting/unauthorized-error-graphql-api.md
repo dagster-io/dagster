@@ -1,6 +1,6 @@
 ---
 title: UnauthorizedError in Dagster+ GraphQL API calls
-sidebar_position: 170
+sidebar_position: 1800
 description: Resolve UnauthorizedError when calling the Dagster+ GraphQL API by verifying endpoint URL, repository selector, and token configuration.
 ---
 

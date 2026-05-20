@@ -5,4 +5,4 @@ import dagster as dg
     asset="upstream",
     automation_condition=dg.AutomationCondition.eager(),
 )
-def eager_asset_check() -> dg.AssetCheckResult: ...
+def eager_asset_check() -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]

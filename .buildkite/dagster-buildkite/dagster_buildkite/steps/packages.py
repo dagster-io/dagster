@@ -8,7 +8,7 @@ from typing import TypeAlias
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.packages import get_python_package_step_skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
+from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, ResourceRequests
 from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
     GroupStepBuilder,
@@ -249,13 +249,18 @@ class PackageSpec:
                                 dependencies=dependencies,
                                 tox_file=self.tox_file,
                                 timeout_in_minutes=self.timeout_in_minutes,
-                                queue=self.queue,
+                                queue=(
+                                    other_factor.queue
+                                    if other_factor and other_factor.queue
+                                    else self.queue
+                                ),
                                 skip_reason=skip_reason_str,
                                 pytest_args=pytest_args,
                                 concurrency=other_factor.concurrency if other_factor else None,
                                 concurrency_group=(
                                     other_factor.concurrency_group if other_factor else None
                                 ),
+                                resources=other_factor.resources if other_factor else None,
                             )
                         )
 
@@ -552,6 +557,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
             ],
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("examples/docs_snippets"),
@@ -560,6 +566,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # snippets in all python versions since we are testing the core code exercised by the
             # snippets against all supported python versions.
             unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
+            queue=BuildkiteQueue.KUBERNETES_EKS,
             pytest_tox_factors=[
                 ToxFactor("all"),
                 ToxFactor("integrations"),
@@ -616,23 +623,20 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("examples/with_wandb"),
             unsupported_python_versions=[
-                # dagster-wandb dep
-                AvailablePythonVersion.V3_12,
-                AvailablePythonVersion.V3_13,
-                AvailablePythonVersion.V3_14,
+                # onnxruntime no longer ships cp310 wheels
+                AvailablePythonVersion.V3_10,
             ],
         ),
-        # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
         PackageSpec(
             oss_path("examples/assets_modern_data_stack"),
-            pytest_tox_factors=[ToxFactor("pypi")],
+            pytest_tox_factors=[ToxFactor("source"), ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
             ],
         ),
         PackageSpec(
             oss_path("examples/assets_dbt_python"),
-            pytest_tox_factors=[ToxFactor("pypi")],
+            pytest_tox_factors=[ToxFactor("source"), ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,  # duckdb
                 AvailablePythonVersion.V3_13,  # duckdb
@@ -649,7 +653,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("examples/quickstart_etl"),
-            pytest_tox_factors=[ToxFactor("pypi")],
+            pytest_tox_factors=[ToxFactor("source"), ToxFactor("pypi")],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # PyO3 max supported version is 3.13
             ],
@@ -720,9 +724,19 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
             yield subfolder.name
 
 
-def tox_factors_for_folder(tests_folder_name: str) -> list[ToxFactor]:
+def tox_factors_for_folder(
+    tests_folder_name: str,
+    queue_overrides: Mapping[str, BuildkiteQueue] | None = None,
+    resources_overrides: Mapping[str, ResourceRequests] | None = None,
+) -> list[ToxFactor]:
+    queues = queue_overrides or {}
+    resources = resources_overrides or {}
     return [
-        ToxFactor(f"{tests_folder_name}__{subfolder_name}")
+        ToxFactor(
+            f"{tests_folder_name}__{subfolder_name}",
+            queue=queues.get(subfolder_name),
+            resources=resources.get(subfolder_name),
+        )
         for subfolder_name in test_subfolders(tests_folder_name)
     ]
 
@@ -740,32 +754,101 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             force_run_fn=BuildkiteContext.has_published_python_package_changes,
         ),
         PackageSpec(oss_path("python_modules/dagster-webserver"), pytest_extra_cmds=ui_extra_cmds),
+        PackageSpec(oss_path("python_modules/dagit")),
         PackageSpec(
             oss_path("python_modules/dagster"),
             env_vars=["AWS_ACCOUNT_ID"],
             pytest_tox_factors=[
                 ToxFactor("api_tests"),
                 ToxFactor("asset_defs_tests"),
-                ToxFactor("cli_tests", splits=2),
+                # CLI tests fan out fresh `dagster ...` subprocess invocations
+                # and spin up gRPC workspace/dev servers (test_grpc_server_workspace,
+                # test_dagster_dev_command). Same CPU-starvation profile as
+                # daemon/scheduler tests; bump to match.
+                ToxFactor(
+                    "cli_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="2Gi"),
+                ),
                 ToxFactor("components_tests"),
                 ToxFactor("core_tests"),
-                ToxFactor("daemon_sensor_tests", splits=2),
-                ToxFactor("daemon_tests", splits=2),
-                ToxFactor("declarative_automation_tests", splits=2),
+                # Daemon tests run a gRPC code-server subprocess plus the
+                # sensor/scheduler daemons + threadpool executors; on the EKS
+                # default 1000m CPU budget the code server's heartbeat thread
+                # gets starved and the server shuts itself down mid-test with
+                # "No heartbeat received in 20 seconds", cascading into every
+                # subsequent test in the split. Match storage_tests' bump below.
+                ToxFactor(
+                    "daemon_sensor_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
+                ToxFactor(
+                    "daemon_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
+                # CPU-bound: `test_asset_daemon_without_sensor` parametrizes over
+                # AssetDaemonScenarios; the slowest scenario submits 73 partitioned run
+                # requests through the synchronous run coordinator in one tick and brushes
+                # the 240s pytest-timeout fallback on the EKS default 1000m budget.
+                # Bumping per-step CPU + migrating off the MEDIUM (EC2) queue.
+                ToxFactor(
+                    "declarative_automation_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="2Gi"),
+                ),
                 ToxFactor("definitions_tests"),
-                ToxFactor("general_tests"),
-                ToxFactor("general_tests_old_protobuf"),
+                # general_tests includes the grpc_tests/ subtree (test_heartbeat,
+                # test_persistent, test_watch_server, test_grpc_server_registry,
+                # test_health_check) — the exact subprocess-heartbeat pattern
+                # that drove the daemon-test bumps to 2000m/4Gi.
+                ToxFactor(
+                    "general_tests",
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
+                ToxFactor(
+                    "general_tests_old_protobuf",
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
                 ToxFactor("launcher_tests"),
                 ToxFactor("logging_tests"),
                 ToxFactor("model_tests"),
-                ToxFactor("scheduler_tests"),
-                ToxFactor("storage_tests", splits=2),
-                ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
-                ToxFactor("storage_tests_sqlalchemy_1_4", splits=2),
+                # Same gRPC-code-server/CPU-starvation pattern as the daemon
+                # tests above: test_stale_request_context hits it most reliably.
+                ToxFactor("scheduler_tests", resources=ResourceRequests(cpu="2000m", memory="4Gi")),
+                # `test_threaded_concurrency` (100-thread sqlite contention)
+                # times out at 30s wall-clock on the EKS default 1000m CPU
+                # budget. Bumping per-step CPU to match what pyright/ty use
+                # for CPU-bound EKS work.
+                ToxFactor(
+                    "storage_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
+                ToxFactor(
+                    "storage_tests_sqlalchemy_1_3",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
+                ToxFactor(
+                    "storage_tests_sqlalchemy_1_4",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
                 ToxFactor("utils_tests"),
                 ToxFactor("type_signature_tests"),
             ]
-            + tox_factors_for_folder("execution_tests"),
+            + tox_factors_for_folder(
+                "execution_tests",
+                # misc_execution_tests contains test_interrupt,
+                # test_run_cancellation_thread, and test_run_metrics_thread —
+                # timing-sensitive threading tests with the same CPU-scheduling
+                # sensitivity as the daemon tests above.
+                resources_overrides={
+                    "misc_execution_tests": ResourceRequests(cpu="2000m", memory="4Gi"),
+                },
+            ),
             unsupported_python_versions=_unsupported_dagster_python_versions,
         ),
         PackageSpec(
@@ -817,6 +900,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 )
             ),
             timeout_in_minutes=30,
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/dagster-test"),
@@ -826,6 +910,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dbt"),
@@ -930,10 +1015,25 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 "AIRLIFT_MWAA_TEST_PROFILE",
                 "AIRLIFT_MWAA_TEST_REGION",
             ],
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airbyte"),
-            pytest_tox_factors=[ToxFactor("unit"), ToxFactor("integration")],
+            pytest_tox_factors=[
+                ToxFactor("unit"),
+                # 8-service Airbyte compose stack (5 JVMs + Postgres + nginx + init)
+                # OOM-kills under the dind default 2Gi / 2 vCPU.
+                ToxFactor(
+                    "integration",
+                    resources=ResourceRequests(
+                        cpu="1000m",
+                        memory="1Gi",
+                        docker_cpu="4000m",
+                        docker_memory="4Gi",
+                        docker_memory_limit="6Gi",
+                    ),
+                ),
+            ],
         ),
         # PackageSpec(
         #     "python_modules/libraries/dagster-airflow",
@@ -963,7 +1063,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-dg-cli"),
             pytest_tox_factors=[
                 ToxFactor("general"),
-                ToxFactor("slow", splits=4),
+                ToxFactor("slow", splits=4, queue=BuildkiteQueue.MEDIUM),
                 ToxFactor("serial"),
                 ToxFactor("plus"),
             ],
@@ -981,6 +1081,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagster-aws"),
             env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-azure"),
@@ -990,16 +1091,19 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-celery"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-celery-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dask"),
             env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-databricks"),
@@ -1009,6 +1113,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=docker_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-duckdb"),
@@ -1134,6 +1239,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pandas"),
@@ -1157,6 +1263,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("storage_tests_sqlalchemy_1_3"),
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
+            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-rest-resources"),
@@ -1180,24 +1287,14 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagstermill"),
             pytest_tox_factors=[
-                ToxFactor("papermill1", splits=2),
-                ToxFactor("papermill2", splits=2),
+                ToxFactor("papermill2", splits=2, queue=BuildkiteQueue.MEDIUM),
             ],
-            unsupported_python_versions=(
-                lambda tox_factor: (
-                    [
-                        AvailablePythonVersion.V3_12,
-                        AvailablePythonVersion.V3_13,
-                        AvailablePythonVersion.V3_14,
-                    ]
-                    if (tox_factor and tox_factor.factor == "papermill1")
-                    else []
-                )
-            ),
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airlift/perf-harness"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
+            # Long-standing Airflow e2e timing flake (`test_dagster_materializes[migrate]`).
+            queue=BuildkiteQueue.MEDIUM,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,

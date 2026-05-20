@@ -1144,7 +1144,7 @@ class JobDefinition(IHasInternalInit):
             owners=self._owners,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
-        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
+        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)  # ty: ignore[invalid-argument-type]
         update_wrapper(job_def, self, updated=())
         return job_def
 

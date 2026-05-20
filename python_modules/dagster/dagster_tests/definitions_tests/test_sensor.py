@@ -60,12 +60,12 @@ def test_coerce_to_asset_selection():
 
     assert dg.SensorDefinition(
         "a", asset_selection=["asset1", "asset2"], evaluation_fn=evaluation_fn
-    ).asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
+    ).asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # ty: ignore[unresolved-attribute]
 
     sensor_def = dg.SensorDefinition(
         "a", asset_selection=[asset1, asset2], evaluation_fn=evaluation_fn
     )
-    assert sensor_def.asset_selection.resolve(assets) == {  # pyright: ignore[reportOptionalMemberAccess]
+    assert sensor_def.asset_selection.resolve(assets) == {  # ty: ignore[unresolved-attribute]
         dg.AssetKey("asset1"),
         dg.AssetKey("asset2"),
     }

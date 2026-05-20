@@ -292,7 +292,7 @@ class DecoratorAssetsDefinitionBuilder:
     def for_multi_asset(
         *, fn: Callable[..., Any], args: DecoratorAssetsDefinitionBuilderArgs
     ) -> "DecoratorAssetsDefinitionBuilder":
-        op_name = args.name or fn.__name__
+        op_name = args.name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         if args.asset_out_map and args.specs:
             raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")

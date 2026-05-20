@@ -32,7 +32,9 @@ class DagsterTypeLoader(ABC):
         pass
 
     def construct_from_config_value(
-        self, _context: "DagsterTypeLoaderContext", config_value: object
+        self,
+        context: "DagsterTypeLoaderContext",  # noqa: ARG002
+        config_value: object,
     ) -> object:
         """How to create a runtime value from config data."""
         return config_value
@@ -112,7 +114,7 @@ def dagster_type_loader(
         missing_positional = validate_expected_params(params, EXPECTED_POSITIONALS)
         if missing_positional:
             raise DagsterInvalidDefinitionError(
-                f"@dagster_type_loader '{func.__name__}' decorated function does not have required"
+                f"@dagster_type_loader '{func.__name__}' decorated function does not have required"  # ty: ignore[unresolved-attribute]
                 f" positional parameter '{missing_positional}'. @dagster_type_loader decorated"
                 " functions should only have keyword arguments that match input names and a first"
                 " positional parameter named 'context'."

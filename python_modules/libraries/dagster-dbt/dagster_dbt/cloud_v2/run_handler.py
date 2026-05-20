@@ -57,6 +57,9 @@ class DbtCloudJobRunHandler:
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run
 
+    def cancel(self) -> None:
+        self.client.cancel_run(run_id=self.run_id)
+
     def get_run_results(self) -> Mapping[str, Any]:
         return self.client.get_run_results_json(run_id=self.run_id)
 

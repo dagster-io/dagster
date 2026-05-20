@@ -5324,7 +5324,11 @@ type ScheduleData = {
   startTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
-type ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError;
+type ScheduleDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | ScheduleNotFoundError
+  | UnauthorizedError;
 
 type ScheduleMutationResult =
   | PythonError
@@ -5450,7 +5454,11 @@ type SensorData = {
   lastTickTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
-type SensorDryRunResult = DryRunInstigationTick | PythonError | SensorNotFoundError;
+type SensorDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | SensorNotFoundError
+  | UnauthorizedError;
 
 type SensorMetadata = {
   __typename: 'SensorMetadata';

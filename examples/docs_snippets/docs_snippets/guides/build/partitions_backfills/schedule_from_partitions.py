@@ -1,6 +1,6 @@
 # ruff: isort: skip_file
 
-from .partitioned_job import partitioned_config
+from .partitioned_job import partitioned_config  # ty: ignore[unresolved-import]
 
 # start_marker
 import dagster as dg
@@ -38,7 +38,7 @@ asset_partitioned_schedule = dg.build_schedule_from_partitioned_job(
 # end_partitioned_asset_schedule
 
 
-from .static_partitioned_job import continent_job, CONTINENTS
+from .static_partitioned_job import continent_job, CONTINENTS  # ty: ignore[unresolved-import]
 
 # start_static_partition
 import dagster as dg

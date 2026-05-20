@@ -72,7 +72,7 @@ class _Job:
         check.callable_param(fn, "fn")
 
         if not self.name:
-            self.name = fn.__name__
+            self.name = fn.__name__  # ty: ignore[unresolved-attribute]
 
         from dagster._core.definitions.composition import do_composition
 

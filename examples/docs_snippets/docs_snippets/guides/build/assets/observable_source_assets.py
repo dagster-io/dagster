@@ -10,7 +10,7 @@ import dagster as dg
 
 
 @dg.observable_source_asset
-def foo_source_asset():  # type: ignore  # (didactic)
+def foo_source_asset():  # (didactic)
     content = read_some_file()
     hash_sig = sha256()
     hash_sig.update(bytearray(content, "utf8"))

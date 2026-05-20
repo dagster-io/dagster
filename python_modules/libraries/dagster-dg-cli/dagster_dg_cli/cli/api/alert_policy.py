@@ -33,7 +33,30 @@ def list_alert_policies_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List alert policies for a deployment."""
+    """List alert policies for a deployment.
+
+    Example::
+
+        $ dg api alert-policy list
+        alert_policies:
+        - name: failed_run_alert
+          description: Alert on failed runs
+          enabled: true
+          alert_targets:
+          - email_target:
+              email_addresses:
+              - oncall@example.com
+          event_types:
+          - JOB_FAILURE
+        - name: long_running_alert
+          description: Alert when runs exceed 1 hour
+          enabled: true
+          alert_targets:
+          - slack_target:
+              channel: '#data-alerts'
+          event_types:
+          - JOB_LONG_RUNNING
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -73,7 +96,13 @@ def sync_alert_policies_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Sync alert policies from a YAML file."""
+    """Sync alert policies from a YAML file.
+
+    Example::
+
+        $ dg api alert-policy sync alert_policies.yaml
+        Synced alert policies: failed_run_alert, long_running_alert
+    """
     import yaml
 
     with open(file_path) as f:

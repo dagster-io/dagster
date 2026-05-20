@@ -53,7 +53,15 @@ def list_deployments_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List deployments in the organization."""
+    """List deployments in the organization.
+
+    Example::
+
+        $ dg api deployment list
+        NAME     ID  TYPE
+        prod     1   PRODUCTION
+        staging  2   PRODUCTION
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -99,7 +107,15 @@ def get_deployment_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Show detailed information about a specific deployment."""
+    """Show detailed information about a specific deployment.
+
+    Example::
+
+        $ dg api deployment get prod
+        Name: prod
+        ID:   1
+        Type: PRODUCTION
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -142,7 +158,18 @@ def get_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get settings for a deployment."""
+    """Get settings for a deployment.
+
+    Example::
+
+        $ dg api deployment settings get
+        run_queue:
+          max_concurrent_runs: 10
+          tag_concurrency_limits: []
+        run_retries:
+          max_retries: 3
+        sso_default_role: VIEWER
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -182,7 +209,18 @@ def set_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Set deployment settings from a YAML file."""
+    """Set deployment settings from a YAML file.
+
+    Example::
+
+        $ dg api deployment settings set deployment-settings.yaml
+        run_queue:
+          max_concurrent_runs: 25
+          tag_concurrency_limits: []
+        run_retries:
+          max_retries: 3
+        sso_default_role: VIEWER
+    """
     import yaml
 
     with open(file_path) as f:
@@ -238,7 +276,15 @@ def delete_deployment_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Delete a deployment by name."""
+    """Delete a deployment by name.
+
+    Example::
+
+        $ dg api deployment delete pr-123-feature-branch
+        Name: pr-123-feature-branch
+        ID:   42
+        Type: BRANCH
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,

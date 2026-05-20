@@ -1261,7 +1261,7 @@ def test_back_compat_team_owners():
     }
 
     asset_node_snap = unpack_value(packed_1_7_7_external_asset)
-    assert asset_node_snap.owners == ["team:foo", "hi@me.com"]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert asset_node_snap.owners == ["team:foo", "hi@me.com"]  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_node_snap_depended_by_wire_compat():
@@ -1287,7 +1287,7 @@ def test_asset_node_snap_depended_by_wire_compat():
 
     packed = pack_value(snap)
     assert isinstance(packed, dict)
-    assert packed["depended_by"] == []
+    assert packed["depended_by"] == []  # ty: ignore[invalid-argument-type]
 
     # Hardcoded raw wire format from before AssetChildEdgeSnap was removed; references the now-
     # unregistered `ExternalAssetDependedBy` class to prove backcompat doesn't depend on the

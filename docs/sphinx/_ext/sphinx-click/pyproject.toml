@@ -29,3 +29,24 @@ Homepage = "https://github.com/click-contrib/sphinx-click"
 "Bug Tracker" = "https://github.com/click-contrib/sphinx-click/issues"
 "Documentation" = "https://sphinx-click.readthedocs.io/en/latest"
 "Source Code" = "https://github.com/click-contrib/sphinx-click"
+
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-cov",
+    "coverage",
+    "defusedxml",
+]
+test-click8 = [
+    "click>=8.0,<9.0",
+]
+test-click8-async = [
+    "asyncclick>=8.0,<9.0",
+]
+
+[tool.uv]
+conflicts = [
+    [{group = "test-click8"}, {group = "test-click8-async"}],
+]
+
+[tool.uv.sources]

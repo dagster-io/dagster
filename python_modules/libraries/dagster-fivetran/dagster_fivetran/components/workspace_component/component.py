@@ -106,7 +106,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         FivetranWorkspace,
         dg.Resolver(
             lambda context, model: FivetranWorkspace(
-                **resolve_fields(model, FivetranWorkspace, context)
+                **resolve_fields(model, FivetranWorkspace, context)  # ty: ignore[invalid-argument-type]
             )
         ),
     ]

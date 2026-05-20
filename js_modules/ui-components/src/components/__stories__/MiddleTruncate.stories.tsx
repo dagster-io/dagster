@@ -1,8 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
 import faker from 'faker';
-import {useMemo, useRef, useState} from 'react';
-import styled from 'styled-components';
+import React, {useMemo, useRef, useState} from 'react';
 
 import {Box} from '../Box';
 import {Colors} from '../Color';
@@ -11,6 +10,7 @@ import {MiddleTruncate} from '../MiddleTruncate';
 import {Slider} from '../Slider';
 import {Tag} from '../Tag';
 import {Heading, Title} from '../Text';
+import storyStyles from './css/MiddleTruncate.module.css';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -255,6 +255,7 @@ export const BreadcrumbsScenario = () => {
       <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '500px'}}>
         <BreadcrumbsWithSlashes
           items={breadcrumbs}
+          numHeaderBreadcrumbs={breadcrumbs.length}
           currentBreadcrumbRenderer={({text, href}) => (
             <span key={href}>
               <TruncatedHeading>
@@ -262,7 +263,6 @@ export const BreadcrumbsScenario = () => {
               </TruncatedHeading>
             </span>
           )}
-          $numHeaderBreadcrumbs={breadcrumbs.length}
           breadcrumbRenderer={({text, href}) => (
             <span key={href}>
               <TruncatedHeading>
@@ -281,22 +281,32 @@ export const BreadcrumbsScenario = () => {
   );
 };
 
-const TruncatedHeading = styled(Heading)`
-  max-width: 200px;
-  overflow: hidden;
-`;
+const TruncatedHeading = ({children}: {children: React.ReactNode}) => (
+  <Heading style={{maxWidth: 200, overflow: 'hidden'}}>{children}</Heading>
+);
 
-// Only add slashes within the asset key path
-const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
-  height: auto;
+const BreadcrumbsWithSlashes = ({
+  numHeaderBreadcrumbs,
+  ...rest
+}: React.ComponentProps<typeof Breadcrumbs> & {numHeaderBreadcrumbs: number}) => {
+  const slashStyle = React.useMemo(
+    () =>
+      `.${storyStyles.breadcrumbsWithSlashes} li:nth-child(n + ${numHeaderBreadcrumbs + 1})::after {
+        background: none;
+        font-size: 20px;
+        font-weight: bold;
+        color: ${Colors.textLighter()};
+        content: '/';
+        width: 8px;
+        line-height: 16px;
+      }`,
+    [numHeaderBreadcrumbs],
+  );
 
-  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
-    background: none;
-    font-size: 20px;
-    font-weight: bold;
-    color: ${Colors.textLighter()};
-    content: '/';
-    width: 8px;
-    line-height: 16px;
-  }
-`;
+  return (
+    <>
+      <style>{slashStyle}</style>
+      <Breadcrumbs className={storyStyles.breadcrumbsWithSlashes} {...rest} />
+    </>
+  );
+};

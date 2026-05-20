@@ -8,10 +8,10 @@ from ingestion_patterns.defs.poll_kafka_ingestion import poll_kafka_events, proc
 from ingestion_patterns.defs.pull_api_ingestion import extract_source_data
 from ingestion_patterns.defs.push_webhook_ingestion import process_webhook_data
 
-from .conftest import (  # ty: ignore[unresolved-import]
-    MockAPIClientResource,
-    MockKafkaConsumerResource,
-    MockWebhookStorageResource,
+from .conftest import (
+    MockAPIClientResource,  # ty: ignore[unresolved-import]
+    MockKafkaConsumerResource,  # ty: ignore[unresolved-import]
+    MockWebhookStorageResource,  # ty: ignore[unresolved-import]
 )
 
 

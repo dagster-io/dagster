@@ -55,7 +55,6 @@ def resolve_to_config_type(obj: object) -> ConfigType | bool:
         return obj
 
     if isinstance(obj, dict):
-        obj = cast("dict[Any, Any]", obj)
         # Dicts of the special form {type: value} are treated as Maps
         # mapping from the type to value type, otherwise treat as dict type
         if len(obj) == 1:
@@ -67,19 +66,19 @@ def resolve_to_config_type(obj: object) -> ConfigType | bool:
                         f"Invalid key in map specification: {key!r} in map {obj}"
                     )
 
-                if not key_type.kind == ConfigTypeKind.SCALAR:
+                if not key_type.kind == ConfigTypeKind.SCALAR:  # type: ignore
                     raise DagsterInvalidDefinitionError(
                         f"Non-scalar key in map specification: {key!r} in map {obj}"
                     )
 
-                inner_type = resolve_to_config_type(obj[key])
+                inner_type = resolve_to_config_type(obj[key])  # ty: ignore[invalid-argument-type]
 
                 if not inner_type:
                     raise DagsterInvalidDefinitionError(
-                        f"Invalid value in map specification: {obj[key]!r} in map {obj}"
+                        f"Invalid value in map specification: {obj[key]!r} in map {obj}"  # ty: ignore[invalid-argument-type]
                     )
                 return Map(key_type, inner_type)
-        return convert_fields_to_dict_type(obj)
+        return convert_fields_to_dict_type(obj)  # ty: ignore[invalid-argument-type]
 
     if isinstance(obj, list):
         if len(obj) != 1:

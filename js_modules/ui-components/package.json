@@ -30,8 +30,7 @@
     "@tanstack/react-virtual": "^3.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-is": "^18.3.1",
-    "styled-components": "^5.3.3"
+    "react-is": "^18.3.1"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.11",
@@ -81,7 +80,6 @@
     "@types/react": "^18.3.9",
     "@types/react-dom": "^18.3.0",
     "@types/react-is": "^18.3.0",
-    "@types/styled-components": "^5.1.26",
     "@types/testing-library__jest-dom": "^5.14.2",
     "@typescript/native-preview": "^7.0.0-dev.20251203.1",
     "babel-jest": "^27.4.6",

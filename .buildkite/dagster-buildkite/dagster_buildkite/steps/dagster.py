@@ -6,6 +6,7 @@ from buildkite_shared.step_builders.command_step_builder import (
     BuildkiteQueue,
     CommandStepBuilder,
     CommandStepConfiguration,
+    ResourceRequests,
 )
 from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
@@ -44,9 +45,9 @@ def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
 
 def build_repo_wide_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
-    # the target. `pyright` and `ruff` are run for the whole repo at once.
+    # the target. `ty` and `ruff` are run for the whole repo at once.
     return [
-        *build_repo_wide_pyright_steps(ctx),
+        *build_repo_wide_ty_steps(ctx),
         *build_repo_wide_ruff_steps(ctx),
         *build_repo_wide_prettier_steps(ctx),
         *build_buildkite_lint_steps(),
@@ -144,62 +145,18 @@ def build_repo_wide_prettier_steps(ctx: BuildkiteContext) -> list[CommandStepCon
     ]
 
 
-def build_repo_wide_pyright_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
+def build_repo_wide_ty_steps(ctx: BuildkiteContext) -> list[CommandStepConfiguration]:
     return [
-        GroupStepBuilder(
-            "pyright-ty",
-            [":pyright:", ":ty:"],
-            steps=[
-                CommandStepBuilder("pyright", [":pyright:"])
-                .on_test_image()
-                .run(
-                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-                    "uv venv",
-                    "source .venv/bin/activate",
-                    f"just -f {oss_path('justfile')} install_pyright",
-                    # Cap Node.js heap at 4GB. Without this, pyright (which runs
-                    # on Node.js) can exceed physical memory under pressure,
-                    # causing V8's garbage collector to thrash on swapped pages
-                    # and hang silently for the full job timeout. With the cap,
-                    # it OOMs immediately with a clear error instead.
-                    "export NODE_OPTIONS=--max-old-space-size=4096",
-                    f"just -f {oss_path('justfile')} pyright",
-                )
-                .skip(get_general_python_step_skip_reason(ctx, other_paths=["pyright"]))
-                # Run on a larger instance
-                .on_queue(BuildkiteQueue.DOCKER)
-                .build(),
-                CommandStepBuilder("pyright-rebuild-pyright-pins", [":pyright:"])
-                .on_test_image()
-                .run(
-                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-                    "uv venv",
-                    "source .venv/bin/activate",
-                    f"just -f {oss_path('justfile')} install_pyright",
-                    # Cap Node.js heap at 4GB. Without this, pyright (which runs
-                    # on Node.js) can exceed physical memory under pressure,
-                    # causing V8's garbage collector to thrash on swapped pages
-                    # and hang silently for the full job timeout. With the cap,
-                    # it OOMs immediately with a clear error instead.
-                    "export NODE_OPTIONS=--max-old-space-size=4096",
-                    f"just -f {oss_path('justfile')} rebuild_pyright_pins",
-                )
-                .skip(_get_pyright_pin_step_skip_reason(ctx))
-                # Run on a larger instance
-                .on_queue(BuildkiteQueue.DOCKER)
-                .build(),
-                CommandStepBuilder("ty", [":ty:"])
-                .on_test_image()
-                .run(
-                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-                    f"just -f {oss_path('justfile')} ty",
-                )
-                .skip(get_general_python_step_skip_reason(ctx, other_paths=["pyright"]))
-                # Run on a larger instance
-                .on_queue(BuildkiteQueue.DOCKER)
-                .build(),
-            ],
-        ).build()
+        CommandStepBuilder("ty", [":ty:"])
+        .on_test_image()
+        .run(
+            "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
+            f"just -f {oss_path('justfile')} ty",
+        )
+        .skip(get_general_python_step_skip_reason(ctx, other_paths=["ty"]))
+        .on_queue(BuildkiteQueue.KUBERNETES_EKS)
+        .resources(ResourceRequests(cpu="2000m", memory="8Gi", ephemeral_storage="15Gi"))
+        .build(),
     ]
 
 
@@ -264,16 +221,6 @@ def _get_graphql_python_client_backcompat_skip_reason(
     elif any(ctx.has_package_changes(dep) for dep in gql_schema_dependencies):
         return None
     return "No GraphQL schema changes"
-
-
-def _get_pyright_pin_step_skip_reason(ctx: BuildkiteContext) -> str | None:
-    if ctx.config.no_skip:
-        return None
-    elif not ctx.is_feature_branch:
-        return None
-    elif ctx.has_pyright_requirements_txt_changes():
-        return None
-    return "No pyright requirements.txt changes"
 
 
 def _get_prettier_step_skip_reason(ctx: BuildkiteContext) -> str | None:

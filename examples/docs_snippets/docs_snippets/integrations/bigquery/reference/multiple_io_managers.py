@@ -27,7 +27,7 @@ def iris_data() -> pd.DataFrame:
 def iris_plots(iris_data):
     # plot_data is a function we've defined somewhere else
     # that plots the data in a DataFrame
-    return plot_data(iris_data)
+    return plot_data(iris_data)  # ty: ignore[call-non-callable]
 
 
 defs = Definitions(

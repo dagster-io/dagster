@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
 import {
   Body,
   Box,
@@ -7,6 +5,7 @@ import {
   HoverButton,
   Icon,
   IconName,
+  Intent,
   Popover,
   Skeleton,
   SubtitleLarge,

@@ -226,7 +226,7 @@ class AssetReconciliationScenario(
 
         with freeze_time(test_time):
 
-            @dg.repository  # pyright: ignore[reportArgumentType]
+            @dg.repository
             def repo():
                 return self.assets
 
@@ -234,7 +234,7 @@ class AssetReconciliationScenario(
             for dagster_run in self.dagster_runs or []:
                 instance.add_run(dagster_run)
                 # make sure to log the planned events
-                for asset_key in dagster_run.asset_selection:  # pyright: ignore[reportOptionalIterable]
+                for asset_key in dagster_run.asset_selection:  # ty: ignore[not-iterable]
                     event = dg.DagsterEvent(
                         event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
                         job_name=dagster_run.job_name,
@@ -252,13 +252,13 @@ class AssetReconciliationScenario(
             for i, target in enumerate(self.active_backfill_targets or []):
                 if isinstance(target, Mapping):
                     target_subset = AssetGraphSubset(
-                        partitions_subsets_by_asset_key=target,
+                        partitions_subsets_by_asset_key=target,  # ty: ignore[invalid-argument-type]
                         non_partitioned_asset_keys=set(),
                     )
                 else:
                     target_subset = AssetGraphSubset(
                         partitions_subsets_by_asset_key={},
-                        non_partitioned_asset_keys=target,  # pyright: ignore[reportArgumentType]
+                        non_partitioned_asset_keys=target,  # ty: ignore[invalid-argument-type]
                     )
                 empty_subset = AssetGraphSubset(
                     partitions_subsets_by_asset_key={},
@@ -287,9 +287,9 @@ class AssetReconciliationScenario(
 
             if self.cursor_from is not None:
 
-                @dg.repository  # pyright: ignore[reportArgumentType]
+                @dg.repository
                 def prior_repo():
-                    return self.cursor_from.assets  # pyright: ignore[reportOptionalMemberAccess]
+                    return self.cursor_from.assets  # ty: ignore[unresolved-attribute]
 
                 (
                     run_requests,
@@ -326,7 +326,7 @@ class AssetReconciliationScenario(
                         instance=instance,
                         assets=[
                             a
-                            for a in self.assets  # pyright: ignore[reportOptionalIterable]
+                            for a in self.assets  # ty: ignore[not-iterable]
                             if isinstance(a, dg.SourceAsset) and a.key in run.asset_keys
                         ],
                     )
@@ -334,7 +334,7 @@ class AssetReconciliationScenario(
                     do_run(
                         asset_keys=run.asset_keys,
                         partition_key=run.partition_key,
-                        all_assets=self.assets,  # pyright: ignore[reportArgumentType]
+                        all_assets=self.assets,  # ty: ignore[invalid-argument-type]
                         instance=instance,
                         failed_asset_keys=run.failed_asset_keys,
                     )
@@ -362,7 +362,7 @@ class AssetReconciliationScenario(
             with mock.patch.object(
                 dg.DagsterInstance,
                 "auto_materialize_respect_materialization_data_versions",
-                new=lambda: self.respect_materialization_data_versions,  # pyright: ignore[reportAttributeAccessIssue]
+                new=lambda: self.respect_materialization_data_versions,  # ty: ignore[unresolved-attribute]
             ):
                 run_requests, cursor, evaluations = AutomationTickEvaluationContext(
                     evaluation_id=cursor.evaluation_id + 1,
@@ -382,7 +382,7 @@ class AssetReconciliationScenario(
                 ).evaluate()
 
         for run_request in run_requests:
-            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)  # pyright: ignore[reportArgumentType]
+            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)  # ty: ignore[invalid-argument-type]
             assert base_job is not None
 
         return run_requests, cursor, evaluations
@@ -612,7 +612,7 @@ def asset_def(
         if context.op_execution_context.op_config["fail"]:
             raise ValueError("")
 
-    return _asset  # type: ignore
+    return _asset
 
 
 def multi_asset_def(
@@ -705,7 +705,7 @@ def get_implicit_auto_materialize_policy(
             max_materializations_per_minute = 24
         else:
             max_materializations_per_minute = 1
-        rules = {
+        rules: set[AutoMaterializeRule] = {
             AutoMaterializeRule.materialize_on_missing(),
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_parent_outdated(),

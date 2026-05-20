@@ -1,6 +1,6 @@
 from dagster import AssetKey, Out, op
 
-from .subset_graph_backed_asset import defs
+from .subset_graph_backed_asset import defs  # ty: ignore[unresolved-import]
 
 
 # start_unexpected_materialization_foo

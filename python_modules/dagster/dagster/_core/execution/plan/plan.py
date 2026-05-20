@@ -958,7 +958,7 @@ class ExecutionPlan(
             if not isinstance(only_step, ExecutionStep):
                 return None
 
-            return cast("ExecutionStep", only_step).handle
+            return only_step.handle
 
         return None
 

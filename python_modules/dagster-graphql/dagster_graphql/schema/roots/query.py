@@ -873,7 +873,7 @@ class GrapheneQuery(graphene.ObjectType):
         def _get_config_type(key: str):
             return graphene_info.context.get_config_type(job_selector, key)
 
-        return GrapheneResourceConnection(
+        return GrapheneResourceConnection(  # ty: ignore[invalid-return-type]
             resources=[
                 GrapheneResource(_get_config_type, resource_snap)
                 for resource_snap in graphene_info.context.get_resources(job_selector)
@@ -896,7 +896,7 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     async def resolve_pipelineRunOrError(self, graphene_info: ResolveInfo, runId: graphene.ID):
-        return await gen_run_by_id(graphene_info, runId)
+        return await gen_run_by_id(graphene_info, str(runId))
 
     def resolve_runsOrError(
         self,
@@ -952,7 +952,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         selector = filter.to_selector() if filter is not None else None
         return GrapheneRunsFeedCount(
-            get_runs_feed_count(
+            get_runs_feed_count(  # ty: ignore[too-many-positional-arguments]
                 graphene_info,
                 selector,
                 view=view,
@@ -983,7 +983,7 @@ class GrapheneQuery(graphene.ObjectType):
             graphene_info,
             RepositorySelector.from_graphql_input(repositorySelector),
             # partitionSetName should prob be required
-            partitionSetName,  # type: ignore
+            partitionSetName,
         )
 
     @capture_error
@@ -1029,7 +1029,7 @@ class GrapheneQuery(graphene.ObjectType):
         return await get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore  # (possible str)
+            parse_run_config_input(runConfigData or {}, raise_on_error=True),
         )
 
     @capture_error
@@ -1040,7 +1040,9 @@ class GrapheneQuery(graphene.ObjectType):
         mode: str | None = None,
     ):
         return await resolve_run_config_schema_or_error(
-            graphene_info, pipeline_selector_from_graphql(selector), mode
+            graphene_info,
+            pipeline_selector_from_graphql(selector),
+            mode,
         )
 
     def resolve_instance(self, graphene_info: ResolveInfo):
@@ -1294,7 +1296,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         return fetch_asset_condition_evaluation_record_for_partition(
             graphene_info=graphene_info,
-            graphene_asset_key=assetKey,
+            graphene_asset_key=check.not_none(assetKey),
             evaluation_id=int(evaluationId),
             partition_key=partition,
         )
@@ -1323,7 +1325,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         return fetch_true_partitions_for_evaluation_node(
             graphene_info=graphene_info,
-            graphene_entity_key=assetKey,
+            graphene_entity_key=check.not_none(assetKey),
             evaluation_id=int(evaluationId),
             node_unique_id=nodeUniqueId,
         )
@@ -1391,7 +1393,8 @@ class GrapheneQuery(graphene.ObjectType):
         return fetch_asset_check_executions(
             graphene_info.context,
             asset_check_key=AssetCheckKey(
-                asset_key=AssetKey.from_graphql_input(assetKey), name=checkName
+                asset_key=AssetKey.from_graphql_input(assetKey),
+                name=checkName,
             ),
             limit=limit,
             cursor=cursor,

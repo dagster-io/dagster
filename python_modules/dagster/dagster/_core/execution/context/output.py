@@ -1,6 +1,6 @@
 import warnings
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
@@ -289,7 +289,7 @@ class OutputContext:
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return cast("OpDefinition", self._op_def)
+        return self._op_def
 
     @public
     @property
@@ -512,9 +512,11 @@ class OutputContext:
         if subset is None:
             check.failed("The output has no asset partitions")
 
-        partition_key_ranges = subset.get_partition_key_ranges(
-            self._asset_partitions_def  # pyright: ignore[reportArgumentType]
-        )
+        instance = self._step_context.instance if self._step_context is not None else None
+        with partition_loading_context(dynamic_partitions_store=instance):
+            partition_key_ranges = subset.get_partition_key_ranges(
+                self._asset_partitions_def  # ty: ignore[invalid-argument-type]
+            )
         if len(partition_key_ranges) != 1:
             check.failed(
                 "Tried to access asset_partition_key_range, but there are "
@@ -614,9 +616,9 @@ class OutputContext:
             self.name is not None,
             "Unable to find the run scoped output identifier: name is None on OutputContext.",
         )
-        run_id = cast("str", self.run_id)
-        step_key = cast("str", self.step_key)
-        name = cast("str", self.name)
+        run_id = self.run_id
+        step_key = self.step_key
+        name = self.name
 
         if self.mapping_key:
             return [run_id, step_key, name, self.mapping_key]

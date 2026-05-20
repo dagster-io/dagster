@@ -10,4 +10,4 @@ def add_partitions_def(spec: dg.AssetSpec) -> dg.AssetSpec:
 class ExampleComponentWithPartitions(dg.Component, dg.Model, dg.Resolvable):
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         # Use map_asset_specs to add a property to all assets
-        return super().build_defs(context).map_asset_specs(add_partitions_def)
+        return super().build_defs(context).map_asset_specs(add_partitions_def)  # ty: ignore[missing-argument, too-many-positional-arguments]

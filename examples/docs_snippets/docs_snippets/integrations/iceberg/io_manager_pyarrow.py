@@ -1,7 +1,9 @@
 import pandas as pd
 import pyarrow as pa
-from dagster_iceberg.config import IcebergCatalogConfig
-from dagster_iceberg.io_manager.arrow import PyArrowIcebergIOManager
+from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
+from dagster_iceberg.io_manager.arrow import (
+    PyArrowIcebergIOManager,  # ty: ignore[unresolved-import]
+)
 
 from dagster import Definitions, asset
 

@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any
 
-from clickhouse_driver import Client  # ty: ignore[unresolved-import]
+from clickhouse_driver import Client
 from dagster import ConfigurableResource
 from dagster.components.lib.sql_component.sql_client import SQLClient
 from pydantic import Field

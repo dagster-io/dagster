@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Callable, NamedTuple, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -548,7 +548,7 @@ def _reexecute_job(
                 execute_instance,
                 job_arg,
                 run_config,
-                cast("DagsterRun", parent_dagster_run),
+                parent_dagster_run,
                 reexecution_options.step_selection,
             )
         # else all steps will be executed and parent state is not needed

@@ -61,7 +61,7 @@ class EntitySubset(Generic[T_EntityKey]):
 
     @property
     def partitions_def(self) -> PartitionsDefinition | None:
-        return self._asset_graph_view.asset_graph.get(self._key).partitions_def
+        return self._asset_graph_view.asset_graph.get(self._key).partitions_def  # ty: ignore[no-matching-overload]
 
     def convert_to_serializable_subset(self) -> SerializableEntitySubset[T_EntityKey]:
         return SerializableEntitySubset(key=self._key, value=self._value)

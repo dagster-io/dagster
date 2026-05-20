@@ -561,9 +561,9 @@ from dagster._annotations import public
                                 spec = importlib.util.spec_from_file_location(
                                     "module.name", out_file
                                 )
-                                foo = importlib.util.module_from_spec(spec)  # pyright: ignore[reportArgumentType]
+                                foo = importlib.util.module_from_spec(spec)  # ty: ignore[invalid-argument-type]
                                 sys.modules["module.name"] = foo
-                                spec.loader.exec_module(foo)  # pyright: ignore[reportOptionalMemberAccess]
+                                spec.loader.exec_module(foo)  # ty: ignore[unresolved-attribute]
 
                                 out = new_out
                                 successes += 1
@@ -572,7 +572,7 @@ from dagster._annotations import public
                                 failures.append((connector_name_human_readable, e))
                                 continue
 
-                print("\033[1A\033[K\033[1A\033[K\033[1A\033[K")  # noqa: T201
+                print("\033[1A\033[K\033[1A\033[K\033[1A\033[K")
                 click.secho(f"{successes} successes", fg="green")
                 click.secho(f"{len(failures)} failures", fg="red")
 

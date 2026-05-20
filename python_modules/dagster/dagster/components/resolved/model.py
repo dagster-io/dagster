@@ -171,7 +171,7 @@ class Resolver:
         field_types = tuple(r.model_field_type or t for t, r in arg_resolver_pairs)
         return Resolver(
             fn=functools.partial(resolve_union, [r for _, r in arg_resolver_pairs]),
-            model_field_type=Union[field_types],  # noqa: UP007
+            model_field_type=Union[field_types],  # noqa: UP007  # ty: ignore[invalid-argument-type]
         )
 
     @staticmethod

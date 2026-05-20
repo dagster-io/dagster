@@ -1,5 +1,4 @@
 # pyright: reportUnnecessaryTypeIgnoreComment=false
-# ruff: noqa: T201
 
 import os
 
@@ -85,7 +84,9 @@ def _make_dagster_package(package_name: str):
     for to_create, variables in files_to_create.items():
         print(f"Writing {to_create}")
         template = jinja_env.get_template(f"{to_create}.tmpl")
-        with open(variables["path"], "w") as f:
+        path = variables["path"]
+        assert isinstance(path, str)
+        with open(path, "w") as f:
             template.stream(**variables["kwargs"]).dump(f)  # type: ignore
 
         if variables["has_todos"]:

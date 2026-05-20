@@ -1,6 +1,6 @@
 import os
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 import yaml
 
@@ -509,7 +509,7 @@ class InstanceRef(
                 return v
             return ConfigurableClassData(*v)
 
-        return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})  # pyright: ignore[reportArgumentType]
+        return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})
 
     @property
     def local_artifact_storage(self) -> "LocalArtifactStorage":
@@ -616,11 +616,14 @@ class InstanceRef(
         )
 
     @property
-    def custom_instance_class(self) -> type["DagsterInstance"]:
-        return (  # type: ignore  # (ambiguous return type)
-            class_from_code_pointer(
-                self.custom_instance_class_data.module_name,
-                self.custom_instance_class_data.class_name,
+    def custom_instance_class(self) -> type["DagsterInstance"] | None:
+        return (
+            cast(
+                "type[DagsterInstance]",
+                class_from_code_pointer(
+                    self.custom_instance_class_data.module_name,
+                    self.custom_instance_class_data.class_name,
+                ),
             )
             if self.custom_instance_class_data
             else None

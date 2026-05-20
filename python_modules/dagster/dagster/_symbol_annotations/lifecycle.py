@@ -332,7 +332,7 @@ def beta_param(
             return apply_pre_call_decorator(
                 __obj,
                 warning_fn,
-                condition=partial(_param_is_used, __param=param),
+                condition=partial(_param_is_used, _param=param),
             )
         else:
             return __obj
@@ -682,8 +682,8 @@ def deprecated_param(
         )
 
 
-def _param_is_used(*_, __param: str, **kwargs):
-    return kwargs.get(__param) is not None
+def _param_is_used(*_, _param: str, **kwargs):
+    return kwargs.get(_param) is not None
 
 
 def attach_deprecation_info_and_wrap(
@@ -722,7 +722,7 @@ def attach_deprecation_info_and_wrap(
     return apply_pre_call_decorator(
         obj,
         warning_fn,
-        condition=partial(_param_is_used, __param=param),
+        condition=partial(_param_is_used, _param=param),
     )
 
 

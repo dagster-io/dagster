@@ -14,7 +14,8 @@ def test_cross_location_condition():
     instance = dg.DagsterInstance.ephemeral()
 
     result = dg.evaluate_automation_conditions(
-        defs=[external_upstream, my_asset], instance=instance
+        defs=[external_upstream, my_asset],
+        instance=instance,  # ty: ignore[invalid-argument-type]
     )
     assert result.total_requested == 0
 
@@ -23,11 +24,15 @@ def test_cross_location_condition():
     )
 
     result = dg.evaluate_automation_conditions(
-        defs=[external_upstream, my_asset], instance=instance, cursor=result.cursor
+        defs=[external_upstream, my_asset],
+        instance=instance,
+        cursor=result.cursor,  # ty: ignore[invalid-argument-type]
     )
     assert result.total_requested == 1
 
     result = dg.evaluate_automation_conditions(
-        defs=[external_upstream, my_asset], instance=instance, cursor=result.cursor
+        defs=[external_upstream, my_asset],
+        instance=instance,
+        cursor=result.cursor,  # ty: ignore[invalid-argument-type]
     )
     assert result.total_requested == 0

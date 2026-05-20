@@ -551,7 +551,7 @@ def capture_error(
 
 
 @overload
-def capture_error(  # pyright: ignore[reportOverlappingOverload]
+def capture_error(
     fn: Callable[P, Awaitable[T]],
 ) -> Callable[P, Awaitable[T]]: ...
 

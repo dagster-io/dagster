@@ -139,7 +139,13 @@ def add_code_location_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Add or update a code location in the deployment."""
+    """Add or update a code location in the deployment.
+
+    Example::
+
+        $ dg api code-location add ingestion --image dagster/ingestion:1.12.0 --module-name ingestion.definitions
+        Added or updated code location 'ingestion'.
+    """
     from dagster_rest_resources.api.code_location import DgApiCodeLocationApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -190,7 +196,16 @@ def list_code_locations_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List code locations in the deployment."""
+    """List code locations in the deployment.
+
+    Example::
+
+        $ dg api code-location list
+        NAME       IMAGE                       STATUS
+        ingestion  dagster/ingestion:1.12.0    LOADED
+        analytics  dagster/analytics:1.12.0    LOADED
+        marts      dagster/marts:1.11.5        LOAD_ERROR
+    """
     from dagster_rest_resources.api.code_location import DgApiCodeLocationApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -228,7 +243,15 @@ def get_code_location_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get detailed information about a specific code location."""
+    """Get detailed information about a specific code location.
+
+    Example::
+
+        $ dg api code-location get ingestion
+        Name:   ingestion
+        Image:  dagster/ingestion:1.12.0
+        Module: ingestion.definitions
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -270,7 +293,13 @@ def delete_code_location_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Delete a code location from the deployment."""
+    """Delete a code location from the deployment.
+
+    Example::
+
+        $ dg api code-location delete ingestion
+        Deleted code location 'ingestion'.
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,

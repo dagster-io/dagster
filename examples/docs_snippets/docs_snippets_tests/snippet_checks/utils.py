@@ -18,7 +18,7 @@ from dagster._utils import pushd
 from dagster._utils.env import environ
 
 if TYPE_CHECKING:
-    from selenium import webdriver
+    from selenium import webdriver  # ty: ignore[unresolved-import]
 
 # https://stackoverflow.com/a/14693789
 ANSI_ESCAPE = re.compile(

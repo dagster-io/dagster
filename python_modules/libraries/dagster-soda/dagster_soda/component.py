@@ -20,7 +20,7 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 from dagster.components.scaffold.scaffold import scaffold_with
 from pydantic import Field
-from soda.scan import Scan  # ty: ignore[unresolved-import]
+from soda.scan import Scan
 
 from dagster_soda.scaffolder import SodaScanComponentScaffolder
 

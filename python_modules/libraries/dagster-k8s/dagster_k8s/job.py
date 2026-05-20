@@ -13,6 +13,7 @@ from dagster import (
     BoolSource,
     Enum as DagsterEnum,
     Field,
+    IntSource,
     Map,
     Noneable,
     StringSource,
@@ -747,6 +748,18 @@ class DagsterK8sJobConfig(
                     ),
                     is_required=False,
                     default_value=[],
+                ),
+                "server_replica_count": Field(
+                    IntSource,
+                    is_required=False,
+                    description=(
+                        "The number of code server replicas to launch for this code location. "
+                        "Defaults to 1. When set above 1, the agent will launch the same number "
+                        "of pods behind the code location's Service and load-balance gRPC requests "
+                        "across them. A readiness probe on the gRPC port is required so that "
+                        "Kubernetes only routes traffic to replicas whose user code has finished "
+                        "importing; a default tcpSocket probe is injected if none is configured."
+                    ),
                 ),
             },
         )

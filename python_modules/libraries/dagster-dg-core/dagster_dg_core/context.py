@@ -5,7 +5,7 @@ import shlex
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import dagster_shared.check as check
 from dagster_shared.record import record
@@ -232,7 +232,7 @@ class DgContext:
         if not ((root_path / "pyproject.toml").exists() or (root_path / "dg.toml").exists()):
             raise DgError(f"Cannot find `pyproject.toml` at {root_path}")
         return self.__class__.from_file_discovery_and_command_line_config(
-            root_path, self.cli_opts or {}
+            root_path, self.cli_opts or cast("DgRawCliConfig", {})
         )
 
     def component_registry_paths(self) -> list[Path]:

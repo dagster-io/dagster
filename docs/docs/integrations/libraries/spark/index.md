@@ -29,7 +29,7 @@ With Pipes, the code inside the asset or op definition submits a Spark job to an
 
 You can either use one of the available Pipes Clients or make your own. The available Pipes Clients for popular Spark providers are:
 
-- [Databricks](/integrations/external-pipelines/databricks-pipeline)
+- [Databricks](/integrations/libraries/databricks/pipes)
 - [AWS Glue](/integrations/external-pipelines/aws/aws-glue-pipeline)
 - [AWS EMR](/integrations/external-pipelines/aws/aws-emr-pipeline)
 - [AWS EMR on EKS](/integrations/external-pipelines/aws/aws-emr-containers-pipeline)

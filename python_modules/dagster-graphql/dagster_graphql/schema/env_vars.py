@@ -24,8 +24,8 @@ class GrapheneEnvVarConsumer(graphene.ObjectType):
     def __init__(self, env_var_consumer: EnvVarConsumer):
         super().__init__()
 
-        self.type = GrapheneEnvVarConsumerType.RESOURCE
-        self.name = env_var_consumer.name
+        self.type = GrapheneEnvVarConsumerType.RESOURCE  # ty: ignore[invalid-assignment]
+        self.name = env_var_consumer.name  # ty: ignore[invalid-assignment]
 
 
 class GrapheneEnvVarWithConsumers(graphene.ObjectType):
@@ -40,7 +40,7 @@ class GrapheneEnvVarWithConsumers(graphene.ObjectType):
     def __init__(self, name: str, consumers: Sequence[EnvVarConsumer]):
         super().__init__()
 
-        self.envVarName = name
+        self.envVarName = name  # ty: ignore[invalid-assignment]
         self.consumers = consumers
 
     def resolve_envVarConsumers(self, _graphene_info) -> list[GrapheneEnvVarConsumer]:

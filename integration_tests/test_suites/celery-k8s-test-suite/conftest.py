@@ -1,6 +1,7 @@
 import os
 
 import docker
+import docker.errors
 import pytest
 
 # fixtures: redundant alias marks them as used imports
@@ -30,7 +31,7 @@ def dagster_docker_image():
                 f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
                 f"docker rmi {docker_image}"
             )
-        except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+        except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)
 
     return docker_image

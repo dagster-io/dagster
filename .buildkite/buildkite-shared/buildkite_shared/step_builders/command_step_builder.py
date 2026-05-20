@@ -15,6 +15,7 @@ ECR_PLUGIN = "ecr#v2.7.0"
 SM_PLUGIN = "seek-oss/aws-sm#v2.3.1"
 BASE_IMAGE_NAME = "buildkite-test"
 BASE_IMAGE_TAG = "2026-05-04T142331"
+BUILDKITE_TEST_IMAGE_PY_SLIM = "buildkite-test-image-py-slim:prod-1777949196"
 
 AWS_ACCOUNT_ID = os.getenv("AWS_ACCOUNT_ID")
 AWS_ECR_REGION = "us-west-2"
@@ -24,13 +25,18 @@ class ResourceRequests:
     def __init__(
         self,
         cpu: str,
+        *,
         memory: str | None = None,
-        docker_cpu: str = "500m",
+        docker_cpu: str = "2000m",
+        docker_memory: str = "1Gi",
+        docker_memory_limit: str = "2Gi",
         ephemeral_storage: str | None = None,
     ) -> None:
         self._cpu = cpu
         self._memory = memory
         self._docker_cpu = docker_cpu
+        self._docker_memory = docker_memory
+        self._docker_memory_limit = docker_memory_limit
         self._ephemeral_storage = ephemeral_storage
 
     @property
@@ -44,6 +50,14 @@ class ResourceRequests:
     @property
     def docker_cpu(self) -> str:
         return self._docker_cpu
+
+    @property
+    def docker_memory(self) -> str:
+        return self._docker_memory
+
+    @property
+    def docker_memory_limit(self) -> str:
+        return self._docker_memory_limit
 
     @property
     def ephemeral_storage(self) -> str | None:
@@ -141,14 +155,20 @@ class CommandStepBuilder:
             ]
 
         self._step = {
-            "agents": {"queue": BuildkiteQueue.MEDIUM.value},
+            "agents": {"queue": BuildkiteQueue.KUBERNETES_EKS.value},
             "key": key,
             "label": make_label(key, label_emojis),
             "timeout_in_minutes": timeout_in_minutes,
             "retry": retry,
             "plugins": plugins or [],
         }
-        self._requires_docker = True  # used for k8s queue
+        # Default off: most steps don't need a docker daemon (lints, type-checkers,
+        # k8s manifests, helm, kaniko image builds, dashboard publishing). Steps that
+        # actually invoke `docker compose`/`docker build`/`docker pull` opt in via
+        # `.with_docker()`. Off-by-default avoids attaching a privileged dind sidecar
+        # — which costs scheduling resources and is the kubelet's first eviction
+        # target under fan-out memory pressure — to steps that don't need one.
+        self._requires_docker = False  # used for k8s queue; opt in via .with_docker()
         self._resources = None
 
     def run(self, *argc: str) -> Self:
@@ -159,8 +179,8 @@ class CommandStepBuilder:
         self._resources = resources
         return self
 
-    def no_docker(self) -> Self:
-        self._requires_docker = False
+    def with_docker(self) -> Self:
+        self._requires_docker = True
         return self
 
     def on_python_image(
@@ -200,7 +220,7 @@ class CommandStepBuilder:
 
     def on_integration_slim_image(self, env: list[str] | None = None) -> Self:
         return self.on_python_image(
-            image="buildkite-test-image-py-slim:prod-1777654800",
+            image=BUILDKITE_TEST_IMAGE_PY_SLIM,
             env=env,
         )
 
@@ -317,7 +337,7 @@ class CommandStepBuilder:
         cpu = (
             self._resources.cpu
             if self._resources
-            else ("1500m" if self._requires_docker else "500m")
+            else ("1000m" if self._requires_docker else "500m")
         )
         memory = self._resources.memory if self._resources else None
         default_ephemeral_storage = "10Gi" if self._requires_docker else "5Gi"
@@ -364,6 +384,15 @@ class CommandStepBuilder:
                 "AWS_REGION",
                 "AWS_ACCOUNT_ID",
                 "UV_DEFAULT_INDEX",
+                # `uv`'s 48h-old-package cutoff, set in the buildkite pre-command
+                # hook to mirror the workspace's `[tool.uv].exclude-newer`. Has
+                # to be allowlisted here or it gets stripped at the docker
+                # boundary (`propagate-environment: False` above).
+                "UV_EXCLUDE_NEWER",
+                # `tox` CLI-override that appends `UV_*` to every testenv's
+                # passenv so the cutoff above survives into the test subprocess
+                # — same docker-boundary reason.
+                "TOX_OVERRIDE",
             ]
             + [
                 # needed by our own stuff
@@ -390,6 +419,7 @@ class CommandStepBuilder:
         buildkite_shell = "/bin/bash -e -c"
         assert self._docker_settings
         image = str(self._docker_settings["image"])
+        # no skip
         if image == "hashicorp/terraform:light" or "/datadog-ci:" in image or "/alpine:" in image:
             buildkite_shell = "/bin/sh -e -c"
         elif "kaniko-project/executor" in image:
@@ -399,27 +429,53 @@ class CommandStepBuilder:
         if self._requires_docker:
             # Determine docker image based on queue (GKE vs EKS)
             queue = self._step.get("agents", {}).get("queue", "")
-            if "gke" in queue:
-                docker_image = "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:20.10.16-dind"
+            is_gke = "gke" in queue
+            if is_gke:
+                docker_image = "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:29.4.3-dind"
             else:
-                docker_image = "public.ecr.aws/docker/library/docker:20.10.16-dind"
+                docker_image = "public.ecr.aws/docker/library/docker:29.4.3-dind"
+
+            # Bump max-concurrent-downloads/uploads from default 3 to 10 to
+            # parallelize layer pulls. The dockerd-entrypoint.sh of the
+            # docker:dind image execs `dockerd` with whatever args are
+            # passed, so these forward through cleanly.
+            dind_args = [
+                "--max-concurrent-downloads=10",
+                "--max-concurrent-uploads=10",
+            ]
+            if not is_gke:
+                # Route docker.io pulls through the in-cluster Docker Hub
+                # mirror to avoid Docker Hub 5xx flakes and rate limits. The
+                # mirror is a `registry:2` Deployment in the buildkite-agent
+                # namespace; see infra/k8s/buildkite/overlays/buildkite-eks/
+                # dockerhub-mirror.yaml. dockerd transparently falls back to
+                # registry-1.docker.io if the mirror is unreachable.
+                dind_args.append(
+                    "--registry-mirror=http://dockerhub-mirror.buildkite-agent.svc.cluster.local:5000"
+                )
 
             sidecars.append(
                 {
                     "image": docker_image,
                     "command": ["dockerd-entrypoint.sh"],
-                    # Bump max-concurrent-downloads/uploads from default 3 to 10 to
-                    # parallelize layer pulls. The dockerd-entrypoint.sh of the
-                    # docker:dind image execs `dockerd` with whatever args are
-                    # passed, so these forward through cleanly.
-                    "args": [
-                        "--max-concurrent-downloads=10",
-                        "--max-concurrent-uploads=10",
-                    ],
+                    "args": dind_args,
+                    # Memory request/limit promote the dind sidecar from
+                    # BestEffort to Burstable QoS, so it isn't the first
+                    # container the kubelet evicts when a node is under
+                    # memory pressure during fan-out waves. Without this,
+                    # docker API calls (`containers.create` etc.) can hang
+                    # for minutes mid-test before the SDK's read timeout
+                    # fires — see test_docker_launcher.py flakes.
                     "resources": {
                         "requests": {
-                            "cpu": self._resources.docker_cpu if self._resources else "500m"
-                        }
+                            "cpu": self._resources.docker_cpu if self._resources else "2000m",
+                            "memory": self._resources.docker_memory if self._resources else "1Gi",
+                        },
+                        "limits": {
+                            "memory": self._resources.docker_memory_limit
+                            if self._resources
+                            else "2Gi",
+                        },
                     },
                     "env": [
                         {
@@ -546,8 +602,8 @@ class CommandStepBuilder:
             BuildkiteQueue.KUBERNETES_GKE,
             BuildkiteQueue.KUBERNETES_EKS,
         )
-        if self._requires_docker is False and not on_k8s:
-            raise Exception("you specified .no_docker() but you're not running on kubernetes")
+        # Note: `self._requires_docker` is k8s-only. On non-k8s queues docker is
+        # provided by the host agent regardless of the flag, so we don't gate.
 
         if not on_k8s and self._k8s_secrets:
             raise Exception(

@@ -336,28 +336,28 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 _set_and_detect_invalid_key(config_file, path)
 
-        cases = [
-            ["cli.verbose", bool, 1],
-            ["cli.use_component_modules", Sequence[str], 1],
-            ["cli.suppress_warnings", list[DgWarningIdentifier], 1],
-            ["workspace.projects", list, 1],
-            ["workspace.projects[1]", dict, 1],
-            ["workspace.projects[0].path", str, 1],
-            ["workspace.scaffold_project_options", dict, 1],
-            [
+        mistyped_cases: list[tuple[str, Any, Any]] = [
+            ("cli.verbose", bool, 1),
+            ("cli.use_component_modules", Sequence[str], 1),
+            ("cli.suppress_warnings", list[DgWarningIdentifier], 1),
+            ("workspace.projects", list, 1),
+            ("workspace.projects[1]", dict, 1),
+            ("workspace.projects[0].path", str, 1),
+            ("workspace.scaffold_project_options", dict, 1),
+            (
                 "workspace.scaffold_project_options.use_editable_dagster",
                 bool,
                 1,
-            ],
+            ),
         ]
-        for path, expected_type, val in cases:
+        for path, expected_type, val in mistyped_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_mistyped_value(config_file, path, expected_type, val)
 
-        cases = [
-            ["workspace.projects[0].path", str],
+        missing_cases: list[tuple[str, Any]] = [
+            ("workspace.projects[0].path", str),
         ]
-        for path, expected_type in cases:
+        for path, expected_type in missing_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
@@ -377,21 +377,21 @@ def test_invalid_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 _set_and_detect_invalid_key(config_file, case)
 
-        cases = [
-            ["cli.verbose", bool, 1],
-            ["project.root_module", str, 1],
-            ["project.defs_module", str, 1],
-            ["project.code_location_name", str, 1],
-            ["project.code_location_target_module", str, 1],
+        mistyped_cases: list[tuple[str, Any, Any]] = [
+            ("cli.verbose", bool, 1),
+            ("project.root_module", str, 1),
+            ("project.defs_module", str, 1),
+            ("project.code_location_name", str, 1),
+            ("project.code_location_target_module", str, 1),
         ]
-        for path, expected_type, val in cases:
+        for path, expected_type, val in mistyped_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_mistyped_value(config_file, path, expected_type, val)
 
-        cases = [
-            ["project.root_module", str],
+        missing_cases: list[tuple[str, Any]] = [
+            ("project.root_module", str),
         ]
-        for path, expected_type in cases:
+        for path, expected_type in missing_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 

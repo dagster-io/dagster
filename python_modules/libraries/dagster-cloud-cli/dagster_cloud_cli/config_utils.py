@@ -3,7 +3,10 @@ import functools
 import inspect
 import os
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from typer.models import OptionInfo
 
 import yaml
 from click import Context
@@ -98,7 +101,7 @@ def get_location_load_timeout() -> int:
 
     env_val = os.getenv(LOCATION_LOAD_TIMEOUT_ENV_VAR_NAME)
 
-    return int(cast("str", env_val)) if env_val is not None else default_timeout
+    return int(env_val) if env_val is not None else default_timeout
 
 
 def get_agent_heartbeat_timeout(default_timeout: int | None) -> int | None:
@@ -108,7 +111,7 @@ def get_agent_heartbeat_timeout(default_timeout: int | None) -> int | None:
     """
     env_val = os.getenv(AGENT_HEARTBEAT_TIMEOUT_ENV_VAR_NAME)
 
-    return int(cast("str", env_val)) if env_val is not None else None
+    return int(env_val) if env_val is not None else None
 
 
 def get_user_token(ctx: Context | None = None) -> str | None:
@@ -151,20 +154,20 @@ def get_org_url(organization: str, dagster_env: str | None):
 
 
 # Typer Option definitions for common CLI config options (organization, deployment, user token)
-ORGANIZATION_OPTION = Option(
+ORGANIZATION_OPTION = Option(  # ty: ignore[no-matching-overload]
     get_organization,
     "--organization",
     "-o",
     help="Organization to target.",
-    show_default=get_organization(),  # type: ignore
+    show_default=get_organization(),
 )
-DEPLOYMENT_OPTION = Option(
+DEPLOYMENT_OPTION = Option(  # ty: ignore[no-matching-overload]
     get_deployment,
     "--deployment",
     "-d",
     help="Deployment to target.",
     autocompletion=available_deployment_names,
-    show_default=get_deployment(),  # type: ignore
+    show_default=get_deployment(),
 )
 
 DAGSTER_ENV_OPTION = Option(
@@ -174,13 +177,14 @@ DAGSTER_ENV_OPTION = Option(
     envvar="DAGSTER_CLOUD_ENV",
 )
 
-USER_TOKEN_OPTION = Option(
+_user_token = get_user_token()
+USER_TOKEN_OPTION = Option(  # ty: ignore[no-matching-overload]
     get_user_token,
     "--api-token",
     "--user-token",
     "-u",
     help="Cloud user token.",
-    show_default=ui.censor_token(get_user_token()) if get_user_token() else None,  # type: ignore
+    show_default=ui.censor_token(_user_token) if _user_token else None,
 )
 URL_OPTION = Option(
     get_url,
@@ -235,7 +239,7 @@ def dagster_cloud_options(
         wrapped_sig = inspect.signature(to_wrap)
         params = collections.OrderedDict(wrapped_sig.parameters)
 
-        options = {
+        options: dict[str, tuple[Any, OptionInfo]] = {
             ORGANIZATION_CLI_ARGUMENT: (str, ORGANIZATION_OPTION),
             TOKEN_CLI_ARGUMENT_VAR: (str, USER_TOKEN_OPTION),
         }
@@ -254,13 +258,13 @@ def dagster_cloud_options(
 
         has_location_load_timeout_param = LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR in params
         if has_location_load_timeout_param:
-            options[LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR] = (  # pyright: ignore[reportArgumentType]
+            options[LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR] = (
                 int,
                 LOCATION_LOAD_TIMEOUT_OPTION,
             )
         has_agent_heartbeat_timeout_param = AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR in params
         if has_agent_heartbeat_timeout_param:
-            options[AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR] = (  # pyright: ignore[reportArgumentType]
+            options[AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR] = (
                 int,
                 get_agent_heartbeat_timeout_option(default_timeout=60),
             )
@@ -278,7 +282,7 @@ def dagster_cloud_options(
                 and kwargs.get(DEPLOYMENT_CLI_ARGUMENT)
             ):
                 kwargs[URL_CLI_ARGUMENT] = gql.url_from_config(
-                    organization=kwargs.get(ORGANIZATION_CLI_ARGUMENT),  # pyright: ignore[reportArgumentType]
+                    organization=kwargs.get(ORGANIZATION_CLI_ARGUMENT),  # ty: ignore[invalid-argument-type]
                     deployment=kwargs.get(DEPLOYMENT_CLI_ARGUMENT),
                 )
 

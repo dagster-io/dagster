@@ -1,7 +1,7 @@
 ---
 title: 'Troubleshooting sensor timeouts'
 description: Debug and address Dagster sensor timeout issues.
-sidebar_position: 40
+sidebar_position: 300
 ---
 
 In this guide, we’ll discuss how to handle sensors that time out.

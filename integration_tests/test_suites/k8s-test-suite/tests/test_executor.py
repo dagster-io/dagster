@@ -7,6 +7,7 @@ from typing import Any
 
 import dagster._check as check
 import kubernetes
+import kubernetes.client.rest
 import pytest
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
@@ -54,8 +55,8 @@ def test_k8s_run_launcher_default(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # ty: ignore[invalid-argument-type]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -82,7 +83,7 @@ def test_k8s_run_launcher_volume_mounts(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -112,8 +113,8 @@ def test_k8s_executor_get_config_from_run_launcher(
 ):
     # Verify that if you do not specify executor config it is delegated by the run launcher
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # ty: ignore[invalid-argument-type]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {"config": {"job_image": dagster_docker_image}},
         },
@@ -137,8 +138,8 @@ def test_k8s_executor_combine_configs(
     # from run launcher config and executor config. Also includes each executor secret
     # twice to verify that duplicates within the combined config are acceptable
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # ty: ignore[invalid-argument-type]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -245,8 +246,8 @@ def test_k8s_run_launcher_image_from_origin(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # ty: ignore[invalid-argument-type]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -283,7 +284,7 @@ def test_k8s_run_launcher_terminate(
     job_name = "slow_job_k8s"
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -347,7 +348,7 @@ def test_k8s_executor_resource_requirements(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -425,7 +426,7 @@ def test_k8s_executor_owner_references_garbage_collection(
     allow for garbage collection of the step job and step pod when a run pod is deleted.
     """
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -534,7 +535,7 @@ def test_k8s_executor_owner_references_disabled(
 ):
     """Test that owner references are NOT set when enable_owner_references is False, and that garbage collection does NOT happen when the run pod is deleted."""
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {
@@ -630,7 +631,7 @@ def test_execute_on_k8s_retry_job(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "execution": {
                 "config": {

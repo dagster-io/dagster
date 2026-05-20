@@ -1062,7 +1062,7 @@ def get_resource_type_name(resource: ResourceDefinition) -> str:
             else resource.resource_fn
         )
         module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
-        resource_type = f"{module_name}.{original_resource_fn.__name__}"  # ty: ignore[unresolved-attribute]
+        resource_type = f"{module_name}.{getattr(original_resource_fn, '__name__', 'resource_fn')}"
     # if it's a Pythonic resource, get the underlying Pythonic class name
     elif isinstance(
         resource,

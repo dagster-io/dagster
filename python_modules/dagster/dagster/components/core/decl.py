@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
 from functools import cached_property
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, cast
 
 from dagster_shared.record import record
 from dagster_shared.serdes.objects import EnvRegistryKey
@@ -115,7 +115,7 @@ class PythonFileDecl(ComponentDecl[PythonFileComponent]):
 
 def _get_component_class(
     context: ComponentDeclLoadContext, component_file_model: ComponentFileModel
-) -> type:
+) -> type[Component]:
     # TODO: lookup in cache so we don't have to import the class directly
     type_str = context.normalize_component_type_str(component_file_model.type)
     key = EnvRegistryKey.from_typename(type_str)
@@ -174,7 +174,10 @@ class YamlBackedComponentDecl(ComponentDecl[T]):
     @property
     def component_type(self) -> type[T]:
         """The class of the component that is being loaded."""
-        return _get_component_class(self.context, check.not_none(self.component_file_model))
+        return cast(
+            "type[T]",
+            _get_component_class(self.context, check.not_none(self.component_file_model)),
+        )
 
     def get_asset_post_processor_lists(self) -> list[AssetPostProcessor]:
         if not self.source_tree or not self.component_file_model:

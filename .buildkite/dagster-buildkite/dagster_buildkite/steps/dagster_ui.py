@@ -35,14 +35,11 @@ def build_dagster_ui_components_steps(ctx: BuildkiteContext) -> list[CommandStep
 def skip_if_no_dagster_ui_core_changes(ctx: BuildkiteContext) -> str | None:
     if not ctx.is_feature_branch:
         return None
-
-    # If anything changes in the js_modules directory
-    if any(oss_path("js_modules") in path.parents for path in ctx.changed_files):
+    elif ctx.has_javascript_changes():
         return None
-
     # If anything changes in python packages that our front end depend on
     # dagster and dagster-graphql might indicate changes to our graphql schema
-    if not PackageSpec(oss_path("python_modules/dagster-graphql")).get_skip_reason(ctx):
+    elif not PackageSpec(oss_path("python_modules/dagster-graphql")).get_skip_reason(ctx):
         return None
 
     return "No changes that affect the JS webapp"

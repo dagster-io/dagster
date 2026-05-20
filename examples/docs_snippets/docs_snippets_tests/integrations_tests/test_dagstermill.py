@@ -51,7 +51,7 @@ def exec_for_test(module_name, fn_name, env=None, raise_on_error=True, **kwargs)
                 cleanup_result_notebook(result)
 
 
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_config_asset():
     with exec_for_test(
         module_name="docs_snippets.integrations.dagstermill.iris_notebook_config",
@@ -60,7 +60,7 @@ def test_config_asset():
         assert result.success, [str(e) for e in result.all_node_events if e.is_failure]
 
 
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_iris_classify_job():
     with exec_for_test(
         module_name="docs_snippets.integrations.dagstermill.iris_notebook_op",
@@ -69,7 +69,7 @@ def test_iris_classify_job():
         assert result.success, [str(e) for e in result.all_node_events if e.is_failure]
 
 
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_outputs_job():
     with exec_for_test(
         module_name="docs_snippets.integrations.dagstermill.notebook_outputs",

@@ -2041,9 +2041,7 @@
           "is_dynamic_mapped": false,
           "solid_def_name": "asset_with_compute_storage_kinds",
           "solid_name": "asset_with_compute_storage_kinds",
-          "tags": {
-            "dagster/compute_kind": "python"
-          }
+          "tags": {}
         },
         {
           "__class__": "SolidInvocationSnap",
@@ -2067,11 +2065,7 @@
           "is_dynamic_mapped": false,
           "solid_def_name": "asset_with_op_tags",
           "solid_name": "asset_with_op_tags",
-          "tags": {
-            "baz": "qux",
-            "dagster/kind/python": "",
-            "foo": "bar"
-          }
+          "tags": {}
         },
         {
           "__class__": "SolidInvocationSnap",
@@ -41935,7 +41929,7 @@
   'a42b76205f669056b37fd68ef75743cbb470f27e'
 # ---
 # name: test_all_snapshot_ids[1]
-  '11ae819084ee915e30a985b00fc82e184d4a64ac'
+  '055f82d1d78c531c33c93549338bea9fbb26ec35'
 # ---
 # name: test_all_snapshot_ids[20]
   '''

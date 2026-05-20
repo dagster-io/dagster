@@ -159,7 +159,7 @@ class InstigationLogger(logging.Logger):
             record.args = tuple()
         return record
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):  # ty: ignore[invalid-method-override]
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
         return self._annotate_record(record)
 

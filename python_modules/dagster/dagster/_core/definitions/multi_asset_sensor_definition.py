@@ -1055,9 +1055,8 @@ def build_multi_asset_sensor_context(
 
         asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
-            asset_keys = cast(
-                "list[AssetKey]",
-                list(monitored_assets.resolve(list(set(repository_def.asset_graph.assets_defs)))),
+            asset_keys = list(
+                monitored_assets.resolve(list(set(repository_def.asset_graph.assets_defs)))
             )
         else:
             asset_keys = monitored_assets
@@ -1240,7 +1239,7 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
                         " context.advance_all_cursors to update the cursor."
                     )
 
-                multi_asset_sensor_context.update_cursor_after_evaluation()  # pyright: ignore[reportAttributeAccessIssue]
+                multi_asset_sensor_context.update_cursor_after_evaluation()  # ty: ignore[unresolved-attribute]
                 context.update_cursor(multi_asset_sensor_context.cursor)
 
             return _fn

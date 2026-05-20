@@ -68,6 +68,7 @@ def get_buildkite_registry_config():
 
 def find_local_test_image(docker_image):
     import docker
+    import docker.errors
 
     try:
         client = docker.from_env()
@@ -76,7 +77,7 @@ def find_local_test_image(docker_image):
             f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
             f"docker rmi {docker_image}"
         )
-    except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+    except docker.errors.ImageNotFound:
         build_and_tag_test_image(docker_image)
 
 
@@ -224,13 +225,13 @@ class ReOriginatedExternalScheduleForTest(RemoteSchedule):
         )
 
     @property
-    def selector_id(self):  # pyright: ignore[reportIncompatibleVariableOverride]
+    def selector_id(self):
         """Hack! Inject a selector that matches the one that the k8s helm chart will use."""
         return create_snapshot_id(
             InstigatorSelector(
-                "user-code-deployment-1",  # pyright: ignore[reportCallIssue]
-                "demo_execution_repo",
-                self.name,
+                location_name="user-code-deployment-1",
+                repository_name="demo_execution_repo",
+                name=self.name,
             )
         )
 

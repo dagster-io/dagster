@@ -36,7 +36,18 @@ def get_issue_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get an issue by ID."""
+    """Get an issue by ID.
+
+    Example::
+
+        $ dg api issue get 7e2c44b9-8f1a-4d6e-b0c3-2a5f9d4e6b18
+        Title:       Snowflake load failed for daily_orders
+        Status:      OPEN
+        Created By:  oncall@example.com
+        Run IDs:     5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        Asset Keys:  daily_orders
+        Description: Snowflake permission denied while loading partition 2026-05-06
+    """
     from dagster_rest_resources.api.issue import DgApiIssueApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -109,7 +120,16 @@ def list_issues_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List issues with pagination and optional filtering."""
+    """List issues with pagination and optional filtering.
+
+    Example::
+
+        $ dg api issue list --limit 3 --status OPEN
+        STATUS  TITLE                                       ID                                    CREATED BY
+        OPEN    Snowflake load failed for daily_orders      7e2c44b9-8f1a-4d6e-b0c3-2a5f9d4e6b18  oncall@example.com
+        OPEN    Stale freshness on stg_customers            ad9c7f2e-3b15-4a87-9d61-5c8b3e2f1a04  alice@example.com
+        OPEN    dbt test failure: unique_customer_id        c0b1ab17-1d2e-4f5b-9c8a-3e8d2c5f7a91  bob@example.com
+    """
     from dagster_rest_resources.api.issue import DgApiIssueApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -174,7 +194,16 @@ def create_issue_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Create a new issue."""
+    """Create a new issue.
+
+    Example::
+
+        $ dg api issue create --title "Snowflake load failed" --description "Permission denied loading daily_orders"
+        Title:       Snowflake load failed
+        Status:      OPEN
+        Created By:  oncall@example.com
+        Description: Permission denied loading daily_orders
+    """
     from dagster_rest_resources.api.issue import DgApiIssueApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -241,7 +270,16 @@ def update_issue_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Update an existing issue."""
+    """Update an existing issue.
+
+    Example::
+
+        $ dg api issue update 7e2c44b9-8f1a-4d6e-b0c3-2a5f9d4e6b18 --status RESOLVED
+        Title:       Snowflake load failed for daily_orders
+        Status:      RESOLVED
+        Created By:  oncall@example.com
+        Description: Snowflake permission denied while loading partition 2026-05-06
+    """
     from dagster_rest_resources.api.issue import DgApiIssueApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -299,7 +337,17 @@ def add_link_issue_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Add a run or asset link to an issue."""
+    """Add a run or asset link to an issue.
+
+    Example::
+
+        $ dg api issue add-link 7e2c44b9-8f1a-4d6e-b0c3-2a5f9d4e6b18 --run-id 5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        Title:       Snowflake load failed for daily_orders
+        Status:      OPEN
+        Created By:  oncall@example.com
+        Run IDs:     5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        Description: Snowflake permission denied while loading partition 2026-05-06
+    """
     from dagster_rest_resources.api.issue import DgApiIssueApi
 
     if run_id is None and asset_key is None:
@@ -358,7 +406,16 @@ def remove_link_issue_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Remove a run or asset link from an issue."""
+    """Remove a run or asset link from an issue.
+
+    Example::
+
+        $ dg api issue remove-link 7e2c44b9-8f1a-4d6e-b0c3-2a5f9d4e6b18 --run-id 5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        Title:       Snowflake load failed for daily_orders
+        Status:      OPEN
+        Created By:  oncall@example.com
+        Description: Snowflake permission denied while loading partition 2026-05-06
+    """
     from dagster_rest_resources.api.issue import DgApiIssueApi
 
     if run_id is None and asset_key is None:

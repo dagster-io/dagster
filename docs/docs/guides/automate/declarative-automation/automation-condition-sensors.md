@@ -8,6 +8,14 @@ All automation conditions must be evaluated by a [sensor](/guides/automate/senso
 
 By default, this sensor will evaluate all automation conditions in your code location, and execute the asset or asset check if the condition is met.
 
+The `default_automation_condition_sensor` is created when all of the following are true:
+
+- The code location contains at least one asset with an `AutomationCondition` (or legacy `AutoMaterializePolicy`).
+- You're on Dagster 1.5 or later.
+- The code location loads and registers definitions successfully.
+
+If you're migrating from `AutoMaterializePolicy`, you must set `use_sensors: true` in your `auto_materialize` configuration. Toggling sensors on in the UI alone is not enough; without `use_sensors: true`, the sensor will not drive automation. If a default sensor is missing, verify the conditions above before troubleshooting further.
+
 ### Adding additional sensors
 
 If you have a code location with a large number of assets using automation conditions, you may want to create additional sensors to evaluate only a subset of the conditions. This has a few benefits:

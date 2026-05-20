@@ -787,7 +787,7 @@ def test_remove_partitions_defs_after_backfill_backcompat():
         backfill = instance.get_backfills()[0]
         backcompat_backfill = backfill._replace(
             asset_backfill_data=None,
-            serialized_asset_backfill_data=backfill.asset_backfill_data.serialize(  # pyright: ignore[reportOptionalMemberAccess]
+            serialized_asset_backfill_data=backfill.asset_backfill_data.serialize(  # ty: ignore[unresolved-attribute]
                 instance, asset_graph=repo.asset_graph
             ),
         )
@@ -947,10 +947,10 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): asset_graph.get(
                         AssetKey("hourly")
-                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # pyright: ignore[reportOptionalMemberAccess]
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # ty: ignore[unresolved-attribute]
                     AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),  # pyright: ignore[reportOptionalMemberAccess]
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),  # ty: ignore[unresolved-attribute]
                 },
             )
 
@@ -1012,13 +1012,13 @@ def test_launch_asset_backfill_with_two_anchor_assets():
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly1"): asset_graph.get(
                         AssetKey("hourly1")
-                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # pyright: ignore[reportOptionalMemberAccess]
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # ty: ignore[unresolved-attribute]
                     AssetKey("hourly2"): asset_graph.get(
                         AssetKey("hourly2")
-                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # pyright: ignore[reportOptionalMemberAccess]
+                    ).partitions_def.subset_with_partition_keys(hourly_partitions),  # ty: ignore[unresolved-attribute]
                     AssetKey("daily"): asset_graph.get(
                         AssetKey("daily")
-                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),  # pyright: ignore[reportOptionalMemberAccess]
+                    ).partitions_def.subset_with_partition_keys(["2020-01-02", "2020-01-03"]),  # ty: ignore[unresolved-attribute]
                 },
             )
 
@@ -1067,12 +1067,12 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): (
                         asset_graph.get(AssetKey("hourly"))
-                        .partitions_def.empty_subset()  # pyright: ignore[reportOptionalMemberAccess]
+                        .partitions_def.empty_subset()  # ty: ignore[unresolved-attribute]
                         .with_partition_keys(hourly_partitions)
                     ),
                     AssetKey("daily"): (
                         asset_graph.get(AssetKey("daily"))
-                        .partitions_def.empty_subset()  # pyright: ignore[reportOptionalMemberAccess]
+                        .partitions_def.empty_subset()  # ty: ignore[unresolved-attribute]
                         .with_partition_keys(["2020-01-02", "2020-01-03"])
                     ),
                 },
@@ -1394,7 +1394,7 @@ def test_backfill_logs():
         def override_backfill_storage_setting(self):
             return True
 
-        instance.backfill_log_storage_enabled = override_backfill_storage_setting.__get__(
+        instance.backfill_log_storage_enabled = override_backfill_storage_setting.__get__(  # ty: ignore[invalid-assignment]
             instance, DagsterInstance
         )
         with define_out_of_process_context(__file__, "get_repo", instance) as context:

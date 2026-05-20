@@ -29,7 +29,7 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> dg.GraphDefinition:
 
     deps = {}
 
-    for op_yaml_data in yaml_data["ops"]:
+    for op_yaml_data in yaml_data["ops"]:  # ty: ignore[invalid-argument-type, not-iterable]
         def_name = op_yaml_data["def"]
         alias = op_yaml_data.get("alias", def_name)
         op_deps_entry = {}
@@ -40,8 +40,8 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> dg.GraphDefinition:
         deps[dg.NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
 
     return dg.GraphDefinition(
-        name=yaml_data["name"],
-        description=yaml_data.get("description"),
+        name=yaml_data["name"],  # ty: ignore[invalid-argument-type]
+        description=yaml_data.get("description"),  # ty: ignore[invalid-argument-type]
         node_defs=op_defs,
         dependencies=deps,
     )

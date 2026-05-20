@@ -1,7 +1,9 @@
 import os
+import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -62,9 +64,16 @@ def _airflow_is_ready(*, port: int, expected_num_dags: int) -> bool:
 
 @pytest.fixture(name="airflow_home")
 def default_airflow_home() -> Generator[str, None, None]:
-    with TemporaryDirectory() as tmpdir:
+    # NOTE: don't use `TemporaryDirectory` here. Airflow child processes (gunicorn workers,
+    # scheduler, triggerer) can race their final writes against teardown, which causes
+    # `TemporaryDirectory.__exit__` to raise `OSError: [Errno 39] Directory not empty` and
+    # fails the test even when it passed. Tolerate the race with `ignore_errors=True`.
+    tmpdir = tempfile.mkdtemp()
+    try:
         with environ({"AIRFLOW_HOME": tmpdir}):
             yield tmpdir
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 @pytest.fixture(name="setup")

@@ -59,7 +59,7 @@ source_asset = dg.SourceAsset(key=["key0"])
 
 
 def test_forward_slashes_allowed():
-    keys1 = [a.key for a in dg.load_assets_from_current_module(key_prefix="foo/bar")]  # pyright: ignore[reportAttributeAccessIssue]
+    keys1 = [a.key for a in dg.load_assets_from_current_module(key_prefix="foo/bar")]  # ty: ignore[unresolved-attribute]
     assert dg.AssetKey(["foo/bar", "baz"]) in keys1
     assert dg.AssetKey(["foo/bar", "baz", "quix"]) in keys1
 

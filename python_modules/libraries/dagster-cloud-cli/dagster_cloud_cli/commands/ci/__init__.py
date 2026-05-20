@@ -1060,7 +1060,7 @@ def _deploy(
                 else {}
             ),
         }
-        if build_output.strategy == "python-executable":
+        if isinstance(build_output, state.PexBuildOutput):
             metrics.instrument_add_tags([CliEventTags.server_strategy.pex])
             location_args["pex_tag"] = build_output.pex_tag
             location_args["python_version"] = build_output.python_version

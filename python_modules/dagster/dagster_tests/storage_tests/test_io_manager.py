@@ -450,7 +450,7 @@ def test_different_io_managers():
     assert my_job.execute_in_process().success
 
 
-@dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+@dg.io_manager
 def my_io_manager():
     pass
 

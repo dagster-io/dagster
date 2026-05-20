@@ -140,11 +140,11 @@ def test_wrapped_input_and_output_lambda():
     assert len(add_one.input_defs) == 1
     assert add_one.input_defs[0].name == "nums"
     assert add_one.input_defs[0].dagster_type.kind == DagsterTypeKind.LIST
-    assert add_one.input_defs[0].dagster_type.inner_type.unique_name == "Int"  # pyright: ignore[reportAttributeAccessIssue]
+    assert add_one.input_defs[0].dagster_type.inner_type.unique_name == "Int"  # ty: ignore[unresolved-attribute]
 
     assert len(add_one.output_defs) == 1
     assert add_one.output_defs[0].dagster_type.kind == DagsterTypeKind.NULLABLE
-    assert add_one.output_defs[0].dagster_type.inner_type.kind == DagsterTypeKind.LIST  # pyright: ignore[reportAttributeAccessIssue]
+    assert add_one.output_defs[0].dagster_type.inner_type.kind == DagsterTypeKind.LIST  # ty: ignore[unresolved-attribute]
 
 
 def test_kitchen_sink():
@@ -302,7 +302,7 @@ def test_infer_input_description_from_docstring_rest():
         """  # noqa: D212
         return hello + str(optional)
 
-    defs = infer_input_props(rest.compute_fn.decorated_fn, context_arg_provided=True)  # pyright: ignore[reportFunctionMemberAccess]
+    defs = infer_input_props(rest.compute_fn.decorated_fn, context_arg_provided=True)  # ty: ignore[unresolved-attribute]
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -330,7 +330,7 @@ def test_infer_descriptions_from_docstring_numpy():
         """  # noqa: D212
         return hello + str(optional)
 
-    defs = infer_input_props(good_numpy.compute_fn.decorated_fn, context_arg_provided=True)  # pyright: ignore[reportFunctionMemberAccess]
+    defs = infer_input_props(good_numpy.compute_fn.decorated_fn, context_arg_provided=True)  # ty: ignore[unresolved-attribute]
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -356,7 +356,7 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_google.compute_fn.decorated_fn, context_arg_provided=True)  # pyright: ignore[reportFunctionMemberAccess]
+    defs = infer_input_props(good_google.compute_fn.decorated_fn, context_arg_provided=True)  # ty: ignore[unresolved-attribute]
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -396,7 +396,7 @@ def test_infer_output_description_from_docstring_numpy():
         """  # noqa: D212
         return 1
 
-    props = infer_output_props(numpy.compute_fn.decorated_fn)  # pyright: ignore[reportFunctionMemberAccess]
+    props = infer_output_props(numpy.compute_fn.decorated_fn)  # ty: ignore[unresolved-attribute]
     assert props.description == "a number."
     assert props.annotation == int
 
@@ -409,7 +409,7 @@ def test_infer_output_description_from_docstring_rest():
         """  # noqa: D212
         return 1
 
-    props = infer_output_props(rest.compute_fn.decorated_fn)  # pyright: ignore[reportFunctionMemberAccess]
+    props = infer_output_props(rest.compute_fn.decorated_fn)  # ty: ignore[unresolved-attribute]
     assert props.description == "a number."
     assert props.annotation == int
 
@@ -423,7 +423,7 @@ def test_infer_output_description_from_docstring_google():
         """  # noqa: D212
         return 1
 
-    props = infer_output_props(google.compute_fn.decorated_fn)  # pyright: ignore[reportFunctionMemberAccess]
+    props = infer_output_props(google.compute_fn.decorated_fn)  # ty: ignore[unresolved-attribute]
 
     assert props.description == "a number."
     assert props.annotation == int

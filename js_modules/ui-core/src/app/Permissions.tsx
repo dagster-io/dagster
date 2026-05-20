@@ -14,7 +14,9 @@ export const EXPECTED_PERMISSIONS = {
   launch_pipeline_reexecution: true,
   start_schedule: true,
   stop_running_schedule: true,
+  schedule_dry_run: true,
   edit_sensor: true,
+  sensor_dry_run: true,
   update_sensor_cursor: true,
   terminate_pipeline_execution: true,
   delete_pipeline_run: true,
@@ -40,7 +42,9 @@ export type PermissionsFromJSON = {
   launch_pipeline_reexecution?: PermissionResult;
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
+  schedule_dry_run?: PermissionResult;
   edit_sensor?: PermissionResult;
+  sensor_dry_run?: PermissionResult;
   update_sensor_cursor?: PermissionResult;
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
@@ -91,8 +95,10 @@ export const extractPermissions = (
     canLaunchPipelineReexecution: permissionOrFallback('launch_pipeline_reexecution'),
     canStartSchedule: permissionOrFallback('start_schedule'),
     canStopRunningSchedule: permissionOrFallback('stop_running_schedule'),
+    canScheduleDryRun: permissionOrFallback('schedule_dry_run'),
     canStartSensor: permissionOrFallback('edit_sensor'),
     canStopSensor: permissionOrFallback('edit_sensor'),
+    canSensorDryRun: permissionOrFallback('sensor_dry_run'),
     canTerminatePipelineExecution: permissionOrFallback('terminate_pipeline_execution'),
     canDeletePipelineRun: permissionOrFallback('delete_pipeline_run'),
     canReloadRepositoryLocation: permissionOrFallback('reload_repository_location'),

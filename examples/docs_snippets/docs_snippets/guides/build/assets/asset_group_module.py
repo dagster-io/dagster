@@ -6,7 +6,7 @@ import dagster as dg
 
 # start_example
 
-from my_package import cereal
+from my_package import cereal  # ty: ignore[unresolved-import]
 
 cereal_assets = dg.load_assets_from_package_module(
     cereal,

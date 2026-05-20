@@ -134,7 +134,7 @@ def test_docker_monitoring(docker_postgres_instance, aws_env):
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "ops": {
                 "multiply_the_word_slow": {
@@ -212,7 +212,7 @@ def test_docker_monitoring_run_out_of_attempts(docker_postgres_instance, aws_env
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "ops": {
                 "multiply_the_word_slow": {

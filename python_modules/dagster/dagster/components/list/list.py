@@ -82,7 +82,7 @@ def list_all_components_schema(
             model_cls_list.append(
                 create_model(
                     key.name,
-                    type=(Literal[key_string], key_string),
+                    type=(Literal[key_string], key_string),  # ty: ignore[invalid-type-form]
                     attributes=(model_cls, None),
                     requirements=(Optional[ComponentRequirementsModel], None),  # noqa: UP045
                     __config__=ConfigDict(extra="forbid"),

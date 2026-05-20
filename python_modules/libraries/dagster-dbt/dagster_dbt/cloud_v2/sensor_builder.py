@@ -64,14 +64,14 @@ def materializations_from_batch_iter(
     workspace_data = workspace.get_or_fetch_workspace_data()
 
     # Build a set of all adhoc job IDs to filter out Dagster-triggered runs.
-    # This includes the current adhoc job and any stale adhoc jobs from a
+    # This includes the current adhoc job pool and any stale adhoc jobs from a
     # previous naming convention that still exist in dbt Cloud.
     adhoc_job_ids = {
         job["id"]
         for job in workspace_data.jobs
         if (job.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX)
     }
-    adhoc_job_ids.add(workspace_data.adhoc_job_id)
+    adhoc_job_ids.update(workspace_data.adhoc_job_ids)
 
     total_processed_runs = 0
     while True:

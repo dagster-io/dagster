@@ -46,6 +46,15 @@ def list_secrets_command(
 
     By default, secret values are not shown for security reasons.
     Use 'dg api secret get NAME --show-value' to view specific values.
+
+    Example::
+
+        $ dg api secret list
+        NAME                LOCATIONS  SCOPES                                                     UPDATED
+        SNOWFLAKE_USER      All        Full Deployment, All Branch Deployments, Local Deployment  2023-05-04 19:14:15 UTC
+        SNOWFLAKE_PASSWORD  All        Full Deployment, All Branch Deployments, Local Deployment  2023-11-29 22:38:48 UTC
+        DATABRICKS_TOKEN    All        Full Deployment, Local Deployment                          2025-07-25 23:52:00 UTC
+        GITHUB_TOKEN        analytics  Full Deployment                                            2025-08-11 18:19:12 UTC
     """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
@@ -103,6 +112,21 @@ def get_secret_command(
 
     WARNING: When using --show-value, the secret will be visible in your terminal
     and may be stored in shell history. Use with caution.
+
+    Example::
+
+        $ dg api secret get SNOWFLAKE_USER
+        Name: SNOWFLAKE_USER
+        Locations: All code locations
+        Scopes: Full Deployment, All Branch Deployments, Local Deployment
+        Permissions:
+          Can Edit: Yes
+          Can View Value: Yes
+
+        Value: <hidden - use --show-value to display>
+
+        Updated By: colton@dagsterlabs.com
+        Updated: 2023-05-04 19:14:15 UTC
     """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,

@@ -3,6 +3,7 @@ import os
 import time
 
 import kubernetes
+import kubernetes.client.rest
 import pytest
 from dagster import _check as check
 from dagster._core.storage.dagster_run import DagsterRunStatus
@@ -67,7 +68,7 @@ def test_k8s_run_launcher_default(
 
     run_id = launch_run_over_graphql(
         webserver_url_for_k8s_run_launcher,
-        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        run_config=run_config,  # ty: ignore[invalid-argument-type]
         job_name=job_name,
     )
 
@@ -148,7 +149,7 @@ def test_failing_k8s_run_launcher(
 
     run_id = launch_run_over_graphql(
         webserver_url_for_k8s_run_launcher,
-        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        run_config=run_config,  # ty: ignore[invalid-argument-type]
         job_name=job_name,
     )
 
@@ -177,7 +178,7 @@ def test_k8s_run_launcher_terminate(
 
     run_id = launch_run_over_graphql(
         webserver_url_for_k8s_run_launcher,
-        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        run_config=run_config,  # ty: ignore[invalid-argument-type]
         job_name=job_name,
     )
 
@@ -219,7 +220,7 @@ def test_k8s_run_launcher_secret_from_deployment(
 
     run_id = launch_run_over_graphql(
         webserver_url_for_k8s_run_launcher,
-        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        run_config=run_config,  # ty: ignore[invalid-argument-type]
         job_name=job_name,
     )
 

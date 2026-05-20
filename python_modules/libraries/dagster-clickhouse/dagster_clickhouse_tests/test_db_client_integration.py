@@ -4,7 +4,7 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
-from clickhouse_driver import Client  # ty: ignore[unresolved-import]
+from clickhouse_driver import Client
 from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
 from dagster_clickhouse.db_client import ClickhouseDbClient, format_clickhouse_table_fqn
