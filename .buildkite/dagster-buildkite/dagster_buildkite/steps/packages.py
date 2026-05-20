@@ -727,12 +727,15 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
 def tox_factors_for_folder(
     tests_folder_name: str,
     queue_overrides: Mapping[str, BuildkiteQueue] | None = None,
+    resources_overrides: Mapping[str, ResourceRequests] | None = None,
 ) -> list[ToxFactor]:
-    overrides = queue_overrides or {}
+    queues = queue_overrides or {}
+    resources = resources_overrides or {}
     return [
         ToxFactor(
             f"{tests_folder_name}__{subfolder_name}",
-            queue=overrides.get(subfolder_name),
+            queue=queues.get(subfolder_name),
+            resources=resources.get(subfolder_name),
         )
         for subfolder_name in test_subfolders(tests_folder_name)
     ]
@@ -758,9 +761,17 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_tox_factors=[
                 ToxFactor("api_tests"),
                 ToxFactor("asset_defs_tests"),
-                ToxFactor("cli_tests", splits=2, queue=BuildkiteQueue.MEDIUM),
+                # CLI tests fan out fresh `dagster ...` subprocess invocations
+                # and spin up gRPC workspace/dev servers (test_grpc_server_workspace,
+                # test_dagster_dev_command). Same CPU-starvation profile as
+                # daemon/scheduler tests; bump to match.
+                ToxFactor(
+                    "cli_tests",
+                    splits=2,
+                    resources=ResourceRequests(cpu="2000m", memory="2Gi"),
+                ),
                 ToxFactor("components_tests"),
-                ToxFactor("core_tests", queue=BuildkiteQueue.MEDIUM),
+                ToxFactor("core_tests"),
                 # Daemon tests run a gRPC code-server subprocess plus the
                 # sensor/scheduler daemons + threadpool executors; on the EKS
                 # default 1000m CPU budget the code server's heartbeat thread
@@ -788,8 +799,18 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                     resources=ResourceRequests(cpu="2000m", memory="2Gi"),
                 ),
                 ToxFactor("definitions_tests"),
-                ToxFactor("general_tests", queue=BuildkiteQueue.MEDIUM),
-                ToxFactor("general_tests_old_protobuf", queue=BuildkiteQueue.MEDIUM),
+                # general_tests includes the grpc_tests/ subtree (test_heartbeat,
+                # test_persistent, test_watch_server, test_grpc_server_registry,
+                # test_health_check) — the exact subprocess-heartbeat pattern
+                # that drove the daemon-test bumps to 2000m/4Gi.
+                ToxFactor(
+                    "general_tests",
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
+                ToxFactor(
+                    "general_tests_old_protobuf",
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
                 ToxFactor("launcher_tests"),
                 ToxFactor("logging_tests"),
                 ToxFactor("model_tests"),
@@ -820,9 +841,12 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ]
             + tox_factors_for_folder(
                 "execution_tests",
-                # Timing-sensitive concurrency / subprocess-lifecycle tests flake on EKS.
-                queue_overrides={
-                    "misc_execution_tests": BuildkiteQueue.MEDIUM,
+                # misc_execution_tests contains test_interrupt,
+                # test_run_cancellation_thread, and test_run_metrics_thread —
+                # timing-sensitive threading tests with the same CPU-scheduling
+                # sensitivity as the daemon tests above.
+                resources_overrides={
+                    "misc_execution_tests": ResourceRequests(cpu="2000m", memory="4Gi"),
                 },
             ),
             unsupported_python_versions=_unsupported_dagster_python_versions,
