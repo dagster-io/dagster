@@ -1118,8 +1118,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-aws"),
-            env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-azure"),
@@ -1139,8 +1137,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dask"),
-            env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-databricks"),

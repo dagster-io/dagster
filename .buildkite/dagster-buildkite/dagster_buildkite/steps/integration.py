@@ -171,7 +171,6 @@ def build_azure_live_test_suite_steps(ctx: BuildkiteContext) -> list[TopLevelSte
             "TEST_AZURE_CONTAINER_ID",
             "TEST_AZURE_ACCESS_KEY",
         ],
-        queue=BuildkiteQueue.MEDIUM,
     ).build_steps(ctx)
 
 

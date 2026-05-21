@@ -1,3 +1,4 @@
+import os
 import sys
 import tempfile
 import time
@@ -114,6 +115,11 @@ class LocalGlueMockClient:
         popen = Popen(
             [sys.executable, f.name, *args],
             env={
+                # Pass through AWS_* creds from the parent (set by the autouse
+                # `fake_aws_credentials` fixture to stub values). Without this,
+                # botocore inside the subprocess has no creds at all and only
+                # works incidentally when the host has an EC2 IMDS instance role.
+                **{k: v for k, v in os.environ.items() if k.startswith("AWS_")},
                 "AWS_ENDPOINT_URL": self.aws_endpoint_url,
                 "TESTING_PIPES_MESSAGES_BACKEND": self.pipes_messages_backend,
             },
