@@ -37,6 +37,7 @@ class UserDeployment(BaseModel):
     volumeMounts: list[kubernetes.VolumeMount] | None = None
     volumes: list[kubernetes.Volume] | None = None
     schedulerName: str | None = None
+    serviceAccountName: str | None = None
     initContainers: (
         list[kubernetes.Container | kubernetes.InitContainerWithStructuredImage] | None
     ) = None
