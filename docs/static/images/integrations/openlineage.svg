@@ -1,4 +1,5 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OpenLineage">
+  <title>OpenLineage</title>
   <rect width="64" height="64" rx="10" fill="#74A4BC"/>
   <text x="32" y="42" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="white" text-anchor="middle">OL</text>
 </svg>
