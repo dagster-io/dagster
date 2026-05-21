@@ -123,8 +123,30 @@ ASSET_RECORD_FRAGMENT = (
     """
 )
 
-ASSET_CHECK_STATE_FRAGMENT = (
+ASSET_CHECK_EXECUTION_RECORD_FRAGMENT = (
     EVENT_LOG_ENTRY_FRAGMENT
+    + """
+    fragment AssetCheckExecutionRecordFragment on AssetCheckExecutionRecord {
+        assetCheckKey {
+            assetKey {
+                path
+            }
+            name
+        }
+        id
+        runId
+        status
+        event {
+            ...EventLogEntryFragment
+        }
+        createTimestamp
+        partition
+    }
+"""
+)
+
+ASSET_CHECK_STATE_FRAGMENT = (
+    ASSET_CHECK_EXECUTION_RECORD_FRAGMENT
     + """
     fragment AssetCheckSummaryRecordFragment on AssetCheckSummaryRecord {
         assetCheckKey {
@@ -134,22 +156,10 @@ ASSET_CHECK_STATE_FRAGMENT = (
             name
         }
         lastCheckExecutionRecord {
-            id
-            runId
-            status
-            event {
-                ...EventLogEntryFragment
-            }
-            createTimestamp
+            ...AssetCheckExecutionRecordFragment
         }
         lastCompletedCheckExecutionRecord {
-            id
-            runId
-            status
-            event {
-                ...EventLogEntryFragment
-            }
-            createTimestamp
+            ...AssetCheckExecutionRecordFragment
         }
         lastRunId
     }
@@ -291,6 +301,19 @@ GET_ASSET_CHECK_STATE_QUERY = (
         eventLogs {
             getAssetCheckSummaryRecord(assetCheckKeys: $assetCheckKeys) {
                 ...AssetCheckSummaryRecordFragment
+            }
+        }
+    }
+"""
+)
+
+GET_LATEST_ASSET_CHECK_EXECUTION_BY_KEY_QUERY = (
+    ASSET_CHECK_EXECUTION_RECORD_FRAGMENT
+    + """
+    query getLatestAssetCheckExecutionByKey($assetCheckKeys: [String!]!, $partitionFilter: PartitionKeyFilter) {
+        eventLogs {
+            getLatestAssetCheckExecutionByKey(assetCheckKeys: $assetCheckKeys, partitionFilter: $partitionFilter) {
+                ...AssetCheckExecutionRecordFragment
             }
         }
     }
