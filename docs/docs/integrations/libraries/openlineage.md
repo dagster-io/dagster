@@ -53,8 +53,11 @@ event_log_storage:
         postgres_url:
           env: DAGSTER_PG_URL
     namespace: my-company
-    # Optional:
-    # namespace_template: "{namespace}"  # {tag:KEY} is not available in Mechanism A
+    # Optional — namespace_template overrides the static namespace field.
+    # Note: the {tag:KEY} token always resolves to an empty string in
+    # Mechanism A because EventLogStorage has no access to run tags at
+    # store_event time. Use Mechanism B if you need per-run tag resolution.
+    # namespace_template: "{namespace}"
     # timeout: 2.0
 ```
 
@@ -62,7 +65,7 @@ Set `OPENLINEAGE_URL` (and optionally `OPENLINEAGE_API_KEY`) in the environment 
 
 ## Mechanism B — sensor
 
-Add `openlineage_sensor(include_asset_events=True)` to your `Definitions`:
+Add `openlineage_sensor(include_asset_events=True)` to your `Definitions`. The sensor runs in the Dagster daemon and has full access to run tags, making it the right choice for `{tag:KEY}` namespace resolution and Dagster+ deployments.
 
 ```python
 from dagster import Definitions
@@ -92,15 +95,23 @@ Set these environment variables on the process that runs the Dagster daemon:
 
 ## Namespace templates
 
-Use `namespace_template` to route assets to per-tenant namespaces:
+Use `namespace_template` to route assets to per-tenant namespaces. The `{tag:KEY}` token resolves to the run tag named `KEY`, and is only available in **Mechanism B** (the sensor has access to run tags). In Mechanism A it always resolves to an empty string.
 
-```python
+```
 # Template: "{namespace}/{tag:tenant}"
 # (Mechanism B, OPENLINEAGE_NAMESPACE=dagster)
 # Run tags {"tenant": "acme"} → resolved namespace "dagster/acme"
-# Run tags {}                 → resolved namespace "dagster"  (tag unset, slash stripped)
+# Run tags {}                 → resolved namespace "dagster"  (tag unset, trailing slash stripped)
+```
 
-The `{tag:KEY}` token is available in Mechanism B (the sensor has access to run tags). In Mechanism A the token always resolves to an empty string because `EventLogStorage` has no access to run tags at `store_event` time.
+## Migration from v0.1
+
+If you are upgrading from `dagster-openlineage` v0.1 to v0.2, note the following breaking changes:
+
+- **Dagster version:** The minimum supported Dagster version is now `1.11.6`.
+- **Default namespace:** The default namespace is now flat (`dagster`). In v0.1, the integration attempted to use the repository name as the namespace. If you wish to preserve the old behavior, configure the `namespace` or `namespace_template` option accordingly.
+- **Removed class:** The legacy `OpenLineageEventListener` has been removed.
+- **Emission mechanics:** v0.1 emitted pipeline and step events automatically with no extra configuration. In v0.2, you must explicitly configure exactly one mechanism (A or B). Both now include full asset-centric support.
 
 ## About OpenLineage
 
