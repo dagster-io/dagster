@@ -96,9 +96,9 @@ Use `namespace_template` to route assets to per-tenant namespaces:
 
 ```python
 # Template: "{namespace}/{tag:tenant}"
+# (Mechanism B, OPENLINEAGE_NAMESPACE=dagster)
 # Run tags {"tenant": "acme"} → resolved namespace "dagster/acme"
 # Run tags {}                 → resolved namespace "dagster"  (tag unset, slash stripped)
-```
 
 The `{tag:KEY}` token is available in Mechanism B (the sensor has access to run tags). In Mechanism A the token always resolves to an empty string because `EventLogStorage` has no access to run tags at `store_event` time.
 
