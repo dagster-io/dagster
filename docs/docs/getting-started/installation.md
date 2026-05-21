@@ -77,21 +77,49 @@ If you prefer to set up Dagster manually or are installing it into an existing p
 
 To verify that Dagster is installed correctly, run the commands below. You should see the version number of `dg` in your environment.
 
-<Tabs groupId="os">
-  <TabItem value="mac" label="Mac">
-    <CliInvocationExample contents="cd my-project" />
-    <CliInvocationExample contents="source .venv/bin/activate" />
-    <CliInvocationExample contents="dg --version" />
+If you scaffolded your project with `uvx create-dagster`, a virtual environment was created automatically by `uv sync` and you only need to activate it. If you installed `create-dagster` with `pip`, `brew`, or `curl` (or installed Dagster manually with `pip`), you must create the virtual environment yourself before activating it.
+
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    <Tabs groupId="os">
+      <TabItem value="mac" label="Mac">
+        <CliInvocationExample contents="cd my-project" />
+        <CliInvocationExample contents="source .venv/bin/activate" />
+        <CliInvocationExample contents="dg --version" />
+      </TabItem>
+      <TabItem value="windows" label="Windows">
+        <CliInvocationExample contents="cd my-project" />
+        <CliInvocationExample contents=".venv\Scripts\activate" />
+        <CliInvocationExample contents="dg --version" />
+      </TabItem>
+      <TabItem value="linux" label="Linux">
+        <CliInvocationExample contents="cd my-project" />
+        <CliInvocationExample contents="source .venv/bin/activate" />
+        <CliInvocationExample contents="dg --version" />
+      </TabItem>
+    </Tabs>
   </TabItem>
-  <TabItem value="windows" label="Windows">
-    <CliInvocationExample contents="cd my-project" />
-    <CliInvocationExample contents=".venv\Scripts\activate" />
-    <CliInvocationExample contents="dg --version" />
-  </TabItem>
-  <TabItem value="linux" label="Linux">
-    <CliInvocationExample contents="cd my-project" />
-    <CliInvocationExample contents="source .venv/bin/activate" />
-    <CliInvocationExample contents="dg --version" />
+  <TabItem value="pip" label="pip">
+    <Tabs groupId="os">
+      <TabItem value="mac" label="Mac">
+        <CliInvocationExample contents="cd my-project" />
+        <CliInvocationExample contents="python -m venv .venv" />
+        <CliInvocationExample contents="source .venv/bin/activate" />
+        <CliInvocationExample contents="dg --version" />
+      </TabItem>
+      <TabItem value="windows" label="Windows">
+        <CliInvocationExample contents="cd my-project" />
+        <CliInvocationExample contents="python -m venv .venv" />
+        <CliInvocationExample contents=".venv\Scripts\activate" />
+        <CliInvocationExample contents="dg --version" />
+      </TabItem>
+      <TabItem value="linux" label="Linux">
+        <CliInvocationExample contents="cd my-project" />
+        <CliInvocationExample contents="python -m venv .venv" />
+        <CliInvocationExample contents="source .venv/bin/activate" />
+        <CliInvocationExample contents="dg --version" />
+      </TabItem>
+    </Tabs>
   </TabItem>
 </Tabs>
 
