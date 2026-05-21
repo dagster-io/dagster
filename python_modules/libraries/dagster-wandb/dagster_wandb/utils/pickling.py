@@ -43,6 +43,29 @@ except ImportError:
     has_joblib = False
 
 
+class RestrictedUnpickler(pickle.Unpickler):
+    """Restricted unpickler that blocks dangerous modules to prevent RCE."""
+    
+    def find_class(self, module, name):
+        dangerous_functions = {
+            ('os', 'system'), ('os', 'popen'), ('os', 'execv'), ('os', 'execve'),
+            ('posix', 'system'), ('posix', 'popen'), ('posix', 'execv'), ('posix', 'execve'),
+            ('nt', 'system'), ('nt', 'popen'), ('nt', 'execv'), ('nt', 'execve'),
+            ('subprocess', 'call'), ('subprocess', 'run'), ('subprocess', 'Popen'),
+            ('builtins', 'exec'), ('builtins', 'eval'), ('builtins', 'compile'),
+            ('builtins', '__import__'), ('builtins', 'open'),
+            ('sys', 'exit'), ('sys', 'modules'),
+        }
+        
+        if (module, name) in dangerous_functions:
+            raise pickle.UnpicklingError(f"Blocked dangerous function: {module}.{name}")
+        
+        if name.startswith('__') and name.endswith('__'):
+            raise pickle.UnpicklingError(f"Blocked dunder attribute: {name}")
+        
+        return super().find_class(module, name)
+
+
 def pickle_artifact_content(
     context, serialization_module_name, serialization_module_parameters_with_protocol, artifact, obj
 ):
@@ -204,5 +227,14 @@ def unpickle_artifact_content(artifact_dir):
             return input_value
     elif os.path.exists(f"{artifact_dir}/{PICKLE_FILENAME}"):
         with open(f"{artifact_dir}/{PICKLE_FILENAME}", "rb") as file:
-            input_value = pickle.load(file)
-            return input_value
+            # Use restricted unpickler
+            try:
+                input_value = RestrictedUnpickler(file).load()
+                return input_value
+            except pickle.UnpicklingError as e:
+                raise WandbArtifactsIOManagerError(
+                    f"Security validation failed: {str(e)}. "
+                    f"The artifact contains potentially dangerous content."
+                ) from e
+    
+    return None
