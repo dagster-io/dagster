@@ -141,6 +141,7 @@ class PackageSpec:
     tox_file: str | None = None
     timeout_in_minutes: int | None = None
     queue: BuildkiteQueue | None = None
+    resources: ResourceRequests | None = None
     run_pytest: bool = True
     splits: int = 1
     force_run_fn: Callable[[BuildkiteContext], bool] | None = None
@@ -263,7 +264,11 @@ class PackageSpec:
                                 concurrency_group=(
                                     other_factor.concurrency_group if other_factor else None
                                 ),
-                                resources=other_factor.resources if other_factor else None,
+                                resources=(
+                                    other_factor.resources
+                                    if other_factor and other_factor.resources
+                                    else self.resources
+                                ),
                                 soft_fail=other_factor.soft_fail if other_factor else False,
                                 ecr_passthru=self.ecr_passthru,
                             )
@@ -562,7 +567,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
             ],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("examples/docs_snippets"),
@@ -1122,17 +1126,16 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
         ),
         PackageSpec(
+            # Single rabbitmq sibling container; default dind sizing is enough.
             oss_path("python_modules/libraries/dagster-celery"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-celery-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dask"),
@@ -1147,7 +1150,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=docker_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-duckdb"),
@@ -1263,6 +1265,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-mlflow"),
         ),
         PackageSpec(
+            # Three sibling MySQL containers (test-mysql-db, test-mysql-db-pinned,
+            # test-mysql-db-pinned-backcompat) up at once; each mysqld is ~300-500MB
+            # at steady state, so the 2Gi dind limit is the tight bound.
             oss_path("python_modules/libraries/dagster-mysql"),
             pytest_extra_cmds=mysql_extra_cmds,
             pytest_tox_factors=[
@@ -1273,7 +1278,16 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
-            queue=BuildkiteQueue.MEDIUM,
+            # Three sibling mysqld containers (~300-500MB each); the default
+            # 2Gi dind memory limit is the tight bound. Outer-pod memory=1Gi
+            # promotes the test container to Burstable QoS. Same shape as the
+            # airbyte integration bump in #23997.
+            resources=ResourceRequests(
+                cpu="1000m",
+                memory="1Gi",
+                docker_memory="2Gi",
+                docker_memory_limit="4Gi",
+            ),
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pandas"),
@@ -1291,13 +1305,14 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
+            # Single sibling postgres container via dagster_test.fixtures; default
+            # dind sizing is enough.
             oss_path("python_modules/libraries/dagster-postgres"),
             pytest_tox_factors=[
                 ToxFactor("storage_tests"),
                 ToxFactor("storage_tests_sqlalchemy_1_3"),
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-rest-resources"),

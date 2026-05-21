@@ -487,7 +487,18 @@ class CommandStepBuilder:
                         {
                             "mountPath": "/var/run",
                             "name": "docker-sock",
-                        }
+                        },
+                        # Shared /tmp with the test container so docker bind
+                        # mounts of paths like `tempfile.TemporaryDirectory()`
+                        # resolve to the same files dockerd sees. On EC2 the
+                        # docker plugin mounted the host's /tmp into the test
+                        # container and dockerd ran on the host, so /tmp was
+                        # implicitly shared. On EKS the dind sidecar has its
+                        # own /tmp by default, breaking that assumption.
+                        {
+                            "mountPath": "/tmp",
+                            "name": "shared-tmp",
+                        },
                     ],
                     "securityContext": {
                         "privileged": True,
@@ -518,10 +529,22 @@ class CommandStepBuilder:
                     "emptyDir": {},
                 }
             )
+            self._k8s_volumes.append(
+                {
+                    "name": "shared-tmp",
+                    "emptyDir": {},
+                }
+            )
             self._k8s_volume_mounts.append(
                 {
                     "mountPath": "/var/run/",
                     "name": "docker-sock",
+                },
+            )
+            self._k8s_volume_mounts.append(
+                {
+                    "mountPath": "/tmp",
+                    "name": "shared-tmp",
                 },
             )
 
