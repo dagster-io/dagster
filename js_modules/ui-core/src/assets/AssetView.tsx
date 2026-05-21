@@ -1,6 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps} from '@blueprintjs/core';
-import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
+import {Alert, Box, BreadcrumbProps, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
 import {observeEnabled} from '@shared/app/observeEnabled';
 import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import {AssetPageHeader} from '@shared/assets/AssetPageHeader';

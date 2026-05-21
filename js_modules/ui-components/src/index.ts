@@ -1,5 +1,6 @@
 export * from './components/Alert';
 export * from './components/BaseTag';
+export * from './components/Breadcrumbs';
 export * from './components/Box';
 export * from './components/Button';
 export * from './components/ButtonGroup';
