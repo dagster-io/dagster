@@ -20,6 +20,7 @@ from automation.dagster_docs.docstring_rules import (
     create_rst_syntax_validator,
     create_section_header_validator,
     create_sphinx_filter_validator,
+    create_yaml_syntax_validator,
 )
 from automation.dagster_docs.docstring_rules.section_header_rule import SECTION_HEADER_PATTERN
 from automation.dagster_docs.public_symbol_utils import get_public_methods_from_class
@@ -161,6 +162,7 @@ def validate_docstring_text(docstring: str, symbol_path: str = "unknown") -> Val
     validators: list[ValidationFunction] = [
         create_section_header_validator(),
         create_python_ast_validator(),
+        create_yaml_syntax_validator(),
         create_rst_syntax_validator(),
         create_sphinx_filter_validator(),
     ]
