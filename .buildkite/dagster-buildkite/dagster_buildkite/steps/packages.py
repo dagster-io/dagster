@@ -1066,12 +1066,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                         docker_memory="4Gi",
                         docker_memory_limit="6Gi",
                     ),
-                    # Quarantined: recurring `KeyError: 'airbyte-webapp'` from
-                    # an IPAM race in `buildkite_hostnames_cm` on the EKS
-                    # runner. The localhost fallback fix in #24675 broke every
-                    # other `docker_compose_cm` consumer (build 151863), so it
-                    # was reverted; needs a different fix.
-                    soft_fail=True,
                 ),
             ],
         ),
