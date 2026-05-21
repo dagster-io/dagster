@@ -54,7 +54,7 @@ event_log_storage:
           env: DAGSTER_PG_URL
     namespace: my-company
     # Optional:
-    # namespace_template: "{namespace}/{tag:tenant}"
+    # namespace_template: "{namespace}"  # {tag:KEY} is not available in Mechanism A
     # timeout: 2.0
 ```
 
