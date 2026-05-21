@@ -4,7 +4,7 @@ description: Monitoring external Kafka and streaming infrastructure in Dagster w
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Chart.png
 ---
 
 In this example, we'll explore how to observe external streaming processes (like Kafka or Azure Event Hub) in Dagster. When you have existing streaming infrastructure managed outside of Dagster, you can still incorporate it into your data lineage, monitor its health, and trigger downstream processing based on stream freshness—all without migrating the stream itself into Dagster.
