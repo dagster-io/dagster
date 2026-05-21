@@ -46,6 +46,8 @@ _DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST = "dagster_dbt_tests/core/test_resource.py"
 _DAGSTER_DBT_CORE_MAIN_ASSET_CHECKS_TEST = "dagster_dbt_tests/core/test_asset_checks.py"
 _DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
 
+_GRAPHQL_GRPC_RESOURCES = ResourceRequests(cpu="2000m", memory="4Gi")
+
 
 def _infer_package_type(directory: str | Path) -> str:
     directory = Path(directory)
@@ -857,17 +859,48 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/dagster-graphql"),
             pytest_extra_cmds=dagster_graphql_extra_cmds,
+            # *_instance_*_grpc_env and *_instance_multi_location factors all
+            # spin up GrpcServerProcess subprocesses via
+            # graphql_context_test_suite (STRICT_GRPC_SERVER_PROCESS_WAIT=1).
+            # Same subprocess-heartbeat CPU-starvation profile as
+            # daemon_tests; bump matches.
             pytest_tox_factors=[
                 ToxFactor("not_graphql_context_test_suite", splits=2),
-                ToxFactor("sqlite_instance_multi_location"),
-                ToxFactor("sqlite_instance_managed_grpc_env", splits=2),
-                ToxFactor("sqlite_instance_deployed_grpc_env", splits=2),
-                ToxFactor("sqlite_instance_code_server_cli_grpc_env", splits=2),
+                ToxFactor(
+                    "sqlite_instance_multi_location",
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "sqlite_instance_managed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "sqlite_instance_deployed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "sqlite_instance_code_server_cli_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
                 ToxFactor("graphql_python_client"),
                 ToxFactor("postgres-graphql_context_variants"),
-                ToxFactor("postgres-instance_multi_location"),
-                ToxFactor("postgres-instance_managed_grpc_env", splits=2),
-                ToxFactor("postgres-instance_deployed_grpc_env", splits=2),
+                ToxFactor(
+                    "postgres-instance_multi_location",
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "postgres-instance_managed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "postgres-instance_deployed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
                 ToxFactor("gql_v3"),
                 ToxFactor("gql_v3_5"),
             ],
@@ -903,7 +936,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 )
             ),
             timeout_in_minutes=30,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/dagster-test"),
@@ -913,7 +945,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dbt"),
