@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Text} from '@blueprintjs/core';
 import {Box, Code, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -38,12 +36,12 @@ const OpLink = (props: OpLinkInfo) => (
 
 export const OpEdges = (props: {title: string; items: OpLinkInfo[]}) =>
   props.items && props.items.length ? (
-    <Text>
+    <div>
       {props.title}
       {props.items.map((i, idx) => (
         <OpLink key={idx} {...i} />
       ))}
-    </Text>
+    </div>
   ) : null;
 
 export const Invocation = (props: {invocation: SidebarOpInvocationInfo; onClick: () => void}) => {
