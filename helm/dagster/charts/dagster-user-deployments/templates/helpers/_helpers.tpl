@@ -190,6 +190,15 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     run_k8s_config:
       pod_spec_config:
         automount_service_account_token: true
+        {{- if .nodeSelector }}
+        node_selector: {{- .nodeSelector | toYaml | nindent 10 }}
+        {{- end }}
+        {{- if .tolerations }}
+        tolerations: {{- .tolerations | toYaml | nindent 10 }}
+        {{- end }}
+        {{- if .podSecurityContext }}
+        security_context: {{- .podSecurityContext | toYaml | nindent 10 }}
+        {{- end }}
         {{- if .sidecarContainers }}
         containers: {{- toYaml .sidecarContainers | nindent 10 }}
         {{- end }}
