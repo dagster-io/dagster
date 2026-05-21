@@ -155,6 +155,11 @@
     "permanent": true
   },
   {
+    "source": "/dagster-plus/deployment/hybrid/multiple-agents",
+    "destination": "/deployment/dagster-plus/hybrid/multiple",
+    "permanent": true
+  },
+  {
     "source": "/dagster-plus/account",
     "destination": "/deployment/dagster-plus/management/tokens",
     "permanent": true
