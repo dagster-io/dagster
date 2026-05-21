@@ -84,7 +84,6 @@ def ai_review_summarize(diff_range: str, output_format: str, confidence_threshol
         else:
             # Human-readable output
             click.echo("\n📋 Change Summary")
-            click.echo(f"Category: {summary.change_category.value}")
             click.echo(
                 f"Scope: {summary.files_changed} files, +{summary.additions}/-{summary.deletions} lines"
             )
@@ -119,9 +118,6 @@ def ai_review_summarize(diff_range: str, output_format: str, confidence_threshol
                         click.echo(f"  {line}")
                 if len(summary.key_implementation_details.split("\n")) > 8:
                     click.echo("  ... (truncated)")
-
-            if summary.needs_detailed_review:
-                click.echo("\n⚠️  Recommendation: Large change - consider full diff review")
 
     except ValueError as e:
         click.echo(f"❌ Error analyzing diff: {e}", err=True)
