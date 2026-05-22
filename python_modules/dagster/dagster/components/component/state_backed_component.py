@@ -1,4 +1,6 @@
 import asyncio
+import concurrent.futures
+import contextvars
 import inspect
 import shutil
 import tempfile
@@ -217,7 +219,24 @@ class StateBackedComponent(Component):
                 # automatically refresh in local dev unless the user opts out
                 (using_dagster_dev() and self.defs_state_config.refresh_if_dev)
             ):
-                version = asyncio.run(self.refresh_state(context.project_root))
+                try:
+                    running_loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    running_loop = None
+
+                if running_loop is not None:
+                    # Called from within a running event loop (e.g. `dg utils
+                    # refresh-defs-state`). asyncio.run() cannot be used here, so
+                    # delegate to a worker thread that spins up its own event loop.
+                    # copy_context() propagates ContextVars (e.g. DefsStateStorage)
+                    # to the worker, which ThreadPoolExecutor does not do on Python <3.12.
+                    ctx = contextvars.copy_context()
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                        version = pool.submit(
+                            ctx.run, asyncio.run, self.refresh_state(context.project_root)
+                        ).result()
+                else:
+                    version = asyncio.run(self.refresh_state(context.project_root))
                 defs_load_context.add_defs_state_info(key, version)
 
         with DefinitionsLoadContext.get().state_path(
