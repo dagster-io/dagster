@@ -1220,8 +1220,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 "BUILDKITE_SECRETS_BUCKET",
             ],
             pytest_tox_factors=[
-                ToxFactor("default"),
-                ToxFactor("old_kubernetes"),
+                ToxFactor("kubernetes_12"),
+                ToxFactor("kubernetes_35"),
+                ToxFactor("kubernetes_36"),
             ],
             pytest_extra_cmds=k8s_extra_cmds,
         ),
