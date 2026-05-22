@@ -1,23 +1,33 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-postgres"
-version = "1!0+dev"
+version = "0.29.6"
 description = "A Dagster integration for postgres"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.6",
     "psycopg2-binary",
 ]
 
 [project.optional-dependencies]
-azure = ["azure-identity>=1.12.0"]
-gcp = ["google-auth>=2.0.0"]
-aws = ["boto3>=1.26.0"]
+azure = [
+    "azure-identity>=1.12.0",
+]
+gcp = [
+    "google-auth>=2.0.0",
+]
+aws = [
+    "boto3>=1.26.0",
+]
 wif = [
     "azure-identity>=1.12.0",
     "google-auth>=2.0.0",
@@ -38,8 +48,18 @@ test-sqlalchemy-1-3 = [
     "sqlalchemy<1.4",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-test = { path = "../../dagster-test", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../../dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true

@@ -1,16 +1,20 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster_polytomic"
-version = "1!0+dev"
+version = "0.29.6"
 description = "Package for integrating Polytomic with Dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.6",
     "polytomic>=1.11.3",
 ]
 
@@ -31,14 +35,42 @@ test = [
     "dagster-graphql",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
-dagster-managed-elements = { path = "../dagster-managed-elements", editable = true }
-create-dagster = { path = "../create-dagster", editable = true }
-dagster-dg-cli = { path = "../dagster-dg-cli", editable = true }
-dagster-dg-core = { path = "../dagster-dg-core", editable = true }
-dagster-cloud-cli = { path = "../dagster-cloud-cli", editable = true }
-dagster-rest-resources = { path = "../dagster-rest-resources", editable = true }
-dagster-graphql = { path = "../../dagster-graphql", editable = true }
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-managed-elements]
+path = "../dagster-managed-elements"
+editable = true
+
+[tool.uv.sources.create-dagster]
+path = "../create-dagster"
+editable = true
+
+[tool.uv.sources.dagster-dg-cli]
+path = "../dagster-dg-cli"
+editable = true
+
+[tool.uv.sources.dagster-dg-core]
+path = "../dagster-dg-core"
+editable = true
+
+[tool.uv.sources.dagster-cloud-cli]
+path = "../dagster-cloud-cli"
+editable = true
+
+[tool.uv.sources.dagster-rest-resources]
+path = "../dagster-rest-resources"
+editable = true
+
+[tool.uv.sources.dagster-graphql]
+path = "../../dagster-graphql"
+editable = true

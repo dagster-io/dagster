@@ -1,37 +1,34 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-airflow"
-version = "1!0+dev"
+version = "1.13.6"
 description = "Airflow plugin for Dagster"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.6",
     "lazy_object_proxy",
     "setuptools<71.0.0",
-    # pendulum 2.x sdist imports the removed-in-py3.12 stdlib `distutils`
-    # and has no wheels for modern Python. Require 3.x on py3.12+ so
-    # installs succeed; the test-airflow2 group (which needs pendulum<3
-    # for airflow<2.8) is marker-scoped to py<3.12 anyway.
     "pendulum>=3; python_version>='3.12'",
     "pendulum; python_version<'3.12'",
 ]
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster"
-# airflow will embed a link to this in the providers page UI
 "project-url/documentation" = "https://docs.dagster.io"
 
-# airflow 1.0/2.0 plugin format
 [project.entry-points."airflow.plugins"]
 dagster_airflow = "dagster_airflow.__init__:DagsterAirflowPlugin"
 
-# airflow 2.0 provider format
-[project.entry-points."apache_airflow_provider"]
+[project.entry-points.apache_airflow_provider]
 provider_info = "dagster_airflow.__init__:get_provider_info"
 
 [project.optional-dependencies]
@@ -50,15 +47,11 @@ test = [
     "dagster-pandas",
     "dagster-gcp",
     "dagster-postgres",
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+    "connexion<3.0.0",
 ]
-# Scoped to python<'3.12' for the same reason as test-airflow1: pendulum
-# 2.x (required by airflow<2.8) imports the removed-in-py3.12 stdlib
-# `distutils` at build time. The matching tox env factor only runs on
-# py3.10/3.11; on py3.12+ the group is a no-op.
 test-airflow2 = [
-    "apache-airflow>=2.0.0,<2.8; python_version<'3.12'",  # 2.8+ airflow breaks a bunch of tests
-    "pendulum<3.0.0; python_version<'3.12'",  # sub 2.8 blows up on pendulum 3
+    "apache-airflow>=2.0.0,<2.8; python_version<'3.12'",
+    "pendulum<3.0.0; python_version<'3.12'",
     "boto3>=1.26.7; python_version<'3.12'",
     "flask-session<0.6.0; python_version<'3.12'",
     "kubernetes>=10.0.1; python_version<'3.12'",
@@ -66,10 +59,6 @@ test-airflow2 = [
     "apache-airflow-providers-apache-spark; python_version<'3.12'",
     "apache-airflow-providers-http<4.1.1; python_version<'3.12'",
 ]
-# Scoped to python<'3.12' because apache-airflow 1.x depends on the
-# stdlib `imp` module which was removed in Python 3.12. Functions as a
-# no-op on py3.12+ — the matching tox env factor is expected to run on
-# py3.10/3.11 only.
 test-airflow1 = [
     "apache-airflow>=1.0.0,<2.0.0; python_version<'3.12'",
     "boto3>=1.26.7; python_version<'3.12'",
@@ -82,45 +71,48 @@ test-airflow1 = [
 
 [tool.uv]
 conflicts = [
-    [{group = "test-airflow1"}, {group = "test-airflow2"}],
+    [
+        { group = "test-airflow1" },
+        { group = "test-airflow2" },
+    ],
 ]
-# Explicitly enumerate the Python environments uv should resolve for so
-# that pendulum can pin to 2.x on py<3.12 (where airflow<2.8 + pendulum<3
-# apply) and to 3.x on py>=3.12 (where pendulum 2.x can't even build —
-# it imports the removed-in-py3.12 stdlib `distutils`). Without this
-# split, uv's universal lock picks pendulum 2.1.2 to satisfy both forks
-# simultaneously, and install fails on py3.12 when the sdist tries to
-# build.
 environments = [
     "python_version >= '3.10' and python_version < '3.12'",
     "python_version >= '3.12' and python_version < '3.15'",
 ]
+dependency-metadata = [
+    { name = "apache-airflow", version = "1.10.15", requires-dist = [] },
+    { name = "flask-appbuilder", version = "1.13.1", requires-dist = [] },
+]
 
-# uv runs sdist builds under the host Python, not under each target version
-# in our requires-python range. apache-airflow 1.x sdists (and its
-# Flask-AppBuilder 1.x dep) import the stdlib `imp` module which was
-# removed in Python 3.12, AND Flask-AppBuilder 1.x has a malformed
-# install_requires that modern setuptools rejects. Static metadata
-# overrides below let uv skip the build entirely for these packages —
-# pinning the exact versions we want for the test-airflow1 fork and
-# declaring their minimal install dependencies (sufficient to satisfy
-# co-resolution; the runtime install will fetch the real wheels/sdists).
-[[tool.uv.dependency-metadata]]
-name = "apache-airflow"
-version = "1.10.15"
-requires-dist = []
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
 
-[[tool.uv.dependency-metadata]]
-name = "flask-appbuilder"
-version = "1.13.1"
-requires-dist = []
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
-dagster-test = { path = "../../dagster-test", editable = true }
-dagster-aws = { path = "../dagster-aws", editable = true }
-dagster-pandas = { path = "../dagster-pandas", editable = true }
-dagster-gcp = { path = "../dagster-gcp", editable = true }
-dagster-postgres = { path = "../dagster-postgres", editable = true }
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../../dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-aws]
+path = "../dagster-aws"
+editable = true
+
+[tool.uv.sources.dagster-pandas]
+path = "../dagster-pandas"
+editable = true
+
+[tool.uv.sources.dagster-gcp]
+path = "../dagster-gcp"
+editable = true
+
+[tool.uv.sources.dagster-postgres]
+path = "../dagster-postgres"
+editable = true

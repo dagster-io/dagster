@@ -1,17 +1,21 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-ge"
-version = "1!0+dev"
+version = "0.29.6"
 description = "Package for GE-specific Dagster framework op and resource components."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "dagster==1!0+dev",
-    "dagster-pandas==1!0+dev",
+    "dagster==1.13.6",
+    "dagster-pandas==0.29.6",
     "pandas<3.0.0",
     "great_expectations>=0.17.15,<1.0.0",
 ]
@@ -32,10 +36,26 @@ test = [
     "great-expectations>=0.18.22",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
-dagster-pandas = { path = "../dagster-pandas", editable = true }
-dagster-spark = { path = "../dagster-spark", editable = true }
-dagster-pyspark = { path = "../dagster-pyspark", editable = true }
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-pandas]
+path = "../dagster-pandas"
+editable = true
+
+[tool.uv.sources.dagster-spark]
+path = "../dagster-spark"
+editable = true
+
+[tool.uv.sources.dagster-pyspark]
+path = "../dagster-pyspark"
+editable = true
