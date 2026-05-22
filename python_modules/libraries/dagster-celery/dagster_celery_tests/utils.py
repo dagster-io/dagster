@@ -3,6 +3,7 @@ import signal
 import subprocess
 import tempfile
 import threading
+import time
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any
@@ -14,6 +15,7 @@ from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
+from dagster_celery.app import app as celery_app
 
 BUILDKITE = os.getenv("BUILDKITE")
 
@@ -110,11 +112,33 @@ def start_celery_worker(queue: str | None = None) -> Iterator[None]:
     )
 
     try:
+        _wait_for_worker_ready(queue)
         yield
     finally:
         os.kill(process.pid, signal.SIGINT)
         process.wait()
         subprocess.check_output(["dagster-celery", "worker", "terminate"])
+
+
+def _wait_for_worker_ready(queue: str | None, timeout: float = 60.0) -> None:
+    # `subprocess.Popen` returns as soon as the worker process is spawned, but
+    # the worker needs to connect to the broker and register before it will
+    # dequeue any tasks. Tests that `launch_run` before the worker is ready
+    # then race a short event-polling deadline against ~10s of worker startup.
+    expected_queue = queue if queue is not None else "dagster"
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            active_queues = celery_app.control.inspect(timeout=1.0).active_queues() or {}
+        except Exception:
+            active_queues = {}
+        for queues in active_queues.values():
+            if any(q.get("name") == expected_queue for q in queues):
+                return
+        time.sleep(0.25)
+    raise TimeoutError(
+        f"Celery worker for queue {expected_queue!r} did not become ready within {timeout:.0f}s"
+    )
 
 
 def events_of_type(result: ExecutionResult, event_type: str) -> Sequence[DagsterEvent]:
