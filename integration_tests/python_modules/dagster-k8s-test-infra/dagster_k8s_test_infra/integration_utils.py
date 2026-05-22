@@ -3,6 +3,7 @@ import json
 import os
 import random
 import subprocess
+import time
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -100,6 +101,24 @@ query($runId: ID!) {
 }
 """
 
+LOCATION_STATUSES_QUERY = """
+query {
+  locationStatusesOrError {
+    __typename
+    ... on WorkspaceLocationStatusEntries {
+      entries {
+        name
+        loadStatus
+      }
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
 TERMINATE_RUN_MUTATION = """
 mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
   terminateRun(runId: $runId, terminatePolicy:$terminatePolicy){
@@ -138,6 +157,41 @@ def _execute_query_over_graphql(webserver_url, query, variables):
             {"variables": variables} if variables else {},
         ),
     ).json()
+
+
+def wait_for_workspace_loaded(
+    webserver_url: str,
+    expected_location_names: Sequence[str],
+    timeout: int = 180,
+) -> None:
+    # Pod-readiness of a user-code-deployment doesn't imply the webserver has
+    # finished polling its gRPC server and registered it as a code location.
+    # The first test in a fresh suite races this gap and fails with
+    # PipelineNotFoundError. Block here until every expected location reports
+    # LOADED so callers can launch runs immediately.
+    expected = set(expected_location_names)
+    start = time.time()
+    last_status: Mapping[str, str] = {}
+    while time.time() - start < timeout:
+        try:
+            result = _execute_query_over_graphql(
+                webserver_url, LOCATION_STATUSES_QUERY, variables=None
+            )
+            payload = result.get("data", {}).get("locationStatusesOrError", {})
+            if payload.get("__typename") == "WorkspaceLocationStatusEntries":
+                last_status = {e["name"]: e["loadStatus"] for e in payload["entries"]}
+                if expected.issubset(last_status) and all(
+                    last_status[name] == "LOADED" for name in expected
+                ):
+                    print(f"Code locations loaded: {sorted(expected)}")
+                    return
+        except Exception as e:
+            print(f"Polling workspace load status failed (retrying): {e}")
+        time.sleep(1)
+    raise Exception(
+        f"Timed out after {timeout}s waiting for code locations {sorted(expected)} to load. "
+        f"Last status: {last_status}"
+    )
 
 
 def launch_run_over_graphql(

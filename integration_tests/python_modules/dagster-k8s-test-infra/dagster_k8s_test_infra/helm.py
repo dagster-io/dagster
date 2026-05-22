@@ -23,6 +23,7 @@ from dagster_k8s_test_infra.integration_utils import (
     check_output,
     get_test_namespace,
     image_pull_policy,
+    wait_for_workspace_loaded,
 )
 
 ensure_dagster_aws_tests_import()
@@ -1108,6 +1109,12 @@ def _port_forward_dagster_webserver(namespace):
                 pass
 
             time.sleep(1)
+
+        wait_for_workspace_loaded(
+            f"http://{webserver_url_url}",
+            expected_location_names=["user-code-deployment-1"],
+        )
+
         yield f"http://{webserver_url_url}"
 
     finally:
