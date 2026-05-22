@@ -20,6 +20,12 @@ SHARED_ECS_CONFIG = {
                     is_required=False,
                     description="The ephemeral storage, in GiB, to use for the launched task.",
                 ),
+                "replica_count": Field(
+                    int,
+                    default_value=1,
+                    is_required=False,
+                    description="The number of code server instances to launch.",
+                ),
             }
         )
     ),
