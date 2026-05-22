@@ -46,7 +46,6 @@ def build_backcompat_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         ctx,
         pytest_extra_cmds=backcompat_extra_cmds,
         pytest_tox_factors=tox_factors,
-        queue=BuildkiteQueue.MEDIUM,
     )
 
 
@@ -137,7 +136,6 @@ def build_daemon_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigur
         ctx,
         pytest_tox_factors,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
-        queue=BuildkiteQueue.MEDIUM,
     )
 
 
