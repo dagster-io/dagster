@@ -1063,7 +1063,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 "AIRLIFT_MWAA_TEST_PROFILE",
                 "AIRLIFT_MWAA_TEST_REGION",
             ],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airbyte"),
@@ -1369,8 +1368,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airlift/perf-harness"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
-            # Long-standing Airflow e2e timing flake (`test_dagster_materializes[migrate]`).
-            queue=BuildkiteQueue.MEDIUM,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
