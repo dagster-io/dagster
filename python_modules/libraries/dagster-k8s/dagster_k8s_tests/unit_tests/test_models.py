@@ -165,9 +165,7 @@ def test_snake_case_dict_type_pep585_format():
             "name": "my_volume",
             "csi": {
                 "driver": "my_driver",
-                "volumeAttributes": {
-                    "fooKey": "fooVal"
-                },
+                "volumeAttributes": {"fooKey": "fooVal"},
             },
         }
 
