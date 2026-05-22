@@ -1101,7 +1101,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-dg-cli"),
             pytest_tox_factors=[
                 ToxFactor("general"),
-                ToxFactor("slow", splits=4, queue=BuildkiteQueue.MEDIUM),
+                ToxFactor("slow", splits=4),
                 ToxFactor("serial"),
                 ToxFactor("plus"),
             ],
@@ -1333,7 +1333,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagstermill"),
             pytest_tox_factors=[
-                ToxFactor("papermill2", splits=2, queue=BuildkiteQueue.MEDIUM),
+                ToxFactor("papermill2", splits=2),
             ],
         ),
         PackageSpec(
