@@ -13,6 +13,8 @@ airbyte_instance = airbyte_resource.configured(
     {
         "host": os.getenv("AIRBYTE_HOSTNAME", "localhost"),
         "port": os.getenv("AIRBYTE_PORT", "80"),
+        "request_timeout": 60,
+        "request_max_retries": 5,
     }
 )
 
