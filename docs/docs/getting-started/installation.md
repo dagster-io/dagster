@@ -77,7 +77,7 @@ If you prefer to set up Dagster manually or are installing it into an existing p
 
 To verify that Dagster is installed correctly, run the commands below. You should see the version number of `dg` in your environment.
 
-If you scaffolded your project with `uvx create-dagster`, a virtual environment was created automatically by `uv sync` and you only need to activate it. If you installed `create-dagster` with `pip`, `brew`, or `curl` (or installed Dagster manually with `pip`), you must create the virtual environment yourself before activating it.
+If you scaffolded your project with `uvx create-dagster`, a virtual environment was created and dependencies were installed automatically by `uv sync`, so you only need to activate it. If you installed `create-dagster` with `pip`, `brew`, or `curl`, you must create the virtual environment yourself and install the scaffolded project into it before `dg` becomes available.
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -99,27 +99,37 @@ If you scaffolded your project with `uvx create-dagster`, a virtual environment 
       </TabItem>
     </Tabs>
   </TabItem>
-  <TabItem value="pip" label="pip">
+  <TabItem value="pip" label="pip / brew / curl">
     <Tabs groupId="os">
       <TabItem value="mac" label="Mac">
         <CliInvocationExample contents="cd my-project" />
         <CliInvocationExample contents="python -m venv .venv" />
         <CliInvocationExample contents="source .venv/bin/activate" />
+        <CliInvocationExample contents="pip install --editable . --group dev" />
         <CliInvocationExample contents="dg --version" />
       </TabItem>
       <TabItem value="windows" label="Windows">
         <CliInvocationExample contents="cd my-project" />
         <CliInvocationExample contents="python -m venv .venv" />
         <CliInvocationExample contents=".venv\Scripts\activate" />
+        <CliInvocationExample contents="pip install --editable . --group dev" />
         <CliInvocationExample contents="dg --version" />
       </TabItem>
       <TabItem value="linux" label="Linux">
         <CliInvocationExample contents="cd my-project" />
         <CliInvocationExample contents="python -m venv .venv" />
         <CliInvocationExample contents="source .venv/bin/activate" />
+        <CliInvocationExample contents="pip install --editable . --group dev" />
         <CliInvocationExample contents="dg --version" />
       </TabItem>
     </Tabs>
+
+:::note
+
+The `--group` argument requires pip 25.1 or higher. On older pip, upgrade with `pip install --upgrade pip`, or omit `--group dev` and install the CLI separately with `pip install dagster-dg-cli`.
+
+:::
+
   </TabItem>
 </Tabs>
 
