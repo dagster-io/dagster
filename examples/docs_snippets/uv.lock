@@ -8,6 +8,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
+[options]
+exclude-newer = "2026-05-22T00:00:00Z"
+
 [[package]]
 name = "agate"
 version = "1.9.1"
