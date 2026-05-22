@@ -46,6 +46,7 @@ export * from './components/Suggest';
 export * from './components/Table';
 export * from './components/Tabs';
 export * from './components/Tag';
+export * from './components/TagInput';
 export * from './components/TagSelector';
 export * from './components/Text';
 export * from './components/TextArea';

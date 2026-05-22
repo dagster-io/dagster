@@ -1,15 +1,19 @@
-// eslint-disable-next-line no-restricted-imports
-import {TagInput} from '@blueprintjs/core';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import clsx from 'clsx';
 import * as React from 'react';
 
 import {Box} from './Box';
-import {Menu, MenuItem} from './Menu';
+import {Icon} from './Icon';
+import {MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
+import {Container, Inner, Row} from './VirtualizedTable';
 import styles from './css/TokenizingField.module.css';
 
 const MAX_SUGGESTIONS = 100;
+const MENU_ITEM_HEIGHT = 32;
+
+const defaultRenderSuggestion = (suggestion: Suggestion) => suggestion.text;
 
 export interface SuggestionProvider {
   token?: string;
@@ -137,6 +141,8 @@ export const TokenizingField = ({
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>('');
+  const [focused, setFocused] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const values = React.useMemo(() => [...externalValues], [externalValues]);
   const typedValue = tokenizedValueFromString(typed, suggestionProviders);
@@ -225,6 +231,7 @@ export const TokenizingField = ({
 
   const _onTextChange = (text: string) => {
     setTyped(text);
+    setActive(null);
     if (onTextChange) {
       onTextChange(text);
     }
@@ -308,6 +315,15 @@ export const TokenizingField = ({
       e.stopPropagation();
       return;
     }
+
+    // Backspace removes the last tag when the input is empty
+    if (e.key === 'Backspace' && typed === '' && values.length > 0) {
+      const next = [...values];
+      next.pop();
+      onChange(next);
+      return;
+    }
+
     // Enter and Return confirm the currently selected suggestion or
     // confirm the freeform text you've typed if no suggestions are shown.
     if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
@@ -359,17 +375,34 @@ export const TokenizingField = ({
     }
   };
 
-  const menuRef = React.createRef<HTMLDivElement>();
-  React.useEffect(() => {
-    if (menuRef.current && active) {
-      const el = menuRef.current.querySelector(`[data-idx='${active.idx}']`);
-      if (el && el instanceof HTMLElement && 'scrollIntoView' in el) {
-        el.scrollIntoView({block: 'nearest'});
-      }
-    }
-  }, [menuRef, active]);
+  const renderSuggestion = suggestionRenderer || defaultRenderSuggestion;
 
-  const renderSuggestion = suggestionRenderer || ((suggestion) => suggestion.text);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.currentTarget.value;
+    _onTextChange(text);
+
+    if (onChangeBeforeCommit && text !== '' && !text.endsWith(':')) {
+      const tokenized = tokenizedValueFromString(text, filteredSuggestionProviders);
+      onChange([...values, tokenized]);
+    }
+  };
+
+  const handleFocus = React.useCallback(() => {
+    setFocused(true);
+    setOpen(true);
+    onFocus?.();
+  }, [onFocus]);
+
+  const handleBlur = () => {
+    setFocused(false);
+    if (addOnBlur) {
+      onConfirmText(typed);
+    }
+    setOpen(false);
+    onBlur?.();
+  };
+
+  const onClearActive = React.useCallback(() => setActive(null), []);
 
   return (
     <Popover
@@ -377,91 +410,127 @@ export const TokenizingField = ({
       position="bottom-left"
       content={
         suggestions.length > 0 ? (
-          <div style={{maxHeight: 235, overflowY: 'scroll'}} ref={menuRef}>
-            <Menu className={styles.styledMenu}>
-              {suggestions.map((suggestion, idx) => (
-                <MenuItem
-                  data-idx={idx}
-                  key={suggestion.text}
-                  text={renderSuggestion(suggestion)}
-                  active={active?.idx === idx}
-                  onMouseDown={(e: React.MouseEvent<any>) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onConfirmSuggestion(suggestion);
-                    setActive(null);
-                  }}
-                />
-              ))}
-            </Menu>
-          </div>
+          <SuggestionList
+            suggestions={suggestions}
+            activeIdx={active?.idx ?? -1}
+            onConfirmSuggestion={onConfirmSuggestion}
+            onClearActive={onClearActive}
+            renderSuggestion={renderSuggestion}
+          />
         ) : (
           <div />
         )
       }
     >
-      <TagInput
-        className={clsx(styles.styledTagInput, fullwidth && styles.fullWidth, className)}
-        values={values.map((v) => (v.token ? `${v.token}:${v.value}` : v.value))}
-        inputValue={typed}
-        onRemove={(_, idx) => {
-          const next = [...values];
-          next.splice(idx, 1);
-          onChange(next);
-        }}
-        onInputChange={(e) => {
-          _onTextChange(e.currentTarget.value);
-
-          if (onChangeBeforeCommit) {
-            const tokenized = tokenizedValueFromString(
-              e.currentTarget.value,
-              filteredSuggestionProviders,
+      <div
+        className={clsx(
+          styles.styledTagInput,
+          fullwidth && styles.fullWidth,
+          className,
+          focused && styles.active,
+        )}
+        onClick={() => inputRef.current?.focus()}
+      >
+        <div className={styles.tagInputValues}>
+          {values.map((v, idx) => {
+            const text = v.token ? `${v.token}:${v.value}` : v.value;
+            return (
+              <span key={`${text}-${idx}`} className={clsx(styles.tag, styles.tagDefault)}>
+                <span className={styles.tagText}>{text}</span>
+                <button
+                  className={styles.tagRemove}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const next = [...values];
+                    next.splice(idx, 1);
+                    onChange(next);
+                  }}
+                  tabIndex={-1}
+                  type="button"
+                  aria-label="Remove"
+                >
+                  <Icon name="close" size={12} />
+                </button>
+              </span>
             );
-            onChange([...values, tokenized]);
-          }
-        }}
-        inputProps={{
-          onFocus: () => {
-            setOpen(true);
-            if (onFocus) {
-              onFocus();
-            }
-          },
-          onBlur: () => {
-            // Emulate behavior of addOnBlur for TagInput
-            // When a user clicks outside of the input, finish the current token
-            if (addOnBlur) {
-              onConfirmText(typed);
-            }
-            setOpen(false);
-            if (onBlur) {
-              onBlur();
-            }
-          },
-        }}
-        onAdd={() => false}
-        onKeyDown={onKeyDown}
-        tagProps={{minimal: true}}
-        placeholder={placeholder || 'Filter…'}
-        rightElement={
-          loading && open ? (
-            <Box style={{alignSelf: 'center'}} margin={{right: 4}}>
-              <Spinner purpose="body-text" />
-            </Box>
-          ) : undefined
-        }
-      />
+          })}
+          <input
+            ref={inputRef}
+            className={clsx(styles.input, values.length === 0 && styles.inputFirst)}
+            value={typed}
+            onChange={handleInputChange}
+            onKeyDown={onKeyDown}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={values.length === 0 ? placeholder || 'Search\u2026' : undefined}
+          />
+        </div>
+        {loading && open ? (
+          <Box style={{alignSelf: 'center'}} margin={{right: 4}}>
+            <Spinner purpose="body-text" />
+          </Box>
+        ) : null}
+      </div>
     </Popover>
   );
 };
 
-export const StyledTagInput = ({
-  maxWidth,
-  className,
-  ...props
-}: {maxWidth?: string; className?: string} & React.ComponentProps<typeof TagInput>) => (
-  <TagInput
-    className={clsx(styles.styledTagInput, maxWidth === '100%' && styles.fullWidth, className)}
-    {...props}
-  />
-);
+interface SuggestionListProps {
+  suggestions: Suggestion[];
+  activeIdx: number;
+  onConfirmSuggestion: (suggestion: Suggestion) => void;
+  onClearActive: () => void;
+  renderSuggestion: (suggestion: Suggestion) => React.ReactNode;
+}
+
+const SuggestionList = ({
+  suggestions,
+  activeIdx,
+  onConfirmSuggestion,
+  onClearActive,
+  renderSuggestion,
+}: SuggestionListProps) => {
+  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: suggestions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => MENU_ITEM_HEIGHT,
+    overscan: 10,
+  });
+
+  React.useEffect(() => {
+    if (activeIdx >= 0) {
+      rowVirtualizer.scrollToIndex(activeIdx, {align: 'auto'});
+    }
+  }, [rowVirtualizer, activeIdx]);
+
+  return (
+    <Container ref={parentRef} className={styles.suggestionList}>
+      <Inner totalHeight={rowVirtualizer.getTotalSize()}>
+        {rowVirtualizer.getVirtualItems().map(({index, key, size, start}) => {
+          const suggestion = suggestions[index];
+          if (!suggestion) {
+            return null;
+          }
+          return (
+            <Row key={key} height={size} start={start}>
+              <MenuItem
+                text={renderSuggestion(suggestion)}
+                active={activeIdx === index}
+                onMouseDown={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
+                  if (e.button !== 0 || e.metaKey || e.ctrlKey) {
+                    return;
+                  }
+                  e.stopPropagation();
+                  onConfirmSuggestion(suggestion);
+                  onClearActive();
+                }}
+              />
+            </Row>
+          );
+        })}
+      </Inner>
+    </Container>
+  );
+};
