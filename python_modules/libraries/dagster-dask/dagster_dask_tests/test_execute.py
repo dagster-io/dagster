@@ -57,7 +57,15 @@ def test_composite_execute():
         with execute_job(
             reconstructable(dask_nested_graph_job),
             run_config={
-                "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
+                # Cap workers — with default n_workers=nproc, this deeply
+                # nested graph races for the SQLite event-log file lock.
+                "execution": {
+                    "config": {
+                        "cluster": {
+                            "local": {"timeout": 30, "n_workers": 2, "threads_per_worker": 1}
+                        }
+                    }
+                },
             },
             instance=instance,
         ) as result:
