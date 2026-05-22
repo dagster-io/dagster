@@ -17,6 +17,7 @@
 - Softened the `job_snapshot_id` mismatch invariant in execution plan persistence from a crash to a warning, preventing run launch failures when client and server compute slightly different snapshot IDs.
 - Pinned `antlr4-python3-runtime` to `<4.14` to prevent potential breakage from future ANTLR minor version bumps.
 - [ui] Fixed minor flex alignment issues for tags and metadata buttons on asset catalog detail pages.
+- [dagster-k8s] Added support for the PEP 585 `dict[str, str]` syntax used by the `kubernetes` client v36+ when snake-casing model dictionaries, fixing an `AttributeError: module 'kubernetes.client.models' has no attribute 'dict[str, str]'` raised on `kubernetes>=36`. (Thanks, [@vanika02](https://github.com/vanika02)!)
 
 ### Documentation
 
