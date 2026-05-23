@@ -44,6 +44,7 @@ from dagster._core.events import (
     ASSET_CHECK_EVENTS,
     ASSET_EVENTS,
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    PURGEABLE_EVENT_TYPES,
     DagsterEventType,
 )
 from dagster._core.events.log import EventLogEntry
@@ -707,6 +708,35 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_id.in_(asset_event_ids)
                 )
             )
+
+    def purge_events(self, before_timestamp: float) -> int:
+        # operates on the index shard; per-run sqlite backends only mirror run status events here,
+        # shared backends (postgres/mysql/consolidated sqlite) carry the full table
+        cutoff = datetime.fromtimestamp(before_timestamp, tz=timezone.utc)
+        purgeable_values = {e.value for e in PURGEABLE_EVENT_TYPES}
+        chunk_size = 1000
+        total_deleted = 0
+        while True:
+            with self.index_connection() as conn:
+                rows = conn.execute(
+                    db_select([SqlEventLogStorageTable.c.id])
+                    .where(
+                        db.and_(
+                            SqlEventLogStorageTable.c.timestamp < cutoff,
+                            SqlEventLogStorageTable.c.dagster_event_type.in_(purgeable_values),
+                        )
+                    )
+                    .limit(chunk_size)
+                ).fetchall()
+                if not rows:
+                    return total_deleted
+                ids = [row[0] for row in rows]
+                conn.execute(
+                    SqlEventLogStorageTable.delete().where(SqlEventLogStorageTable.c.id.in_(ids))
+                )
+                total_deleted += len(ids)
+                if len(ids) < chunk_size:
+                    return total_deleted
 
     @property
     def is_persistent(self) -> bool:
