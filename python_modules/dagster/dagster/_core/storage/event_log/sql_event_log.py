@@ -712,7 +712,7 @@ class SqlEventLogStorage(EventLogStorage):
     def purge_events(self, before_timestamp: float) -> int:
         # operates on the index shard; per-run sqlite backends only mirror run status events here,
         # shared backends (postgres/mysql/consolidated sqlite) carry the full table
-        cutoff = datetime.fromtimestamp(before_timestamp, tz=timezone.utc)
+        cutoff = datetime.fromtimestamp(before_timestamp, tz=timezone.utc).replace(tzinfo=None)
         purgeable_values = {e.value for e in PURGEABLE_EVENT_TYPES}
         chunk_size = 1000
         total_deleted = 0
