@@ -726,6 +726,7 @@ class SqlEventLogStorage(EventLogStorage):
                             SqlEventLogStorageTable.c.dagster_event_type.in_(purgeable_values),
                         )
                     )
+                    .order_by(SqlEventLogStorageTable.c.id)
                     .limit(chunk_size)
                 ).fetchall()
                 if not rows:
