@@ -147,6 +147,8 @@ retention:
       skipped: 7
       failure: 30
       success: -1
+  event_logs:
+    purge_after_days: 30
 
 sensors:
   use_threads: true
@@ -295,6 +297,8 @@ retention:
       skipped: 7
       failure: 30
       success: -1
+  event_logs:
+    purge_after_days: 30
 ```
 
 ### `sensors`
