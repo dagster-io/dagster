@@ -301,6 +301,8 @@ retention:
     purge_after_days: 30
 ```
 
+Note: `event_logs.purge_after_days` requires a consolidated event log storage (Postgres, MySQL, or `ConsolidatedSqliteEventLogStorage`). The default per-run SQLite storage keeps most event rows in per-run shard files that the retention daemon cannot reach; only rows on the shared index shard are purged.
+
 ### `sensors`
 
 Configures how sensors are evaluated.
