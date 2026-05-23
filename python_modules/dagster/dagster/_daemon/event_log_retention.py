@@ -36,6 +36,11 @@ class EventLogRetentionDaemon(IntervalDaemon):
             self._warned_run_sharded = True
         cutoff = (get_current_datetime() - datetime.timedelta(days=days)).timestamp()
         deleted = event_log_storage.purge_events(cutoff)
-        self._logger.info(
-            f"Purged {deleted} non-asset event log row(s) older than {days} day(s).",
-        )
+        if deleted:
+            self._logger.info(
+                f"Purged {deleted} non-asset event log row(s) older than {days} day(s).",
+            )
+        else:
+            self._logger.debug(
+                f"No non-asset event log rows older than {days} day(s) to purge.",
+            )
