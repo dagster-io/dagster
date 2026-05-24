@@ -582,6 +582,86 @@ def test_subclass_override_get_asset_spec_translator_metadata(dbt_path: Path) ->
     )
 
 
+def test_subclass_override_get_asset_spec_with_translation(dbt_path: Path) -> None:
+    """Regression test: translation key config must apply to deps when subclass overrides get_asset_spec.
+
+    Verifies fix for https://github.com/dagster-io/dagster/issues/33632.
+    """
+
+    @dataclass
+    class CustomDbtProjectComponent(DbtProjectComponent):
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
+        ) -> dg.AssetSpec:
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+            return base_spec.replace_attributes(tags={**base_spec.tags, "custom_tag": "true"})
+
+    defs = build_component_defs_for_test(
+        CustomDbtProjectComponent,
+        {
+            "project": str(dbt_path),
+            "translation": {"key": "some_prefix/{{ node.name }}"},
+        },
+    )
+
+    # All asset keys must carry the "some_prefix" prefix
+    all_keys = defs.resolve_asset_graph().get_all_asset_keys()
+    assert AssetKey(["some_prefix", "customers"]) in all_keys
+    assert AssetKey(["some_prefix", "stg_customers"]) in all_keys
+    # Untranslated keys must not appear
+    assert AssetKey("customers") not in all_keys
+    assert AssetKey("stg_customers") not in all_keys
+
+    # Deps of "customers" must reference translated upstream keys
+    customers_spec = defs.resolve_assets_def(AssetKey(["some_prefix", "customers"])).get_asset_spec(
+        AssetKey(["some_prefix", "customers"])
+    )
+
+    dep_keys = {dep.asset_key for dep in customers_spec.deps}
+    assert AssetKey(["some_prefix", "stg_customers"]) in dep_keys
+    assert AssetKey("stg_customers") not in dep_keys  # the bug: untranslated key in deps
+
+    # Custom tag from the subclass override must still be present
+    assert customers_spec.tags.get("custom_tag") == "true"
+
+
+def test_subclass_override_get_asset_spec_with_translation_preserves_source_dep_metadata() -> None:
+    """Regression test: translated subclass overrides must preserve source dep metadata."""
+    project = DbtProject(test_metadata_path)
+    project.preparer.prepare(project)
+
+    @dataclass
+    class CustomDbtProjectComponent(DbtProjectComponent):
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
+        ) -> dg.AssetSpec:
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+            return base_spec.replace_attributes(tags={**base_spec.tags, "custom_tag": "true"})
+
+    defs = build_component_defs_for_test(
+        CustomDbtProjectComponent,
+        {
+            "project": str(test_metadata_path),
+            "select": "stg_customers",
+            "translation": {"key": "some_prefix/{{ node.name }}"},
+            "translation_settings": {
+                "enable_source_metadata": True,
+            },
+        },
+    )
+
+    stg_customers_spec = defs.resolve_assets_def(
+        AssetKey(["some_prefix", "stg_customers"])
+    ).get_asset_spec(AssetKey(["some_prefix", "stg_customers"]))
+
+    assert stg_customers_spec.tags.get("custom_tag") == "true"
+    deps = list(stg_customers_spec.deps)
+    assert len(deps) == 1
+    assert deps[0].asset_key == AssetKey(["some_prefix", "raw_customers"])
+    assert deps[0].metadata["dagster/table_name"] == "local_jaffle_shop.main.raw_customers"
+
+
+
 def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
     with (
         instance_for_test(),
