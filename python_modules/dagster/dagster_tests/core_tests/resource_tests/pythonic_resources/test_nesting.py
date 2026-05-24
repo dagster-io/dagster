@@ -1151,3 +1151,94 @@ def test_nested_resources_with_default_set_in_configure_at_launch() -> None:
         }
     ).success
     assert completed["yes"]
+
+
+def test_resource_dependency_with_default_no_recursion() -> None:
+    """Regression test for https://github.com/dagster-io/dagster/issues/33650.
+
+    A ResourceDependency field with a default ConfigurableResource instance used to trigger
+    infinite recursion (RecursionError) when the resource was accessed in a sensor context
+    because the default instance acted as a data descriptor (inheriting __get__/__set__ from
+    TypecheckAllowPartialResourceInitParams) and getattr(obj, name) re-invoked the same
+    __get__ endlessly.
+    """
+
+    class InnerResource(dg.ConfigurableResource):
+        val: str = "hello"
+
+    class OuterResource(dg.ConfigurableResource):
+        inner: dg.ResourceDependency[InnerResource] = InnerResource()
+
+        def greet(self) -> str:
+            return self.inner.val
+
+    @dg.asset
+    def my_asset() -> None:
+        pass
+
+    my_job = dg.define_asset_job("my_job", selection=[my_asset])
+
+    # Pattern 1: required_resource_keys (old-style sensor)
+    @dg.sensor(name="test_sensor_33650", required_resource_keys={"outer"}, job=my_job)
+    def my_sensor(context: dg.SensorEvaluationContext):
+        result = context.resources.outer.greet()
+        assert result == "hello"
+        yield dg.SkipReason("done")
+
+    with dg.build_sensor_context(
+        resources={"outer": OuterResource()}, sensor_name="test_sensor_33650"
+    ) as ctx:
+        outer = ctx.resources.outer
+        assert outer.greet() == "hello"
+
+    # Pattern 2: default value is properly tracked in nested_resources
+    outer_default = OuterResource()
+    assert "inner" in outer_default._nested_resources  # type: ignore
+
+    # Pattern 3: explicit override still works
+    outer_explicit = OuterResource(inner=InnerResource(val="world"))
+    assert outer_explicit._nested_resources["inner"].val == "world"  # type: ignore
+
+    # Pattern 4: sensor body executes correctly end-to-end via evaluate_tick
+    with dg.build_sensor_context(
+        resources={"outer": OuterResource()}, sensor_name="test_sensor_33650"
+    ) as ctx:
+        result = my_sensor.evaluate_tick(ctx)
+        assert result.skip_message == "done"
+
+
+def test_resource_dependency_with_default_in_asset() -> None:
+    """Companion to test_resource_dependency_with_default_no_recursion for asset execution.
+
+    The same RecursionError also manifests in asset execution (the issue report was
+    incorrect in stating assets worked).  This verifies that assets with a
+    ResourceDependency-default resource now execute successfully.
+    """
+
+    class InnerResource(dg.ConfigurableResource):
+        val: str = "default"
+
+    class OuterResource(dg.ConfigurableResource):
+        inner: dg.ResourceDependency[InnerResource] = InnerResource()
+
+        def greet(self) -> str:
+            return self.inner.val
+
+    completed: dict[str, str] = {}
+
+    @dg.asset
+    def my_asset(outer: OuterResource) -> None:
+        completed["result"] = outer.greet()
+
+    result = dg.materialize([my_asset], resources={"outer": OuterResource()})
+    assert result.success
+    assert completed["result"] == "default"
+
+    # Override the default
+    completed.clear()
+    result = dg.materialize(
+        [my_asset], resources={"outer": OuterResource(inner=InnerResource(val="overridden"))}
+    )
+    assert result.success
+    assert completed["result"] == "overridden"
+
