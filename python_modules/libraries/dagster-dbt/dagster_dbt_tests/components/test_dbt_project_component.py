@@ -35,7 +35,9 @@ from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
     get_projects_from_dbt_component,
+    resolve_dbt_project,
 )
+from dagster_dbt.dbt_project_manager import DbtProjectArgsManager
 from dagster_dbt_tests.dbt_projects import test_metadata_path
 from dagster_dg_cli.cli import cli as dg_cli
 from dagster_shared import check
@@ -280,6 +282,55 @@ def test_exclude(dbt_path: Path) -> None:
 DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH = (
     Path(__file__).parent / "code_locations" / "dependency_on_dbt_project_location"
 )
+
+
+def test_resolve_dbt_project_normalizes_parent_traversal_path(tmp_path: Path) -> None:
+    """Regression for https://github.com/dagster-io/dagster/issues/33808.
+
+    A project layout where the dbt project is a sibling of the Dagster code location
+    must support `project: "{{ project_root }}/../dbt_project"` in defs.yaml. After
+    Jinja renders this to an absolute path containing `..` segments,
+    `ResolutionContext.resolve_source_relative_path` must collapse the `..` so
+    downstream `DbtProject` construction sees a canonical path. The fix lives in
+    that helper rather than in `resolve_dbt_project` so every component using
+    `resolve_source_relative_path` benefits.
+    """
+    from dagster_shared.yaml_utils.source_position import (
+        LineCol,
+        SourcePosition,
+        SourcePositionTree,
+    )
+
+    parent = tmp_path / "parent"
+    dagster_project = parent / "dagster_project"
+    dbt_project = parent / "dbt_project"
+    dagster_project.mkdir(parents=True)
+    dbt_project.mkdir()
+    yaml_file = dagster_project / "defs.yaml"
+    yaml_file.touch()
+
+    tree = SourcePositionTree(
+        position=SourcePosition(
+            filename=str(yaml_file),
+            start=LineCol(1, 0),
+            end=LineCol(1, 0),
+        ),
+        children={},
+    )
+    ctx = ResolutionContext.default().with_source_position_tree(tree)
+
+    # Mimic the Jinja-rendered output of `{{ project_root }}/../dbt_project`: an
+    # absolute string containing a `..` segment.
+    rendered = str(dagster_project / ".." / "dbt_project")
+    assert ".." in Path(rendered).parts
+
+    manager = resolve_dbt_project(ctx, rendered)
+
+    assert isinstance(manager, DbtProjectArgsManager)
+    project_dir = Path(manager.args.project_dir)
+    assert ".." not in project_dir.parts
+    assert project_dir.name == "dbt_project"
+    assert project_dir.parent.name == "parent"
 
 
 def test_dependency_on_dbt_project():
