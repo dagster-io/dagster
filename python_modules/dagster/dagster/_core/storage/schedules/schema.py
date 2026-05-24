@@ -56,7 +56,7 @@ JobTickTable = db.Table(
     db.Column("status", db.String(63)),
     db.Column("type", db.String(63)),
     db.Column("timestamp", db.types.TIMESTAMP),
-    db.Column("tick_body", db.Text),
+    db.Column("tick_body", MySQLCompatabilityTypes.LongText),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
