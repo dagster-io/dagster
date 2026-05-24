@@ -512,6 +512,13 @@ hello_world_asset = dagstermill.define_dagstermill_asset(
     name="hello_world_asset", notebook_path=nb_test_path("hello_world")
 )
 
+hello_world_html_asset = dagstermill.define_dagstermill_asset(
+    name="hello_world_html_asset",
+    notebook_path=nb_test_path("hello_world"),
+    output_notebook_format="html",
+    output_notebook_html_no_input=True,
+)
+
 
 hello_world_with_custom_tags_and_description_asset = dagstermill.define_dagstermill_asset(
     name="hello_world_custom_asset",
@@ -541,6 +548,13 @@ error_notebook_asset = dagstermill.define_dagstermill_asset(
     name="error_notebook_asset",
     notebook_path=nb_test_path("error_notebook"),
     save_notebook_on_failure=True,
+)
+
+error_notebook_html_asset = dagstermill.define_dagstermill_asset(
+    name="error_notebook_html_asset",
+    notebook_path=nb_test_path("error_notebook"),
+    save_notebook_on_failure=True,
+    output_notebook_format="html",
 )
 
 
@@ -584,6 +598,7 @@ yield_event_asset = dagstermill.define_dagstermill_asset(
 assets = with_resources(
     [
         hello_world_asset,
+        hello_world_html_asset,
         hello_world_with_custom_tags_and_description_asset,
         hello_world_config_asset,
         goodbye_config_asset,
@@ -593,6 +608,7 @@ assets = with_resources(
         add_two_number_asset,
         hello_world_resource_asset,
         error_notebook_asset,
+        error_notebook_html_asset,
         yield_event_asset,
     ],
     resource_defs={
@@ -609,6 +625,7 @@ def make_resolved_job(asset):
 
 
 hello_world_asset_job = make_resolved_job(hello_world_asset)
+hello_world_html_asset_job = make_resolved_job(hello_world_html_asset)
 hello_world_with_custom_tags_and_description_asset_job = make_resolved_job(
     hello_world_with_custom_tags_and_description_asset
 )
@@ -618,6 +635,7 @@ hello_logging_asset_job = make_resolved_job(hello_logging_asset)
 add_two_number_asset_job = make_resolved_job(add_two_number_asset)
 hello_world_resource_asset_job = make_resolved_job(hello_world_resource_asset)
 error_notebook_asset_job = make_resolved_job(error_notebook_asset)
+error_notebook_html_asset_job = make_resolved_job(error_notebook_html_asset)
 yield_event_asset_job = make_resolved_job(yield_event_asset)
 
 
