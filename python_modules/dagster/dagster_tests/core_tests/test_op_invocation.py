@@ -1262,6 +1262,18 @@ def test_multipartitioned_time_window_asset_invocation():
     static_multipartitioned_asset(context)
 
 
+def test_direct_invocation_context_preserves_multi_partition_key_type():
+    multipartition_key = dg.MultiPartitionKey({"date": "2020-01-01", "static": "a"})
+
+    op_context = dg.build_op_context(partition_key=multipartition_key)
+    assert isinstance(op_context.partition_key, dg.MultiPartitionKey)
+    assert op_context.multi_partition_key == multipartition_key
+
+    asset_context = dg.build_asset_context(partition_key=multipartition_key)
+    assert isinstance(asset_context.partition_key, dg.MultiPartitionKey)
+    assert asset_context.multi_partition_key == multipartition_key
+
+
 def test_partition_range_asset_invocation():
     partitions_def = dg.DailyPartitionsDefinition(start_date=datetime(2023, 1, 1))
 
