@@ -11,6 +11,11 @@ import click
 
 from dagster_cloud_cli import ui
 from dagster_cloud_cli.core.pex_builder import deps, util
+from dagster_cloud_cli.core.pex_builder.package_manager import (
+    PackageManager,
+    PackageManagerError,
+    detect_package_manager,
+)
 
 # inspired by https://github.com/github/gitignore/blob/main/Python.gitignore
 # would be nice to just read the gitignore and use that
@@ -46,34 +51,54 @@ def build_source_pex(
     return final_pex_path
 
 
-def _build_local_package(local_dir: str, build_dir: str, python_interpreter: str):
-    if os.path.exists(os.path.join(local_dir, "setup.py")):
-        ui.print(f"Building package at {local_dir!r} using {python_interpreter} setup.py build")
-        command = [
-            python_interpreter,
-            "setup.py",
-            "build",
-            "--build-lib",
-            build_dir,
-        ]
-        subprocess.run(command, check=True, cwd=local_dir)
-    elif os.path.exists(os.path.join(local_dir, "pyproject.toml")):
-        ui.print(f"Building package at {local_dir!r} using {python_interpreter} -m pip install")
-        # Use pip install with --target to build and install the package to the build directory
-        # This handles pyproject.toml files properly using modern Python build standards
-        command = [
-            python_interpreter,
-            "-m",
-            "pip",
-            "install",
-            "--target",
-            build_dir,
-            "--no-deps",  # Don't install dependencies, just the package itself
-            ".",
-        ]
-        subprocess.run(command, check=True, cwd=local_dir)
-    else:
-        ui.warn(f"No setup.py or pyproject.toml found in {local_dir!r} - will not build.")
+def _build_local_package(
+    local_dir: str,
+    build_dir: str,
+    python_interpreter: str,
+    # When ``pm`` is None, detection is deferred to the first pyproject.toml package
+    # encountered. Callers should prefer passing ``pm`` explicitly to avoid repeated
+    # detection overhead.
+    pm: PackageManager | None = None,
+):
+    pm_name = "unknown"
+    try:
+        if os.path.exists(os.path.join(local_dir, "setup.py")):
+            ui.print(f"Building package at {local_dir!r} using {python_interpreter} setup.py build")
+            command = [
+                python_interpreter,
+                "setup.py",
+                "build",
+                "--build-lib",
+                build_dir,
+            ]
+            pm_name = "setup.py"
+            subprocess.run(command, check=True, cwd=local_dir, capture_output=True, text=True)
+        elif os.path.exists(os.path.join(local_dir, "pyproject.toml")):
+            if pm is None:
+                pm = detect_package_manager(python_interpreter)
+            command = pm.build_install_command(
+                target_dir=build_dir,
+                no_deps=True,
+            )
+            ui.print(
+                f"Building package at {local_dir!r} using {pm.name} install "
+                f"(interpreter: {python_interpreter})"
+            )
+            pm_name = pm.name
+            subprocess.run(command, check=True, cwd=local_dir, capture_output=True, text=True)
+        else:
+            ui.warn(f"No setup.py or pyproject.toml found in {local_dir!r} - will not build.")
+            return
+    except PackageManagerError as e:
+        raise ui.error(f"Failed to build local package at {local_dir!r}: {e}") from e
+    except subprocess.CalledProcessError as e:
+        raise ui.error(
+            f"Package installation failed using {pm_name} for {local_dir!r}:\n"
+            f"Command: {' '.join(e.cmd)}\n"
+            f"Exit code: {e.returncode}\n"
+            f"Stdout: {e.stdout if e.stdout else ''}\n"
+            f"Stderr: {e.stderr if e.stderr else ''}"
+        ) from e
 
 
 def build_pex_using_setup_py(
@@ -84,6 +109,29 @@ def build_pex_using_setup_py(
 ):
     """Builds package using setup.py and copies built output into PEX."""
     python_interpreter = util.python_interpreter_for(python_version)
+    # Only probe for a package manager if at least one package uses pyproject.toml *without*
+    # a co-located setup.py.  setup.py always wins in _build_local_package, so a directory
+    # that has both files will never reach the pyproject.toml branch and does not need a pm.
+    # Detection runs two subprocess probes with 15s timeouts each, so avoid it whenever possible.
+    all_package_dirs = [*local_package_paths, code_directory]
+    has_pyproject = any(
+        os.path.exists(os.path.join(d, "pyproject.toml"))
+        and not os.path.exists(os.path.join(d, "setup.py"))
+        for d in all_package_dirs
+    )
+    pm: PackageManager | None = None
+    pm: PackageManager | None = None
+    if has_pyproject:
+        try:
+            pm = detect_package_manager(python_interpreter)
+        except PackageManagerError as e:
+            raise ui.error(
+                f"No package manager available for building local packages: {e}"
+            ) from e
+        if pm.name == "uv":
+            ui.warn(
+                f"pip not available in {python_interpreter}, falling back to uv for local package builds"
+            )
     with tempfile.TemporaryDirectory() as build_dir, tempfile.TemporaryDirectory() as sources_dir:
         included_dirs = [build_dir]
 
@@ -92,12 +140,14 @@ def build_pex_using_setup_py(
                 local_dir=local_dir,
                 build_dir=build_dir,
                 python_interpreter=python_interpreter,
+                pm=pm,
             )
 
         _build_local_package(
             local_dir=code_directory,
             build_dir=build_dir,
             python_interpreter=python_interpreter,
+            pm=pm,
         )
 
         # We always include the code_directory source in a special package called working_directory
