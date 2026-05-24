@@ -264,6 +264,189 @@ def test_dbt_profile_configuration() -> None:
     assert dbt_cli_invocation.is_successful()
 
 
+def _make_fake_popen(mocker: MockerFixture) -> None:
+    """Patch subprocess.Popen to capture args without executing dbt."""
+
+    class _FakePopen:
+        def __init__(self, args: list[str], **kwargs: object) -> None:
+            self.args = args
+            self.stdout = iter([])
+            self.returncode = 0
+
+        def wait(self) -> int:
+            return 0
+
+    mocker.patch("dagster_dbt.core.dbt_cli_invocation.subprocess.Popen", _FakePopen)
+
+
+def _make_fake_executable(tmp_path: Path, name: str) -> str:
+    executable_path = tmp_path / name
+    executable_path.write_text("", encoding="utf-8")
+    return os.fspath(executable_path)
+
+
+def _patch_fake_which(mocker: MockerFixture, *fake_executables: str) -> None:
+    real_which = shutil.which
+    fake_executable_set = set(fake_executables)
+
+    def _which(executable: str) -> str | None:
+        if executable in fake_executable_set:
+            return executable
+        return real_which(executable)
+
+    mocker.patch("dagster_dbt.core.resource.shutil.which", side_effect=_which)
+
+
+@pytest.mark.core
+def test_dbt_fusion_no_row_limit_on_materialization(mocker: MockerFixture, tmp_path: Path) -> None:
+    """dbt-fusion (v2+) injects --limit 0 for materialization commands to suppress the 10-row default."""
+    # cached_property stores its value in instance.__dict__, which Python's descriptor protocol
+    # checks before the class descriptor for non-data descriptors. Setting it here is the
+    # canonical way to bypass a cached_property without a subprocess call.
+    fusion_executable = _make_fake_executable(tmp_path, "dbtf")
+    _patch_fake_which(mocker, fusion_executable)
+    dbt = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        dbt_executable=fusion_executable,
+    )
+    dbt.__dict__["_cli_version"] = version.parse("2.0.0")
+    _make_fake_popen(mocker)
+
+    # Row-limited commands must receive --limit 0.
+    for cmd in ["build", "run", "seed", "snapshot", "test"]:
+        invocation = dbt.cli([cmd])
+        assert "--limit" in invocation.process.args, f"Expected --limit in args for '{cmd}'"
+        limit_idx = list(invocation.process.args).index("--limit")
+        assert invocation.process.args[limit_idx + 1] == "0", f"Expected --limit 0 for '{cmd}'"
+
+    # User-supplied --limit (space form) must be preserved and not duplicated.
+    invocation = dbt.cli(["seed", "--limit", "5"])
+    assert list(invocation.process.args).count("--limit") == 1
+    assert invocation.process.args[list(invocation.process.args).index("--limit") + 1] == "5"
+
+    # User-supplied --limit (equals form) must also suppress injection.
+    invocation = dbt.cli(["seed", "--limit=5"])
+    assert "--limit" not in invocation.process.args, (
+        "Equals-form --limit must not be injected when user passed --limit=N"
+    )
+    assert any(arg == "--limit=5" for arg in invocation.process.args)
+
+    # Non-materialization commands must NOT receive --limit.
+    for cmd in ["parse", "compile", "debug", "deps"]:
+        invocation = dbt.cli([cmd])
+        assert "--limit" not in invocation.process.args, f"Unexpected --limit in args for '{cmd}'"
+
+    # Leading global flags are a supported call shape and must not skip injection.
+    invocation = dbt.cli(["--debug", "build"])
+    assert "--limit" in invocation.process.args
+    limit_idx = list(invocation.process.args).index("--limit")
+    assert invocation.process.args[limit_idx + 1] == "0"
+
+    # Flags with values before the subcommand must also preserve injection.
+    invocation = dbt.cli(["--profiles-dir", "/tmp", "run"])
+    assert "--limit" in invocation.process.args
+    limit_idx = list(invocation.process.args).index("--limit")
+    assert invocation.process.args[limit_idx + 1] == "0"
+
+    invocation = dbt.cli(["-t", "dev", "seed"])
+    assert "--limit" in invocation.process.args
+    limit_idx = list(invocation.process.args).index("--limit")
+    assert invocation.process.args[limit_idx + 1] == "0"
+
+    invocation = dbt.cli(["--resource-type", "model", "build"])
+    assert "--limit" in invocation.process.args
+    limit_idx = list(invocation.process.args).index("--limit")
+    assert invocation.process.args[limit_idx + 1] == "0"
+
+    invocation = dbt.cli(["--exclude-resource-type", "test", "build"])
+    assert "--limit" in invocation.process.args
+    limit_idx = list(invocation.process.args).index("--limit")
+    assert invocation.process.args[limit_idx + 1] == "0"
+
+    # --limit in global_config_flags (space form) must suppress injection.
+    dbt_with_global_limit = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        dbt_executable=fusion_executable,
+        global_config_flags=["--limit", "5"],
+    )
+    dbt_with_global_limit.__dict__["_cli_version"] = version.parse("2.0.0")
+    invocation = dbt_with_global_limit.cli(["seed"])
+    assert list(invocation.process.args).count("--limit") == 1
+    assert invocation.process.args[list(invocation.process.args).index("--limit") + 1] == "5"
+
+    # --limit in global_config_flags (equals form) must also suppress injection.
+    dbt_with_global_limit = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        dbt_executable=fusion_executable,
+        global_config_flags=["--limit=5"],
+    )
+    dbt_with_global_limit.__dict__["_cli_version"] = version.parse("2.0.0")
+    invocation = dbt_with_global_limit.cli(["seed"])
+    assert "--limit" not in invocation.process.args
+    assert any(arg == "--limit=5" for arg in invocation.process.args)
+
+
+@pytest.mark.core
+def test_dbt_fusion_v1_no_row_limit_injection(mocker: MockerFixture, tmp_path: Path) -> None:
+    """dbt-fusion v1 must NOT have --limit injected before the v2 behavior change."""
+    fusion_executable = _make_fake_executable(tmp_path, "dbtf")
+    _patch_fake_which(mocker, fusion_executable)
+    dbt = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        dbt_executable=fusion_executable,
+    )
+    dbt.__dict__["_cli_version"] = version.parse("1.9.0")
+    _make_fake_popen(mocker)
+
+    for cmd in ["build", "run", "seed", "snapshot", "test"]:
+        invocation = dbt.cli([cmd])
+        assert "--limit" not in invocation.process.args, (
+            f"dbt-fusion v1 must not receive --limit injection for '{cmd}'"
+        )
+
+
+@pytest.mark.core
+def test_dbt_core_v2_no_row_limit_injection(mocker: MockerFixture, tmp_path: Path) -> None:
+    """dbt-core v2 must NOT receive the fusion-specific row-limit injection."""
+    core_executable = _make_fake_executable(tmp_path, "dbt")
+    _patch_fake_which(mocker, core_executable)
+    dbt = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        dbt_executable=core_executable,
+    )
+    dbt.__dict__["_cli_version"] = version.parse("2.0.0")
+    _make_fake_popen(mocker)
+
+    for cmd in ["build", "run", "seed", "snapshot", "test"]:
+        invocation = dbt.cli([cmd])
+        assert "--limit" not in invocation.process.args, (
+            f"dbt-core v2 must not receive --limit injection for '{cmd}'"
+        )
+
+
+@pytest.mark.core
+def test_dbt_fusion_row_limit_injection_warns_on_version_probe_failure(
+    caplog: pytest.LogCaptureFixture, mocker: MockerFixture, tmp_path: Path
+) -> None:
+    fusion_executable = _make_fake_executable(tmp_path, "dbtf")
+    _patch_fake_which(mocker, fusion_executable)
+    dbt = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        dbt_executable=fusion_executable,
+    )
+    mocker.patch("dagster_dbt.core.resource.check_output", side_effect=ValueError("boom"))
+    _make_fake_popen(mocker)
+
+    with caplog.at_level("WARNING"):
+        invocation = dbt.cli(["build"])
+
+    assert "--limit" not in invocation.process.args
+    assert (
+        "Could not determine dbt CLI version; skipping dbt-fusion row-limit injection."
+        in caplog.text
+    )
+
+
 @pytest.mark.parametrize(
     "profiles_dir", [None, test_jaffle_shop_path, os.fspath(test_jaffle_shop_path)]
 )
@@ -391,6 +574,10 @@ def test_dbt_partial_parse(dbt: DbtCliResource) -> None:
     )
 
 
+@pytest.mark.skipif(
+    DBT_PYTHON_VERSION is None,
+    reason="dbt-core Python modules are required for manifest-based asset selection in this test",
+)
 def test_dbt_cli_debug_execution(
     test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
 ) -> None:

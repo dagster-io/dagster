@@ -48,8 +48,75 @@ DBT_EXECUTABLE = _get_dbt_executable()
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
 
+# dbt-fusion's `dbtf` executable (v2+) silently caps row output to 10 rows by default for these
+# commands.
+# Materialization and test commands query full datasets, so the cap causes silent data loss or
+# incorrect test results.
+_FUSION_ROW_LIMITED_CMDS = frozenset({"build", "run", "seed", "snapshot", "test"})
+# All dbt / dbt-fusion global flags that accept a space-separated value token.
+# MAINTENANCE: if dbt-fusion adds a new value-taking global flag (e.g. `--new-flag <val>`),
+# add it here.  A missing entry causes `_get_dbt_command` to treat its value as the
+# subcommand, silently skipping --limit 0 injection and leaving the 10-row cap in place.
+# Flags that use `--flag=value` syntax do NOT need to be listed (handled by the `=` check).
+_DBT_FLAGS_WITH_VALUES = frozenset(
+    {
+        "--deprecated-favor-state",
+        "--defer-state",
+        "--exclude-resource-type",
+        "--indirect-selection",
+        "--log-format",
+        "--log-format-file",
+        "--log-level",
+        "--log-level-file",
+        "--log-path",
+        "--partial-parse-file-diff",
+        "--printer-width",
+        "--profile",
+        "--profiles-dir",
+        "--project-dir",
+        "--record-timing-info",
+        "--resource-type",
+        "--state",
+        "--target",
+        "--vars",
+        "--warn-error-options",
+        "-r",
+        "-t",
+    }
+)
+
 
 DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
+
+
+def _is_dbt_fusion_executable(dbt_executable: str) -> bool:
+    return Path(os.fspath(dbt_executable)).stem.lower() == "dbtf"
+
+
+def _get_dbt_command(args: Sequence[str]) -> str | None:
+    """Return the first dbt subcommand token from *args*, skipping leading global flags.
+
+    Flags in ``_DBT_FLAGS_WITH_VALUES`` are treated as taking one value token (skipped over).
+    Flags with an inline ``=`` value (``--flag=val``) are handled automatically.
+    Boolean flags not in ``_DBT_FLAGS_WITH_VALUES`` are skipped individually.
+
+    If ``_DBT_FLAGS_WITH_VALUES`` is missing a value-taking flag, its value token is
+    returned instead of the real subcommand; the caller's ``in _FUSION_ROW_LIMITED_CMDS``
+    check then fails silently, skipping --limit 0 injection.  Keep the allowlist current.
+    """
+    idx = 0
+    while idx < len(args):
+        arg = args[idx]
+        if not arg.startswith("-"):
+            return arg
+        if arg.startswith("--") and "=" in arg:
+            idx += 1
+        elif arg in _DBT_FLAGS_WITH_VALUES:
+            idx += 2
+        else:
+            idx += 1
+
+    return None
 
 
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
@@ -698,6 +765,35 @@ class DbtCliResource(ConfigurableResource):
         if self.target:
             profile_args += ["--target", self.target]
 
+        is_fusion_executable = _is_dbt_fusion_executable(self.dbt_executable)
+        try:
+            cli_version = self._cli_version
+            should_inject_row_limit = is_fusion_executable and cli_version.major >= 2
+        except Exception:
+            if not is_fusion_executable:
+                raise
+
+            logger.warning(
+                "Could not determine dbt CLI version; skipping dbt-fusion row-limit injection.",
+                exc_info=True,
+            )
+            # Preserve fusion execution behavior even when version probing fails later in `cli()`.
+            cli_version = version.parse("2.0.0")
+            should_inject_row_limit = False
+
+        # dbt-fusion's `dbtf` executable (v2+) silently caps row output to 10 rows by default.
+        # Inject --limit 0 to disable this unless the user already supplied --limit in `args` or
+        # `global_config_flags`. `DbtCliResource.cli()` accepts leading global flags, so find the
+        # first dbt subcommand rather than assuming it is always the first token.
+        if should_inject_row_limit:
+            dbt_command = _get_dbt_command(args)
+            all_supplied_args = [*self.global_config_flags, *args]
+            user_supplied_limit = any(
+                arg == "--limit" or arg.startswith("--limit=") for arg in all_supplied_args
+            )
+            if dbt_command in _FUSION_ROW_LIMITED_CMDS and not user_supplied_limit:
+                args = [*args, "--limit", "0"]
+
         full_dbt_args = [
             self.dbt_executable,
             *self.global_config_flags,
@@ -713,7 +809,7 @@ class DbtCliResource(ConfigurableResource):
         adapter: BaseAdapter | None = None
         with pushd(str(project_dir)):
             # we do not need to initialize the adapter if we are using the fusion engine
-            if self._cli_version.major < 2:
+            if cli_version.major < 2:
                 try:
                     adapter = self._initialize_dbt_core_adapter(args)
                 except:
@@ -732,7 +828,7 @@ class DbtCliResource(ConfigurableResource):
                 raise_on_error=raise_on_error,
                 context=context,
                 adapter=adapter,
-                cli_version=self._cli_version,
+                cli_version=cli_version,
                 dbt_project=updated_params.dbt_project,
             )
 
