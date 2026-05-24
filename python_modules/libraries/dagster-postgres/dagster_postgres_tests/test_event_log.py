@@ -48,6 +48,9 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     def can_wipe_asset_partitions(self) -> bool:
         return False
 
+    def can_set_concurrency_defaults(self) -> bool:
+        return True
+
     def test_event_log_storage_two_watchers(self, conn_string):
         with _clean_storage(conn_string) as storage:
             run_id = make_new_run_id()
