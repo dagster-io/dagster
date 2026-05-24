@@ -102,7 +102,7 @@ class InstanceConcurrencyContext:
             return True
 
         if step_key in self._pending_claims:
-            if time.time() > self._pending_timeouts[step_key]:
+            if time.monotonic() > self._pending_timeouts[step_key]:
                 del self._pending_timeouts[step_key]
                 self._sync_pools()
             else:
@@ -144,7 +144,7 @@ class InstanceConcurrencyContext:
             interval = _calculate_timeout_interval(
                 claim_status.sleep_interval, self._pending_claim_counts[step_key]
             )
-            self._pending_timeouts[step_key] = time.time() + interval
+            self._pending_timeouts[step_key] = time.monotonic() + interval
             self._pending_claim_counts[step_key] += 1
             return False
 
@@ -158,7 +158,7 @@ class InstanceConcurrencyContext:
         if not self._pending_claims:
             return 0.0
 
-        now = time.time()
+        now = time.monotonic()
         return min([0, *[ready_at - now for ready_at in self._pending_timeouts.values()]])
 
     def pending_claim_steps(self) -> list[str]:
