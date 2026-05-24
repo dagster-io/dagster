@@ -19,6 +19,7 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
+    _validate_no_mixed_partitions_defs,
     build_dbt_specs,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
@@ -322,6 +323,8 @@ def dbt_assets(
         io_manager_key=io_manager_key,
         project=project,
     )
+
+    _validate_no_mixed_partitions_defs(specs)
 
     if op_tags and DAGSTER_DBT_SELECT_METADATA_KEY in op_tags:
         raise DagsterInvalidDefinitionError(
