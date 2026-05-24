@@ -729,24 +729,51 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 current_timestamp, ignore_exclusions=ignore_exclusions
             )
         )
-        # first returned time window is the last window <= the current timestamp
-        end_offset_zero_window = next(current_timestamp_iter)
+        # Consume the zero window (last window <= current timestamp) to advance the
+        # iterator; subsequent next() calls in the end_offset < 0 branch step back further.
+        next(current_timestamp_iter)
 
         if self.end_offset < 0:
             for _ in range(abs(self.end_offset)):
                 current_timestamp_window = next(current_timestamp_iter)
         else:
-            current_timestamp_iter = iter(
+            # Compute the time boundary ignoring exclusions (pure temporal arithmetic).
+            # Fixes issue #33551: using end_offset_zero_window (which respects exclusions)
+            # as the start caused the forward step count to skip excluded windows and
+            # overshoot the boundary. Instead, compute a natural (exclusion-ignoring)
+            # zero window, step forward ignoring exclusions to get the true time boundary,
+            # then apply exclusion filtering via a reverse iterator.
+            natural_zero_window = next(
+                iter(
+                    self._reverse_iterate_time_windows(
+                        current_timestamp, ignore_exclusions=True
+                    )
+                )
+            )
+            boundary_iter = iter(
                 self._iterate_time_windows(
-                    end_offset_zero_window.end.timestamp(), ignore_exclusions=ignore_exclusions
+                    natural_zero_window.end.timestamp(), ignore_exclusions=True
                 )
             )
             for _ in range(self.end_offset):
-                current_timestamp_window = next(current_timestamp_iter)
+                current_timestamp_window = next(boundary_iter)
+
+            if not ignore_exclusions:
+                # Apply exclusion filtering: find the last non-excluded partition
+                # at or before the computed time boundary.
+                current_timestamp_window = next(
+                    iter(
+                        self._reverse_iterate_time_windows(
+                            current_timestamp_window.end.timestamp(), ignore_exclusions=False
+                        )
+                    ),
+                    None,
+                )
 
         current_timestamp_window = check.not_none(
             current_timestamp_window,
-            "current_timestamp_window should not be None if end_offset != 0",
+            "No valid partition window found — all partitions before the computed boundary"
+            " may be excluded, or end_offset is unexpectedly zero at this code path.",
         )
 
         if (
