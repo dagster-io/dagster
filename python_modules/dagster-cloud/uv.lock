@@ -9,10 +9,6 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
-[options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
-exclude-newer-span = "PT48H"
-
 [[package]]
 name = "agate"
 version = "1.9.1"
@@ -118,18 +114,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/14/2c5dd9f512b66549ae92767a9c7b330ae88e1932ca57876909410251fe13/anyio-4.13.0.tar.gz", hash = "sha256:334b70e641fd2221c1505b3890c69882fe4a2df910cba14d97019b90b24439dc", size = 231622, upload-time = "2026-03-24T12:59:09.671Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/da/42/e921fccf5015463e32a3cf6ee7f980a6ed0f395ceeaa45060b61d86486c2/anyio-4.13.0-py3-none-any.whl", hash = "sha256:08b310f9e24a9594186fd75b4f73f4a4152069e3853f1ed8bfbf58369f4ad708", size = 114353, upload-time = "2026-03-24T12:59:08.246Z" },
-]
-
-[[package]]
-name = "anysqlite"
-version = "0.0.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/4b/cd5d66b9f87e773bc71344a368b9472987e33514e6627e28342b9c3e7c43/anysqlite-0.0.5.tar.gz", hash = "sha256:9dfcf87baf6b93426ad1d9118088c41dbf24ef01b445eea4a5d486bac2755cce", size = 3432, upload-time = "2023-10-02T13:49:25.135Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/31/349eae2bc9d9331dd8951684cf94528d91efaa71129dc30822ac111dfc66/anysqlite-0.0.5-py3-none-any.whl", hash = "sha256:cb345dc4f76f6b37f768d7a0b3e9cf5c700dfcb7a6356af8ab46a11f666edbe7", size = 3907, upload-time = "2023-10-02T13:49:26.943Z" },
 ]
 
 [[package]]
@@ -1027,7 +1011,7 @@ requires-dist = [
     { name = "tox", marker = "extra == 'test'", specifier = ">=4.22" },
     { name = "tox-uv", marker = "extra == 'test'", specifier = ">=1.16" },
     { name = "tqdm", specifier = "<5" },
-    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.37" },
+    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.38" },
     { name = "types-backports", marker = "extra == 'pyright'" },
     { name = "types-backports", marker = "extra == 'ty'" },
     { name = "types-certifi", marker = "extra == 'pyright'" },
@@ -1394,7 +1378,7 @@ dependencies = [
     { name = "dagster-cloud-cli" },
     { name = "dagster-dg-core" },
     { name = "dagster-rest-resources" },
-    { name = "githubkit" },
+    { name = "requests" },
     { name = "typer" },
 ]
 
@@ -1406,7 +1390,7 @@ requires-dist = [
     { name = "dagster-cloud-cli", editable = "../libraries/dagster-cloud-cli" },
     { name = "dagster-dg-core", editable = "../libraries/dagster-dg-core" },
     { name = "dagster-rest-resources", editable = "../libraries/dagster-rest-resources" },
-    { name = "githubkit" },
+    { name = "requests" },
     { name = "typer" },
 ]
 provides-extras = ["ai"]
@@ -1579,7 +1563,9 @@ test = [
     { name = "dagster-shared", editable = "../libraries/dagster-shared" },
     { name = "dagster-test", editable = "../dagster-test" },
 ]
-test-old-kubernetes = [{ name = "kubernetes", specifier = "==12.0.0" }]
+test-kubernetes-12 = [{ name = "kubernetes", specifier = "==12.0.0" }]
+test-kubernetes-35 = [{ name = "kubernetes", specifier = ">=35.0.0,<36" }]
+test-kubernetes-36 = [{ name = "kubernetes", specifier = ">=36.0.0,<37" }]
 
 [[package]]
 name = "dagster-pipes"
@@ -2156,22 +2142,6 @@ wheels = [
 ]
 
 [[package]]
-name = "githubkit"
-version = "0.15.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "hishel" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/ac/857b78d82bf95a91413322614d6751db2f55ab214b24239f31729d8821e6/githubkit-0.15.5.tar.gz", hash = "sha256:5ee487b77d3f4332c73fe5dbc69f932d8012ff0bb1aa9c544c238aef74ef1ae0", size = 5550333, upload-time = "2026-05-01T08:57:12.016Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/ed/d08de6b425a6cce4554ea70a559e03d545058881b5b1d2d0a193d886d3a8/githubkit-0.15.5-py3-none-any.whl", hash = "sha256:69934fdce7e4f197f24d85ea91d808ef245f4463bb982e4c19ac32d827bc7a40", size = 13436716, upload-time = "2026-05-01T08:57:07.644Z" },
-]
-
-[[package]]
 name = "gitpython"
 version = "3.1.50"
 source = { registry = "https://pypi.org/simple" }
@@ -2691,22 +2661,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/01/ee/02a2c011bdab74c6fb3c75474d40b3052059d95df7e73351460c8588d963/h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1", size = 101250, upload-time = "2025-04-24T03:35:25.427Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86", size = 37515, upload-time = "2025-04-24T03:35:24.344Z" },
-]
-
-[[package]]
-name = "hishel"
-version = "0.1.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "anysqlite" },
-    { name = "httpx" },
-    { name = "msgpack" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/64/a104ccac48f123f853254483617b16e0efc1649bd7e35bcdc5a5a5ef0ae2/hishel-0.1.5.tar.gz", hash = "sha256:9d40c682cd94fd6e1394fb05713ae20a75ed8aeba6f5272380444039ce6257f2", size = 75468, upload-time = "2025-10-18T13:32:41.854Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/83/4f8b77839e62114bb034375ee8e08cfb6af1164754b925b271d3f1ec06ee/hishel-0.1.5-py3-none-any.whl", hash = "sha256:0bfbe9a2b9342090eba82ba6de88258092e1c4c7b730cd4cb4b570e4b40e44a7", size = 92486, upload-time = "2025-10-18T13:32:40.333Z" },
 ]
 
 [[package]]

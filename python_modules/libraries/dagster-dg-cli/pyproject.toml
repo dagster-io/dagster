@@ -14,7 +14,7 @@ dependencies = [
     "dagster-dg-core==1!0+dev",
     "dagster-rest-resources==1!0+dev",
     "dagster==1!0+dev",
-    "githubkit",
+    "requests",
     "typer",
 ]
 

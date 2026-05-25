@@ -424,18 +424,6 @@ wheels = [
 ]
 
 [[package]]
-name = "anysqlite"
-version = "0.0.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/4b/cd5d66b9f87e773bc71344a368b9472987e33514e6627e28342b9c3e7c43/anysqlite-0.0.5.tar.gz", hash = "sha256:9dfcf87baf6b93426ad1d9118088c41dbf24ef01b445eea4a5d486bac2755cce", size = 3432, upload-time = "2023-10-02T13:49:25.135Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/31/349eae2bc9d9331dd8951684cf94528d91efaa71129dc30822ac111dfc66/anysqlite-0.0.5-py3-none-any.whl", hash = "sha256:cb345dc4f76f6b37f768d7a0b3e9cf5c700dfcb7a6356af8ab46a11f666edbe7", size = 3907, upload-time = "2023-10-02T13:49:26.943Z" },
-]
-
-[[package]]
 name = "apache-airflow"
 version = "2.11.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2478,7 +2466,7 @@ requires-dist = [
     { name = "tox", marker = "extra == 'test'", specifier = ">=4.22" },
     { name = "tox-uv", marker = "extra == 'test'", specifier = ">=1.16" },
     { name = "tqdm", specifier = "<5" },
-    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.37" },
+    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.38" },
     { name = "types-backports", marker = "extra == 'pyright'" },
     { name = "types-backports", marker = "extra == 'ty'" },
     { name = "types-certifi", marker = "extra == 'pyright'" },
@@ -3383,7 +3371,7 @@ dependencies = [
     { name = "dagster-cloud-cli" },
     { name = "dagster-dg-core" },
     { name = "dagster-rest-resources" },
-    { name = "githubkit" },
+    { name = "requests" },
     { name = "typer" },
 ]
 
@@ -3401,7 +3389,7 @@ requires-dist = [
     { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
     { name = "dagster-dg-core", editable = "../../python_modules/libraries/dagster-dg-core" },
     { name = "dagster-rest-resources", editable = "../../python_modules/libraries/dagster-rest-resources" },
-    { name = "githubkit" },
+    { name = "requests" },
     { name = "typer" },
 ]
 provides-extras = ["ai"]
@@ -3997,7 +3985,9 @@ test = [
     { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
     { name = "dagster-test", editable = "../../python_modules/dagster-test" },
 ]
-test-old-kubernetes = [{ name = "kubernetes", specifier = "==12.0.0" }]
+test-kubernetes-12 = [{ name = "kubernetes", specifier = "==12.0.0" }]
+test-kubernetes-35 = [{ name = "kubernetes", specifier = ">=35.0.0,<36" }]
+test-kubernetes-36 = [{ name = "kubernetes", specifier = ">=36.0.0,<37" }]
 
 [[package]]
 name = "dagster-k8s-test-infra"
@@ -6546,22 +6536,6 @@ wheels = [
 ]
 
 [[package]]
-name = "githubkit"
-version = "0.15.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "hishel" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/ac/857b78d82bf95a91413322614d6751db2f55ab214b24239f31729d8821e6/githubkit-0.15.5.tar.gz", hash = "sha256:5ee487b77d3f4332c73fe5dbc69f932d8012ff0bb1aa9c544c238aef74ef1ae0", size = 5550333, upload-time = "2026-05-01T08:57:12.016Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/ed/d08de6b425a6cce4554ea70a559e03d545058881b5b1d2d0a193d886d3a8/githubkit-0.15.5-py3-none-any.whl", hash = "sha256:69934fdce7e4f197f24d85ea91d808ef245f4463bb982e4c19ac32d827bc7a40", size = 13436716, upload-time = "2026-05-01T08:57:07.644Z" },
-]
-
-[[package]]
 name = "gitpython"
 version = "3.1.50"
 source = { registry = "https://pypi.org/simple" }
@@ -7076,22 +7050,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/aa/b2/703569fc881f3284487e68cda7b42179978480da3c438042a6bbbb4a671c/hf_xet-1.5.0-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:4b35549ce62601b84da4ff9b24d970032ace3d4430f52d91bcbb26c901d6c690", size = 4672414, upload-time = "2026-05-06T06:18:09.864Z" },
     { url = "https://files.pythonhosted.org/packages/af/37/1b6def445c567286b50aa3b33828158e135b1be44938dde59f11382a500c/hf_xet-1.5.0-cp37-abi3-win_amd64.whl", hash = "sha256:2806c7c17b4d23f8d88f7c4814f838c3b6150773fe339c20af23e1cfaf2797e4", size = 3977238, upload-time = "2026-05-06T06:18:23.621Z" },
     { url = "https://files.pythonhosted.org/packages/62/94/3b66b148778ee100dcfd69c2ca22b57b41b44d3063ceec934f209e9184ce/hf_xet-1.5.0-cp37-abi3-win_arm64.whl", hash = "sha256:b6c9df403040248c76d808d3e047d64db2d923bae593eb244c41e425cf6cd7be", size = 3806916, upload-time = "2026-05-06T06:18:21.7Z" },
-]
-
-[[package]]
-name = "hishel"
-version = "0.1.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "anysqlite" },
-    { name = "httpx" },
-    { name = "msgpack" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/64/a104ccac48f123f853254483617b16e0efc1649bd7e35bcdc5a5a5ef0ae2/hishel-0.1.5.tar.gz", hash = "sha256:9d40c682cd94fd6e1394fb05713ae20a75ed8aeba6f5272380444039ce6257f2", size = 75468, upload-time = "2025-10-18T13:32:41.854Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/83/4f8b77839e62114bb034375ee8e08cfb6af1164754b925b271d3f1ec06ee/hishel-0.1.5-py3-none-any.whl", hash = "sha256:0bfbe9a2b9342090eba82ba6de88258092e1c4c7b730cd4cb4b570e4b40e44a7", size = 92486, upload-time = "2025-10-18T13:32:40.333Z" },
 ]
 
 [[package]]
