@@ -113,6 +113,13 @@ class CommandStepBuilder:
         self._k8s_volume_mounts = []
         self._k8s_volumes = []
         self._docker_settings = None
+        # Concrete env vars set via `.with_env({...})`. Source of truth on
+        # both queue paths: on k8s these become podSpec container env
+        # entries; on docker they're merged into the docker plugin's
+        # `environment` list as `KEY=value`. Bare-name passthroughs belong
+        # in the `on_*_image(env=[...])` parameter / agent envFrom chain —
+        # not here.
+        self._env: dict[str, str] = {}
 
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
@@ -283,6 +290,10 @@ class CommandStepBuilder:
 
     def with_secret(self, name: str, reference: str) -> Self:
         self._secrets[name] = reference
+        return self
+
+    def with_env(self, env_vars: dict[str, str]) -> Self:
+        self._env.update(env_vars)
         return self
 
     def with_timeout(self, num_minutes: int | None) -> Self:
@@ -644,7 +655,28 @@ class CommandStepBuilder:
             # images require /bin/bash, others don't have it, so there's some setting
             # munging done below as well.
             if self._docker_settings:
-                self._step["plugins"] = [{"kubernetes": self._base_k8s_settings()}]
+                k8s_settings = self._base_k8s_settings()
+                # Propagate concrete env vars set via .with_env({...}) into
+                # the pod's container env. Intentionally do NOT auto-pickup
+                # KEY=value entries from self._docker_settings["environment"]:
+                # that list holds docker-plugin-specific settings like
+                # `DOCKER_CONFIG=/tmp/.docker` (added by with_ecr_passthru())
+                # which have no meaning on k8s and actively break ECR auth
+                # here — EKS pods get ECR auth via the ecr-docker-login
+                # initContainer writing /work/.docker/config.json, not via
+                # DOCKER_CONFIG redirection.
+                container_env = k8s_settings["podSpec"]["containers"][0]["env"]
+                container_env.extend({"name": k, "value": v} for k, v in self._env.items())
+                self._step["plugins"] = [{"kubernetes": k8s_settings}]
+            if self._secrets:
+                # SM_PLUGIN runs as a buildkite-agent bootstrap hook inside
+                # the user container under agent-stack-k8s; exported env vars
+                # are visible to subsequent command hooks. setdefault guards
+                # the unusual case where a step has _secrets without
+                # _docker_settings.
+                self._step.setdefault("plugins", []).append(
+                    {SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}}
+                )
 
             return self._step
 
@@ -652,15 +684,19 @@ class CommandStepBuilder:
         assert "plugins" in self._step
         self._step["plugins"].append({SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}})
         if self._docker_settings:
+            env_list = self._docker_settings.setdefault("environment", [])
             for secret in self._secrets.keys():
-                self._docker_settings["environment"].append(secret)
+                env_list.append(secret)
+            for k, v in self._env.items():
+                env_list.append(f"{k}={v}")
 
             # we need to dedup the env vars to make sure that the ones we set
             # aren't overridden by the ones that are already set in the parent env
-            # the last one wins
+            # the last one wins. Use split("=", 1) so values containing "="
+            # (e.g. JSON, query strings) don't blow up the unpacking.
             envvar_map = {}
-            for ev in self._docker_settings.get("environment", []):
-                k, v = ev.split("=") if "=" in ev else (ev, None)
+            for ev in env_list:
+                k, v = ev.split("=", 1) if "=" in ev else (ev, None)
                 envvar_map[k] = v
             self._docker_settings["environment"] = [
                 f"{k}={v}" if v is not None else k for k, v in envvar_map.items()
