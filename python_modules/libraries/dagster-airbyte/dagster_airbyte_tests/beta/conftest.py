@@ -403,6 +403,38 @@ def resource(rest_api_url: str, config_api_url: str) -> AirbyteWorkspace | Airby
 
 
 @pytest.fixture
+def resource_exclude_deprecated(
+    rest_api_url: str, config_api_url: str
+) -> AirbyteWorkspace | AirbyteCloudWorkspace:
+    """Returns the appropriate workspace type with exclude_deprecated_connections=True."""
+    if (
+        rest_api_url == AIRBYTE_CLOUD_REST_API_BASE_URL
+        and config_api_url == AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
+    ):
+        return AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
+            exclude_deprecated_connections=True,
+        )
+    else:
+        return AirbyteWorkspace(
+            rest_api_base_url=rest_api_url,
+            configuration_api_base_url=config_api_url,
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
+            exclude_deprecated_connections=True,
+        )
+
+
+@pytest.fixture
 def another_resource(
     rest_api_url: str, config_api_url: str
 ) -> AirbyteWorkspace | AirbyteCloudWorkspace:

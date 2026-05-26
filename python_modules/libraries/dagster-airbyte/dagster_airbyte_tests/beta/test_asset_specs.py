@@ -21,7 +21,6 @@ from dagster_airbyte.translator import (
 from responses import matchers
 
 from dagster_airbyte_tests.beta.conftest import (
-    SAMPLE_ACCESS_TOKEN,
     SAMPLE_ANOTHER_WORKSPACE_RESPOMSE,
     SAMPLE_CONNECTION_DETAILS,
     SAMPLE_DESTINATION_DETAILS,
@@ -47,13 +46,13 @@ def test_fetch_airbyte_workspace_data(
     assert len(actual_workspace_data.destinations_by_id) == 1
 
 
-def test_fetch_airbyte_workspace_data_filters_deprecated_connections(
+def test_fetch_airbyte_workspace_data_excludes_deprecated_connections(
     base_api_mocks: responses.RequestsMock,
     rest_api_url: str,
     config_api_url: str,
-    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
+    resource_exclude_deprecated: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
-    """Deprecated (deleted) connections are excluded by default and included when opted in."""
+    """When exclude_deprecated_connections=True, deprecated connections are filtered out."""
     base_api_mocks.add(
         method=responses.GET,
         url=f"{rest_api_url}/workspaces/{TEST_WORKSPACE_ID}",
@@ -91,8 +90,7 @@ def test_fetch_airbyte_workspace_data_filters_deprecated_connections(
         status=200,
     )
 
-    # Default behavior: deprecated connections are filtered out
-    workspace_data = resource.fetch_airbyte_workspace_data()
+    workspace_data = resource_exclude_deprecated.fetch_airbyte_workspace_data()
     assert TEST_CONNECTION_ID in workspace_data.connections_by_id
     assert TEST_DEPRECATED_CONNECTION_ID not in workspace_data.connections_by_id
     assert len(workspace_data.connections_by_id) == 1

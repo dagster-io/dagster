@@ -520,7 +520,7 @@ class BaseAirbyteWorkspace(ConfigurableResource):
             "and begin polling it instead of starting a new sync."
         ),
     )
-    filter_deprecated_connections: bool = Field(
+    exclude_deprecated_connections: bool = Field(
         default=False,
         description=(
             "If set to True, connections with a 'deprecated' status in Airbyte "
@@ -554,7 +554,7 @@ class BaseAirbyteWorkspace(ConfigurableResource):
 
         for partial_connection_details in connections:
             if (
-                self.filter_deprecated_connections
+                self.exclude_deprecated_connections
                 and partial_connection_details.get("status") == "deprecated"
             ):
                 continue
