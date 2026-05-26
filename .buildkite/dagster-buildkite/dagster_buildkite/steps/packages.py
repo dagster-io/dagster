@@ -1139,11 +1139,12 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_extra_cmds=celery_extra_cmds,
         ),
         PackageSpec(
-            # Runs `test-project` images via celery + docker. Memory bump from
-            # #24779 was not enough — 60s ReadTimeouts on UnixHTTPConnectionPool
-            # persist (e.g. builds 152905, 152906, 152907, 152912), so add the
-            # planned docker_cpu=4000m follow-up. Same shape as the
-            # dagster-airbyte integration bump in #23997.
+            # Runs `test-project` images via celery + docker. The cpu=4000m bump
+            # from #24902 did not eliminate the 60s UnixHTTPConnectionPool
+            # ReadTimeouts (recurred on builds 152968, 152985, 153001, 153056
+            # within ~2h of merge). Per #24902's pre-committed escalation,
+            # bump docker_memory_limit 4Gi → 8Gi to give dind headroom for
+            # concurrent decompression and image-pull buffers.
             oss_path("python_modules/libraries/dagster-celery-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
@@ -1153,7 +1154,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 memory="1Gi",
                 docker_cpu="4000m",
                 docker_memory="2Gi",
-                docker_memory_limit="4Gi",
+                docker_memory_limit="8Gi",
             ),
         ),
         PackageSpec(
@@ -1164,8 +1165,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             # Pulls and runs `test-project` images per test. Same dind
-            # saturation shape as dagster-celery-docker above — bump docker_cpu
-            # to 4000m alongside that package.
+            # saturation shape as dagster-celery-docker above — bump
+            # docker_memory_limit 4Gi → 8Gi alongside that package.
             oss_path("python_modules/libraries/dagster-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=docker_extra_cmds,
@@ -1175,7 +1176,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 memory="1Gi",
                 docker_cpu="4000m",
                 docker_memory="2Gi",
-                docker_memory_limit="4Gi",
+                docker_memory_limit="8Gi",
             ),
         ),
         PackageSpec(
