@@ -1,5 +1,5 @@
 import os
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import StrEnum
 from typing import Any, Self
 
@@ -113,12 +113,6 @@ class CommandStepBuilder:
         self._k8s_volume_mounts = []
         self._k8s_volumes = []
         self._docker_settings = None
-        # Concrete env vars set via `.with_env(...)`. Source of truth on both
-        # queue paths: on k8s these become podSpec container env entries; on
-        # docker they're merged into the docker plugin's `environment` list.
-        # Bare-name passthroughs belong in the agent/k8s secret envFrom chain,
-        # not here.
-        self._env: dict[str, str] = {}
 
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
@@ -291,10 +285,6 @@ class CommandStepBuilder:
         self._secrets[name] = reference
         return self
 
-    def with_env(self, env_vars: dict[str, str]) -> Self:
-        self._env.update(env_vars)
-        return self
-
     def with_timeout(self, num_minutes: int | None) -> Self:
         if num_minutes is not None:
             self._step["timeout_in_minutes"] = num_minutes
@@ -425,7 +415,7 @@ class CommandStepBuilder:
             "mount-buildkite-agent": True,
         }
 
-    def _base_k8s_settings(self) -> dict[str, Any]:
+    def _base_k8s_settings(self) -> Mapping[Any, Any]:
         buildkite_shell = "/bin/bash -e -c"
         assert self._docker_settings
         image = str(self._docker_settings["image"])
@@ -654,37 +644,16 @@ class CommandStepBuilder:
             # images require /bin/bash, others don't have it, so there's some setting
             # munging done below as well.
             if self._docker_settings:
-                k8s_settings = self._base_k8s_settings()
-                # Propagate concrete env vars (set via .with_env() or as
-                # KEY=value entries in the legacy docker-plugin `environment`
-                # list) into the pod's container env. Bare-name entries are
-                # passthroughs that arrive via envFrom k8s Secrets or via the
-                # SM_PLUGIN bootstrap hook, so they're skipped here.
-                container_env = k8s_settings["podSpec"]["containers"][0]["env"]
-                container_env.extend({"name": k, "value": v} for k, v in self._env.items())
-                for entry in self._docker_settings.get("environment", []):
-                    if "=" in entry:
-                        k, v = entry.split("=", 1)
-                        container_env.append({"name": k, "value": v})
-                self._step["plugins"] = [{"kubernetes": k8s_settings}]
-            if self._secrets:
-                # SM_PLUGIN runs as a buildkite-agent bootstrap hook, which
-                # executes inside the user container under agent-stack-k8s. The
-                # exported env vars are visible to subsequent command hooks.
-                self._step["plugins"].append(
-                    {SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}}
-                )
+                self._step["plugins"] = [{"kubernetes": self._base_k8s_settings()}]
+
             return self._step
 
         # adding SM and DOCKER plugin in build allows secrets to be passed to docker envs
         assert "plugins" in self._step
         self._step["plugins"].append({SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}})
         if self._docker_settings:
-            env_list = self._docker_settings.setdefault("environment", [])
             for secret in self._secrets.keys():
-                env_list.append(secret)
-            for k, v in self._env.items():
-                env_list.append(f"{k}={v}")
+                self._docker_settings["environment"].append(secret)
 
             # we need to dedup the env vars to make sure that the ones we set
             # aren't overridden by the ones that are already set in the parent env
