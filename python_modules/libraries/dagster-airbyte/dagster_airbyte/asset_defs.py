@@ -356,7 +356,7 @@ def build_airbyte_assets(
         name=f"airbyte_sync_{connection_id.replace('-', '_')}",
         deps=upstream_deps,
         outs=outputs,
-        internal_asset_deps=internal_deps,
+        internal_asset_deps=internal_deps,  # ty: ignore[invalid-argument-type]
         compute_kind="airbyte",
         group_name=group_name,
     )

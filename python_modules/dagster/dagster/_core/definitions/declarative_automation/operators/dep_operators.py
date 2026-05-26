@@ -267,7 +267,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
             context,
             true_subset=true_subset,
             child_results=dep_results,
-            timing_metadata=self._merge_timing_metadata(dep_results),
+            timing_metadata=self._merge_timing_metadata(dep_results),  # ty: ignore[invalid-argument-type]
         )
 
 

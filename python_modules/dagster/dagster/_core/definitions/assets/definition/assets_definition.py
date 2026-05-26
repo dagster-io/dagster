@@ -1277,9 +1277,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             ) -> None:
                 if isinstance(new_value, Mapping):
                     if key in new_value:
-                        replace_dict[attr_name] = new_value[key]  # ty: ignore[invalid-argument-type]
+                        replace_dict[attr_name] = new_value[key]  # ty: ignore[invalid-assignment, invalid-argument-type]
                 elif new_value:
-                    replace_dict[attr_name] = new_value
+                    replace_dict[attr_name] = new_value  # ty: ignore[invalid-assignment]
 
                 old_value = getattr(spec, attr_name)
                 if old_value and old_value != default_value and attr_name in replace_dict:

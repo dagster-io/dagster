@@ -574,7 +574,7 @@ class AssetMethods:
         asset_key: AssetKey,
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Mapping[str, "AssetPartitionStatus"] | None:
+    ) -> Mapping[str, "AssetPartitionStatus | None"] | None:
         """Get the current status of provided partition_keys for the provided asset.
         Moved from AssetDomain.get_status_by_partition().
 

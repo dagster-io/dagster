@@ -78,6 +78,7 @@ def test_single_proc_interrupt():
                 "Execution was interrupted unexpectedly. "
                 "No user initiated termination request was found, treating as failure." in message
                 for message in result_messages
+                if message is not None
             ]
         )
 

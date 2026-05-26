@@ -61,7 +61,7 @@ def _parse_and_populate_model_with_annotated_errors(
 
         raise ValidationError.from_exception_data(
             title=e.title,
-            line_errors=line_errors,
+            line_errors=line_errors,  # ty: ignore[invalid-argument-type]
             input_type="json",
             hide_input=False,
         ) from None
@@ -128,7 +128,7 @@ def enrich_validation_errors_with_source_position(
 
         err = ValidationError.from_exception_data(
             title=e.title,
-            line_errors=line_errors,
+            line_errors=line_errors,  # ty: ignore[invalid-argument-type]
             input_type="json",
             hide_input=False,
         )

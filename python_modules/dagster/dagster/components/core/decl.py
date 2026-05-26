@@ -404,7 +404,7 @@ def build_component_decl_from_yaml_file(
     return YamlFileDecl(
         path=ComponentPath.from_path(context.path),
         context=context,
-        decls=component_nodes,
+        decls=component_nodes,  # ty: ignore[invalid-argument-type]
         source_positions=[
             source_tree.source_position_tree.position for source_tree in source_trees
         ],

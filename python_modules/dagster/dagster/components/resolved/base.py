@@ -216,7 +216,7 @@ def derive_model_type(
 
             model_fields[field_name] = (
                 field_type,
-                FieldInfo.merge_field_infos(*field_infos),
+                FieldInfo.merge_field_infos(*field_infos),  # ty: ignore[invalid-argument-type]
             )
 
         try:

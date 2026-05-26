@@ -79,7 +79,7 @@ def _make_dagster_package(package_name: str):
         },
     }
 
-    has_todos = []
+    has_todos: list[str] = []
 
     for to_create, variables in files_to_create.items():
         print(f"Writing {to_create}")
@@ -90,7 +90,7 @@ def _make_dagster_package(package_name: str):
             template.stream(**variables["kwargs"]).dump(f)  # type: ignore
 
         if variables["has_todos"]:
-            has_todos.append(variables["path"])
+            has_todos.append(path)
 
     # test __init__.py
     path = os.path.join(tests_path, "__init__.py")
