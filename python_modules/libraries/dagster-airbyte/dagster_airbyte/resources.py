@@ -525,7 +525,7 @@ class BaseAirbyteWorkspace(ConfigurableResource):
         description=(
             "If set to True, connections with a 'deprecated' status in Airbyte "
             "will be excluded when fetching workspace data. Deprecated connections are those "
-            "that have been deleted in Airbyte. Defaults to false."
+            "that have been deleted in Airbyte. Defaults to False."
         ),
     )
 
