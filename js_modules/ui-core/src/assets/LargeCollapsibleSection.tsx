@@ -55,7 +55,7 @@ export const LargeCollapsibleSection = ({
             </Box>
           </UnstyledButton>
         </Collapsible.Trigger>
-        <Collapsible.Content style={{overflowX: 'auto'}}>
+        <Collapsible.Content>
           <Box padding={{vertical: padChildren ? 12 : 0}}>{children}</Box>
         </Collapsible.Content>
       </Box>

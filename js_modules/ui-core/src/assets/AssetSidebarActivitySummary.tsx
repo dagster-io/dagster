@@ -16,7 +16,7 @@ import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {PoolTag} from '../instance/PoolTag';
 import {SidebarSection} from '../pipelines/SidebarComponents';
-
+import styles from './css/AssetSidebarActivitySummary.module.css';
 interface Props {
   asset: SidebarAssetFragment;
   liveData?: LiveDataForNodeWithStaleData;
@@ -93,13 +93,15 @@ export const AssetSidebarActivitySummary = ({
             (displayedEvent.__typename === 'MaterializationEvent' ||
               displayedEvent.__typename === 'ObservationEvent' ||
               displayedEvent.__typename === 'FailedToMaterializeEvent') ? (
-              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-                <LatestMaterializationMetadata
-                  assetKey={asset.assetKey}
-                  latest={displayedEvent}
-                  liveData={liveData}
-                  definition={asset}
-                />
+              <div className={styles.removeTableBorderOuter}>
+                <div className={styles.removeTableBorderInner}>
+                  <LatestMaterializationMetadata
+                    assetKey={asset.assetKey}
+                    latest={displayedEvent}
+                    liveData={liveData}
+                    definition={asset}
+                  />
+                </div>
               </div>
             ) : loading ? (
               <Box padding={{vertical: 20}}>
@@ -122,8 +124,10 @@ export const AssetSidebarActivitySummary = ({
             (displayedEvent.__typename === 'MaterializationEvent' ||
               displayedEvent.__typename === 'ObservationEvent' ||
               displayedEvent.__typename === 'FailedToMaterializeEvent') ? (
-              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-                <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
+              <div className={styles.removeTableBorderOuter}>
+                <div className={styles.removeTableBorderInner}>
+                  <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
+                </div>
               </div>
             ) : loading ? (
               <Box padding={{vertical: 20}}>
