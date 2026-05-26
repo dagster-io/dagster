@@ -101,19 +101,19 @@ query($runId: ID!) {
 }
 """
 
-LOCATION_STATUSES_QUERY = """
-query {
-  locationStatusesOrError {
+LOCATION_ENTRY_QUERY = """
+query($name: String!) {
+  workspaceLocationEntryOrError(name: $name) {
     __typename
-    ... on WorkspaceLocationStatusEntries {
-      entries {
-        name
-        loadStatus
+    ... on WorkspaceLocationEntry {
+      name
+      loadStatus
+      locationOrLoadError {
+        __typename
+        ... on PythonError {
+          message
+        }
       }
-    }
-    ... on PythonError {
-      message
-      stack
     }
   }
 }
@@ -165,32 +165,53 @@ def wait_for_workspace_loaded(
     timeout: int = 180,
 ) -> None:
     # Pod-readiness of a user-code-deployment doesn't imply the webserver has
-    # finished polling its gRPC server and registered it as a code location.
-    # The first test in a fresh suite races this gap and fails with
-    # PipelineNotFoundError. Block here until every expected location reports
-    # LOADED so callers can launch runs immediately.
-    expected = set(expected_location_names)
+    # successfully loaded its gRPC server as a code location. In dagster,
+    # CodeLocationLoadStatus is a two-value enum (LOADING / LOADED) where
+    # LOADED means "finished loading (may be an error)" — _load_location
+    # always returns LOADED, even when the load attempt raised and the entry's
+    # code_location is None. Polling loadStatus alone races the watch-thread
+    # reload triggered by the first LOCATION_UPDATED event from the gRPC
+    # server, and the first test fails with PipelineNotFoundError.
+    #
+    # Use workspaceLocationEntryOrError per location and require
+    # locationOrLoadError to be a RepositoryLocation (not a PythonError) so
+    # callers know the workspace actually has the location's repositories.
+    expected = list(expected_location_names)
     start = time.time()
-    last_status: Mapping[str, str] = {}
+    last_states: dict[str, str] = {}
     while time.time() - start < timeout:
-        try:
-            result = _execute_query_over_graphql(
-                webserver_url, LOCATION_STATUSES_QUERY, variables=None
-            )
-            payload = result.get("data", {}).get("locationStatusesOrError", {})
-            if payload.get("__typename") == "WorkspaceLocationStatusEntries":
-                last_status = {e["name"]: e["loadStatus"] for e in payload["entries"]}
-                if expected.issubset(last_status) and all(
-                    last_status[name] == "LOADED" for name in expected
-                ):
-                    print(f"Code locations loaded: {sorted(expected)}")
-                    return
-        except Exception as e:
-            print(f"Polling workspace load status failed (retrying): {e}")
+        states: dict[str, str] = {}
+        for name in expected:
+            try:
+                result = _execute_query_over_graphql(
+                    webserver_url,
+                    LOCATION_ENTRY_QUERY,
+                    variables=json.dumps({"name": name}),
+                )
+                entry = (result.get("data") or {}).get("workspaceLocationEntryOrError")
+                if not entry or entry.get("__typename") != "WorkspaceLocationEntry":
+                    states[name] = "MISSING"
+                    continue
+                inner = entry.get("locationOrLoadError")
+                if entry.get("loadStatus") != "LOADED" or inner is None:
+                    states[name] = "LOADING"
+                elif inner.get("__typename") == "RepositoryLocation":
+                    states[name] = "LOADED"
+                else:
+                    message = (inner.get("message") or "").splitlines()[0][:200]
+                    states[name] = f"LOAD_ERROR: {message}"
+            except Exception as e:
+                states[name] = f"POLL_ERROR: {e}"
+
+        last_states = states
+        if all(s == "LOADED" for s in states.values()):
+            print(f"Code locations loaded: {sorted(expected)}")
+            return
         time.sleep(1)
+
     raise Exception(
-        f"Timed out after {timeout}s waiting for code locations {sorted(expected)} to load. "
-        f"Last status: {last_status}"
+        f"Timed out after {timeout}s waiting for code locations {sorted(expected)} "
+        f"to load successfully. Last states: {last_states}"
     )
 
 
