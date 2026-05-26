@@ -11,7 +11,7 @@ license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster==1!0+dev",
-    "kubernetes<37",
+    "kubernetes<36",
     # exclude a google-auth release that added an overly restrictive urllib3 pin
     # that confuses dependency resolvers
     "google-auth!=2.23.1",
@@ -40,9 +40,6 @@ test-kubernetes-12 = [
 ]
 test-kubernetes-35 = [
     "kubernetes>=35.0.0,<36",
-]
-test-kubernetes-36 = [
-    "kubernetes>=36.0.0,<37",
 ]
 
 [tool.uv]
