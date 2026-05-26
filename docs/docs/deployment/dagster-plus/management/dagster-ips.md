@@ -8,6 +8,12 @@ tags: [dagster-plus-feature]
 
 The Dagster+ web interface, CLI, and GraphQL API use [AWS Cloudfront's content delivery network](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html).
 
+:::tip
+
+If your organization requires that agent traffic stays entirely on the AWS private network, Dagster+ supports AWS PrivateLink as an alternative to IP allowlisting. To enable AWS PrivateLink, [contact the Dagster team](https://dagster.io/contact) to enable it. For details, see the [Hybrid architecture security overview](/deployment/dagster-plus/hybrid/architecture#private-connectivity-aws-privatelink).
+
+:::
+
 ## IP addresses
 
 The Dagster+ agent interacts with the following IP addresses:
