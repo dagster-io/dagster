@@ -29,7 +29,7 @@ export const PipelinePartitionsRoot = (props: Props) => {
   const isJob = !!pipelineInfo?.isJob;
   const isAssetJob = !!pipelineInfo?.isAssetJob;
 
-  useJobTitle(explorerPath, isJob);
+  useJobTitle(explorerPath, isJob, 'Partitions');
   useStripSnapshotFromPath(params);
 
   const {partitionSet, partitionSetError} = usePartitionNameForPipeline(repoAddress, pipelineName);

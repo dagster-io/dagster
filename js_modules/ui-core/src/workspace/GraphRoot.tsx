@@ -35,7 +35,7 @@ export const GraphRoot = (props: Props) => {
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
   // or the name of the pipeline tweaked to look a bit more like a graph name.
   const title = path.opNames.length > 1 ? path.opNames[path.opNames.length - 2] : path.pipelineName;
-  useDocumentTitle(`Graph: ${title}`);
+  useDocumentTitle(`Graphs | ${title}`);
 
   return (
     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>

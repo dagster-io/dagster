@@ -11,27 +11,29 @@ import {Link, Redirect, useParams} from 'react-router-dom';
 import {useQuery} from '../apollo-client';
 import {CodeLocationDocsPackageTree} from './CodeLocationDocsPackageTree';
 import {CODE_LOCATION_DOCS_QUERY} from './CodeLocationDocsQuery';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import styles from './css/CodeLocationDocsRoot.module.css';
 import {
   CodeLocationDocsQuery,
   CodeLocationDocsQueryVariables,
 } from './types/CodeLocationDocsQuery.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 interface Props {
   repoAddress: RepoAddress;
 }
 
-export const CodeLocationDocsRoot = (props: Props) => {
+export const CodeLocationDocsRoot = ({repoAddress}: Props) => {
+  useDocumentTitle(`Code locations | ${repoAddressAsHumanString(repoAddress)} | Docs`);
+
   const params = useParams<{
     repoPath: string;
     packageName?: string;
     componentName?: string;
   }>();
 
-  const {repoAddress} = props;
   const {locationEntries, loadingNonAssets: loading} = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
 

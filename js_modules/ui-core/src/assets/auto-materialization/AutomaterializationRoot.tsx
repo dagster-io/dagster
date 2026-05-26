@@ -27,7 +27,7 @@ export const AutomaterializationRoot = () => {
 
 const GlobalAutomaterializationRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Automations | Auto-materialize');
+  useDocumentTitle('Automation | Auto-materialize');
   return (
     <Page>
       <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
