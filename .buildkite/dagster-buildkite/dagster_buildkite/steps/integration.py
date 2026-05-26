@@ -6,7 +6,11 @@ from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.step_builder import TopLevelStepConfiguration
-from buildkite_shared.utils import oss_path
+from buildkite_shared.utils import (
+    connect_sibling_docker_container,
+    network_buildkite_container,
+    oss_path,
+)
 from dagster_buildkite.defines import (
     GCP_CREDS_FILENAME,
     GCP_CREDS_LOCAL_FILE,
@@ -19,11 +23,7 @@ from dagster_buildkite.steps.packages import (
 )
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor
-from dagster_buildkite.utils import (
-    connect_sibling_docker_container,
-    library_version_from_core_version,
-    network_buildkite_container,
-)
+from dagster_buildkite.utils import library_version_from_core_version
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"

@@ -18,15 +18,15 @@ from buildkite_shared.step_builders.step_builder import (
     TopLevelStepConfiguration,
     is_command_step,
 )
-from buildkite_shared.utils import oss_path
+from buildkite_shared.utils import (
+    connect_sibling_docker_container,
+    network_buildkite_container,
+    oss_path,
+)
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
-from dagster_buildkite.utils import (
-    connect_sibling_docker_container,
-    network_buildkite_container,
-    wait_for_mysql_container,
-)
+from dagster_buildkite.utils import wait_for_mysql_container
 
 _CORE_PACKAGES = [
     oss_path("python_modules/dagster"),
