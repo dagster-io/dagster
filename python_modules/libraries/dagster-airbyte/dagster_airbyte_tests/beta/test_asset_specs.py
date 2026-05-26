@@ -21,12 +21,20 @@ from dagster_airbyte.translator import (
 from responses import matchers
 
 from dagster_airbyte_tests.beta.conftest import (
+    SAMPLE_ACCESS_TOKEN,
     SAMPLE_ANOTHER_WORKSPACE_RESPOMSE,
+    SAMPLE_CONNECTION_DETAILS,
+    SAMPLE_DESTINATION_DETAILS,
+    SAMPLE_WORKSPACE_RESPOMSE,
     TEST_ANOTHER_WORKSPACE_ID,
     TEST_CONNECTION_ID,
+    TEST_DEPRECATED_CONNECTION_ID,
+    TEST_DESTINATION_ID,
     TEST_DESTINATION_TYPE,
+    TEST_WORKSPACE_ID,
     get_sample_connections,
     get_sample_connections_next_page,
+    get_sample_connections_with_deprecated,
 )
 
 
@@ -37,6 +45,57 @@ def test_fetch_airbyte_workspace_data(
     actual_workspace_data = resource.fetch_airbyte_workspace_data()
     assert len(actual_workspace_data.connections_by_id) == 1
     assert len(actual_workspace_data.destinations_by_id) == 1
+
+
+def test_fetch_airbyte_workspace_data_filters_deprecated_connections(
+    base_api_mocks: responses.RequestsMock,
+    rest_api_url: str,
+    config_api_url: str,
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
+) -> None:
+    """Deprecated (deleted) connections are excluded by default and included when opted in."""
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{rest_api_url}/workspaces/{TEST_WORKSPACE_ID}",
+        json=SAMPLE_WORKSPACE_RESPOMSE,
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{rest_api_url}/connections",
+        json=get_sample_connections_with_deprecated(),
+        status=200,
+        match=[matchers.query_param_matcher({"limit": 5, "workspaceIds": TEST_WORKSPACE_ID})],
+    )
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{rest_api_url}/connections",
+        json=get_sample_connections_next_page(),
+        status=200,
+        match=[
+            matchers.query_param_matcher(
+                {"limit": 5, "offset": 10, "workspaceIds": TEST_WORKSPACE_ID}
+            )
+        ],
+    )
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{config_api_url}/connections/get",
+        json=SAMPLE_CONNECTION_DETAILS,
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{rest_api_url}/destinations/{TEST_DESTINATION_ID}",
+        json=SAMPLE_DESTINATION_DETAILS,
+        status=200,
+    )
+
+    # Default behavior: deprecated connections are filtered out
+    workspace_data = resource.fetch_airbyte_workspace_data()
+    assert TEST_CONNECTION_ID in workspace_data.connections_by_id
+    assert TEST_DEPRECATED_CONNECTION_ID not in workspace_data.connections_by_id
+    assert len(workspace_data.connections_by_id) == 1
 
 
 @pytest.mark.parametrize(
