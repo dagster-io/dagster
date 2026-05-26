@@ -1052,12 +1052,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airlift"),
-            unsupported_python_versions=[
-                # airflow
-                AvailablePythonVersion.V3_12,
-                AvailablePythonVersion.V3_13,
-                AvailablePythonVersion.V3_14,
-            ],
             env_vars=[
                 "AIRLIFT_MWAA_TEST_ENV_NAME",
                 "AIRLIFT_MWAA_TEST_PROFILE",

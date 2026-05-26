@@ -101,7 +101,6 @@ test = [
     "tox>=4.22",
     "tox-uv>=1.16",
     "morefs[asynclocal]",
-    "fsspec<2024.5.0",
     "rapidfuzz",
     "pytest-rerunfailures",
     "psutil",

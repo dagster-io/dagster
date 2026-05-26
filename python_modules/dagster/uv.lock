@@ -727,7 +727,6 @@ ruff = [
 ]
 test = [
     { name = "docker" },
-    { name = "fsspec" },
     { name = "grpcio-tools", version = "1.48.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
     { name = "grpcio-tools", version = "1.80.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
     { name = "morefs", extra = ["asynclocal"] },
@@ -821,7 +820,6 @@ requires-dist = [
     { name = "docstring-parser" },
     { name = "duckdb", marker = "extra == 'test-components'" },
     { name = "filelock" },
-    { name = "fsspec", marker = "extra == 'test'", specifier = "<2024.5.0" },
     { name = "grpcio", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
     { name = "grpcio", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2" },
     { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
@@ -1384,11 +1382,11 @@ wheels = [
 
 [[package]]
 name = "fsspec"
-version = "2024.3.0"
+version = "2026.4.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/54/57/ecad709ff03e636c90b93067d54a289da49cac97258b626929933e792fb1/fsspec-2024.3.0.tar.gz", hash = "sha256:f13a130c0ed07e15c4e1aeb0472a823e9c426b0b5792a1f40d902b0a71972d43", size = 170720, upload-time = "2024-03-15T20:17:28.991Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/8d/1c51c094345df128ca4a990d633fe1a0ff28726c9e6b3c41ba65087bba1d/fsspec-2026.4.0.tar.gz", hash = "sha256:301d8ac70ae90ef3ad05dcf94d6c3754a097f9b5fe4667d2787aa359ec7df7e4", size = 312760, upload-time = "2026-04-29T20:42:38.635Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/be/ba7cf9660a7f566fe6b63eab725e962d23ffc340324ba1eb837833e4b90a/fsspec-2024.3.0-py3-none-any.whl", hash = "sha256:779001bd0122c9c4975cf03827d5e86c3afb914a3ae27040f15d341ab506a693", size = 171917, upload-time = "2024-03-15T20:17:27.272Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/0c/043d5e551459da400957a1395e0febbf771446ff34291afcbe3d8be2a279/fsspec-2026.4.0-py3-none-any.whl", hash = "sha256:11ef7bb35dab8a394fde6e608221d5cf3e8499401c249bebaeaad760a1a8dec2", size = 203402, upload-time = "2026-04-29T20:42:36.842Z" },
 ]
 
 [[package]]
