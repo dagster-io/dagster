@@ -26,12 +26,12 @@ import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md'
 
 `dagster-openlineage` v0.2 provides two emission mechanisms — configure **exactly one** per deployment:
 
-| Environment | Mechanism A (storage wrapper) | Mechanism B (sensor) |
-|---|---|---|
-| OSS Dagster (self-hosted) | ✅ | ✅ |
-| Dagster+ Hybrid | ❌ | ✅ |
-| Dagster+ Serverless | ❌ | ✅ |
-| Dagster+ Branch Deployments | ❌ | ✅ |
+| Environment                 | Mechanism A (storage wrapper) | Mechanism B (sensor) |
+| --------------------------- | ----------------------------- | -------------------- |
+| OSS Dagster (self-hosted)   | ✅                            | ✅                   |
+| Dagster+ Hybrid             | ❌                            | ✅                   |
+| Dagster+ Serverless         | ❌                            | ✅                   |
+| Dagster+ Branch Deployments | ❌                            | ✅                   |
 
 - **You control `instance.yaml`** → use Mechanism A. Every event is emitted as it is persisted; no daemon dependency.
 - **You run on Dagster+** → use Mechanism B. The sensor polls the event log and converts asset events to OpenLineage emissions.
