@@ -48,6 +48,15 @@ _DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
 
 _GRAPHQL_GRPC_RESOURCES = ResourceRequests(cpu="2000m", memory="4Gi")
 
+# clickhouse-server in dind via testcontainers. Default 2Gi dind limit OOMs the
+# server under load.
+_CLICKHOUSE_TESTCONTAINERS_RESOURCES = ResourceRequests(
+    cpu="1000m",
+    memory="1Gi",
+    docker_memory="2Gi",
+    docker_memory_limit="4Gi",
+)
+
 
 def _infer_package_type(directory: str | Path) -> str:
     directory = Path(directory)
@@ -671,13 +680,14 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("examples/use_case_repository"),
             pytest_tox_factors=[ToxFactor("source")],
         ),
-        # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
-        # beefier instance
+        # Federation tutorial spins up two host-process airflow instances + dagster;
+        # needs a beefier main container than MEDIUM's c5a.large (2 vCPU / 4 Gi) provides.
         PackageSpec(
             oss_path("examples/airlift-federation-tutorial"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=ResourceRequests(cpu="2000m", memory="6Gi"),
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -1203,7 +1213,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1211,7 +1222,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-pandas"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1219,7 +1231,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-polars"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1372,6 +1385,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
+            # Each split runs a host-process airflow + dagster pair; mirror the
+            # federation tutorial's sizing (minus one airflow instance).
             oss_path("python_modules/libraries/dagster-airlift/kitchen-sink"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
@@ -1380,7 +1395,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=ResourceRequests(cpu="2000m", memory="4Gi"),
             splits=2,
         ),
         # Runs against live dbt cloud instance, we only want to run on commits and on the
