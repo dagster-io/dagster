@@ -22,13 +22,13 @@ import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md'
 
 <PackageInstallInstructions packageName="dagster-elasticsearch" />
 
-Optional extras are available for table-like asset outputs:
+Optional extras are available for table-like asset outputs. Install the extras that match the data types your assets return:
 
-```shell
-uv add 'dagster-elasticsearch[pandas]'
-uv add 'dagster-elasticsearch[polars]'
-uv add 'dagster-elasticsearch[arrow]'
-```
+<PackageInstallInstructions packageName="dagster-elasticsearch[pandas]" />
+
+<PackageInstallInstructions packageName="dagster-elasticsearch[polars]" />
+
+<PackageInstallInstructions packageName="dagster-elasticsearch[arrow]" />
 
 The underlying `elasticsearch` Python client must match the major version of your Elasticsearch cluster. Pin the client major version in your project if needed, for example `elasticsearch>=8.10,<9` for Elasticsearch 8.x.
 

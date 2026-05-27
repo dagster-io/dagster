@@ -23,25 +23,27 @@ def search_docs() -> list[dict[str, str]]:
     ]
 
 
-defs = dg.Definitions(
-    assets=[indexed_doc, search_docs],
-    asset_checks=[build_indexed_asset_check(asset=search_docs, min_indexed=1)],
-    resources={
-        "es": ElasticsearchResource(
-            connection_config=HostsConfig(
-                hosts=["https://es.example.com:9200"],
-                api_key=dg.EnvVar("ELASTICSEARCH_API_KEY"),
+@dg.definitions
+def defs() -> dg.Definitions:
+    return dg.Definitions(
+        assets=[indexed_doc, search_docs],
+        asset_checks=[build_indexed_asset_check(asset=search_docs, min_indexed=1)],
+        resources={
+            "es": ElasticsearchResource(
+                connection_config=HostsConfig(
+                    hosts=["https://es.example.com:9200"],
+                    api_key=dg.EnvVar("ELASTICSEARCH_API_KEY"),
+                ),
             ),
-        ),
-        "elasticsearch_io_manager": ElasticsearchIOManager(
-            connection_config=HostsConfig(
-                hosts=["https://es.example.com:9200"],
-                api_key=dg.EnvVar("ELASTICSEARCH_API_KEY"),
+            "elasticsearch_io_manager": ElasticsearchIOManager(
+                connection_config=HostsConfig(
+                    hosts=["https://es.example.com:9200"],
+                    api_key=dg.EnvVar("ELASTICSEARCH_API_KEY"),
+                ),
+                index="docs",
+                use_alias=True,
+                rollover_strategy="auto",
+                keep_last=3,
             ),
-            index="docs",
-            use_alias=True,
-            rollover_strategy="auto",
-            keep_last=3,
-        ),
-    },
-)
+        },
+    )
