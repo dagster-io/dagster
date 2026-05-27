@@ -14,14 +14,11 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def image_pull_policy():
-    # This is because when running local tests, we need to load the image into the kind cluster (and
-    # then not attempt to pull it) because we don't want to require credentials for a private
-    # registry / pollute the private registry / set up and network a local registry as a condition
-    # of running tests
-    if IS_BUILDKITE:
-        return "Always"
-    else:
-        return "IfNotPresent"
+    # The cluster_provider fixture preloads every referenced image (test-project
+    # + postgres / rabbitmq / localstack / busybox) into the kind node via
+    # `kind load docker-image`, so kubelet should never need to reach a remote
+    # registry.
+    return "IfNotPresent"
 
 
 def check_output(*args, **kwargs):
