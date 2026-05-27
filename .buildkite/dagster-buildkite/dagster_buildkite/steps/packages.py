@@ -687,7 +687,11 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
             queue=BuildkiteQueue.KUBERNETES_EKS,
-            resources=ResourceRequests(cpu="2000m", memory="6Gi"),
+            # Two airflow standalone stacks + dagster share one pod. 2 vCPU starved
+            # the SQLite writers under load (scheduler died with "database is
+            # locked", failing test_load_metrics); 4 vCPU matches the old c5.xlarge
+            # DOCKER-queue sizing this package ran on before #24950.
+            resources=ResourceRequests(cpu="4000m", memory="6Gi"),
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -1396,7 +1400,10 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_14,
             ],
             queue=BuildkiteQueue.KUBERNETES_EKS,
-            resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+            # One airflow standalone stack + dagster per split carries the same
+            # SQLite-lock risk as the federation tutorial, so match its 4 vCPU
+            # sizing rather than MEDIUM's 2 vCPU (#24950).
+            resources=ResourceRequests(cpu="4000m", memory="4Gi"),
             splits=2,
         ),
         # Runs against live dbt cloud instance, we only want to run on commits and on the
