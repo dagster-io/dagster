@@ -51,14 +51,14 @@ Use `ElasticsearchIOManager` to bulk-index asset outputs into Elasticsearch. It 
 
 Common IO manager options include:
 
-| Option | Description |
-| --- | --- |
-| `index` | Target index name. When `use_alias=True`, this is the stable alias name. |
-| `bulk_chunk_size` | Number of documents per bulk request. |
-| `max_chunk_bytes` | Optional maximum bulk request size in bytes. |
-| `refresh` | Whether to refresh the index after writes. |
-| `lazy_load` | Return an iterator from `load_input` instead of loading all hits eagerly. |
-| `scan_size` | Page size for scroll-based reads. |
+| Option            | Description                                                               |
+| ----------------- | ------------------------------------------------------------------------- |
+| `index`           | Target index name. When `use_alias=True`, this is the stable alias name.  |
+| `bulk_chunk_size` | Number of documents per bulk request.                                     |
+| `max_chunk_bytes` | Optional maximum bulk request size in bytes.                              |
+| `refresh`         | Whether to refresh the index after writes.                                |
+| `lazy_load`       | Return an iterator from `load_input` instead of loading all hits eagerly. |
+| `scan_size`       | Page size for scroll-based reads.                                         |
 
 Most IO manager settings can be overridden for individual assets with asset metadata, including `index`, `id_field`, `bulk_chunk_size`, `max_chunk_bytes`, `refresh`, `rollover_strategy`, and `index_config`.
 
@@ -68,13 +68,13 @@ Set `use_alias=True` to write each materialization to a fresh physical index and
 
 Rollover strategies include:
 
-| Strategy | Behavior |
-| --- | --- |
-| `auto` | Uses the partition key for partitioned assets, otherwise a timestamp. |
-| `timestamp` | Appends a UTC timestamp suffix. |
-| `run_id` | Appends the Dagster run ID. |
-| `partition` | Appends a slugified partition key. |
-| `none` | Uses no suffix. |
+| Strategy    | Behavior                                                              |
+| ----------- | --------------------------------------------------------------------- |
+| `auto`      | Uses the partition key for partitioned assets, otherwise a timestamp. |
+| `timestamp` | Appends a UTC timestamp suffix.                                       |
+| `run_id`    | Appends the Dagster run ID.                                           |
+| `partition` | Appends a slugified partition key.                                    |
+| `none`      | Uses no suffix.                                                       |
 
 Use `keep_last` to delete older rollover indices after successful alias swaps.
 
