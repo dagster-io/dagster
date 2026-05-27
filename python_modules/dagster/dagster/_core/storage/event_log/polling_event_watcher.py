@@ -157,6 +157,10 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
             if not self._callback_fn_list:
                 self._should_thread_exit.set()
 
+    def get_callbacks(self) -> list[CallbackAfterCursor]:
+        with self._callback_fn_list_lock:
+            return list(self._callback_fn_list)
+
     def run(self) -> None:
         """Polling function to update Observers with EventLogEntrys from Event Log DB.
         Wakes every POLLING_CADENCE &
@@ -177,15 +181,14 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
             )
             cursor = conn.cursor
             for event_record in conn.records:
-                with self._callback_fn_list_lock:
-                    for callback_with_cursor in self._callback_fn_list:
-                        if (
-                            callback_with_cursor.cursor is None
-                            or EventLogCursor.parse(callback_with_cursor.cursor).storage_id()
-                            < event_record.storage_id
-                        ):
-                            callback_with_cursor.callback(
-                                event_record.event_log_entry,
-                                str(EventLogCursor.from_storage_id(event_record.storage_id)),
-                            )
+                for callback_with_cursor in self.get_callbacks():
+                    if (
+                        callback_with_cursor.cursor is None
+                        or EventLogCursor.parse(callback_with_cursor.cursor).storage_id()
+                        < event_record.storage_id
+                    ):
+                        callback_with_cursor.callback(
+                            event_record.event_log_entry,
+                            str(EventLogCursor.from_storage_id(event_record.storage_id)),
+                        )
             wait_time = INIT_POLL_PERIOD if conn.records else min(wait_time * 2, MAX_POLL_PERIOD)
