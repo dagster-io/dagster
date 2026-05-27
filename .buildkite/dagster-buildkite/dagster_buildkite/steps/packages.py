@@ -260,9 +260,9 @@ class PackageSpec:
                                 base_label=split_label,
                                 command_type="pytest",
                                 python_version=py_version,
-                                env_vars=self.env_vars,
+                                env=self.env_vars,
                                 extra_commands_pre=extra_commands_pre,
-                                dependencies=dependencies,
+                                depends_on=dependencies,
                                 tox_file=self.tox_file,
                                 timeout_in_minutes=self.timeout_in_minutes,
                                 queue=(
