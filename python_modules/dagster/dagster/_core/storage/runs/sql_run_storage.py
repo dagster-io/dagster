@@ -277,18 +277,40 @@ class SqlRunStorage(RunStorage):
         order_by: str | None,
         ascending: bool | None,
     ) -> SqlAlchemyQuery:
-        """Helper function to deal with cursor/limit pagination args."""
+        """Helper function to deal with cursor/limit/ordering pagination args for a RunsTable query.
+
+        Cursor pagination is only supported when sorting by ``RunsTable.c.id`` (the default). If
+        ``order_by`` names a different column and ``cursor`` is also provided, this method raises.
+        """
+        sorting_column: db.Column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
         if cursor:
-            cursor_query = db_select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
-            if ascending:
-                query = query.where(RunsTable.c.id > db_scalar_subquery(cursor_query))
+            if sorting_column is RunsTable.c.id:
+                # `cursor_query` and `query.where(RunsTable.c.id ....)` both assume that `id` is
+                # the sorting_column.
+                cursor_query = db_select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
+                if ascending:
+                    query = query.where(RunsTable.c.id > db_scalar_subquery(cursor_query))
+                else:
+                    query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
+            elif sorting_column.unique:
+                # Single-column cursor pagination requires a unique sort column to identify the last
+                # seen row unambiguously. This branch means the column is unique but is not `id`.
+                # The only other unique column today is `run_id`, which is a random uuid4 and not a
+                # useful sort key. Stable, multi-column cursor pagination over a composite index
+                # is possible in general but not currently implemented.
+                check.not_implemented(
+                    f"Cursor pagination for this RunsTable unique column: {order_by}"
+                )
             else:
-                query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
+                check.param_invariant(
+                    False,
+                    "sorting_column",
+                    f"Cursor pagination requires a unique sort column, but RunsTable.c.{order_by} is not unique.",
+                )
 
         if limit:
             query = query.limit(limit)
 
-        sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
         direction = db.asc if ascending else db.desc
         query = query.order_by(direction(sorting_column))
 
