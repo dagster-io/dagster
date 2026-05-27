@@ -378,10 +378,6 @@ class CommandStepBuilder:
                 "BUILDKITE_BUILD_URL",
                 "BUILDKITE_ORGANIZATION_SLUG",
                 "BUILDKITE_PIPELINE_SLUG",
-                "BUILDKITE_ANALYTICS_TOKEN",
-                "BUILDKITE_TEST_QUARANTINE_TOKEN",
-                "BUILDKITE_TEST_SUITE_SLUG",
-                # Buildkite uses this to tag tests in Test Engine
                 "BUILDKITE_BRANCH",
                 "BUILDKITE_COMMIT",
                 "BUILDKITE_MESSAGE",
@@ -614,33 +610,6 @@ class CommandStepBuilder:
                             {
                                 "name": "NODE_NAME",
                                 "valueFrom": {"fieldRef": {"fieldPath": "spec.nodeName"}},
-                            },
-                            {
-                                "name": "INTERNAL_BUILDKITE_TEST_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "INTERNAL_BUILDKITE_TEST_ANALYTICS_TOKEN",
-                                    }
-                                },
-                            },
-                            {
-                                "name": "INTERNAL_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "INTERNAL_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                    }
-                                },
-                            },
-                            {
-                                "name": "DOGFOOD_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "DOGFOOD_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                    }
-                                },
                             },
                         ],
                         "envFrom": [
