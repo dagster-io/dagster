@@ -304,7 +304,7 @@ class SqlRunStorage(RunStorage):
             else:
                 check.param_invariant(
                     False,
-                    "sorting_column",
+                    "order_by",
                     f"Cursor pagination requires a unique sort column, but RunsTable.c.{order_by} is not unique.",
                 )
 
