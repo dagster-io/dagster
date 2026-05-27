@@ -1300,6 +1300,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_tox_factors=[
                 ToxFactor("kubernetes_12"),
                 ToxFactor("kubernetes_35"),
+                ToxFactor("kubernetes_36"),
             ],
             pytest_extra_cmds=k8s_extra_cmds,
         ),
