@@ -49,9 +49,12 @@ _DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
 _GRAPHQL_GRPC_RESOURCES = ResourceRequests(cpu="2000m", memory="4Gi")
 
 # clickhouse-server in dind via testcontainers. Default 2Gi dind limit OOMs the
-# server under load.
+# server under load. cpu bumped 1000m->2000m: at 1000m the clickhouse-server boot
+# starves the dind daemon, so testcontainers' container bring-up intermittently
+# blows docker-py's 60s read timeout (UnixHTTPConnectionPool ... read timeout=60)
+# and the session fixture errors. Pairs with the /var/lib/docker emptyDir mount.
 _CLICKHOUSE_TESTCONTAINERS_RESOURCES = ResourceRequests(
-    cpu="1000m",
+    cpu="2000m",
     memory="1Gi",
     docker_memory="2Gi",
     docker_memory_limit="4Gi",

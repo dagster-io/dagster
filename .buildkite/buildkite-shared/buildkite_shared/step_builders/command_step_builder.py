@@ -510,6 +510,23 @@ class CommandStepBuilder:
                             "mountPath": "/tmp",
                             "name": "shared-tmp",
                         },
+                        # Dedicated pod-private emptyDir for dockerd's image
+                        # store and container state. Without this, /var/lib/docker
+                        # falls through to the dind container's writable layer on
+                        # the node's overlay filesystem, which is shared with every
+                        # other pod on the node — so heavy snapshot/layer ops
+                        # serialize at the kernel FS layer and dockerd holds its
+                        # internal locks across that serialization. The observed
+                        # symptom is 60s `UnixHTTPConnectionPool` ReadTimeouts on
+                        # `containers.create` calls during dagster-docker tests
+                        # (see #24902 / #24936 escalation ladder). Isolating
+                        # /var/lib/docker to a per-pod mount eliminates the
+                        # filesystem-layer overlay overhead and the cross-pod
+                        # contention at that surface.
+                        {
+                            "mountPath": "/var/lib/docker",
+                            "name": "docker-data",
+                        },
                     ],
                     "securityContext": {
                         "privileged": True,
@@ -544,6 +561,19 @@ class CommandStepBuilder:
                 {
                     "name": "shared-tmp",
                     "emptyDir": {},
+                }
+            )
+            self._k8s_volumes.append(
+                {
+                    "name": "docker-data",
+                    # 10Gi cap bounds the dind sidecar's footprint on the
+                    # node's ephemeral storage. The test-project image is
+                    # ~2-3Gi and per-test scratch space is small, so 10Gi is
+                    # comfortable headroom. If a job ever blows through, the
+                    # eviction blast radius is just that pod.
+                    "emptyDir": {
+                        "sizeLimit": "10Gi",
+                    },
                 }
             )
             self._k8s_volume_mounts.append(
