@@ -278,7 +278,7 @@ class PackageSpec:
                                 ),
                                 resources=(
                                     other_factor.resources
-                                    if other_factor and other_factor.resources
+                                    if other_factor and other_factor.resources is not None
                                     else self.resources
                                 ),
                                 soft_fail=other_factor.soft_fail if other_factor else False,
