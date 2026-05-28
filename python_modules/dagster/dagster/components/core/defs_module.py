@@ -155,9 +155,9 @@ class CompositeYamlComponent(Component):
 class ComponentLoc:
     """Base class for component location identifiers.
 
-    All component locations -- whether filesystem-based, synthetic root, or
-    UI-defined -- inherit from this class so they can be used uniformly as
-    cache and dependency-graph keys in the ComponentTreeStateTracker.
+    All component locations -- whether filesystem-based or synthetic root --
+    inherit from this class so they can be used uniformly as cache and
+    dependency-graph keys in the ComponentTreeStateTracker.
     """
 
     def without_instance_key(self) -> "ComponentLoc":
@@ -169,6 +169,18 @@ class ComponentLoc:
     def get_display_key(self, root_path: Path) -> str:
         """Return a human-readable key for error messages and tree display."""
         return repr(self)
+
+
+@record
+class ComponentRootLoc(ComponentLoc):
+    """Synthetic location for the canonical root of the component tree.
+
+    This loc serves as the cache and dependency-graph key for the merged
+    definitions produced by the tree.
+    """
+
+    def get_display_key(self, root_path: Path) -> str:
+        return "<root>"
 
 
 @record
@@ -213,14 +225,35 @@ class ComponentPath(ComponentLoc):
         return self.get_relative_key(root_path)
 
 
+@dataclass
+class ComponentRootComponent(Component):
+    """The root component of the unified component tree.
+
+    Merges definitions from all child decls together with library-enriched
+    definitions.
+    """
+
+    components: Sequence[Component]
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        from dagster.components.core.load_defs import get_library_json_enriched_defs
+
+        child_defs = [
+            context.build_defs(child_decl.loc)
+            for child_decl in context.component_decl.iterate_child_component_decls()
+        ]
+        library_defs = get_library_json_enriched_defs(context.component_tree)
+        return Definitions.merge(*child_defs, library_defs)
+
+
 def get_component(context: ComponentLoadContext) -> Component | None:
     """Attempts to load a component from the given context. Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
     """
-    from dagster.components.core.decl import build_component_decl_from_context
+    from dagster.components.core.decl import build_filesystem_component_decl_from_context
 
-    component_decl = build_component_decl_from_context(context)
+    component_decl = build_filesystem_component_decl_from_context(context)
     if component_decl:
         return context.load_structural_component_at_loc(component_decl.loc)
     return None

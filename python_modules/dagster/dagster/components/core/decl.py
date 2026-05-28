@@ -27,6 +27,7 @@ from dagster.components.core.defs_module import (
     ComponentFileModel,
     ComponentLoc,
     ComponentPath,
+    ComponentRootComponent,
     CompositeYamlComponent,
     DefsFolderComponent,
     PythonFileComponent,
@@ -271,7 +272,7 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
 
     @classmethod
     def get(cls, context: ComponentDeclLoadContext) -> "DefsFolderDecl":
-        component = build_component_decl_from_context(context)
+        component = build_filesystem_component_decl_from_context(context)
         return check.inst(
             component,
             DefsFolderDecl,
@@ -299,7 +300,35 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
         yield from self.children.values()
 
 
-def build_component_decl_from_context(context: ComponentDeclLoadContext) -> ComponentDecl | None:
+@record
+class ComponentRootDecl(ComponentDecl[ComponentRootComponent]):
+    """Declaration for the unified root of the component tree.
+
+    Holds a flat list of child decls. Not cached itself — always freshly
+    constructed by ``ComponentTree.find_root_decl`` from independently
+    cached parts.
+    """
+
+    decls: Sequence[ComponentDecl]
+
+    def _load_component(self) -> ComponentRootComponent:
+        return ComponentRootComponent(
+            components=[
+                self.context.load_structural_component_at_loc(decl.loc) for decl in self.decls
+            ],
+        )
+
+    @property
+    def component_type(self) -> type[ComponentRootComponent]:
+        return ComponentRootComponent
+
+    def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
+        yield from self.decls
+
+
+def build_filesystem_component_decl_from_context(
+    context: ComponentDeclLoadContext,
+) -> ComponentDecl | None:
     """Attempts to determine the type of component that should be loaded for the given context.  Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
@@ -350,7 +379,7 @@ def build_component_decls_from_directory_items(
             component_file_model.template_vars_module if component_file_model else None,
         ).for_component_loc(ComponentPath.from_path(subpath))
 
-        component_node = build_component_decl_from_context(path_context)
+        component_node = build_filesystem_component_decl_from_context(path_context)
         if component_node:
             found[subpath] = component_node
     return found
