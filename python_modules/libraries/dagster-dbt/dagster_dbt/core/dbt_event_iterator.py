@@ -127,6 +127,7 @@ def _fetch_column_metadata(
                     manifest=invocation.manifest,
                     dagster_dbt_translator=invocation.dagster_dbt_translator,
                     target_path=invocation.target_path,
+                    project=invocation.project,
                 )
 
             except Exception as e:
