@@ -3,7 +3,7 @@ from dagster_hf_datasets.assets import hf_dataset_asset
 from dagster_hf_datasets.io_manager import HFParquetIOManager
 from dagster_hf_datasets.resources import HuggingFaceResource
 
-from dagster import AssetExecutionContext, Definitions
+from dagster import AssetExecutionContext, Definitions, MaterializeResult
 
 resources = {
     "huggingface": HuggingFaceResource(
@@ -25,7 +25,10 @@ resources = {
     group_name="huggingface_datasets",
     io_manager_key="hf_parquet_io_manager",
 )
-def glue_qqp_train():
+def glue_qqp_train(
+    context: AssetExecutionContext,
+    dataset,
+):
     """Materialize the GLUE QQP training split
     as a Dagster asset backed by a
     Hugging Face Dataset.
@@ -36,7 +39,27 @@ def glue_qqp_train():
     - metadata enrichment
     - Hugging Face Hub observability
     """
-    pass
+    metadata = build_dataset_metadata(
+        dataset,
+        path="nyu-mll/glue",
+    )
+
+    context.log.info(
+        "Loaded dataset with %s rows",
+        len(dataset),
+    )
+
+    for key, value in metadata.items():
+        context.log.info(
+            "%s: %s",
+            key,
+            value,
+        )
+
+    return MaterializeResult(
+        value=dataset,
+        metadata=metadata,
+    )
 
 
 defs = Definitions(
@@ -45,36 +68,3 @@ defs = Definitions(
     ],
     resources=resources,
 )
-
-
-def describe_metadata(
-    context: AssetExecutionContext,
-    metadata: dict,
-) -> None:
-    """Log extracted dataset metadata."""
-    for key, value in metadata.items():
-        context.log.info(
-            "%s: %s",
-            key,
-            value,
-        )
-
-
-def example_metadata_usage(
-    context,
-    dataset,
-) -> dict:
-    """Demonstrate metadata extraction
-    for a Hugging Face dataset.
-    """
-    metadata = build_dataset_metadata(
-        dataset,
-        path="nyu-mll/glue",
-    )
-
-    describe_metadata(
-        context=context,
-        metadata=metadata,
-    )
-
-    return metadata
