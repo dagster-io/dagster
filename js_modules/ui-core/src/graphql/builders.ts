@@ -60,7 +60,6 @@ type Scalars = {
   Int: {input: number; output: number};
   Float: {input: number; output: number};
   GenericScalar: {input: any; output: any};
-  JSONString: {input: any; output: any};
   JsonSchema: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
@@ -2692,13 +2691,6 @@ type LocalFileCodeReference = {
   lineNumber: Maybe<Scalars['Int']['output']>;
 };
 
-type LocationDocsJson = {
-  __typename: 'LocationDocsJson';
-  json: Scalars['JSONString']['output'];
-};
-
-type LocationDocsJsonOrError = LocationDocsJson | PythonError;
-
 type LocationStateChangeEvent = {
   __typename: 'LocationStateChangeEvent';
   eventType: LocationStateChangeEventType;
@@ -4595,11 +4587,9 @@ type Repository = {
   assetNodes: Array<AssetNode>;
   assetNodesConnection: AssetNodeConnection;
   displayMetadata: Array<RepositoryMetadata>;
-  hasLocationDocs: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobs: Array<Job>;
   location: RepositoryLocation;
-  locationDocsJsonOrError: LocationDocsJsonOrError;
   name: Scalars['String']['output'];
   origin: RepositoryOrigin;
   partitionSets: Array<PartitionSet>;
@@ -10936,18 +10926,6 @@ export const buildLocalFileCodeReference = (
   };
 };
 
-export const buildLocationDocsJson = (
-  overrides?: Partial<LocationDocsJson>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'LocationDocsJson'} & LocationDocsJson => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('LocationDocsJson');
-  return {
-    __typename: 'LocationDocsJson',
-    json: overrides && overrides.hasOwnProperty('json') ? overrides.json! : 'eos',
-  };
-};
-
 export const buildLocationStateChangeEvent = (
   overrides?: Partial<LocationStateChangeEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -14087,8 +14065,6 @@ export const buildRepository = (
           : buildAssetNodeConnection({}, relationshipsToOmit),
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
-    hasLocationDocs:
-      overrides && overrides.hasOwnProperty('hasLocationDocs') ? overrides.hasLocationDocs! : false,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -14100,12 +14076,6 @@ export const buildRepository = (
         : relationshipsToOmit.has('RepositoryLocation')
           ? ({} as RepositoryLocation)
           : buildRepositoryLocation({}, relationshipsToOmit),
-    locationDocsJsonOrError:
-      overrides && overrides.hasOwnProperty('locationDocsJsonOrError')
-        ? overrides.locationDocsJsonOrError!
-        : relationshipsToOmit.has('LocationDocsJson')
-          ? ({} as LocationDocsJson)
-          : buildLocationDocsJson({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dolor',
     origin:
       overrides && overrides.hasOwnProperty('origin')
