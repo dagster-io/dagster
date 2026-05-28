@@ -34,7 +34,7 @@ The integration with HF Datasets makes it easy within Dagster to:
 
 ## Example
 
-These examples illustrate the example of a dataset pipeline for transformation, split-aware assets, and Hugging Face Hub publishing.
+This example illustrates the working of a dataset pipeline for transformation, split-aware assets, and Hugging Face Hub publishing.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/hf_datasets/dataset_pipeline_example.py" language="python" />
 
