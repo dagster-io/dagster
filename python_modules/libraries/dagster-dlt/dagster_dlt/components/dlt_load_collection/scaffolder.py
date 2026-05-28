@@ -54,7 +54,6 @@ def _extract_pipelines_and_sources_from_pipeline_file(
     file_path: Path,
 ) -> ParsedPipelineAndSource:
     """Process a Python file and generate a new file with pipeline and data definitions."""
-    imports = []
     pipelines_and_sources = {}
     source = file_path.read_text()
     tree = ast.parse(source)
@@ -64,9 +63,11 @@ def _extract_pipelines_and_sources_from_pipeline_file(
     new_content.append('"""Generated pipeline and data definitions."""\n')
 
     # Add imports from original file
-    for node in tree.body:
-        if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
-            imports.append(ast.unparse(node).replace("from ", "from ."))
+    imports = [
+        ast.unparse(node).replace("from ", "from .")
+        for node in tree.body
+        if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom)
+    ]
 
     # Process each function
     for node in tree.body:

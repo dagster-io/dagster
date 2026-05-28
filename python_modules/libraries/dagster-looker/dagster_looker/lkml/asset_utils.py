@@ -143,7 +143,6 @@ def build_looker_explore_specs(
     project_dir: Path,
     dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
-    looker_explore_specs: list[AssetSpec] = []
 
     explores = []
     # https://cloud.google.com/looker/docs/reference/param-explore
@@ -155,8 +154,10 @@ def build_looker_explore_specs(
             explores.append(lookml_explore)
 
     explores_postprocessed = postprocess_loaded_structures(explores)
-    for lookml_explore in explores_postprocessed:
-        looker_explore_specs.append(dagster_looker_translator.get_asset_spec(lookml_explore))
+    looker_explore_specs: list[AssetSpec] = [
+        dagster_looker_translator.get_asset_spec(lookml_explore)
+        for lookml_explore in explores_postprocessed
+    ]
 
     return looker_explore_specs
 
@@ -165,16 +166,18 @@ def build_looker_view_specs(
     project_dir: Path,
     dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
-    looker_view_specs: list[AssetSpec] = []
 
     # https://cloud.google.com/looker/docs/reference/param-view
     views: list[LookMLStructure] = []
     for lookml_view_path in project_dir.rglob("*.view.lkml"):
-        for lookml_view_props in lkml.load(lookml_view_path.read_text()).get("views", []):
-            views.append(LookMLStructure(lookml_view_path, "view", lookml_view_props))
+        views.extend(
+            LookMLStructure(lookml_view_path, "view", lookml_view_props)
+            for lookml_view_props in lkml.load(lookml_view_path.read_text()).get("views", [])
+        )
     views_postprocessed = postprocess_loaded_structures(views)
 
-    for lookml_view in views_postprocessed:
-        looker_view_specs.append(dagster_looker_translator.get_asset_spec(lookml_view))
+    looker_view_specs: list[AssetSpec] = [
+        dagster_looker_translator.get_asset_spec(lookml_view) for lookml_view in views_postprocessed
+    ]
 
     return looker_view_specs

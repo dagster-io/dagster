@@ -104,7 +104,7 @@ test = [
     "rapidfuzz",
     "pytest-rerunfailures",
     "psutil",
-    "ruff==0.15.13",
+    "ruff==0.15.14",
 ]
 test-components = [
     "tomlkit",
@@ -135,7 +135,7 @@ pyright = [
     "types-toml",
 ]
 ruff = [
-    "ruff==0.15.13",
+    "ruff==0.15.14",
 ]
 ty = [
     "ty==0.0.39",

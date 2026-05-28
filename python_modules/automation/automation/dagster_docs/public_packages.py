@@ -65,21 +65,19 @@ def get_public_dagster_packages(dagster_root: Path | None = None) -> list[Public
     # Add Dagster libraries from libraries/ directory
     libraries_dir = python_modules_dir / "libraries"
     if libraries_dir.exists():
-        for lib_dir in libraries_dir.iterdir():
-            if (
-                lib_dir.is_dir()
-                and lib_dir.name.startswith("dagster-")
-                and not lib_dir.name.startswith(".")
-                and ((lib_dir / "setup.py").exists() or (lib_dir / "pyproject.toml").exists())
-            ):
-                packages.append(
-                    PublicPackage(
-                        name=lib_dir.name,
-                        directory_name=lib_dir.name,
-                        module_name=lib_dir.name.replace("-", "_"),
-                        path=lib_dir,
-                    )
-                )
+        packages.extend(
+            PublicPackage(
+                name=lib_dir.name,
+                directory_name=lib_dir.name,
+                module_name=lib_dir.name.replace("-", "_"),
+                path=lib_dir,
+            )
+            for lib_dir in libraries_dir.iterdir()
+            if lib_dir.is_dir()
+            and lib_dir.name.startswith("dagster-")
+            and not lib_dir.name.startswith(".")
+            and ((lib_dir / "setup.py").exists() or (lib_dir / "pyproject.toml").exists())
+        )
 
     # Sort by name for consistent ordering
     packages.sort(key=lambda p: p.name)

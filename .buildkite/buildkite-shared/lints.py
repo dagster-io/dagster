@@ -35,10 +35,9 @@ def test_tox_passenv(tox_config: configparser.ConfigParser) -> None:
         "PYTEST_PLUGINS",
     ]
 
-    missing_env = []
-    for env in PASSENV_ENV:
-        if env not in tox_config["testenv"]["passenv"].split("\n"):
-            missing_env.append(env)
+    missing_env = [
+        env for env in PASSENV_ENV if env not in tox_config["testenv"]["passenv"].split("\n")
+    ]
 
     assert not missing_env, f"tox.ini missing passenv {missing_env}"
 

@@ -217,15 +217,15 @@ def list_definitions(
 
         # dont include other definitions if asset selection provided
         if asset_selection_obj is None:
-            for job in repo_def.get_all_jobs():
-                if not is_reserved_asset_job_name(job.name):
-                    jobs.append(
-                        DgJobMetadata(
-                            name=job.name,
-                            description=job.description,
-                            source=_get_source(job.metadata, dg_context),
-                        )
-                    )
+            jobs.extend(
+                DgJobMetadata(
+                    name=job.name,
+                    description=job.description,
+                    source=_get_source(job.metadata, dg_context),
+                )
+                for job in repo_def.get_all_jobs()
+                if not is_reserved_asset_job_name(job.name)
+            )
 
             for schedule in repo_def.schedule_defs:
                 schedule_str = (
@@ -241,13 +241,13 @@ def list_definitions(
                     )
                 )
 
-            for sensor in repo_def.sensor_defs:
-                sensors.append(
-                    DgSensorMetadata(
-                        name=sensor.name,
-                        source=_get_source(sensor.metadata, dg_context),
-                    )
+            sensors.extend(
+                DgSensorMetadata(
+                    name=sensor.name,
+                    source=_get_source(sensor.metadata, dg_context),
                 )
+                for sensor in repo_def.sensor_defs
+            )
 
             for name, resource in repo_def.get_top_level_resources().items():
                 resources.append(

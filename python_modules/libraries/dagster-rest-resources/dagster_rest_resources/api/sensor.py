@@ -115,15 +115,15 @@ class DgApiSensorApi:
             case "RepositoryConnection":
                 matches: list[DgApiSensor] = []
                 for repo in result.nodes:  # ty: ignore[unresolved-attribute]
-                    for s in repo.sensors:
-                        if s.name == sensor_name:
-                            matches.append(
-                                self._build_sensor(
-                                    s,
-                                    repo_location_name=repo.location.name,
-                                    repo_name=repo.name,
-                                )
-                            )
+                    matches.extend(
+                        self._build_sensor(
+                            s,
+                            repo_location_name=repo.location.name,
+                            repo_name=repo.name,
+                        )
+                        for s in repo.sensors
+                        if s.name == sensor_name
+                    )
                 if not matches:
                     raise DagsterPlusGraphqlError(f"Sensor not found: {sensor_name}")
                 if len(matches) > 1:

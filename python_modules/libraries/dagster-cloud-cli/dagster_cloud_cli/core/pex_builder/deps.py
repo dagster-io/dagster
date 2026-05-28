@@ -419,19 +419,15 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
     except Exception as e:
         raise ValueError(f"Error parsing pyproject.toml: {e}")
 
-    lines = []
-
     # Handle dependencies in [project] section (PEP 621)
     project_section = pyproject_data.get("project", {})
     dependencies = project_section.get("dependencies", [])
-    for dep in dependencies:
-        lines.append(str(dep))
+    lines = [str(dep) for dep in dependencies]
 
     # Handle optional dependencies in [project.optional-dependencies]
     optional_deps = project_section.get("optional-dependencies", {})
     for group_deps in optional_deps.values():
-        for dep in group_deps:
-            lines.append(str(dep))
+        lines.extend(str(dep) for dep in group_deps)
 
     # Handle legacy [tool.poetry.dependencies] for Poetry projects
     poetry_section = pyproject_data.get("tool", {}).get("poetry", {})

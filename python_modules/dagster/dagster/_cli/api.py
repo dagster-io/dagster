@@ -437,14 +437,14 @@ def execute_step_command(input_json: str | None, compressed_input_json: str | No
                 f"Run with id '{args.run_id}' not found for step execution",
             )
 
-            buff = []
-
-            for event in _execute_step_command_body(
-                args,
-                instance,
-                dagster_run,
-            ):
-                buff.append(serialize_value(event))
+            buff = [
+                serialize_value(event)
+                for event in _execute_step_command_body(
+                    args,
+                    instance,
+                    dagster_run,
+                )
+            ]
 
             if args.print_serialized_events:
                 for line in buff:

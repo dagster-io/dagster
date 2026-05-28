@@ -1424,9 +1424,11 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
                     keys_by_input_handle[inner_input_handle] = key
 
         # add all subgraphs to the stack
-        for node_def in graph_def.node_defs:
-            if isinstance(node_def, GraphDefinition):
-                stack.append((node_def, NodeHandle(node_def.name, parent_node_handle)))
+        stack.extend(
+            (node_def, NodeHandle(node_def.name, parent_node_handle))
+            for node_def in graph_def.node_defs
+            if isinstance(node_def, GraphDefinition)
+        )
 
     return AssetLayer(
         asset_graph=AssetGraph.from_assets(list(assets_defs_by_key.values())),

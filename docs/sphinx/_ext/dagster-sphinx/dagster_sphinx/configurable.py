@@ -81,9 +81,11 @@ def config_field_to_lines(field, name=None) -> list[str]:
         if field.description:
             # trim / normalize whitespace. some of our config descriptions misuse triple-quote blocks
             # so this makes them look nicer
-            for ln in field.description.split("\n"):
-                # escape '*' characters because they get interpreted as emphasis markers in rst
-                lines.append(" " * 4 + textwrap.dedent(ln.replace("*", "\\*")))
+            # escape '*' characters because they get interpreted as emphasis markers in rst
+            lines.extend(
+                " " * 4 + textwrap.dedent(ln.replace("*", "\\*"))
+                for ln in field.description.split("\n")
+            )
             lines.append("")
 
         if field.default_provided:
@@ -96,8 +98,7 @@ def config_field_to_lines(field, name=None) -> list[str]:
                 lines.append("")
                 lines.append("        .. code-block:: javascript")
                 lines.append("")
-                for ln in ls:
-                    lines.append(" " * 12 + ln)
+                lines.extend(" " * 12 + ln for ln in ls)
             else:
                 lines.append("")
                 lines.append(f"    **Default Value:** {val!r}")

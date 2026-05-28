@@ -574,7 +574,5 @@ def parse_af_log_response(logs: str) -> str:
     import ast
 
     parsed_data: list = ast.literal_eval(logs)
-    strs = []
-    for log_item in parsed_data:
-        strs.append(log_item[1])
+    strs = [log_item[1] for log_item in parsed_data]
     return "".join(strs)

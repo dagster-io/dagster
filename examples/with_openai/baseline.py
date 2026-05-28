@@ -22,8 +22,10 @@ def search_index(source_docs):
     source_chunks = []
     splitter = CharacterTextSplitter(separator=" ", chunk_size=1024, chunk_overlap=0)
     for source in source_docs:
-        for chunk in splitter.split_text(source.page_content):
-            source_chunks.append(Document(page_content=chunk, metadata=source.metadata))
+        source_chunks.extend(
+            Document(page_content=chunk, metadata=source.metadata)
+            for chunk in splitter.split_text(source.page_content)
+        )
     search_index = FAISS.from_documents(source_chunks, OpenAIEmbeddings())
     with open("search_index.pickle", "wb") as f:
         pickle.dump(search_index.serialize_to_bytes(), f)

@@ -397,14 +397,14 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     ) -> Sequence[ScheduleSelector]:
         selectors = []
         for node in self.repo_scoped_asset_infos:
-            for schedule_name in node.targeting_schedule_names:
-                selectors.append(
-                    ScheduleSelector(
-                        location_name=node.handle.location_name,
-                        repository_name=node.handle.repository_name,
-                        schedule_name=schedule_name,
-                    )
+            selectors.extend(
+                ScheduleSelector(
+                    location_name=node.handle.location_name,
+                    repository_name=node.handle.repository_name,
+                    schedule_name=schedule_name,
                 )
+                for schedule_name in node.targeting_schedule_names
+            )
 
         return selectors
 
@@ -413,14 +413,14 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     ) -> Sequence[SensorSelector]:
         selectors = []
         for node in self.repo_scoped_asset_infos:
-            for sensor_name in node.targeting_sensor_names:
-                selectors.append(
-                    SensorSelector(
-                        location_name=node.handle.location_name,
-                        repository_name=node.handle.repository_name,
-                        sensor_name=sensor_name,
-                    )
+            selectors.extend(
+                SensorSelector(
+                    location_name=node.handle.location_name,
+                    repository_name=node.handle.repository_name,
+                    sensor_name=sensor_name,
                 )
+                for sensor_name in node.targeting_sensor_names
+            )
         return selectors
 
     ##### HELPERS

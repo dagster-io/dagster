@@ -136,9 +136,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
         tmpdir_path = storage._base_dir  # noqa: SLF001
         ctx = multiprocessing.get_context("spawn")
         exceptions = ctx.Queue()
-        ps = []
-        for _ in range(5):
-            ps.append(ctx.Process(target=self.cmd, args=(exceptions, tmpdir_path)))
+        ps = [ctx.Process(target=self.cmd, args=(exceptions, tmpdir_path)) for _ in range(5)]
         for p in ps:
             p.start()
 

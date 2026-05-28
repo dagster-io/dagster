@@ -682,13 +682,12 @@ def with_auto_materialize_policy(
     """Note: this should be implemented in core dagster at some point, and this implementation is
     a lazy hack.
     """
-    ret = []
-    for assets_def in assets_defs:
-        ret.append(
-            assets_def.with_attributes(
-                automation_condition=auto_materialize_policy.to_automation_condition()
-            )
+    ret = [
+        assets_def.with_attributes(
+            automation_condition=auto_materialize_policy.to_automation_condition()
         )
+        for assets_def in assets_defs
+    ]
     return ret
 
 

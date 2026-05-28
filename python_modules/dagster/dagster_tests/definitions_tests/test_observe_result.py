@@ -432,9 +432,7 @@ def test_observe_result_generators():
     assert observations[1].metadata["baz"].value == "qux"
 
     async def _run_async_gen():
-        results = []
-        async for result in async_gen_specs_multi_asset():
-            results.append(result)
+        results = [result async for result in async_gen_specs_multi_asset()]
         return results
 
     result = asyncio.run(_run_async_gen())

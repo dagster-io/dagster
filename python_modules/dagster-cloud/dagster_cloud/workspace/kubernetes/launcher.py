@@ -613,17 +613,17 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
                         f"location_hash={deterministic_label_for_location(deployment_name, location_name)},agent_id={self._instance.instance_uuid}"
                     ),
                 ).items
-                for deployment in deployments:
-                    handles.append(
-                        K8sHandle(
-                            namespace=namespace,  # ty: ignore[invalid-argument-type]
-                            name=deployment.metadata.name,
-                            labels=deployment.metadata.labels,
-                            creation_timestamp=deployment.metadata.creation_timestamp.timestamp()
-                            if deployment.metadata.creation_timestamp
-                            else None,
-                        )
+                handles.extend(
+                    K8sHandle(
+                        namespace=namespace,  # ty: ignore[invalid-argument-type]
+                        name=deployment.metadata.name,
+                        labels=deployment.metadata.labels,
+                        creation_timestamp=deployment.metadata.creation_timestamp.timestamp()
+                        if deployment.metadata.creation_timestamp
+                        else None,
                     )
+                    for deployment in deployments
+                )
 
         return handles
 
@@ -641,17 +641,17 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
                     namespace,
                     label_selector="managed_by=K8sUserCodeLauncher",
                 ).items
-                for deployment in deployments:
-                    handles.append(
-                        K8sHandle(
-                            namespace,
-                            deployment.metadata.name,
-                            deployment.metadata.labels,
-                            deployment.metadata.creation_timestamp.timestamp()
-                            if deployment.metadata.creation_timestamp
-                            else None,
-                        )
+                handles.extend(
+                    K8sHandle(
+                        namespace,
+                        deployment.metadata.name,
+                        deployment.metadata.labels,
+                        deployment.metadata.creation_timestamp.timestamp()
+                        if deployment.metadata.creation_timestamp
+                        else None,
                     )
+                    for deployment in deployments
+                )
         self._logger.info(f"Listing server handles: {handles}")
         return handles
 

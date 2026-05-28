@@ -139,9 +139,7 @@ def get_partition_keys_for_def(
         return list(partitions_def.get_partition_keys(dynamic_partitions_store=instance))
     elif isinstance(partitions_def, dg.MultiPartitionsDefinition):
         # For multi partitions, get all combinations
-        keys = []
-        for pk in partitions_def.get_partition_keys():
-            keys.append(str(pk))
+        keys = [str(pk) for pk in partitions_def.get_partition_keys()]
         return keys
     else:
         return list(partitions_def.get_partition_keys())

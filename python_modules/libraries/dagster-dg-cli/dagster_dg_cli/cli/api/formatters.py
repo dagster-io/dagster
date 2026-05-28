@@ -87,8 +87,7 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
         return "  ".join(parts)
 
     lines = [_format_row(headers)]
-    for row in rows:
-        lines.append(_format_row(row))
+    lines.extend(_format_row(row) for row in rows)
 
     return "\n".join(lines)
 
@@ -265,16 +264,15 @@ def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
         return assets.model_dump_json(indent=2)
 
     headers = ["ASSET KEY", "GROUP", "DESCRIPTION", "KINDS"]
-    rows: list[list[str]] = []
-    for asset in assets.items:
-        rows.append(
-            [
-                asset.asset_key,
-                asset.group_name or "",
-                asset.description or "",
-                ", ".join(asset.kinds) if asset.kinds else "",
-            ]
-        )
+    rows: list[list[str]] = [
+        [
+            asset.asset_key,
+            asset.group_name or "",
+            asset.description or "",
+            ", ".join(asset.kinds) if asset.kinds else "",
+        ]
+        for asset in assets.items
+    ]
 
     return format_table(headers, rows)
 
@@ -390,16 +388,15 @@ def format_asset_events(event_list: "DgApiAssetEventList", as_json: bool) -> str
         return "No events found."
 
     headers = ["TIMESTAMP", "TYPE", "RUN ID", "PARTITION"]
-    rows = []
-    for event in event_list.items:
-        rows.append(
-            [
-                _format_timestamp(float(event.timestamp), "milliseconds"),
-                event.event_type,
-                event.run_id,
-                event.partition or "",
-            ]
-        )
+    rows = [
+        [
+            _format_timestamp(float(event.timestamp), "milliseconds"),
+            event.event_type,
+            event.run_id,
+            event.partition or "",
+        ]
+        for event in event_list.items
+    ]
 
     return format_table(headers, rows)
 
@@ -458,15 +455,14 @@ def format_asset_checks(checks: "DgApiAssetCheckList", as_json: bool) -> str:
         return "No asset checks found."
 
     headers = ["NAME", "BLOCKING", "DESCRIPTION"]
-    rows = []
-    for check in checks.items:
-        rows.append(
-            [
-                check.name,
-                "Yes" if check.blocking else "No",
-                check.description or "",
-            ]
-        )
+    rows = [
+        [
+            check.name,
+            "Yes" if check.blocking else "No",
+            check.description or "",
+        ]
+        for check in checks.items
+    ]
 
     return format_table(headers, rows)
 
@@ -480,16 +476,15 @@ def format_asset_check_executions(executions: "DgApiAssetCheckExecutionList", as
         return "No check executions found."
 
     headers = ["STATUS", "RUN_ID", "TIMESTAMP", "PARTITION"]
-    rows = []
-    for execution in executions.items:
-        rows.append(
-            [
-                execution.status.value,
-                execution.run_id,
-                _format_timestamp(execution.timestamp, "seconds"),
-                execution.partition or "",
-            ]
-        )
+    rows = [
+        [
+            execution.status.value,
+            execution.run_id,
+            _format_timestamp(execution.timestamp, "seconds"),
+            execution.partition or "",
+        ]
+        for execution in executions.items
+    ]
 
     return format_table(headers, rows)
 
@@ -561,8 +556,7 @@ def format_agent(agent: "DgApiAgent", as_json: bool) -> str:
     if agent.metadata:
         lines.append("")
         lines.append("Metadata:")
-        for meta in agent.metadata:
-            lines.append(f"  {meta.key}: {meta.value}")
+        lines.extend(f"  {meta.key}: {meta.value}" for meta in agent.metadata)
 
     return "\n".join(lines)
 
@@ -727,16 +721,15 @@ def format_runs_list(runs_list: "DgApiRunList", as_json: bool) -> str:
         return "No runs found."
 
     headers = ["ID", "STATUS", "JOB", "CREATED"]
-    rows = []
-    for run in runs_list.items:
-        rows.append(
-            [
-                run.id,
-                run.status.value,
-                run.job_name or "N/A",
-                _format_timestamp_epoch(run.created_at),
-            ]
-        )
+    rows = [
+        [
+            run.id,
+            run.status.value,
+            run.job_name or "N/A",
+            _format_timestamp_epoch(run.created_at),
+        ]
+        for run in runs_list.items
+    ]
 
     return format_table(headers, rows)
 
@@ -770,9 +763,9 @@ def format_logs_table(events: "DgApiRunEventList", run_id: str) -> str:
             lines.append("")
             lines.append("Stack Trace:")
             stack_trace = event.error.get_stack_trace_string()
-            for stack_line in stack_trace.split("\n"):
-                if stack_line.strip():
-                    lines.append(f"  {stack_line}")
+            lines.extend(
+                f"  {stack_line}" for stack_line in stack_trace.split("\n") if stack_line.strip()
+            )
             lines.append("")
 
     lines.extend(["", f"Total log entries: {len(events.items)}"])
@@ -833,16 +826,15 @@ def format_compute_log_links(links: "DgApiComputeLogLinkList", as_json: bool) ->
         return f"No compute log links found for run {links.run_id}"
 
     headers = ["FILE KEY", "STEP KEY(S)", "STDOUT URL", "STDERR URL"]
-    rows = []
-    for item in links.items:
-        rows.append(
-            [
-                item.file_key,
-                ", ".join(item.step_keys) if item.step_keys else "(none)",
-                item.stdout_download_url or "(none)",
-                item.stderr_download_url or "(none)",
-            ]
-        )
+    rows = [
+        [
+            item.file_key,
+            ", ".join(item.step_keys) if item.step_keys else "(none)",
+            item.stdout_download_url or "(none)",
+            item.stderr_download_url or "(none)",
+        ]
+        for item in links.items
+    ]
 
     return format_table(headers, rows)
 
@@ -861,16 +853,15 @@ def format_ticks(ticks: "DgApiTickList", name: str, as_json: bool) -> str:
         return f"No ticks found for {name}"
 
     headers = ["TIMESTAMP", "STATUS", "RUN IDS", "SKIP REASON"]
-    rows = []
-    for tick in ticks.items:
-        rows.append(
-            [
-                _format_timestamp(tick.timestamp, "seconds"),
-                tick.status.value,
-                ", ".join(tick.run_ids) if tick.run_ids else "-",
-                tick.skip_reason or "",
-            ]
-        )
+    rows = [
+        [
+            _format_timestamp(tick.timestamp, "seconds"),
+            tick.status.value,
+            ", ".join(tick.run_ids) if tick.run_ids else "-",
+            tick.skip_reason or "",
+        ]
+        for tick in ticks.items
+    ]
 
     lines = [format_table(headers, rows)]
 
@@ -881,9 +872,9 @@ def format_ticks(ticks: "DgApiTickList", name: str, as_json: bool) -> str:
             lines.append(f"  {tick.error.message}")
             if tick.error.stack:
                 for stack_line in tick.error.stack:
-                    for sub_line in stack_line.split("\n"):
-                        if sub_line.strip():
-                            lines.append(f"    {sub_line}")
+                    lines.extend(
+                        f"    {sub_line}" for sub_line in stack_line.split("\n") if sub_line.strip()
+                    )
 
     lines.append(f"\nTotal ticks: {ticks.total}")
 
@@ -905,16 +896,15 @@ def format_schedules(schedules: "DgApiScheduleList", as_json: bool) -> str:
         return json.dumps(schedules_dict, indent=2)
 
     headers = ["NAME", "STATUS", "CRON", "PIPELINE"]
-    rows = []
-    for schedule in schedules.items:
-        rows.append(
-            [
-                schedule.name,
-                schedule.status.value,
-                schedule.cron_schedule,
-                schedule.pipeline_name,
-            ]
-        )
+    rows = [
+        [
+            schedule.name,
+            schedule.status.value,
+            schedule.cron_schedule,
+            schedule.pipeline_name,
+        ]
+        for schedule in schedules.items
+    ]
 
     return format_table(headers, rows)
 
@@ -960,15 +950,14 @@ def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
         return json.dumps(sensors_dict, indent=2)
 
     headers = ["NAME", "STATUS", "TYPE"]
-    rows = []
-    for sensor in sensors.items:
-        rows.append(
-            [
-                sensor.name,
-                sensor.status.value,
-                sensor.sensor_type.value,
-            ]
-        )
+    rows = [
+        [
+            sensor.name,
+            sensor.status.value,
+            sensor.sensor_type.value,
+        ]
+        for sensor in sensors.items
+    ]
 
     return format_table(headers, rows)
 
@@ -1126,17 +1115,16 @@ def format_jobs(jobs: "DgApiJobList", as_json: bool) -> str:
         return json.dumps(jobs_dict, indent=2)
 
     headers = ["NAME", "DESCRIPTION", "SCHEDULES", "SENSORS", "ASSET JOB"]
-    rows = []
-    for job in jobs.items:
-        rows.append(
-            [
-                job.name,
-                (job.description or "")[:50],
-                str(len(job.schedules)),
-                str(len(job.sensors)),
-                "Yes" if job.is_asset_job else "No",
-            ]
-        )
+    rows = [
+        [
+            job.name,
+            (job.description or "")[:50],
+            str(len(job.schedules)),
+            str(len(job.sensors)),
+            "Yes" if job.is_asset_job else "No",
+        ]
+        for job in jobs.items
+    ]
 
     return format_table(headers, rows)
 
@@ -1160,11 +1148,11 @@ def format_job(job: "DgApiJob", as_json: bool) -> str:
         fields.append(("Tags", tags_str))
 
     if job.schedules:
-        for s in job.schedules:
-            fields.append(("Schedule", f"{s.name} ({s.cron_schedule}) [{s.status}]"))
+        fields.extend(
+            ("Schedule", f"{s.name} ({s.cron_schedule}) [{s.status}]") for s in job.schedules
+        )
 
     if job.sensors:
-        for s in job.sensors:
-            fields.append(("Sensor", f"{s.name} [{s.status}]"))
+        fields.extend(("Sensor", f"{s.name} [{s.status}]") for s in job.sensors)
 
     return format_detail(fields)

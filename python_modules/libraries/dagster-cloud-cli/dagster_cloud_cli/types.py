@@ -43,10 +43,7 @@ SubcommandTags = Enum(
 class CliEventTags:
     @classmethod
     def enums(cls):
-        attrs = []
-        for attr in cls.__dict__.values():
-            if isinstance(attr, EnumMeta):
-                attrs.append(attr)
+        attrs = [attr for attr in cls.__dict__.values() if isinstance(attr, EnumMeta)]
         return attrs
 
     @classmethod

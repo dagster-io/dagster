@@ -26,7 +26,7 @@ target-version = "py310"
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.15.13"
+required-version = "0.15.14"
 
 [lint]
 
@@ -85,9 +85,8 @@ ignore = [
   "D205", # (blank line after summary)
   "D417", # (missing arg in docstring)
 
-  # (assorted perf rules) We have a lot of violations, enable when autofix is available
-  "PERF401", # (manual-list-comprehension)
-  "PERF402", # (manual-list-copy)
+  # (manual-list-copy) No autofix available; enable once violations are fixed by hand.
+  "PERF402",
 
 ]
 
