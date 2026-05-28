@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import dagster as dg
 import pytest
@@ -33,9 +33,11 @@ from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_dbt import DbtCliResource, DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import (
+    DbtProjectArgs,
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dbt.dbt_project_manager import DbtProjectArgsManager
 from dagster_dbt_tests.dbt_projects import test_metadata_path
 from dagster_dg_cli.cli import cli as dg_cli
 from dagster_shared import check
@@ -619,6 +621,36 @@ def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
 
             expected_key = "DbtProjectComponent[jaffle_shop]"
             assert expected_key in load_context.accessed_defs_state_info.info_mapping
+
+
+def test_prepare_does_not_recurse_when_state_nested_in_project_dir() -> None:
+    """Regression test: when the dbt project sits at the root of the Dagster project, the local
+    state directory ends up nested inside the project dir, so the project snapshot copy's
+    destination is a subdirectory of its source. The copy must not recurse into its own
+    destination, which previously copied the project into itself unboundedly and filled the disk.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_dir = Path(temp_dir) / "dbt_project"
+        project_dir.mkdir()
+        (project_dir / "dbt_project.yml").write_text("name: jaffle_shop", encoding="utf-8")
+        (project_dir / "models").mkdir()
+        (project_dir / "models" / "a.sql").write_text("select 1", encoding="utf-8")
+
+        # state path nested INSIDE the project dir, as happens when the dbt project is at the
+        # project root and the defs module (which holds `.local_defs_state`) lives within it
+        state_path = project_dir / "defs" / ".local_defs_state" / "key" / "state"
+        state_path.parent.mkdir(parents=True)
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(project_dir)))
+
+        # skip the actual dbt compilation; we are exercising the project-snapshot copy
+        with patch.object(DbtProjectArgsManager, "get_project", return_value=MagicMock()):
+            manager.prepare(state_path)
+
+        snapshot = state_path.parent / "project"
+        assert (snapshot / "dbt_project.yml").exists()
+        # the snapshot must NOT contain a recursive copy of its own destination
+        assert not (snapshot / "defs" / ".local_defs_state" / "key" / "project").exists()
 
 
 def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
