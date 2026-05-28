@@ -22,16 +22,16 @@ PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
 def get_plugin_component_jsons_for_code_location(
     code_location: "CodeLocation",
-) -> list[dict[str, Any]]:
+) -> list[tuple[str, dict[str, Any]]]:
     """Extract unique plugin component type JSONs from a code location's repository metadata.
 
     Component types are embedded as the ``PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY`` metadata
     entry on each repository (see :func:`get_library_json_enriched_defs`). This iterates all
-    repositories on the location, deduplicates by component name, and returns the parsed
-    JSON dicts in the order they were encountered.
+    repositories on the location, deduplicates by component name, and returns
+    ``(namespace_name, component_json)`` pairs in the order they were encountered.
     """
     seen_names: set[str] = set()
-    results: list[dict[str, Any]] = []
+    results: list[tuple[str, dict[str, Any]]] = []
     for repository in code_location.get_repositories().values():
         metadata = repository.repository_snap.metadata
         if not metadata:
@@ -46,6 +46,8 @@ def get_plugin_component_jsons_for_code_location(
             if not isinstance(namespace, dict):
                 continue
             namespace = cast("dict[str, Any]", namespace)
+            raw_namespace_name = namespace.get("name")
+            namespace_name = raw_namespace_name if isinstance(raw_namespace_name, str) else ""
             component_jsons = namespace.get("componentTypes")
             if not isinstance(component_jsons, list):
                 continue
@@ -57,7 +59,7 @@ def get_plugin_component_jsons_for_code_location(
                 if not isinstance(name, str) or name in seen_names:
                     continue
                 seen_names.add(name)
-                results.append(component_json)
+                results.append((namespace_name, component_json))
     return results
 
 
