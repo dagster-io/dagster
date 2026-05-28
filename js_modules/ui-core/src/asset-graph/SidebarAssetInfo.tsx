@@ -253,6 +253,14 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
           </Box>
         </SidebarSection>
       )}
+
+      {repoAddress && (
+        <SidebarSection title="Underlying Ops">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <UnderlyingOpsOrGraph assetNode={definition} repoAddress={repoAddress} minimal />
+          </Box>
+        </SidebarSection>
+      )}
     </>
   );
 };
@@ -271,11 +279,11 @@ interface HeaderProps {
   repoAddress?: RepoAddress | null;
 }
 
-const Header = ({assetNode, repoAddress}: HeaderProps) => {
+const Header = ({assetNode}: HeaderProps) => {
   const displayName = displayNameForAssetKey(assetNode.assetKey);
 
   return (
-    <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
+    <Box flex={{gap: 12, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
       <SidebarTitle
         style={{
           marginBottom: 0,
@@ -287,18 +295,15 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
         <Box>{displayName}</Box>
       </SidebarTitle>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-        <Box flex={{direction: 'row', gap: 4}}>
+        <Box flex={{direction: 'row', gap: 8}}>
+          <AddToFavoritesButton assetKey={assetNode.assetKey} />
           <AnchorButton
             to={assetDetailsPathForKey(assetNode.assetKey)}
             icon={<Icon name="open_in_new" color={Colors.linkDefault()} />}
           >
             {'View in Asset Catalog '}
           </AnchorButton>
-          <AddToFavoritesButton assetKey={assetNode.assetKey} />
         </Box>
-        {repoAddress && (
-          <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} minimal />
-        )}
       </Box>
     </Box>
   );

@@ -726,7 +726,7 @@ def with_implicit_auto_materialize_policies(
     assets_defs: Sequence[dg.SourceAsset | dg.AssetsDefinition],
     asset_graph: BaseAssetGraph,
     targeted_assets: AbstractSet[dg.AssetKey] | None = None,
-) -> Sequence[dg.AssetsDefinition]:
+) -> Sequence[dg.AssetsDefinition | dg.SourceAsset]:
     """Accepts a list of assets, adding implied auto-materialize policies to targeted assets
     if policies do not exist.
     """

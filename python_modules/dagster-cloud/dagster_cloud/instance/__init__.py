@@ -24,6 +24,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._serdes import ConfigurableClassData
 from dagster_cloud_cli.core.graphql_client import (
+    RETRY_STATUS_CODES,
     create_agent_graphql_client,
     create_agent_http_client,
     create_graphql_requests_session,
@@ -288,6 +289,7 @@ class DagsterCloudAgentInstance(DagsterCloudInstance):
                         max_retries=Retry(
                             total=self.dagster_cloud_api_retries,
                             backoff_factor=self._dagster_cloud_api_config["backoff_factor"],
+                            status_forcelist=RETRY_STATUS_CODES,
                         ),
                         socket_options=self._socket_options(),
                     )

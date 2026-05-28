@@ -1,10 +1,9 @@
-// eslint-disable-next-line no-restricted-imports
-import {Overlay} from '@blueprintjs/core';
 import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
+import {createPortal} from 'react-dom';
 import {useHistory} from 'react-router-dom';
 
 import {SearchResults} from './SearchResults';
@@ -180,12 +179,7 @@ export const useSearchDialog = () => {
   return {
     openSearch,
     overlay: (
-      <Overlay
-        backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
-        isOpen={shown}
-        onClose={() => dispatch({type: 'hide-dialog'})}
-        transitionDuration={100}
-      >
+      <SearchOverlay isOpen={shown} onClose={() => dispatch({type: 'hide-dialog'})}>
         <div className={styles.container}>
           <div className={clsx(styles.searchBox, !!queryString.length && styles.hasQueryString)}>
             <Icon name="search" color={Colors.accentGray()} size={20} />
@@ -210,7 +204,53 @@ export const useSearchDialog = () => {
             searching={loading || state.searching}
           />
         </div>
-      </Overlay>
+      </SearchOverlay>
     ),
   };
+};
+
+const SEARCH_DIALOG_BACKDROP_STYLE = {
+  '--search-dialog-backdrop-color': Colors.dialogBackground(),
+} as React.CSSProperties;
+
+interface SearchOverlayProps {
+  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const SearchOverlay = ({children, isOpen, onClose}: SearchOverlayProps) => {
+  React.useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className={styles.backdrop}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+      style={SEARCH_DIALOG_BACKDROP_STYLE}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
 };

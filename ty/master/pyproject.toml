@@ -412,7 +412,7 @@ exclude = [
   # There is code in dagster_graphql/implementation that as of ty 0.0.35 breaks
   # ty and causes runaway memory consumption. Tracked here:
   #   https://github.com/astral-sh/ty/issues/3445#issuecomment-4426769715
-  "python_modules/dagster-graphql/dagster_graphql/implementation",
+  # "python_modules/dagster-graphql/dagster_graphql/implementation",
 
   # Vendored third-party code (croniter, dateutil).
   "python_modules/dagster/dagster/_vendored",
@@ -427,22 +427,29 @@ exclude = [
 # Ignore all files that are git-ignored unless explicitly included.
 respect-ignore-files = true
 
-# Override for dagster_graphql/schema: graphene's ObjectType / Mutation /
-# InputObjectType / Interface metaclass synthesizes `__init__` kwargs from
-# class-body field declarations, so e.g. `GrapheneFooType(message=..., path=...)`
-# is valid at runtime even though ty can't see `message` or `path` as accepted
-# kwargs. graphene doesn't ship `@dataclass_transform`-decorated bases, so ty
-# reports every such kwarg as `unknown-argument`. Additionally, ty 0.0.35 doesn't
-# narrow pydantic discriminated unions through `match result.typename__: case 'X':`,
-# causing unresolved-attribute, invalid-argument-type, and not-subscriptable
-# errors across the schema files. Disable all four rules for the schema subtree.
+# Override for dagster_graphql/schema and dagster_graphql/implementation:
+# graphene's ObjectType / Mutation / InputObjectType / Interface metaclass
+# synthesizes `__init__` kwargs from class-body field declarations, so e.g.
+# `GrapheneFooType(message=..., path=...)` is valid at runtime even though ty
+# can't see `message` or `path` as accepted kwargs. graphene doesn't ship
+# `@dataclass_transform`-decorated bases, so ty reports every such kwarg as
+# `unknown-argument` (and positional forms as `too-many-positional-arguments`).
+# Additionally, ty 0.0.35 doesn't narrow pydantic discriminated unions through
+# `match result.typename__: case 'X':`, causing unresolved-attribute,
+# invalid-argument-type, and not-subscriptable errors. Disable these rules for
+# both subtrees.
 [[tool.ty.overrides]]
-include = ["python_modules/dagster-graphql/dagster_graphql/schema/**"]
+include = [
+  "python_modules/dagster-graphql/dagster_graphql/schema/**",
+  "python_modules/dagster-graphql/dagster_graphql/implementation/**",
+]
 
 [tool.ty.overrides.rules]
 # graphene's ObjectType / Mutation / etc. metaclass synthesizes __init__
-# from class-body fields. ty doesn't see it and flags every kwarg.
+# from class-body fields. ty doesn't see it and flags every kwarg /
+# positional form.
 unknown-argument = "ignore"
+too-many-positional-arguments = "ignore"
 # All three below are caused by ty 0.0.35 not narrowing pydantic
 # discriminated unions through `match result.typename__: case "X":`,
 # which is the dominant pattern in schema files. Revisit when ty

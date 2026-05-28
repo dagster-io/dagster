@@ -6,8 +6,10 @@ import {Redirect} from 'react-router-dom';
 
 import {CodeLocationDefinitionsMain} from './CodeLocationDefinitionsMain';
 import {CodeLocationDefinitionsNav} from './CodeLocationDefinitionsNav';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {WorkspaceRepositoryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 interface Props {
@@ -15,8 +17,9 @@ interface Props {
   repository: WorkspaceRepositoryFragment;
 }
 
-export const CodeLocationDefinitionsRoot = (props: Props) => {
-  const {repoAddress, repository} = props;
+export const CodeLocationDefinitionsRoot = ({repoAddress, repository}: Props) => {
+  useDocumentTitle(`Code locations | ${repoAddressAsHumanString(repoAddress)} | Definitions`);
+
   const {locationEntries, loadingNonAssets: loading} = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
 

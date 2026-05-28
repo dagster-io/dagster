@@ -1,6 +1,10 @@
-// eslint-disable-next-line no-restricted-imports
-import {Breadcrumbs} from '@blueprintjs/core';
-import {Checkbox, ErrorBoundary, SplitPanelContainer, TextInput} from '@dagster-io/ui-components';
+import {
+  Breadcrumbs,
+  Checkbox,
+  ErrorBoundary,
+  SplitPanelContainer,
+  TextInput,
+} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {forwardRef, useEffect, useMemo, useState} from 'react';
 

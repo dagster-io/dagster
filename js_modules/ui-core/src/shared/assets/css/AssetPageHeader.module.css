@@ -3,11 +3,6 @@
   overflow: hidden;
 }
 
-.breadcrumbsWithSlashes .bp5-breadcrumbs {
-  height: auto;
-  min-height: 30px;
-}
-
 .breadcrumbLink {
   color: var(--color-text-light);
   white-space: nowrap;

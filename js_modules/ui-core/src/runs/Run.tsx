@@ -68,15 +68,19 @@ export const Run = memo((props: RunProps) => {
     defaults: {selection: ''},
   });
 
+  const documentTitle = useMemo(() => {
+    const shortId = runId.slice(0, 8);
+    if (!run) {
+      return `Runs | ${shortId}`;
+    }
+    if (isHiddenAssetGroupJob(run.pipelineName)) {
+      return `Runs | ${shortId} [${run.status}]`;
+    }
+    return `Runs | ${run.pipelineName} | ${shortId} [${run.status}]`;
+  }, [run, runId]);
+
+  useDocumentTitle(documentTitle);
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
-  useDocumentTitle(
-    run
-      ? `${!isHiddenAssetGroupJob(run.pipelineName) ? run.pipelineName : ''} ${runId.slice(
-          0,
-          8,
-        )} [${run.status}]`
-      : `Run: ${runId}`,
-  );
 
   const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
     const errorNode = logs.find(

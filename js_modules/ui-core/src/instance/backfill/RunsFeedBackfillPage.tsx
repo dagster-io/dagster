@@ -36,7 +36,7 @@ export const RunsFeedBackfillPage = () => {
   const {featureContext} = useContext(CloudOSSContext);
   const {backfillId} = useParams<{backfillId: string}>();
   useTrackPageView();
-  useDocumentTitle(`Backfill | ${backfillId}`);
+  useDocumentTitle(`Backfills | ${backfillId}`);
 
   const isDaemonHealthy = useIsBackfillDaemonHealthy();
 

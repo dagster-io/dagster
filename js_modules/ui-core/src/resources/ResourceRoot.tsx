@@ -92,7 +92,7 @@ export const ResourceRoot = (props: Props) => {
   const {repoAddress} = props;
   const {resourceName} = useParams<{resourceName: string}>();
 
-  useDocumentTitle(`Resource: ${resourceName}`);
+  useDocumentTitle(`Resources | ${resourceName}`);
 
   const resourceSelector = {
     ...repoAddressToSelector(repoAddress),

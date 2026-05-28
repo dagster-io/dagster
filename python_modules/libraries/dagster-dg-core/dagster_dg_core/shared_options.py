@@ -37,7 +37,7 @@ def make_option_group(
 
             return fn
         else:
-            return lambda fn: option_group(fn, names=names)
+            return lambda fn: option_group(fn, names=names)  # ty: ignore[invalid-return-type]
 
     return option_group
 

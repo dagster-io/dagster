@@ -1,4 +1,6 @@
 import datetime
+import multiprocessing
+import multiprocessing.process
 import os
 import sys
 import time
@@ -145,6 +147,21 @@ def get_grpc_workspace_request_context(filename: str, instance_ref: InstanceRef 
 def get_threadpool_executor():
     with SingleThreadPoolExecutor() as executor:
         yield executor
+
+
+def wait_for_daemon_subprocess(
+    process: multiprocessing.process.BaseProcess,
+    *,
+    timeout: float = 180.0,
+    poll_interval: float = 0.5,
+) -> None:
+    deadline = time.monotonic() + timeout
+    while process.is_alive() and time.monotonic() < deadline:
+        process.join(timeout=poll_interval)
+    if process.is_alive():
+        process.terminate()
+        process.join(timeout=5)
+        raise RuntimeError(f"Daemon subprocess (pid={process.pid}) did not exit within {timeout}s")
 
 
 def _execute_ticks(

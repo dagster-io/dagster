@@ -9,14 +9,11 @@ import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 import {Route} from '../app/Route';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {activatableButtonStyles} from '../runs/ActivatableButton';
 import {AnchorButton} from '../ui/AnchorButton';
 
 export const OverviewActivityRoot = () => {
-  useDocumentTitle('Overview | Activity');
-
   const header = React.useCallback(
     ({refreshState}: {refreshState: React.ComponentProps<typeof OverviewTabs>['refreshState']}) => (
       <OverviewPageHeader tab="activity" refreshState={refreshState} />

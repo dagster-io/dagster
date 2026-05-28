@@ -1,10 +1,12 @@
 import {
+  Body,
   BodySmall,
   Box,
   Colors,
   Icon,
   IconName,
   MiddleTruncate,
+  Mono,
   MonoSmall,
 } from '@dagster-io/ui-components';
 import React from 'react';
@@ -188,10 +190,10 @@ export const SuggestionJSXBase = ({
         }}
       >
         {icon ? <Icon name={icon} size={12} style={{margin: 0}} /> : null}
-        <BodySmall style={{overflow: 'hidden'}}>{label}</BodySmall>
+        <Body style={{overflow: 'hidden'}}>{label}</Body>
       </div>
       {rightLabel ? (
-        <MonoSmall style={{textAlign: 'right', overflow: 'hidden'}}>{rightLabel}</MonoSmall>
+        <Mono style={{textAlign: 'right', overflow: 'hidden'}}>{rightLabel}</Mono>
       ) : null}
     </div>
   );

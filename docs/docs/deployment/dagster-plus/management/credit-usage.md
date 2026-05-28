@@ -11,10 +11,23 @@ This page explains how Dagster+ counts credits for common operations, including 
 
 | Operation                                                                  | Credit cost               |
 | -------------------------------------------------------------------------- | ------------------------- |
-| An asset materialization (per partition)                                   | 1 credit                  |
+| An asset materialization backed by a step execution (per partition)        | 1 credit                  |
 | An observable source asset execution                                       | 1 credit                  |
+| An asset materialization reported from a sensor (no step execution)        | 0 credits                 |
 | Adding a dynamic partition via `context.instance.add_dynamic_partitions()` | 0 credits (metadata only) |
 | Asset observations                                                         | 0 credits                 |
+| Asset checks                                                               | 0 credits                 |
+| Sensor evaluations                                                         | 0 credits                 |
+
+## Materializations with and without step execution
+
+Credits are only charged for materializations that involve a step execution — that is, when Dagster actually runs compute to produce an asset. If a sensor reports that an asset was materialized by an external system (using `context.log_for_asset(...)` or by yielding `AssetMaterialization` events), no step is executed and no credit is consumed.
+
+This means you can use sensors to track the state of externally-produced assets in the Dagster UI without incurring credit usage. If you want Dagster to perform compute itself (transformations, loading, etc.), that step execution costs 1 credit per partition.
+
+## Sensors and asset checks
+
+Sensor evaluations and asset check executions do not consume credits, regardless of how frequently they run or how many assets they target.
 
 ## Dynamic partitions and observable source assets
 
@@ -35,4 +48,6 @@ If you only need to record metadata about work that happened outside Dagster, [r
 
 - [Reporting external system events without consuming credits](/deployment/dagster-plus/management/report-external-system-events)
 - [Asset observations](/guides/build/assets/metadata-and-tags/asset-observations)
+- [Asset checks](/guides/test/asset-checks)
+- [Sensors](/guides/automate/sensors)
 - [Dynamic partitions](/guides/build/partitions-and-backfills/partitioning-assets#dynamic-partitions)

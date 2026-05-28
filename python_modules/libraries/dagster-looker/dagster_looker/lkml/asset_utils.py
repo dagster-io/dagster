@@ -112,7 +112,9 @@ def postprocess_loaded_structures(
             _, _, extension_props = extension_obj
             output_props = deep_merge_objs(extension_props, output_props)
 
-        refined_extended_objs_by_name[obj_name] = (base_obj[0], base_obj[1], output_props)
+        refined_extended_objs_by_name[obj_name] = LookMLStructure(
+            base_obj[0], base_obj[1], output_props
+        )
 
     return list(refined_extended_objs_by_name.values())
 
@@ -166,11 +168,10 @@ def build_looker_view_specs(
     looker_view_specs: list[AssetSpec] = []
 
     # https://cloud.google.com/looker/docs/reference/param-view
-    views = []
+    views: list[LookMLStructure] = []
     for lookml_view_path in project_dir.rglob("*.view.lkml"):
         for lookml_view_props in lkml.load(lookml_view_path.read_text()).get("views", []):
-            lookml_view = (lookml_view_path, "view", lookml_view_props)
-            views.append(lookml_view)
+            views.append(LookMLStructure(lookml_view_path, "view", lookml_view_props))
     views_postprocessed = postprocess_loaded_structures(views)
 
     for lookml_view in views_postprocessed:

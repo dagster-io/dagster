@@ -62,7 +62,7 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  useJobTitle(explorerPath, isJob);
+  useJobTitle(explorerPath, isJob, 'Launchpad');
 
   const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});

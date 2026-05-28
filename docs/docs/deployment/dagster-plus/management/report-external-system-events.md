@@ -9,16 +9,17 @@ When you set up sensors or assets that report events from external systems (for 
 
 | Method                                                                         | Credit cost        | When to use                                                                                                   |
 | ------------------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| Asset materialization                                                          | 1 credit per event | The event represents work performed by Dagster, or you want it to count toward materialization-based metrics. |
+| Asset materialization with step execution                                      | 1 credit per event | The event represents work performed by Dagster, or you want it to count toward materialization-based metrics. |
+| Asset materialization reported from a sensor (no step execution)               | 0 credits          | You want to record that an asset was materialized externally and surface it in the asset graph.               |
 | [Asset observation](/guides/build/assets/metadata-and-tags/asset-observations) | 0 credits          | The event represents work performed outside Dagster, and you only need the metadata visible in the UI.        |
 
-Both methods surface metadata in the Dagster+ UI, so for pure external-event reporting, observations give you the same visibility without driving up credit usage.
+Sensor evaluations themselves never consume credits. Both materialization reports and observations from sensors surface metadata in the Dagster+ UI, so for pure external-event reporting you can track asset state without driving up credit usage.
 
 ## When to prefer observations
 
 Use observations whenever:
 
-- A sensor watches an external system (e.g., Snowflake table updates, S3 object arrivals, third-party job completions) and only needs to record that something happened.
+- A sensor watches an external system (e.g., Snowflake table updates, S3 object arrivals, third-party job completions) and only needs to record that something happened. Note that sensor evaluations themselves never consume credits.
 - You want to attach metadata (timestamps, row counts, file URIs) to an asset without claiming Dagster materialized it.
 - High-frequency external events would otherwise generate unexpected credit consumption.
 

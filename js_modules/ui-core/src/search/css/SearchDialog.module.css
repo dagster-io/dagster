@@ -1,3 +1,15 @@
+/* Backdrop */
+.backdrop {
+  align-items: flex-start;
+  background-color: var(--search-dialog-backdrop-color);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding-top: 20vh;
+  position: fixed;
+  z-index: 20;
+}
+
 /* Container */
 .container {
   background-color: var(--color-background-default);
@@ -6,10 +18,8 @@
     2px 2px 8px var(--color-shadow-default),
     var(--color-keyline-default) inset 0px 0px 0px 1px;
   max-height: 60vh;
-  left: calc(50% - 300px);
   overflow: hidden;
   width: 600px;
-  top: 20vh;
 }
 
 /* SearchBox */

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 
@@ -383,16 +384,68 @@ def hostnames(network):
     return hostnames
 
 
+def _wait_for_network_ipam(network, *, timeout=30, settle_polls=3, interval=0.5):
+    """Block until docker's IPAM has populated an IPAddress on `network` for
+    every running container, or until `timeout` elapses.
+
+    `docker compose up --detach` returns when containers are `Started`, but
+    docker's IPAM populates `NetworkSettings.Networks[<network>].IPAddress`
+    asynchronously around that point. Without a barrier, `hostnames()` can
+    run mid-race and drop services from the returned dict — which surfaces
+    as a `KeyError` at the caller's lookup site.
+
+    On the legacy buildkite-agent layout, `docker network connect <network>
+    <agent>` doubled as an implicit barrier — it doesn't return until the
+    network is in a settled state. On the EKS layout we skip that call
+    (the agent is a kube pod, not a docker container — there's nothing to
+    join, and `current_container()` returns empty), so the barrier has to
+    be explicit. We poll until `hostnames(network)` returns the same
+    non-empty dict for `settle_polls` consecutive ticks, which empirically
+    corresponds to IPAM having finished assigning addresses.
+    """
+    deadline = time.monotonic() + timeout
+    prev: dict[str, str] = {}
+    stable = 0
+    while time.monotonic() < deadline:
+        current = hostnames(network)
+        if current and current == prev:
+            stable += 1
+            if stable >= settle_polls:
+                return
+        else:
+            stable = 0
+        prev = current
+        time.sleep(interval)
+    logging.warning(
+        "Network %s did not settle after %ds; proceeding with %d host(s): %s",
+        network,
+        timeout,
+        len(prev),
+        sorted(prev),
+    )
+
+
 @contextmanager
 def buildkite_hostnames_cm(network):
     container = current_container()
 
-    try:
+    # On the legacy buildkite-agent layout the agent runs as a sibling docker
+    # container; joining the compose network is what makes the compose IPs
+    # routable from this process. On the EKS layout the agent is a kube pod
+    # whose network namespace is shared with the dind sidecar, so the bridge
+    # networks created by dind already exist in our namespace — there is no
+    # container to join (`current_container()` returns empty, since
+    # /etc/hostname is the pod name, not a container ID dind knows). Skip the
+    # connect when there's no container to connect.
+    if container:
         connect_container_to_network(container, network)
-        yield hostnames(network)
 
+    try:
+        _wait_for_network_ipam(network)
+        yield hostnames(network)
     finally:
-        disconnect_container_from_network(container, network)
+        if container:
+            disconnect_container_from_network(container, network)
 
 
 def default_docker_compose_yml(default_directory) -> str:

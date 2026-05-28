@@ -3,6 +3,44 @@ import userEvent from '@testing-library/user-event';
 
 import {SuggestionProvider, TokenizingField} from '../TokenizingField';
 
+// useVirtualizer needs a scrollable container with real dimensions in JSDOM.
+beforeAll(() => {
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get: () => 235,
+  });
+  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+    configurable: true,
+    get: () => 400,
+  });
+
+  class MockResizeObserver {
+    callback: ResizeObserverCallback;
+    targets: Element[] = [];
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      this.targets.push(target);
+      this.callback(
+        [
+          {
+            target,
+            contentRect: {width: 400, height: 235, top: 0, left: 0, bottom: 235, right: 400},
+            borderBoxSize: [{blockSize: 235, inlineSize: 400}],
+            contentBoxSize: [{blockSize: 235, inlineSize: 400}],
+            devicePixelContentBoxSize: [{blockSize: 235, inlineSize: 400}],
+          } as unknown as ResizeObserverEntry,
+        ],
+        this as unknown as ResizeObserver,
+      );
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  window.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+});
+
 describe('TokenizingField', () => {
   const onChange = jest.fn();
   const suggestions: SuggestionProvider[] = [

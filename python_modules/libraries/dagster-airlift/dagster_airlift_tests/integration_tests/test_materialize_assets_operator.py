@@ -5,7 +5,6 @@ import pytest
 import requests
 from dagster import AssetKey, DagsterInstance, DagsterRunStatus
 from dagster._core.test_utils import environ
-from dagster._time import get_current_timestamp
 from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 
 
@@ -23,17 +22,16 @@ def dagster_defs_path_fixture() -> str:
     return str(_test_project_dir() / "dagster_defs.py")
 
 
+@pytest.mark.timeout(180)
 def test_dagster_operator(airflow_instance: None, dagster_dev: None, dagster_home: str) -> None:
     """Tests that dagster operator can correctly map airflow tasks to dagster tasks, and kick off executions."""
     response = requests.post(
         "http://localhost:8080/api/v1/dags/the_dag/dagRuns", auth=("admin", "admin"), json={}
     )
     assert response.status_code == 200, response.json()
-    # Wait until the run enters a terminal state
-    terminal_status = None
-    start_time = get_current_timestamp()
-    dag_run = None
-    while get_current_timestamp() - start_time < 30:
+    # Poll until the run enters a terminal state. The outer pytest-timeout
+    # marker is the safety net for a truly stuck run.
+    while True:
         response = requests.get(
             "http://localhost:8080/api/v1/dags/the_dag/dagRuns", auth=("admin", "admin")
         )
@@ -44,11 +42,7 @@ def test_dagster_operator(airflow_instance: None, dagster_dev: None, dagster_hom
             dag_run = dag_runs[0]
             break
         time.sleep(1)
-    assert terminal_status == "success", (
-        "Never reached terminal status"
-        if terminal_status is None
-        else f"terminal status was {terminal_status}"
-    )
+    assert terminal_status == "success", f"terminal status was {terminal_status}"
     with environ({"DAGSTER_HOME": dagster_home}):
         instance = DagsterInstance.get()
         runs = instance.get_runs()

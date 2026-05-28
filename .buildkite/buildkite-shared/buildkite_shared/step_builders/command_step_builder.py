@@ -31,6 +31,7 @@ class ResourceRequests:
         docker_memory: str = "1Gi",
         docker_memory_limit: str = "2Gi",
         ephemeral_storage: str | None = None,
+        docker_storage_size: str | None = None,
     ) -> None:
         self._cpu = cpu
         self._memory = memory
@@ -38,6 +39,7 @@ class ResourceRequests:
         self._docker_memory = docker_memory
         self._docker_memory_limit = docker_memory_limit
         self._ephemeral_storage = ephemeral_storage
+        self._docker_storage_size = docker_storage_size
 
     @property
     def cpu(self) -> str:
@@ -62,6 +64,15 @@ class ResourceRequests:
     @property
     def ephemeral_storage(self) -> str | None:
         return self._ephemeral_storage
+
+    @property
+    def docker_storage_size(self) -> str | None:
+        # Size of a dedicated emptyDir to mount at /var/lib/docker inside the
+        # dind sidecar. EBS-backed (not tmpfs) so it doesn't compete with the
+        # dind container's memory cgroup. Counts against the pod's
+        # ephemeral_storage, which must be sized to cover it plus the agent's
+        # checkout / build artifacts.
+        return self._docker_storage_size
 
 
 class BuildkiteQueue(StrEnum):
@@ -113,6 +124,13 @@ class CommandStepBuilder:
         self._k8s_volume_mounts = []
         self._k8s_volumes = []
         self._docker_settings = None
+        # Concrete env vars set via `.with_env({...})`. Source of truth on
+        # both queue paths: on k8s these become podSpec container env
+        # entries; on docker they're merged into the docker plugin's
+        # `environment` list as `KEY=value`. Bare-name passthroughs belong
+        # in the `on_*_image(env=[...])` parameter / agent envFrom chain —
+        # not here.
+        self._env: dict[str, str] = {}
 
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
@@ -285,6 +303,10 @@ class CommandStepBuilder:
         self._secrets[name] = reference
         return self
 
+    def with_env(self, env_vars: dict[str, str]) -> Self:
+        self._env.update(env_vars)
+        return self
+
     def with_timeout(self, num_minutes: int | None) -> Self:
         if num_minutes is not None:
             self._step["timeout_in_minutes"] = num_minutes
@@ -367,10 +389,6 @@ class CommandStepBuilder:
                 "BUILDKITE_BUILD_URL",
                 "BUILDKITE_ORGANIZATION_SLUG",
                 "BUILDKITE_PIPELINE_SLUG",
-                "BUILDKITE_ANALYTICS_TOKEN",
-                "BUILDKITE_TEST_QUARANTINE_TOKEN",
-                "BUILDKITE_TEST_SUITE_SLUG",
-                # Buildkite uses this to tag tests in Test Engine
                 "BUILDKITE_BRANCH",
                 "BUILDKITE_COMMIT",
                 "BUILDKITE_MESSAGE",
@@ -454,6 +472,52 @@ class CommandStepBuilder:
                     "--registry-mirror=http://dockerhub-mirror.buildkite-agent.svc.cluster.local:5000"
                 )
 
+            dind_volume_mounts = [
+                {
+                    "mountPath": "/var/run",
+                    "name": "docker-sock",
+                },
+                # Shared /tmp with the test container so docker bind
+                # mounts of paths like `tempfile.TemporaryDirectory()`
+                # resolve to the same files dockerd sees. On EC2 the
+                # docker plugin mounted the host's /tmp into the test
+                # container and dockerd ran on the host, so /tmp was
+                # implicitly shared. On EKS the dind sidecar has its
+                # own /tmp by default, breaking that assumption.
+                {
+                    "mountPath": "/tmp",
+                    "name": "shared-tmp",
+                },
+            ]
+            docker_storage_size = self._resources.docker_storage_size if self._resources else None
+            if docker_storage_size:
+                # See ResourceRequests.docker_storage_size for rationale.
+                dind_volume_mounts.append(
+                    {
+                        "mountPath": "/var/lib/docker",
+                        "name": "dind-storage",
+                    }
+                )
+            else:
+                # Dedicated pod-private emptyDir for dockerd's image
+                # store and container state. Without this, /var/lib/docker
+                # falls through to the dind container's writable layer on
+                # the node's overlay filesystem, which is shared with every
+                # other pod on the node — so heavy snapshot/layer ops
+                # serialize at the kernel FS layer and dockerd holds its
+                # internal locks across that serialization. The observed
+                # symptom is 60s `UnixHTTPConnectionPool` ReadTimeouts on
+                # `containers.create` calls during dagster-docker tests
+                # (see #24902 / #24936 escalation ladder). Isolating
+                # /var/lib/docker to a per-pod mount eliminates the
+                # filesystem-layer overlay overhead and the cross-pod
+                # contention at that surface.
+                dind_volume_mounts.append(
+                    {
+                        "mountPath": "/var/lib/docker",
+                        "name": "docker-data",
+                    }
+                )
             sidecars.append(
                 {
                     "image": docker_image,
@@ -483,12 +547,7 @@ class CommandStepBuilder:
                             "value": "",
                         },
                     ],
-                    "volumeMounts": [
-                        {
-                            "mountPath": "/var/run",
-                            "name": "docker-sock",
-                        }
-                    ],
+                    "volumeMounts": dind_volume_mounts,
                     "securityContext": {
                         "privileged": True,
                         "allowPrivilegeEscalation": True,
@@ -518,12 +577,44 @@ class CommandStepBuilder:
                     "emptyDir": {},
                 }
             )
+            self._k8s_volumes.append(
+                {
+                    "name": "shared-tmp",
+                    "emptyDir": {},
+                }
+            )
+            self._k8s_volumes.append(
+                {
+                    "name": "docker-data",
+                    # 10Gi cap bounds the dind sidecar's footprint on the
+                    # node's ephemeral storage. The test-project image is
+                    # ~2-3Gi and per-test scratch space is small, so 10Gi is
+                    # comfortable headroom. If a job ever blows through, the
+                    # eviction blast radius is just that pod.
+                    "emptyDir": {
+                        "sizeLimit": "10Gi",
+                    },
+                }
+            )
             self._k8s_volume_mounts.append(
                 {
                     "mountPath": "/var/run/",
                     "name": "docker-sock",
                 },
             )
+            self._k8s_volume_mounts.append(
+                {
+                    "mountPath": "/tmp",
+                    "name": "shared-tmp",
+                },
+            )
+            if docker_storage_size:
+                self._k8s_volumes.append(
+                    {
+                        "name": "dind-storage",
+                        "emptyDir": {"sizeLimit": docker_storage_size},
+                    }
+                )
 
         return {
             "gitEnvFrom": [{"secretRef": {"name": "git-ssh-credentials"}}],
@@ -550,33 +641,6 @@ class CommandStepBuilder:
                             {
                                 "name": "NODE_NAME",
                                 "valueFrom": {"fieldRef": {"fieldPath": "spec.nodeName"}},
-                            },
-                            {
-                                "name": "INTERNAL_BUILDKITE_TEST_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "INTERNAL_BUILDKITE_TEST_ANALYTICS_TOKEN",
-                                    }
-                                },
-                            },
-                            {
-                                "name": "INTERNAL_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "INTERNAL_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                    }
-                                },
-                            },
-                            {
-                                "name": "DOGFOOD_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "DOGFOOD_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                    }
-                                },
                             },
                         ],
                         "envFrom": [
@@ -621,7 +685,28 @@ class CommandStepBuilder:
             # images require /bin/bash, others don't have it, so there's some setting
             # munging done below as well.
             if self._docker_settings:
-                self._step["plugins"] = [{"kubernetes": self._base_k8s_settings()}]
+                k8s_settings = self._base_k8s_settings()
+                # Propagate concrete env vars set via .with_env({...}) into
+                # the pod's container env. Intentionally do NOT auto-pickup
+                # KEY=value entries from self._docker_settings["environment"]:
+                # that list holds docker-plugin-specific settings like
+                # `DOCKER_CONFIG=/tmp/.docker` (added by with_ecr_passthru())
+                # which have no meaning on k8s and actively break ECR auth
+                # here — EKS pods get ECR auth via the ecr-docker-login
+                # initContainer writing /work/.docker/config.json, not via
+                # DOCKER_CONFIG redirection.
+                container_env = k8s_settings["podSpec"]["containers"][0]["env"]
+                container_env.extend({"name": k, "value": v} for k, v in self._env.items())
+                self._step["plugins"] = [{"kubernetes": k8s_settings}]
+            if self._secrets:
+                # SM_PLUGIN runs as a buildkite-agent bootstrap hook inside
+                # the user container under agent-stack-k8s; exported env vars
+                # are visible to subsequent command hooks. setdefault guards
+                # the unusual case where a step has _secrets without
+                # _docker_settings.
+                self._step.setdefault("plugins", []).append(
+                    {SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}}
+                )
 
             return self._step
 
@@ -629,15 +714,19 @@ class CommandStepBuilder:
         assert "plugins" in self._step
         self._step["plugins"].append({SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}})
         if self._docker_settings:
+            env_list = self._docker_settings.setdefault("environment", [])
             for secret in self._secrets.keys():
-                self._docker_settings["environment"].append(secret)
+                env_list.append(secret)
+            for k, v in self._env.items():
+                env_list.append(f"{k}={v}")
 
             # we need to dedup the env vars to make sure that the ones we set
             # aren't overridden by the ones that are already set in the parent env
-            # the last one wins
+            # the last one wins. Use split("=", 1) so values containing "="
+            # (e.g. JSON, query strings) don't blow up the unpacking.
             envvar_map = {}
-            for ev in self._docker_settings.get("environment", []):
-                k, v = ev.split("=") if "=" in ev else (ev, None)
+            for ev in env_list:
+                k, v = ev.split("=", 1) if "=" in ev else (ev, None)
                 envvar_map[k] = v
             self._docker_settings["environment"] = [
                 f"{k}={v}" if v is not None else k for k, v in envvar_map.items()

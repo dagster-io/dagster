@@ -4,7 +4,7 @@ description: How to monitor critical assets with scheduled health checks.
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Visibility.png
 ---
 
 In this example, we'll explore different approaches to monitoring critical (Tier-0) assets in Dagster. When you have assets that power downstream business processes, you need to ensure they are successfully materialized, passing data quality checks, and fresh according to defined policies.

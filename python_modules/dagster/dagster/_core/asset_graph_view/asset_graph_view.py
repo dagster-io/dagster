@@ -585,7 +585,7 @@ class AssetGraphView(LoadingContext):
         from_subset: EntitySubset,
     ) -> EntitySubset[AssetCheckKey]:
         """Returns the subset of an asset check that matches a given status."""
-        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
+        from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 
         # Handle partitioned asset checks
         if self._get_partitions_def(key):
@@ -595,8 +595,7 @@ class AssetGraphView(LoadingContext):
                 )
 
         # Handle non-partitioned asset checks with existing logic
-        summary = await AssetCheckSummaryRecord.gen(self, key)
-        latest_record = summary.last_check_execution_record if summary else None
+        latest_record = await AssetCheckExecutionRecord.gen(self, key)
         resolved_status = (
             await latest_record.resolve_status(self)
             if latest_record and await latest_record.targets_latest_materialization(self)
@@ -882,12 +881,11 @@ class AssetGraphView(LoadingContext):
         query_key: AssetCheckKey,
         filter_fn: Callable[["RunRecord"], bool],
     ) -> bool:
+        from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
         from dagster._core.storage.dagster_run import RunRecord
-        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 
         check.invariant(partition_key is None, "Partitioned checks not supported")
-        summary = await AssetCheckSummaryRecord.gen(self, query_key)
-        check_record = summary.last_check_execution_record if summary else None
+        check_record = await AssetCheckExecutionRecord.gen(self, query_key)
         if check_record and check_record.event:
             run_record = await RunRecord.gen(self, check_record.event.run_id)
             return bool(run_record) and filter_fn(run_record)
@@ -1011,11 +1009,10 @@ class AssetGraphView(LoadingContext):
         self, key: AssetCheckKey, time: datetime
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
+        from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 
         # intentionally left unimplemented for AssetKey, as this is a less performant query
-        summary = await AssetCheckSummaryRecord.gen(self, key)
-        record = summary.last_check_execution_record if summary else None
+        record = await AssetCheckExecutionRecord.gen(self, key)
         if (
             record is None
             or record.event is None

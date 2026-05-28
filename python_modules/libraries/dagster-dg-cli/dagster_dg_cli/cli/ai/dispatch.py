@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import click
+import requests
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_rest_resources.api.issue import DgApiIssueApi
@@ -23,6 +24,7 @@ from dagster_shared.plus.config_utils import (
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.utils.github import (
     GitHubError,
+    PullRequest,
     get_authenticated_github_user_login,
     get_github_repository,
     parse_github_remote_url,
@@ -30,7 +32,6 @@ from dagster_dg_cli.utils.github import (
 
 if TYPE_CHECKING:
     from dagster_rest_resources.schemas.issue import DgApiIssue
-    from githubkit.versions.latest.models import PullRequest
 
 
 _DISPATCH_WORKFLOW_FILE = "dg-ai-dispatch.yml"
@@ -86,7 +87,7 @@ def dispatch_command(
             api_token=api_token,
             view_graphql=view_graphql,
         )
-    except (DispatchError, GitHubError) as exc:
+    except (DispatchError, GitHubError, requests.HTTPError) as exc:
         raise click.ClickException(str(exc)) from exc
 
 
@@ -301,7 +302,7 @@ def _create_draft_pr(
     default_branch: str,
     branch_name: str,
     prompt: str,
-) -> "PullRequest":
+) -> PullRequest:
     max_title_len = 60
     suffix = "..." if len(prompt) > max_title_len else ""
     title = f"Dispatch: {prompt[:max_title_len]}{suffix}"
