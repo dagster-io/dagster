@@ -212,7 +212,6 @@ def deploy_command(
     if not source_directory:
         raise ui.error("No source directory provided.")
 
-    _check_source_directory(source_directory)
     docker_utils.verify_docker()
 
     env_vars = kwargs.get("env", [])
