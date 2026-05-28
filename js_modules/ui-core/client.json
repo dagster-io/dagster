@@ -63,6 +63,7 @@
   "LatestAssetPartitionsQuery": "2568dc5d6ad01d1695e9b6028a69e20785b90e152b15e84efe76b7c2595707da",
   "ReportEventMutation": "80b4987cdf27ec8fac25eb6b98b996bd4fdeb4cbfff605d647da5d4bb8244cb0",
   "AssetWipeMutation": "accefb0c47b3d4a980d16965e8af565afed787a8a987a03570df876bd734dc8f",
+  "CodeLocationComponentTypesQuery": "28d380e6ebfb3161ceefa2312f57edf5955cc2949851cba28df2f913461a8816",
   "CodeLocationDefsStateQuery": "5b08179edb0fd7fc5708a72749481eef52efc1b06874a64ea8d7f87ed1a8afbe",
   "RunGroupPanelQuery": "c454b4e4c3d881b2a78361c5868212f734c458291a3cb28be8ba4a63030eb004",
   "SetConcurrencyLimit": "758e6bfdb936dff3e4e38f8e1fb447548710a2b2c66fbcad9d4f264a10a61044",
