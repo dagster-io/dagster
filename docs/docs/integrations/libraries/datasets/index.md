@@ -36,11 +36,11 @@ The integration with HF Datasets makes it easy within Dagster to:
 
 These examples illustrate two usage examples: The first example is a basic asset pipeline for materializing an HF dataset with metadata and persistence.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/basic_asset_example.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/hf_datasets/basic_asset_example.py" language="python" />
 
 The second example is a fuller dataset pipeline for transformation, split-aware assets, and Hugging Face Hub publishing.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dataset_pipeline_example.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/hf_datasets/dataset_pipeline_example.py" language="python" />
 
 ## About HF Datasets
 
