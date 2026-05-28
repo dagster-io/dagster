@@ -121,10 +121,9 @@ def test_returns_component_types_with_schemas():
         assert simple["owners"] == ["john@dagster.io", "jane@dagster.io"]
         assert simple["tags"] == ["a", "b", "c"]
         assert simple["description"]  # present
-        # ComponentFormConfig(editable=True) hasn't been introduced yet, so
-        # no component opts into UI editing here. Later PRs in this stack add
-        # the opt-in and flip this assertion back to True.
-        assert simple["isUiEditable"] is False
+        # SimpleAssetComponent.get_form_config() returns ComponentFormConfig(editable=True),
+        # so its schema carries x-ui-editable: true and the field surfaces here.
+        assert simple["isUiEditable"] is True
         # Namespace + example come from the same metadata blob the docs
         # tab used to read directly.
         assert simple["namespace"] == "dagster_test"

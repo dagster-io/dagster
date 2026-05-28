@@ -13,12 +13,12 @@ from pydantic import BaseModel, ConfigDict
 from dagster import _check as check
 from dagster._annotations import public
 from dagster.components.resolved.errors import ResolutionException
+from dagster.components.resolved.form_config import ComponentFormConfig
 
 if TYPE_CHECKING:
     from dagster.components.resolved.context import ResolutionContext
 
 
-@public
 @public
 class Model(BaseModel):
     """pydantic BaseModel configured with recommended default settings for use with the Resolved framework.
@@ -125,6 +125,8 @@ class Resolver:
         description: str | None = None,
         examples: list[Any] | None = None,
         inject_before_resolve: bool = True,
+        json_schema_extra: dict[str, Any] | None = None,
+        form_config: ComponentFormConfig | None = None,
     ):
         """Resolve this field by invoking the function which will receive the corresponding field value
         from the model.
@@ -141,6 +143,10 @@ class Resolver:
                 loading from yaml.
             inject_before_resolve (bool): If True (Default) string values will be evaluated
                 to perform possible template resolution before calling the resolver function.
+            json_schema_extra (Optional[dict[str, Any]]): Extra entries to merge into the
+                generated JSON schema for this field. For UI hints, prefer ``form_config``.
+            form_config (Optional[ComponentFormConfig]): Typed UI metadata for this field.
+                Merged into ``json_schema_extra``; ``form_config`` values take precedence.
         """
         if not isinstance(fn, (ParentFn, AttrWithContextFn)):
             if not callable(fn):
@@ -158,6 +164,12 @@ class Resolver:
         self.description = description
         self.examples = examples
         self.inject_before_resolve = inject_before_resolve
+
+        merged: dict[str, Any] = {
+            **(json_schema_extra or {}),
+            **(form_config.to_field_json_schema_extra() if form_config else {}),
+        }
+        self.json_schema_extra: dict[str, Any] | None = merged or None
 
         super().__init__()
 
@@ -181,6 +193,8 @@ class Resolver:
         model_field_type: type | UnionType | None = None,
         description: str | None = None,
         examples: list[Any] | None = None,
+        json_schema_extra: dict[str, Any] | None = None,
+        form_config: ComponentFormConfig | None = None,
     ):
         """Default recursive resolution."""
         return Resolver(
@@ -190,6 +204,8 @@ class Resolver:
             description=description,
             examples=examples,
             inject_before_resolve=False,
+            json_schema_extra=json_schema_extra,
+            form_config=form_config,
         )
 
     @staticmethod
@@ -252,6 +268,7 @@ class Resolver:
     def with_outer_resolver(self, outer: "Resolver"):
         description = outer.description or self.description
         examples = outer.examples or self.examples
+        json_schema_extra = outer.json_schema_extra or self.json_schema_extra
         return Resolver(
             self.fn,
             model_field_name=self.model_field_name,
@@ -259,6 +276,7 @@ class Resolver:
             description=description,
             examples=examples,
             inject_before_resolve=self.inject_before_resolve,
+            json_schema_extra=json_schema_extra,
         )
 
 

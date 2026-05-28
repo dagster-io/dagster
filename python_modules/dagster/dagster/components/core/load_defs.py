@@ -45,21 +45,21 @@ def get_plugin_component_jsons_for_code_location(
         for namespace in namespaces:
             if not isinstance(namespace, dict):
                 continue
-            namespace = cast("dict[str, Any]", namespace)
-            raw_namespace_name = namespace.get("name")
+            namespace_dict = cast("dict[str, Any]", namespace)
+            raw_namespace_name = namespace_dict.get("name")
             namespace_name = raw_namespace_name if isinstance(raw_namespace_name, str) else ""
-            component_jsons = namespace.get("componentTypes")
+            component_jsons = namespace_dict.get("componentTypes")
             if not isinstance(component_jsons, list):
                 continue
             for component_json in component_jsons:
                 if not isinstance(component_json, dict):
                     continue
-                component_json = cast("dict[str, Any]", component_json)
-                name = component_json.get("name")
+                component_json_dict = cast("dict[str, Any]", component_json)
+                name = component_json_dict.get("name")
                 if not isinstance(name, str) or name in seen_names:
                     continue
                 seen_names.add(name)
-                results.append((namespace_name, component_json))
+                results.append((namespace_name, component_json_dict))
     return results
 
 
