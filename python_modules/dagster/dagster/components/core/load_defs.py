@@ -152,7 +152,7 @@ def load_defs(
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
-        defs_root (Path): The path to the defs root, typically `package.defs`.
+        defs_root (ModuleType): The root module containing Dagster defs, typically the `defs` submodule of your project package.
         project_root (Optional[Path]): path to the project root directory.
         terminate_autoloading_on_keyword_files (bool): Whether to terminate the defs
             autoloading process when encountering a definitions.py or component.py file.
