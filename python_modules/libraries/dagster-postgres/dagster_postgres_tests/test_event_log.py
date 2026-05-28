@@ -45,6 +45,18 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
         assert isinstance(event_log_storage, PostgresEventLogStorage)
         yield event_log_storage
 
+    def can_set_concurrency_defaults(self):
+        return True
+
+    def set_default_op_concurrency(self, instance, storage, limit):
+        settings = dict(instance._settings) if instance._settings else {}  # noqa: SLF001
+        concurrency = dict(settings.get("concurrency", {}))
+        pools = dict(concurrency.get("pools", {}))
+        pools["default_limit"] = limit
+        concurrency["pools"] = pools
+        settings["concurrency"] = concurrency
+        instance._settings = settings  # noqa: SLF001
+
     def can_wipe_asset_partitions(self) -> bool:
         return False
 
