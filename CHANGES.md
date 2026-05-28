@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.13.7 (core) / 0.29.7 (libraries)
+
+### New
+
+- Added an `owners` parameter to `build_schedule_from_partitioned_job` to set owners on the resulting schedule. (Thanks, [@dragos-pop](https://github.com/dragos-pop)!)
+- [dagster-airlift] Added support for Python 3.12, 3.13, and 3.14.
+- [dagster-fivetran] The Fivetran component now supports a `fetch_column_metadata` option to fetch column-level metadata for synced tables.
+- [dagster-k8s] When `includeConfigInLaunchedRuns.enabled` is set in the Helm chart, run pods now inherit `nodeSelector`, `tolerations`, and `podSecurityContext` from user deployment configuration.
+
+### Bugfixes
+
+- Fixed a SQL injection vulnerability in `dagster-clickhouse`, `dagster-clickhouse-pandas`, and `dagster-clickhouse-polars` when using dynamic partition keys. ClickHouse partition queries now use driver parameter binding instead of interpolating partition key values into SQL strings.
+- Fixed a race condition where readers polling for a run to reach `FAILURE` could observe the failed status before the `dagster/failure_reason` tag was written.
+- Fixed a regression where a blocking asset check that did not emit a result (e.g. a dbt test that dbt declined to run under `indirect_selection: cautious` or `buildable`) could silently cause downstream assets to be skipped. Missing blocking check results now allow downstream assets to proceed and log a warning; failed blocking checks continue to fail the step and the run as before.
+- Improved deduplication in `AutomationCondition.any_downstream_conditions()` to prevent recursive blowups in condition size when combined with other automation conditions.
+- [ui] Fixed extra scrollbars appearing in the asset overview and asset sidebar.
+- [dagster-k8s] Fixed an `AttributeError` when using `kubernetes` client v36+, which uses PEP 585 dict syntax (e.g. `dict[str, str]`) in its OpenAPI type annotations. (Thanks, [@vanika02](https://github.com/vanika02)!)
+
 ## 1.13.6 (core) / 0.29.6 (libraries)
 
 ### New
