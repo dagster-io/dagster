@@ -133,6 +133,41 @@ def test_handle_output(spark):
 
 
 @pytest.mark.integration
+def test_handle_output_empty_dataframe(spark):
+    with patch("pyspark.sql.readwriter.DataFrameWriter.save") as mock_save:
+        handler = BigQueryPySparkTypeHandler()
+
+        schema = StructType(
+            [StructField("col1", StringType(), True), StructField("col2", StringType(), True)]
+        )
+        df = spark.createDataFrame([], schema)
+
+        output_context = build_output_context(resource_config=resource_config)
+
+        metadata = handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=None,
+            ),
+            df,
+            None,
+        )
+
+        assert metadata == {
+            "dataframe_columns": MetadataValue.table_schema(
+                TableSchema(columns=[TableColumn("col1", "string"), TableColumn("col2", "string")])
+            ),
+        }
+
+        # Should not attempt to write to BigQuery
+        assert mock_save.call_count == 0
+
+
+@pytest.mark.integration
 def test_load_input(spark):
     with patch("pyspark.sql.readwriter.DataFrameReader.load") as mock_read:
         columns = ["col1", "col2"]

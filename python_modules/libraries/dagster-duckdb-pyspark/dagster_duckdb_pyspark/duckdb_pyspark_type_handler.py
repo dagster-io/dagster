@@ -52,16 +52,21 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         connection,
     ):
         """Stores the given object at the provided filepath."""
-        pa_df = pyspark_df_to_arrow_table(obj)  # noqa: F841
-        connection.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
-            " pa_df;"
-        )
-        if not connection.fetchall():
-            # table was not created, therefore already exists. Insert the data
-            connection.execute(
-                f"insert into {table_slice.schema}.{table_slice.table} select * from pa_df;"
+        if obj.isEmpty():
+            context.log.warning(
+                "Skipping DuckDB write for empty DataFrame. An empty table will not be created."
             )
+        else:
+            pa_df = pyspark_df_to_arrow_table(obj)  # noqa: F841
+            connection.execute(
+                f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+                " pa_df;"
+            )
+            if not connection.fetchall():
+                # table was not created, therefore already exists. Insert the data
+                connection.execute(
+                    f"insert into {table_slice.schema}.{table_slice.table} select * from pa_df;"
+                )
 
         context.add_output_metadata(
             {
