@@ -109,3 +109,18 @@ def write_ui_component_entry(
         path.write_text(serialize_value(entry), encoding="utf-8")
         storage.upload_state_from_path(key, new_version, path)
     return new_version
+
+
+def delete_ui_component_entry(
+    storage: DefsStateStorage,
+    location_name: str,
+    component_id: str,
+) -> None:
+    """Delete a UI component entry.
+
+    Idempotent — deleting a component_id that doesn't exist is a no-op.
+    The next ``get_ui_component_ids`` call for this location will not
+    include the deleted id, and the ``ComponentTree``'s next
+    ``find_root_decl`` call will exclude it from the tree.
+    """
+    storage.set_latest_version(get_ui_component_state_key(location_name, component_id), None)

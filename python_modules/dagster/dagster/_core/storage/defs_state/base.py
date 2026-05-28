@@ -96,12 +96,21 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def set_latest_version(self, key: str, version: str) -> None:
+    def set_latest_version(self, key: str, version: str | None) -> None:
         """Sets the latest version of the state for the given key.
+
+        Passing ``version=None`` drops the key from the latest-version
+        mapping. After such a call, ``get_latest_version(key)`` returns
+        None and the key no longer appears in
+        ``list_state_keys_with_prefix``. Idempotent — clearing a key that
+        isn't present is a no-op. Stored bytes for prior versions are
+        not cleaned up by this call; backends that care about orphan
+        cleanup should handle it out-of-band.
 
         Args:
             key (str): The key of the state to persist.
-            version (str): The version of the state to persist.
+            version (str | None): The version of the state to persist,
+                or None to clear the key from the mapping.
         """
         raise NotImplementedError()
 
