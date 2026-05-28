@@ -21,7 +21,10 @@ def raw_glue_qqp():
     pass
 
 
-@asset
+@asset(
+    io_manager_key="hf_parquet_io_manager",
+    group_name="golden_glue_pipeline",
+)
 def deduplicated_glue_qqp(
     raw_glue_qqp: Dataset,
 ) -> Dataset:
@@ -43,7 +46,10 @@ def deduplicated_glue_qqp(
     return raw_glue_qqp.filter(unique_example)
 
 
-@asset
+@asset(
+    io_manager_key="hf_parquet_io_manager",
+    group_name="golden_glue_pipeline",
+)
 def filtered_glue_qqp(
     deduplicated_glue_qqp: Dataset,
 ) -> Dataset:
@@ -63,7 +69,10 @@ def filtered_glue_qqp(
     return deduplicated_glue_qqp.filter(valid_example)
 
 
-@asset
+@asset(
+    io_manager_key="hf_parquet_io_manager",
+    group_name="golden_glue_pipeline",
+)
 def golden_glue_qqp(
     filtered_glue_qqp: Dataset,
 ) -> Dataset:
@@ -81,7 +90,10 @@ def golden_glue_qqp(
     return filtered_glue_qqp.map(normalize)
 
 
-@asset
+@asset(
+    io_manager_key="hf_parquet_io_manager",
+    group_name="golden_glue_pipeline",
+)
 def publish_golden_glue(
     context: AssetExecutionContext,
     golden_glue_qqp: Dataset,
