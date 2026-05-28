@@ -972,7 +972,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         ac_snapshot = get_ac_snapshot(self._asset_node_snap)
         return GrapheneAutomationCondition(ac_snapshot) if ac_snapshot else None
 
-    def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
+    def resolve_targetingInstigators(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneSensor | GrapheneSchedule]:
         if isinstance(self._remote_node, RemoteWorkspaceAssetNode):
             # global nodes have saved references to their targeting instigators
             schedules = [

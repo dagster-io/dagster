@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.13.6 (core) / 0.29.6 (libraries)
+
+### New
+
+- Schedule, sensor, and asset daemon ticks now dispatch instigators round-robin across code locations, preventing a single code location with many instigators from delaying launches in other code locations.
+- Added `dg api run launch` command for launching runs from the CLI against the Dagster+ API.
+- Improved declarative automation performance for assets sharing the same cron schedule.
+- [ui] The asset catalog now shows a toggle to hide duplicate connections-defined assets when an SDA and a connection target the same table, and the asset sidebar links to matched assets.
+- [dagster-dbt] Added a configurable job pool to `DbtCloudComponent` and `DbtCloudWorkspace` to work around dbt Cloud's one-concurrent-run-per-job limit.
+
+### Bugfixes
+
+- Fixed an issue where asset keys and partitions containing leading "/" characters or ".." characters would sometimes cause IOManagers to read and write outside of the supplied `base_path`.
+- Fixed a regression where a blocking asset check that did not emit a result (e.g. a dbt test skipped under `indirect_selection: cautious` or `buildable`) would silently cause downstream assets to be skipped. Missing check results now allow downstream assets to proceed; failed checks still fail the step.
+- Softened the `job_snapshot_id` mismatch invariant in execution plan persistence from a crash to a warning, preventing run launch failures when client and server compute slightly different snapshot IDs.
+- Pinned `antlr4-python3-runtime` to `<4.14` to prevent potential breakage from future ANTLR minor version bumps.
+- [ui] Fixed minor flex alignment issues for tags and metadata buttons on asset catalog detail pages.
+- [dagster-k8s] Added support for the PEP 585 `dict[str, str]` syntax used by the `kubernetes` client v36+ when snake-casing model dictionaries, fixing an `AttributeError: module 'kubernetes.client.models' has no attribute 'dict[str, str]'` raised on `kubernetes>=36`. (Thanks, [@vanika02](https://github.com/vanika02)!)
+
+### Documentation
+
+- Added documentation for defining asset dependencies across code locations.
+- Added `dg utils` CLI reference documentation.
+- Added missing `DAGSTER_POSTGRES_HOST` environment variable to the Docker deployment documentation.
+- Expanded Databricks integration documentation with Databricks Connect, serverless compute (Pipes), and UC Volumes patterns.
+- [dagster-dbt] Documented the `FROM_ASSET_FAILURE` retry strategy for dbt asset jobs.
+
 ## 1.13.5 (core) / 0.29.5 (libraries)
 
 ### New

@@ -367,11 +367,11 @@ def _output_name_for_result_obj(
         asset_key = _key_for_result(event, context)
         return context.per_invocation_properties.assets_def.get_output_name_for_asset_key(asset_key)
     elif isinstance(event, AssetCheckResult):
-        check_names_by_asset_key = {}
+        check_names_by_asset_key: dict[AssetKey, set[str]] = {}
         for spec in context.per_invocation_properties.assets_def.check_specs:
             if spec.asset_key not in check_names_by_asset_key:
-                check_names_by_asset_key[spec.asset_key] = []
-            check_names_by_asset_key[spec.asset_key].append(spec.name)
+                check_names_by_asset_key[spec.asset_key] = set()
+            check_names_by_asset_key[spec.asset_key].add(spec.name)
 
         return context.per_invocation_properties.assets_def.get_output_name_for_asset_check_key(
             event.resolve_target_check_key(check_names_by_asset_key)

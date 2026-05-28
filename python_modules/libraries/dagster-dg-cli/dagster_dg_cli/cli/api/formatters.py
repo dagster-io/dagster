@@ -265,12 +265,12 @@ def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
         return assets.model_dump_json(indent=2)
 
     headers = ["ASSET KEY", "GROUP", "DESCRIPTION", "KINDS"]
-    rows = []
+    rows: list[list[str]] = []
     for asset in assets.items:
         rows.append(
             [
                 asset.asset_key,
-                asset.group_name,
+                asset.group_name or "",
                 asset.description or "",
                 ", ".join(asset.kinds) if asset.kinds else "",
             ]

@@ -40,7 +40,7 @@ def docker_compose_env_file_fixture():
 
 
 RETRY_DELAY_SEC = 5
-STARTUP_TIME_SEC = 120
+STARTUP_TIME_SEC = 240
 
 
 @pytest.fixture(name="docker_compose_airbyte_instance", scope="module")

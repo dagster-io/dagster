@@ -1,9 +1,9 @@
 import logging
-import time
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 
 import dagster as dg
+from dagster import in_process_executor
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import construct_event_logger
@@ -213,7 +213,12 @@ def test_event_forward_compat_without_event_specific_data():
 
 
 def failing_job_concurrent_events():
-    """This job fails, with a specific step consistently failing last."""
+    """This job fails such that ``mapped_op[0]`` is the earliest step failure.
+
+    Pinned to ``in_process_executor`` so dynamic-mapped steps run sequentially
+    in mapping-key order. Multiprocess execution was previously used here, but
+    subprocess startup jitter could reorder the failures.
+    """
 
     @dg.op(out=dg.DynamicOut())
     def dynamic_op(context):
@@ -222,10 +227,9 @@ def failing_job_concurrent_events():
 
     @dg.op
     def mapped_op(context, i: int):
-        time.sleep(i)
         raise Exception("oof")
 
-    @dg.job
+    @dg.job(executor_def=in_process_executor)
     def failing_job():
         dynamic_op().map(mapped_op)
 

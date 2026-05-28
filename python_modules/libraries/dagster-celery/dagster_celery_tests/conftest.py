@@ -1,4 +1,5 @@
 import os
+import socket
 import subprocess
 import tempfile
 import time
@@ -17,12 +18,34 @@ from dagster_celery_tests.utils import start_celery_worker
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
+def _wait_for_tcp_port(host: str, port: int, timeout: float = 60.0) -> None:
+    deadline = time.monotonic() + timeout
+    last_err: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=2.0):
+                return
+        except OSError as e:
+            last_err = e
+            time.sleep(1.0)
+    raise RuntimeError(
+        f"Timed out waiting for {host}:{port} to accept connections after {timeout}s: {last_err}"
+    )
+
+
 @pytest.fixture(scope="session")
 def rabbitmq():
     if IS_BUILDKITE:
+        # The celery_extra_cmds shell starts the rabbitmq sibling container with
+        # `docker compose up -d`, which returns once the container is created --
+        # not once rabbitmq's TCP listener is bound. Wait for the AMQP port to
+        # actually accept connections before yielding, otherwise test_start_worker
+        # races the broker and fails with `[Errno 111] Connection refused`.
+        broker_host = os.getenv("DAGSTER_CELERY_BROKER_HOST", "localhost")
+        _wait_for_tcp_port(broker_host, 5672, timeout=60.0)
         # Set the enviornment variable that celery uses in the start_worker() test function
         # to find the broker host
-        with environ({"TEST_BROKER": os.getenv("DAGSTER_CELERY_BROKER_HOST", "localhost")}):
+        with environ({"TEST_BROKER": broker_host}):
             yield
         return
 

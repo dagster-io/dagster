@@ -458,12 +458,13 @@ export const SelectionAutoCompleteInput = ({
           }}
           ref={inputRef}
           onKeyDownCapture={handleKeyDown} // Added keyboard event handler
-          tabIndex={0} // Make the div focusable to capture keyboard events
+          tabIndex={-1} // Make the div focusable to capture keyboard events
           onClick={() => {
             setShowResults({current: true});
+            cmInstance.current?.focus();
           }}
         >
-          <div style={{alignSelf: currentHeight > 20 ? 'flex-start' : 'center'}}>
+          <div style={{alignSelf: currentHeight > 20 ? 'flex-start' : 'center', width: 18}}>
             <Icon name="search" style={{marginTop: 2}} />
           </div>
           <div ref={editorRef} />

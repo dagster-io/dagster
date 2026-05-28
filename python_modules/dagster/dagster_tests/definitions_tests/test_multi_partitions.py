@@ -879,7 +879,9 @@ def test_pagination_accumulation():
         for b_val in ["b1", "b2", "b3", "b4", "b5"]:
             expected_combinations.append({"dim_a": a_val, "dim_b": b_val})
 
-    result_dicts = [key.keys_by_dimension for key in all_results]
+    result_dicts = [
+        key.keys_by_dimension for key in all_results if isinstance(key, dg.MultiPartitionKey)
+    ]
     for expected in expected_combinations:
         assert expected in result_dicts
     assert len(result_dicts) == len(expected_combinations)

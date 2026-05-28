@@ -20,6 +20,7 @@ from dagster_k8s.client import DagsterKubernetesClient
 
 from dagster_k8s_test_infra.integration_utils import (
     IS_BUILDKITE,
+    _execute_query_over_graphql,
     check_output,
     get_test_namespace,
     image_pull_policy,
@@ -200,27 +201,38 @@ def configmaps(namespace, should_cleanup):
 
 @pytest.fixture(scope="session")
 def aws_configmap(namespace, should_cleanup):
-    if not IS_BUILDKITE:
-        kube_api = kubernetes.client.CoreV1Api()
+    kube_api = kubernetes.client.CoreV1Api()
 
+    if IS_BUILDKITE:
+        # On Buildkite the buildkite-agent pod uses IRSA, so the kind step pods cannot
+        # inherit AWS credentials via IMDS or the web-identity token. Propagate the
+        # temporary creds materialized by `aws configure export-credentials --format env`
+        # (see {k8s,celery_k8s}_integration_suite_pytest_extra_cmds) into step pods via
+        # this configmap.
+        aws_data = {
+            k: os.environ[k]
+            for k in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
+            if os.environ.get(k)
+        }
+    else:
         aws_data = {
             "AWS_ENDPOINT_URL": f"http://s3.{namespace}.svc.cluster.local:4566",
             "AWS_ACCESS_KEY_ID": "fake",
             "AWS_SECRET_ACCESS_KEY": "fake",
         }
 
-        print(f"Creating ConfigMap {TEST_AWS_CONFIGMAP_NAME} with AWS credentials")
-        aws_configmap = kubernetes.client.V1ConfigMap(
-            api_version="v1",
-            kind="ConfigMap",
-            data=aws_data,
-            metadata=kubernetes.client.V1ObjectMeta(name=TEST_AWS_CONFIGMAP_NAME),
-        )
-        kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
+    print(f"Creating ConfigMap {TEST_AWS_CONFIGMAP_NAME} with AWS credentials")
+    aws_configmap = kubernetes.client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data=aws_data,
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_AWS_CONFIGMAP_NAME),
+    )
+    kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
 
     yield TEST_AWS_CONFIGMAP_NAME
 
-    if should_cleanup and not IS_BUILDKITE:
+    if should_cleanup:
         kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)
 
 
@@ -728,8 +740,10 @@ def helm_chart_for_k8s_run_launcher(
                 "config": {
                     "k8sRunLauncher": {
                         "jobNamespace": user_code_namespace,
-                        "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
-                        + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
+                        "envConfigMaps": [
+                            {"name": TEST_CONFIGMAP_NAME},
+                            {"name": TEST_AWS_CONFIGMAP_NAME},
+                        ],
                         "envSecrets": [{"name": TEST_SECRET_NAME}],
                         "envVars": ["BUILDKITE=1"] if os.getenv("BUILDKITE") else [],
                         "imagePullPolicy": image_pull_policy(),
@@ -846,7 +860,7 @@ def _deployment_config(docker_image):
                 else []
             )
             + [{"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}],
-            "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else [],
+            "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
             "service": {"annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}},
@@ -916,9 +930,7 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
                         "worker_concurrency": 1,
                     },
                     "annotations": {"dagster-integration-tests": "celery-pod-annotation"},
-                    "envConfigMaps": (
-                        [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []
-                    ),
+                    "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}],
                     "env": {"TEST_SET_ENV_VAR": "test_celery_env_var"},
                     "envSecrets": [{"name": TEST_SECRET_NAME}],
                     "volumeMounts": [
@@ -1108,9 +1120,85 @@ def _port_forward_dagster_webserver(namespace):
                 pass
 
             time.sleep(1)
+
+        # The webserver can win the race to /listen on user-code-deployment-1:3030
+        # -- its initial workspace load sees `Connection refused`, the location
+        # goes into ERROR, and the natural workspace-refresh interval is too long
+        # for tests that start within a few seconds. Force a reload; the
+        # `_helm_chart_helper` wait_for_pod loop has already gated on user-code.
+        _ensure_user_code_location_loaded(
+            f"http://{webserver_url_url}",
+            location_name="user-code-deployment-1",
+            timeout_seconds=60.0,
+        )
+
         yield f"http://{webserver_url_url}"
 
     finally:
         print("Terminating port-forwarding")
         if p is not None:
             p.terminate()
+
+
+_RELOAD_LOCATION_MUTATION = """
+mutation($locationName: String!) {
+  reloadRepositoryLocation(repositoryLocationName: $locationName) {
+    __typename
+    ... on WorkspaceLocationEntry {
+      name
+      loadStatus
+      locationOrLoadError {
+        __typename
+        ... on PythonError {
+          message
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+
+def _ensure_user_code_location_loaded(
+    webserver_url: str,
+    *,
+    location_name: str,
+    timeout_seconds: float,
+) -> None:
+    """Force-reload the named code location and poll until it is LOADED.
+
+    Returns once the location reports loadStatus=LOADED with no
+    locationOrLoadError. Raises if the reload errors or doesn't converge
+    within timeout_seconds.
+    """
+    deadline = time.time() + timeout_seconds
+    last_response = None
+    while time.time() < deadline:
+        response = _execute_query_over_graphql(
+            webserver_url,
+            _RELOAD_LOCATION_MUTATION,
+            {"locationName": location_name},
+        )
+        last_response = response
+        payload = response.get("data", {}).get("reloadRepositoryLocation", {})
+        typename = payload.get("__typename")
+        if typename == "WorkspaceLocationEntry":
+            load_status = payload.get("loadStatus")
+            load_error_typename = (payload.get("locationOrLoadError") or {}).get("__typename")
+            if load_status == "LOADED" and load_error_typename != "PythonError":
+                print(f"Code location {location_name!r} loaded successfully")
+                return
+            print(
+                f"Code location {location_name!r} not yet loaded "
+                f"(loadStatus={load_status}, locationOrLoadError={load_error_typename}); retrying"
+            )
+        else:
+            print(f"reloadRepositoryLocation returned {typename}: {payload}; retrying")
+        time.sleep(2)
+    raise Exception(
+        f"Timed out waiting for code location {location_name!r} to load "
+        f"(last response: {last_response})"
+    )

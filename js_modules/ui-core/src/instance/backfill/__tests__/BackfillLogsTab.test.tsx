@@ -11,7 +11,11 @@ import {
   buildPartitionBackfill,
 } from '../../../graphql/builders';
 import {REFRESHING_DATA} from '../../../live-data-provider/LiveDataRefreshButton';
-import {buildQueryMock} from '../../../testing/mocking';
+import {
+  buildQueryMock,
+  mockViewportClientRect,
+  restoreViewportClientRect,
+} from '../../../testing/mocking';
 import {BACKFILL_LOGS_PAGE_QUERY, BackfillLogsTab} from '../BackfillLogsTab';
 
 const mockBackfillId = 'mockBackfillId';
@@ -66,6 +70,17 @@ const mocks = [
 ];
 
 describe('BackfillLogsTab', () => {
+  // InstigationEventLogTable is virtualized; without a non-zero viewport jsdom
+  // reports zero layout height and renders no rows, so the event assertions
+  // below would never find their elements.
+  beforeAll(() => {
+    mockViewportClientRect();
+  });
+
+  afterAll(() => {
+    restoreViewportClientRect();
+  });
+
   it('paginates through the logs to load them all', async () => {
     render(
       <RecoilRoot>
@@ -83,13 +98,24 @@ describe('BackfillLogsTab', () => {
 
     expect(await screen.findByText(REFRESHING_DATA)).toBeVisible();
 
-    waitFor(async () => {
-      expect(await screen.findByText('Event 1')).toBeVisible();
-      expect(await screen.findByText('Event 4')).toBeVisible();
-    });
+    // These assertions were previously not awaited, so they never effectively
+    // ran. Await them, and use synchronous queries inside waitFor (nested findBy*
+    // would compound their own timeouts). Both pages must load (Event 1 from the
+    // first page, Event 4 from the second) and the refreshing indicator must
+    // clear. Give the pagination + render chain more room than the default 1000ms.
+    await waitFor(
+      () => {
+        expect(screen.getByText('Event 1')).toBeVisible();
+        expect(screen.getByText('Event 4')).toBeVisible();
+      },
+      {timeout: 5000},
+    );
 
-    waitFor(async () => {
-      expect(await screen.findByText(REFRESHING_DATA)).not.toBeVisible();
-    });
+    await waitFor(
+      () => {
+        expect(screen.queryByText(REFRESHING_DATA)).not.toBeInTheDocument();
+      },
+      {timeout: 5000},
+    );
   });
 });

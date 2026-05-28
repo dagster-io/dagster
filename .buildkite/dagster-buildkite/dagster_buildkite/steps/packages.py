@@ -18,15 +18,15 @@ from buildkite_shared.step_builders.step_builder import (
     TopLevelStepConfiguration,
     is_command_step,
 )
-from buildkite_shared.utils import oss_path
+from buildkite_shared.utils import (
+    connect_sibling_docker_container,
+    network_buildkite_container,
+    oss_path,
+)
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
-from dagster_buildkite.utils import (
-    connect_sibling_docker_container,
-    network_buildkite_container,
-    wait_for_mysql_container,
-)
+from dagster_buildkite.utils import wait_for_mysql_container
 
 _CORE_PACKAGES = [
     oss_path("python_modules/dagster"),
@@ -45,6 +45,20 @@ _DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
 _DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST = "dagster_dbt_tests/core/test_resource.py"
 _DAGSTER_DBT_CORE_MAIN_ASSET_CHECKS_TEST = "dagster_dbt_tests/core/test_asset_checks.py"
 _DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
+
+_GRAPHQL_GRPC_RESOURCES = ResourceRequests(cpu="2000m", memory="4Gi")
+
+# clickhouse-server in dind via testcontainers. Default 2Gi dind limit OOMs the
+# server under load. cpu bumped 1000m->2000m: at 1000m the clickhouse-server boot
+# starves the dind daemon, so testcontainers' container bring-up intermittently
+# blows docker-py's 60s read timeout (UnixHTTPConnectionPool ... read timeout=60)
+# and the session fixture errors. Pairs with the /var/lib/docker emptyDir mount.
+_CLICKHOUSE_TESTCONTAINERS_RESOURCES = ResourceRequests(
+    cpu="2000m",
+    memory="1Gi",
+    docker_memory="2Gi",
+    docker_memory_limit="4Gi",
+)
 
 
 def _infer_package_type(directory: str | Path) -> str:
@@ -139,6 +153,7 @@ class PackageSpec:
     tox_file: str | None = None
     timeout_in_minutes: int | None = None
     queue: BuildkiteQueue | None = None
+    resources: ResourceRequests | None = None
     run_pytest: bool = True
     splits: int = 1
     force_run_fn: Callable[[BuildkiteContext], bool] | None = None
@@ -245,9 +260,9 @@ class PackageSpec:
                                 base_label=split_label,
                                 command_type="pytest",
                                 python_version=py_version,
-                                env_vars=self.env_vars,
+                                env=self.env_vars,
                                 extra_commands_pre=extra_commands_pre,
-                                dependencies=dependencies,
+                                depends_on=dependencies,
                                 tox_file=self.tox_file,
                                 timeout_in_minutes=self.timeout_in_minutes,
                                 queue=(
@@ -261,7 +276,11 @@ class PackageSpec:
                                 concurrency_group=(
                                     other_factor.concurrency_group if other_factor else None
                                 ),
-                                resources=other_factor.resources if other_factor else None,
+                                resources=(
+                                    other_factor.resources
+                                    if other_factor and other_factor.resources is not None
+                                    else self.resources
+                                ),
                                 soft_fail=other_factor.soft_fail if other_factor else False,
                                 ecr_passthru=self.ecr_passthru,
                             )
@@ -560,7 +579,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
             ],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("examples/docs_snippets"),
@@ -665,13 +683,18 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("examples/use_case_repository"),
             pytest_tox_factors=[ToxFactor("source")],
         ),
-        # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
-        # beefier instance
+        # Federation tutorial spins up two host-process airflow instances + dagster;
+        # needs a beefier main container than MEDIUM's c5a.large (2 vCPU / 4 Gi) provides.
         PackageSpec(
             oss_path("examples/airlift-federation-tutorial"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            # Two airflow standalone stacks + dagster share one pod. 2 vCPU starved
+            # the SQLite writers under load (scheduler died with "database is
+            # locked", failing test_load_metrics); 4 vCPU matches the old c5.xlarge
+            # DOCKER-queue sizing this package ran on before #24950.
+            resources=ResourceRequests(cpu="4000m", memory="6Gi"),
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -857,17 +880,48 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/dagster-graphql"),
             pytest_extra_cmds=dagster_graphql_extra_cmds,
+            # *_instance_*_grpc_env and *_instance_multi_location factors all
+            # spin up GrpcServerProcess subprocesses via
+            # graphql_context_test_suite (STRICT_GRPC_SERVER_PROCESS_WAIT=1).
+            # Same subprocess-heartbeat CPU-starvation profile as
+            # daemon_tests; bump matches.
             pytest_tox_factors=[
                 ToxFactor("not_graphql_context_test_suite", splits=2),
-                ToxFactor("sqlite_instance_multi_location"),
-                ToxFactor("sqlite_instance_managed_grpc_env", splits=2),
-                ToxFactor("sqlite_instance_deployed_grpc_env", splits=2),
-                ToxFactor("sqlite_instance_code_server_cli_grpc_env", splits=2),
+                ToxFactor(
+                    "sqlite_instance_multi_location",
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "sqlite_instance_managed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "sqlite_instance_deployed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "sqlite_instance_code_server_cli_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
                 ToxFactor("graphql_python_client"),
                 ToxFactor("postgres-graphql_context_variants"),
-                ToxFactor("postgres-instance_multi_location"),
-                ToxFactor("postgres-instance_managed_grpc_env", splits=2),
-                ToxFactor("postgres-instance_deployed_grpc_env", splits=2),
+                ToxFactor(
+                    "postgres-instance_multi_location",
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "postgres-instance_managed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
+                ToxFactor(
+                    "postgres-instance_deployed_grpc_env",
+                    splits=2,
+                    resources=_GRAPHQL_GRPC_RESOURCES,
+                ),
                 ToxFactor("gql_v3"),
                 ToxFactor("gql_v3_5"),
             ],
@@ -903,9 +957,12 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 )
             ),
             timeout_in_minutes=30,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
+            # fixtures_tests cycles multi-service docker-compose stacks; under the
+            # default 2Gi dind limit `compose down` hits the 90s stop timeout and
+            # leaves stale containers that fail name-conflict on the next test.
+            # Same shape as the dagster-mysql bump in #24661.
             oss_path("python_modules/dagster-test"),
             unsupported_python_versions=[
                 # dagster-airflow
@@ -913,7 +970,12 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
-            queue=BuildkiteQueue.MEDIUM,
+            resources=ResourceRequests(
+                cpu="1000m",
+                memory="1Gi",
+                docker_memory="2Gi",
+                docker_memory_limit="4Gi",
+            ),
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dbt"),
@@ -1007,18 +1069,11 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airlift"),
-            unsupported_python_versions=[
-                # airflow
-                AvailablePythonVersion.V3_12,
-                AvailablePythonVersion.V3_13,
-                AvailablePythonVersion.V3_14,
-            ],
             env_vars=[
                 "AIRLIFT_MWAA_TEST_ENV_NAME",
                 "AIRLIFT_MWAA_TEST_PROFILE",
                 "AIRLIFT_MWAA_TEST_REGION",
             ],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airbyte"),
@@ -1035,12 +1090,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                         docker_memory="4Gi",
                         docker_memory_limit="6Gi",
                     ),
-                    # Quarantined: recurring `KeyError: 'airbyte-webapp'` from
-                    # an IPAM race in `buildkite_hostnames_cm` on the EKS
-                    # runner. The localhost fallback fix in #24675 broke every
-                    # other `docker_compose_cm` consumer (build 151863), so it
-                    # was reverted; needs a different fix.
-                    soft_fail=True,
                 ),
             ],
         ),
@@ -1072,7 +1121,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-dg-cli"),
             pytest_tox_factors=[
                 ToxFactor("general"),
-                ToxFactor("slow", splits=4, queue=BuildkiteQueue.MEDIUM),
+                ToxFactor("slow", splits=4),
                 ToxFactor("serial"),
                 ToxFactor("plus"),
             ],
@@ -1089,40 +1138,57 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-aws"),
-            env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-azure"),
             env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
         ),
         PackageSpec(
+            # Single rabbitmq sibling container; default dind sizing is enough.
             oss_path("python_modules/libraries/dagster-celery"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
+            # Runs `test-project` images via celery + docker. The cpu=4000m bump
+            # from #24902 did not eliminate the 60s UnixHTTPConnectionPool
+            # ReadTimeouts (recurred on builds 152968, 152985, 153001, 153056
+            # within ~2h of merge). Per #24902's pre-committed escalation,
+            # bump docker_memory_limit 4Gi → 8Gi to give dind headroom for
+            # concurrent decompression and image-pull buffers.
             oss_path("python_modules/libraries/dagster-celery-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
-            queue=BuildkiteQueue.MEDIUM,
+            resources=ResourceRequests(
+                cpu="1000m",
+                memory="1Gi",
+                docker_cpu="4000m",
+                docker_memory="2Gi",
+                docker_memory_limit="8Gi",
+            ),
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dask"),
-            env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-databricks"),
         ),
         PackageSpec(
+            # Pulls and runs `test-project` images per test. Same dind
+            # saturation shape as dagster-celery-docker above — bump
+            # docker_memory_limit 4Gi → 8Gi alongside that package.
             oss_path("python_modules/libraries/dagster-docker"),
             env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=docker_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
-            queue=BuildkiteQueue.MEDIUM,
+            resources=ResourceRequests(
+                cpu="1000m",
+                memory="1Gi",
+                docker_cpu="4000m",
+                docker_memory="2Gi",
+                docker_memory_limit="8Gi",
+            ),
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-duckdb"),
@@ -1154,7 +1220,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1162,7 +1229,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-pandas"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1170,7 +1238,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-polars"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1229,8 +1298,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 "BUILDKITE_SECRETS_BUCKET",
             ],
             pytest_tox_factors=[
-                ToxFactor("default"),
-                ToxFactor("old_kubernetes"),
+                ToxFactor("kubernetes_12"),
+                ToxFactor("kubernetes_35"),
+                ToxFactor("kubernetes_36"),
             ],
             pytest_extra_cmds=k8s_extra_cmds,
         ),
@@ -1238,6 +1308,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-mlflow"),
         ),
         PackageSpec(
+            # Three sibling MySQL containers (test-mysql-db, test-mysql-db-pinned,
+            # test-mysql-db-pinned-backcompat) up at once; each mysqld is ~300-500MB
+            # at steady state, so the 2Gi dind limit is the tight bound.
             oss_path("python_modules/libraries/dagster-mysql"),
             pytest_extra_cmds=mysql_extra_cmds,
             pytest_tox_factors=[
@@ -1248,7 +1321,16 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
-            queue=BuildkiteQueue.MEDIUM,
+            # Three sibling mysqld containers (~300-500MB each); the default
+            # 2Gi dind memory limit is the tight bound. Outer-pod memory=1Gi
+            # promotes the test container to Burstable QoS. Same shape as the
+            # airbyte integration bump in #23997.
+            resources=ResourceRequests(
+                cpu="1000m",
+                memory="1Gi",
+                docker_memory="2Gi",
+                docker_memory_limit="4Gi",
+            ),
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pandas"),
@@ -1266,13 +1348,14 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
+            # Single sibling postgres container via dagster_test.fixtures; default
+            # dind sizing is enough.
             oss_path("python_modules/libraries/dagster-postgres"),
             pytest_tox_factors=[
                 ToxFactor("storage_tests"),
                 ToxFactor("storage_tests_sqlalchemy_1_3"),
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
-            queue=BuildkiteQueue.MEDIUM,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-rest-resources"),
@@ -1296,14 +1379,12 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(
             oss_path("python_modules/libraries/dagstermill"),
             pytest_tox_factors=[
-                ToxFactor("papermill2", splits=2, queue=BuildkiteQueue.MEDIUM),
+                ToxFactor("papermill2", splits=2),
             ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airlift/perf-harness"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
-            # Long-standing Airflow e2e timing flake (`test_dagster_materializes[migrate]`).
-            queue=BuildkiteQueue.MEDIUM,
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -1312,6 +1393,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
+            # Each split runs a host-process airflow + dagster pair; mirror the
+            # federation tutorial's sizing (minus one airflow instance).
             oss_path("python_modules/libraries/dagster-airlift/kitchen-sink"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
@@ -1320,7 +1403,11 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            # One airflow standalone stack + dagster per split carries the same
+            # SQLite-lock risk as the federation tutorial, so match its 4 vCPU
+            # sizing rather than MEDIUM's 2 vCPU (#24950).
+            resources=ResourceRequests(cpu="4000m", memory="4Gi"),
             splits=2,
         ),
         # Runs against live dbt cloud instance, we only want to run on commits and on the

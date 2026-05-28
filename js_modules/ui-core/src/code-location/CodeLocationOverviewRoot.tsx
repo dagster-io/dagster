@@ -19,6 +19,7 @@ import * as yaml from 'yaml';
 import {CodeLocationDefsStateComparisonSection} from './CodeLocationDefsStateComparisonSection';
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
 import {useCopyToClipboard} from '../app/browser';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
@@ -176,6 +177,8 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 };
 
 const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  useDocumentTitle(`Code locations | ${repoAddressAsHumanString(repoAddress)}`);
+
   const {
     locationEntries,
     locationStatuses,

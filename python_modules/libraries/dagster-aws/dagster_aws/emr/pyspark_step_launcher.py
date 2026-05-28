@@ -433,6 +433,12 @@ class EmrPySparkStepLauncher(StepLauncher):
             ).format(conf.get("spark.master")),
         )
 
+        py_files = []
+        if self.s3_job_package_path:
+            py_files = ["--py-files", self.s3_job_package_path]
+        elif self.deploy_local_job_package:
+            py_files = ["--py-files", self._artifact_s3_uri(run_id, step_key, CODE_ZIP_NAME)]
+
         command = (
             [
                 EMR_SPARK_HOME + "bin/spark-submit",
@@ -442,9 +448,8 @@ class EmrPySparkStepLauncher(StepLauncher):
                 conf.get("spark.submit.deployMode", "client"),
             ]
             + format_for_cli(list(flatten_dict(conf)))
+            + py_files
             + [
-                "--py-files",
-                self._artifact_s3_uri(run_id, step_key, CODE_ZIP_NAME),
                 self._artifact_s3_uri(run_id, step_key, self._main_file_name()),
                 self.staging_bucket,
                 self._artifact_s3_key(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),

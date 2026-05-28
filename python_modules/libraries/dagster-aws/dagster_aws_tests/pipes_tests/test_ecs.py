@@ -2,7 +2,6 @@ import multiprocessing
 import os
 import re
 import sys
-import time
 from typing import TYPE_CHECKING
 
 import boto3
@@ -137,11 +136,25 @@ def test_ecs_pipes(
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def _materialize_asset(env, return_dict):
+def _materialize_asset(env, return_dict, task_started_event):
     ecs_client = boto3.client("ecs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
     cloudwatch_client = boto3.client("logs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
+    mock_client = LocalECSMockClient(ecs_client=ecs_client, cloudwatch_client=cloudwatch_client)
+
+    # Signal the parent as soon as the ECS task has actually been launched, so
+    # the parent waits for real work before sending SIGTERM rather than racing
+    # subprocess startup with a fixed sleep.
+    original_run_task = mock_client.run_task
+
+    def run_task_and_signal(**kwargs):
+        result = original_run_task(**kwargs)
+        task_started_event.set()
+        return result
+
+    mock_client.run_task = run_task_and_signal  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+
     pipes = PipesECSClient(
-        client=LocalECSMockClient(ecs_client=ecs_client, cloudwatch_client=cloudwatch_client),  # type: ignore
+        client=mock_client,  # type: ignore
         message_reader=PipesCloudWatchMessageReader(
             client=cloudwatch_client,
         ),
@@ -165,25 +178,29 @@ def _materialize_asset(env, return_dict):
 def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
+        task_started_event = multiprocessing.Event()
 
         p = multiprocessing.Process(
             target=_materialize_asset,
             args=(
                 {"SLEEP_SECONDS": "10"},
                 return_dict,
+                task_started_event,
             ),
         )
         p.start()
 
-        while p.is_alive():
-            # we started executing the run
-            # time to interrupt it!
-            time.sleep(4)
+        if not task_started_event.wait(timeout=60):
             p.terminate()
+            p.join(timeout=30)
+            if p.is_alive():
+                p.kill()
+                p.join()
+            raise AssertionError("Subprocess did not launch an ECS task within 60s")
 
-        p.join()
+        p.terminate()
+        p.join(timeout=30)
         assert not p.is_alive()
-        # breakpoint()
         assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
         assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
 

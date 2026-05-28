@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 async def resolve_run_config_schema_or_error(
     graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: str | None = None
-) -> "GrapheneRunConfigSchema":
+) -> "GrapheneRunConfigSchema | GrapheneModeNotFoundError":
     from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 
     check.inst_param(selector, "selector", JobSubsetSelector)

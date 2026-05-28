@@ -1,12 +1,24 @@
 import base64
 import os
 import re
-from typing import TYPE_CHECKING
-from urllib.parse import urlparse
+from typing import Any, NamedTuple
+from urllib.parse import quote, urlparse
 
-if TYPE_CHECKING:
-    from githubkit import GitHub
-    from githubkit.versions.latest.models import FullRepository, PullRequest
+import requests
+
+
+class Repository(NamedTuple):
+    default_branch: str
+    html_url: str
+
+
+class PullRequest(NamedTuple):
+    number: int
+    html_url: str
+
+
+_DEFAULT_GITHUB_API_URL = "https://api.github.com"
+_REQUEST_TIMEOUT_SECONDS = 60
 
 
 class GitHubError(Exception):
@@ -17,56 +29,97 @@ class GitHubAuthError(GitHubError):
     """Raised when GitHub authentication is not configured."""
 
 
+class _GitHubClient:
+    def __init__(self, token: str, base_url: str | None = None):
+        self._base_url = (base_url or _DEFAULT_GITHUB_API_URL).rstrip("/")
+        self._session = requests.Session()
+        self._session.headers.update(
+            {
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {token}",
+                "User-Agent": "dagster-dg-cli",
+                "X-GitHub-Api-Version": "2022-11-28",
+            }
+        )
+
+    def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: Any = None,
+    ) -> requests.Response:
+        url = f"{self._base_url}{path}"
+        response = self._session.request(
+            method,
+            url,
+            json=json,
+            timeout=_REQUEST_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        return response
+
+
+def _ref_path(branch_name: str) -> str:
+    return quote(branch_name, safe="/")
+
+
 class GitHubRepositoryClient:
-    def __init__(self, github: "GitHub", owner: str, repo: str):
-        self.github = github
+    def __init__(self, client: _GitHubClient, owner: str, repo: str):
+        self._client = client
         self.owner = owner
         self.repo = repo
 
-    def get_repository(self) -> "FullRepository":
-        return self.github.rest.repos.get(self.owner, self.repo).parsed_data
+    def _repo_path(self, suffix: str = "") -> str:
+        return f"/repos/{self.owner}/{self.repo}{suffix}"
+
+    def get_repository(self) -> Repository:
+        data = self._client.request("GET", self._repo_path()).json()
+        return Repository(default_branch=data["default_branch"], html_url=data["html_url"])
 
     def workflow_exists(self, workflow_id: str) -> bool:
-        # Keep githubkit imports lazy so non-GitHub CLI paths can import this module without it.
-        from githubkit.exception import RequestFailed
-
         try:
-            self.github.rest.actions.get_workflow(self.owner, self.repo, workflow_id)
-        except RequestFailed as exc:
-            if exc.response.status_code == 404:
+            self._client.request(
+                "GET",
+                self._repo_path(f"/actions/workflows/{quote(workflow_id, safe='')}"),
+            )
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 404:
                 return False
             raise
         return True
 
     def get_branch_sha(self, branch_name: str) -> str:
-        response = self.github.rest.git.get_ref(self.owner, self.repo, f"heads/{branch_name}")
-        return response.parsed_data.object_.sha
+        response = self._client.request(
+            "GET",
+            self._repo_path(f"/git/ref/heads/{_ref_path(branch_name)}"),
+        )
+        return response.json()["object"]["sha"]
 
     def branch_exists(self, branch_name: str) -> bool:
-        response = self.github.rest.git.list_matching_refs(
-            self.owner,
-            self.repo,
-            f"heads/{branch_name}",
+        response = self._client.request(
+            "GET",
+            self._repo_path(f"/git/matching-refs/heads/{_ref_path(branch_name)}"),
         )
         target_ref = f"refs/heads/{branch_name}"
-        return any(ref.ref == target_ref for ref in response.parsed_data)
+        return any(ref["ref"] == target_ref for ref in response.json())
 
     def create_branch(self, branch_name: str, sha: str) -> None:
-        self.github.rest.git.create_ref(
-            self.owner,
-            self.repo,
-            ref=f"refs/heads/{branch_name}",
-            sha=sha,
+        self._client.request(
+            "POST",
+            self._repo_path("/git/refs"),
+            json={"ref": f"refs/heads/{branch_name}", "sha": sha},
         )
 
     def create_file(self, path: str, message: str, content: bytes, branch_name: str) -> None:
-        self.github.rest.repos.create_or_update_file_contents(
-            self.owner,
-            self.repo,
-            path,
-            message=message,
-            content=base64.b64encode(content).decode("utf-8"),
-            branch=branch_name,
+        self._client.request(
+            "PUT",
+            self._repo_path(f"/contents/{quote(path, safe='/')}"),
+            json={
+                "message": message,
+                "content": base64.b64encode(content).decode("utf-8"),
+                "branch": branch_name,
+            },
         )
 
     def create_pull_request(
@@ -77,23 +130,25 @@ class GitHubRepositoryClient:
         base: str,
         body: str,
         draft: bool,
-    ) -> "PullRequest":
-        return self.github.rest.pulls.create(
-            self.owner,
-            self.repo,
-            title=title,
-            head=head,
-            base=base,
-            body=body,
-            draft=draft,
-        ).parsed_data
+    ) -> PullRequest:
+        data = self._client.request(
+            "POST",
+            self._repo_path("/pulls"),
+            json={
+                "title": title,
+                "head": head,
+                "base": base,
+                "body": body,
+                "draft": draft,
+            },
+        ).json()
+        return PullRequest(number=data["number"], html_url=data["html_url"])
 
     def add_labels(self, issue_number: int, labels: list[str]) -> None:
-        self.github.rest.issues.add_labels(
-            self.owner,
-            self.repo,
-            issue_number,
-            labels=labels,
+        self._client.request(
+            "POST",
+            self._repo_path(f"/issues/{issue_number}/labels"),
+            json={"labels": labels},
         )
 
     def dispatch_workflow(
@@ -102,12 +157,10 @@ class GitHubRepositoryClient:
         ref: str,
         inputs: dict[str, str],
     ) -> None:
-        self.github.rest.actions.create_workflow_dispatch(
-            self.owner,
-            self.repo,
-            workflow_id,
-            ref=ref,
-            inputs=inputs,
+        self._client.request(
+            "POST",
+            self._repo_path(f"/actions/workflows/{quote(workflow_id, safe='')}/dispatches"),
+            json={"ref": ref, "inputs": inputs},
         )
 
 
@@ -158,27 +211,19 @@ def parse_github_remote_url(remote_url: str) -> tuple[str, str] | None:
     return owner, repo
 
 
-def get_github_client() -> "GitHub":
+def _get_github_client() -> _GitHubClient:
     token = os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN")
     if not token:
         raise GitHubAuthError(
             "GitHub authentication not found. Set GH_TOKEN or GITHUB_TOKEN to make GitHub API calls."
         )
-
-    # Keep githubkit imports lazy so non-GitHub CLI paths can import this module without it.
-    from githubkit import GitHub
-
-    base_url = _get_github_base_url()
-    if base_url:
-        return GitHub(auth=token, base_url=base_url)
-
-    return GitHub(auth=token)
+    return _GitHubClient(token=token, base_url=_get_github_base_url())
 
 
 def get_authenticated_github_user_login() -> str:
-    client = get_github_client()
-    return client.rest.users.get_authenticated().parsed_data.login
+    client = _get_github_client()
+    return client.request("GET", "/user").json()["login"]
 
 
 def get_github_repository(owner: str, repo: str) -> GitHubRepositoryClient:
-    return GitHubRepositoryClient(get_github_client(), owner, repo)
+    return GitHubRepositoryClient(_get_github_client(), owner, repo)

@@ -23,7 +23,10 @@ from dagster_graphql.implementation.utils import get_query_limit_with_default
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
-    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.errors import (
+        GrapheneRunGroupNotFoundError,
+        GrapheneRunNotFoundError,
+    )
     from dagster_graphql.schema.execution import GrapheneExecutionPlan
     from dagster_graphql.schema.logs.events import GrapheneRunStepStats
     from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
@@ -83,7 +86,9 @@ def get_run_tags(
     )
 
 
-def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
+def get_run_group(
+    graphene_info: "ResolveInfo", run_id: str
+) -> "GrapheneRunGroup | GrapheneRunGroupNotFoundError":
     from dagster_graphql.schema.errors import GrapheneRunGroupNotFoundError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.runs import GrapheneRunGroup

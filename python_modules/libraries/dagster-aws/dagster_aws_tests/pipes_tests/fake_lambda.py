@@ -86,7 +86,12 @@ class FakeLambdaClient:
                         out_path,
                     ],
                     check=False,
-                    env={},  # env vars part of lambda fn definition, can't vary at runtime
+                    # Real lambda env is fixed at fn definition, but botocore
+                    # inside the subprocess still needs AWS_* creds to sign
+                    # requests (even against moto). Pass through stub creds
+                    # set by the autouse `fake_aws_credentials` fixture; without
+                    # this we only got creds via EC2 IMDS on the MEDIUM queue.
+                    env={k: v for k, v in os.environ.items() if k.startswith("AWS_")},
                     stdout=log_file,
                     stderr=log_file,
                 )

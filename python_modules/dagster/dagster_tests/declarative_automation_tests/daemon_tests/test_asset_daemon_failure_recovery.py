@@ -18,6 +18,9 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
+from dagster_tests.declarative_automation_tests.daemon_tests.test_e2e import (
+    wait_for_daemon_subprocess,
+)
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.auto_materialize_policy_scenarios import (
     auto_materialize_policy_scenarios,
 )
@@ -474,7 +477,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
         ],
     )
     asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
+    wait_for_daemon_subprocess(asset_daemon_process)
 
     ticks = instance.get_ticks(
         origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
@@ -503,7 +506,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
         ],
     )
     asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
+    wait_for_daemon_subprocess(asset_daemon_process)
 
     ticks = instance.get_ticks(
         origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
@@ -584,7 +587,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
         ],
     )
     asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
+    wait_for_daemon_subprocess(asset_daemon_process)
 
     ticks = instance.get_ticks(
         origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
@@ -628,7 +631,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
         ],
     )
     asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
+    wait_for_daemon_subprocess(asset_daemon_process)
 
     ticks = instance.get_ticks(
         origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,

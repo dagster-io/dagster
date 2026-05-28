@@ -1620,6 +1620,101 @@ def test_env_container_context(template: HelmTemplate, user_deployment_configmap
     }
 
 
+def test_code_server_cli_with_scheduling_fields(
+    template: HelmTemplate, user_deployment_configmap_template
+):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+        nodeSelector=kubernetes.NodeSelector.parse_obj({"disktype": "ssd"}),
+        tolerations=kubernetes.Tolerations.parse_obj(
+            [{"key": "key1", "operator": "Exists", "effect": "NoSchedule"}]
+        ),
+        podSecurityContext=kubernetes.PodSecurityContext.parse_obj(
+            {"runAsUser": 1000, "runAsGroup": 3000}
+        ),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 3
+
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
+    parsed = json.loads(container_context.value)
+    assert parsed == {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            "run_k8s_config": {
+                "pod_spec_config": {
+                    "automount_service_account_token": True,
+                    "node_selector": {"disktype": "ssd"},
+                    "tolerations": [{"key": "key1", "operator": "Exists", "effect": "NoSchedule"}],
+                    "security_context": {"runAsUser": 1000, "runAsGroup": 3000},
+                },
+            },
+        }
+    }
+
+
+def test_container_context_with_pod_scheduling_fields(
+    template: HelmTemplate, user_deployment_configmap_template
+):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+        nodeSelector=kubernetes.NodeSelector.parse_obj({"disktype": "ssd", "region": "us-east-1"}),
+        tolerations=kubernetes.Tolerations.parse_obj(
+            [
+                {
+                    "key": "dedicated",
+                    "operator": "Equal",
+                    "value": "dagster",
+                    "effect": "NoSchedule",
+                },
+            ]
+        ),
+        podSecurityContext=kubernetes.PodSecurityContext.parse_obj(
+            {"runAsUser": 1000, "runAsGroup": 3000, "fsGroup": 2000}
+        ),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    parsed = json.loads(container_context.value)
+
+    pod_spec_config = parsed["k8s"]["run_k8s_config"]["pod_spec_config"]
+    assert pod_spec_config["node_selector"] == {"disktype": "ssd", "region": "us-east-1"}
+    assert pod_spec_config["tolerations"] == [
+        {
+            "key": "dedicated",
+            "operator": "Equal",
+            "value": "dagster",
+            "effect": "NoSchedule",
+        },
+    ]
+    assert pod_spec_config["security_context"] == {
+        "runAsUser": 1000,
+        "runAsGroup": 3000,
+        "fsGroup": 2000,
+    }
+
+
 def test_old_env(template: HelmTemplate, user_deployment_configmap_template):
     # old style env: dict. Gets written to configmap
     deployment = UserDeployment.construct(

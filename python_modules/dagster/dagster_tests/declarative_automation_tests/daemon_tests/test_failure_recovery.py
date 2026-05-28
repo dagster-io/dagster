@@ -14,6 +14,7 @@ from dagster_tests.declarative_automation_tests.daemon_tests.test_e2e import (
     _get_all_sensors,
     get_grpc_workspace_request_context,
     get_threadpool_executor,
+    wait_for_daemon_subprocess,
 )
 
 
@@ -77,7 +78,7 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
                 args=[instance.get_ref(), crash_location, terminate, evaluation_time_1],
             )
             test_process.start()
-            test_process.join(timeout=60)
+            wait_for_daemon_subprocess(test_process)
 
             ticks = instance.get_ticks(selector_id=selector_id, origin_id=origin_id)
             assert len(ticks) == 1
@@ -109,7 +110,7 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
                 target=_execute, args=[instance.get_ref(), None, terminate, evaluation_time_2]
             )
             test_process.start()
-            test_process.join(timeout=60)
+            wait_for_daemon_subprocess(test_process)
 
             cursor_written = crash_location not in (
                 "EVALUATIONS_FINISHED",

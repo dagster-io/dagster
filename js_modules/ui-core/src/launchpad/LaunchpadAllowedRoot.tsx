@@ -43,7 +43,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  useJobTitle(explorerPath, isJob);
+  useJobTitle(explorerPath, isJob, 'Launchpad');
   useStripSnapshotFromPath(props);
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;

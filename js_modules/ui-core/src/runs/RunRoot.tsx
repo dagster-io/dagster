@@ -39,7 +39,7 @@ export const RunRoot = () => {
   useTrackPageView();
 
   const {runId} = useParams<{runId: string}>();
-  useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
+  useDocumentTitle(runId ? `Runs | ${runId.slice(0, 8)}` : 'Runs');
 
   const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
     variables: {runId},

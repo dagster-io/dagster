@@ -47,7 +47,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  useJobTitle(explorerPath, isJob);
+  useJobTitle(explorerPath, isJob, 'Runs');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
 

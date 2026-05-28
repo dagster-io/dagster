@@ -101,7 +101,6 @@ test = [
     "tox>=4.22",
     "tox-uv>=1.16",
     "morefs[asynclocal]",
-    "fsspec<2024.5.0",
     "rapidfuzz",
     "pytest-rerunfailures",
     "psutil",
@@ -139,7 +138,7 @@ ruff = [
     "ruff==0.15.13",
 ]
 ty = [
-    "ty==0.0.37",
+    "ty==0.0.39",
     ### Stub packages for type checking
     "pandas-stubs",  # version will be resolved against pandas
     "types-backports",  # version will be resolved against backports

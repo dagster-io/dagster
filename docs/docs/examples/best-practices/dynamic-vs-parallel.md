@@ -4,7 +4,7 @@ description: Comparing Dagster's dynamic outputs with regular Python parallelism
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Parallel.png
 ---
 
 In this example, we'll explore two different approaches to achieving parallelism in Dagster pipelines. When you have computationally expensive operations that can benefit from parallel processing, you can choose between Dagster's built-in dynamic outputs or standard Python parallelism techniques. Each approach has distinct trade-offs in terms of observability, performance, and resource consumption.

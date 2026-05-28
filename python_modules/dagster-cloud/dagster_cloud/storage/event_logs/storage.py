@@ -93,6 +93,7 @@ from dagster_cloud.storage.event_logs.queries import (
     GET_DYNAMIC_PARTITIONS_QUERY,
     GET_EVENT_RECORDS_QUERY,
     GET_EVENT_TAGS_FOR_ASSET,
+    GET_LATEST_ASSET_CHECK_EXECUTION_BY_KEY_QUERY,
     GET_LATEST_ASSET_PARTITION_MATERIALIZATION_ATTEMPTS_WITHOUT_MATERIALIZATIONS,
     GET_LATEST_MATERIALIZATION_EVENTS_QUERY,
     GET_LATEST_PLANNED_MATERIALIZATION_INFO,
@@ -1244,7 +1245,22 @@ class GraphQLEventLogStorage(EventLogStorage, ConfigurableClass):
         check_keys: Sequence[AssetCheckKey],
         partition_filter: PartitionKeyFilter | None = None,
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
-        raise NotImplementedError("Not callable from user cloud")
+        if not check_keys:
+            return {}
+        res = self._execute_query(
+            GET_LATEST_ASSET_CHECK_EXECUTION_BY_KEY_QUERY,
+            variables={
+                "assetCheckKeys": [key.to_user_string() for key in check_keys],
+                "partitionFilter": (
+                    {"key": partition_filter.key} if partition_filter is not None else None
+                ),
+            },
+        )
+        records = {}
+        for result in res["data"]["eventLogs"]["getLatestAssetCheckExecutionByKey"]:
+            check_key = AssetCheckKey.from_graphql_input(result["assetCheckKey"])
+            records[check_key] = _asset_check_execution_record_from_graphql(result, check_key)
+        return records
 
     def get_asset_check_partition_info(
         self,

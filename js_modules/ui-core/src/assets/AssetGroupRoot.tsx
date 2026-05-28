@@ -48,7 +48,7 @@ export const AssetGroupRoot = ({
   const {groupName, 0: path} = useParams<AssetGroupRootParams>();
   const history = useHistory();
 
-  useDocumentTitle(`Asset Group: ${groupName}`);
+  useDocumentTitle(`Asset groups | ${groupName}`);
   const openInNewTab = useOpenInNewTab();
 
   const groupPath = workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`);

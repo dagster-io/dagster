@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-airlift"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.15"
 description = "A toolkit for observing integration and migration between Apache Airflow and Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
@@ -36,18 +36,20 @@ in-airflow = [
 # Namely, the dagster-webserver and the constrained airflow packages.
 tutorial = [
     "dagster-webserver",
-    # Requirements for python versions under 3.12.
+    # Requirements for python versions under 3.12 (airflow 2.x).
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
     "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",
-    # Requirements for python versions 3.12 and above.
-    "apache-airflow>=2.9.0; python_version >= '3.12'",
+    # Flask-session 0.6, connexion 3.x, and fastapi >=0.118 are incompatible with
+    # certain airflow 2.x-provided utilities. airflow 3.x (used on 3.12+) does
+    # not have these conflicts.
+    "flask-session<0.6.0; python_version < '3.12'",
+    "connexion<3.0.0; python_version < '3.12'",  # https://github.com/apache/airflow/issues/35234
+    "fastapi<0.118; python_version < '3.12'",  # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
+    # Requirements for python versions 3.12 and above (airflow 3.x).
+    "apache-airflow>=3.0.0; python_version >= '3.12'",
     "marshmallow==3.23.1; python_version >= '3.12'",
     "pendulum>=3.0.0; python_version >= '3.12'",
-    # Flask-session 0.6 is incompatible with certain airflow-provided test utilities.
-    "flask-session<0.6.0",
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-    "fastapi<0.118",  # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
     "click",
     "structlog",
 ]
@@ -60,18 +62,21 @@ mwaa = [
 # airlift-migration-tutorial). Adding entries here affects those test envs.
 test = [
     "pytest",
-    "dagster-dbt==1!0+dev",
-    "dbt-duckdb",
+    # dagster-dbt does not yet support Python 3.14 (dbt-core incompatibility).
+    "dagster-dbt==1!0+dev; python_version < '3.14'",
+    "dbt-duckdb; python_version < '3.14'",
     "boto3",
     "dagster-webserver==1!0+dev",
+    # Requirements for python versions under 3.12 (airflow 2.x).
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
     "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",
-    "apache-airflow>=2.9.0; python_version >= '3.12'",
+    "flask-session<0.6.0; python_version < '3.12'",
+    "connexion<3.0.0; python_version < '3.12'",
+    # Requirements for python versions 3.12 and above (airflow 3.x).
+    "apache-airflow>=3.0.0; python_version >= '3.12'",
     "marshmallow==3.23.1; python_version >= '3.12'",
     "pendulum>=3.0.0; python_version >= '3.12'",
-    "flask-session<0.6.0",
-    "connexion<3.0.0",
     "click",
     "structlog",
 ]
@@ -84,13 +89,14 @@ test = [
     "dagster-shared",
     "dagster-webserver",
     "dagster-graphql",
-    "dagster-dbt",
+    # dagster-dbt does not yet support Python 3.14 (dbt-core incompatibility).
+    "dagster-dbt; python_version < '3.14'",
     "dagster-k8s",
     "dagster-dg-cli",
     "dagster-dg-core",
     "dagster-cloud-cli",
     "dagster-rest-resources",
-    "dbt-duckdb",
+    "dbt-duckdb; python_version < '3.14'",
 ]
 
 [tool.uv.sources]

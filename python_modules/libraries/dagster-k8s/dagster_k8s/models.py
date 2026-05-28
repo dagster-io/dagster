@@ -39,12 +39,16 @@ def _get_openapi_list_element_type(attr_type: str) -> str:
 
 
 def _is_openapi_dict_type(attr_type: str) -> bool:
-    return attr_type.startswith("dict(")
+    return attr_type.startswith("dict(") or attr_type.startswith("dict[")
 
 
 def _get_openapi_dict_value_type(attr_type: str) -> str:
     # group(2) because value, not key
-    match = check.not_none(re.match(r"dict\(([^,]*), (.*)\)", attr_type))
+    match = check.not_none(
+        re.match(r"dict\(([^,]*), (.*)\)", attr_type)
+        or re.match(r"dict\[([^,]*),\s*(.*)\]", attr_type)
+    )
+
     return match.group(2)
 
 
