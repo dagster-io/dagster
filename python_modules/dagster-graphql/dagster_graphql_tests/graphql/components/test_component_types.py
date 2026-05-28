@@ -23,10 +23,13 @@ query GetComponentTypes($locationName: String!) {
       locationName
       componentTypes {
         name
+        namespace
+        example
         schema
         description
         owners
         tags
+        isUiEditable
       }
     }
     ... on RepositoryLocationNotFound {
@@ -45,10 +48,8 @@ def get_empty_repo() -> RepositoryDefinition:
 
 
 def get_components_repo() -> RepositoryDefinition:
-    """Loads a repository with the dagster_test built-in components installed.
-
-    Uses the same mock pattern as test_dg_docs_json so the
-    ``PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY`` metadata is populated.
+    """Loads a repository with the dagster_test built-in components installed,
+    populating the ``PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY`` metadata.
     """
     with mock.patch(
         "dagster.components.core.package_entry.discover_entry_point_package_objects"
@@ -120,6 +121,15 @@ def test_returns_component_types_with_schemas():
         assert simple["owners"] == ["john@dagster.io", "jane@dagster.io"]
         assert simple["tags"] == ["a", "b", "c"]
         assert simple["description"]  # present
+        # ComponentFormConfig(editable=True) hasn't been introduced yet, so
+        # no component opts into UI editing here. Later PRs in this stack add
+        # the opt-in and flip this assertion back to True.
+        assert simple["isUiEditable"] is False
+        # Namespace + example come from the same metadata blob the docs
+        # tab used to read directly.
+        assert simple["namespace"] == "dagster_test"
+        assert simple["example"]
+        assert "dagster_test.SimpleAssetComponent" in simple["example"]
 
 
 def test_unknown_location_returns_not_found_error():

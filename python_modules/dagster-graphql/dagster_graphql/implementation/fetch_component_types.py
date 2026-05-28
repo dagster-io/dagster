@@ -35,16 +35,30 @@ def _parse_schema(schema_field: Any) -> Any:
     return schema_field
 
 
-def _to_component_type_info(component_json: dict) -> "GrapheneComponentTypeInfo":
+def _is_ui_editable(schema: Any) -> bool:
+    """Whether this component supports the UI add/edit/delete workflow.
+
+    Opt-in via ``ComponentFormConfig(editable=True)`` on the component class,
+    which serializes to ``x-ui-editable: true`` on the schema.
+    """
+    return bool(isinstance(schema, dict) and schema.get("x-ui-editable"))
+
+
+def _to_component_type_info(
+    namespace_name: str, component_json: dict
+) -> "GrapheneComponentTypeInfo":
     from dagster_graphql.schema.component_types import GrapheneComponentTypeInfo
 
     schema = _parse_schema(component_json.get("schema"))
     return GrapheneComponentTypeInfo(
         name=component_json["name"],
+        namespace=namespace_name,
+        example=component_json.get("example") or "",
         schema=schema,
         description=component_json.get("description"),
         owners=component_json.get("owners"),
         tags=component_json.get("tags"),
+        isUiEditable=_is_ui_editable(schema),
     )
 
 
@@ -60,6 +74,6 @@ def get_component_types_for_location(
 
     code_location = context.get_code_location(location_name)
     component_jsons = get_plugin_component_jsons_for_code_location(code_location)
-    component_types = [_to_component_type_info(cj) for cj in component_jsons]
+    component_types = [_to_component_type_info(ns, cj) for ns, cj in component_jsons]
     component_types.sort(key=lambda c: c.name)
     return GrapheneComponentTypes(locationName=location_name, componentTypes=component_types)

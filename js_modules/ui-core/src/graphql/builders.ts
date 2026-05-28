@@ -1019,7 +1019,10 @@ type CodeReferencesMetadataEntry = MetadataEntry & {
 type ComponentTypeInfo = {
   __typename: 'ComponentTypeInfo';
   description: Maybe<Scalars['String']['output']>;
+  example: Scalars['String']['output'];
+  isUiEditable: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
+  namespace: Scalars['String']['output'];
   owners: Maybe<Array<Scalars['String']['output']>>;
   schema: Maybe<Scalars['JsonSchema']['output']>;
   tags: Maybe<Array<Scalars['String']['output']>>;
@@ -8189,7 +8192,12 @@ export const buildComponentTypeInfo = (
     __typename: 'ComponentTypeInfo',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'fuga',
+    example: overrides && overrides.hasOwnProperty('example') ? overrides.example! : 'eveniet',
+    isUiEditable:
+      overrides && overrides.hasOwnProperty('isUiEditable') ? overrides.isUiEditable! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quae',
+    namespace:
+      overrides && overrides.hasOwnProperty('namespace') ? overrides.namespace! : 'similique',
     owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     schema: overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : 'illum',
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],

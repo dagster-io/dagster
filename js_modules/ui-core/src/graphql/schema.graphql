@@ -3700,10 +3700,13 @@ scalar JsonSchema
 
 type ComponentTypeInfo {
   name: String!
+  namespace: String!
+  example: String!
   schema: JsonSchema
   description: String
   owners: [String!]
   tags: [String!]
+  isUiEditable: Boolean!
 }
 
 type ComponentTypes {

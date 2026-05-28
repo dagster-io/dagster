@@ -16,6 +16,17 @@ class GrapheneComponentTypeInfo(graphene.ObjectType):
     """Metadata for a single Component class registered in a code location."""
 
     name = graphene.NonNull(graphene.String)
+    namespace = graphene.NonNull(
+        graphene.String,
+        description="The plugin namespace this component belongs to (e.g. ``dagster_test``).",
+    )
+    example = graphene.NonNull(
+        graphene.String,
+        description=(
+            "Sample YAML rendered server-side from the component's JSON Schema."
+            " Used to seed the docs ``Example`` panel."
+        ),
+    )
     schema = graphene.Field(
         GrapheneJsonSchema,
         description=(
@@ -26,6 +37,16 @@ class GrapheneComponentTypeInfo(graphene.ObjectType):
     description = graphene.String()
     owners = graphene.List(graphene.NonNull(graphene.String))
     tags = graphene.List(graphene.NonNull(graphene.String))
+    isUiEditable = graphene.NonNull(
+        graphene.Boolean,
+        description=(
+            "Whether instances of this component class may be created and edited"
+            " from the UI via the UI-defined components workflow. Today every"
+            " component class is editable; in the future this will be an opt-in"
+            " hook on the Component class so library authors can mark their"
+            " components UI-editable explicitly."
+        ),
+    )
 
     class Meta:
         name = "ComponentTypeInfo"
