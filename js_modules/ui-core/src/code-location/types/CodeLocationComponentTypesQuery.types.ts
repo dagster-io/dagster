@@ -24,8 +24,17 @@ export type CodeLocationComponentTypesQuery = {
           isUiEditable: boolean;
         }>;
       }
-    | {__typename: 'PythonError'; message: string}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
     | {__typename: 'RepositoryLocationNotFound'; message: string};
 };
 
-export const CodeLocationComponentTypesQueryVersion = '28d380e6ebfb3161ceefa2312f57edf5955cc2949851cba28df2f913461a8816';
+export const CodeLocationComponentTypesQueryVersion = '1e28d6199105acb90e6c1d27ba70633db808324d6a0ffbe490bf0462645c6df6';
