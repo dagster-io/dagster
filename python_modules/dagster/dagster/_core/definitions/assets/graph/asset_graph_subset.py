@@ -125,13 +125,13 @@ class AssetGraphSubset(NamedTuple):
                 key.to_user_string(): check.not_none(
                     asset_graph.get(key).partitions_def
                 ).get_serializable_unique_identifier()
-                for key, _ in self.partitions_subsets_by_asset_key.items()
+                for key in self.partitions_subsets_by_asset_key.keys()
             },
             "partitions_def_class_names_by_asset_key": {
                 key.to_user_string(): check.not_none(
                     asset_graph.get(key).partitions_def
                 ).__class__.__name__
-                for key, _ in self.partitions_subsets_by_asset_key.items()
+                for key in self.partitions_subsets_by_asset_key.keys()
             },
             "non_partitioned_asset_keys": [
                 key.to_user_string() for key in self.non_partitioned_asset_keys

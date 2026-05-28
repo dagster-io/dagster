@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 import pyarrow as pa
-import pyspark
 import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice

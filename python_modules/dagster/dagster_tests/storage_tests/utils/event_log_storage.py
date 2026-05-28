@@ -3199,7 +3199,7 @@ class TestEventLogStorage:
                 )
                 for partition in partitions
             ]
-            for step_key, partitions in materialize_partitions.items()
+            for partitions in materialize_partitions.values()
         ]
 
         events = [event for events in events_by_step for event in events]

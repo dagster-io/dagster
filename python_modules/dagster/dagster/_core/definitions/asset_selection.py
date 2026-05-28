@@ -982,7 +982,7 @@ class KindAssetSelection(AssetSelection):
         if self.kind_str is None:
             return {
                 node.key
-                for key, node in base_nodes.items()
+                for node in base_nodes.values()
                 if (not any(tag_key.startswith(KIND_PREFIX) for tag_key in (node.tags or {})))
             }
         else:

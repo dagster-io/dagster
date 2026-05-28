@@ -1,7 +1,6 @@
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-import dask
 import dask.distributed
 from dagster import (
     Executor,

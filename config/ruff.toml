@@ -30,6 +30,13 @@ required-version = "0.15.14"
 
 [lint]
 
+# Enable preview-mode behavior for stable rules (tighter detection, additional autofixes
+# like PERF401's loop→comprehension transform). Required for preview-status rules too,
+# but explicit-preview-rules below prevents prefix selectors (e.g. "PERF") from sweeping
+# unrelated preview rules in — preview rules must be selected by exact code.
+preview = true
+explicit-preview-rules = true
+
 ignore = [
 
   # (missing public docstrings) These work off of the Python sense of "public", rather than our
