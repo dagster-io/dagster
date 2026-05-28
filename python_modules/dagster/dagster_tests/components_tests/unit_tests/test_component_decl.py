@@ -44,7 +44,7 @@ def test_component_loader_decl(component_tree: MockComponentTree):
     my_component = MyComponent()
     decl = ComponentLoaderDecl(
         context=component_tree.decl_load_context,
-        path=ComponentPath.from_path(Path(__file__).parent),
+        loc=ComponentPath.from_path(Path(__file__).parent),
         component_node_fn=lambda context: my_component,
     )
 
@@ -56,11 +56,11 @@ def test_composite_python_decl(component_tree: MockComponentTree):
     my_component = MyComponent()
     loader_decl = ComponentLoaderDecl(
         context=component_tree.decl_load_context,
-        path=ComponentPath.from_path(Path(__file__).parent, "my_component"),
+        loc=ComponentPath.from_path(Path(__file__).parent, "my_component"),
         component_node_fn=lambda context: my_component,
     )
     decl = PythonFileDecl(
-        path=ComponentPath.from_path(Path(__file__).parent),
+        loc=ComponentPath.from_path(Path(__file__).parent),
         context=component_tree.decl_load_context,
         decls={"my_component": loader_decl},
     )
@@ -75,21 +75,21 @@ def test_defs_folder_decl(component_tree: MockComponentTree):
     my_component = MyComponent()
     loader_decl = ComponentLoaderDecl(
         context=component_tree.decl_load_context,
-        path=ComponentPath.from_path(Path(__file__).parent / "my_component"),
+        loc=ComponentPath.from_path(Path(__file__).parent / "my_component"),
         component_node_fn=lambda context: my_component,
     )
 
     my_other_component = MyComponent()
     my_other_loader_decl = ComponentLoaderDecl(
         context=component_tree.decl_load_context,
-        path=ComponentPath.from_path(Path(__file__).parent / "my_other_component"),
+        loc=ComponentPath.from_path(Path(__file__).parent / "my_other_component"),
         component_node_fn=lambda context: my_other_component,
     )
 
     defs_path = Path(__file__).parent
     decl = DefsFolderDecl(
         context=component_tree.decl_load_context,
-        path=ComponentPath.from_path(defs_path),
+        loc=ComponentPath.from_path(defs_path),
         children={
             defs_path / "my_component": loader_decl,
             defs_path / "my_other_component": my_other_loader_decl,

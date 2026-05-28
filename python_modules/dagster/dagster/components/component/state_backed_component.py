@@ -116,7 +116,7 @@ class StateBackedComponent(Component):
         loaded_component = super().load(attributes, context)
         context.component_tree.mark_component_defs_state_key(
             defs_state_key=loaded_component.defs_state_config.key,
-            component_path=context.component_path,
+            loc=context.component_loc,
         )
         return loaded_component
 
