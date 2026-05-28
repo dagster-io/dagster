@@ -30,6 +30,27 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
 EARLIEST_TESTED_RELEASE = "0.12.8"
 
+# Spins up a `webserver_service` docker-compose stack (dagster_webserver +
+# user-code sidecar) in the dind sidecar. Single-pair compose, comparable to
+# dagster-test's fixtures_tests sizing.
+_BACKCOMPAT_RESOURCES = ResourceRequests(
+    cpu="1000m",
+    memory="1Gi",
+    docker_memory="2Gi",
+    docker_memory_limit="4Gi",
+)
+
+# monitoring_daemon_tests cycles a postgres+minio compose stack plus pulls and
+# runs the `test_project` image per test. Same dind saturation shape as
+# dagster-docker / dagster-celery-docker (see packages.py:1185).
+_DAEMON_RESOURCES = ResourceRequests(
+    cpu="1000m",
+    memory="1Gi",
+    docker_cpu="4000m",
+    docker_memory="2Gi",
+    docker_memory_limit="8Gi",
+)
+
 
 # ########################
 # ##### BACKCOMPAT
@@ -47,8 +68,8 @@ def build_backcompat_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         ctx,
         pytest_extra_cmds=backcompat_extra_cmds,
         pytest_tox_factors=tox_factors,
-        queue=BuildkiteQueue.MEDIUM,
-        resources=None,
+        queue=BuildkiteQueue.KUBERNETES_EKS,
+        resources=_BACKCOMPAT_RESOURCES,
     )
 
 
@@ -140,8 +161,8 @@ def build_daemon_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigur
         ctx,
         pytest_tox_factors,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
-        queue=BuildkiteQueue.MEDIUM,
-        resources=None,
+        queue=BuildkiteQueue.KUBERNETES_EKS,
+        resources=_DAEMON_RESOURCES,
     )
 
 
