@@ -122,6 +122,37 @@ def test_accepts_string_target_path(project_dir) -> None:
     assert my_project.target_path == Path(string_target_path)
 
 
+def test_prepare_runs_deps_when_packages_exist() -> None:
+    """Test that prepare() runs dbt deps even when dbt_packages dir exists.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/31885.
+    """
+    with copy_directory(test_jaffle_shop_path) as project_dir:
+        my_project = DbtProject(project_dir)
+
+        # Create dependencies.yml
+        deps_path = Path(project_dir) / "dependencies.yml"
+        deps_path.write_text(
+            "packages:\n  - package: dbt-labs/dbt_utils\n    version: ['>=1.1.1', '<2.0.0']\n",
+            encoding="utf-8",
+        )
+
+        # Pre-create dbt_packages to simulate previous installation
+        packages_dir = Path(project_dir) / "dbt_packages"
+        packages_dir.mkdir(exist_ok=True)
+
+        # Recreate project so it picks up the new deps file
+        my_project = DbtProject(project_dir)
+
+        # Even though dbt_packages exists, prepare() should run deps
+        preparer = DagsterDbtProjectPreparer()
+        preparer.prepare(my_project)
+
+        # dbt deps should have actually installed packages
+        assert any(packages_dir.iterdir()), "dbt deps should have installed packages"
+        assert my_project.manifest_path.exists(), "dbt parse should have created manifest"
+
+
 def test_seed_command_succeeds_after_invalidation() -> None:
     """Test that dbt seed command works after seed entries are invalidated.
 
