@@ -832,6 +832,7 @@ def _build_docker(
     name = location_state.location_name
     docker_utils.verify_docker()
     registry_info = utils.get_registry_info(url)
+    repo_location = name if registry_info.get("is_harbor") else None
 
     docker_image_tag = docker_utils.default_image_tag(
         location_state.deployment_name, name, location_state.build.commit_hash
@@ -853,15 +854,18 @@ def _build_docker(
         base_image=docker_base_image,
         dockerfile_path=dockerfile_path,
         use_editable_dagster=use_editable_dagster,
+        location_name=repo_location,
     )
     if retval != 0:
         raise ui.error(f"Failed to build docker image for location {name}")
 
-    retval = docker_utils.upload_image(docker_image_tag, registry_info)
+    retval = docker_utils.upload_image(docker_image_tag, registry_info, location_name=repo_location)
     if retval != 0:
         raise ui.error(f"Failed to upload docker image for location {name}")
 
-    image = f"{registry_info['registry_url']}:{docker_image_tag}"
+    image = docker_utils.full_image_ref(
+        registry_info["registry_url"], repo_location, docker_image_tag
+    )
     ui.print(f"Built and uploaded image {image} for location {name}")
 
     return state.DockerBuildOutput(image=image)

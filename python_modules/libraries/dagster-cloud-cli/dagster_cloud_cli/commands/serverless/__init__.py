@@ -220,21 +220,29 @@ def deploy_command(
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
         ecr_info = gql.get_ecr_info(client)
         registry = ecr_info["registry_url"]
+        repo_location = location_name if ecr_info.get("is_harbor") else None
 
         image_tag = kwargs.get("image") or docker_utils.default_image_tag(
             deployment, location_name, kwargs.get("commit_hash")
         )
         retval = docker_utils.build_image(
-            source_directory, image_tag, ecr_info, env_vars, base_image, use_editable_dagster=False
+            source_directory,
+            image_tag,
+            ecr_info,
+            env_vars,
+            base_image,
+            use_editable_dagster=False,
+            location_name=repo_location,
         )
         if retval != 0:
             return
 
-        retval = docker_utils.upload_image(image_tag, ecr_info)
+        retval = docker_utils.upload_image(image_tag, ecr_info, location_name=repo_location)
         if retval != 0:
             return
 
-        location_args = {**kwargs, "image": f"{registry}:{image_tag}"}
+        full_image = docker_utils.full_image_ref(registry, repo_location, image_tag)
+        location_args = {**kwargs, "image": full_image}
         location_document = get_location_document(location_name, location_args)
         gql.add_or_update_code_location(client, location_document)
 
