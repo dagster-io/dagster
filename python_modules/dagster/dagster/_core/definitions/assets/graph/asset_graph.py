@@ -221,13 +221,30 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             for a in assets
         ]
 
+        # Use the AssetSpec registry to preserve metadata for stub external assets
+        from dagster._core.definitions.assets.definition.asset_dep import _ASSET_SPEC_DEPS_BY_KEY
         with disable_dagster_warnings():
-            # Resolve all asset dependency keys to their final values
-            assets_defs = resolve_assets_def_deps(assets_defs)
-            # Create stub assets for any referenced keys for which no definition was provided.
-            stub_assets_defs = resolve_stub_assets_defs(assets_defs)
-
-        return assets_defs + stub_assets_defs
+            for key in all_referenced_asset_keys.difference(all_keys):
+                source_spec = _ASSET_SPEC_DEPS_BY_KEY.get(key)
+                if source_spec is not None:
+                    # Reuse description and tags (which already encode kinds via KIND_PREFIX)
+                    # from the AssetSpec provided in deps, and mark it as auto-created.
+                    stub_spec = AssetSpec(
+                        key=key,
+                        description=source_spec.description,
+                        metadata={
+                            **(source_spec.metadata or {}),
+                            SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True,
+                        },
+                        tags=source_spec.tags,
+                    )
+                else:
+                    stub_spec = AssetSpec(
+                        key=key,
+                        metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True},
+                    )
+                assets_defs.append(AssetsDefinition(specs=[stub_spec]))
+            return assets_defs
 
     @classmethod
     def key_mappings_from_assets(

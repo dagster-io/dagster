@@ -1,5 +1,7 @@
+# Internal registry for AssetSpec dependencies: stores specs by AssetKey so other internals can reuse metadata like description and tags when creating stub external assets.
+_ASSET_SPEC_DEPS_BY_KEY = {}
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -86,6 +88,14 @@ class AssetDep(
         if partition_mapping:
             warn_if_partition_mapping_not_builtin(partition_mapping)
 
+        # If this dep is an AssetSpec, store it by AssetKey so downstream code can recover its metadata for stub external assets.
+        try:
+            from dagster._core.definitions.assets.definition.asset_spec import AssetSpec as _AS
+            if isinstance(asset, _AS):
+                _ASSET_SPEC_DEPS_BY_KEY[asset_key] = asset
+        except ImportError:
+            # Best-effort only; if we can't import AssetSpec here, just skip recording.
+            pass
         return super().__new__(
             cls,
             asset_key=asset_key,
