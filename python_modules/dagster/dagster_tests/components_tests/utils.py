@@ -19,6 +19,7 @@ from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import (
+    ComponentPath,
     asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
 )
@@ -37,7 +38,10 @@ def load_context_and_component_for_test(
     attrs: str | dict[str, Any],
     template_vars_module: str | None = None,
 ) -> tuple[dg.ComponentLoadContext, T_Component]:
-    context = ComponentTree.for_test().load_context
+    tree = ComponentTree.for_test()
+    # Root load_context is keyed at ComponentRootLoc(); swap in a ComponentPath
+    # so template vars that read `context.path` work.
+    context = tree.load_context.for_component_loc(ComponentPath.from_path(tree.defs_module_path))
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )

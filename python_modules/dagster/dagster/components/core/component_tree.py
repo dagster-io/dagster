@@ -25,13 +25,15 @@ from dagster.components.core.context import ComponentDeclLoadContext, ComponentL
 from dagster.components.core.decl import (
     ComponentDecl,
     ComponentLoaderDecl,
+    ComponentRootDecl,
     PythonFileDecl,
     YamlDecl,
-    build_component_decl_from_context,
+    build_filesystem_component_decl_from_context,
 )
 from dagster.components.core.defs_module import (
     ComponentLoc,
     ComponentPath,
+    ComponentRootLoc,
     CompositeYamlComponent,
     PythonFileComponent,
     ResolvableToComponentLoc,
@@ -172,11 +174,11 @@ class ComponentTree(IHaveNew):
 
     @property
     def decl_load_context(self) -> ComponentDeclLoadContext:
-        if self.state_tracker.get_cache_data(self.defs_module_path).decl_load_context is None:
+        if self.state_tracker.get_cache_data(ComponentRootLoc()).decl_load_context is None:
             self.state_tracker.set_cache_data(
-                self.defs_module_path,
+                ComponentRootLoc(),
                 decl_load_context=ComponentDeclLoadContext(
-                    component_loc=ComponentPath.from_path(self.defs_module_path),
+                    component_loc=ComponentRootLoc(),
                     project_root=self.project_root,
                     defs_module_path=self.defs_module_path,
                     defs_module_name=self.defs_module_name,
@@ -186,32 +188,43 @@ class ComponentTree(IHaveNew):
                 ),
             )
         return check.not_none(
-            self.state_tracker.get_cache_data(self.defs_module_path).decl_load_context
+            self.state_tracker.get_cache_data(ComponentRootLoc()).decl_load_context
         )
 
     @property
     def load_context(self) -> ComponentLoadContext:
-        if self.state_tracker.get_cache_data(self.defs_module_path).load_context is None:
+        if self.state_tracker.get_cache_data(ComponentRootLoc()).load_context is None:
             self.state_tracker.set_cache_data(
-                self.defs_module_path,
+                ComponentRootLoc(),
                 load_context=ComponentLoadContext.from_decl_load_context(
                     self.decl_load_context, self.find_root_decl()
                 ),
             )
-        return check.not_none(self.state_tracker.get_cache_data(self.defs_module_path).load_context)
+        return check.not_none(self.state_tracker.get_cache_data(ComponentRootLoc()).load_context)
 
     def load_root_component(self) -> Component:
-        return self.load_structural_component_at_loc(self.defs_module_path)
+        return self.load_structural_component_at_loc(ComponentRootLoc())
 
-    def find_root_decl(self) -> ComponentDecl:
-        if self.state_tracker.get_cache_data(self.defs_module_path).component_decl is None:
-            self.state_tracker.set_cache_data(
-                self.defs_module_path,
-                component_decl=build_component_decl_from_context(self.decl_load_context),
-            )
-        return check.not_none(
-            self.state_tracker.get_cache_data(self.defs_module_path).component_decl
+    def find_root_decl(self) -> ComponentRootDecl:
+        """Returns the unified root of the component tree.
+
+        Always constructs a fresh ComponentRootDecl that wraps the (cached)
+        filesystem decl as its sole child.
+        """
+        return ComponentRootDecl(
+            context=self.decl_load_context,
+            loc=ComponentRootLoc(),
+            decls=[self._get_filesystem_decl()],
         )
+
+    def _get_filesystem_decl(self) -> ComponentDecl:
+        loc = ComponentPath.from_path(self.defs_module_path)
+        context = self.decl_load_context.for_component_loc(loc)
+        if self.state_tracker.get_cache_data(loc).component_decl is None:
+            filesystem_decl = build_filesystem_component_decl_from_context(context)
+            self.state_tracker.set_cache_data(loc, component_decl=filesystem_decl)
+
+        return check.not_none(self.state_tracker.get_cache_data(loc).component_decl)
 
     def build_defs_at_path(self, loc: ResolvableToComponentLoc) -> Definitions:
         """Builds definitions from the given defs subdirectory or component loc.
@@ -234,22 +247,14 @@ class ComponentTree(IHaveNew):
 
         Args:
             loc: ComponentLoc or path to build definitions from.  If ``None``,
-                builds definitions for the entire defs module.
+                builds definitions for the entire project (filesystem + library)
+                by building defs at the ``ComponentRootLoc``.
 
         Returns:
             Definitions: The definitions loaded from the given loc.
         """
         if loc is None:
-            from dagster.components.core.load_defs import get_library_json_enriched_defs
-
-            if self.state_tracker.get_cache_data(self.defs_module_path).defs is None:
-                defs = Definitions.merge(
-                    self.build_defs(self.defs_module_path),
-                    get_library_json_enriched_defs(self),
-                )
-                self.state_tracker.set_cache_data(self.defs_module_path, defs=defs)
-
-            return check.not_none(self.state_tracker.get_cache_data(self.defs_module_path).defs)
+            return self.build_defs_at_path(ComponentRootLoc())
         else:
             return self.build_defs_at_path(loc)
 
@@ -350,7 +355,9 @@ class ComponentTree(IHaveNew):
         return (cache_data.component, cache_data.component_decl)
 
     def _load_component_at_loc(self, resolved_loc: ComponentLoc) -> None:
-        component_decl = self._component_decl_tree().get(resolved_loc)
+        component_decl = self.state_tracker.get_cache_data(
+            resolved_loc
+        ).component_decl or self._component_decl_tree().get(resolved_loc)
         if component_decl:
             self.state_tracker.set_cache_data(
                 resolved_loc,
@@ -435,8 +442,18 @@ class ComponentTree(IHaveNew):
     ) -> None:
         decls = list(decl.iterate_child_component_decls())
 
-        # Only filesystem decls have file_path; skip non-filesystem decls
+        # For non-filesystem decls (e.g. ComponentRootDecl), skip rendering
+        # this node but still recurse into filesystem children.
         if not isinstance(decl.loc, ComponentPath):
+            for child_decl in decls:
+                self._add_string_representation(
+                    lines,
+                    child_decl,
+                    prefix,
+                    include_load_and_build_status,
+                    hide_plain_defs,
+                    match_path,
+                )
             return
 
         parent_path = decl.loc.file_path
@@ -583,7 +600,7 @@ class LegacyAutoloadingComponentTree(ComponentTree):
     @property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            component_loc=ComponentPath.from_path(self.defs_module_path),
+            component_loc=ComponentRootLoc(),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,

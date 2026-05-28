@@ -42,31 +42,33 @@ class MyComponent(dg.Component):
 
 def test_component_loader_decl(component_tree: MockComponentTree):
     my_component = MyComponent()
+    defs_path = Path(__file__).parent
     decl = ComponentLoaderDecl(
         context=component_tree.decl_load_context,
-        loc=ComponentPath.from_path(Path(__file__).parent),
+        loc=ComponentPath.from_path(defs_path),
         component_node_fn=lambda context: my_component,
     )
 
     component_tree.set_root_decl(decl)
-    assert component_tree.load_root_component() == my_component
+    assert component_tree.load_structural_component_at_loc(defs_path) == my_component
 
 
 def test_composite_python_decl(component_tree: MockComponentTree):
     my_component = MyComponent()
+    defs_path = Path(__file__).parent
     loader_decl = ComponentLoaderDecl(
         context=component_tree.decl_load_context,
-        loc=ComponentPath.from_path(Path(__file__).parent, "my_component"),
+        loc=ComponentPath.from_path(defs_path, "my_component"),
         component_node_fn=lambda context: my_component,
     )
     decl = PythonFileDecl(
-        loc=ComponentPath.from_path(Path(__file__).parent),
+        loc=ComponentPath.from_path(defs_path),
         context=component_tree.decl_load_context,
         decls={"my_component": loader_decl},
     )
 
     component_tree.set_root_decl(decl)
-    loaded_component = component_tree.load_root_component()
+    loaded_component = component_tree.load_structural_component_at_loc(defs_path)
     assert isinstance(loaded_component, PythonFileComponent)
     assert loaded_component.components["my_component"] == my_component
 
@@ -99,7 +101,7 @@ def test_defs_folder_decl(component_tree: MockComponentTree):
     )
 
     component_tree.set_root_decl(decl)
-    loaded_component = component_tree.load_root_component()
+    loaded_component = component_tree.load_structural_component_at_loc(defs_path)
     assert isinstance(loaded_component, dg.DefsFolderComponent)
     assert loaded_component.children[defs_path / "my_component"] == my_component
 

@@ -1504,7 +1504,7 @@ class ComponentTreeSnap:
         leaves = []
 
         for comp_path, comp_inst in check.inst(
-            tree.load_root_component(), DefsFolderComponent
+            tree.load_structural_component_at_loc(tree.defs_module_path), DefsFolderComponent
         ).iterate_path_component_pairs():
             if not isinstance(
                 comp_inst,
