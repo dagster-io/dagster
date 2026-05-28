@@ -36,6 +36,10 @@ from dagster_graphql.implementation.execution.launch_execution import (
     launch_reexecution_from_parent_run,
 )
 from dagster_graphql.implementation.external import fetch_workspace, get_full_remote_job_or_raise
+from dagster_graphql.implementation.fetch_ui_definitions import (
+    delete_ui_component,
+    set_ui_component,
+)
 from dagster_graphql.implementation.telemetry import log_ui_telemetry_event
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
@@ -103,6 +107,10 @@ from dagster_graphql.schema.sensors import (
     GrapheneSetSensorCursorMutation,
     GrapheneStartSensorMutation,
     GrapheneStopSensorMutation,
+)
+from dagster_graphql.schema.ui_definitions import (
+    GrapheneDeleteUIComponentResult,
+    GrapheneSetUIComponentResult,
 )
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -493,6 +501,55 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
         return delete_dynamic_partitions(
             graphene_info, repositorySelector, partitionsDefName, partitionKeys
         )
+
+
+class GrapheneSetUIComponentMutation(graphene.Mutation):
+    """Adds or replaces a UI-defined component for a code location.
+
+    Writes are last-writer-wins; concurrent calls targeting the same
+    component_id resolve to whichever finishes last.
+    """
+
+    Output = graphene.NonNull(GrapheneSetUIComponentResult)
+
+    class Arguments:
+        locationName = graphene.NonNull(graphene.String)
+        componentId = graphene.NonNull(graphene.String)
+        componentType = graphene.NonNull(graphene.String)
+        attributes = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "SetUIComponentMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.EDIT_UI_DEFINITIONS)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        locationName: str,
+        componentId: str,
+        componentType: str,
+        attributes: str,
+    ):
+        return set_ui_component(graphene_info, locationName, componentId, componentType, attributes)
+
+
+class GrapheneDeleteUIComponentMutation(graphene.Mutation):
+    """Deletes a UI-defined component. Idempotent — deleting a missing id is a no-op."""
+
+    Output = graphene.NonNull(GrapheneDeleteUIComponentResult)
+
+    class Arguments:
+        locationName = graphene.NonNull(graphene.String)
+        componentId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DeleteUIComponentMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.EDIT_UI_DEFINITIONS)
+    def mutate(self, graphene_info: ResolveInfo, locationName: str, componentId: str):
+        return delete_ui_component(graphene_info, locationName, componentId)
 
 
 async def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
@@ -1157,6 +1214,8 @@ class GrapheneMutation(graphene.ObjectType):
     setNuxSeen = GrapheneSetNuxSeenMutation.Field()
     addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()
     deleteDynamicPartitions = GrapheneDeleteDynamicPartitionsMutation.Field()
+    setUIComponent = GrapheneSetUIComponentMutation.Field()
+    deleteUIComponent = GrapheneDeleteUIComponentMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
     deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()

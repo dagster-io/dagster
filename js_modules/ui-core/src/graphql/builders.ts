@@ -1347,6 +1347,14 @@ type DeleteRunMutation = {
   Output: DeletePipelineRunResult;
 };
 
+type DeleteUiComponentResult = DeleteUiComponentSuccess | PythonError | UnauthorizedError;
+
+type DeleteUiComponentSuccess = {
+  __typename: 'DeleteUIComponentSuccess';
+  componentId: Scalars['String']['output'];
+  locationName: Scalars['String']['output'];
+};
+
 type DimensionDefinitionType = {
   __typename: 'DimensionDefinitionType';
   description: Scalars['String']['output'];
@@ -2928,6 +2936,7 @@ type Mutation = {
   deleteDynamicPartitions: DeleteDynamicPartitionsResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
+  deleteUIComponent: DeleteUiComponentResult;
   freeConcurrencySlots: Scalars['Boolean']['output'];
   freeConcurrencySlotsForRun: Scalars['Boolean']['output'];
   launchMultipleRuns: LaunchMultipleRunsResultOrError;
@@ -2951,6 +2960,7 @@ type Mutation = {
   setConcurrencyLimit: Scalars['Boolean']['output'];
   setNuxSeen: Scalars['Boolean']['output'];
   setSensorCursor: SensorOrError;
+  setUIComponent: SetUiComponentResult;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
   startSchedule: ScheduleMutationResult;
   startSensor: SensorOrError;
@@ -2988,6 +2998,11 @@ type MutationDeletePipelineRunArgs = {
 
 type MutationDeleteRunArgs = {
   runId: Scalars['String']['input'];
+};
+
+type MutationDeleteUiComponentArgs = {
+  componentId: Scalars['String']['input'];
+  locationName: Scalars['String']['input'];
 };
 
 type MutationFreeConcurrencySlotsArgs = {
@@ -3082,6 +3097,13 @@ type MutationSetConcurrencyLimitArgs = {
 type MutationSetSensorCursorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   sensorSelector: SensorSelector;
+};
+
+type MutationSetUiComponentArgs = {
+  attributes: Scalars['String']['input'];
+  componentId: Scalars['String']['input'];
+  componentType: Scalars['String']['input'];
+  locationName: Scalars['String']['input'];
 };
 
 type MutationShutdownRepositoryLocationArgs = {
@@ -4122,6 +4144,7 @@ type Query = {
   test: Maybe<TestFields>;
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
   truePartitionsForAutomationConditionEvaluationNode: Array<Scalars['String']['output']>;
+  uiComponentsForLocationOrError: UiComponentsOrError;
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String']['output'];
   workspaceLocationEntryOrError: Maybe<WorkspaceLocationEntryOrError>;
@@ -4383,6 +4406,10 @@ type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
+};
+
+type QueryUiComponentsForLocationOrErrorArgs = {
+  locationName: Scalars['String']['input'];
 };
 
 type QueryUtilizedEnvVarsOrErrorArgs = {
@@ -5493,6 +5520,13 @@ type SetSensorCursorMutation = {
   Output: SensorOrError;
 };
 
+type SetUiComponentResult = PythonError | SetUiComponentSuccess | UnauthorizedError;
+
+type SetUiComponentSuccess = {
+  __typename: 'SetUIComponentSuccess';
+  component: UiComponent;
+};
+
 type ShutdownRepositoryLocationMutation = {
   __typename: 'ShutdownRepositoryLocationMutation';
   Output: ShutdownRepositoryLocationMutationResult;
@@ -5998,6 +6032,21 @@ type TypeCheck = DisplayableEvent & {
   >;
   success: Scalars['Boolean']['output'];
 };
+
+type UiComponent = {
+  __typename: 'UIComponent';
+  attributes: Scalars['String']['output'];
+  componentId: Scalars['String']['output'];
+  componentType: Scalars['String']['output'];
+};
+
+type UiComponents = {
+  __typename: 'UIComponents';
+  components: Array<UiComponent>;
+  locationName: Scalars['String']['output'];
+};
+
+type UiComponentsOrError = PythonError | UiComponents;
 
 type UnauthorizedError = Error & {
   __typename: 'UnauthorizedError';
@@ -8633,6 +8682,21 @@ export const buildDeleteRunMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
           ? ({} as DeletePipelineRunSuccess)
           : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+  };
+};
+
+export const buildDeleteUiComponentSuccess = (
+  overrides?: Partial<DeleteUiComponentSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DeleteUIComponentSuccess'} & DeleteUiComponentSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DeleteUiComponentSuccess');
+  return {
+    __typename: 'DeleteUIComponentSuccess',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'natus',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'placeat',
   };
 };
 
@@ -11416,6 +11480,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
           ? ({} as DeletePipelineRunSuccess)
           : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    deleteUIComponent:
+      overrides && overrides.hasOwnProperty('deleteUIComponent')
+        ? overrides.deleteUIComponent!
+        : relationshipsToOmit.has('DeleteUiComponentSuccess')
+          ? ({} as DeleteUiComponentSuccess)
+          : buildDeleteUiComponentSuccess({}, relationshipsToOmit),
     freeConcurrencySlots:
       overrides && overrides.hasOwnProperty('freeConcurrencySlots')
         ? overrides.freeConcurrencySlots!
@@ -11538,6 +11608,12 @@ export const buildMutation = (
     setSensorCursor:
       overrides && overrides.hasOwnProperty('setSensorCursor')
         ? overrides.setSensorCursor!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
+    setUIComponent:
+      overrides && overrides.hasOwnProperty('setUIComponent')
+        ? overrides.setUIComponent!
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
@@ -13641,6 +13717,12 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('truePartitionsForAutomationConditionEvaluationNode')
         ? overrides.truePartitionsForAutomationConditionEvaluationNode!
         : [],
+    uiComponentsForLocationOrError:
+      overrides && overrides.hasOwnProperty('uiComponentsForLocationOrError')
+        ? overrides.uiComponentsForLocationOrError!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
     utilizedEnvVarsOrError:
       overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
         ? overrides.utilizedEnvVarsOrError!
@@ -15668,6 +15750,23 @@ export const buildSetSensorCursorMutation = (
   };
 };
 
+export const buildSetUiComponentSuccess = (
+  overrides?: Partial<SetUiComponentSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'SetUIComponentSuccess'} & SetUiComponentSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SetUiComponentSuccess');
+  return {
+    __typename: 'SetUIComponentSuccess',
+    component:
+      overrides && overrides.hasOwnProperty('component')
+        ? overrides.component!
+        : relationshipsToOmit.has('UiComponent')
+          ? ({} as UiComponent)
+          : buildUiComponent({}, relationshipsToOmit),
+  };
+};
+
 export const buildShutdownRepositoryLocationMutation = (
   overrides?: Partial<ShutdownRepositoryLocationMutation>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -16651,6 +16750,39 @@ export const buildTypeCheck = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
+  };
+};
+
+export const buildUiComponent = (
+  overrides?: Partial<UiComponent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UIComponent'} & UiComponent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UiComponent');
+  return {
+    __typename: 'UIComponent',
+    attributes:
+      overrides && overrides.hasOwnProperty('attributes') ? overrides.attributes! : 'perferendis',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'neque',
+    componentType:
+      overrides && overrides.hasOwnProperty('componentType')
+        ? overrides.componentType!
+        : 'mollitia',
+  };
+};
+
+export const buildUiComponents = (
+  overrides?: Partial<UiComponents>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UIComponents'} & UiComponents => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UiComponents');
+  return {
+    __typename: 'UIComponents',
+    components: overrides && overrides.hasOwnProperty('components') ? overrides.components! : [],
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'sequi',
   };
 };
 
