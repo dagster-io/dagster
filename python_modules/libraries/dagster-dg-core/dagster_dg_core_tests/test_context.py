@@ -456,6 +456,21 @@ def test_code_location_config(config_file: ConfigFileType):
         assert context.code_location_name == "my-code_location"
 
 
+@pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
+def test_cli_telemetry_config(config_file: ConfigFileType):
+    # Regression test for dagster-io/dagster#32728: validating `cli.telemetry.enabled`
+    # raised `TypeError: TypedDict does not support instance and class checks` because
+    # the validator called `isinstance` against a TypedDict.
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, config_file_type=config_file, in_workspace=False),
+    ):
+        with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
+            create_toml_node(toml, ("cli", "telemetry", "enabled"), False)
+        context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+        assert context.config.cli.telemetry_enabled is False
+
+
 def test_virtual_env_mismatch_warning():
     with (
         ProxyRunner.test() as runner,
