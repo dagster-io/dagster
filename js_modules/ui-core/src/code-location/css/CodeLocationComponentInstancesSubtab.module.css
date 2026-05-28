@@ -1,0 +1,69 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+}
+
+.rowRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.rowId {
+  font-weight: 600;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.rowType {
+  color: var(--color-text-light);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.reloadOverlay {
+  position: absolute;
+  inset: 0;
+  background: var(--color-background-default);
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+.reloadOverlayInner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  color: var(--color-text-light);
+  font-size: 13px;
+}
+
+.editorFrame {
+  border-radius: 4px;
+  height: 320px;
+  overflow: hidden;
+  background: var(--color-background-default);
+}
+
+.fieldLabel {
+  font-weight: 500;
+}
