@@ -123,6 +123,35 @@ def test_handle_output():
     }
 
 
+def test_handle_output_empty_dataframe():
+    handler = SnowflakePandasTypeHandler()
+    connection = MagicMock()
+    df = DataFrame(
+        {"col1": pandas.Series([], dtype="str"), "col2": pandas.Series([], dtype="int64")}
+    )
+    output_context = build_output_context(
+        resource_config={**resource_config, "time_data_to_string": False}
+    )
+
+    with patch(
+        "dagster_snowflake_pandas.snowflake_pandas_type_handler.write_pandas"
+    ) as mock_write_pandas:
+        handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=[],
+            ),
+            df,
+            connection,
+        )
+
+    mock_write_pandas.assert_not_called()
+
+
 def test_load_input():
     with patch(
         "dagster_snowflake_pandas.snowflake_pandas_type_handler.pd.read_sql"

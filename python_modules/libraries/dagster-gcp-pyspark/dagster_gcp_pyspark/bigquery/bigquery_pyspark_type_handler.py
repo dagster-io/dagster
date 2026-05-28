@@ -61,11 +61,16 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     def handle_output(  # ty: ignore[invalid-method-override]
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
-        options = _get_bigquery_write_options(context.resource_config, table_slice)
+        if obj.isEmpty():
+            context.log.warning(
+                "Skipping BigQuery write for empty DataFrame. An empty table will not be created."
+            )
+        else:
+            options = _get_bigquery_write_options(context.resource_config, table_slice)
 
-        with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
+            with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
-        with_uppercase_cols.write.format("bigquery").options(**options).mode("append").save()
+            with_uppercase_cols.write.format("bigquery").options(**options).mode("append").save()
 
         return {
             "dataframe_columns": MetadataValue.table_schema(
