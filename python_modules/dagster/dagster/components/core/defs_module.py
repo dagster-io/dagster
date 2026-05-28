@@ -225,6 +225,47 @@ class ComponentPath(ComponentLoc):
         return self.get_relative_key(root_path)
 
 
+@record
+class UIDefinitionsLoc(ComponentLoc):
+    """Location for the UI-definitions subtree.
+
+    With ``instance_key=None`` this identifies the aggregate container
+    (``UIDefinitionsDecl``) — analogous to ``YamlFileDecl``'s loc for a
+    yaml file containing several components. With an ``instance_key``
+    set it identifies a single UI-defined component, analogous to a
+    yaml document's loc.
+    """
+
+    instance_key: str | None = None
+
+    def without_instance_key(self) -> "UIDefinitionsLoc":
+        return UIDefinitionsLoc()
+
+    def get_display_key(self, root_path: Path) -> str:
+        if self.instance_key is not None:
+            return f"<ui>/{self.instance_key}"
+        return "<ui>"
+
+
+class UIDefinitionsComponent(Component):
+    """Aggregate component for UI-defined components at a code location.
+
+    Functionally minimal — its ``build_defs`` just merges children's defs,
+    same as ``ComponentRootComponent`` does at the next level up. The
+    point of this layer is structural: it gives the UI subtree a single
+    named node under the root, parallel to the filesystem subtree, so
+    additions to the "things hanging off the root" are easy to reason
+    about by analogy.
+    """
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        child_defs = [
+            context.build_defs(child_decl.loc)
+            for child_decl in context.component_decl.iterate_child_component_decls()
+        ]
+        return Definitions.merge(*child_defs)
+
+
 @dataclass
 class ComponentRootComponent(Component):
     """The root component of the unified component tree.
