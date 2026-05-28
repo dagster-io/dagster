@@ -1,4 +1,4 @@
-import {Tab, Tabs} from '@dagster-io/ui-components';
+import {Box, Tab, Tabs, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {findRepositoryInLocation} from '../../code-location/findRepositoryInLocation';
@@ -7,7 +7,7 @@ import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/ty
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 
-export type CodeLocationTabType = 'overview' | 'definitions';
+export type CodeLocationTabType = 'overview' | 'definitions' | 'components';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -35,6 +35,18 @@ export const CodeLocationTabs = (props: Props) => {
       ) : (
         <Tab id="definitions" title="Definitions" disabled />
       )}
+      <TabLink
+        id="components"
+        title={
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+            <span>Components</span>
+            <Tag>
+              <span style={{fontWeight: 'normal'}}>Beta</span>
+            </Tag>
+          </Box>
+        }
+        to={workspacePathFromAddress(repoAddress, '/components')}
+      />
     </Tabs>
   );
 };

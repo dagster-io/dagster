@@ -6,9 +6,11 @@ import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext/WorkspaceContext';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressFromPath} from './repoAddressFromPath';
+import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 import {Route} from '../app/Route';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
+import {CodeLocationComponentsRoutes} from '../code-location/CodeLocationComponentsRoutes';
 import {CodeLocationDefinitionsRoot} from '../code-location/CodeLocationDefinitionsRoot';
 import CodeLocationOverviewRoot from '../code-location/CodeLocationOverviewRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
@@ -101,6 +103,16 @@ const RepoRouteContainer = () => {
       <Route path="/locations/:repoPath/definitions" exact>
         <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
       </Route>
+      {/* The old top-level Docs experience now lives under Components > Library. */}
+      <Route path="/locations/:repoPath/docs" exact>
+        <Redirect to={workspacePathFromAddress(addressForPath, '/components/library')} />
+      </Route>
+      <Route path="/locations/:repoPath/docs/packages/:packageName?/:componentName?">
+        <RedirectDocsToLibrary repoAddress={addressForPath} />
+      </Route>
+      <Route path="/locations/:repoPath/components">
+        <CodeLocationComponentsRoutes repoAddress={addressForPath} />
+      </Route>
       {/* Avoid trying to render a definitions route if there is no actual repo available. */}
       {matchingRepo ? (
         <Route
@@ -138,6 +150,20 @@ export const WorkspaceRoot = () => {
       </Switch>
     </MainContent>
   );
+};
+
+// The old `/docs/packages/:packageName?/:componentName?` path moved to
+// `/components/library/packages/:packageName?/:componentName?`. Forward
+// the URL params so deep links keep working.
+const RedirectDocsToLibrary = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  const {packageName, componentName} = useParams<{packageName?: string; componentName?: string}>();
+  let suffix = '';
+  if (packageName) {
+    suffix = componentName
+      ? `/packages/${packageName}/${componentName}`
+      : `/packages/${packageName}`;
+  }
+  return <Redirect to={workspacePathFromAddress(repoAddress, `/components/library${suffix}`)} />;
 };
 
 // Imported via React.lazy, which requires a default export.
