@@ -44,6 +44,7 @@ def types():
     from dagster_graphql.schema.solids import types as solids_types
     from dagster_graphql.schema.table import types as table_types
     from dagster_graphql.schema.tags import GraphenePipelineTag, GraphenePipelineTagAndValues
+    from dagster_graphql.schema.ui_definitions import types as ui_definitions_types
     from dagster_graphql.schema.used_solid import GrapheneNodeInvocationSite, GrapheneUsedSolid
 
     return (
@@ -72,6 +73,7 @@ def types():
         + table_types
         + [GraphenePipelineTag, GraphenePipelineTagAndValues]
         + [GrapheneNodeInvocationSite, GrapheneUsedSolid]
+        + ui_definitions_types
     )
 
 

@@ -3680,6 +3680,32 @@ type UsedSolid {
   invocations: [NodeInvocationSite!]!
 }
 
+type UIComponent {
+  componentId: String!
+  componentType: String!
+  attributes: String!
+}
+
+type UIComponents {
+  locationName: String!
+  components: [UIComponent!]!
+}
+
+union UIComponentsOrError = UIComponents | PythonError
+
+type SetUIComponentSuccess {
+  component: UIComponent!
+}
+
+union SetUIComponentResult = SetUIComponentSuccess | UnauthorizedError | PythonError
+
+type DeleteUIComponentSuccess {
+  locationName: String!
+  componentId: String!
+}
+
+union DeleteUIComponentResult = DeleteUIComponentSuccess | UnauthorizedError | PythonError
+
 type Query {
   version: String!
   repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
@@ -3827,6 +3853,7 @@ type Query {
     cursor: String
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
+  uiComponentsForLocationOrError(locationName: String!): UIComponentsOrError!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -4198,6 +4225,13 @@ type Mutation {
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
   ): DeleteDynamicPartitionsResult!
+  setUIComponent(
+    attributes: String!
+    componentId: String!
+    componentType: String!
+    locationName: String!
+  ): SetUIComponentResult!
+  deleteUIComponent(componentId: String!, locationName: String!): DeleteUIComponentResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   deleteConcurrencyLimit(concurrencyKey: String!): Boolean!
