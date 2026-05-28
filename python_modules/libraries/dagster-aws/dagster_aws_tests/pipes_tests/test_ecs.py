@@ -180,6 +180,7 @@ def _materialize_asset(env, return_dict, task_started_event, materialization_don
         materialization_done_event.set()
 
 
+@pytest.mark.timeout(420)
 def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
     # Use a "spawn" context so the subprocess starts a fresh interpreter and does NOT
     # inherit this process's open file descriptors -- in particular the moto server's
@@ -204,8 +205,10 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
         )
         p.start()
         try:
-            if not task_started_event.wait(timeout=60):
-                raise AssertionError("Subprocess did not launch an ECS task within 60s")
+            # Generous windows -- spawn cold-start + instance setup + SIGTERM teardown
+            # can each take tens of seconds on slow CI runners (e.g. EKS pods).
+            if not task_started_event.wait(timeout=180):
+                raise AssertionError("Subprocess did not launch an ECS task within 180s")
 
             p.terminate()
 
@@ -214,9 +217,9 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
             # process is fully reaped within a fixed window. Under spawn, instance and
             # multiprocessing teardown after the interruption can outrun a process-death
             # check even when the data we want to assert on is already available.
-            if not materialization_done_event.wait(timeout=60):
+            if not materialization_done_event.wait(timeout=180):
                 raise AssertionError(
-                    "Subprocess did not complete materialization within 60s of SIGTERM"
+                    "Subprocess did not complete materialization within 180s of SIGTERM"
                 )
 
             assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
