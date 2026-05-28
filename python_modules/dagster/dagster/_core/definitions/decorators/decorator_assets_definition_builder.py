@@ -56,10 +56,11 @@ def get_function_params_without_context_or_config_or_resources(
 
     resource_arg_names = {arg.name for arg in get_resource_args(fn)}
 
-    new_input_args = []
-    for input_arg in input_params:
-        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
-            new_input_args.append(input_arg)
+    new_input_args = [
+        input_arg
+        for input_arg in input_params
+        if input_arg.name != "config" and input_arg.name not in resource_arg_names
+    ]
 
     return new_input_args
 

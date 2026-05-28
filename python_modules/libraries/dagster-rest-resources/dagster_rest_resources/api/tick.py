@@ -104,9 +104,11 @@ class DgApiTickApi:
                 matches: list[tuple[str, str]] = []
                 for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                     entities = repo.sensors if entity_type == "sensor" else repo.schedules
-                    for entity in entities:
-                        if entity.name == name:
-                            matches.append((repo.location.name, repo.name))
+                    matches.extend(
+                        (repo.location.name, repo.name)
+                        for entity in entities
+                        if entity.name == name
+                    )
                 if not matches:
                     raise DagsterPlusGraphqlError(f"{entity_type.capitalize()} not found: {name}")
                 if len(matches) > 1:

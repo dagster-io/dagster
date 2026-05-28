@@ -921,13 +921,13 @@ class GraphDefinition(NodeDefinition):
                     output_pointer.node_name
                 ).get(NodeOutput(output_node, output_def), [])
             )
-            for input_handle in downstream_input_handles:
-                all_destinations.append(
-                    NodeInputHandle(
-                        node_handle=NodeHandle(input_handle.node_name, parent=handle),
-                        input_name=input_handle.input_name,
-                    )
+            all_destinations.extend(
+                NodeInputHandle(
+                    node_handle=NodeHandle(input_handle.node_name, parent=handle),
+                    input_name=input_handle.input_name,
                 )
+                for input_handle in downstream_input_handles
+            )
 
         return all_destinations
 

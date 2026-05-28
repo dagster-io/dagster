@@ -172,15 +172,12 @@ def test_connection_leak(hostname, conn_string):
     num_instances = 20
 
     tempdir = tempfile.TemporaryDirectory()
-    copies = []
-    for _ in range(num_instances):
-        copies.append(
-            DagsterInstance.from_ref(
-                InstanceRef.from_dir(
-                    tempdir.name, overrides=yaml.safe_load(full_pg_config(hostname))
-                )
-            )
+    copies = [
+        DagsterInstance.from_ref(
+            InstanceRef.from_dir(tempdir.name, overrides=yaml.safe_load(full_pg_config(hostname)))
         )
+        for _ in range(num_instances)
+    ]
 
     conn = psycopg2.connect(conn_string)
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)

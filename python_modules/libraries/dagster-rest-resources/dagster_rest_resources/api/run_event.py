@@ -149,16 +149,16 @@ class DgApiRunEventApi:
         for _ in range(_MAX_PAGES):
             page = self._fetch_single_page(run_id=run_id, limit=limit, after_cursor=cursor)
 
-            for e in page.items:
-                if (
-                    (not type_filter or (e.event_type or "").upper() in type_filter)
-                    and (not level_filter or e.level.upper() in level_filter)
-                    and (
-                        not step_key_filter
-                        or any(sk in (e.step_key or "").lower() for sk in step_key_filter)
-                    )
-                ):
-                    events.append(e)
+            events.extend(
+                e
+                for e in page.items
+                if (not type_filter or (e.event_type or "").upper() in type_filter)
+                and (not level_filter or e.level.upper() in level_filter)
+                and (
+                    not step_key_filter
+                    or any(sk in (e.step_key or "").lower() for sk in step_key_filter)
+                )
+            )
             cursor = page.cursor or None
             has_more = page.has_more
 

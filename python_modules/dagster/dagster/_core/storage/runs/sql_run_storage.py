@@ -874,9 +874,7 @@ class SqlRunStorage(RunStorage):
 
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         rows = self.fetchall(db_select([DaemonHeartbeatsTable.c.body]))
-        heartbeats = []
-        for row in rows:
-            heartbeats.append(deserialize_value(row["body"], DaemonHeartbeat))
+        heartbeats = [deserialize_value(row["body"], DaemonHeartbeat) for row in rows]
         return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self) -> None:

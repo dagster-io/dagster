@@ -111,10 +111,11 @@ class S3ModelStoreResource(ModelStoreResource):
                 return []
 
             # Get model files and their last modified times
-            model_objects = []
-            for obj in response["Contents"]:
-                if obj["Key"].endswith(".pth"):
-                    model_objects.append({"key": obj["Key"], "last_modified": obj["LastModified"]})
+            model_objects = [
+                {"key": obj["Key"], "last_modified": obj["LastModified"]}
+                for obj in response["Contents"]
+                if obj["Key"].endswith(".pth")
+            ]
 
             # Sort by modification time, newest first
             model_objects.sort(key=lambda x: x["last_modified"], reverse=True)

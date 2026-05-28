@@ -73,15 +73,14 @@ def test_connection_leak(conn_string):
     num_instances = 20
 
     tempdir = TemporaryDirectory()
-    copies = []
-    for _ in range(num_instances):
-        copies.append(
-            DagsterInstance.from_ref(
-                InstanceRef.from_dir(
-                    tempdir.name, overrides=yaml.safe_load(full_mysql_config(hostname, port))
-                )
+    copies = [
+        DagsterInstance.from_ref(
+            InstanceRef.from_dir(
+                tempdir.name, overrides=yaml.safe_load(full_mysql_config(hostname, port))
             )
         )
+        for _ in range(num_instances)
+    ]
 
     engine = create_engine(conn_string, isolation_level=mysql_isolation_level(), poolclass=NullPool)
     with engine.connect() as conn:

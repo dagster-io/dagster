@@ -239,10 +239,9 @@ def test_databricks_execution_failure(mock_workspace, mock_serializer, mock_dese
 
     target_key = AssetKey(["data_ingestion_job", "ingest_task"])
 
-    job_assets = []
-    for a in defs.assets:
-        if isinstance(a, AssetsDefinition) and target_key in a.keys:
-            job_assets.append(a)
+    job_assets = [
+        a for a in defs.assets if isinstance(a, AssetsDefinition) and target_key in a.keys
+    ]
 
     with pytest.raises(Exception) as excinfo:
         materialize(assets=job_assets)

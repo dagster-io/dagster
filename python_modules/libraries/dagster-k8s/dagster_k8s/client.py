@@ -937,8 +937,7 @@ class DagsterKubernetesClient:
                 namespace=namespace,
                 field_selector=f"involvedObject.name={job_name}",
             ).items
-            for event in events:
-                event_strs.append(f"{event.reason}: {event.message}")
+            event_strs.extend(f"{event.reason}: {event.message}" for event in events)
 
         return (
             f"Debug information for job {job_name}:"

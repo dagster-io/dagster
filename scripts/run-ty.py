@@ -533,8 +533,10 @@ def _serialize_ty_config(config: Mapping[str, Any]) -> str:
     sections: list[str] = []
     for section_name, section_body in config.items():
         if isinstance(section_body, list):
-            for item in section_body:
-                sections.append(_serialize_section(section_name, item, array_of_tables=True))
+            sections.extend(
+                _serialize_section(section_name, item, array_of_tables=True)
+                for item in section_body
+            )
         else:
             sections.append(_serialize_section(section_name, section_body, array_of_tables=False))
     return "\n\n".join(sections) + "\n"

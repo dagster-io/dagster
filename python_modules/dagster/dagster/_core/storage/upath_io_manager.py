@@ -387,19 +387,17 @@ class UPathIOManager(IOManager):
         async def collect():
             loop = asyncio.get_running_loop()
 
-            tasks = []
-
-            for partition_key in context.asset_partition_keys:
-                tasks.append(
-                    loop.create_task(
-                        self._load_partition_from_path(
-                            context,
-                            partition_key,
-                            paths[partition_key],
-                            backcompat_paths.get(partition_key),
-                        )
+            tasks = [
+                loop.create_task(
+                    self._load_partition_from_path(
+                        context,
+                        partition_key,
+                        paths[partition_key],
+                        backcompat_paths.get(partition_key),
                     )
                 )
+                for partition_key in context.asset_partition_keys
+            ]
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 

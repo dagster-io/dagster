@@ -385,15 +385,19 @@ def test_retry_concurrency_release(instance):
 
     events = []
     with dg.execute_job(recon_retry_job, instance=instance) as result:
-        for event in result.all_events:
-            if event.step_key and event.event_type_value in (
+        events.extend(
+            (event.step_key, event.event_type_value)
+            for event in result.all_events
+            if event.step_key
+            and event.event_type_value
+            in (
                 DagsterEventType.STEP_START.value,
                 DagsterEventType.STEP_SUCCESS.value,
                 DagsterEventType.STEP_FAILURE.value,
                 DagsterEventType.STEP_RESTARTED.value,
                 DagsterEventType.STEP_UP_FOR_RETRY.value,
-            ):
-                events.append((event.step_key, event.event_type_value))
+            )
+        )
 
     # job has released any claimed slots
     assert foo_info.slot_count == 1

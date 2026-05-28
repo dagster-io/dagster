@@ -228,9 +228,10 @@ def training_file(
     enriched_graphic_novels,
 ) -> str:
     graphic_novels = enriched_graphic_novels.sample(n=TRAINING_FILE_NUM)
-    prompt_data = []
-    for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record, CATEGORIES))
+    prompt_data = [
+        create_prompt_record(record, CATEGORIES)
+        for record in [row for _, row in graphic_novels.iterrows()]
+    ]
 
     file_name = "goodreads-training.jsonl"
     write_openai_file(file_name, prompt_data)
@@ -249,9 +250,10 @@ def validation_file(
     enriched_graphic_novels,
 ) -> str:
     graphic_novels = enriched_graphic_novels.sample(n=VALIDATION_FILE_NUM)
-    prompt_data = []
-    for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record, CATEGORIES))
+    prompt_data = [
+        create_prompt_record(record, CATEGORIES)
+        for record in [row for _, row in graphic_novels.iterrows()]
+    ]
 
     file_name = "goodreads-validation.jsonl"
     write_openai_file(file_name, prompt_data)

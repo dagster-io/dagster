@@ -17,16 +17,15 @@ app = Flask(__name__)
 def generate_sample_data() -> list[dict[str, Any]]:
     """Generate sample records spanning the last 7 days."""
     base_time = datetime.now() - timedelta(days=7)
-    data = []
-    for i in range(100):
-        data.append(
-            {
-                "id": f"record-{i:03d}",
-                "timestamp": (base_time + timedelta(hours=i)).isoformat(),
-                "value": 100 + i * 10,
-                "status": "active" if i % 2 == 0 else "inactive",
-            }
-        )
+    data = [
+        {
+            "id": f"record-{i:03d}",
+            "timestamp": (base_time + timedelta(hours=i)).isoformat(),
+            "value": 100 + i * 10,
+            "status": "active" if i % 2 == 0 else "inactive",
+        }
+        for i in range(100)
+    ]
     return data
 
 

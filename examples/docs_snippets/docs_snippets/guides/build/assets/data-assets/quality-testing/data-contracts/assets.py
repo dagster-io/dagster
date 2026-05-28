@@ -90,18 +90,16 @@ def validate_shipments_data_contract(
 
     # Compare schemas
     mismatches = []
-    missing_columns = []
-    extra_columns = []
 
     # Check for missing columns in actual schema
-    for col_name in expected_schema:
-        if col_name not in actual_schema:
-            missing_columns.append(col_name)
+    missing_columns = [
+        col_name for col_name in expected_schema if col_name not in actual_schema
+    ]
 
     # Check for extra columns in actual schema
-    for col_name in actual_schema:
-        if col_name not in expected_schema:
-            extra_columns.append(col_name)
+    extra_columns = [
+        col_name for col_name in actual_schema if col_name not in expected_schema
+    ]
 
     # Check for type mismatches
     for col_name in expected_schema:

@@ -110,15 +110,15 @@ class DgApiScheduleApi:
             case "RepositoryConnection":
                 matches: list[DgApiSchedule] = []
                 for repo in result.nodes:  # ty: ignore[unresolved-attribute]
-                    for s in repo.schedules:
-                        if s.name == schedule_name:
-                            matches.append(
-                                self._build_schedule(
-                                    s,
-                                    repo_location_name=repo.location.name,
-                                    repo_name=repo.name,
-                                )
-                            )
+                    matches.extend(
+                        self._build_schedule(
+                            s,
+                            repo_location_name=repo.location.name,
+                            repo_name=repo.name,
+                        )
+                        for s in repo.schedules
+                        if s.name == schedule_name
+                    )
                 if not matches:
                     raise DagsterPlusGraphqlError(f"Schedule not found: {schedule_name}")
                 if len(matches) > 1:

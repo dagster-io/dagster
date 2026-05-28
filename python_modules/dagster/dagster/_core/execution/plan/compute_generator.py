@@ -185,12 +185,12 @@ def _filter_expected_output_defs(
 
     remove_outputs = []
     for asset_result in asset_results:
-        for check_result in asset_result.check_results:
-            remove_outputs.append(
-                context.op_execution_context.assets_def.get_output_name_for_asset_check_key(
-                    check_result.resolve_target_check_key(check_names_by_asset_key)
-                )
+        remove_outputs.extend(
+            context.op_execution_context.assets_def.get_output_name_for_asset_check_key(
+                check_result.resolve_target_check_key(check_names_by_asset_key)
             )
+            for check_result in asset_result.check_results
+        )
 
     return [out for out in output_defs if out.name not in remove_outputs]
 

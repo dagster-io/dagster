@@ -1313,11 +1313,13 @@ class DagsterCloudUserCodeLauncher(
         handles = self._list_server_handles()
         servers_to_remove: list[ServerHandle] = []
         with self._grpc_servers_lock:
-            for handle in handles:
+            servers_to_remove.extend(
+                handle
+                for handle in handles
                 if self._can_cleanup_server(
                     handle, active_agent_ids, include_own_servers=include_own_servers
-                ):
-                    servers_to_remove.append(handle)
+                )
+            )
             self._pending_delete_grpc_server_handles.update(servers_to_remove)
         for server_handle in servers_to_remove:
             self._graceful_remove_server_handle(server_handle)

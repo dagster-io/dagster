@@ -1207,16 +1207,16 @@ class TestRunStorage:
         #          |
         #         [c]
 
-        for _ in range(3):
-            runs.append(
-                create_dagster_run(
-                    run_id=make_new_run_id(),
-                    job_name="foo_job",
-                    root_run_id=root_run.run_id,
-                    parent_run_id=root_run.run_id,
-                    tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
-                )
+        runs.extend(
+            create_dagster_run(
+                run_id=make_new_run_id(),
+                job_name="foo_job",
+                root_run_id=root_run.run_id,
+                parent_run_id=root_run.run_id,
+                tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
             )
+            for _ in range(3)
+        )
         for _ in range(3):
             # get root run id from the previous run if exists, otherwise use previous run's id
             root_run_id = runs[-1].root_run_id if runs[-1].root_run_id else runs[-1].run_id

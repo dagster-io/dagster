@@ -564,10 +564,11 @@ def _helm_chart_helper(
 
                     labels = queue.get("labels")
                     if labels:
-                        target_deployments = []
-                        for item in deployments.items:
-                            if queue.get("name") in item.metadata.name:
-                                target_deployments.append(item)
+                        target_deployments = [
+                            item
+                            for item in deployments.items
+                            if queue.get("name") in item.metadata.name
+                        ]
 
                         assert len(target_deployments) > 0
                         for target in target_deployments:

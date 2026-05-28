@@ -87,7 +87,6 @@ HAVING ARRAY_SIZE(opaque_ids) > 0
         # TODO: is this cost splitting logic correct?
         cost = result_cost / len(opaque_ids)
         total += len(opaque_ids)
-        for opaque_id in opaque_ids:
-            costs.append((opaque_id, float(cost), query_id))
+        costs.extend((opaque_id, float(cost), query_id) for opaque_id in opaque_ids)
 
     return costs
