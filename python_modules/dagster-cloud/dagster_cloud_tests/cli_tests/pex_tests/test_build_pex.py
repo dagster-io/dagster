@@ -2,7 +2,6 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import dagster_cloud_cli
 import dagster_cloud_cli.core.pex_builder.util
 import pytest
 from dagster_cloud_cli.entrypoint import app

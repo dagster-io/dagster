@@ -1014,7 +1014,7 @@ def graph_asset_no_defaults(
         name=out_asset_key.to_python_identifier(),
         description=description,
         config=config,
-        ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},
+        ins={input_name: GraphIn() for (input_name, _) in named_ins.values()},
         out=combined_outs_by_output_name,
     )(compose_fn)
     return AssetsDefinition.from_graph(
@@ -1118,7 +1118,7 @@ def graph_multi_asset(
             name=name or fn.__name__,  # ty: ignore[unresolved-attribute]
             out=combined_outs_by_output_name,
             config=config,
-            ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},
+            ins={input_name: GraphIn() for (input_name, _) in named_ins.values()},
         )(fn)
 
         # source metadata from the AssetOuts (if any)

@@ -2,7 +2,6 @@ import ssl
 import time
 from datetime import datetime, timedelta
 
-import botocore
 import botocore.exceptions
 from dagster._vendored.dateutil.tz import tzutc
 

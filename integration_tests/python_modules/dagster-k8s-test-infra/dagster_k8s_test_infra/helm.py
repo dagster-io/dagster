@@ -8,7 +8,6 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 
 import dagster._check as check
-import kubernetes
 import kubernetes.client.rest
 import pytest
 import requests

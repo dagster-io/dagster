@@ -309,7 +309,7 @@ def test_attach_metadata(
         check.not_none(event.asset_key): event.materialization.metadata
         for event in result.get_asset_materialization_events()
     }
-    assert all("summary" in metadata for _, metadata in metadata_by_asset_key.items()), str(
+    assert all("summary" in metadata for metadata in metadata_by_asset_key.values()), str(
         metadata_by_asset_key
     )
 

@@ -154,9 +154,7 @@ class MultiPexManager(AbstractContextManager):
     def get_error_pex_servers(self) -> list[PexErrorEntry]:
         with self._pex_servers_lock:
             return [
-                server
-                for server_id, server in self._pex_servers.items()
-                if isinstance(server, PexErrorEntry)
+                server for server in self._pex_servers.values() if isinstance(server, PexErrorEntry)
             ]
 
     def get_active_pex_server_handles(

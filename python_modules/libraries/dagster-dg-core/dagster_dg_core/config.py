@@ -542,7 +542,6 @@ def modify_dg_toml_config(
     path: Path,
 ) -> Iterator[Union["tomlkit.TOMLDocument", "tomlkit.items.Table"]]:
     """Modify a TOML file as a tomlkit.TOMLDocument, preserving comments and formatting."""
-    import tomlkit
     import tomlkit.items
 
     with modify_toml(path) as toml:

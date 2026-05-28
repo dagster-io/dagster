@@ -2,7 +2,6 @@ from pprint import pformat
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
-import botocore
 import botocore.exceptions
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient

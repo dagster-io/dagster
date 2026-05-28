@@ -87,9 +87,12 @@ exclude = ["*.ipynb"]
 "docs/**" = ["INP001"]
 "**/scripts/**" = ["INP001", "T201"]  # scripts are CLI tools — print is the output channel
 "python_modules/dagster/dagster/_core/storage/alembic/env.py" = ["INP001"]
+"python_modules/dagster/dagster/_core/storage/alembic/versions/__init__.py" = ["INP001"]
 "python_modules/libraries/dagster-airlift/kitchen-sink/**" = ["INP001"]
 # There is an __init__.py.tmpl
 "python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
+# Project-scaffold templates; the PROJECT_NAME_PLACEHOLDER is substituted at generation time.
+"**/templates/PROJECT_NAME_PLACEHOLDER/**/__init__.py" = ["INP001"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"

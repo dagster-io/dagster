@@ -168,7 +168,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         keys = [
             (run_id, callback)
             for run_id, callback_dict in self._watchers.items()
-            for callback, _ in callback_dict.items()
+            for callback in callback_dict.keys()
         ]
         for run_id, callback in keys:
             cursor = self._watchers[run_id][callback]

@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 import dagster as dg
-import fsspec
 import fsspec.implementations.local
 import pytest
 from dagster import (
