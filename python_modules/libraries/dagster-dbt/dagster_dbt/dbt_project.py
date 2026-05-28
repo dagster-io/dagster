@@ -96,8 +96,16 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             project (DbtProject):
                 The dbt project to be prepared.
         """
-        # guard against multiple Dagster processes trying to update this at the same time
-        if project.has_uninstalled_deps:
+        # Always run dbt deps when dependency files exist, not just when
+        # packages appear uninstalled. The has_uninstalled_deps check uses a
+        # heuristic (dbt_packages dir existence) that can incorrectly skip
+        # deps when dependencies have changed but the directory still exists.
+        # dbt deps itself is fast when packages are already up-to-date.
+        has_deps_files = (
+            project.project_dir.joinpath("dependencies.yml").exists()
+            or project.project_dir.joinpath("packages.yml").exists()
+        )
+        if has_deps_files:
             run_with_concurrent_update_guard(
                 project.project_dir.joinpath("package-lock.yml"),
                 self._prepare_packages,
