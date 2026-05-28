@@ -149,6 +149,9 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
             == expected_asset_partitions
         )
 
+        import pytest
+        from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+
 
 def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
     @dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2022-01-01"))
@@ -171,6 +174,38 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
             asset_graph.get_children_partitions(parent.key, "2022-01-03")
             == expected_asset_partitions
         )
+
+
+def test_external_asset_stub_preserves_metadata_minimal():
+    import dagster as dg
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+
+    ext_spec = dg.AssetSpec(
+        key=["external_asset"],
+        description="External asset description",
+        kinds={"external", "db"},
+    )
+
+    @dg.asset(deps=[ext_spec])
+    def downstream_asset():
+        pass
+
+    asset_graph = AssetGraph.from_assets([downstream_asset])
+    ext_node = asset_graph.get(dg.AssetKey(["external_asset"]))
+    assert ext_node is not None
+    assert getattr(ext_node, "description", None) == "External asset description"
+    assert getattr(ext_node, "kinds", None) == set(["external", "db"])
+
+    @dg.asset(deps=["plain_external"])
+    def downstream2():
+        pass
+
+    asset_graph2 = AssetGraph.from_assets([downstream2])
+    plain_node = asset_graph2.get(dg.AssetKey(["plain_external"]))
+    assert plain_node is not None
+    assert getattr(plain_node, "description", None) is None
+    kinds = getattr(plain_node, "kinds", None)
+    assert kinds is None or kinds == set()
 
 
 def test_get_parent_partitions_fan_in(
@@ -968,6 +1003,36 @@ def test_check_deps(asset_graph_from_assets: Callable[..., BaseAssetGraph]) -> N
 
 
 def test_cross_code_location_partition_mapping() -> None:
+
+    def test_external_asset_stub_preserves_metadata_minimal():
+        import dagster as dg
+        from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+
+        ext_spec = dg.AssetSpec(
+            key=["external_asset"],
+            description="External asset description",
+            kinds={"external", "db"},
+        )
+
+        @dg.asset(deps=[ext_spec])
+        def downstream_asset():
+            pass
+
+        asset_graph = AssetGraph.from_assets([downstream_asset])
+        ext_node = asset_graph.get(dg.AssetKey(["external_asset"]))
+        assert ext_node is not None
+        assert getattr(ext_node, "description", None) == "External asset description"
+        assert getattr(ext_node, "kinds", None) == set(["external", "db"])
+
+        @dg.asset(deps=["plain_external"])
+        def downstream2():
+            pass
+
+        asset_graph2 = AssetGraph.from_assets([downstream2])
+        plain_node = asset_graph2.get(dg.AssetKey(["plain_external"]))
+        assert plain_node is not None
+        assert getattr(plain_node, "description", None) is None
+        assert getattr(plain_node, "kinds", None) is None
     @dg.asset(partitions_def=dg.HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
     def a(): ...
 
