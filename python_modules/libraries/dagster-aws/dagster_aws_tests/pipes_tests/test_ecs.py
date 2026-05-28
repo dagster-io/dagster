@@ -136,7 +136,7 @@ def test_ecs_pipes(
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def _materialize_asset(env, return_dict, task_started_event):
+def _materialize_asset(env, return_dict, task_started_event, materialization_done_event):
     ecs_client = boto3.client("ecs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
     cloudwatch_client = boto3.client("logs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
     mock_client = LocalECSMockClient(ecs_client=ecs_client, cloudwatch_client=cloudwatch_client)
@@ -173,36 +173,62 @@ def _materialize_asset(env, return_dict, task_started_event):
         return_dict[0] = pipes._client.describe_tasks(  # noqa
             cluster="test-cluster", tasks=[task_arn]
         )
+        # Signal that return_dict is fully populated. The parent gates on this rather
+        # than on `p.is_alive()` because spawn/instance teardown after the interruption
+        # can outrun a fixed process-death window even when the materialization data
+        # the test cares about is already ready.
+        materialization_done_event.set()
 
 
 def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
-    with multiprocessing.Manager() as manager:
+    # Use a "spawn" context so the subprocess starts a fresh interpreter and does NOT
+    # inherit this process's open file descriptors -- in particular the moto server's
+    # listening socket on localhost:5193. The child reaches moto over the network as a
+    # client, so it has no need to inherit that socket; a forked child that outlived its
+    # expected lifetime would otherwise keep the port wedged and hang every subsequent
+    # pipes test. (Linux CI defaults to fork; macOS already defaults to spawn.)
+    ctx = multiprocessing.get_context("spawn")
+    with ctx.Manager() as manager:
         return_dict = manager.dict()
-        task_started_event = multiprocessing.Event()
+        task_started_event = ctx.Event()
+        materialization_done_event = ctx.Event()
 
-        p = multiprocessing.Process(
+        p = ctx.Process(
             target=_materialize_asset,
             args=(
                 {"SLEEP_SECONDS": "10"},
                 return_dict,
                 task_started_event,
+                materialization_done_event,
             ),
         )
         p.start()
+        try:
+            if not task_started_event.wait(timeout=60):
+                raise AssertionError("Subprocess did not launch an ECS task within 60s")
 
-        if not task_started_event.wait(timeout=60):
             p.terminate()
-            p.join(timeout=30)
+
+            # Gate on the materialization-complete signal -- set by the subprocess
+            # immediately after return_dict is populated -- rather than asserting the
+            # process is fully reaped within a fixed window. Under spawn, instance and
+            # multiprocessing teardown after the interruption can outrun a process-death
+            # check even when the data we want to assert on is already available.
+            if not materialization_done_event.wait(timeout=60):
+                raise AssertionError(
+                    "Subprocess did not complete materialization within 60s of SIGTERM"
+                )
+
+            assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
+            assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
+        finally:
+            # Defense-in-depth: spawn already prevents the child from inheriting our
+            # fds, and we waited on a real completion signal above, but never leave
+            # the subprocess alive -- a runaway child would still hold the manager
+            # connection and consume CI resources. Always reap.
             if p.is_alive():
                 p.kill()
                 p.join()
-            raise AssertionError("Subprocess did not launch an ECS task within 60s")
-
-        p.terminate()
-        p.join(timeout=30)
-        assert not p.is_alive()
-        assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
-        assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
 
 
 class FailToStartECSMockClient(LocalECSMockClient):
