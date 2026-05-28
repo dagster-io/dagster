@@ -2,10 +2,10 @@
 title: Dagster & HF Datasets
 sidebar_label: HF Datasets
 sidebar_position: 1
-description: Use Dagster and HF Datasets to orchestrate your MLOps pipelines and maintain ML assets.
+description: Use Dagster and Hugging Face Datasets to orchestrate data pipelines, materialize dataset assets, track metadata and lineage, and publish datasets to the Hub.
 tags: [community-supported, datasets, metadata, streaming]
-source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-wandb
-pypi: https://pypi.org/project/dagster-hf-datasets
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hf-datasets
+pypi: https://pypi.org/project/dagster_hf_datasets/
 sidebar_custom_props:
   logo: images/integrations/hf_datasets.svg
   community: true
@@ -22,6 +22,11 @@ import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md'
 
 The integration with HF Datasets makes it easy within Dagster to:
 
+- Load a Hugging Face dataset as a Dagster asset with metadata.
+- Stream large datasets efficiently in runtime-only mode
+- Capture metadata and lineage for improved observability
+- Build multi-asset pipelines that support dataset splits.
+- Publish processed datasets back to the Hugging Face Hub. 
 
 ## Installation
 
@@ -29,6 +34,13 @@ The integration with HF Datasets makes it easy within Dagster to:
 
 ## Example
 
+These examples illustrate two usage examples: The first example is a basic asset pipeline for materializing an HF dataset with metadata and persistence.
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/basic_asset_example.py" language="python" />
+
+The second example is a fuller dataset pipeline for transformation, split-aware assets, and Hugging Face Hub publishing.
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/dataset_pipeline_example.py" language="python" />
 
 ## About HF Datasets
 
