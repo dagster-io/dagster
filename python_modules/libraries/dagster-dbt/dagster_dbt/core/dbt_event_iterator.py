@@ -243,7 +243,7 @@ class DbtEventIterator(Iterator[T]):
         column lineage metadata using sqlglot, if enabled.
 
         Args:
-            generate_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
+            with_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:

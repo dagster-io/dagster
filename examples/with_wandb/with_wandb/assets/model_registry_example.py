@@ -39,7 +39,6 @@ def promote_best_model_to_production(
     """Example that links a model stored in a W&B Artifact to the Model Registry.
 
     Args:
-        context (AssetExecutionContext): Dagster execution context
         artifact (wandb.wandb_sdk.wandb_artifacts.Artifact): Downloaded Artifact object
     """
     # In a real scenario you would evaluate model performance

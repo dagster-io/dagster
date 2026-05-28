@@ -94,8 +94,7 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
 
         Args:
             context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
-            params (dict): Parameters for the ``start_job_run`` boto3 AWS EMR Containers client call.
-                See `Boto3 EMR Containers API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-containers/client/start_job_run.html>`_
+            start_job_run_params (dict): Parameters for the start_job_run boto3 AWS EMR Containers client call.
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:

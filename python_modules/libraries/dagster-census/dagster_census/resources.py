@@ -182,7 +182,7 @@ class CensusResource(ConfigurableResource):
         """Given a Census sync run, poll until the run is complete.
 
         Args:
-            sync_id (int): The Census Sync Run ID.
+            sync_run_id (int): The Census Sync Run ID.
             poll_interval (float): The time (in seconds) that will be waited between successive polls.
             poll_timeout (float): The maximum time that will waited before this operation is timed
                 out. By default, this will never time out.

@@ -502,7 +502,7 @@ class PipesDbfsContextInjector(PipesContextInjector):
         DBFS temporary file as JSON and exposing the path to the file.
 
         Args:
-            context_data (PipesContextData): The context data to inject.
+            context (PipesContextData): The context data to inject.
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and

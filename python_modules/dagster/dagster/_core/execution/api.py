@@ -725,7 +725,7 @@ def job_execution_iterator(
     and failure events.
 
     Args:
-        pipeline_context (PlanOrchestrationContext):
+        job_context (PlanOrchestrationContext):
         execution_plan (ExecutionPlan):
     """
     # TODO: restart event?
