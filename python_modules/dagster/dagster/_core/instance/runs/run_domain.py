@@ -73,6 +73,16 @@ if TYPE_CHECKING:
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
+# Default chunk size for bulk-writing planned events on run creation. Chosen to stay well
+# under PostgreSQL's 65535 bind-parameter ceiling for a single statement while still
+# keeping the typical run-launch path to a small number of round-trips. Operators can
+# override with the `DAGSTER_PLANNED_EVENT_CHUNK_SIZE` env var; this is a separate knob
+# from `DAGSTER_EVENT_BATCH_SIZE` (which gates `handle_new_event`'s opt-in batching for
+# non-planned event callers) because they control different mechanisms.
+_DEFAULT_PLANNED_EVENT_CHUNK_SIZE = 1024
+_PLANNED_EVENT_CHUNK_SIZE_ENV_VAR = "DAGSTER_PLANNED_EVENT_CHUNK_SIZE"
+
+
 class RunDomain:
     """Domain object encapsulating run-related operations.
 
@@ -838,16 +848,11 @@ class RunDomain:
         asset_graph: "BaseAssetGraph",
     ) -> None:
         """Moved from DagsterInstance._log_asset_planned_events."""
-        from dagster._core.events import (
-            DagsterEvent,
-            DagsterEventBatchMetadata,
-            DagsterEventType,
-            generate_event_batch_id,
-        )
+        from dagster._core.events import DagsterEvent, DagsterEventType
 
         job_name = dagster_run.job_name
 
-        events = []
+        events: list[DagsterEvent] = []
 
         for step in execution_plan_snapshot.steps:
             if step.key in execution_plan_snapshot.step_keys_to_execute:
@@ -890,32 +895,38 @@ class RunDomain:
                         )
                         events.append(event)
 
-        batch_id = generate_event_batch_id()
-        last_index = len(events) - 1
+        if not events:
+            return
 
         batch_planned_events = not bool(os.getenv("DAGSTER_EMIT_PLANNED_EVENTS_INDIVIDUALLY"))
 
-        if batch_planned_events:
-            # sort events by asset key to ensure they are inserted in a consistent order
-            # if they are batched
-            events = sorted(
-                events,
-                key=lambda event: (
-                    event.asset_key.to_db_string()
-                    if event.asset_key
-                    else event.asset_check_planned_data.asset_check_key.to_db_string()
-                ),
-            )
+        if not batch_planned_events:
+            for event in events:
+                self._instance.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
+            return
 
-        for i, event in enumerate(events):
-            batch_metadata = (
-                DagsterEventBatchMetadata(batch_id, i == last_index)
-                if batch_planned_events
-                else None
-            )
-            self._instance.report_dagster_event(
-                event, dagster_run.run_id, logging.DEBUG, batch_metadata=batch_metadata
-            )
+        # sort events by asset key for deterministic insert order
+        events = sorted(
+            events,
+            key=lambda event: (
+                event.asset_key.to_db_string()
+                if event.asset_key
+                else event.asset_check_planned_data.asset_check_key.to_db_string()
+            ),
+        )
+
+        # Bulk-write planned events directly via the batch path so we are not gated on
+        # DAGSTER_EVENT_BATCH_SIZE (which defaults to 0/disabled and governs
+        # `handle_new_event`'s opt-in batching, not this path). Chunk to keep individual
+        # INSERTs bounded; respect DAGSTER_PLANNED_EVENT_CHUNK_SIZE if set.
+        try:
+            env_chunk_size = int(os.getenv(_PLANNED_EVENT_CHUNK_SIZE_ENV_VAR, "0"))
+        except ValueError:
+            env_chunk_size = 0
+        chunk_size = env_chunk_size if env_chunk_size > 0 else _DEFAULT_PLANNED_EVENT_CHUNK_SIZE
+        for start in range(0, len(events), chunk_size):
+            chunk = events[start : start + chunk_size]
+            self._instance.report_dagster_event_batch(chunk, dagster_run.run_id, logging.DEBUG)
 
     def get_materialization_planned_events_for_asset(
         self,

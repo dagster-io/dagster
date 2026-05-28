@@ -206,10 +206,6 @@ class EventMethods:
             event (EventLogEntry): The event to handle.
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
-        from dagster._core.events import RunFailureReason
-        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
-        from dagster._time import datetime_from_timestamp
-
         if not self.should_store_event(event):
             return
 
@@ -227,6 +223,22 @@ class EventMethods:
             else:
                 return
 
+        self._store_and_notify(events)
+
+    def handle_new_event_batch(self, events: Sequence["EventLogEntry"]) -> None:
+        """Store a list of events as a single batch and notify subscribers.
+
+        Unlike `handle_new_event` with `batch_metadata`, this path is not gated on
+        `DAGSTER_EVENT_BATCH_SIZE` -- callers that have already collected a batch (for
+        example, planned-event emission at run creation time) can use it to invoke the
+        storage layer's `store_event_batch` directly.
+        """
+        events = [event for event in events if self.should_store_event(event)]
+        if not events:
+            return
+        self._store_and_notify(events)
+
+    def _store_and_notify(self, events: Sequence["EventLogEntry"]) -> None:
         if len(events) == 1:
             self._event_storage_impl.store_event(events[0])
         else:
@@ -244,6 +256,13 @@ class EventMethods:
                 )
                 for event in events:
                     self._event_storage_impl.store_event(event)
+
+        self._notify_after_store(events)
+
+    def _notify_after_store(self, events: Sequence["EventLogEntry"]) -> None:
+        from dagster._core.events import RunFailureReason
+        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
+        from dagster._time import datetime_from_timestamp
 
         for event in events:
             run_id = event.run_id
@@ -370,6 +389,36 @@ class EventMethods:
             dagster_event=dagster_event,
         )
         self.handle_new_event(event_record, batch_metadata=batch_metadata)
+
+    def report_dagster_event_batch(
+        self,
+        dagster_events: Sequence["DagsterEvent"],
+        run_id: str,
+        log_level: str | int = logging.INFO,
+    ) -> None:
+        """Take a list of DagsterEvents and store them in one batch.
+
+        Bypasses the `DAGSTER_EVENT_BATCH_SIZE` gate that governs `report_dagster_event`'s
+        opt-in batching; callers that have already accumulated a batch (e.g. planned-event
+        emission at run creation) get a single storage call regardless of the env var.
+        """
+        from dagster._core.events.log import EventLogEntry
+
+        now = get_current_timestamp()
+        records = [
+            EventLogEntry(
+                user_message="",
+                level=log_level,
+                job_name=dagster_event.job_name,
+                run_id=run_id,
+                error_info=None,
+                timestamp=now,
+                step_key=dagster_event.step_key,
+                dagster_event=dagster_event,
+            )
+            for dagster_event in dagster_events
+        ]
+        self.handle_new_event_batch(records)
 
     def report_run_canceling(self, run: "DagsterRun", message: str | None = None) -> None:
         """Report run canceling event."""
