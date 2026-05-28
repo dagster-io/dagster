@@ -267,7 +267,7 @@ export function StatusBar({
   const pctFailed = (100 * failed) / targeted;
   const pctInProgress = (100 * inProgress) / targeted;
 
-  const pctFinal = Math.ceil(pctSucceeded + pctFailed);
+  const pctFinal = Math.floor(pctSucceeded + pctFailed);
 
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-end', gap: 2}}>
