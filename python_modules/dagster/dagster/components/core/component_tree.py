@@ -18,6 +18,7 @@ from dagster_shared.utils.config import (
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.errors import DagsterError
 from dagster.components.component.component import Component
 from dagster.components.core.component_tree_state import ComponentTreeStateTracker
@@ -27,6 +28,8 @@ from dagster.components.core.decl import (
     ComponentLoaderDecl,
     ComponentRootDecl,
     PythonFileDecl,
+    UIComponentDecl,
+    UIDefinitionsDecl,
     YamlDecl,
     build_filesystem_component_decl_from_context,
 )
@@ -38,6 +41,7 @@ from dagster.components.core.defs_module import (
     PythonFileComponent,
     ResolvableToComponentLoc,
     ResolvableToComponentPath,
+    UIDefinitionsLoc,
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
@@ -72,6 +76,7 @@ class ComponentTree(IHaveNew):
     defs_module: ModuleType
     project_root: Path
     terminate_autoloading_on_keyword_files: bool | None = None
+    code_location_name: str | None = None
 
     @cached_property
     def state_tracker(self) -> ComponentTreeStateTracker:
@@ -167,9 +172,12 @@ class ComponentTree(IHaveNew):
 
         defs_module = importlib.import_module(defs_module_name)
 
+        code_location_name = project.get("code_location_name") or project_root.name
+
         return cls(
             defs_module=defs_module,
             project_root=project_root,
+            code_location_name=code_location_name,
         )
 
     @property
@@ -208,13 +216,21 @@ class ComponentTree(IHaveNew):
     def find_root_decl(self) -> ComponentRootDecl:
         """Returns the unified root of the component tree.
 
-        Always constructs a fresh ComponentRootDecl that wraps the (cached)
-        filesystem decl as its sole child.
+        Constructs a fresh ComponentRootDecl whose flat ``decls`` list is
+        the (cached) filesystem decl followed by an optional
+        ``UIDefinitionsDecl`` aggregating the UI-defined components
+        discovered in storage. The aggregate is rebuilt on every call so
+        newly-added or removed UI components are picked up; the
+        individual ``UIComponentDecl`` children are cached per-id so
+        unchanged components don't get rebuilt.
         """
+        decls: list[ComponentDecl] = [self._get_filesystem_decl()]
+        if self.code_location_name is not None:
+            decls.append(self._build_ui_definitions_decl(self.code_location_name))
         return ComponentRootDecl(
             context=self.decl_load_context,
             loc=ComponentRootLoc(),
-            decls=[self._get_filesystem_decl()],
+            decls=decls,
         )
 
     def _get_filesystem_decl(self) -> ComponentDecl:
@@ -225,6 +241,65 @@ class ComponentTree(IHaveNew):
             self.state_tracker.set_cache_data(loc, component_decl=filesystem_decl)
 
         return check.not_none(self.state_tracker.get_cache_data(loc).component_decl)
+
+    def _build_ui_definitions_decl(self, code_location_name: str) -> UIDefinitionsDecl:
+        """Build the ``UIDefinitionsDecl`` wrapper for this code location.
+
+        Discovery is sourced from the pinned ``DefinitionsLoadContext`` rather
+        than the live ``DefsStateStorage`` listing — that way a load pinned to
+        a specific snapshot (RECONSTRUCTION in a run worker, or an explicit
+        ReloadCodeWithState pin) sees exactly the components captured in the
+        snapshot, not whatever is currently latest in storage. The actual
+        per-component entries are *not* fetched here — each
+        ``UIComponentDecl`` lazily downloads its entry on first access (see
+        ``UIComponentDecl.entry``), so building the tree is metadata-only.
+
+        Each child ``UIComponentDecl`` is cached at its own
+        ``UIDefinitionsLoc(instance_key=id)`` and registered against its
+        own state key, so an edit to a single component invalidates only
+        that child's decl and cascades up via existing dependency
+        tracking. The wrapper itself is reconstructed fresh because
+        adding/removing a component changes the list of children — we
+        rely on a fresh listing to observe those changes rather than
+        caching the wrapper.
+        """
+        from dagster.components.component.ui_definitions_state import (
+            get_ui_component_state_key,
+            get_ui_definitions_prefix,
+        )
+
+        prefix = get_ui_definitions_prefix(code_location_name)
+        component_ids = [
+            k[len(prefix) :] for k in DefinitionsLoadContext.get().state_keys_with_prefix(prefix)
+        ]
+
+        children: list[UIComponentDecl] = []
+        for component_id in component_ids:
+            child_loc = UIDefinitionsLoc(instance_key=component_id)
+            cached = self.state_tracker.get_cache_data(child_loc).component_decl
+            if cached is None:
+                child_ctx = self.decl_load_context.for_component_loc(child_loc)
+                cached = UIComponentDecl(
+                    context=child_ctx,
+                    loc=child_loc,
+                    location_name=code_location_name,
+                    component_id=component_id,
+                )
+                self.state_tracker.set_cache_data(child_loc, component_decl=cached)
+
+                state_key = get_ui_component_state_key(code_location_name, component_id)
+                self.state_tracker.mark_component_defs_state_key(child_loc, state_key)
+
+            children.append(check.inst(cached, UIComponentDecl))
+
+        ui_loc = UIDefinitionsLoc()
+        ctx = self.decl_load_context.for_component_loc(ui_loc)
+        return UIDefinitionsDecl(
+            context=ctx,
+            loc=ui_loc,
+            location_name=code_location_name,
+            children=children,
+        )
 
     def build_defs_at_path(self, loc: ResolvableToComponentLoc) -> Definitions:
         """Builds definitions from the given defs subdirectory or component loc.

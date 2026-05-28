@@ -63,6 +63,13 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
         raise NotImplementedError()
 
+    def list_state_keys_with_prefix(self, prefix: str) -> list[str]:
+        """List all state keys that start with the given prefix."""
+        info = self.get_latest_defs_state_info()
+        if info is None:
+            return []
+        return [k for k in info.info_mapping if k.startswith(prefix)]
+
     @abstractmethod
     def download_state_to_path(self, key: str, version: str, path: Path) -> None:
         """Loads the state file for the given defs key and version into the given file path.

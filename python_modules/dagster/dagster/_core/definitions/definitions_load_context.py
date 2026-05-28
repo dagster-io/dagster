@@ -106,6 +106,23 @@ class DefinitionsLoadContext:
         """bool: Whether the context has been set."""
         return cls._instance is not None
 
+    @classmethod
+    @contextmanager
+    def scoped(cls, instance: "DefinitionsLoadContext") -> Iterator["DefinitionsLoadContext"]:
+        """Install ``instance`` as the singleton for the duration of the block, then
+        restore whatever was previously set (which may be unset).
+
+        Distinct from ``set``: this snapshots the underlying value — including
+        the "unset" state — so an outer scope that hadn't installed a context
+        isn't left pinned to a fresh INITIALIZATION context after the block exits.
+        """
+        prev = cls._instance
+        cls._instance = instance
+        try:
+            yield instance
+        finally:
+            cls._instance = prev
+
     @property
     def load_type(self) -> DefinitionsLoadType:
         """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
@@ -169,14 +186,35 @@ class DefinitionsLoadContext:
     def _mark_defs_key_accessed(self, key: str) -> None:
         self._accessed_defs_state_keys.add(key)
 
-    def _get_defs_key_state_info(self, key: str) -> DefsKeyStateInfo | None:
-        """Ensures that if we attempt to access a key that doesn't exist, we mark it as None."""
+    def get_defs_key_state_info(self, key: str) -> DefsKeyStateInfo | None:
+        """Returns the pinned state info for the given defs key, or None if no
+        version is pinned. Marks the key as accessed so it shows up in
+        ``accessed_defs_state_info``.
+        """
         self._mark_defs_key_accessed(key)
         current_info = self._defs_state_info or DefsStateInfo.empty()
         key_info = current_info.info_mapping.get(key)
         if key_info is None:
             self._defs_state_info = DefsStateInfo.add_version(current_info, key, None)
         return key_info
+
+    def state_keys_with_prefix(self, prefix: str) -> list[str]:
+        """Returns the pinned defs state keys that start with ``prefix``.
+
+        Read-only — does not mark keys as accessed. Mirrors
+        ``DefsStateStorage.list_state_keys_with_prefix`` but reads from the
+        snapshot pinned on this load context, which is what callers want when
+        they need a listing that's consistent with the versions being loaded
+        against (e.g. during ``RECONSTRUCTION`` or a ``ReloadCodeWithState``
+        flow that pins an explicit ``DefsStateInfo``).
+        """
+        if self._defs_state_info is None:
+            return []
+        return sorted(
+            k
+            for k, v in self._defs_state_info.info_mapping.items()
+            if v is not None and k.startswith(prefix)
+        )
 
     def _get_defs_state_from_reconstruction_metadata(self, key: str) -> str:
         metadata_key = get_code_server_metadata_key(key)
@@ -206,7 +244,7 @@ class DefinitionsLoadContext:
         """
         # if no state has ever been written for this key, we return None to indicate that no state is available
         key = config.key
-        key_info = self._get_defs_key_state_info(key)
+        key_info = self.get_defs_key_state_info(key)
 
         if config.management_type == DefsStateManagementType.LOCAL_FILESYSTEM:
             # it is possible for local state to exist without the defs_state_storage being aware
@@ -223,7 +261,7 @@ class DefinitionsLoadContext:
                     f"Attempted to access state for key {config.key} with management type {config.management_type} "
                     "without a StateStorage in context. This is likely the result of an internal framework error."
                 )
-            key_info = self._get_defs_key_state_info(key)
+            key_info = self.get_defs_key_state_info(key)
             # this implies that no state has been stored since the management type was changed
             if key_info is None or key_info.management_type != config.management_type:
                 yield None

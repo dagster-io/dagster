@@ -2,8 +2,6 @@
 the component tree.
 """
 
-import importlib
-import sys
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -15,26 +13,19 @@ from dagster.components.core.defs_module import (
     ComponentRootComponent,
     ComponentRootLoc,
 )
+from dagster.components.testing.utils import create_defs_folder_sandbox
 
 
 @pytest.fixture
-def component_tree(tmp_path: Path) -> Iterator[ComponentTree]:
+def component_tree() -> Iterator[ComponentTree]:
     """A ComponentTree backed by a real on-disk defs module with one asset."""
-    defs_pkg = tmp_path / "myproj" / "defs"
-    defs_pkg.mkdir(parents=True)
-    (tmp_path / "myproj" / "__init__.py").write_text("")
-    (defs_pkg / "__init__.py").write_text("")
-    (defs_pkg / "asset.py").write_text("import dagster as dg\n\n@dg.asset\ndef foo():\n    pass\n")
-
-    sys.path.insert(0, str(tmp_path))
-    try:
-        module = importlib.import_module("myproj.defs")
-        yield ComponentTree(defs_module=module, project_root=tmp_path)
-    finally:
-        sys.path.remove(str(tmp_path))
-        for mod in list(sys.modules):
-            if mod.startswith("myproj"):
-                del sys.modules[mod]
+    with create_defs_folder_sandbox() as sandbox:
+        (sandbox.defs_folder_path / "asset.py").write_text(
+            "import dagster as dg\n\n@dg.asset\ndef foo():\n    pass\n",
+            encoding="utf-8",
+        )
+        with sandbox.build_component_tree() as tree:
+            yield tree
 
 
 class TestComponentRootLoc:
