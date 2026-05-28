@@ -3706,6 +3706,23 @@ type DeleteUIComponentSuccess {
 
 union DeleteUIComponentResult = DeleteUIComponentSuccess | UnauthorizedError | PythonError
 
+scalar JsonSchema
+
+type ComponentTypeInfo {
+  name: String!
+  schema: JsonSchema
+  description: String
+  owners: [String!]
+  tags: [String!]
+}
+
+type ComponentTypes {
+  locationName: String!
+  componentTypes: [ComponentTypeInfo!]!
+}
+
+union ComponentTypesOrError = ComponentTypes | RepositoryLocationNotFound | PythonError
+
 type Query {
   version: String!
   repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
@@ -3854,6 +3871,7 @@ type Query {
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
   uiComponentsForLocationOrError(locationName: String!): UIComponentsOrError!
+  componentTypesForLocationOrError(locationName: String!): ComponentTypesOrError!
 }
 
 union WorkspaceOrError = Workspace | PythonError

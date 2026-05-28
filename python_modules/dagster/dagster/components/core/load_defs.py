@@ -1,6 +1,7 @@
 import importlib
 from pathlib import Path
 from types import ModuleType
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster_shared.check as check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
@@ -13,7 +14,51 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.component.component import Component
 from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
 
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.code_location import CodeLocation
+
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
+
+
+def get_plugin_component_jsons_for_code_location(
+    code_location: "CodeLocation",
+) -> list[dict[str, Any]]:
+    """Extract unique plugin component type JSONs from a code location's repository metadata.
+
+    Component types are embedded as the ``PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY`` metadata
+    entry on each repository (see :func:`get_library_json_enriched_defs`). This iterates all
+    repositories on the location, deduplicates by component name, and returns the parsed
+    JSON dicts in the order they were encountered.
+    """
+    seen_names: set[str] = set()
+    results: list[dict[str, Any]] = []
+    for repository in code_location.get_repositories().values():
+        metadata = repository.repository_snap.metadata
+        if not metadata:
+            continue
+        entry = metadata.get(PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY)
+        if not entry or not entry.value:
+            continue
+        namespaces = entry.value
+        if not isinstance(namespaces, list):
+            continue
+        for namespace in namespaces:
+            if not isinstance(namespace, dict):
+                continue
+            namespace = cast("dict[str, Any]", namespace)
+            component_jsons = namespace.get("componentTypes")
+            if not isinstance(component_jsons, list):
+                continue
+            for component_json in component_jsons:
+                if not isinstance(component_json, dict):
+                    continue
+                component_json = cast("dict[str, Any]", component_json)
+                name = component_json.get("name")
+                if not isinstance(name, str) or name in seen_names:
+                    continue
+                seen_names.add(name)
+                results.append(component_json)
+    return results
 
 
 @deprecated(breaking_version="0.2.0")

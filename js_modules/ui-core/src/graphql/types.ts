@@ -18,6 +18,7 @@ export type Scalars = {
   Float: {input: number; output: number};
   GenericScalar: {input: any; output: any};
   JSONString: {input: any; output: any};
+  JsonSchema: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
 

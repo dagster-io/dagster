@@ -51,6 +51,7 @@ from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations imp
     fetch_auto_materialize_asset_evaluations_for_evaluation_id,
 )
 from dagster_graphql.implementation.fetch_backfills import get_backfill, get_backfills
+from dagster_graphql.implementation.fetch_component_types import get_component_types_for_location
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_instigators import (
     get_instigation_states_by_repository_id,
@@ -118,6 +119,7 @@ from dagster_graphql.schema.backfill import (
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
 )
+from dagster_graphql.schema.component_types import GrapheneComponentTypesOrError
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
@@ -673,6 +675,16 @@ class GrapheneQuery(graphene.ObjectType):
             "Retrieve all UI-defined components stored for a given code location. The"
             " returned list is sourced from the instance's defs state storage and is"
             " independent of whether the location is currently loaded."
+        ),
+    )
+
+    componentTypesForLocationOrError = graphene.Field(
+        graphene.NonNull(GrapheneComponentTypesOrError),
+        locationName=graphene.NonNull(graphene.String),
+        description=(
+            "Retrieve the JSON schemas and metadata for every Component class"
+            " installed in a given code location. Reads from the location's"
+            " repository metadata, so the location must be loaded."
         ),
     )
 
@@ -1423,3 +1435,9 @@ class GrapheneQuery(graphene.ObjectType):
     @capture_error
     def resolve_uiComponentsForLocationOrError(self, graphene_info: ResolveInfo, locationName: str):
         return get_ui_components_for_location(graphene_info, locationName)
+
+    @capture_error
+    def resolve_componentTypesForLocationOrError(
+        self, graphene_info: ResolveInfo, locationName: str
+    ):
+        return get_component_types_for_location(graphene_info, locationName)
