@@ -1,10 +1,12 @@
-from dagster_hf_datasets._export import HFDatasetPublisher
-from dagster_hf_datasets.assets import hf_dataset_asset
-from dagster_hf_datasets.io_manager import HFParquetIOManager
-from dagster_hf_datasets.resources import HuggingFaceResource
+from dagster_hf_datasets import (
+    HFDatasetPublisher,
+    HFParquetIOManager,
+    HuggingFaceResource,
+    hf_dataset_asset,
+)
 from datasets import Dataset
 
-from dagster import AssetExecutionContext, Definitions, asset
+from dagster import AssetExecutionContext, Definitions, MaterializeResult, asset
 
 
 @hf_dataset_asset(
@@ -14,11 +16,27 @@ from dagster import AssetExecutionContext, Definitions, asset
     group_name="golden_glue_pipeline",
     io_manager_key="hf_parquet_io_manager",
 )
-def raw_glue_qqp():
+def raw_glue_qqp(
+    context: AssetExecutionContext,
+    dataset: Dataset,
+) -> MaterializeResult:
     """Load the raw GLUE QQP training split
     from the Hugging Face Hub.
     """
-    pass
+    context.log.info(
+        "Loaded raw dataset with %s rows",
+        len(dataset),
+    )
+
+    return MaterializeResult(
+        value=dataset,
+        metadata={
+            "rows": len(dataset),
+            "source_dataset": "nyu-mll/glue",
+            "split": "train",
+            "config": "qqp",
+        },
+    )
 
 
 @asset(
@@ -91,7 +109,6 @@ def golden_glue_qqp(
 
 
 @asset(
-    io_manager_key="hf_parquet_io_manager",
     group_name="golden_glue_pipeline",
 )
 def publish_golden_glue(
