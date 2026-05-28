@@ -61,6 +61,7 @@ type Scalars = {
   Float: {input: number; output: number};
   GenericScalar: {input: any; output: any};
   JSONString: {input: any; output: any};
+  JsonSchema: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
 
@@ -1015,6 +1016,23 @@ type CodeReferencesMetadataEntry = MetadataEntry & {
   description: Maybe<Scalars['String']['output']>;
   label: Scalars['String']['output'];
 };
+
+type ComponentTypeInfo = {
+  __typename: 'ComponentTypeInfo';
+  description: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  owners: Maybe<Array<Scalars['String']['output']>>;
+  schema: Maybe<Scalars['JsonSchema']['output']>;
+  tags: Maybe<Array<Scalars['String']['output']>>;
+};
+
+type ComponentTypes = {
+  __typename: 'ComponentTypes';
+  componentTypes: Array<ComponentTypeInfo>;
+  locationName: Scalars['String']['output'];
+};
+
+type ComponentTypesOrError = ComponentTypes | PythonError | RepositoryLocationNotFound;
 
 type CompositeConfigType = ConfigType & {
   __typename: 'CompositeConfigType';
@@ -4105,6 +4123,7 @@ type Query = {
   canBulkTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
+  componentTypesForLocationOrError: ComponentTypesOrError;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
   instance: Instance;
@@ -4252,6 +4271,10 @@ type QueryCapturedLogsArgs = {
 
 type QueryCapturedLogsMetadataArgs = {
   logKey: Array<Scalars['String']['input']>;
+};
+
+type QueryComponentTypesForLocationOrErrorArgs = {
+  locationName: Scalars['String']['input'];
 };
 
 type QueryExecutionPlanOrErrorArgs = {
@@ -8163,6 +8186,38 @@ export const buildCodeReferencesMetadataEntry = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'beatae',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'eveniet',
+  };
+};
+
+export const buildComponentTypeInfo = (
+  overrides?: Partial<ComponentTypeInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ComponentTypeInfo'} & ComponentTypeInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ComponentTypeInfo');
+  return {
+    __typename: 'ComponentTypeInfo',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'fuga',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quae',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
+    schema: overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : 'illum',
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+  };
+};
+
+export const buildComponentTypes = (
+  overrides?: Partial<ComponentTypes>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ComponentTypes'} & ComponentTypes => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ComponentTypes');
+  return {
+    __typename: 'ComponentTypes',
+    componentTypes:
+      overrides && overrides.hasOwnProperty('componentTypes') ? overrides.componentTypes! : [],
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'molestiae',
   };
 };
 
@@ -13494,6 +13549,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('CapturedLogsMetadata')
           ? ({} as CapturedLogsMetadata)
           : buildCapturedLogsMetadata({}, relationshipsToOmit),
+    componentTypesForLocationOrError:
+      overrides && overrides.hasOwnProperty('componentTypesForLocationOrError')
+        ? overrides.componentTypesForLocationOrError!
+        : relationshipsToOmit.has('ComponentTypes')
+          ? ({} as ComponentTypes)
+          : buildComponentTypes({}, relationshipsToOmit),
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!

@@ -10,6 +10,7 @@ def types():
         GrapheneLaunchBackfillResult,
         GrapheneLaunchBackfillSuccess,
     )
+    from dagster_graphql.schema.component_types import types as component_types_types
     from dagster_graphql.schema.config_type_or_error import GrapheneConfigTypeOrError
     from dagster_graphql.schema.config_types import types as config_types
     from dagster_graphql.schema.dagster_types import types as dagster_types_types
@@ -74,6 +75,7 @@ def types():
         + [GraphenePipelineTag, GraphenePipelineTagAndValues]
         + [GrapheneNodeInvocationSite, GrapheneUsedSolid]
         + ui_definitions_types
+        + component_types_types
     )
 
 
