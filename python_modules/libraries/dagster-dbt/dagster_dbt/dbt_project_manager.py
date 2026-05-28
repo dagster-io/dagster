@@ -16,6 +16,20 @@ if TYPE_CHECKING:
     from dagster_dbt.components.dbt_project.component import DbtProjectArgs
 
 
+def _ignore_nested_dest(dest: Path):
+    """Returns an ``ignore`` callable for ``shutil.copytree`` that prevents the copy from
+    descending into its own destination directory when ``dest`` is nested inside the source
+    tree. This guards against unbounded recursive copying that would otherwise fill the disk.
+    """
+    resolved_dest = dest.resolve()
+
+    def _ignore(src_dir: str, names: list[str]) -> set[str]:
+        src_path = Path(src_dir).resolve()
+        return {name for name in names if (src_path / name).resolve() == resolved_dest}
+
+    return _ignore
+
+
 class DbtProjectManager(ABC):
     """Helper class that wraps a dbt project that may or may not be available on local disk at the time
     it is instantiated. Provides methods for syncing the project to a local path and for instantiating the
@@ -89,8 +103,13 @@ class DbtProjectArgsManager(DbtProjectManager):
         # the manifest.json file.
         project = self.get_project(None)
         project.preparer.prepare(project)
+        dest = self._local_project_dir(state_path)
+        # When the dbt project lives at (or above) the local state directory -- e.g. when the
+        # dbt project is at the root of the Dagster project -- `dest` is nested inside the source
+        # directory. Without ignoring it, copytree recurses into its own destination and copies
+        # the project into itself unboundedly, filling up the disk.
         shutil.copytree(
-            self.args.project_dir, self._local_project_dir(state_path), dirs_exist_ok=True
+            self.args.project_dir, dest, dirs_exist_ok=True, ignore=_ignore_nested_dest(dest)
         )
 
     def get_project(self, state_path: Path | None) -> "DbtProject":
