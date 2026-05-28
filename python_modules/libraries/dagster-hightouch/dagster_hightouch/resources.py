@@ -209,7 +209,6 @@ class HightouchResource:
 
         Args:
             sync_id (str): The Hightouch Sync ID
-            sync_request_id (str): The Hightouch Sync Request ID to poll against.
             fail_on_warning (bool): Whether a warning is considered a failure for this sync.
             poll_interval (float): The time in seconds that will be waited between succcessive polls
             poll_timeout (float): The maximum time that will be waited before this operation

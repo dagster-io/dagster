@@ -120,6 +120,11 @@ select = [
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
 
+  # (pydoclint) Docstring lint. Preview-status rule; must be listed by exact code under
+  # explicit-preview-rules=true. DOC102 catches `Args:` entries that don't correspond to
+  # an actual function parameter.
+  "DOC102",
+
   # (pycodestyle) pycodestyle rules
   "E",
 

@@ -488,10 +488,6 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                 `pod.spec.containers` will be able to communicate back to Dagster.
             extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
-            context_injector (Optional[PipesContextInjector]):
-                Override the default ext protocol context injection.
-            message_reader (Optional[PipesMessageReader]):
-                Override the default ext protocol message reader.
             ignore_containers (Optional[Set]): Ignore certain containers from waiting for termination. Defaults to
                 None.
             enable_multi_container_logs (bool): Whether or not to enable multi-container log consumption.

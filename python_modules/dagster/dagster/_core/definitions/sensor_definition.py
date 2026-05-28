@@ -651,8 +651,7 @@ class SensorDefinition(IHasInternalInit):
         """Returns a copy of this sensor with the job replaced.
 
         Args:
-            job (ExecutableDefinition): The job that should execute when this
-                schedule runs.
+            new_job (ExecutableDefinition): The job to be added to this sensor.
         """
         return self.with_updated_jobs([new_job])
 
@@ -660,8 +659,7 @@ class SensorDefinition(IHasInternalInit):
         """Returns a copy of this sensor with the jobs replaced.
 
         Args:
-            jobs (Sequence[ExecutableDefinition]): The jobs that should execute when this
-                schedule runs.
+            new_jobs (Sequence[ExecutableDefinition]): The jobs to be added to this sensor.
         """
         return self.with_attributes(jobs=new_jobs)
 

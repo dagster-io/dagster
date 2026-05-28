@@ -139,7 +139,7 @@ def resolve_module_pattern(pattern: str) -> list[str]:
     return an empty list if the module does not exist.
 
     Args:
-        pattern_segments: List of pattern segments, where * matches any segment name.
+        pattern: List of pattern segments, where * matches any segment name.
 
     Returns:
         List of matching module names.

@@ -119,8 +119,6 @@ class ComponentTree(IHaveNew):
         Args:
             defs_module: The defs module of the project, typically the `defs` directory.
             project_root: The root of the project.
-            terminate_autoloading_on_keyword_files: Whether to terminate autoloading on keyword files such as
-                `definitions.py` or `component.py`.
 
         Returns:
             A ComponentTree.
@@ -604,8 +602,6 @@ class LegacyAutoloadingComponentTree(ComponentTree):
         Args:
             defs_module: The defs module of the project, typically the `defs` directory.
             project_root: The root of the project.
-            terminate_autoloading_on_keyword_files: Whether to terminate autoloading on keyword files such as
-                `definitions.py` or `component.py`.
 
         Returns:
             A ComponentTree.

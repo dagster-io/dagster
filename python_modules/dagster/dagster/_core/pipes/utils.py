@@ -93,9 +93,6 @@ class PipesTempFileContextInjector(PipesContextInjector):
         """Inject context to external environment by writing it to an automatically-generated
         temporary file as JSON and exposing the path to the file.
 
-        Args:
-            context_data (PipesContextData): The context data to inject.
-
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
             load the injected context data.

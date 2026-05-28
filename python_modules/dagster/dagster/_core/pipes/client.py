@@ -110,11 +110,6 @@ class PipesClientCompletedInvocation:
         This does not work on invocations that materialize multiple assets and will fail
         in that case. For multiple assets use `get_results` instead to get the result stream.
 
-        Args:
-            implicit_materializations (bool): Create MaterializeResults for expected asset
-                even if nothing was reported from the external process.
-
-
         Returns: MaterializeResult
         """
         return materialize_result_from_pipes_results(

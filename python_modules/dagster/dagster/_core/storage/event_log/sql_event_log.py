@@ -2681,7 +2681,7 @@ class SqlEventLogStorage(EventLogStorage):
         """Claim concurrency slot for step.
 
         Args:
-            concurrency_keys (str): The concurrency key to claim.
+            concurrency_key (str): The concurrency key to claim.
             run_id (str): The run id to claim for.
             step_key (str): The step key to claim for.
         """
