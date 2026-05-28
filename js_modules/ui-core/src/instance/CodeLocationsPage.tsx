@@ -1,21 +1,13 @@
 import {Box, PageHeader, Subheading, Subtitle1, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useMemo} from 'react';
 
-import {useQuery} from '../apollo-client';
-import {CODE_LOCATION_PAGE_DOCS_QUERY} from './CodeLocationsPageDocsQuery';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {
-  CodeLocationPageDocsQuery,
-  CodeLocationPageDocsQueryVariables,
-} from './types/CodeLocationsPageDocsQuery.types';
 import {useCodeLocationPageFilters} from './useCodeLocationPageFilters';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepositoryLocationsList} from '../workspace/RepositoryLocationsList';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 const SEARCH_THRESHOLD = 10;
 
@@ -25,28 +17,6 @@ export const CodeLocationsPageContent = () => {
 
   const {activeFiltersJsx, flattened, button, loading, filtered, onChangeSearch, searchValue} =
     useCodeLocationPageFilters();
-
-  const {data} = useQuery<CodeLocationPageDocsQuery, CodeLocationPageDocsQueryVariables>(
-    CODE_LOCATION_PAGE_DOCS_QUERY,
-  );
-
-  const locationsWithDocs: Set<string> = useMemo(() => {
-    if (!data || data.repositoriesOrError.__typename !== 'RepositoryConnection') {
-      return new Set();
-    }
-
-    const repos = data.repositoriesOrError.nodes.filter(
-      (repo) => repo.__typename === 'Repository' && repo.hasLocationDocs,
-    );
-
-    return new Set(
-      repos.map((repo) => {
-        const repoName = repo.name;
-        const locationName = repo.location.name;
-        return repoAddressAsHumanString({name: repoName, location: locationName});
-      }),
-    );
-  }, [data]);
 
   const entryCount = flattened.length;
   const showSearch = entryCount > SEARCH_THRESHOLD;
@@ -93,7 +63,6 @@ export const CodeLocationsPageContent = () => {
       <RepositoryLocationsList
         loading={loading}
         codeLocations={filtered}
-        locationsWithDocs={locationsWithDocs}
         isFilteredView={!!activeFiltersJsx.length}
         searchValue={searchValue}
       />
