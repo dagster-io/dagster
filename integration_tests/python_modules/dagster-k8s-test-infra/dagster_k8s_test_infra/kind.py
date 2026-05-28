@@ -222,7 +222,40 @@ def create_kind_cluster(cluster_name, should_cleanup=True):
         # ensure cleanup happens on error or normal exit
         if should_cleanup:
             print(f"--- Cleaning up kind cluster {cluster_name}")
-            check_output(["kind", "delete", "cluster", "--name", cluster_name])
+            _delete_kind_cluster_best_effort(cluster_name)
+
+
+def _delete_kind_cluster_best_effort(cluster_name: str) -> None:
+    # `kind delete cluster` shells out to `docker rm -f -v <node>`, which
+    # occasionally fails under dind load with "tried to kill container, but did
+    # not receive an exit event" (runc/containerd shim race). Fall back to a
+    # direct kill+rm against the kind-labeled node containers, then swallow:
+    # the agent pod is ephemeral, tests have already completed, and failing
+    # teardown turns green test runs red.
+    try:
+        check_output(["kind", "delete", "cluster", "--name", cluster_name])
+        return
+    except Exception as e:
+        print(f"WARNING: kind delete cluster failed: {e}; falling back to docker rm")
+
+    try:
+        result = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "-aq",
+                "--filter",
+                f"label=io.x-k8s.kind.cluster={cluster_name}",
+            ],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        for node_id in result.stdout.split():
+            subprocess.run(["docker", "kill", node_id], check=False)
+            subprocess.run(["docker", "rm", "-f", "-v", node_id], check=False)
+    except Exception as fallback_err:
+        print(f"WARNING: fallback container cleanup failed: {fallback_err}")
 
 
 @contextmanager
