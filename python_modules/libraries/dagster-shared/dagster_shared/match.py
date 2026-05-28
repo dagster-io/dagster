@@ -10,7 +10,10 @@ from typing import (
     Union,
     get_args,
     get_origin,
+    is_typeddict,
 )
+
+from typing_extensions import NotRequired, Required
 
 T = TypeVar("T", bound=Any)
 
@@ -33,8 +36,28 @@ def match_type(obj: object, type_: type[T] | tuple[type[T]]) -> TypeGuard[T]:
             raise NotImplementedError(
                 f"Got ForwardRef {type_}. ForwardRef is not supported by `match_type`"
             )
+        elif is_typeddict(type_):
+            if not isinstance(obj, dict):
+                return False
+            annotations = type_.__annotations__
+            required_keys = getattr(type_, "__required_keys__", set())
+            # Check all required keys are present
+            for k in required_keys:
+                if k not in obj:
+                    return False
+            # Check all present keys have correct types
+            for k, v in obj.items():
+                if k in annotations:
+                    if not match_type(v, annotations[k]):
+                        return False
+            return True
         else:
             return isinstance(obj, type_)
+
+    # Handle Required/NotRequired wrappers (e.g. Required[str], NotRequired[int])
+    if origin in (Required, NotRequired):
+        (inner_type,) = get_args(type_)
+        return match_type(obj, inner_type)
 
     # Handle Union (e.g. Union[int, str])
     if origin in (Union, UnionType):
