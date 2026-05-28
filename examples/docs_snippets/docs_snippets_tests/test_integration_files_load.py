@@ -19,6 +19,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/salesforce.py",
     f"{snippets_folder}/sftp.py",
     f"{snippets_folder}/sharepoint.py",
+    f"{snippets_folder}/hf_datasets/dataset_pipeline_example.py",
     # FIXME: need to enable the following once we have a way to run their init/compile script in CI
     f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",
