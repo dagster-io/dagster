@@ -20,7 +20,7 @@ GET_LATEST_DEFS_STATE_INFO_QUERY = """
 """
 
 SET_LATEST_VERSION_MUTATION = """
-    mutation setLatestDefsStateVersion($key: String!, $version: String!) {
+    mutation setLatestDefsStateVersion($key: String!, $version: String) {
         defsState {
             setLatestDefsStateVersion(key: $key, version: $version) {
                 ok
@@ -109,5 +109,5 @@ class GraphQLDefsStateStorage(DefsStateStorage["DagsterCloudAgentInstance"], Con
         else:
             return None
 
-    def set_latest_version(self, key: str, version: str) -> None:
+    def set_latest_version(self, key: str, version: str | None) -> None:
         self._execute_query(SET_LATEST_VERSION_MUTATION, variables={"key": key, "version": version})

@@ -12,6 +12,7 @@ from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
 from dagster.components.component.ui_definitions_state import (
     UIComponentEntry,
+    delete_ui_component_entry,
     write_ui_component_entry,
 )
 from dagster.components.core.component_tree import ComponentTree
@@ -254,6 +255,114 @@ class TestPerComponentInvalidation:
                 # Wrapper itself is freshly built each call (different list could differ),
                 # but each child decl is cached and reused.
                 assert first.children[0] is second.children[0]
+
+
+class TestDeletion:
+    def test_delete_removes_component_from_root_decl(self) -> None:
+        """After ``delete_ui_component_entry``, the next ``find_root_decl``
+        call no longer includes the deleted component as a child of the
+        UI wrapper — discovery is via fresh prefix-listing on each call.
+        """
+        with _instance_with_storage() as storage:
+            write_ui_component_entry(
+                storage,
+                "test_loc",
+                "comp_a",
+                UIComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+            write_ui_component_entry(
+                storage,
+                "test_loc",
+                "comp_b",
+                UIComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+
+            with _component_tree_for_loc("test_loc") as tree:
+                ui_decl = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                assert {
+                    check.inst(c.loc, UIDefinitionsLoc).instance_key for c in ui_decl.children
+                } == {
+                    "comp_a",
+                    "comp_b",
+                }
+
+                delete_ui_component_entry(storage, "test_loc", "comp_a")
+
+                ui_decl_after = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                assert [
+                    check.inst(c.loc, UIDefinitionsLoc).instance_key for c in ui_decl_after.children
+                ] == ["comp_b"]
+
+    def test_delete_does_not_purge_surviving_siblings_cached_decl(self) -> None:
+        """Deleting one component must not invalidate the cached decl of
+        another — per-id caching means siblings are independent.
+        """
+        with _instance_with_storage() as storage:
+            write_ui_component_entry(
+                storage,
+                "test_loc",
+                "deleted",
+                UIComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+            write_ui_component_entry(
+                storage,
+                "test_loc",
+                "kept",
+                UIComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+
+            with _component_tree_for_loc("test_loc") as tree:
+                ui_decl = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                kept_decl_first = next(
+                    c
+                    for c in ui_decl.children
+                    if check.inst(c.loc, UIDefinitionsLoc).instance_key == "kept"
+                )
+
+                delete_ui_component_entry(storage, "test_loc", "deleted")
+
+                ui_decl_after = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                kept_decl_second = next(
+                    c
+                    for c in ui_decl_after.children
+                    if check.inst(c.loc, UIDefinitionsLoc).instance_key == "kept"
+                )
+                # Same cached object — sibling unaffected.
+                assert kept_decl_first is kept_decl_second
+
+    def test_delete_then_re_add_with_same_id_appears_again(self) -> None:
+        """Delete + re-add at the same id round-trips through the tree."""
+        with _instance_with_storage() as storage:
+            write_ui_component_entry(
+                storage,
+                "test_loc",
+                "comp1",
+                UIComponentEntry(component_type="dagster.Component", attributes="k: v1\n"),
+            )
+
+            with _component_tree_for_loc("test_loc") as tree:
+                first = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                assert first.children[0].entry.attributes == "k: v1\n"
+
+                delete_ui_component_entry(storage, "test_loc", "comp1")
+
+                gone = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                assert gone.children == []
+
+                # Re-add: write fresh state. The cached UIComponentDecl from
+                # before will get re-used unless its state key was invalidated;
+                # callers that want to observe the new entry need to invalidate
+                # explicitly via the state tracker (the writer-side concern).
+                write_ui_component_entry(
+                    storage,
+                    "test_loc",
+                    "comp1",
+                    UIComponentEntry(component_type="dagster.Component", attributes="k: v2\n"),
+                )
+                tree.state_tracker.invalidate_loc(UIDefinitionsLoc(instance_key="comp1"))
+
+                back = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                assert back.children[0].entry.attributes == "k: v2\n"
 
 
 class TestStorageListPrefix:

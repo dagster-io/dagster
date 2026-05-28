@@ -8,6 +8,7 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
 from dagster.components.component.ui_definitions_state import (
     UIComponentEntry,
+    delete_ui_component_entry,
     get_ui_component_ids,
     get_ui_component_state_key,
     get_ui_definitions_prefix,
@@ -101,3 +102,54 @@ class TestListing:
 
         write_ui_component_entry(storage, "loc", "comp1", _entry("a"))
         assert get_ui_component_ids(storage, "loc") == {"comp1"}
+
+
+class TestDeletion:
+    def test_delete_then_read_returns_none(self, storage):
+        write_ui_component_entry(storage, "loc", "comp1", _entry("a"))
+        assert read_ui_component_entry(storage, "loc", "comp1") is not None
+
+        delete_ui_component_entry(storage, "loc", "comp1")
+        assert read_ui_component_entry(storage, "loc", "comp1") is None
+
+    def test_delete_drops_id_from_listing(self, storage):
+        """A deleted component's id must not show up in the listing — that's
+        the path the framework uses to discover the active set.
+        """
+        write_ui_component_entry(storage, "loc", "comp1", _entry("a"))
+        write_ui_component_entry(storage, "loc", "comp2", _entry("b"))
+        assert get_ui_component_ids(storage, "loc") == {"comp1", "comp2"}
+
+        delete_ui_component_entry(storage, "loc", "comp1")
+        assert get_ui_component_ids(storage, "loc") == {"comp2"}
+
+    def test_delete_is_idempotent(self, storage):
+        """Caller doesn't need to first check whether the component exists."""
+        delete_ui_component_entry(storage, "loc", "never-existed")  # no-op, no error
+        write_ui_component_entry(storage, "loc", "comp1", _entry("a"))
+        delete_ui_component_entry(storage, "loc", "comp1")
+        delete_ui_component_entry(storage, "loc", "comp1")  # second delete also a no-op
+
+    def test_delete_does_not_affect_other_locations(self, storage):
+        """A delete in one location is scoped to that location — same component
+        id in a sibling location stays put.
+        """
+        write_ui_component_entry(storage, "locA", "shared_id", _entry("from_a"))
+        write_ui_component_entry(storage, "locB", "shared_id", _entry("from_b"))
+
+        delete_ui_component_entry(storage, "locA", "shared_id")
+
+        assert get_ui_component_ids(storage, "locA") == set()
+        assert get_ui_component_ids(storage, "locB") == {"shared_id"}
+        assert read_ui_component_entry(storage, "locB", "shared_id") == _entry("from_b")
+
+    def test_delete_then_re_add_with_same_id_works(self, storage):
+        """The component_id namespace is reusable after deletion — useful if
+        a caller wants to recreate a deleted component at the same logical id.
+        """
+        write_ui_component_entry(storage, "loc", "comp1", _entry("first"))
+        delete_ui_component_entry(storage, "loc", "comp1")
+
+        write_ui_component_entry(storage, "loc", "comp1", _entry("second"))
+        result = read_ui_component_entry(storage, "loc", "comp1")
+        assert result == _entry("second")
