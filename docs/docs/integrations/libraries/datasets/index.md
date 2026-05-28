@@ -14,7 +14,7 @@ canonicalUrl: '/integrations/libraries/hf-datasets'
 slug: '/integrations/libraries/hf-datasets'
 ---
 
-import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+import CommunityIntegration from '@site/docs/partials/_CommunityIntegration.md';
 
 <CommunityIntegration />
 
@@ -26,7 +26,7 @@ The integration with HF Datasets makes it easy within Dagster to:
 - Stream large datasets efficiently in runtime-only mode
 - Capture metadata and lineage for improved observability
 - Build multi-asset pipelines that support dataset splits.
-- Publish processed datasets back to the Hugging Face Hub. 
+- Publish processed datasets back to the Hugging Face Hub.
 
 ## Installation
 
@@ -36,7 +36,10 @@ The integration with HF Datasets makes it easy within Dagster to:
 
 This example illustrates the working of a dataset pipeline for transformation, split-aware assets, and Hugging Face Hub publishing.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/hf_datasets/dataset_pipeline_example.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/hf_datasets/dataset_pipeline_example.py"
+  language="python"
+/>
 
 ## About HF Datasets
 
