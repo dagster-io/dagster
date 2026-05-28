@@ -1,16 +1,20 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-cloud-cli"
-version = "1!0+dev"
+version = "1.13.7"
 requires-python = ">=3.10,<3.15"
 description = ""
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 dependencies = [
-    "dagster-shared",
+    "dagster-shared==1.13.7",
     "packaging>=20.9",
     "questionary",
     "requests",
@@ -44,5 +48,6 @@ test = [
     "pip",
 ]
 
-[tool.uv.sources]
-dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
+[tool.uv.sources.dagster-shared]
+path = "../../../python_modules/libraries/dagster-shared"
+editable = true

@@ -1,17 +1,21 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagit"
-version = "1!0+dev"
+version = "1.13.7"
 description = "Web UI for dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 readme = "README.rst"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster-webserver==1!0+dev",
+    "dagster-webserver==1.13.7",
 ]
 
 [project.urls]
@@ -23,7 +27,7 @@ dagit-debug = "dagster_webserver.debug:main"
 
 [project.optional-dependencies]
 notebook = [
-    "dagster-webserver[notebook]==1!0+dev",
+    "dagster-webserver[notebook]==1.13.7",
 ]
 
 [dependency-groups]
@@ -37,9 +41,22 @@ test = [
     "dagster-webserver[test]==1!0+dev",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../dagster", editable = true }
-dagster-pipes = { path = "../dagster-pipes", editable = true }
-dagster-shared = { path = "../libraries/dagster-shared", editable = true }
-dagster-graphql = { path = "../dagster-graphql", editable = true }
-dagster-webserver = { path = "../dagster-webserver", editable = true }
+[tool.uv.sources.dagster]
+path = "../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../libraries/dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-graphql]
+path = "../dagster-graphql"
+editable = true
+
+[tool.uv.sources.dagster-webserver]
+path = "../dagster-webserver"
+editable = true

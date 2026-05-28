@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-azure"
-version = "1!0+dev"
+version = "0.29.7"
 description = "Package for Azure-specific Dagster framework op and resource components."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
@@ -15,7 +19,7 @@ dependencies = [
     "azure-ai-ml<2.0.0,>=1.28.0",
     "azure-storage-blob<13.0.0,>=12.5.0",
     "azure-storage-file-datalake<13.0.0,>=12.5",
-    "dagster==1!0+dev",
+    "dagster==1.13.7",
 ]
 
 [project.urls]
@@ -37,10 +41,26 @@ test = [
     "dagster-pyspark",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-test = { path = "../../dagster-test", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
-dagster-spark = { path = "../dagster-spark", editable = true }
-dagster-pyspark = { path = "../dagster-pyspark", editable = true }
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../../dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-spark]
+path = "../dagster-spark"
+editable = true
+
+[tool.uv.sources.dagster-pyspark]
+path = "../dagster-pyspark"
+editable = true

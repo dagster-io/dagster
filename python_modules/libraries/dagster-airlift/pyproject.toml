@@ -1,13 +1,17 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-airlift"
-version = "1!0+dev"
+version = "0.29.7"
 requires-python = ">=3.10,<3.15"
 description = "A toolkit for observing integration and migration between Apache Airflow and Dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 
 [project.urls]
@@ -21,32 +25,22 @@ dagster-airlift = "dagster_airlift.cli:cli"
 
 [project.optional-dependencies]
 core = [
-    "dagster==1!0+dev",
+    "dagster==1.13.7",
     "click",
     "structlog",
 ]
-# [in-airflow] doesn't directly have a dependency on airflow because Airflow
-# cannot be installed via setup.py reliably. Instead, users need to install from
-# a constraints file as recommended by the Airflow project.
 in-airflow = [
     "click",
     "structlog",
 ]
-# [tutorial] includes additional dependencies needed to run the tutorial.
-# Namely, the dagster-webserver and the constrained airflow packages.
 tutorial = [
-    "dagster-webserver",
-    # Requirements for python versions under 3.12 (airflow 2.x).
+    "dagster-webserver==1.13.7",
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
     "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",
-    # Flask-session 0.6, connexion 3.x, and fastapi >=0.118 are incompatible with
-    # certain airflow 2.x-provided utilities. airflow 3.x (used on 3.12+) does
-    # not have these conflicts.
     "flask-session<0.6.0; python_version < '3.12'",
-    "connexion<3.0.0; python_version < '3.12'",  # https://github.com/apache/airflow/issues/35234
-    "fastapi<0.118; python_version < '3.12'",  # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
-    # Requirements for python versions 3.12 and above (airflow 3.x).
+    "connexion<3.0.0; python_version < '3.12'",
+    "fastapi<0.118; python_version < '3.12'",
     "apache-airflow>=3.0.0; python_version >= '3.12'",
     "marshmallow==3.23.1; python_version >= '3.12'",
     "pendulum>=3.0.0; python_version >= '3.12'",
@@ -54,26 +48,19 @@ tutorial = [
     "structlog",
 ]
 mwaa = [
-    "boto3>=1.18.0",  # confirms mwaa is available in the environment
+    "boto3>=1.18.0",
 ]
-# Kept as a published extra because it is consumed cross-package by the
-# airlift example/tutorial ecosystem (kitchen-sink, perf-harness,
-# docs_snippets, starlift-demo, airlift-federation-tutorial,
-# airlift-migration-tutorial). Adding entries here affects those test envs.
 test = [
     "pytest",
-    # dagster-dbt does not yet support Python 3.14 (dbt-core incompatibility).
-    "dagster-dbt==1!0+dev; python_version < '3.14'",
+    "dagster-dbt==0.29.7",
     "dbt-duckdb; python_version < '3.14'",
     "boto3",
-    "dagster-webserver==1!0+dev",
-    # Requirements for python versions under 3.12 (airflow 2.x).
+    "dagster-webserver==1.13.7",
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
     "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",
     "flask-session<0.6.0; python_version < '3.12'",
     "connexion<3.0.0; python_version < '3.12'",
-    # Requirements for python versions 3.12 and above (airflow 3.x).
     "apache-airflow>=3.0.0; python_version >= '3.12'",
     "marshmallow==3.23.1; python_version >= '3.12'",
     "pendulum>=3.0.0; python_version >= '3.12'",
@@ -89,7 +76,6 @@ test = [
     "dagster-shared",
     "dagster-webserver",
     "dagster-graphql",
-    # dagster-dbt does not yet support Python 3.14 (dbt-core incompatibility).
     "dagster-dbt; python_version < '3.14'",
     "dagster-k8s",
     "dagster-dg-cli",
@@ -99,16 +85,50 @@ test = [
     "dbt-duckdb; python_version < '3.14'",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../../python_modules/dagster", editable = true }
-dagster-test = { path = "../../../python_modules/dagster-test", editable = true }
-dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
-dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
-dagster-webserver = { path = "../../../python_modules/dagster-webserver", editable = true }
-dagster-graphql = { path = "../../../python_modules/dagster-graphql", editable = true }
-dagster-dbt = { path = "../dagster-dbt", editable = true }
-dagster-k8s = { path = "../dagster-k8s", editable = true }
-dagster-dg-cli = { path = "../dagster-dg-cli", editable = true }
-dagster-dg-core = { path = "../dagster-dg-core", editable = true }
-dagster-cloud-cli = { path = "../dagster-cloud-cli", editable = true }
-dagster-rest-resources = { path = "../dagster-rest-resources", editable = true }
+[tool.uv.sources.dagster]
+path = "../../../python_modules/dagster"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../../../python_modules/dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../../python_modules/dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../../../python_modules/libraries/dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-webserver]
+path = "../../../python_modules/dagster-webserver"
+editable = true
+
+[tool.uv.sources.dagster-graphql]
+path = "../../../python_modules/dagster-graphql"
+editable = true
+
+[tool.uv.sources.dagster-dbt]
+path = "../dagster-dbt"
+editable = true
+
+[tool.uv.sources.dagster-k8s]
+path = "../dagster-k8s"
+editable = true
+
+[tool.uv.sources.dagster-dg-cli]
+path = "../dagster-dg-cli"
+editable = true
+
+[tool.uv.sources.dagster-dg-core]
+path = "../dagster-dg-core"
+editable = true
+
+[tool.uv.sources.dagster-cloud-cli]
+path = "../dagster-cloud-cli"
+editable = true
+
+[tool.uv.sources.dagster-rest-resources]
+path = "../dagster-rest-resources"
+editable = true

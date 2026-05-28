@@ -1,18 +1,20 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-dbt"
-version = "1!0+dev"
+version = "0.29.7"
 description = "A Dagster integration for dbt"
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "dagster==1!0+dev",
-    # Follow the version support constraints for dbt Core:
-    # https://docs.getdbt.com/docs/dbt-versions/core
+    "dagster==1.13.7",
     "dbt-core>=1.7,<1.12",
     "gitpython",
     "Jinja2",
@@ -20,7 +22,7 @@ dependencies = [
     "orjson",
     "requests",
     "rich",
-    "sqlglot[rs]<28.1.0",  # FW-731
+    "sqlglot[rs]<28.1.0",
     "typer>=0.9.0",
     "packaging",
 ]
@@ -36,10 +38,6 @@ dagster-dbt = "dagster_dbt.cli.app:app"
 dagster_dbt = "dagster_dbt"
 
 [dependency-groups]
-# Base test deps installed for every test env. The pre-migration tox.ini
-# had a `!dbtfusion: -e .[test]` / `dbtfusion: -e .[test-bare]` split so
-# fusion envs skipped the duckdb deps; that subset behavior is dropped
-# here — fusion envs now install the duckdb deps too (harmless extra).
 test = [
     "dagster[test]",
     "dagster-pipes",
@@ -52,16 +50,9 @@ test = [
     "dagster-duckdb-pandas",
     "pytest-rerunfailures",
     "pytest-order",
-    "dbt-duckdb<1.9.2",  # concurrency issues
-    "duckdb<1.4.0",  # compat issues
+    "dbt-duckdb<1.9.2",
+    "duckdb<1.4.0",
 ]
-# dbt-core 1.7.x / 1.8.x pin protobuf<5 internally. dagster's runtime
-# requires grpcio>=1.66.2 on py>=3.13 (which transitively requires
-# protobuf>=5.26), so the dbt17/18 forks are only feasible on py<3.13.
-# The python_version marker scopes the constraints accordingly. The
-# `[tool.uv].environments` split below is what makes uv evaluate these
-# marker-scoped caps cleanly per Python band — see the bug report at
-# reports/2026-05-13-uv-disjoint-markers-conflict-resolver-bug.md.
 test-dbt17 = [
     "dbt-core==1.7.*,>=1.7.10; python_version<'3.13'",
     "dbt-duckdb==1.7.*; python_version<'3.13'",
@@ -80,8 +71,6 @@ test-dbt18 = [
     "grpcio<1.62; python_version<'3.13'",
     "grpcio-tools<1.62; python_version<'3.13'",
 ]
-# dbt-core 1.9+ allows protobuf>=5, so these factor groups co-resolve
-# cleanly with dagster's runtime grpcio chain on all Python versions.
 test-dbt19 = [
     "dbt-core==1.9.*",
     "dbt-duckdb==1.9.*",
@@ -98,31 +87,50 @@ test-dbt111 = [
 [tool.uv]
 conflicts = [
     [
-        {group = "test-dbt17"},
-        {group = "test-dbt18"},
-        {group = "test-dbt19"},
-        {group = "test-dbt110"},
-        {group = "test-dbt111"},
+        { group = "test-dbt17" },
+        { group = "test-dbt18" },
+        { group = "test-dbt19" },
+        { group = "test-dbt110" },
+        { group = "test-dbt111" },
     ],
 ]
-# Explicitly enumerate the Python environments uv should resolve for.
-# Splitting into a <3.13 environment and a >=3.13 environment lets uv
-# evaluate the test-dbt17/18 marker-scoped grpcio caps independently
-# in each environment instead of unifying them across forks (which
-# triggers a uv resolver bug — see
-# reports/2026-05-13-uv-disjoint-markers-conflict-resolver-bug.md).
 environments = [
     "python_version >= '3.10' and python_version < '3.13'",
     "python_version >= '3.13' and python_version < '3.14'",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
-dagster-dg-cli = { path = "../dagster-dg-cli", editable = true }
-dagster-dg-core = { path = "../dagster-dg-core", editable = true }
-dagster-cloud-cli = { path = "../dagster-cloud-cli", editable = true }
-dagster-rest-resources = { path = "../dagster-rest-resources", editable = true }
-dagster-duckdb = { path = "../dagster-duckdb", editable = true }
-dagster-duckdb-pandas = { path = "../dagster-duckdb-pandas", editable = true }
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-dg-cli]
+path = "../dagster-dg-cli"
+editable = true
+
+[tool.uv.sources.dagster-dg-core]
+path = "../dagster-dg-core"
+editable = true
+
+[tool.uv.sources.dagster-cloud-cli]
+path = "../dagster-cloud-cli"
+editable = true
+
+[tool.uv.sources.dagster-rest-resources]
+path = "../dagster-rest-resources"
+editable = true
+
+[tool.uv.sources.dagster-duckdb]
+path = "../dagster-duckdb"
+editable = true
+
+[tool.uv.sources.dagster-duckdb-pandas]
+path = "../dagster-duckdb-pandas"
+editable = true

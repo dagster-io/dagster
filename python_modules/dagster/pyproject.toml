@@ -1,12 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster"
-version = "1!0+dev"
+version = "1.13.7"
 description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
@@ -20,11 +24,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
 dependencies = [
-    # cli
     "click>=5.0,<9.0",
     "coloredlogs>=6.1,<=14.0",
     "Jinja2",
-    # core
     "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
     "grpcio>=1.66.2; python_version>='3.13'",
     "grpcio>=1.44.0; python_version<'3.13'",
@@ -44,15 +46,15 @@ dependencies = [
     "sqlalchemy>=1.0,<3",
     "toposort>=1.0",
     "watchdog>=0.8.3,<7",
-    'psutil>=1.0; platform_system=="Windows"',
-    'pywin32!=226; platform_system=="Windows"',
+    "psutil>=1.0; platform_system==\"Windows\"",
+    "pywin32!=226; platform_system==\"Windows\"",
     "docstring-parser",
     "universal_pathlib; python_version<'3.12'",
     "universal_pathlib>=0.2.0; python_version>='3.12'",
     "rich",
     "filelock",
-    "dagster-pipes==1!0+dev",
-    "dagster-shared==1!0+dev",
+    "dagster-pipes==1.13.7",
+    "dagster-shared==1.13.7",
     "antlr4-python3-runtime<4.14",
 ]
 
@@ -76,14 +78,9 @@ dagster-daemon = "dagster._daemon.cli:main"
 dagster = "dagster"
 
 [project.optional-dependencies]
-docker = ["docker"]
-# `test` is kept as a published extra (rather than a dependency-group) because
-# it is consumed cross-package by ~121 other tox.ini files via `dagster[test]`.
-# Other packages' test envs install this surface to pick up shared test
-# infrastructure (pytest plugins, responses, syrupy, etc.). Adding entries
-# here affects all of those downstream test envs — be deliberate.
-# Dagster-dev-only test deps that should NOT bleed into downstream consumers
-# go in [dependency-groups].test instead.
+docker = [
+    "docker",
+]
 test = [
     "docker",
     "grpcio-tools>=1.66.2; python_version>='3.13'",
@@ -112,10 +109,11 @@ test-components = [
     "pandas<3.0.0",
     "duckdb",
 ]
-mypy = ["mypy==1.8.0"]
+mypy = [
+    "mypy==1.8.0",
+]
 pyright = [
     "pyright==1.1.389",
-    # Stub packages
     "pandas-stubs",
     "types-backports",
     "types-certifi",
@@ -139,25 +137,23 @@ ruff = [
 ]
 ty = [
     "ty==0.0.39",
-    ### Stub packages for type checking
-    "pandas-stubs",  # version will be resolved against pandas
-    "types-backports",  # version will be resolved against backports
-    "types-certifi",  # version will be resolved against certifi
-    "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
-    "types-cryptography",  # version will be resolved against cryptography
-    "types-mock",  # version will be resolved against mock
-    "types-paramiko",  # version will be resolved against paramiko
-    "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
-    "types-python-dateutil~=2.9.0.20240316",  # vendored python-dateutil version is 2.9.0
-    "types-PyYAML",  # version will be resolved against PyYAML
-    "types-pytz",  # version will be resolved against pytz
-    "types-requests",  # version will be resolved against requests
-    "types-simplejson",  # version will be resolved against simplejson
-    "types-six",  # needed but not specified by grpcio
-    "types-tabulate",  # version will be resolved against tabulate
-    "types-tzlocal",  # version will be resolved against tzlocal
-    "types-toml",  # version will be resolved against toml
-    ### Additional stubs for ty
+    "pandas-stubs",
+    "types-backports",
+    "types-certifi",
+    "types-chardet",
+    "types-cryptography",
+    "types-mock",
+    "types-paramiko",
+    "types-pyOpenSSL",
+    "types-python-dateutil~=2.9.0.20240316",
+    "types-PyYAML",
+    "types-pytz",
+    "types-requests",
+    "types-simplejson",
+    "types-six",
+    "types-tabulate",
+    "types-tzlocal",
+    "types-toml",
     "types-protobuf",
     "types-redis",
     "boto3-stubs[essential]",
@@ -165,8 +161,6 @@ ty = [
 ]
 
 [dependency-groups]
-# Dagster-dev test deps NOT exposed via dagster[test] — kept here so
-# downstream consumers of `dagster[test]` don't pull them in.
 test = [
     "dagster-test",
     "dagster-pipes",
@@ -177,15 +171,15 @@ test = [
     "dagster-graphql",
     "dagster-webserver",
 ]
-test-sqlalchemy-1-3 = ["sqlalchemy<1.4"]
-test-sqlalchemy-1-4 = ["sqlalchemy<2"]
-# Scoped to python<'3.11' because dagster's runtime requires
-# `protobuf>=4,<7` on py>=3.11. On py3.10 the protobuf upper bound is
-# absent, allowing protobuf<4 here. The tox env is py3.10-only as a
-# result.
+test-sqlalchemy-1-3 = [
+    "sqlalchemy<1.4",
+]
+test-sqlalchemy-1-4 = [
+    "sqlalchemy<2",
+]
 test-old-protobuf = [
     "protobuf<4; python_version<'3.11'",
-    "setuptools<82; python_version<'3.11'",  # old protobuf versions require pkg_resources
+    "setuptools<82; python_version<'3.11'",
 ]
 test-components = [
     "dagster-dg-cli",
@@ -194,23 +188,53 @@ test-components = [
 
 [tool.uv]
 conflicts = [
-    [{group = "test-sqlalchemy-1-3"}, {group = "test-sqlalchemy-1-4"}],
+    [
+        { group = "test-sqlalchemy-1-3" },
+        { group = "test-sqlalchemy-1-4" },
+    ],
 ]
 
-[tool.uv.sources]
-dagster-test = { path = "../dagster-test", editable = true }
-dagster-pipes = { path = "../dagster-pipes", editable = true }
-dagster-shared = { path = "../libraries/dagster-shared", editable = true }
-dagster-cloud-cli = { path = "../libraries/dagster-cloud-cli", editable = true }
-dagster-dg-core = { path = "../libraries/dagster-dg-core", editable = true }
-dagster-dg-cli = { path = "../libraries/dagster-dg-cli", editable = true }
-create-dagster = { path = "../libraries/create-dagster", editable = true }
-dagster-graphql = { path = "../dagster-graphql", editable = true }
-dagster-webserver = { path = "../dagster-webserver", editable = true }
-dagster-rest-resources = { path = "../libraries/dagster-rest-resources", editable = true }
+[tool.uv.sources.dagster-test]
+path = "../dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../libraries/dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-cloud-cli]
+path = "../libraries/dagster-cloud-cli"
+editable = true
+
+[tool.uv.sources.dagster-dg-core]
+path = "../libraries/dagster-dg-core"
+editable = true
+
+[tool.uv.sources.dagster-dg-cli]
+path = "../libraries/dagster-dg-cli"
+editable = true
+
+[tool.uv.sources.create-dagster]
+path = "../libraries/create-dagster"
+editable = true
+
+[tool.uv.sources.dagster-graphql]
+path = "../dagster-graphql"
+editable = true
+
+[tool.uv.sources.dagster-webserver]
+path = "../dagster-webserver"
+editable = true
+
+[tool.uv.sources.dagster-rest-resources]
+path = "../libraries/dagster-rest-resources"
+editable = true
 
 [tool.hatch.build]
-force-include = {"dagster/_core/definitions/tags" = "dagster/_core/definitions/tags"}
 exclude = [
     "dagster/**/*.g4",
     "dagster/**/*.interp",
@@ -218,3 +242,6 @@ exclude = [
     "dagster/**/Makefile",
     "dagster/**/ruff.toml",
 ]
+
+[tool.hatch.build.force-include]
+"dagster/_core/definitions/tags" = "dagster/_core/definitions/tags"

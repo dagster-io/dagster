@@ -1,13 +1,16 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-cloud"
 requires-python = ">=3.10,<3.15"
-version = "1!0+dev"
-authors = [{name = "Elementl", email = "support@elementl.com"}]
-license = {text = "Apache-2.0"}
+version = "1.13.7"
+authors = [
+    { name = "Elementl", email = "support@elementl.com" },
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -25,14 +28,17 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster",
-    "dagster-shared",
-    "dagster-cloud-cli",
-    "pex>=2.1.132,<2.60.0", # https://github.com/pex-tool/pex/issues/2942
+    "dagster==1.13.7",
+    "dagster-shared==1.13.7",
+    "dagster-cloud-cli==1.13.7",
+    "pex>=2.1.132,<2.60.0",
     "questionary",
     "requests",
     "typer>=0.15.0",
 ]
+
+[project.license]
+text = "Apache-2.0"
 
 [project.readme]
 file = "README.md"
@@ -51,13 +57,30 @@ Blog = "https://dagster.io/blog"
 Newsletter = "https://dagster.io/newsletter-signup"
 
 [project.optional-dependencies]
-insights = ["pyarrow"]
-docker = ["docker", "dagster-docker"]
-kubernetes = ["kubernetes", "dagster-k8s"]
-ecs = ["dagster-aws", "boto3"]
-sandbox = ["supervisor"]
-pex = ["boto3"]
-serverless = ["boto3"]
+insights = [
+    "pyarrow",
+]
+docker = [
+    "docker",
+    "dagster-docker==0.29.7",
+]
+kubernetes = [
+    "kubernetes",
+    "dagster-k8s==0.29.7",
+]
+ecs = [
+    "dagster-aws==0.29.7",
+    "boto3",
+]
+sandbox = [
+    "supervisor",
+]
+pex = [
+    "boto3",
+]
+serverless = [
+    "boto3",
+]
 
 [dependency-groups]
 test = [
@@ -82,12 +105,6 @@ test = [
     "kubernetes",
     "moto[all]",
     "mypy",
-    # Pex-tests exercise the production code path in dagster-cloud-cli's
-    # `pex_builder/source.py` that shells out to `python -m pip install --target ...`
-    # to build pyproject projects, so the test interpreter must have pip
-    # importable. Declared explicitly because uv-created venvs (tox-uv) don't
-    # seed pip by default. Mirrors the same dependency in dagster-cloud-cli's
-    # test extra.
     "pip",
     "psutil",
     "pylint",
@@ -99,15 +116,46 @@ test = [
     "wordcloud",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../dagster", editable = true }
-dagster-pipes = { path = "../dagster-pipes", editable = true }
-dagster-shared = { path = "../libraries/dagster-shared", editable = true }
-dagster-test = { path = "../dagster-test", editable = true }
-dagster-aws = { path = "../libraries/dagster-aws", editable = true }
-dagster-cloud-cli = { path = "../libraries/dagster-cloud-cli", editable = true }
-dagster-dbt = { path = "../libraries/dagster-dbt", editable = true }
-dagster-dg-cli = { path = "../libraries/dagster-dg-cli", editable = true }
-dagster-docker = { path = "../libraries/dagster-docker", editable = true }
-dagster-k8s = { path = "../libraries/dagster-k8s", editable = true }
-dagster-rest-resources = { path = "../libraries/dagster-rest-resources", editable = true }
+[tool.uv.sources.dagster]
+path = "../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../libraries/dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-aws]
+path = "../libraries/dagster-aws"
+editable = true
+
+[tool.uv.sources.dagster-cloud-cli]
+path = "../libraries/dagster-cloud-cli"
+editable = true
+
+[tool.uv.sources.dagster-dbt]
+path = "../libraries/dagster-dbt"
+editable = true
+
+[tool.uv.sources.dagster-dg-cli]
+path = "../libraries/dagster-dg-cli"
+editable = true
+
+[tool.uv.sources.dagster-docker]
+path = "../libraries/dagster-docker"
+editable = true
+
+[tool.uv.sources.dagster-k8s]
+path = "../libraries/dagster-k8s"
+editable = true
+
+[tool.uv.sources.dagster-rest-resources]
+path = "../libraries/dagster-rest-resources"
+editable = true
