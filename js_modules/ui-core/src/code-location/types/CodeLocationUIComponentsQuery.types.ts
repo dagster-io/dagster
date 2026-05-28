@@ -2,6 +2,13 @@
 
 import * as Types from '../../graphql/types';
 
+export type UiComponentFragment = {
+  __typename: 'UIComponent';
+  componentId: string;
+  componentType: string;
+  attributes: string;
+};
+
 export type CodeLocationUiComponentsQueryVariables = Types.Exact<{
   locationName: Types.Scalars['String']['input'];
 }>;
@@ -9,7 +16,16 @@ export type CodeLocationUiComponentsQueryVariables = Types.Exact<{
 export type CodeLocationUiComponentsQuery = {
   __typename: 'Query';
   uiComponentsForLocationOrError:
-    | {__typename: 'PythonError'; message: string}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
     | {
         __typename: 'UIComponents';
         locationName: string;
@@ -32,7 +48,16 @@ export type SetUiComponentMutationVariables = Types.Exact<{
 export type SetUiComponentMutation = {
   __typename: 'Mutation';
   setUIComponent:
-    | {__typename: 'PythonError'; message: string}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
     | {
         __typename: 'SetUIComponentSuccess';
         component: {
@@ -54,7 +79,16 @@ export type DeleteUiComponentMutation = {
   __typename: 'Mutation';
   deleteUIComponent:
     | {__typename: 'DeleteUIComponentSuccess'; locationName: string; componentId: string}
-    | {__typename: 'PythonError'; message: string}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
