@@ -3,10 +3,16 @@ from collections.abc import Callable
 from pathlib import Path
 
 from buildkite_shared.context import BuildkiteContext
+from buildkite_shared.packages import (
+    PackageSpec,
+    PytestExtraCommandsFunction,
+    UnsupportedVersionsFunction,
+)
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, ResourceRequests
 from buildkite_shared.step_builders.resource_presets import KIND_TEST_RESOURCES
 from buildkite_shared.step_builders.step_builder import TopLevelStepConfiguration
+from buildkite_shared.tox import ToxFactor
 from buildkite_shared.utils import (
     connect_sibling_docker_container,
     network_buildkite_container,
@@ -17,13 +23,7 @@ from dagster_buildkite.defines import (
     GCP_CREDS_LOCAL_FILE,
     LATEST_DAGSTER_RELEASE,
 )
-from dagster_buildkite.steps.packages import (
-    PackageSpec,
-    PytestExtraCommandsFunction,
-    UnsupportedVersionsFunction,
-)
 from dagster_buildkite.steps.test_project import test_project_depends_fn
-from dagster_buildkite.steps.tox import ToxFactor
 from dagster_buildkite.utils import library_version_from_core_version
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))

@@ -1,4 +1,5 @@
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -14,6 +15,32 @@ from buildkite_shared.step_builders.command_step_builder import (
 ToxImage = Literal["test", "integration", "integration_slim"]
 
 
+@dataclass(frozen=True)
+class ToxFactor:
+    """A tox-env factor for a PackageSpec.
+
+    The factor name is concatenated to the python-version factor with `-` to
+    form the full tox env name. For example, ToxFactor("default") with python
+    3.12 produces the tox env `py312-default`.
+
+    Most fields override the corresponding PackageSpec-level setting for steps
+    generated for this factor.
+    """
+
+    factor: str
+    splits: int = 1
+    concurrency: int | None = None
+    concurrency_group: str | None = None
+    pytest_args: list[str] | None = None
+    label_suffix: str | None = None
+    queue: BuildkiteQueue | None = None
+    resources: ResourceRequests | None = None
+    soft_fail: bool = False
+    # Overrides the PackageSpec-level image when set. Useful for packages that
+    # mostly run on one image but have one tox env that needs a different one.
+    image: ToxImage | None = None
+
+
 def build_tox_step(
     directory: str | Path,
     tox_env: str,
@@ -23,6 +50,7 @@ def build_tox_step(
     timeout_in_minutes: int | None = None,
     tox_file: str | None = None,
     extra_commands_pre: list[str] | None = None,
+    extra_commands_post_cd: list[str] | None = None,
     extra_commands_post: list[str] | None = None,
     env: list[str] | None = None,
     image: ToxImage = "test",
@@ -77,6 +105,9 @@ def build_tox_step(
     commands: list[str] = [
         *(extra_commands_pre or []),
         f"cd {directory}",
+        # `extra_commands_post_cd` runs from `directory` (after `cd`); use it for
+        # commands that depend on cwd (e.g. `export VAR=$(pwd)/relative/path`).
+        *(extra_commands_post_cd or []),
         # Caller is responsible for shell-quoting section_header if it contains
         # ANSI escapes or other special chars (OSS uses make_buildkite_section_header
         # + shlex.quote; internal passes a plain "--- foo" string).

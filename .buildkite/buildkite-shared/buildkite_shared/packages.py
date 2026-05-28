@@ -1,10 +1,83 @@
 import logging
-import os
+import re
+import shlex
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeAlias, cast
 
 from buildkite_shared.context import BuildkiteContext
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import (
+    BuildkiteQueue,
+    ResourceRequests,
+    StepBuilderMutator,
+)
+from buildkite_shared.step_builders.group_step_builder import (
+    GroupLeafStepConfiguration,
+    GroupStepBuilder,
+)
+from buildkite_shared.step_builders.slug import slugify_label
+from buildkite_shared.step_builders.step_builder import (
+    StepConfiguration,
+    TopLevelStepConfiguration,
+    is_command_step,
+)
+from buildkite_shared.tox import ToxFactor, ToxImage, build_tox_step
 from buildkite_shared.utils import oss_path
+
+PytestExtraCommandsFunction: TypeAlias = Callable[
+    [AvailablePythonVersion, ToxFactor | None], list[str]
+]
+PytestDependenciesFunction: TypeAlias = Callable[
+    [AvailablePythonVersion, ToxFactor | None], list[str]
+]
+UnsupportedVersionsFunction: TypeAlias = Callable[[ToxFactor | None], list[AvailablePythonVersion]]
+
+# https://github.com/buildkite/emojis#emoji-reference
+_PACKAGE_TYPE_TO_EMOJI_MAP: dict[str, str] = {
+    "core": ":dagster:",
+    "example": ":large_blue_diamond:",
+    "extension": ":electric_plug:",
+    "infrastructure": ":gear:",
+    "unknown": ":grey_question:",
+}
+
+_CORE_PACKAGES = [
+    oss_path("python_modules/dagster"),
+    oss_path("python_modules/dagit"),
+    oss_path("python_modules/dagster-graphql"),
+    oss_path("js_modules"),
+]
+
+_INFRASTRUCTURE_PACKAGES = [
+    oss_path(".buildkite/dagster-buildkite"),
+    oss_path("python_modules/automation"),
+    oss_path("python_modules/dagster-test"),
+]
+
+
+def infer_package_type(directory: str | Path) -> str:
+    """Infer a package type from an OSS-conventional directory layout.
+
+    Returns "core", "example", "extension", "infrastructure", or "unknown".
+    Internal packages that don't sit under any of these roots get "unknown",
+    which is fine — internal call sites typically pass `label_emojis` to bypass
+    the package-type emoji lookup entirely.
+    """
+    directory = Path(directory)
+    if directory in _CORE_PACKAGES:
+        return "core"
+    if oss_path("examples") in directory.parents or directory == oss_path("examples"):
+        return "example"
+    if oss_path("python_modules/libraries") in directory.parents:
+        return "extension"
+    if directory in _INFRASTRUCTURE_PACKAGES or oss_path("integration_tests") in (
+        directory,
+        *directory.parents,
+    ):
+        return "infrastructure"
+    return "unknown"
 
 
 def get_python_package_step_skip_reason(
@@ -19,7 +92,7 @@ def get_python_package_step_skip_reason(
     and no message if the package's steps should be run.
     """
     if name is None:
-        name = os.path.basename(directory)
+        name = Path(directory).name
 
     if ctx.config.no_skip:
         logging.info(f"Building {name} because NO_SKIP set")
@@ -49,6 +122,323 @@ def get_python_package_step_skip_reason(
         return None
 
     return "Package unaffected by these changes"
+
+
+@dataclass
+class PackageSpec:
+    """Spec for testing a Dagster Python package using tox.
+
+    A PackageSpec describes one package's CI configuration. `build_steps(ctx)`
+    expands it into one or more `CommandStep`s (and an optional wrapping
+    GroupStep) by taking the cross-product of supported python versions,
+    `pytest_tox_factors`, and `splits`.
+
+    There are two ways to control which python versions get steps:
+
+      * Default: the python versions returned by
+        `AvailablePythonVersion.get_pytest_defaults(ctx)`, minus
+        `unsupported_python_versions`. This is the OSS pattern.
+      * Explicit: set `python_versions` to a fixed list. This is the
+        internal pattern, where most packages run on exactly one
+        python version (the "cloud" version).
+
+    Image selection:
+      * `image="test"` (default): `.on_test_image(python_version, env=env_vars)`.
+      * `image="integration"`: `.on_integration_image(env=env_vars, ecr_account_ids=ecr_account_ids)`.
+      * `image="integration_slim"`: `.on_integration_slim_image(env=env_vars)`.
+
+    Group wrapping: `is_group=None` (default) wraps in a GroupStep only when
+    there are 2+ resulting steps. `is_group=True/False` forces the behavior.
+
+    Internal-only knobs (default no-op for OSS):
+      * `mutator`: callback that receives the `CommandStepBuilder` before
+        `.build()`.
+      * `command_wrapper`: callable that wraps the rendered tox command (e.g.
+        for buildevents/Honeycomb instrumentation).
+      * `extra_install_commands`: prepended to the rendered commands list
+        before `pytest_extra_cmds`. Used for things like `uv venv` setup.
+      * `skippable=False`: never skip this package, even if change-detection
+        says nothing changed.
+    """
+
+    directory: str | Path
+    name: str | None = None
+
+    # Labeling. If `label_emojis` is set it wins. Otherwise the emoji is
+    # derived from `package_type` via the package-type emoji map (OSS pattern).
+    package_type: str | None = None
+    label_emojis: list[str] | None = None
+
+    # Tox config
+    pytest_tox_factors: list[ToxFactor] | None = None
+    splits: int = 1
+    tox_file: str | None = None
+
+    # Python versions. If `python_versions` is set, it's used directly
+    # (internal pattern). Otherwise the default pytest set is used, minus
+    # `unsupported_python_versions` (OSS pattern).
+    unsupported_python_versions: (
+        list[AvailablePythonVersion] | UnsupportedVersionsFunction | None
+    ) = None
+    python_versions: list[AvailablePythonVersion] | None = None
+
+    # Per-step config
+    timeout_in_minutes: int | None = None
+    queue: BuildkiteQueue | None = None
+    resources: ResourceRequests | None = None
+    env_vars: list[str] | None = None
+
+    # Pre/post commands
+    pytest_extra_cmds: list[str] | PytestExtraCommandsFunction | None = None
+    pytest_step_dependencies: list[str] | PytestDependenciesFunction | None = None
+    extra_install_commands: list[str] | None = None
+    # Commands that run AFTER `cd <directory>` but BEFORE the tox invocation.
+    # Use this for commands that depend on cwd (e.g. `export X=$(pwd)/foo`);
+    # `pytest_extra_cmds` runs BEFORE cd.
+    post_cd_extra_cmds: list[str] | PytestExtraCommandsFunction | None = None
+
+    # Skip control
+    force_run_fn: Callable[[BuildkiteContext], bool] | None = None
+    skip_run_fn: Callable[[BuildkiteContext], str | None] | None = None
+    skippable: bool = True
+    run_pytest: bool = True
+
+    # Image / docker
+    image: ToxImage = "test"
+    with_docker: bool = True
+    ecr_passthru: bool = False
+    ecr_account_ids: list[str | None] | None = None
+
+    # Group wrapping
+    is_group: bool | None = None
+
+    # Internal-only escape hatches
+    mutator: StepBuilderMutator | None = None
+    command_wrapper: Callable[[str], str] | None = None
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            self.name = Path(self.directory).name
+        if not self.package_type:
+            self.package_type = infer_package_type(self.directory)
+        self._should_skip: bool | None = None
+        self._skip_reason: str | None = None
+
+    def get_skip_reason(self, ctx: BuildkiteContext) -> str | None:
+        if not self.skippable:
+            return None
+        if self._should_skip is not None:
+            return self._skip_reason
+        # Pass directory only — self.name is a display label; the change-detection
+        # lookup uses the directory basename (matches OSS PackageSpec behavior).
+        self._skip_reason = get_python_package_step_skip_reason(
+            self.directory,
+            force_run_fn=self.force_run_fn,
+            skip_run_fn=self.skip_run_fn,
+            ctx=ctx,
+        )
+        self._should_skip = self._skip_reason is not None
+        return self._skip_reason
+
+    def _resolve_emoji(self) -> str:
+        if self.label_emojis:
+            return self.label_emojis[0]
+        return _PACKAGE_TYPE_TO_EMOJI_MAP.get(self.package_type or "unknown", ":grey_question:")
+
+    def _section_header(self, tox_env: str) -> str:
+        # Internal-style (explicit label_emojis): plain text, unquoted.
+        # OSS-style: ANSI-colored "--- :emoji: Running tox env: <env>", quoted.
+        if self.label_emojis is not None:
+            return f"--- Running tox env {tox_env}"
+        emoji = self._resolve_emoji()
+        # \033[0;32m is green; matches make_buildkite_section_header().
+        return shlex.quote(f"--- \\033[0;32m{emoji} Running tox env: {tox_env}\\033[0m")
+
+    def _pytest_python_versions(
+        self, ctx: BuildkiteContext, factor: ToxFactor | None
+    ) -> list[AvailablePythonVersion]:
+        if self.python_versions is not None:
+            return self.python_versions
+        default_python_versions = AvailablePythonVersion.get_pytest_defaults(ctx)
+        if callable(self.unsupported_python_versions):
+            unsupported = self.unsupported_python_versions(factor)
+        else:
+            unsupported = self.unsupported_python_versions or []
+        supported = [v for v in AvailablePythonVersion.get_all() if v not in unsupported]
+        pytest_versions = [
+            AvailablePythonVersion(v)
+            for v in sorted(
+                set(e.value for e in default_python_versions) - set(e.value for e in unsupported)
+            )
+        ]
+        # Fall back to highest supported when no defaults match.
+        return pytest_versions or [supported[-1]]
+
+    def build_steps(self, ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
+        base_name = self.name or Path(self.directory).name
+        steps: list[GroupLeafStepConfiguration] = []
+
+        if self.run_pytest:
+            tox_factors: Sequence[ToxFactor | None] = self.pytest_tox_factors or [None]
+            for factor in tox_factors:
+                for py_version in self._pytest_python_versions(ctx, factor):
+                    self._append_steps_for_cell(
+                        ctx=ctx,
+                        base_name=base_name,
+                        factor=factor,
+                        py_version=py_version,
+                        out=steps,
+                    )
+
+        # OSS-style: group label gets the package-type emoji. Internal-style
+        # (`label_emojis` set explicitly): leaves carry the emoji, group label
+        # doesn't get one — matches the historic internal `build_tox_steps`
+        # behavior which never decorated the group label.
+        group_emojis: list[str] | None = (
+            None if self.label_emojis is not None else [self._resolve_emoji()]
+        )
+        force_group = self.is_group
+        if force_group is True or (force_group is None and len(steps) >= 2):
+            if not steps:
+                return []
+            return [GroupStepBuilder(slugify_label(base_name), group_emojis, steps=steps).build()]
+        if force_group is False:
+            # Return the leaves untouched. GroupLeafStepConfiguration is a
+            # subset of TopLevelStepConfiguration but ty (and pyright) want
+            # an explicit cast.
+            return cast("list[TopLevelStepConfiguration]", list(steps))
+        if len(steps) == 1:
+            only_step = steps[0]
+            if not is_command_step(only_step):
+                raise ValueError("Expected only step to be a CommandStep")
+            return cast("list[TopLevelStepConfiguration]", [only_step])
+        return []
+
+    def _append_steps_for_cell(
+        self,
+        *,
+        ctx: BuildkiteContext,
+        base_name: str,
+        factor: ToxFactor | None,
+        py_version: AvailablePythonVersion,
+        out: list[GroupLeafStepConfiguration],
+    ) -> None:
+        version_factor = AvailablePythonVersion.to_tox_factor(py_version)
+        if factor is None:
+            tox_env = version_factor
+            splits = self.splits
+        else:
+            tox_env = f"{version_factor}-{factor.factor}"
+            splits = factor.splits
+
+        if isinstance(self.pytest_extra_cmds, list):
+            base_extra_pre = list(self.pytest_extra_cmds)
+        elif callable(self.pytest_extra_cmds):
+            base_extra_pre = self.pytest_extra_cmds(py_version, factor)
+        else:
+            base_extra_pre = []
+        extra_pre = list(self.extra_install_commands or []) + base_extra_pre
+
+        if isinstance(self.post_cd_extra_cmds, list):
+            extra_post_cd: list[str] | None = list(self.post_cd_extra_cmds)
+        elif callable(self.post_cd_extra_cmds):
+            extra_post_cd = self.post_cd_extra_cmds(py_version, factor)
+        else:
+            extra_post_cd = None
+
+        skip_reason = self.get_skip_reason(ctx)
+        dependencies: list[str] | None
+        if skip_reason:
+            dependencies = None
+        elif isinstance(self.pytest_step_dependencies, list):
+            dependencies = list(self.pytest_step_dependencies) or None
+        elif callable(self.pytest_step_dependencies):
+            dependencies = self.pytest_step_dependencies(py_version, factor) or None
+        else:
+            dependencies = None
+
+        factor_pytest_args = list(factor.pytest_args) if factor and factor.pytest_args else []
+        label_suffix = f" {factor.label_suffix}" if factor and factor.label_suffix else ""
+        resolved_image = factor.image if factor and factor.image else self.image
+
+        for split_index in range(1, splits + 1):
+            if splits > 1:
+                split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
+                pytest_args: list[str] | None = [
+                    f"--split {split_index}/{splits}",
+                    *factor_pytest_args,
+                ]
+            else:
+                split_label = f"{base_name}{label_suffix}"
+                pytest_args = factor_pytest_args or None
+            key = slugify_label(f"{split_label} {_tox_env_to_label_suffix(tox_env)}")
+            out.append(
+                build_tox_step(
+                    self.directory,
+                    tox_env,
+                    key=key,
+                    label_emojis=self.label_emojis or [self._resolve_emoji()],
+                    timeout_in_minutes=self.timeout_in_minutes,
+                    tox_file=self.tox_file,
+                    extra_commands_pre=extra_pre,
+                    extra_commands_post_cd=extra_post_cd,
+                    env=self.env_vars,
+                    image=resolved_image,
+                    python_version=py_version if resolved_image == "test" else None,
+                    ecr_account_ids=self.ecr_account_ids,
+                    queue=(factor.queue if factor and factor.queue else self.queue),
+                    depends_on=dependencies,
+                    skip_reason=skip_reason,
+                    pytest_args=pytest_args,
+                    section_header=self._section_header(tox_env),
+                    concurrency=factor.concurrency if factor else None,
+                    concurrency_group=(factor.concurrency_group if factor else None),
+                    resources=(
+                        factor.resources
+                        if factor and factor.resources is not None
+                        else self.resources
+                    ),
+                    soft_fail=factor.soft_fail if factor else False,
+                    with_docker=self.with_docker,
+                    ecr_passthru=self.ecr_passthru,
+                    command_wrapper=self.command_wrapper,
+                    mutator=self.mutator,
+                )
+            )
+
+
+def build_steps_from_package_specs(
+    package_specs: Sequence[PackageSpec],
+    ctx: BuildkiteContext,
+    *,
+    package_type_order: Sequence[str] | None = None,
+) -> list[StepConfiguration]:
+    """Build steps for a list of PackageSpecs, sorted by package_type then name."""
+    order = list(
+        package_type_order or ["core", "extension", "example", "infrastructure", "unknown"]
+    )
+
+    def _sort_key(p: PackageSpec) -> str:
+        pt = p.package_type or "unknown"
+        idx = order.index(pt) if pt in order else len(order)
+        return f"{idx} {p.name}"
+
+    steps: list[StepConfiguration] = []
+    for pkg in sorted(package_specs, key=_sort_key):
+        steps += pkg.build_steps(ctx)
+    return steps
+
+
+def _tox_env_to_label_suffix(tox_env: str) -> str:
+    py_version, _, factor = tox_env.partition("-")
+    m = re.match(r"py(\d+)", py_version)
+    if not m:
+        return ""
+    version_number = m[1]
+    number_str = f"{version_number[0]}.{version_number[1:]}"
+    if factor == "":
+        return number_str
+    return f"{factor} {number_str}"
 
 
 def get_general_python_step_skip_reason(

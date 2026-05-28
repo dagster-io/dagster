@@ -2,7 +2,6 @@ import os
 import re
 import shlex
 from collections.abc import Sequence
-from dataclasses import dataclass
 from pathlib import Path
 
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -12,44 +11,11 @@ from buildkite_shared.step_builders.command_step_builder import (
     ResourceRequests,
 )
 from buildkite_shared.step_builders.slug import slugify_label
-from buildkite_shared.tox import build_tox_step as _shared_build_tox_step
+from buildkite_shared.tox import (
+    ToxFactor as ToxFactor,  # re-export
+    build_tox_step as _shared_build_tox_step,
+)
 from dagster_buildkite.utils import make_buildkite_section_header
-
-
-@dataclass
-class ToxFactor:
-    """Represents a tox environment factor for configuration.
-
-    Args:
-        factor: The tox factor name (e.g., "pytest", "integration")
-        splits: Number of parallel splits to generate for this factor (default: 1)
-        concurrency: Maximum number of jobs to run concurrently in this factor's
-            concurrency group (default: None, no limit)
-        concurrency_group: Name of the concurrency group for this factor. Required
-            if concurrency is set.
-        pytest_args: Extra arguments passed to pytest via tox posargs. Useful for
-            scoping a factor to specific test files, or for excluding test files
-            from a residual factor with --ignore=<path>.
-        label_suffix: Optional suffix appended to the Buildkite step label, used
-            to differentiate multiple factors that share the same factor name.
-        queue: Optional Buildkite queue override for this factor. When set,
-            takes precedence over the PackageSpec-level queue.
-        resources: Optional Kubernetes resource requests for this factor. Only
-            takes effect on Kubernetes queues; ignored on EC2 queues.
-        soft_fail: If True, this factor's steps don't fail the build when they
-            fail. Use for known-flaky suites that are temporarily quarantined.
-    """
-
-    factor: str
-    splits: int = 1
-    concurrency: int | None = None
-    concurrency_group: str | None = None
-    pytest_args: list[str] | None = None
-    label_suffix: str | None = None
-    queue: BuildkiteQueue | None = None
-    resources: ResourceRequests | None = None
-    soft_fail: bool = False
-
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
