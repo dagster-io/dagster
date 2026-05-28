@@ -667,6 +667,7 @@ from dagster.components.resolved.core_models import (
     ResolvedAssetKey as ResolvedAssetKey,
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
+from dagster.components.resolved.form_config import ComponentFormConfig as ComponentFormConfig
 from dagster.components.resolved.model import (
     Injected as Injected,
     Model as Model,
