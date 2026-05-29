@@ -58,19 +58,14 @@ def _build_local_package(local_dir: str, build_dir: str, python_interpreter: str
         ]
         subprocess.run(command, check=True, cwd=local_dir)
     elif os.path.exists(os.path.join(local_dir, "pyproject.toml")):
-        ui.print(f"Building package at {local_dir!r} using {python_interpreter} -m pip install")
-        # Use pip install with --target to build and install the package to the build directory
-        # This handles pyproject.toml files properly using modern Python build standards
-        command = [
-            python_interpreter,
-            "-m",
-            "pip",
-            "install",
-            "--target",
-            build_dir,
-            "--no-deps",  # Don't install dependencies, just the package itself
-            ".",
-        ]
+        install_args = ["--target", build_dir, "--no-deps", "."]
+        uv_path = shutil.which("uv")
+        if uv_path:
+            ui.print(f"Building package at {local_dir!r} using uv pip install")
+            command = [uv_path, "pip", "install", "--python", python_interpreter, *install_args]
+        else:
+            ui.print(f"Building package at {local_dir!r} using {python_interpreter} -m pip install")
+            command = [python_interpreter, "-m", "pip", "install", *install_args]
         subprocess.run(command, check=True, cwd=local_dir)
     else:
         ui.warn(f"No setup.py or pyproject.toml found in {local_dir!r} - will not build.")

@@ -163,8 +163,9 @@ dependencies = ["requests>=2.25.0"]
 
 
 @patch("subprocess.run")
-def test_build_local_package_with_pyproject_toml(mock_run, temp_dir):
-    """Test building a package with pyproject.toml."""
+@patch("shutil.which", return_value=None)
+def test_build_local_package_with_pyproject_toml(mock_which, mock_run, temp_dir):
+    """Test building a package with pyproject.toml falls back to pip when uv is not available."""
     mock_run.return_value = None
 
     pyproject_path = Path(temp_dir) / "pyproject.toml"
@@ -188,6 +189,42 @@ version = "0.1.0"
         "-m",
         "pip",
         "install",
+        "--target",
+        str(build_dir),
+        "--no-deps",
+        ".",
+    ]
+    assert command == expected_command
+
+
+@patch("subprocess.run")
+@patch("shutil.which", return_value="/usr/bin/uv")
+def test_build_local_package_with_pyproject_toml_uses_uv(mock_which, mock_run, temp_dir):
+    """Test building a package with pyproject.toml uses uv when available."""
+    mock_run.return_value = None
+
+    pyproject_path = Path(temp_dir) / "pyproject.toml"
+    pyproject_path.write_text("""
+[project]
+name = "test-package"
+version = "0.1.0"
+""")
+
+    build_dir = Path(temp_dir) / "build"
+    build_dir.mkdir()
+
+    source._build_local_package(temp_dir, str(build_dir), "python")  # noqa: SLF001
+
+    mock_run.assert_called_once()
+    args, _kwargs = mock_run.call_args
+    command = args[0]
+
+    expected_command = [
+        "/usr/bin/uv",
+        "pip",
+        "install",
+        "--python",
+        "python",
         "--target",
         str(build_dir),
         "--no-deps",
