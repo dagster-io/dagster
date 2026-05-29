@@ -242,22 +242,33 @@ def test_unresolved_metadata():
 
 def test_owners():
     @dg.schedule(
-        cron_schedule="@daily", job_name="test_job", owners=["user@example.com", "team:data"]
+        cron_schedule="@daily",
+        job_name="test_job",
+        owners=[
+            "user@example.com",
+            "team:Data Engineering",
+        ],
     )
     def schedule_with_owners(): ...
 
-    assert schedule_with_owners.owners == ["user@example.com", "team:data"]
+    assert schedule_with_owners.owners == ["user@example.com", "team:Data Engineering"]
 
 
 def test_owners_validation():
-    # Test invalid team name with special characters
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
-
-        @dg.schedule(cron_schedule="@daily", job_name="test_job", owners=["team:bad-name"])
-        def schedule_with_bad_team(): ...
-
     # Test empty team name
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Team name cannot be empty after 'team:' prefix",
+    ):
 
         @dg.schedule(cron_schedule="@daily", job_name="test_job", owners=["team:"])
         def schedule_with_empty_team(): ...
+
+    # Test invalid owner format
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+
+        @dg.schedule(cron_schedule="@daily", job_name="test_job", owners=["not-an-email-or-team"])
+        def schedule_with_invalid_owner(): ...
