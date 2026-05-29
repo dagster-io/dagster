@@ -312,6 +312,41 @@ def test_webserver_db_pool_max_overflow(deployment_template: HelmTemplate):
     assert f"--db-pool-max-overflow {pool_max_overflow_s}" in command
 
 
+def test_webserver_db_flags_zero_values(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(
+            dbStatementTimeout=0,
+            dbPoolRecycle=0,
+            dbPoolMaxOverflow=0,
+        )
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert "--db-statement-timeout 0" in command
+    assert "--db-pool-recycle 0" in command
+    assert "--db-pool-max-overflow 0" in command
+
+
+def test_webserver_db_flags_large_values(deployment_template: HelmTemplate):
+    large_value = 2147483647
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(
+            dbStatementTimeout=large_value,
+            dbPoolRecycle=large_value,
+            dbPoolMaxOverflow=large_value,
+        )
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--db-statement-timeout {large_value}" in command
+    assert f"--db-pool-recycle {large_value}" in command
+    assert f"--db-pool-max-overflow {large_value}" in command
+
+
 def test_webserver_log_level(deployment_template: HelmTemplate):
     log_level = "trace"
     helm_values = DagsterHelmValues.construct(
