@@ -1075,6 +1075,21 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                     ),
                 )
             ),
+            on_disconnect=lambda location_name: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_DISCONNECTED,
+                    location_name=location_name,
+                    message="Disconnected from the server.",
+                )
+            ),
+            on_reconnected=lambda location_name: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_RECONNECTED,
+                    location_name=location_name,
+                    message="Reconnected to the server.",
+                )
+            ),
+            needs_location_refresh=self._should_recover_location,
         )
         self._watch_thread_shutdown_events[location_name] = shutdown_event
         self._watch_threads[location_name] = watch_thread
@@ -1171,6 +1186,22 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                 is not None
             )
 
+    def _should_recover_location(self, location_name: str, version_key: str) -> bool:
+        """Check without locking whether a code location needs a recovery refresh.
+
+        Returns True if the location is in an error state or has a stale version key.
+        Called from the watch thread without holding self._lock. This is safe because
+        _current_workspace is replaced atomically (single reference assignment) and we only
+        need a consistent-enough snapshot — correctness doesn't depend on reading the latest
+        value.
+        """
+        check.str_param(location_name, "location_name")
+        check.str_param(version_key, "version_key")
+        entry = self._current_workspace.code_location_entries.get(location_name, None)
+        if entry is None:
+            return False
+        return entry.load_error is not None or entry.version_key != version_key
+
     def reload_code_location(self, name: str) -> None:
         new_entry = self._load_location(
             self._current_workspace.code_location_entries[name].origin, reload=True
@@ -1238,19 +1269,31 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
 
     def _location_state_events_handler(self, event: LocationStateChangeEvent) -> None:
         # If the server was updated or we were not able to reconnect, we immediately reload the
-        # location handle
-        if event.event_type in (
+        # location handle. Reconnect/disconnect events are logged but don't trigger a refresh
+        # unless the location is in an error state (in which case reconnect triggers a recovery
+        # refresh).
+        logger = logging.getLogger("dagster-webserver")
+        refresh_event_types = (
             LocationStateChangeEventType.LOCATION_UPDATED,
             LocationStateChangeEventType.LOCATION_ERROR,
-        ):
-            # In case of an updated location, reload the handle to get updated repository data and
-            # re-attach a subscriber
-            # In case of a location error, just reload the handle in order to update the workspace
-            # with the correct error messages
-            logging.getLogger("dagster-webserver").info(
+        )
+
+        location_is_errored = self.has_code_location_error(event.location_name)
+        # Refresh on update/error events, or on any non-disconnect event when the location is
+        # errored (to attempt recovery). Skip disconnect events for errored locations since the
+        # server is unreachable and retries would fail.
+        should_refresh = event.event_type in refresh_event_types or (
+            location_is_errored
+            and event.event_type != LocationStateChangeEventType.LOCATION_DISCONNECTED
+        )
+
+        if should_refresh:
+            logger.info(
                 f"Received {event.event_type} event for location {event.location_name}, refreshing"
             )
             self.refresh_code_location(event.location_name)
+        else:
+            logger.debug(f"Received {event.event_type} event for location {event.location_name}")
 
     def refresh_code_location(self, name: str) -> None:
         # This method reloads the webserver's copy of the code from the remote gRPC server without
