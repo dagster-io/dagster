@@ -24,11 +24,11 @@ def docker_context(test_id, monkeypatch, tmpdir):
 
     # Use ecs --local-simulation
     # https://docs.docker.com/cloud/ecs-integration/#local-simulation
-    subprocess.call(["docker", "context", "create", "ecs", "--local-simulation", test_id])
+    subprocess.run(["docker", "context", "create", "ecs", "--local-simulation", test_id], check=True)
 
     yield test_id
 
-    subprocess.call(["docker", "context", "rm", test_id])
+    subprocess.run(["docker", "context", "rm", test_id], check=True)
 
 
 @pytest.fixture
