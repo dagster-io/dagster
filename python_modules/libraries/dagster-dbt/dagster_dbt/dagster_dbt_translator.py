@@ -29,6 +29,7 @@ from dagster_shared import check
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_METADATA_NAMESPACE,
     DAGSTER_DBT_PROJECT_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
@@ -200,7 +201,19 @@ class DagsterDbtTranslator:
                 # same AssetKey, since per-source metadata is ambiguous.
                 and spec.key not in self._colliding_source_keys(manifest, project)
             ):
-                dep_metadata = spec.metadata
+                # Drop dbt-namespaced metadata, which is per-project bookkeeping (manifest,
+                # translator, unique_id, project, project_id) rather than a property of the data.
+                # The same source can be referenced by multiple dbt projects (e.g. one feeding a
+                # model and another feeding a snapshot), and these values differ across projects,
+                # so leaving them on the dep makes the shared stub asset's metadata conflict and the
+                # code location fail to load. Only the value-stable dagster table metadata (table
+                # name, column schema, storage kind) is kept, so identical sources produce identical
+                # dep metadata.
+                dep_metadata = {
+                    key: value
+                    for key, value in spec.metadata.items()
+                    if not key.startswith(DAGSTER_DBT_METADATA_NAMESPACE)
+                }
 
             deps.append(
                 AssetDep(
