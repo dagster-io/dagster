@@ -111,6 +111,9 @@ def build_asset_job(
         description (Optional[str]): A description of the job.
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
             Only used if retry policy is not defined on the asset definition.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the job.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
 
     Examples:
         .. code-block:: python
