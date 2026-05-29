@@ -60,52 +60,6 @@ class TestDynamicTableSpecs:
         assert len([s for s in all_specs if s.is_virtual]) == 2
 
 
-class TestAutomationConditionResolvesThrough:
-    """Verify that resolve_through_virtual() makes the dashboard asset respond to source changes.
-
-    Graph:
-        raw_orders ──────────────────────────> daily_revenue_rollup (virtual)
-                                                         ↓
-        raw_orders ──> customer_lifetime_value (virtual) ──> executive_dashboard_report
-        raw_customers /                                      (eager + resolve_through_virtual)
-    """
-
-    def _make_defs(self, snowflake_resource):
-        return dg.Definitions(
-            assets=[
-                raw_orders,
-                raw_customers,
-                customer_lifetime_value,
-                daily_revenue_rollup,
-                executive_dashboard_report,
-            ],
-            resources={"snowflake": snowflake_resource},
-        )
-
-    def test_dashboard_not_requested_without_source_data(self, snowflake_resource):
-        instance = dg.DagsterInstance.ephemeral()
-        result = dg.evaluate_automation_conditions(
-            defs=self._make_defs(snowflake_resource), instance=instance
-        )
-        assert result.total_requested == 0
-
-    def test_dashboard_requested_after_sources_materialized(self, snowflake_resource):
-        instance = dg.DagsterInstance.ephemeral()
-        defs = self._make_defs(snowflake_resource)
-
-        result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
-
-        instance.report_runless_asset_event(dg.AssetMaterialization("raw_orders"))
-        instance.report_runless_asset_event(dg.AssetMaterialization("raw_customers"))
-
-        result = dg.evaluate_automation_conditions(
-            defs=defs,
-            instance=instance,
-            cursor=result.cursor,
-        )
-        assert result.total_requested == 1
-
-
 class TestExecutiveDashboardReport:
     def test_returns_materialization(self, snowflake_resource, mock_cursor):
         mock_cursor.fetchone.return_value = (1500, 42350.0)
@@ -133,10 +87,12 @@ class TestExecutiveDashboardReport:
         assert dg.AssetKey("customer_lifetime_value") in all_deps
         assert dg.AssetKey("daily_revenue_rollup") in all_deps
 
-    def test_has_automation_condition(self):
+    def test_has_no_automation_condition(self):
+        # The dashboard is sensor-triggered (fires after a refresh lands), NOT
+        # automation-condition driven. An eager condition would fire on source
+        # change, before Snowflake refreshes the dynamic table — reading stale data.
         conditions = executive_dashboard_report.automation_conditions_by_key
-        assert len(conditions) > 0
-        assert all(c is not None for c in conditions.values())
+        assert all(c is None for c in conditions.values())
 
 
 class TestDynamicTableFreshnessChecks:

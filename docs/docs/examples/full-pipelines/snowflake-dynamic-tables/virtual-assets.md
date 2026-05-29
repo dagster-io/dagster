@@ -11,9 +11,15 @@ When Snowflake manages your transformations — through Dynamic Tables, views, o
 Both [external assets](/guides/build/assets/external-assets) and [virtual assets](/guides/build/assets/virtual-assets) appear in the lineage graph without being executed by Dagster. The difference is how automation treats them:
 
 - **External assets** are opaque to automation conditions. Dagster sees them in the graph, but evaluating whether a change should trigger a downstream run requires an explicit event.
-- **Virtual assets** are transparent. Automation conditions look through them to their real upstream sources, so downstream assets re-run automatically when source data changes.
+- **Virtual assets** are transparent. Automation conditions can look through them to their real upstream sources via `resolve_through_virtual()`, treating them like a synchronous view that is instantly consistent with its source.
 
 [Snowflake Dynamic Tables](https://docs.snowflake.com/en/user-guide/dynamic-tables/overview) are a natural fit for virtual assets. They refresh automatically based on a target lag — Snowflake handles the computation, and Dagster should never run them. Declaring them with `is_virtual=True` models this correctly while keeping full lineage intact.
+
+:::note A Dynamic Table is not a view
+
+The transparency described above is ideal for _lineage_, but be careful with it for _automation_. A Dynamic Table isn't instantly consistent with its source. It refreshes asynchronously on a target lag. Triggering downstream work the moment the source changes would run ahead of the data. The [automation page](/examples/full-pipelines/snowflake-dynamic-tables/automation) covers why, and shows the correct trigger: fire on refresh _completion_, driven by the freshness sensor.
+
+:::
 
 ## External source tables
 
@@ -47,4 +53,4 @@ Key properties on each virtual spec:
 
 ## Next steps
 
-Continue this example by [automating downstream assets](/examples/full-pipelines/snowflake-dynamic-tables/automation).
+Continue this example by [monitoring Dynamic Table freshness](/examples/full-pipelines/snowflake-dynamic-tables/freshness-monitoring).
