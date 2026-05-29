@@ -214,35 +214,68 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
           or as dependencies, but for which no definition was provided.
         """
         from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+        from dagster._core.definitions.assets.definition.asset_spec import SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET
+
+
+        # Track all input AssetSpecs by key for robust stub metadata propagation
+        input_asset_specs_by_key = {}
+        def collect_input_specs(a):
+            if hasattr(a, 'specs_by_key'):
+                for k, spec in a.specs_by_key.items():
+                    input_asset_specs_by_key[k] = spec
+        for a in assets:
+            collect_input_specs(a)
+
+        # Local registry for AssetSpec dependencies (if needed elsewhere)
+        asset_spec_registry = {}
 
         # Convert any source assets to external assets
-        assets_defs = [
-            create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
-            for a in assets
-        ]
+        def convert_asset(a):
+            if isinstance(a, SourceAsset):
+                return create_external_asset_from_source_asset(a)
+            return a
 
-        # Use the AssetSpec registry to preserve metadata for stub external assets
-        from dagster._core.definitions.assets.definition.asset_dep import _ASSET_SPEC_DEPS_BY_KEY
+        assets_defs = [convert_asset(a) for a in assets]
+
+        # Restore relative dependency resolution
         with disable_dagster_warnings():
+            assets_defs = resolve_assets_def_deps(assets_defs)
+
+            # Compute all defined keys and all referenced keys
+            all_keys = set()
+            all_referenced_asset_keys = set()
+            for assets_def in assets_defs:
+                all_keys.update(assets_def.keys)
+                for dep in assets_def.asset_deps.values():
+                    all_referenced_asset_keys.update(dep)
+                # Also include check dependencies if present
+                if hasattr(assets_def, "check_specs_by_key"):
+                    for check_spec in getattr(assets_def, "check_specs_by_key").values():
+                        all_referenced_asset_keys.update(check_spec.asset_keys)
+
+            # Create stub assets for any referenced keys for which no definition was provided
             for key in all_referenced_asset_keys.difference(all_keys):
-                source_spec = _ASSET_SPEC_DEPS_BY_KEY.get(key)
-                if source_spec is not None:
-                    # Reuse description and tags (which already encode kinds via KIND_PREFIX)
-                    # from the AssetSpec provided in deps, and mark it as auto-created.
-                    stub_spec = AssetSpec(
-                        key=key,
-                        description=source_spec.description,
-                        metadata={
-                            **(source_spec.metadata or {}),
-                            SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True,
-                        },
-                        tags=source_spec.tags,
-                    )
-                else:
-                    stub_spec = AssetSpec(
-                        key=key,
-                        metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True},
-                    )
+                # Always use input_asset_specs_by_key for stub metadata
+                description = None
+                tags = None
+                extra_metadata = None
+                if key in input_asset_specs_by_key:
+                    candidate = input_asset_specs_by_key[key]
+                    if hasattr(candidate, 'description') and candidate.description:
+                        description = candidate.description
+                    if hasattr(candidate, 'tags') and candidate.tags:
+                        tags = candidate.tags
+                    if hasattr(candidate, 'metadata') and candidate.metadata:
+                        extra_metadata = candidate.metadata
+                metadata = {SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True}
+                if extra_metadata:
+                    metadata = {**extra_metadata, **metadata}
+                stub_spec = AssetSpec(
+                    key=key,
+                    description=description,
+                    metadata=metadata,
+                    tags=tags,
+                )
                 assets_defs.append(AssetsDefinition(specs=[stub_spec]))
             return assets_defs
 
