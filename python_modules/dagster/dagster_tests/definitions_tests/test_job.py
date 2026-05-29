@@ -334,29 +334,28 @@ def test_metadata():
 
 
 def test_owners():
-    @dg.job(owners=["user@example.com", "team:data"])
+    @dg.job(owners=["user@example.com", "team:Data Engineering"])
     def job_with_owners(): ...
 
-    assert job_with_owners.owners == ["user@example.com", "team:data"]
+    assert job_with_owners.owners == ["user@example.com", "team:Data Engineering"]
 
 
 def test_owners_validation():
     # Test that invalid owners are rejected
 
-    # Test invalid team name with special characters
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
-
-        @dg.job(owners=["team:bad-name"])
-        def job_with_bad_team(): ...
-
     # Test empty team name
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError, match="Team name cannot be empty after 'team:' prefix"
+    ):
 
         @dg.job(owners=["team:"])
         def job_with_empty_team(): ...
 
     # Test invalid owner format
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Owner must be an email address"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
 
         @dg.job(owners=["not-an-email-or-team"])
         def job_with_invalid_owner(): ...

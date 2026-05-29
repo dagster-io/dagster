@@ -49,6 +49,7 @@ from dagster_dg_core.utils.warnings import emit_warning
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _DEFAULT_PROJECT_PLUGIN_MODULE: Final = "components"
 _DEFAULT_PROJECT_PLUGIN_MODULE_REGISTRY_FILE: Final = "plugin_modules.json"
+_ALTERNATIVE_DEFS_SUBMODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
 DG_PLUGIN_ENTRY_POINT_GROUP: Final = "dagster_dg_cli.registry_modules"
 # Remove in future, in place for backcompat
@@ -408,9 +409,20 @@ class DgContext:
     def defs_module_name(self) -> str:
         if not self.config.project:
             raise DgError("`defs_module_name` is only available in a Dagster project context")
-        return get_canonical_defs_module_name(
+        canonical = get_canonical_defs_module_name(
             self.config.project.defs_module, self.root_module_name
         )
+        # If the user explicitly configured a defs_module, use it as-is
+        if self.config.project.defs_module:
+            return canonical
+        # Auto-detect: if the default "defs" path doesn't exist, try "definitions"
+        default_path = self.get_path_for_local_module(canonical, require_exists=False)
+        if not default_path.exists() and not default_path.with_suffix(".py").exists():
+            alt_module = f"{self.root_module_name}.{_ALTERNATIVE_DEFS_SUBMODULE}"
+            alt_path = self.get_path_for_local_module(alt_module, require_exists=False)
+            if alt_path.exists() or alt_path.with_suffix(".py").exists():
+                return alt_module
+        return canonical
 
     @cached_property
     def _defs_path(self) -> Path:
