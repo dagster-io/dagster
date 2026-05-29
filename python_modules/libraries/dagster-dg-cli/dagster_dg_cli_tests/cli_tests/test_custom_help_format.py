@@ -176,7 +176,16 @@ def test_typer_rich_help_remains_click_compatible():
     0.26 for this reason; if that cap is ever raised past an incompatible release, this
     guard fails here rather than letting `dg --help` quietly regress to an empty body.
     """
-    from typer.core import TyperGroup, TyperOption
+    # typer.core is effectively private; if a future typer reshuffles it the import itself
+    # can break. Surface that as the same actionable failure rather than a bare ImportError.
+    try:
+        from typer.core import TyperGroup, TyperOption
+    except ImportError as exc:
+        raise AssertionError(
+            "Could not import TyperGroup/TyperOption from typer.core; typer's internals "
+            "changed and dg help rendering may no longer be compatible with click. "
+            "See https://github.com/dagster-io/dagster/issues/33893."
+        ) from exc
 
     assert issubclass(TyperGroup, click.Group), (
         "Installed typer's TyperGroup is not a click.Group subclass, so dg help output "
