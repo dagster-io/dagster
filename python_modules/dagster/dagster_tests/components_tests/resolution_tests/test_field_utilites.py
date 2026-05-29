@@ -54,6 +54,22 @@ def test_inheritance_dataclass_classvar_not_treated_as_field() -> None:
     assert "not_a_field" not in resolvers
 
 
+def test_inheritance_dataclass_preserves_dataclass_params() -> None:
+    # Re-decorating an undecorated subclass must preserve the base's dataclass config
+    # (eq/order/etc.) rather than resetting it to the @dataclass defaults.
+    @dataclass(order=True)
+    class Base(dg.Resolvable):
+        base_field: int
+
+    class Derived(Base):
+        derived_field: str = "default"
+
+    # accessing the annotations triggers the re-decoration
+    resolvers = _get_annotations(Derived)
+    assert "derived_field" in resolvers
+    assert Derived.__dataclass_params__.order is True
+
+
 def test_inheritance_frozen_dataclass_without_redecoration() -> None:
     @dataclass(frozen=True)
     class Base(dg.Resolvable):
@@ -67,6 +83,7 @@ def test_inheritance_frozen_dataclass_without_redecoration() -> None:
     assert "derived_field" in resolvers
 
     resolved = Derived.resolve_from_dict({"base_field": 1, "derived_field": "from_yaml"})
+    assert resolved.base_field == 1
     assert resolved.derived_field == "from_yaml"
 
 

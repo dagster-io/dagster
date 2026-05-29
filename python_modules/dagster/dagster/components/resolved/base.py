@@ -351,14 +351,15 @@ def _ensure_dataclass_fields_registered(target_type: type) -> type:
     if not unregistered:
         return target_type
 
-    # Mirror the inherited dataclass config so we don't change frozen/kw_only semantics or
-    # raise on a frozen/non-frozen mismatch.
+    # Mirror the inherited dataclass config so re-decorating doesn't silently change
+    # semantics (e.g. eq/order/frozen) or raise on a frozen/non-frozen mismatch. `slots`
+    # and `weakref_slot` are intentionally omitted: `@dataclass(slots=True)` returns a new
+    # class object, which would break the in-place mutation the caller relies on.
     params = getattr(target_type, "__dataclass_params__", None)
+    forwarded = ("init", "repr", "eq", "order", "unsafe_hash", "frozen", "match_args", "kw_only")
+    dataclass_kwargs = {name: getattr(params, name) for name in forwarded if hasattr(params, name)}
     try:
-        return dataclass(
-            frozen=bool(getattr(params, "frozen", False)),
-            kw_only=bool(getattr(params, "kw_only", False)),
-        )(target_type)
+        return dataclass(**dataclass_kwargs)(target_type)
     except TypeError as e:
         raise ResolutionException(
             f"Could not register field(s) {unregistered} added by {target_type.__name__}. "
