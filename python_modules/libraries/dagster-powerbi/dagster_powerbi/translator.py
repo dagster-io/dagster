@@ -14,7 +14,7 @@ from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSe
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
-from dagster._core.definitions.utils import is_valid_asset_owner
+from dagster._core.definitions.utils import is_valid_owner
 from dagster._record import record
 from dagster._utils.names import clean_name
 from dagster_shared.serdes import whitelist_for_serdes
@@ -259,7 +259,7 @@ class DagsterPowerBITranslator:
             },
             tags={**PowerBITagSet(asset_type="report")},
             kinds={"powerbi", "report"},
-            owners=[owner] if owner and is_valid_asset_owner(owner) else None,
+            owners=[owner] if owner and is_valid_owner(owner) else None,
         )
 
     def get_semantic_model_spec(self, data: PowerBITranslatorData) -> AssetSpec:
@@ -314,7 +314,7 @@ class DagsterPowerBITranslator:
             },
             tags={**PowerBITagSet(asset_type="semantic_model")},
             kinds={"powerbi", "semantic_model"},
-            owners=[owner] if owner and is_valid_asset_owner(owner) else None,
+            owners=[owner] if owner and is_valid_owner(owner) else None,
         )
 
     def get_data_source_spec(self, data: PowerBITranslatorData) -> AssetSpec:
