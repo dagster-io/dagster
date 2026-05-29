@@ -25,9 +25,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster",
-    "dagster-shared",
-    "dagster-cloud-cli",
+    "dagster==1!0+dev",
+    "dagster-shared==1!0+dev",
+    "dagster-cloud-cli==1!0+dev",
     "pex>=2.1.132,<2.60.0", # https://github.com/pex-tool/pex/issues/2942
     "questionary",
     "requests",
@@ -52,9 +52,9 @@ Newsletter = "https://dagster.io/newsletter-signup"
 
 [project.optional-dependencies]
 insights = ["pyarrow"]
-docker = ["docker", "dagster-docker"]
-kubernetes = ["kubernetes", "dagster-k8s"]
-ecs = ["dagster-aws", "boto3"]
+docker = ["docker", "dagster-docker==1!0+dev"]
+kubernetes = ["kubernetes", "dagster-k8s==1!0+dev"]
+ecs = ["dagster-aws==1!0+dev", "boto3"]
 sandbox = ["supervisor"]
 pex = ["boto3"]
 serverless = ["boto3"]
@@ -63,14 +63,14 @@ serverless = ["boto3"]
 test = [
     "dagster[test]",
     "dagster-pipes",
-    "dagster-shared",
+    "dagster-shared==1!0+dev",
     "dagster-test",
-    "dagster-aws",
-    "dagster-cloud-cli",
+    "dagster-aws==1!0+dev",
+    "dagster-cloud-cli==1!0+dev",
     "dagster-dbt",
     "dagster-dg-cli",
-    "dagster-docker",
-    "dagster-k8s",
+    "dagster-docker==1!0+dev",
+    "dagster-k8s==1!0+dev",
     "dagster-rest-resources",
     "dbt-bigquery>=1.9.0",
     "dbt-core",
