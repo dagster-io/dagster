@@ -199,7 +199,7 @@ URL_OPTION = Option(
 LOCATION_LOAD_TIMEOUT_OPTION = Option(
     get_location_load_timeout(),
     f"--{LOCATION_LOAD_TIMEOUT_CLI_ARGUMENT}",
-    "--agent-timeout",
+    "--location-timeout",
     help=(
         "After making changes to the workspace. how long in seconds to wait for the location to"
         " load before timing out with an error"
@@ -349,7 +349,7 @@ DEPLOYMENT_METADATA_OPTIONS = {
         Option(
             None,
             "--working-directory",
-            "-d",
+            "-w",
             help="Base directory to use for local imports when loading the repositories.",
         ),
     ),

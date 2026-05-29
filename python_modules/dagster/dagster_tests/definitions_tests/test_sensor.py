@@ -125,34 +125,22 @@ def test_owners():
         pass
 
     sensor = dg.SensorDefinition(
-        evaluation_fn=eval_fn,
-        job_name="test_job",
-        owners=["user@example.com", "team:Data Engineering"],
+        evaluation_fn=eval_fn, job_name="test_job", owners=["user@example.com", "team:data"]
     )
-    assert sensor.owners == ["user@example.com", "team:Data Engineering"]
+    assert sensor.owners == ["user@example.com", "team:data"]
 
 
 def test_owners_validation():
     def eval_fn():
         pass
 
-    # Test empty team name
-    with pytest.raises(
-        dg.DagsterInvalidDefinitionError,
-        match="Team name cannot be empty after 'team:' prefix",
-    ):
-        dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:"])
+    # Test invalid team name with special characters
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
+        dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:bad-name"])
 
-    # Test invalid owner format
-    with pytest.raises(
-        dg.DagsterInvalidDefinitionError,
-        match="Owner must be an email address or a team name prefixed with 'team:'",
-    ):
-        dg.SensorDefinition(
-            evaluation_fn=eval_fn,
-            job_name="test_job",
-            owners=["not-an-email-or-team"],
-        )
+    # Test empty team name
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+        dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:"])
 
 
 def test_sensor_metadata_preserved_through_with_definition_metadata_update():

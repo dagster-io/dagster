@@ -899,33 +899,31 @@ def test_owners():
     def asset1(): ...
 
     unresolved = dg.define_asset_job(
-        "with_owners", selection=[asset1], owners=["user@example.com", "team:Data Engineering"]
+        "with_owners", selection=[asset1], owners=["user@example.com", "team:data"]
     )
-    assert unresolved.owners == ["user@example.com", "team:Data Engineering"]
+    assert unresolved.owners == ["user@example.com", "team:data"]
 
     defs = dg.Definitions(assets=[asset1], jobs=[unresolved])
     resolved = defs.resolve_job_def("with_owners")
-    assert resolved.owners == ["user@example.com", "team:Data Engineering"]
+    assert resolved.owners == ["user@example.com", "team:data"]
 
     # Owners are persisted on the job snapshot
     snap = resolved.get_job_snapshot()
-    assert snap.owners == ["user@example.com", "team:Data Engineering"]
+    assert snap.owners == ["user@example.com", "team:data"]
 
 
 def test_owners_validation():
     @dg.asset
     def asset1(): ...
 
+    # Invalid team name with special characters
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
+        dg.define_asset_job("bad_team", selection=[asset1], owners=["team:bad-name"])
+
     # Empty team name
-    with pytest.raises(
-        dg.DagsterInvalidDefinitionError,
-        match="Team name cannot be empty after 'team:' prefix",
-    ):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
         dg.define_asset_job("empty_team", selection=[asset1], owners=["team:"])
 
     # Invalid owner format
-    with pytest.raises(
-        dg.DagsterInvalidDefinitionError,
-        match="Owner must be an email address or a team name prefixed with 'team:'",
-    ):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Owner must be an email address"):
         dg.define_asset_job("bad_owner", selection=[asset1], owners=["not-an-email-or-team"])
