@@ -167,6 +167,29 @@ def test_sub_command_with_option_help_message():
     )
 
 
+def test_typer_rich_help_remains_click_compatible():
+    """`dg --help` is rendered through typer.rich_utils.rich_format_help, which only
+    discovers options and commands that subclass click's own Option/Group types. typer
+    0.26 vendored its own click fork (typer._click), so on that release dg's click-based
+    options and command groups silently disappear from the help output (see
+    https://github.com/dagster-io/dagster/issues/33893). dagster-dg-core caps typer below
+    0.26 for this reason; if that cap is ever raised past an incompatible release, this
+    guard fails here rather than letting `dg --help` quietly regress to an empty body.
+    """
+    from typer.core import TyperGroup, TyperOption
+
+    assert issubclass(TyperGroup, click.Group), (
+        "Installed typer's TyperGroup is not a click.Group subclass, so dg help output "
+        "will drop its Commands panel. Keep typer pinned below an incompatible release. "
+        "See https://github.com/dagster-io/dagster/issues/33893."
+    )
+    assert issubclass(TyperOption, click.Option), (
+        "Installed typer's TyperOption is not a click.Option subclass, so dg help output "
+        "will drop its Options panels. Keep typer pinned below an incompatible release. "
+        "See https://github.com/dagster-io/dagster/issues/33893."
+    )
+
+
 def test_dynamic_subcommand_help_message():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
