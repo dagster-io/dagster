@@ -2,6 +2,7 @@ import multiprocessing
 import os
 import re
 import sys
+import time
 from typing import TYPE_CHECKING
 
 import boto3
@@ -212,15 +213,34 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
 
             p.terminate()
 
-            # Gate on the materialization-complete signal -- set by the subprocess
-            # immediately after return_dict is populated -- rather than asserting the
-            # process is fully reaped within a fixed window. Under spawn, instance and
-            # multiprocessing teardown after the interruption can outrun a process-death
-            # check even when the data we want to assert on is already available.
-            if not materialization_done_event.wait(timeout=180):
-                raise AssertionError(
-                    "Subprocess did not complete materialization within 180s of SIGTERM"
-                )
+            # Re-send SIGTERM to defeat a Python race: when a signal lands inside
+            # a __del__/weakref finalizer the handler's `raise
+            # DagsterExecutionInterruptedError` is silently swallowed by Python's
+            # "Exception ignored in:" path, losing the interrupt entirely. The
+            # child's early-setup phase (instance + pipes session construction) is
+            # dense with sqlalchemy GC callbacks, so a single SIGTERM lands in a
+            # finalizer with non-trivial probability. Retries are capped so we
+            # don't interrupt the child's own interrupt-handling (the `_terminate`
+            # call + `describe_tasks` in `_materialize_asset`'s finally block).
+            #
+            # Outer wait gates on the materialization-complete signal -- set by the
+            # subprocess immediately after return_dict is populated -- rather than
+            # asserting the process is fully reaped within a fixed window. Under
+            # spawn, instance and multiprocessing teardown after the interruption
+            # can outrun a process-death check even when the data we want to assert
+            # on is already available.
+            deadline = time.monotonic() + 180
+            retries_remaining = 5
+            while not materialization_done_event.wait(timeout=2):
+                if not p.is_alive():
+                    break
+                if time.monotonic() > deadline:
+                    raise AssertionError(
+                        "Subprocess did not complete materialization within 180s of SIGTERM"
+                    )
+                if retries_remaining > 0:
+                    p.terminate()
+                    retries_remaining -= 1
 
             assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
             assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
