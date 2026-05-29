@@ -1,6 +1,7 @@
 # ruff: noqa: T201
 
 import os
+import random
 import subprocess
 import time
 import uuid
@@ -40,10 +41,11 @@ _BUILDKITE_DOCKERHUB_MIRROR = "http://dockerhub-mirror.buildkite-agent.svc.clust
 _DOCKERHUB_UPSTREAM = "https://registry-1.docker.io"
 
 
-def _docker_pull_with_retry(image, attempts=3, backoff_seconds=5):
-    # Docker Hub intermittently returns 5xx from its blob CDN; a couple of retries with
-    # backoff is enough to mask transient failures without masking real auth/404 errors
-    # (those will still fail every attempt).
+def _docker_pull_with_retry(image, attempts=6, base_backoff_seconds=5, max_backoff_seconds=60):
+    # Docker Hub and ECR's S3 layer-blob backend both intermittently return 5xx; the
+    # outage window can span tens of seconds, so exponential backoff with jitter widens
+    # the recovery envelope to ~155s cumulative without masking real auth/404 errors
+    # (those still fail every attempt).
     for attempt in range(1, attempts + 1):
         try:
             check_output(["docker", "pull", image])
@@ -51,8 +53,13 @@ def _docker_pull_with_retry(image, attempts=3, backoff_seconds=5):
         except subprocess.CalledProcessError:
             if attempt == attempts:
                 raise
-            print(f"docker pull {image} failed (attempt {attempt}/{attempts}); retrying...")
-            time.sleep(backoff_seconds)
+            sleep_s = min(base_backoff_seconds * 2 ** (attempt - 1), max_backoff_seconds)
+            sleep_s *= 0.8 + 0.4 * random.random()
+            print(
+                f"docker pull {image} failed (attempt {attempt}/{attempts}); "
+                f"sleeping {sleep_s:.1f}s before retry..."
+            )
+            time.sleep(sleep_s)
 
 
 def _registry_proxy_remote_url() -> str:
