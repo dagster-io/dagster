@@ -1,6 +1,5 @@
 import os
 import uuid
-from typing import Any
 
 import httpx
 from dagster import AssetExecutionContext, MetadataValue, asset
@@ -11,7 +10,7 @@ def new_id(prefix: str) -> str:
 
 
 @asset
-def governed_ai_summary(context: AssetExecutionContext) -> dict[str, Any]:
+def governed_ai_summary(context: AssetExecutionContext) -> str:
     run_id = new_id("dagster")
     request_id = new_id("req")
     response = httpx.post(
@@ -40,6 +39,7 @@ def governed_ai_summary(context: AssetExecutionContext) -> dict[str, Any]:
         },
     )
     response.raise_for_status()
+    summary = response.json()["choices"][0]["message"]["content"]
 
     context.add_output_metadata(
         {
@@ -47,4 +47,4 @@ def governed_ai_summary(context: AssetExecutionContext) -> dict[str, Any]:
             "tuning_engines_request_id": MetadataValue.text(request_id),
         }
     )
-    return response.json()
+    return summary
