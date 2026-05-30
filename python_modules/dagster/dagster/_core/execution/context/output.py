@@ -237,7 +237,7 @@ class OutputContext:
 
         return self._run_id
 
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
+    @deprecated(breaking_version="2.0", additional_warn_text="Use definition_metadata instead")
     @public
     @property
     def metadata(self) -> ArbitraryMetadataMapping | None:
@@ -466,42 +466,6 @@ class OutputContext:
 
     @public
     @property
-    def partition_key(self) -> str:
-        """The partition key for output asset.
-
-        Raises an error if the output asset has no partitioning, or if the run covers a partition
-        range for the output asset.
-        """
-        if self._warn_on_step_context_use:
-            warnings.warn(
-                "You are using InputContext.upstream_output.partition_key. "
-                "This use on upstream_output is deprecated and will fail in the future. "
-                "Try to obtain what you need directly from InputContext. "
-                "For more details: https://github.com/dagster-io/dagster/issues/7900"
-            )
-
-        subset = self._asset_partitions_subset
-        if subset is None:
-            check.failed("The output does not correspond to a partitioned asset.")
-
-        keys_iter = iter(subset.get_partition_keys())
-        first = next(keys_iter, None)
-        if first is not None and next(keys_iter, None) is None:
-            return first
-        check.failed(
-            f"Tried to access partition key for asset '{self._asset_key}', "
-            f"but the number of output partitions != 1: '{subset}'."
-        )
-
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partition_key` instead.")
-    @public
-    @property
-    def asset_partition_key(self) -> str:
-        """The partition key for output asset. Deprecated: use `partition_key`."""
-        return self.partition_key
-
-    @public
-    @property
     def partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for output asset.
 
@@ -532,7 +496,7 @@ class OutputContext:
 
         return partition_key_ranges[0]
 
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partition_key_range` instead.")
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
@@ -559,7 +523,7 @@ class OutputContext:
 
         return list(self._asset_partitions_subset.get_partition_keys())
 
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partition_keys` instead.")
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
     @public
     @property
     def asset_partition_keys(self) -> Sequence[str]:
@@ -604,7 +568,7 @@ class OutputContext:
 
         return time_window_for_partition_key_range(partitions_def, self.partition_key_range)
 
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partitions_time_window` instead.")
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partitions_time_window` instead.")
     @public
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
