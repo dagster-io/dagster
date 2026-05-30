@@ -237,7 +237,7 @@ class OutputContext:
 
         return self._run_id
 
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
+    @deprecated(breaking_version="2.0", additional_warn_text="Use definition_metadata instead")
     @public
     @property
     def metadata(self) -> ArbitraryMetadataMapping | None:
@@ -495,14 +495,14 @@ class OutputContext:
 
     @public
     @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
+    def partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for output asset.
 
         Raises an error if the output asset has no partitioning.
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partition_key_range. "
+                "You are using InputContext.upstream_output.partition_key_range. "
                 "This use on upstream_output is deprecated and will fail in the future. "
                 "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
@@ -519,22 +519,29 @@ class OutputContext:
             )
         if len(partition_key_ranges) != 1:
             check.failed(
-                "Tried to access asset_partition_key_range, but there are "
+                "Tried to access partition_key_range, but there are "
                 f"({len(partition_key_ranges)}) key ranges associated with this output.",
             )
 
         return partition_key_ranges[0]
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
-    def asset_partition_keys(self) -> Sequence[str]:
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for output asset. Deprecated: use `partition_key_range`."""
+        return self.partition_key_range
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
         """The partition keys for the output asset.
 
         Raises an error if the output asset has no partitioning.
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partition_keys. "
+                "You are using InputContext.upstream_output.partition_keys. "
                 "This use on upstream_output is deprecated and will fail in the future. "
                 "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
@@ -545,9 +552,16 @@ class OutputContext:
 
         return list(self._asset_partitions_subset.get_partition_keys())
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
     @public
     @property
-    def asset_partitions_time_window(self) -> TimeWindow:
+    def asset_partition_keys(self) -> Sequence[str]:
+        """The partition keys for the output asset. Deprecated: use `partition_keys`."""
+        return self.partition_keys
+
+    @public
+    @property
+    def partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the output asset.
 
         Raises an error if either of the following are true:
@@ -557,7 +571,7 @@ class OutputContext:
         """
         if self._warn_on_step_context_use:
             warnings.warn(
-                "You are using InputContext.upstream_output.asset_partitions_time_window. "
+                "You are using InputContext.upstream_output.partitions_time_window. "
                 "This use on upstream_output is deprecated and will fail in the future. "
                 "Try to obtain what you need directly from InputContext. "
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
@@ -565,7 +579,7 @@ class OutputContext:
 
         if self._asset_partitions_subset is None:
             check.failed(
-                "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
+                "Tried to access partitions_time_window, but the asset is not partitioned.",
             )
 
         partitions_def = self._asset_partitions_def
@@ -581,7 +595,14 @@ class OutputContext:
                 " to a partitioned asset that is not time-partitioned."
             )
 
-        return time_window_for_partition_key_range(partitions_def, self.asset_partition_key_range)
+        return time_window_for_partition_key_range(partitions_def, self.partition_key_range)
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partitions_time_window` instead.")
+    @public
+    @property
+    def asset_partitions_time_window(self) -> TimeWindow:
+        """The time window for partitions of the output asset. Deprecated: use `partitions_time_window`."""
+        return self.partitions_time_window
 
     def get_run_scoped_output_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
