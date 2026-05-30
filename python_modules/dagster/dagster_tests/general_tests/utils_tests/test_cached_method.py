@@ -3,9 +3,13 @@
 import asyncio
 import gc
 import random
+from collections import Counter
+from collections.abc import Iterator
+from itertools import cycle, repeat
 from typing import NamedTuple
 
 import objgraph
+from dagster._utils.cached_method import cached_if_true_no_arg_method
 from dagster_shared.utils.cached_method import (
     CACHED_METHOD_CACHE_FIELD,
     cached_method,
@@ -200,3 +204,144 @@ def test_explicit_test() -> None:
     assert inst.boop() == 1
 
     assert next(iter(get_cached_method_cache(inst, "boop").values())) == 1
+
+
+class TestCachedIfTrueNoArgMethod:
+    class MyClass:
+        def __init__(self, return_values: bool | Iterator[bool] | list[bool]) -> None:
+            self._return_values: Iterator[bool] = (
+                return_values
+                if isinstance(return_values, Iterator)
+                else repeat(return_values)
+                if isinstance(return_values, bool)
+                else cycle(return_values)
+            )
+            self.call_counts: Counter[str] = Counter()
+
+        @cached_if_true_no_arg_method
+        def has_table_t1(self) -> bool:
+            self.call_counts["has_table_t1"] += 1
+            return next(self._return_values)
+
+        @cached_if_true_no_arg_method
+        def has_table_missing(self) -> bool:
+            self.call_counts["has_table_missing"] += 1
+            return False
+
+        @cached_if_true_no_arg_method
+        def has_table_exists(self) -> bool:
+            self.call_counts["has_table_exists"] += 1
+            return True
+
+        def assert_call_counts(self, t1: int, missing: int = 0, exists: int = 0) -> None:
+            total = t1 + missing + exists
+            assert self.call_counts["has_table_t1"] == t1
+            assert self.call_counts["has_table_missing"] == missing
+            assert self.call_counts["has_table_exists"] == exists
+            assert self.call_counts.total() == total
+            assert set(self.call_counts.keys()) <= {
+                "has_table_t1",
+                "has_table_missing",
+                "has_table_exists",
+            }
+
+    def test_cached_if_true_no_arg_method_caches_true(self) -> None:
+        obj = self.MyClass(return_values=True)
+        assert obj.has_table_t1() is True
+        obj.assert_call_counts(1)
+
+        assert obj.has_table_t1() is True
+        obj.assert_call_counts(1)
+
+    def test_cached_if_true_no_arg_method_does_not_cache_false(self) -> None:
+        obj = self.MyClass(return_values=False)
+        assert obj.has_table_t1() is False
+        obj.assert_call_counts(1)
+
+        assert obj.has_table_t1() is False
+        obj.assert_call_counts(2)
+
+    def test_cached_if_true_no_arg_method_caches_after_transition(self) -> None:
+        """False results are not cached; once True is returned it is cached."""
+        obj = self.MyClass(return_values=[False, False, True, False])
+
+        assert obj.has_table_t1() is False  # call 1: False, not cached
+        obj.assert_call_counts(1)
+
+        assert obj.has_table_t1() is False  # call 2: False, not cached
+        obj.assert_call_counts(2)
+
+        assert obj.has_table_t1() is True  # call 3: True, cached
+        obj.assert_call_counts(3)
+
+        assert obj.has_table_t1() is True  # call 4: cached, not re-computed
+        obj.assert_call_counts(3)
+
+    def test_cached_if_true_no_arg_method_per_method_isolation(self) -> None:
+        obj = self.MyClass(return_values=[False, True, False])
+        obj.assert_call_counts(0, 0, 0)
+
+        assert obj.has_table_t1() is False
+        obj.assert_call_counts(1, 0, 0)
+
+        assert obj.has_table_missing() is False
+        obj.assert_call_counts(1, 1, 0)
+
+        assert obj.has_table_exists() is True
+        obj.assert_call_counts(1, 1, 1)
+
+        assert obj.has_table_t1() is True
+        obj.assert_call_counts(2, 1, 1)
+
+        assert obj.has_table_missing() is False
+        obj.assert_call_counts(2, 2, 1)
+
+        assert obj.has_table_exists() is True
+        obj.assert_call_counts(2, 2, 1)
+
+        assert obj.has_table_t1() is True
+        obj.assert_call_counts(2, 2, 1)
+
+        assert obj.has_table_missing() is False
+        obj.assert_call_counts(2, 3, 1)
+
+        assert obj.has_table_exists() is True
+        obj.assert_call_counts(2, 3, 1)
+
+    def test_cached_if_true_no_arg_method_per_instance_isolation(self) -> None:
+        obj_true = self.MyClass(return_values=True)
+        obj_false = self.MyClass(return_values=False)
+
+        assert obj_true.has_table_t1() is True
+        obj_true.assert_call_counts(1)
+        obj_false.assert_call_counts(0)
+
+        assert obj_false.has_table_t1() is False
+        obj_true.assert_call_counts(1)
+        obj_false.assert_call_counts(1)
+
+        assert obj_true.has_table_t1() is True
+        obj_true.assert_call_counts(1)
+        obj_false.assert_call_counts(1)
+
+        assert obj_false.has_table_t1() is False
+        obj_true.assert_call_counts(1)
+        obj_false.assert_call_counts(2)
+
+    def test_cached_if_true_no_arg_method_as_property(self) -> None:
+        class MyClass:
+            def __init__(self, return_value: bool) -> None:
+                self._return_value = return_value
+                self.call_count = 0
+
+            @property
+            @cached_if_true_no_arg_method
+            def has_table_t1(self) -> bool:
+                self.call_count += 1
+                return self._return_value
+
+        obj = MyClass(return_value=True)
+        assert obj.has_table_t1 is True
+        assert obj.call_count == 1
+        assert obj.has_table_t1 is True
+        assert obj.call_count == 1  # cached

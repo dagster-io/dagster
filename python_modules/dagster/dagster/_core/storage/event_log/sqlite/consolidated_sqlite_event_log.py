@@ -15,6 +15,7 @@ from watchdog.observers import Observer
 import dagster._check as check
 from dagster._annotations import public
 from dagster._config import StringSource
+from dagster._core.storage.cached_has_table_method import cached_has_table_method
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.schema import SqlEventLogStorageMetadata
@@ -122,6 +123,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def index_connection(self):
         return self._connect()
 
+    @cached_has_table_method
     def has_table(self, table_name: str) -> bool:
         engine = create_engine(
             self._conn_string,

@@ -11,6 +11,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, BATCH_WRITABLE_EVENTS
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.cached_has_table_method import cached_has_table_method
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
@@ -354,8 +355,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 with conn.begin():
                     yield conn
 
+    @cached_has_table_method
     def has_table(self, table_name: str) -> bool:
-        return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
+        with self._connect() as conn:
+            return bool(self._engine.dialect.has_table(conn, table_name))
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:

@@ -37,6 +37,7 @@ from dagster._core.events import (
 )
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import RUNLESS_RUN_ID
+from dagster._core.storage.cached_has_table_method import cached_has_table_method
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
 from dagster._core.storage.event_log.schema import (
@@ -161,6 +162,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             if os.path.splitext(os.path.basename(filename))[0] != INDEX_SHARD_NAME
         ]
 
+    @cached_has_table_method
     def has_table(self, table_name: str) -> bool:
         conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
         engine = create_engine(

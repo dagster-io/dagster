@@ -79,6 +79,7 @@ from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
 from dagster._utils import PrintFn
+from dagster._utils.cached_method import cached_if_true_no_arg_method
 from dagster._utils.merger import merge_dicts
 
 
@@ -819,11 +820,13 @@ class SqlRunStorage(RunStorage):
 
     # Checking for migrations
 
+    @cached_if_true_no_arg_method
     def has_run_stats_index_cols(self) -> bool:
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "start_time" in column_names and "end_time" in column_names
 
+    @cached_if_true_no_arg_method
     def has_bulk_actions_selector_cols(self) -> bool:
         with self.connect() as conn:
             column_names = [
@@ -831,11 +834,13 @@ class SqlRunStorage(RunStorage):
             ]
             return "selector_id" in column_names
 
+    @cached_if_true_no_arg_method
     def has_backfill_id_column(self) -> bool:
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "backfill_id" in column_names
 
+    @cached_if_true_no_arg_method
     def has_bulk_action_job_name_column(self) -> bool:
         with self.connect() as conn:
             column_names = [
@@ -843,6 +848,7 @@ class SqlRunStorage(RunStorage):
             ]
             return "job_name" in column_names
 
+    @cached_if_true_no_arg_method
     def has_backfill_tags_table(self) -> bool:
         with self.connect() as conn:
             return BackfillTagsTable.name in db.inspect(conn).get_table_names()
@@ -1083,9 +1089,10 @@ class SqlRunStorage(RunStorage):
         if self.has_bulk_action_job_name_column():
             values["job_name"] = partition_backfill.job_name
 
+        has_backfill_tags_table = self.has_backfill_tags_table()
         with self.connect() as conn:
             conn.execute(BulkActionsTable.insert().values(**values))
-            if self.has_backfill_tags_table():
+            if has_backfill_tags_table:
                 tags_to_insert = partition_backfill.tags
                 if len(tags_to_insert.items()) > 0:
                     conn.execute(
