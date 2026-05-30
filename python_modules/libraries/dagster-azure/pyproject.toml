@@ -9,14 +9,6 @@ description = "Package for Azure-specific Dagster framework op and resource comp
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "azure-core<2.0.0,>=1.7.0",
     "azure-identity<2.0.0,>=1.7.0",
@@ -34,3 +26,21 @@ dagster-azure = "dagster_azure.cli.cli:main"
 
 [project.entry-points."dagster_dg_cli.registry_modules"]
 dagster_azure = "dagster_azure.components"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-spark",
+    "dagster-pyspark",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-test = { path = "../../dagster-test", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-spark = { path = "../dagster-spark", editable = true }
+dagster-pyspark = { path = "../dagster-pyspark", editable = true }

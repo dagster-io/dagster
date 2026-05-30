@@ -2,8 +2,8 @@ import {Box, Caption, Colors, MiddleTruncate, NonIdealState, Tag} from '@dagster
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/BackfillAssetPartitionsTable.module.css';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {gql} from '../../apollo-client';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
@@ -172,7 +172,7 @@ export const VirtualizedBackfillPartitionsRow = ({
       $start={start}
       data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
     >
-      <RowGrid border="bottom">
+      <Box className={styles.rowGrid} border="bottom">
         <RowCell>
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}
@@ -230,16 +230,10 @@ export const VirtualizedBackfillPartitionsRow = ({
             </RowCell>
           </>
         )}
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
   query BackfillPartitionsForAssetKey($backfillId: String!, $assetKey: AssetKeyInput!) {

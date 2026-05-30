@@ -190,8 +190,32 @@ FROM system_base
 
 COPY --from=snapshot_builder /snapshot-reqs.txt .
 
+# Configure uv cache + link behavior up front, so it applies to the
+# snapshot preinstall below as well as to runtime CI invocations.
+#
+# UV_CACHE_DIR=/work/.cache/uv — set here (not at the end of the
+# Dockerfile) so the snapshot wheels installed below land at the runtime
+# cache path. Without this, uv defaults to /root/.cache/uv during image
+# build while runtime looks at /work/.cache/uv, so the snapshot never
+# serves as a cache hit and every CI venv re-downloads from PyPI.
+#
+# UV_LINK_MODE=symlink — at runtime the cache lives on the container
+# overlay (/work) while target venvs typically live on a bind-mounted
+# host path (e.g. /workdir under the docker plugin). uv's default
+# hardlink mode fails across filesystems and falls back to full copies,
+# doubling the wheel footprint on a single underlying volume — enough
+# on heavy steps like rebuild_pyright_pins (810 wheels, including CUDA
+# libs) to ENOSPC a 16 GB agent volume. Symlinks cross filesystems
+# freely and add ~0 bytes to the venv. Setting it here means the
+# snapshot install also uses symlinks: system site-packages becomes
+# symlinks pointing into /work/.cache/uv, which we keep around for
+# runtime anyway, so this is fine.
+ENV UV_CACHE_DIR=/work/.cache/uv \
+    UV_LINK_MODE=symlink
+
 # Preinstall non-Dagster packages in image so that the virtual environment
-# builds faster in Buildkite.
+# builds faster in Buildkite. Seeds /work/.cache/uv with extracted wheels
+# which runtime venvs symlink from.
 RUN uv pip install --system -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
 
@@ -236,5 +260,4 @@ RUN chmod -R a+w /usr/local/lib /usr/local/bin /usr/lib/node_modules \
 # of which UID the container ends up running as.
 RUN mkdir -p /work/.cache && chmod -R 1777 /work
 ENV HOME=/work \
-    XDG_CACHE_HOME=/work/.cache \
-    UV_CACHE_DIR=/work/.cache/uv
+    XDG_CACHE_HOME=/work/.cache

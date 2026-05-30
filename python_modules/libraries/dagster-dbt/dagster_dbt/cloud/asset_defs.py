@@ -315,21 +315,21 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             @classmethod
-            def get_asset_key(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def get_asset_key(cls, dbt_resource_props):
                 return self._node_info_to_asset_key(dbt_resource_props)
 
             @classmethod
-            def get_description(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def get_description(cls, dbt_resource_props):
                 # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
                 # and attach metadata to link to the docs.
                 return default_description_fn(dbt_resource_props, display_raw_sql=False)
 
             @classmethod
-            def get_group_name(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def get_group_name(cls, dbt_resource_props):
                 return self._node_info_to_group_fn(dbt_resource_props)
 
             @classmethod
-            def get_auto_materialize_policy(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def get_auto_materialize_policy(cls, dbt_resource_props):
                 return self._node_info_to_auto_materialize_policy_fn(dbt_resource_props)
 
         # generate specs for each executed node
@@ -579,10 +579,6 @@ def load_assets_from_dbt_cloud_job(
             config applied to dbt models, i.e.:
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]):
-            A function that takes a dictionary of dbt node info and optionally returns a dictionary
-            of metadata to be attached to the corresponding definition. This is added to the default
-            metadata assigned to the node, which consists of the node's schema (if present).
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given

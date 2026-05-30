@@ -19,9 +19,10 @@ import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
 import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
 import {AssetNodeLink} from '../ForeignNode';
-import {tokenForAssetKey} from '../Utils';
+import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {getAssetNodeDimensions} from '../layout';
+import {AssetNodeFragment} from '../types/AssetNode.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -31,9 +32,9 @@ export default {
 
 interface AssetNodeScenario {
   title: string;
-  liveData: any;
+  liveData: LiveDataForNodeWithStaleData | undefined;
   healthData?: AssetHealthFragment;
-  definition: any;
+  definition: AssetNodeFragment;
   expectedText: string[];
 }
 
@@ -43,7 +44,7 @@ function SetCacheEntry({
   healthData,
 }: {
   assetKey: ReturnType<typeof buildAssetKey>;
-  liveData: any;
+  liveData: LiveDataForNodeWithStaleData | undefined;
   healthData?: AssetHealthFragment;
 }) {
   const key = tokenForAssetKey(assetKey);
@@ -55,7 +56,7 @@ function SetCacheEntry({
     const staleEntry = {
       [key]: buildAssetNode({
         assetKey,
-        staleCauses: liveData.staleCauses.map((cause: any) => buildStaleCause(cause)),
+        staleCauses: liveData.staleCauses.map((cause) => buildStaleCause(cause)),
         staleStatus: liveData.staleStatus,
       }),
     };

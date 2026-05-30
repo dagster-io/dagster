@@ -1,19 +1,12 @@
-import {Colors} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import clsx from 'clsx';
+
+import styles from './css/KeyboardTag.module.css';
 
 interface KeyboardTagProps {
-  $withinTooltip?: boolean;
+  withinTooltip?: boolean;
+  children: React.ReactNode;
 }
 
-export const KeyboardTag = styled.div<KeyboardTagProps>`
-  ${(props) => {
-    return props.$withinTooltip
-      ? `color: ${Colors.accentWhite()}`
-      : `color: ${Colors.textDefault()}`;
-  }};
-  background: ${Colors.backgroundGray()};
-  border-radius: 4px;
-  padding: 2px 4px;
-  margin-left: 6px;
-  font-size: 12px;
-`;
+export const KeyboardTag = ({withinTooltip, children}: KeyboardTagProps) => (
+  <div className={clsx(styles.keyboardTag, withinTooltip && styles.withinTooltip)}>{children}</div>
+);

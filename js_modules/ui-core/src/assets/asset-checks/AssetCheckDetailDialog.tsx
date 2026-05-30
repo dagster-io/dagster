@@ -220,7 +220,7 @@ function canShowMetadataInline(entries: MetadataEntryFragment[]) {
   if (entries.length > 1) {
     return false;
   }
-  if (InlineableTypenames.includes(entries[0]?.__typename as any)) {
+  if (entries[0] && InlineableTypenames.includes(entries[0].__typename)) {
     return true;
   }
   if (entries[0]?.__typename === 'TableMetadataEntry' && entries[0].table.records.length <= 1) {

@@ -50,6 +50,7 @@ from dagster_rest_resources.__generated__.update_issue import (
     UpdateIssueUpdateIssueUpdateIssueSuccessIssue,
 )
 from dagster_rest_resources.api.issue import DgApiIssueApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
     DagsterPlusGraphqlError,
     DagsterPlusUnauthorizedError,
@@ -79,7 +80,7 @@ def _make_issue_fields(**kwargs) -> dict:
 
 class TestGetIssue:
     def test_returns_issue(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_issue.return_value = GetIssue(
             issue=GetIssueIssueIssue(
                 __typename="Issue",
@@ -113,14 +114,14 @@ class TestGetIssue:
         assert result.created_by_name == "test@email.com"
 
     def test_none_response_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_issue.return_value = GetIssue(issue=None)
 
         with pytest.raises(DagsterPlusGraphqlError, match="Issue not found"):
             DgApiIssueApi(_client=client).get_issue("missing")
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_issue.return_value = GetIssue(
             issue=GetIssueIssueUnauthorizedError(__typename="UnauthorizedError", message="")
         )
@@ -129,7 +130,7 @@ class TestGetIssue:
             DgApiIssueApi(_client=client).get_issue("")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_issue.return_value = GetIssue(
             issue=GetIssueIssuePythonError(__typename="PythonError", message="")
         )
@@ -140,7 +141,7 @@ class TestGetIssue:
 
 class TestListIssues:
     def test_returns_issues(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_issues.return_value = ListIssues(
             issues=ListIssuesIssuesIssueConnection(
                 __typename="IssueConnection",
@@ -162,7 +163,7 @@ class TestListIssues:
         assert result.has_more is False
 
     def test_returns_empty_list(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_issues.return_value = ListIssues(
             issues=ListIssuesIssuesIssueConnection(
                 __typename="IssueConnection",
@@ -177,7 +178,7 @@ class TestListIssues:
         assert result == DgApiIssueList(items=[], cursor=None, has_more=False)
 
     def test_returns_paginated_list(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_issues.return_value = ListIssues(
             issues=ListIssuesIssuesIssueConnection(
                 __typename="IssueConnection",
@@ -194,7 +195,7 @@ class TestListIssues:
         assert result.has_more is True
 
     def test_none_response_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_issues.return_value = ListIssues(issues=None)
 
         result = DgApiIssueApi(_client=client).list_issues()
@@ -202,7 +203,7 @@ class TestListIssues:
         assert result == DgApiIssueList(items=[], cursor=None, has_more=False)
 
     def test_passes_filters_to_client(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_issues.return_value = ListIssues(
             issues=ListIssuesIssuesIssueConnection(
                 __typename="IssueConnection", issues=[], cursor=None, hasMore=False
@@ -218,7 +219,7 @@ class TestListIssues:
         assert call_kwargs["filters"].created_after == 1.0
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_issues.return_value = ListIssues(
             issues=ListIssuesIssuesUnauthorizedError(__typename="UnauthorizedError", message="")
         )
@@ -227,7 +228,7 @@ class TestListIssues:
             DgApiIssueApi(_client=client).list_issues()
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_issues.return_value = ListIssues(
             issues=ListIssuesIssuesPythonError(__typename="PythonError", message="")
         )
@@ -238,7 +239,7 @@ class TestListIssues:
 
 class TestCreateIssue:
     def test_creates_issue(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.create_issue.return_value = CreateIssue(
             createIssue=CreateIssueCreateIssueCreateIssueSuccess(
                 __typename="CreateIssueSuccess",
@@ -252,7 +253,7 @@ class TestCreateIssue:
         assert result.id == "new-issue"
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.create_issue.return_value = CreateIssue(
             createIssue=CreateIssueCreateIssueUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -263,7 +264,7 @@ class TestCreateIssue:
             DgApiIssueApi(_client=client).create_issue(title="", description="")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.create_issue.return_value = CreateIssue(
             createIssue=CreateIssueCreateIssuePythonError(__typename="PythonError", message="")
         )
@@ -274,7 +275,7 @@ class TestCreateIssue:
 
 class TestUpdateIssue:
     def test_updates_issue(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.update_issue.return_value = UpdateIssue(
             updateIssue=UpdateIssueUpdateIssueUpdateIssueSuccess(
                 __typename="UpdateIssueSuccess",
@@ -290,7 +291,7 @@ class TestUpdateIssue:
         assert result.id == "updated-issue"
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.update_issue.return_value = UpdateIssue(
             updateIssue=UpdateIssueUpdateIssueUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -301,7 +302,7 @@ class TestUpdateIssue:
             DgApiIssueApi(_client=client).update_issue(issue_id="")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.update_issue.return_value = UpdateIssue(
             updateIssue=UpdateIssueUpdateIssuePythonError(__typename="PythonError", message="")
         )
@@ -310,9 +311,9 @@ class TestUpdateIssue:
             DgApiIssueApi(_client=client).update_issue(issue_id="")
 
 
-class TestAddLinkToIssue:
+class TestCreateLinkOnIssue:
     def test_adds_links(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.add_link_to_issue.return_value = AddLinkToIssue(
             addLinkToIssue=AddLinkToIssueAddLinkToIssueUpdateIssueSuccess(
                 __typename="UpdateIssueSuccess",
@@ -334,7 +335,7 @@ class TestAddLinkToIssue:
             )
         )
 
-        result = DgApiIssueApi(_client=client).add_link_to_issue(
+        result = DgApiIssueApi(_client=client).create_link_on_issue(
             issue_id="test-issue", run_id="test-run", asset_key=["test", "asset"]
         )
 
@@ -345,7 +346,7 @@ class TestAddLinkToIssue:
         assert result.linked_objects[1].asset_key == "test/asset"
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.add_link_to_issue.return_value = AddLinkToIssue(
             addLinkToIssue=AddLinkToIssueAddLinkToIssueUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -353,10 +354,10 @@ class TestAddLinkToIssue:
         )
 
         with pytest.raises(DagsterPlusUnauthorizedError, match="Error adding link"):
-            DgApiIssueApi(_client=client).add_link_to_issue(issue_id="")
+            DgApiIssueApi(_client=client).create_link_on_issue(issue_id="")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.add_link_to_issue.return_value = AddLinkToIssue(
             addLinkToIssue=AddLinkToIssueAddLinkToIssuePythonError(
                 __typename="PythonError", message=""
@@ -364,12 +365,12 @@ class TestAddLinkToIssue:
         )
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error adding link"):
-            DgApiIssueApi(_client=client).add_link_to_issue(issue_id="")
+            DgApiIssueApi(_client=client).create_link_on_issue(issue_id="")
 
 
-class TestRemoveLinkFromIssue:
+class TestDeleteLinkFromIssue:
     def test_removes_link(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.remove_link_from_issue.return_value = RemoveLinkFromIssue(
             removeLinkFromIssue=RemoveLinkFromIssueRemoveLinkFromIssueUpdateIssueSuccess(
                 __typename="UpdateIssueSuccess",
@@ -382,14 +383,14 @@ class TestRemoveLinkFromIssue:
             )
         )
 
-        result = DgApiIssueApi(_client=client).remove_link_from_issue(
+        result = DgApiIssueApi(_client=client).delete_link_from_issue(
             issue_id="test-issue", run_id="run-xyz", asset_key=["test", "asset"]
         )
 
         assert result.linked_objects == []
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.remove_link_from_issue.return_value = RemoveLinkFromIssue(
             removeLinkFromIssue=RemoveLinkFromIssueRemoveLinkFromIssueUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -397,10 +398,10 @@ class TestRemoveLinkFromIssue:
         )
 
         with pytest.raises(DagsterPlusUnauthorizedError, match="Error removing link"):
-            DgApiIssueApi(_client=client).remove_link_from_issue(issue_id="")
+            DgApiIssueApi(_client=client).delete_link_from_issue(issue_id="")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.remove_link_from_issue.return_value = RemoveLinkFromIssue(
             removeLinkFromIssue=RemoveLinkFromIssueRemoveLinkFromIssuePythonError(
                 __typename="PythonError", message=""
@@ -408,4 +409,4 @@ class TestRemoveLinkFromIssue:
         )
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error removing link"):
-            DgApiIssueApi(_client=client).remove_link_from_issue(issue_id="")
+            DgApiIssueApi(_client=client).delete_link_from_issue(issue_id="")

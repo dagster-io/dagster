@@ -158,3 +158,28 @@ Region qualifiers help optimize scanning for multi-region datasets.
 ### Optional: Configure asset filtering
 
 Use filtering to control which projects, datasets, tables, and views are synced. Patterns use regular expressions.
+
+## Connection freshness
+
+Once a BigQuery Connection is created, Dagster automatically tracks changes to your BigQuery tables and emits a materialization on the corresponding Connection asset each time the underlying table is updated in BigQuery. As a result, your Connection assets reflect the most recent state of the BigQuery tables without needing to define a sensor or schedule.
+
+### Prerequisites
+
+Connection freshness for BigQuery reuses the service account credentials already configured on the Connection — no additional setup is required. Under the hood, Dagster polls `<region>.INFORMATION_SCHEMA.TABLE_STORAGE` for `last_modification_time` via the BigQuery Jobs API.
+
+The roles granted in [Grant required permissions](#step-12-grant-required-permissions) are sufficient:
+
+- **BigQuery Metadata Viewer** on the target projects — provides `bigquery.tables.get`, which is the read privilege required to query `INFORMATION_SCHEMA.TABLE_STORAGE` for those projects.
+- **BigQuery Job User** on the extractor project — provides `bigquery.jobs.create`, which is required to run the polling query.
+
+Tables must live in a region included in [`region_qualifiers`](#optional-configure-region-qualifiers) (defaults to `region-us` and `region-eu`); changes in regions not listed there will not be detected.
+
+### Triggering downstream assets
+
+Each detected change produces a standard Dagster materialization event on the Connection asset, so code-defined assets can depend on a Connection asset like any other upstream. Combine that with an [Automation Condition](/guides/automate/declarative-automation) to materialize a downstream asset whenever its BigQuery parent changes:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/labs/connections/bigquery/connection_freshness_downstream.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>

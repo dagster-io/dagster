@@ -24,7 +24,7 @@ class DgApiAssetCheckApi:
 
         match node_result.typename__:
             case "AssetNode":
-                checks_result = node_result.asset_checks_or_error
+                checks_result = node_result.asset_checks_or_error  # ty: ignore[unresolved-attribute]
                 match checks_result.typename__:
                     case "AssetChecks":
                         return DgApiAssetCheckList(
@@ -37,25 +37,25 @@ class DgApiAssetCheckApi:
                                     job_names=list(c.job_names),
                                     can_execute_individually=c.can_execute_individually,
                                 )
-                                for c in checks_result.checks
+                                for c in checks_result.checks  # ty: ignore[unresolved-attribute]
                             ]
                         )
                     case "AssetCheckNeedsMigrationError":
                         raise DagsterPlusGraphqlError(
-                            f"Asset check needs migration: {checks_result.message}"
+                            f"Asset check needs migration: {checks_result.message}"  # ty: ignore[unresolved-attribute]
                         )
                     case "AssetCheckNeedsUserCodeUpgrade":
                         raise DagsterPlusGraphqlError(
-                            f"Asset check needs user code upgrade: {checks_result.message}"
+                            f"Asset check needs user code upgrade: {checks_result.message}"  # ty: ignore[unresolved-attribute]
                         )
                     case "AssetCheckNeedsAgentUpgradeError":
                         raise DagsterPlusGraphqlError(
-                            f"Asset check needs agent update: {checks_result.message}"
+                            f"Asset check needs agent update: {checks_result.message}"  # ty: ignore[unresolved-attribute]
                         )
                     case _ as unreachable:
                         assert_never(unreachable)
             case "AssetNotFoundError":
-                raise DagsterPlusGraphqlError(f"Asset not found: {node_result.message}")
+                raise DagsterPlusGraphqlError(f"Asset not found: {node_result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

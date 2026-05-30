@@ -792,10 +792,10 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             return original_method(
                 self,
                 origin,
-                host,  # pyright: ignore[reportArgumentType]
+                host,  # ty: ignore[invalid-argument-type]
                 port,
                 socket,
-                heartbeat,  # pyright: ignore[reportArgumentType]
+                heartbeat,  # ty: ignore[invalid-argument-type]
                 watch_server,
                 grpc_server_registry,
             )
@@ -1090,14 +1090,14 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         instance.event_log_storage.set_concurrency_slots("foo", 1)
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
-        caplog.text.count("is blocked by global concurrency limits") == 0  # pyright: ignore[reportUnusedExpression]
+        caplog.text.count("is blocked by global concurrency limits") == 0
 
         self.submit_run(
             instance, remote_job, workspace, run_id=run_id_2, asset_selection=set([foo_key])
         )
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
-        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
 
         self.submit_run(
             instance, remote_job, workspace, run_id=run_id_3, asset_selection=set([foo_key])
@@ -1105,17 +1105,17 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
         # the log message only shows up once per run
-        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
-        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
+        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1
 
         # bumping up the slot by one means that one more run should get dequeued
         instance.event_log_storage.set_concurrency_slots("foo", 2)
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1, run_id_2}
-        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
-        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
+        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1
 
-    @pytest.mark.flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     @pytest.mark.parametrize(
         "run_coordinator_config",
         [
@@ -1385,7 +1385,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
-        caplog.text.count("is blocked by global concurrency limits") == 0  # pyright: ignore[reportUnusedExpression]
+        caplog.text.count("is blocked by global concurrency limits") == 0
 
         # the global concurrency counter has initialized the concurrency configuration
         assert "foo" in instance.event_log_storage.get_concurrency_keys()
@@ -1395,7 +1395,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         )
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
-        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
 
     @pytest.mark.parametrize(
         "concurrency_config",

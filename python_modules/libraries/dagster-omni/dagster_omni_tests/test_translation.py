@@ -52,16 +52,17 @@ class TestOmniTranslation(TestTranslation):
         assertion: Callable[[AssetSpec], bool],
         key_modifier: Callable[[dg.AssetKey], dg.AssetKey] | None,
     ) -> None:
+        attributes_dict: dict[str, Any] = {
+            "workspace": {
+                "base_url": "https://test.omniapp.co",
+                "api_key": "test-key",
+            },
+            "translation": attributes,
+        }
         body = {
             "type": "dagster_omni.OmniComponent",
-            "attributes": {
-                "workspace": {
-                    "base_url": "https://test.omniapp.co",
-                    "api_key": "test-key",
-                },
-            },
+            "attributes": attributes_dict,
         }
-        body["attributes"]["translation"] = attributes
         with setup_omni_component(defs_yaml_contents=body) as (_, defs):
             expected_key = dg.AssetKey(["analytics", "reports", "User Analysis"])
             if key_modifier:

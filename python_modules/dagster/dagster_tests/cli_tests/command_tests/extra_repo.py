@@ -11,6 +11,6 @@ def extra_job():
     do_something()
 
 
-@dg.repository  # pyright: ignore[reportArgumentType]
+@dg.repository
 def extra():
     return {"jobs": {"extra_job": extra_job}}

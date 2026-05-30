@@ -1,7 +1,7 @@
-import {Colors, FontFamily} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import clsx from 'clsx';
 
 import {Edge, isHighlighted, position} from './common';
+import styles from './css/OpIOBox.module.css';
 import {OpLayoutIO} from './layout';
 import {
   OpNodeDefinitionFragment,
@@ -38,7 +38,7 @@ export const OpIOBox = ({
   jumpTargetOp,
   edges,
   highlightedEdges,
-  colorKey,
+  colorKey: _colorKey,
   item,
   layoutInfo,
   onDoubleClick,
@@ -51,7 +51,8 @@ export const OpIOBox = ({
   const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));
 
   return (
-    <OpIOContainer
+    <div
+      className={styles.opIOContainer}
       title={title}
       style={{...position(layoutInfo.layout), width: 'initial'}}
       onMouseEnter={() => onHighlightEdges(edges)}
@@ -63,74 +64,28 @@ export const OpIOBox = ({
         e.stopPropagation();
       }}
       onDoubleClick={(e) => e.stopPropagation()}
-      $colorKey={colorKey}
-      $highlighted={highlighted}
     >
       {minified || !layoutInfo.label ? (
-        <div className="circle" />
+        <div className={clsx(styles.circle, highlighted && styles.circleHighlighted)} />
       ) : (
         <>
-          <div className="circle" />
-          {name !== DEFAULT_RESULT_NAME && <div className="label">{name}</div>}
+          <div className={clsx(styles.circle, highlighted && styles.circleHighlighted)} />
+          {name !== DEFAULT_RESULT_NAME && <div className={styles.label}>{name}</div>}
           {type.displayName && type.displayName !== 'Nothing' && (
-            <div className="type">{type.displayName}</div>
+            <div className={styles.type}>{type.displayName}</div>
           )}
         </>
       )}
       {layoutInfo.collapsed.length > 0 && (
-        <div className="collapsedCount">+ {layoutInfo.collapsed.length}</div>
+        <div
+          className={clsx(styles.collapsedCount, highlighted && styles.collapsedCountHighlighted)}
+        >
+          + {layoutInfo.collapsed.length}
+        </div>
       )}
-    </OpIOContainer>
+    </div>
   );
 };
-
-const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
-  display: inline-flex;
-  align-items: center;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  background: ${(p) => (p.$highlighted ? Colors.backgroundDefault() : Colors.backgroundDefault())};
-  font-size: 12px;
-
-  &:first-child {
-    border-top-left-radius: 8px;
-  }
-  &:last-child {
-    border-bottom-left-radius: 8px;
-  }
-
-  .circle {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: ${(p) => (p.$highlighted ? Colors.accentBlue() : Colors.accentGray())};
-    display: inline-block;
-    margin: 6px;
-  }
-  .label {
-    line-height: 26px;
-    font-family: ${FontFamily.monospace};
-    font-weight: 500;
-    height: 26px;
-    padding-left: 2px;
-    padding-right: 6px;
-  }
-  .type {
-    padding: 1px 6px;
-    background: ${Colors.backgroundBlue()};
-    margin-right: 4px;
-    color: ${Colors.textBlue()};
-    font-family: ${FontFamily.monospace};
-    font-weight: 700;
-    border-radius: 4px;
-  }
-  .collapsedCount {
-    color: ${(p) => (p.$highlighted ? Colors.textBlue() : Colors.textLight())};
-    font-weight: 600;
-    margin-left: -3px;
-    padding-right: 4px;
-  }
-`;
 
 export function metadataForCompositeParentIO(
   parentDefinition: OpNodeDefinitionFragment,

@@ -64,7 +64,9 @@ class SimplePipesScriptComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @asset(key=self._asset_key)
         def _asset(context: AssetExecutionContext, pipes_client: PipesSubprocessClient):
-            cmd = [shutil.which("python"), self._script_path]
+            python_path = shutil.which("python")
+            assert python_path is not None
+            cmd = [python_path, str(self._script_path)]
             return pipes_client.run(command=cmd, context=context).get_results()
 
         return Definitions(assets=[_asset])

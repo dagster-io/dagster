@@ -12,6 +12,7 @@ from dagster_rest_resources.__generated__.update_organization_settings import (
     UpdateOrganizationSettingsSetOrganizationSettingsUnauthorizedError,
 )
 from dagster_rest_resources.api.organization import DgApiOrganizationApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
     DagsterPlusGraphqlError,
     DagsterPlusUnauthorizedError,
@@ -20,7 +21,7 @@ from dagster_rest_resources.schemas.exception import (
 
 class TestGetOrganizationSettings:
     def test_returns_settings_from_response(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_organization_settings.return_value = GetOrganizationSettings(
             organizationSettings=GetOrganizationSettingsOrganizationSettings(
                 settings={"sso_default_role": "VIEWER"}
@@ -31,7 +32,7 @@ class TestGetOrganizationSettings:
         assert result.settings == {"sso_default_role": "VIEWER"}
 
     def test_returns_empty_settings_when_none(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_organization_settings.return_value = GetOrganizationSettings(
             organizationSettings=None
         )
@@ -42,7 +43,7 @@ class TestGetOrganizationSettings:
 
 class TestUpdateOrganizationSettings:
     def test_success_returns_settings(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.update_organization_settings.return_value = UpdateOrganizationSettings(
             setOrganizationSettings=UpdateOrganizationSettingsSetOrganizationSettingsOrganizationSettings(
                 __typename="OrganizationSettings", settings={"sso_default_role": "EDITOR"}
@@ -56,7 +57,7 @@ class TestUpdateOrganizationSettings:
         assert result.settings == {"sso_default_role": "EDITOR"}
 
     def test_unauthorized_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.update_organization_settings.return_value = UpdateOrganizationSettings(
             setOrganizationSettings=UpdateOrganizationSettingsSetOrganizationSettingsUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -69,7 +70,7 @@ class TestUpdateOrganizationSettings:
             DgApiOrganizationApi(_client=client).update_organization_settings({})
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.update_organization_settings.return_value = UpdateOrganizationSettings(
             setOrganizationSettings=UpdateOrganizationSettingsSetOrganizationSettingsPythonError(
                 __typename="PythonError", message=""

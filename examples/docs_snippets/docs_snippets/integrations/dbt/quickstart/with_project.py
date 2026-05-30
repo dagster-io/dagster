@@ -22,7 +22,7 @@ my_project.prepare_if_dev()
 from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, dbt_assets
 
-from .project import my_project
+from .project import my_project  # ty: ignore[unresolved-import]
 
 @dbt_assets(manifest=my_project.manifest_path)
 def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -35,11 +35,11 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 
-from .assets import my_dbt_assets
-from .project import my_project
+from .assets import my_dbt_assets  # ty: ignore[unresolved-import]
+from .project import my_project  # ty: ignore[unresolved-import]
 
 defs = Definitions(
-    ...,
+    ...,  # ty: ignore[invalid-argument-type]
     assets=[  # type: ignore
         ...,
         # Add the dbt assets alongside your other asset
@@ -49,6 +49,6 @@ defs = Definitions(
         ...: ...,
         # Add the dbt resource alongside your other resources
         "dbt": DbtCliResource(project_dir=my_project),
-    },
+    },  # ty: ignore[invalid-argument-type]
 )
 # end_dbt_definitions_example

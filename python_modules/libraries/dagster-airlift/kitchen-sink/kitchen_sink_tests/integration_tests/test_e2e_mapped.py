@@ -51,7 +51,7 @@ def dag_id_of_mat(event_log_entry: EventLogEntry) -> bool:
     json_metadata_value = event_log_entry.asset_materialization.metadata[RAW_METADATA_KEY]
     assert isinstance(json_metadata_value, JsonMetadataValue)
     assert isinstance(json_metadata_value.data, dict)
-    return json_metadata_value.data["dag_id"]
+    return json_metadata_value.data["dag_id"]  # ty: ignore[invalid-argument-type]
 
 
 def test_dagster_weekly_daily_materializes(

@@ -421,7 +421,7 @@ class DagsterInstance(
         asset_key: "AssetKey",
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Mapping[str, "AssetPartitionStatus"] | None:
+    ) -> Mapping[str, "AssetPartitionStatus | None"] | None:
         """Get the current status of provided partition_keys for the provided asset.
 
         Args:
@@ -545,6 +545,10 @@ class DagsterInstance(
         return self._run_storage.get_run_records(
             filters, limit, order_by, ascending, cursor, bucket_by
         )
+
+    def get_default_graphql_run_records_limit(self) -> int | None:
+        env_value = os.getenv("DAGSTER_DEFAULT_GRAPHQL_RUN_RECORDS_LIMIT")
+        return int(env_value) if env_value is not None else None
 
     # Event Domain
     # ------------
@@ -841,7 +845,7 @@ class DagsterInstance(
                 compute_log_manager,
                 "Compute log manager not configured in instance ref",
             )
-            self._compute_log_manager = cast("ComputeLogManager", compute_log_manager)
+            self._compute_log_manager = compute_log_manager
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 

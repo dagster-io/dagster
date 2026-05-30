@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -195,10 +193,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     </SortButton>
   ) : undefined;
 
-  const inputProps: InputGroupProps2 & HTMLInputProps = {
+  const inputProps: NonNullable<React.ComponentProps<typeof Suggest<string>>['inputProps']> = {
     placeholder: 'Partition',
     style: {width: 180},
-    intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
+    intent: (loading ? !!value : !!selected) ? 'none' : 'danger',
     rightElement,
   };
 

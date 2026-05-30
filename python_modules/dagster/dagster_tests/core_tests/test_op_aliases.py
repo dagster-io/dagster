@@ -16,7 +16,7 @@ def test_aliased_ops():
     job_def = dg.GraphDefinition(
         node_defs=[first, not_first],
         name="test",
-        dependencies={  # pyright: ignore[reportArgumentType]
+        dependencies={  # ty: ignore[invalid-argument-type]
             "not_first": {"prev": dg.DependencyDefinition("first")},
             dg.NodeInvocation("not_first", alias="second"): {
                 "prev": dg.DependencyDefinition("not_first")

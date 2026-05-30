@@ -91,7 +91,7 @@ describe('getAttributesMap', () => {
 
     const result = getAttributesMap(mockAssets);
 
-    expect((result as any).status).toEqual(expect.arrayContaining(SUB_STATUSES));
+    expect('status' in result && result.status).toEqual(expect.arrayContaining(SUB_STATUSES));
   });
 
   it('should handle empty assets array', () => {

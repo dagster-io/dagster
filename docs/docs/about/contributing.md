@@ -35,11 +35,11 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 3. Create and activate a virtual environment using uv with a Python version that Dagster supports:
 
    ```bash
-   uv venv --python 3.12
+   uv venv --python 3.13
    source .venv/bin/activate
    ```
 
-   Dagster supports Python 3.10 through 3.12.
+   Dagster supports Python 3.10 or higher.
 
 4. Install Node.js (20.X and above). We recommend using [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager) to manage Node.js versions. It allows you to switch between different Node versions:
 

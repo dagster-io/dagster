@@ -8,17 +8,16 @@ const MAR_1_2021 = 1614600000; // Mar 1, 2021 00:00 UTC
 const MAR_14_2021 = 1615708800; // Just after DST in USA: Mar 14, 2021 08:00 UTC
 
 describe('timestampToString', () => {
-  let dateNow: any = null;
+  const originalDateNow = global.Date.now;
   beforeEach(() => {
     jest.useFakeTimers();
-    dateNow = global.Date.now;
     const dateNowStub = jest.fn(() => FEB_1_2021 * 1000);
     global.Date.now = dateNowStub;
   });
 
   afterEach(() => {
     jest.useRealTimers();
-    global.Date.now = dateNow;
+    global.Date.now = originalDateNow;
   });
 
   it('formats current year', () => {

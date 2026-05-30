@@ -23,43 +23,43 @@ class DgApiJobApi:
         match result.typename__:
             case "RepositoryConnection":
                 jobs: list[DgApiJob] = []
-                for repo in result.nodes:
+                for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                     location_name = repo.location.name
                     repo_name = repo.name
                     repository_origin = (
                         f"{location_name}@{repo_name}" if location_name and repo_name else None
                     )
-                    for j in repo.jobs:
-                        jobs.append(
-                            DgApiJob(
-                                id=j.id,
-                                name=j.name,
-                                description=j.description,
-                                is_asset_job=j.is_asset_job,
-                                tags=[DgApiJobTag(key=t.key, value=t.value) for t in j.tags],
-                                schedules=[
-                                    DgApiJobScheduleSummary(
-                                        name=s.name,
-                                        cron_schedule=s.cron_schedule or "",
-                                        status=s.schedule_state.status,
-                                    )
-                                    for s in j.schedules
-                                ],
-                                sensors=[
-                                    DgApiJobSensorSummary(
-                                        name=s.name,
-                                        status=s.sensor_state.status,
-                                    )
-                                    for s in j.sensors
-                                ],
-                                repository_origin=repository_origin,
-                            )
+                    jobs.extend(
+                        DgApiJob(
+                            id=j.id,
+                            name=j.name,
+                            description=j.description,
+                            is_asset_job=j.is_asset_job,
+                            tags=[DgApiJobTag(key=t.key, value=t.value) for t in j.tags],
+                            schedules=[
+                                DgApiJobScheduleSummary(
+                                    name=s.name,
+                                    cron_schedule=s.cron_schedule or "",
+                                    status=s.schedule_state.status,
+                                )
+                                for s in j.schedules
+                            ],
+                            sensors=[
+                                DgApiJobSensorSummary(
+                                    name=s.name,
+                                    status=s.sensor_state.status,
+                                )
+                                for s in j.sensors
+                            ],
+                            repository_origin=repository_origin,
                         )
+                        for j in repo.jobs
+                    )
                 return DgApiJobList(items=jobs, total=len(jobs))
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Repository not found: {result.message}")
+                raise DagsterPlusGraphqlError(f"Repository not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching jobs: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching jobs: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

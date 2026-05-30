@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -24,14 +25,14 @@ TEST_SECOND_PROJECT_NAME = "test_second_project_name"
 TEST_SECOND_PROJECT_ID = "test_second_project_id"
 
 
-SAMPLE_DATA_SOURCE = {
+SAMPLE_DATA_SOURCE: dict[str, Any] = {
     "luid": TEST_DATA_SOURCE_ID,
     "name": "Superstore Datasource",
     "hasExtracts": False,
     "isPublished": True,
 }
 
-SAMPLE_EMBEDDED_DATA_SOURCE = {
+SAMPLE_EMBEDDED_DATA_SOURCE: dict[str, Any] = {
     "id": TEST_EMBEDDED_DATA_SOURCE_ID,
     "name": "Embedded Superstore Datasource",
     "hasExtracts": True,
@@ -39,7 +40,7 @@ SAMPLE_EMBEDDED_DATA_SOURCE = {
     "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
-SAMPLE_DATA_SOURCE_HIDDEN_SHEET = {
+SAMPLE_DATA_SOURCE_HIDDEN_SHEET: dict[str, Any] = {
     "luid": TEST_DATA_SOURCE_HIDDEN_SHEET_ID,
     "name": "Hidden Sheet Datasource",
     "hasExtracts": True,
@@ -47,7 +48,7 @@ SAMPLE_DATA_SOURCE_HIDDEN_SHEET = {
 }
 
 
-SAMPLE_SHEET = {
+SAMPLE_SHEET: dict[str, Any] = {
     "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
     "id": "sample_sheet_1_metadata_id",
     "name": "Sales",
@@ -66,7 +67,7 @@ SAMPLE_SHEET = {
     "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
-SAMPLE_SHEET_2 = {
+SAMPLE_SHEET_2: dict[str, Any] = {
     "luid": "be8a5f27-9b2f-54e9-bec3-84fe6c638f4f",
     "id": "sample_sheet_2_metadata_id",
     "name": "Account",
@@ -79,7 +80,7 @@ SAMPLE_SHEET_2 = {
     "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
-SAMPLE_HIDDEN_SHEET = {
+SAMPLE_HIDDEN_SHEET: dict[str, Any] = {
     "luid": None,
     "id": "sample_hidden_sheet_metadata_id",
     "name": "hidden",
@@ -100,7 +101,7 @@ SAMPLE_HIDDEN_SHEET = {
 
 SHEET_LIST = [SAMPLE_SHEET, SAMPLE_SHEET_2, SAMPLE_HIDDEN_SHEET]
 
-SAMPLE_DASHBOARD = {
+SAMPLE_DASHBOARD: dict[str, Any] = {
     "luid": "c9bf8403-5daf-427a-b3d6-2ce9bed7798f",
     "name": "Dashboard_Sales",
     "createdAt": "2024-09-06T14:38:42Z",
@@ -120,7 +121,7 @@ SAMPLE_DASHBOARD = {
 }
 
 
-SAMPLE_WORKBOOK = {
+SAMPLE_WORKBOOK: dict[str, Any] = {
     "luid": TEST_WORKBOOK_ID,
     "name": "Test Workbook",
     "createdAt": "2024-09-05T21:33:26Z",
@@ -136,10 +137,10 @@ SAMPLE_WORKBOOK = {
     ],
 }
 
-SAMPLE_WORKBOOKS = {"workbooks": {"workbook": [{"id": TEST_WORKBOOK_ID}]}}
+SAMPLE_WORKBOOKS: dict[str, Any] = {"workbooks": {"workbook": [{"id": TEST_WORKBOOK_ID}]}}
 
 # Second workbook samples
-SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE = {
+SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE: dict[str, Any] = {
     "id": "2f5660c7-4c05-6ff0-90ce-5299226956c7",
     "name": "Embedded Sales Datasource",
     "hasExtracts": True,
@@ -147,7 +148,7 @@ SAMPLE_SECOND_WORKBOOK_EMBEDDED_DATA_SOURCE = {
     "workbook": {"luid": TEST_SECOND_WORKBOOK_ID},
 }
 
-SAMPLE_SECOND_WORKBOOK_SHEET_1 = {
+SAMPLE_SECOND_WORKBOOK_SHEET_1: dict[str, Any] = {
     "luid": "df9b6g38-9c3g-55f0-cfd4-95gf7d749g5g",
     "id": "sample_second_workbook_sheet_1_metadata_id",
     "name": "Revenue",
@@ -163,7 +164,7 @@ SAMPLE_SECOND_WORKBOOK_SHEET_1 = {
     "workbook": {"luid": TEST_SECOND_WORKBOOK_ID},
 }
 
-SAMPLE_SECOND_WORKBOOK_SHEET_2 = {
+SAMPLE_SECOND_WORKBOOK_SHEET_2: dict[str, Any] = {
     "luid": "eg0c7h49-0d4h-66g1-dgf5-06hg8e850h6h",
     "id": "sample_second_workbook_sheet_2_metadata_id",
     "name": "Profit",
@@ -181,7 +182,7 @@ SAMPLE_SECOND_WORKBOOK_SHEET_2 = {
 
 SECOND_WORKBOOK_SHEET_LIST = [SAMPLE_SECOND_WORKBOOK_SHEET_1, SAMPLE_SECOND_WORKBOOK_SHEET_2]
 
-SAMPLE_SECOND_WORKBOOK_DASHBOARD = {
+SAMPLE_SECOND_WORKBOOK_DASHBOARD: dict[str, Any] = {
     "luid": "fh1d8i50-1e5i-77h2-eig6-17ih9f961i7i",
     "name": "Dashboard_Revenue",
     "createdAt": "2024-10-03T08:15:20Z",
@@ -196,7 +197,7 @@ SAMPLE_SECOND_WORKBOOK_DASHBOARD = {
     "workbook": {"luid": TEST_SECOND_WORKBOOK_ID},
 }
 
-SAMPLE_SECOND_WORKBOOK = {
+SAMPLE_SECOND_WORKBOOK: dict[str, Any] = {
     "luid": TEST_SECOND_WORKBOOK_ID,
     "name": "Second Workbook",
     "createdAt": "2024-10-01T10:00:00Z",
@@ -212,7 +213,7 @@ SAMPLE_SECOND_WORKBOOK = {
     ],
 }
 
-SAMPLE_VIEW_SHEET = {
+SAMPLE_VIEW_SHEET: dict[str, Any] = {
     "view": {
         "workbook": {"id": TEST_WORKBOOK_ID},
         "owner": {"id": "2a59b27f-a842-4c7a-a6ed-8c9f814e6119"},
@@ -227,7 +228,7 @@ SAMPLE_VIEW_SHEET = {
     }
 }
 
-SAMPLE_VIEW_DASHBOARD = {
+SAMPLE_VIEW_DASHBOARD: dict[str, Any] = {
     "view": {
         "workbook": {"id": TEST_WORKBOOK_ID},
         "owner": {"id": "2a59b27f-a842-4c7a-a6ed-8c9f814e6119"},

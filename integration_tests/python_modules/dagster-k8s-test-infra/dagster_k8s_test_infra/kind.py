@@ -1,9 +1,11 @@
 # ruff: noqa: T201
 
 import os
+import random
 import subprocess
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 
 import dagster._check as check
@@ -11,15 +13,39 @@ import kubernetes
 from dagster._utils import safe_tempfile_path
 
 from dagster_k8s_test_infra.cluster import ClusterConfig
-from dagster_k8s_test_infra.integration_utils import check_output, which_, within_docker
+from dagster_k8s_test_infra.integration_utils import (
+    IS_BUILDKITE,
+    check_output,
+    which_,
+    within_docker,
+)
 
 CLUSTER_INFO_DUMP_DIR = "kind-info-dump"
 
+# kind-registry is a docker.io pull-through cache that runs as a sibling
+# container to the kind cluster (in the dind sidecar's docker daemon).
+# kind's containerd is configured via containerdConfigPatches to use it as
+# the docker.io mirror, so kubelet inside kind never talks to docker.io
+# directly. Eliminates rate-limit pressure on shared NAT egress IPs without
+# requiring kind_load_images to preload every supporting image.
+KIND_REGISTRY_NAME = "kind-registry"
+KIND_REGISTRY_PORT = 5000
+KIND_NETWORK_NAME = "kind"
 
-def _docker_pull_with_retry(image, attempts=3, backoff_seconds=5):
-    # Docker Hub intermittently returns 5xx from its blob CDN; a couple of retries with
-    # backoff is enough to mask transient failures without masking real auth/404 errors
-    # (those will still fail every attempt).
+# On Buildkite, chain through the EKS-level dockerhub-mirror so the cache
+# is shared across all agent pods on the cluster (one cluster-wide
+# `registry:2` Deployment in the buildkite-agent namespace, see
+# infra/k8s/buildkite/overlays/buildkite-eks/dockerhub-mirror.yaml).
+# Locally, fall back to pulling direct from docker.io.
+_BUILDKITE_DOCKERHUB_MIRROR = "http://dockerhub-mirror.buildkite-agent.svc.cluster.local:5000"
+_DOCKERHUB_UPSTREAM = "https://registry-1.docker.io"
+
+
+def _docker_pull_with_retry(image, attempts=6, base_backoff_seconds=5, max_backoff_seconds=60):
+    # Docker Hub and ECR's S3 layer-blob backend both intermittently return 5xx; the
+    # outage window can span tens of seconds, so exponential backoff with jitter widens
+    # the recovery envelope to ~155s cumulative without masking real auth/404 errors
+    # (those still fail every attempt).
     for attempt in range(1, attempts + 1):
         try:
             check_output(["docker", "pull", image])
@@ -27,8 +53,83 @@ def _docker_pull_with_retry(image, attempts=3, backoff_seconds=5):
         except subprocess.CalledProcessError:
             if attempt == attempts:
                 raise
-            print(f"docker pull {image} failed (attempt {attempt}/{attempts}); retrying...")
-            time.sleep(backoff_seconds)
+            sleep_s = min(base_backoff_seconds * 2 ** (attempt - 1), max_backoff_seconds)
+            sleep_s *= 0.8 + 0.4 * random.random()
+            print(
+                f"docker pull {image} failed (attempt {attempt}/{attempts}); "
+                f"sleeping {sleep_s:.1f}s before retry..."
+            )
+            time.sleep(sleep_s)
+
+
+def _registry_proxy_remote_url() -> str:
+    return _BUILDKITE_DOCKERHUB_MIRROR if IS_BUILDKITE else _DOCKERHUB_UPSTREAM
+
+
+def _ensure_kind_registry() -> None:
+    """Start (or reuse) the docker.io pull-through registry-proxy container.
+
+    Idempotent: safe to call repeatedly. The container persists for the lifetime
+    of the dind sidecar so subsequent kind clusters in the same pod reuse its
+    cache.
+    """
+    # subprocess.run directly so we can inspect returncode without the
+    # integration_utils.check_output wrapper re-raising CalledProcessError
+    # as a generic Exception.
+    inspect = subprocess.run(
+        ["docker", "inspect", "-f", "{{.State.Running}}", KIND_REGISTRY_NAME],
+        capture_output=True,
+        check=False,
+    )
+    if inspect.returncode == 0:
+        if inspect.stdout.decode("utf-8").strip() == "true":
+            print(f"kind: registry {KIND_REGISTRY_NAME} already running")
+            return
+        # Container exists but is stopped -- start it.
+        subprocess.run(["docker", "start", KIND_REGISTRY_NAME], check=True)
+        print(f"kind: restarted existing registry container {KIND_REGISTRY_NAME}")
+        return
+
+    remote_url = _registry_proxy_remote_url()
+    print(f"kind: creating registry container {KIND_REGISTRY_NAME} -> {remote_url}")
+    subprocess.run(
+        [
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            KIND_REGISTRY_NAME,
+            "--restart=always",
+            "-e",
+            f"REGISTRY_PROXY_REMOTEURL={remote_url}",
+            "-p",
+            f"{KIND_REGISTRY_PORT}:{KIND_REGISTRY_PORT}",
+            "registry:2",
+        ],
+        check=True,
+    )
+
+
+def _attach_registry_to_kind_network() -> None:
+    """Connect kind-registry to the kind docker network.
+
+    Required so kind nodes can resolve `kind-registry:5000` via docker's
+    embedded DNS. Idempotent: if the registry is already attached, docker
+    network connect returns nonzero with `already exists` in stderr -- treat
+    that as success.
+    """
+    result = subprocess.run(
+        ["docker", "network", "connect", KIND_NETWORK_NAME, KIND_REGISTRY_NAME],
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode == 0:
+        print(f"kind: connected {KIND_REGISTRY_NAME} to {KIND_NETWORK_NAME} network")
+        return
+    stderr = result.stderr.decode("utf-8", errors="replace")
+    if "already exists" in stderr:
+        return
+    print(f"kind: warning: failed to attach registry to {KIND_NETWORK_NAME} network: {stderr}")
 
 
 def kind_load_images(cluster_name, local_dagster_test_image, additional_images=None):
@@ -36,15 +137,23 @@ def kind_load_images(cluster_name, local_dagster_test_image, additional_images=N
     check.str_param(local_dagster_test_image, "local_dagster_test_image")
     additional_images = check.opt_list_param(additional_images, "additional_images", of_type=str)
 
-    print("Loading images into kind cluster...")
+    print(f"Loading images into kind cluster {cluster_name}...")
 
-    for image in additional_images:
+    def _load(image: str, pull_first: bool) -> None:
+        if pull_first:
+            _docker_pull_with_retry(image)
         print(f"kind: Loading image {image} into kind cluster {cluster_name}")
-        _docker_pull_with_retry(image)
         check_output(["kind", "load", "docker-image", "--name", cluster_name, image])
 
-    print(f"kind: Loading image {local_dagster_test_image} into kind cluster {cluster_name}")
-    check_output(["kind", "load", "docker-image", "--name", cluster_name, local_dagster_test_image])
+    # Parallelize pull + kind-load. `kind load docker-image` is bounded by
+    # `docker save` -> tar streaming -> kind node's containerd import. The
+    # per-image steps overlap well enough that 4 concurrent loads cut total
+    # wall time from sum() to ~max() on the EBS-backed dind storage.
+    work = [(image, True) for image in additional_images]
+    work.append((local_dagster_test_image, False))
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        list(executor.map(lambda args: _load(*args), work))
 
 
 def kind_cluster_exists(cluster_name):
@@ -53,32 +162,107 @@ def kind_cluster_exists(cluster_name):
     return cluster_exists
 
 
+_KIND_CONFIG_TEMPLATE = """\
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+# Configure kind's containerd to use a sibling registry-proxy container as
+# the docker.io mirror. Eliminates kubelet pulls from hitting docker.io
+# directly (and the rate limits that come with shared NAT egress IPs).
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+    endpoint = ["http://{registry_name}:{registry_port}"]
+"""
+
+
 @contextmanager
 def create_kind_cluster(cluster_name, should_cleanup=True):
     check.str_param(cluster_name, "cluster_name")
     check.bool_param(should_cleanup, "should_cleanup")
 
+    # Start the docker.io pull-through registry-proxy. Must exist before
+    # `kind create cluster` so that kind's containerd, which is configured to
+    # mirror docker.io through it, has a working endpoint by the time kubelet
+    # starts pulling pod images. The container itself runs in the dind
+    # sidecar's docker daemon (sibling to the kind node containers).
+    _ensure_kind_registry()
+
+    config_yaml = _KIND_CONFIG_TEMPLATE.format(
+        registry_name=KIND_REGISTRY_NAME, registry_port=KIND_REGISTRY_PORT
+    )
+
     try:
         print(f"--- \033[32m:k8s: Running kind cluster setup for cluster {cluster_name}\033[0m")
 
-        p = subprocess.Popen(
-            ["kind", "create", "cluster", "--name", cluster_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        stdout, stderr = p.communicate()
+        with safe_tempfile_path() as config_path:
+            with open(config_path, "w", encoding="utf-8") as f:
+                f.write(config_yaml)
+            p = subprocess.Popen(
+                [
+                    "kind",
+                    "create",
+                    "cluster",
+                    "--name",
+                    cluster_name,
+                    "--config",
+                    config_path,
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, stderr = p.communicate()
 
         print("Kind create cluster command completed with stdout: ", stdout)
         print("Kind create cluster command completed with stderr: ", stderr)
 
         assert p.returncode == 0
+
+        # Attach registry to the kind docker network so kind nodes can resolve
+        # `kind-registry:5000` via docker's embedded DNS. Has to happen *after*
+        # cluster creation -- the kind network only exists once the control-
+        # plane container is up.
+        _attach_registry_to_kind_network()
+
         yield cluster_name
 
     finally:
         # ensure cleanup happens on error or normal exit
         if should_cleanup:
             print(f"--- Cleaning up kind cluster {cluster_name}")
-            check_output(["kind", "delete", "cluster", "--name", cluster_name])
+            _delete_kind_cluster_best_effort(cluster_name)
+
+
+def _delete_kind_cluster_best_effort(cluster_name: str) -> None:
+    # `kind delete cluster` shells out to `docker rm -f -v <node>`, which
+    # occasionally fails under dind load with "tried to kill container, but did
+    # not receive an exit event" (runc/containerd shim race). Fall back to a
+    # direct kill+rm against the kind-labeled node containers, then swallow:
+    # the agent pod is ephemeral, tests have already completed, and failing
+    # teardown turns green test runs red.
+    try:
+        check_output(["kind", "delete", "cluster", "--name", cluster_name])
+        return
+    except Exception as e:
+        print(f"WARNING: kind delete cluster failed: {e}; falling back to docker rm")
+
+    try:
+        result = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "-aq",
+                "--filter",
+                f"label=io.x-k8s.kind.cluster={cluster_name}",
+            ],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        for node_id in result.stdout.split():
+            subprocess.run(["docker", "kill", node_id], check=False)
+            subprocess.run(["docker", "rm", "-f", "-v", node_id], check=False)
+    except Exception as fallback_err:
+        print(f"WARNING: fallback container cleanup failed: {fallback_err}")
 
 
 @contextmanager

@@ -1,11 +1,11 @@
 from typing import Any
 
-from pydantic import BaseModel
+from dagster_rest_resources.schemas.util import DgApiList
 
 
-class DgApiAlertPolicyDocument(BaseModel):
-    alert_policies: list[dict[str, Any]]
+class DgApiAlertPolicyDocument(DgApiList[dict[str, Any]]):
+    pass
 
 
-class DgApiAlertPolicySyncResult(BaseModel):
-    synced_policies: list[str]
+class DgApiAlertPolicySyncResult(DgApiList[str]):
+    pass

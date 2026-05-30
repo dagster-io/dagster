@@ -73,7 +73,7 @@ resource_config = {
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 SHARED_BUILDKITE_BQ_CONFIG = {
-    "project": os.getenv("GCP_PROJECT_ID"),
+    "project": os.environ.get("GCP_PROJECT_ID", ""),
     "temporary_gcs_bucket": "gcs_io_manager_test",
 }
 
@@ -133,6 +133,41 @@ def test_handle_output(spark):
 
 
 @pytest.mark.integration
+def test_handle_output_empty_dataframe(spark):
+    with patch("pyspark.sql.readwriter.DataFrameWriter.save") as mock_save:
+        handler = BigQueryPySparkTypeHandler()
+
+        schema = StructType(
+            [StructField("col1", StringType(), True), StructField("col2", StringType(), True)]
+        )
+        df = spark.createDataFrame([], schema)
+
+        output_context = build_output_context(resource_config=resource_config)
+
+        metadata = handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=None,
+            ),
+            df,
+            None,
+        )
+
+        assert metadata == {
+            "dataframe_columns": MetadataValue.table_schema(
+                TableSchema(columns=[TableColumn("col1", "string"), TableColumn("col2", "string")])
+            ),
+        }
+
+        # Should not attempt to write to BigQuery
+        assert mock_save.call_count == 0
+
+
+@pytest.mark.integration
 def test_load_input(spark):
     with patch("pyspark.sql.readwriter.DataFrameReader.load") as mock_read:
         columns = ["col1", "col2"]
@@ -167,7 +202,7 @@ def test_build_bigquery_pyspark_io_manager():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_io_manager_with_bigquery_pyspark(spark, io_manager):
     with temporary_bigquery_table(
         schema_name=SCHEMA,
@@ -200,7 +235,7 @@ def test_io_manager_with_bigquery_pyspark(spark, io_manager):
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_time_window_partitioned_asset(spark, io_manager):
     with temporary_bigquery_table(
         schema_name=SCHEMA,
@@ -290,7 +325,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_static_partitioned_asset(spark, io_manager):
     with temporary_bigquery_table(
         schema_name=SCHEMA,
@@ -374,7 +409,7 @@ def test_static_partitioned_asset(spark, io_manager):
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_multi_partitioned_asset(spark, io_manager):
     with temporary_bigquery_table(
         schema_name=SCHEMA,
@@ -481,7 +516,7 @@ def test_multi_partitioned_asset(spark, io_manager):
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_dynamic_partitions(spark, io_manager):
     with temporary_bigquery_table(
         schema_name=SCHEMA,
@@ -529,7 +564,7 @@ def test_dynamic_partitions(spark, io_manager):
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -544,7 +579,7 @@ def test_dynamic_partitions(spark, io_manager):
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -576,7 +611,7 @@ def test_dynamic_partitions(spark, io_manager):
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 @pytest.mark.integration
-@pytest.mark.flaky(max_runs=2)
+@pytest.mark.flaky(reruns=1)
 def test_self_dependent_asset(spark, io_manager):
     with temporary_bigquery_table(
         schema_name=SCHEMA,

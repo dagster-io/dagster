@@ -95,7 +95,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
                     DaemonErrorCapture.process_exception(
                         sys.exc_info(),
                         logger=self._logger,
-                        log_message=f"Error calling event event log consumer handler: {fn.__name__}",
+                        log_message=f"Error calling event event log consumer handler: {fn.__name__}",  # ty: ignore[unresolved-attribute]
                     )
 
         # persist cursors now that we've processed all the events through the handlers

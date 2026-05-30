@@ -31,7 +31,16 @@ def list_jobs_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List jobs in the deployment."""
+    """List jobs in the deployment.
+
+    Example::
+
+        $ dg api job list
+        NAME                          DESCRIPTION              SCHEDULES  SENSORS  ASSET JOB
+        __ASSET_JOB                                            1          0        Yes
+        ingest_customers              Daily customer ingest    1          0        No
+        retrain_recommendation_model  Weekly model retrain     0          1        No
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -69,7 +78,17 @@ def get_job_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get specific job details."""
+    """Get specific job details.
+
+    Example::
+
+        $ dg api job get ingest_customers
+        Name:        ingest_customers
+        Description: Daily customer ingest
+        Asset Job:   No
+        Tags:        team=data-platform
+        Schedule:    daily_customer_ingest (0 6 * * *) [RUNNING]
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,

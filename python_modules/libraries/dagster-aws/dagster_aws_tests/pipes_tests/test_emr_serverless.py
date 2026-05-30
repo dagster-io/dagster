@@ -57,14 +57,14 @@ def test_emr_serverless_manual(emr_serverless_setup: tuple["EMRServerlessClient"
                 },
             )
 
-            assert params["tags"]["dagster/run-id"] == context.run_id  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            assert params["tags"]["dagster/run-id"] == context.run_id
             assert (
                 "--conf spark.emr-serverless.driverEnv.DAGSTER_PIPES_CONTEXT="
-                in params["jobDriver"]["sparkSubmit"]["sparkSubmitParameters"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                in params["jobDriver"]["sparkSubmit"]["sparkSubmitParameters"]
             )
             assert (
                 "--conf spark.emr-serverless.driverEnv.DAGSTER_PIPES_MESSAGES="
-                in params["jobDriver"]["sparkSubmit"]["sparkSubmitParameters"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                in params["jobDriver"]["sparkSubmit"]["sparkSubmitParameters"]
             )
 
             # moto doesn't have start_job_run implemented so this is as far as we can get with it right now

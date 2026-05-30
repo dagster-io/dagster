@@ -57,7 +57,7 @@ def _check_invocation_requirements(
         build_init_resource_context,
     )
 
-    context_provided = has_at_least_one_parameter(resource_def.resource_fn)
+    context_provided = has_at_least_one_parameter(resource_def.resource_fn)  # ty: ignore[invalid-argument-type]
     if context_provided and resource_def.required_resource_keys and init_context is None:
         raise DagsterInvalidInvocationError(
             "Resource has required resources, but no context was provided. Use the "

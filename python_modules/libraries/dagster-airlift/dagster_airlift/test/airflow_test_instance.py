@@ -203,7 +203,7 @@ class AirflowInstanceFake(AirflowInstance):
             )
         )
 
-    def get_task_info(self, dag_id, task_id) -> TaskInfo:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_task_info(self, dag_id, task_id) -> TaskInfo:
         if (dag_id, task_id) not in self._task_infos_by_dag_and_task_id:
             raise ValueError(f"Task info not found for dag_id {dag_id} and task_id {task_id}")
         return self._task_infos_by_dag_and_task_id[(dag_id, task_id)]
@@ -411,16 +411,15 @@ def make_instance(
                     for task_id in dag_and_task_structure[dag_run.dag_id]
                 ]
             )
-    datasets = []
-    for dataset_info in dataset_construction_info:
-        datasets.append(
-            make_dataset(
-                producing_tasks=dataset_info["producing_tasks"],
-                consuming_dags=dataset_info["consuming_dags"],
-                uri=dataset_info["uri"],
-                extra=dataset_info.get("extra", {}),
-            )
+    datasets = [
+        make_dataset(
+            producing_tasks=dataset_info["producing_tasks"],
+            consuming_dags=dataset_info["consuming_dags"],
+            uri=dataset_info["uri"],
+            extra=dataset_info.get("extra", {}),
         )
+        for dataset_info in dataset_construction_info
+    ]
     return AirflowInstanceFake(
         dag_infos=dag_infos,
         task_infos=task_infos,

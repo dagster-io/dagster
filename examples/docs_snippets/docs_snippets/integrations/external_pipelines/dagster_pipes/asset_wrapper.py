@@ -9,9 +9,9 @@ def wrapper_asset(
 ) -> None:
     external_python_code_path = "/usr/bin/external_code.py"
     return pipes_subprocess_client.run(
-        command=[shutil.which("python"), external_python_code_path],
+        command=[shutil.which("python"), external_python_code_path],  # ty: ignore[invalid-argument-type]
         context=context,
-    ).get_results()
+    ).get_results()  # ty: ignore[invalid-return-type]
 
 
 @dg.definitions

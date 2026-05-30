@@ -97,16 +97,16 @@ class TestPolytomicTranslation(TestTranslation):
         assertion: Callable[[AssetSpec], bool],
         key_modifier: Callable[[dg.AssetKey], dg.AssetKey] | None,
     ) -> None:
-        body = {
+        body: dict[str, Any] = {
             "type": "dagster_polytomic.PolytomicComponent",
             "attributes": {
                 "workspace": {
                     "token": "test-token",
                 },
                 "defs_state": {"management_type": "VERSIONED_STATE_STORAGE"},
+                "translation": attributes,
             },
         }
-        body["attributes"]["translation"] = attributes
         with setup_polytomic_component(defs_yaml_contents=body) as (_, defs):
             expected_key = dg.AssetKey(["public", "schema-1"])
             if key_modifier:

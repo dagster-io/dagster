@@ -166,7 +166,7 @@ class SlingResource(ConfigurableResource):
         if run_config:  # triggered via sensor
             run_config_ops = run_config.get("ops", {})
             if isinstance(run_config_ops, dict):
-                assets_op_config = run_config_ops.get(assets_def.op.name, {}).get("config", {})
+                assets_op_config = run_config_ops.get(assets_def.op.name, {}).get("config", {})  # ty: ignore[no-matching-overload]
             else:
                 assets_op_config = {}
             context_streams = assets_op_config.get("context_streams", {})
@@ -611,9 +611,9 @@ class SlingResource(ConfigurableResource):
                     metadata["stream_name"] = current_stream
                     logger.debug(metadata)
                     if context.has_assets_def:
-                        yield MaterializeResult(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                        yield MaterializeResult(asset_key=asset_key, metadata=metadata)
                     else:
-                        yield AssetMaterialization(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                        yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
 
                     current_stream = None
                     metadata_text = []

@@ -1,5 +1,7 @@
 import pandas as pd
-from dagster_clickhouse_pandas import ClickhousePandasIOManager
+from dagster_clickhouse_pandas import (
+    ClickhousePandasIOManager,  # ty: ignore[unresolved-import]
+)
 
 import dagster as dg
 

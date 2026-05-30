@@ -157,8 +157,10 @@ def test_report_asset_materialization_apis_consistent(
 
     for k, v in sample_payload.items():
         if k == "asset_key":
+            assert isinstance(v, str)
             assert mat.asset_key == AssetKey(v)
         elif k == "metadata":
+            assert isinstance(v, dict)
             assert mat.metadata.keys() == v.keys()
         elif k == "data_version":
             tags = mat.tags
@@ -274,8 +276,10 @@ def test_report_asset_check_evaluation_apis_consistent(
         if k == "check_name":
             assert evaluation.check_name == v
         elif k == "asset_key":
+            assert isinstance(v, str)
             assert evaluation.asset_key == AssetKey(v)
         elif k == "metadata":
+            assert isinstance(v, dict)
             assert evaluation.metadata.keys() == v.keys()
         elif k == "passed":
             assert evaluation.passed == v
@@ -341,8 +345,10 @@ def test_report_asset_observation_apis_consistent(
 
     for k, v in sample_payload.items():
         if k == "asset_key":
+            assert isinstance(v, str)
             assert obs.asset_key == AssetKey(v)
         elif k == "metadata":
+            assert isinstance(v, dict)
             assert obs.metadata.keys() == v.keys()
         elif k == "data_version":
             tags = obs.tags

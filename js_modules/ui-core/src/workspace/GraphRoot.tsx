@@ -30,12 +30,12 @@ export const GraphRoot = (props: Props) => {
   const {repoAddress} = props;
   const params = useParams();
 
-  const path = explorerPathFromString((params as any)[0]);
+  const path = explorerPathFromString((params as Record<string, string>)['0'] ?? '');
 
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
   // or the name of the pipeline tweaked to look a bit more like a graph name.
   const title = path.opNames.length > 1 ? path.opNames[path.opNames.length - 2] : path.pipelineName;
-  useDocumentTitle(`Graph: ${title}`);
+  useDocumentTitle(`Graphs | ${title}`);
 
   return (
     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
@@ -58,7 +58,7 @@ const GraphExplorerRoot = (props: Props) => {
   const {repoAddress} = props;
   const params = useParams();
 
-  const explorerPath = explorerPathFromString((params as any)['0']);
+  const explorerPath = explorerPathFromString((params as Record<string, string>)['0'] ?? '');
   const history = useHistory();
   const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: false,

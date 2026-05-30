@@ -60,12 +60,12 @@ def test_coerce_to_asset_selection():
 
     assert dg.SensorDefinition(
         "a", asset_selection=["asset1", "asset2"], evaluation_fn=evaluation_fn
-    ).asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
+    ).asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # ty: ignore[unresolved-attribute]
 
     sensor_def = dg.SensorDefinition(
         "a", asset_selection=[asset1, asset2], evaluation_fn=evaluation_fn
     )
-    assert sensor_def.asset_selection.resolve(assets) == {  # pyright: ignore[reportOptionalMemberAccess]
+    assert sensor_def.asset_selection.resolve(assets) == {  # ty: ignore[unresolved-attribute]
         dg.AssetKey("asset1"),
         dg.AssetKey("asset2"),
     }
@@ -125,22 +125,34 @@ def test_owners():
         pass
 
     sensor = dg.SensorDefinition(
-        evaluation_fn=eval_fn, job_name="test_job", owners=["user@example.com", "team:data"]
+        evaluation_fn=eval_fn,
+        job_name="test_job",
+        owners=["user@example.com", "team:Data Engineering"],
     )
-    assert sensor.owners == ["user@example.com", "team:data"]
+    assert sensor.owners == ["user@example.com", "team:Data Engineering"]
 
 
 def test_owners_validation():
     def eval_fn():
         pass
 
-    # Test invalid team name with special characters
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
-        dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:bad-name"])
-
     # Test empty team name
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Team name cannot be empty after 'team:' prefix",
+    ):
         dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:"])
+
+    # Test invalid owner format
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+        dg.SensorDefinition(
+            evaluation_fn=eval_fn,
+            job_name="test_job",
+            owners=["not-an-email-or-team"],
+        )
 
 
 def test_sensor_metadata_preserved_through_with_definition_metadata_update():

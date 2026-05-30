@@ -46,13 +46,13 @@ def test_my_asset_sensor():
     instance = DagsterInstance.ephemeral()
     ctx = build_sensor_context(instance)
 
-    result = list(my_asset_sensor(ctx))
+    result = list(my_asset_sensor(ctx))  # ty: ignore[invalid-argument-type]
     assert len(result) == 1
     assert isinstance(result[0], SkipReason)
 
     materialize([my_table], instance=instance)
 
-    result = list(my_asset_sensor(ctx))
+    result = list(my_asset_sensor(ctx))  # ty: ignore[invalid-argument-type]
     assert len(result) == 1
     assert isinstance(result[0], RunRequest)
 

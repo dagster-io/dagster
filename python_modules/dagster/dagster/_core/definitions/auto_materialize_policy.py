@@ -37,7 +37,7 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
         # determine if this namedtuple was serialized with the old format (booleans for rules)
         if any(backcompat_key in unpacked_dict for backcompat_key in backcompat_map):
             # all old policies had these rules by default
-            rules = {
+            rules: set[AutoMaterializeRule] = {
                 AutoMaterializeRule.skip_on_parent_outdated(),
                 AutoMaterializeRule.skip_on_parent_missing(),
                 AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
@@ -46,7 +46,7 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
             for backcompat_key, rule in backcompat_map.items():
                 if unpacked_dict.get(backcompat_key):
                     rules.add(rule)
-            unpacked_dict["rules"] = frozenset(rules)
+            unpacked_dict["rules"] = frozenset(rules)  # ty: ignore[invalid-assignment]
 
         return unpacked_dict
 
@@ -288,7 +288,7 @@ class AutoMaterializePolicy(
         """
         new_rule_types = {type(rule) for rule in rules_to_add}
         return self._replace(
-            rules=set(rules_to_add).union(
+            rules=frozenset(rules_to_add).union(
                 {rule for rule in self.rules if type(rule) not in new_rule_types}
             )
         )
@@ -350,4 +350,4 @@ class AutoMaterializePolicy(
             or self.to_automation_condition() == other.to_automation_condition()
         )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None

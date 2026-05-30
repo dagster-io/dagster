@@ -7,6 +7,7 @@ import tempfile
 
 import pytest
 import sqlalchemy as db
+import sqlalchemy.exc  # ensure db.exc submodule is statically resolvable
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -86,7 +87,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
             noop_op()
 
         with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             noop_job.execute_in_process(instance=instance)
 
@@ -101,8 +102,8 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         run = instance.get_run_by_id(run_id)
 
-        assert run.run_id == run_id  # pyright: ignore[reportOptionalMemberAccess]
-        assert run.job_snapshot_id is None  # pyright: ignore[reportOptionalMemberAccess]
+        assert run.run_id == run_id  # ty: ignore[unresolved-attribute]
+        assert run.job_snapshot_id is None  # ty: ignore[unresolved-attribute]
         result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
@@ -114,7 +115,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.job_snapshot_id  # pyright: ignore[reportOptionalMemberAccess]
+        assert new_run.job_snapshot_id  # ty: ignore[unresolved-attribute]
 
 
 def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
@@ -144,7 +145,7 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
             asset_op()
 
         with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             asset_job.execute_in_process(instance=instance)
 
@@ -183,7 +184,7 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         }
 
         with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             simple_job.execute_in_process(tags=tags, instance=instance)
 
@@ -226,7 +227,7 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
                 target_fd.write(template)
 
         with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             with DagsterInstance.from_config(tempdir) as instance:
                 instance.get_backfills()
@@ -255,9 +256,9 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
             storage = instance._event_storage
             with pytest.raises(
                 (
-                    db.exc.OperationalError,  # pyright: ignore[reportAttributeAccessIssue]
-                    db.exc.ProgrammingError,  # pyright: ignore[reportAttributeAccessIssue]
-                    db.exc.StatementError,  # pyright: ignore[reportAttributeAccessIssue]
+                    db.exc.OperationalError,
+                    db.exc.ProgrammingError,
+                    db.exc.StatementError,
                 )
             ):
                 storage.all_asset_keys()
@@ -380,7 +381,7 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
 
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
 
             # make sure that executing the job works
             asset_job.execute_in_process(instance=instance)
@@ -459,11 +460,11 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
             assert result.success
             assert len(instance.get_runs()) == 3
             latest_run_record = instance.get_run_records()[0]
-            assert latest_run_record.end_time > latest_run_record.start_time  # pyright: ignore[reportOperatorIssue]
+            assert latest_run_record.end_time > latest_run_record.start_time  # ty: ignore[unsupported-operator]
 
             # Verify that historical records also get updated via data migration
             earliest_run_record = instance.get_run_records()[-1]
-            assert earliest_run_record.end_time > earliest_run_record.start_time  # pyright: ignore[reportOperatorIssue]
+            assert earliest_run_record.end_time > earliest_run_record.start_time  # ty: ignore[unsupported-operator]
 
 
 def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
@@ -485,13 +486,13 @@ def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
 
         # secondary indexes should exist because it's colocated in this database from the run
         # storage
-        assert instance.schedule_storage.has_secondary_index_table()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        assert instance.schedule_storage.has_secondary_index_table()  # ty: ignore[unresolved-attribute]
 
         # this should succeed without raising any issues
         instance.upgrade()
 
         # no-op
-        assert instance.schedule_storage.has_secondary_index_table()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        assert instance.schedule_storage.has_secondary_index_table()  # ty: ignore[unresolved-attribute]
 
 
 def test_instigators_table_backcompat(hostname, conn_string):
@@ -509,11 +510,11 @@ def test_instigators_table_backcompat(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        assert not instance.schedule_storage.has_instigators_table()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        assert not instance.schedule_storage.has_instigators_table()  # ty: ignore[unresolved-attribute]
 
         instance.upgrade()
 
-        assert instance.schedule_storage.has_instigators_table()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        assert instance.schedule_storage.has_instigators_table()  # ty: ignore[unresolved-attribute]
 
 
 def test_jobs_selector_id_migration(hostname, conn_string):
@@ -539,27 +540,27 @@ def test_jobs_selector_id_migration(hostname, conn_string):
             # runs the required data migrations
             instance.upgrade()
 
-            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)  # ty: ignore[unresolved-attribute]
             legacy_count = len(instance.all_instigator_state())
-            migrated_instigator_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            migrated_instigator_count = instance.schedule_storage.execute(  # ty: ignore[unresolved-attribute]
                 db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
-            migrated_job_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            migrated_job_count = instance.schedule_storage.execute(  # ty: ignore[unresolved-attribute]
                 db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
-            legacy_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            legacy_tick_count = instance.schedule_storage.execute(  # ty: ignore[unresolved-attribute]
                 db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
-            migrated_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            migrated_tick_count = instance.schedule_storage.execute(  # ty: ignore[unresolved-attribute]
                 db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
@@ -569,7 +570,7 @@ def test_jobs_selector_id_migration(hostname, conn_string):
             # run the optional migrations
             instance.reindex()
 
-            migrated_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            migrated_tick_count = instance.schedule_storage.execute(  # ty: ignore[unresolved-attribute]
                 db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
@@ -791,7 +792,7 @@ def test_add_primary_keys(hostname, conn_string):
             instance.upgrade()
 
             assert "id" in get_columns(instance, "kvs")
-            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.run_storage.connect():  # ty: ignore[unresolved-attribute]
                 kvs_id_count = _get_table_row_count(
                     instance.run_storage, KeyValueStoreTable, with_non_null_id=True
                 )
@@ -799,7 +800,7 @@ def test_add_primary_keys(hostname, conn_string):
             assert get_primary_key(instance, "kvs")
 
             assert "id" in get_columns(instance, "instance_info")
-            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.run_storage.connect():  # ty: ignore[unresolved-attribute]
                 instance_info_id_count = _get_table_row_count(
                     instance.run_storage, InstanceInfo, with_non_null_id=True
                 )
@@ -807,7 +808,7 @@ def test_add_primary_keys(hostname, conn_string):
             assert get_primary_key(instance, "instance_info")
 
             assert "id" in get_columns(instance, "daemon_heartbeats")
-            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.run_storage.connect():  # ty: ignore[unresolved-attribute]
                 daemon_heartbeats_id_count = _get_table_row_count(
                     instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
                 )
@@ -842,20 +843,20 @@ def test_bigint_migration(hostname, conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.run_storage.connect() as conn:  # ty: ignore[unresolved-attribute]
                 assert len(_get_integer_id_tables(conn)) > 0
-            with instance.event_log_storage.index_connection() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.event_log_storage.index_connection() as conn:  # ty: ignore[unresolved-attribute]
                 assert len(_get_integer_id_tables(conn)) > 0
-            with instance.schedule_storage.connect() as conn:  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            with instance.schedule_storage.connect() as conn:  # ty: ignore[unresolved-attribute]
                 assert len(_get_integer_id_tables(conn)) > 0
 
             run_bigint_migration(instance)
 
-            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.run_storage.connect() as conn:  # ty: ignore[unresolved-attribute]
                 assert len(_get_integer_id_tables(conn)) == 0
-            with instance.event_log_storage.index_connection() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.event_log_storage.index_connection() as conn:  # ty: ignore[unresolved-attribute]
                 assert len(_get_integer_id_tables(conn)) == 0
-            with instance.schedule_storage.connect() as conn:  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            with instance.schedule_storage.connect() as conn:  # ty: ignore[unresolved-attribute]
                 assert len(_get_integer_id_tables(conn)) == 0
 
 
@@ -905,7 +906,7 @@ def test_add_backfill_id_column(hostname, conn_string):
             assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
 
             instance.upgrade()
-            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)  # pyright: ignore[reportAttributeAccessIssue]
+            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)  # ty: ignore[unresolved-attribute]
 
             assert new_columns <= get_columns(instance, "runs")
             run_not_in_backfill_post_migration = instance.run_storage.add_run(
@@ -927,7 +928,7 @@ def test_add_backfill_id_column(hostname, conn_string):
 
             backfill_ids = {
                 row["run_id"]: row["backfill_id"]
-                for row in instance._run_storage.fetchall(  # pyright: ignore[reportAttributeAccessIssue]
+                for row in instance._run_storage.fetchall(  # ty: ignore[unresolved-attribute]
                     db_select([RunsTable.c.run_id, RunsTable.c.backfill_id]).select_from(RunsTable)
                 )
             }
@@ -1022,7 +1023,7 @@ def test_add_backfill_tags(hostname, conn_string):
             )
             instance.add_backfill(after_migration)
 
-            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.run_storage.connect() as conn:  # ty: ignore[unresolved-attribute]
                 rows = conn.execute(
                     db_select(
                         [
@@ -1038,7 +1039,7 @@ def test_add_backfill_tags(hostname, conn_string):
                 assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
 
                 # filtering by tags works after migration
-                assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # pyright: ignore[reportAttributeAccessIssue]
+                assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # ty: ignore[unresolved-attribute]
                 # delete the run that was added pre-migration to prove that tags filtering is happening on the
                 # backfill_tags table
                 instance.delete_run(pre_migration_run.run_id)
@@ -1103,7 +1104,7 @@ def test_add_bulk_actions_job_name_column(hostname, conn_string):
             # filtering pre-migration relies on filtering runs, so add a run with the expected job_name
             pre_migration_run = instance.run_storage.add_run(
                 DagsterRun(
-                    job_name=before_migration.job_name,  # pyright: ignore[reportArgumentType]
+                    job_name=before_migration.job_name,  # ty: ignore[invalid-argument-type]
                     run_id=make_new_run_id(),
                     tags={BACKFILL_ID_TAG: before_migration.backfill_id},
                     status=DagsterRunStatus.NOT_STARTED,
@@ -1140,7 +1141,7 @@ def test_add_bulk_actions_job_name_column(hostname, conn_string):
             )
             instance.add_backfill(after_migration)
 
-            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
+            with instance.run_storage.connect() as conn:  # ty: ignore[unresolved-attribute]
                 rows = conn.execute(
                     db_select([BulkActionsTable.c.key, BulkActionsTable.c.job_name])
                 ).fetchall()
@@ -1150,7 +1151,7 @@ def test_add_bulk_actions_job_name_column(hostname, conn_string):
                 assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
 
                 # filtering by job_name works after migration
-                assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # pyright: ignore[reportAttributeAccessIssue]
+                assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # ty: ignore[unresolved-attribute]
                 # delete the run that was added pre-migration to prove that tags filtering is happening on the
                 # backfill_tags table
                 instance.delete_run(pre_migration_run.run_id)

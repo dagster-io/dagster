@@ -59,36 +59,41 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame, connection
     ) -> Mapping[str, RawMetadataValue]:
-        # Rename columns to uppercase to match Snowflake convention
-        with_uppercase_cols = obj.rename({col: col.upper() for col in obj.columns})
-        write_mode = "replace"
-
-        # Use the fully qualified table name
-        full_table_name = f"{table_slice.database.upper()}.{table_slice.schema.upper()}.{table_slice.table.upper()}"  # pyright: ignore[reportOptionalMemberAccess]
-
-        # If we're appending to a partition, we need to delete existing data for that partition first
-        # Determine the write mode based on whether we're dealing with partitions
-        # For partitioned assets, we should append rather than replace
-        if table_slice.partition_dimensions and _table_exists(table_slice, connection):
-            write_mode = "append"
-            delete_stmt = f"DELETE FROM {full_table_name} WHERE\n" + partition_where_clause(
-                table_slice.partition_dimensions
+        if obj.is_empty():
+            context.log.warning(
+                "Skipping Snowflake write for empty DataFrame. An empty table will not be created."
             )
-            connection.cursor().execute(delete_stmt)
+        else:
+            # Rename columns to uppercase to match Snowflake convention
+            with_uppercase_cols = obj.rename({col: col.upper() for col in obj.columns})
+            write_mode = "replace"
 
-        # Write using Polars native write_database with ADBC
-        # This is more efficient than converting to pandas
+            # Use the fully qualified table name
+            full_table_name = f"{table_slice.database.upper()}.{table_slice.schema.upper()}.{table_slice.table.upper()}"  # ty: ignore[unresolved-attribute]
 
-        with connection.cursor() as cursor:
-            cursor.execute(f"USE DATABASE {table_slice.database.upper()}")  # pyright: ignore[reportOptionalMemberAccess]
-            cursor.execute(f"USE SCHEMA {table_slice.schema.upper()}")
+            # If we're appending to a partition, we need to delete existing data for that partition first
+            # Determine the write mode based on whether we're dealing with partitions
+            # For partitioned assets, we should append rather than replace
+            if table_slice.partition_dimensions and _table_exists(table_slice, connection):
+                write_mode = "append"
+                delete_stmt = f"DELETE FROM {full_table_name} WHERE\n" + partition_where_clause(
+                    table_slice.partition_dimensions
+                )
+                connection.cursor().execute(delete_stmt)
 
-        with_uppercase_cols.write_database(
-            table_name=table_slice.table.upper(),
-            connection=connection,
-            if_table_exists=write_mode,
-            engine="adbc",
-        )
+            # Write using Polars native write_database with ADBC
+            # This is more efficient than converting to pandas
+
+            with connection.cursor() as cursor:
+                cursor.execute(f"USE DATABASE {table_slice.database.upper()}")  # ty: ignore[unresolved-attribute]
+                cursor.execute(f"USE SCHEMA {table_slice.schema.upper()}")
+
+            with_uppercase_cols.write_database(
+                table_name=table_slice.table.upper(),
+                connection=connection,
+                if_table_exists=write_mode,
+                engine="adbc",
+            )
 
         return {
             # output object may be a slice/partition, so we output different metadata keys based on

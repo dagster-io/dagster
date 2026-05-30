@@ -76,3 +76,24 @@ def retry_job():
     better()
     even_better()
     manual()
+
+
+class ValidationError(Exception):
+    pass
+
+
+def validate_and_do_something():
+    raise ValidationError("input is invalid")
+
+
+# allow_retries_false_start
+@dg.asset(retry_policy=dg.RetryPolicy(max_retries=3))
+def my_asset():
+    try:
+        validate_and_do_something()
+    except ValidationError as e:
+        # Retrying won't help. Fail the asset now and skip the retry policy.
+        raise dg.Failure(description=str(e), allow_retries=False) from e
+
+
+# allow_retries_false_end

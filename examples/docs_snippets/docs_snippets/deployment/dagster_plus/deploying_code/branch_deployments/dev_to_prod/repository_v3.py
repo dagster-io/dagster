@@ -2,8 +2,8 @@ import os
 
 from dagster import Definitions, graph
 
-from .clone_and_drop_db import drop_database_clone
-from .repository_v2 import (
+from .clone_and_drop_db import drop_database_clone  # ty: ignore[unresolved-import]
+from .repository_v2 import (  # ty: ignore[unresolved-import]
     clone_prod,
     comments,
     get_current_env,

@@ -33,4 +33,4 @@ def scala_spark_demo(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
             check=True,
         )
 
-    return session.get_results()
+    return session.get_results()  # ty: ignore[invalid-return-type]

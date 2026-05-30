@@ -78,9 +78,7 @@ class PickledObjectS3IOManager(UPathIOManager):
 
     @staticmethod
     def _sanitize_path(path: UPath) -> UPath:
-        sanitized_parts = []
-        for part in path.parts:
-            sanitized_parts.append(part.replace("[", "--").replace("]", ""))
+        sanitized_parts = [part.replace("[", "--").replace("]", "") for part in path.parts]
         return UPath(*sanitized_parts)
 
     def _uri_for_path(self, path: UPath) -> str:

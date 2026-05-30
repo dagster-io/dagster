@@ -1,7 +1,9 @@
 import os
+import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -62,13 +64,35 @@ def _airflow_is_ready(*, port: int, expected_num_dags: int) -> bool:
 
 @pytest.fixture(name="airflow_home")
 def default_airflow_home() -> Generator[str, None, None]:
-    with TemporaryDirectory() as tmpdir:
+    # NOTE: don't use `TemporaryDirectory` here. Airflow child processes (gunicorn workers,
+    # scheduler, triggerer) can race their final writes against teardown, which causes
+    # `TemporaryDirectory.__exit__` to raise `OSError: [Errno 39] Directory not empty` and
+    # fails the test even when it passed. Tolerate the race with `ignore_errors=True`.
+    tmpdir = tempfile.mkdtemp()
+    try:
         with environ({"AIRFLOW_HOME": tmpdir}):
             yield tmpdir
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def _airflow_major_version() -> int:
+    import airflow
+
+    return int(airflow.__version__.split(".", 1)[0])
 
 
 @pytest.fixture(name="setup")
 def setup_fixture(airflow_home: Path, dags_dir: Path) -> Generator[Path, None, None]:
+    if _airflow_major_version() >= 3:
+        pytest.skip(
+            "dagster-airlift integration fixtures are pinned to Airflow 2.x. "
+            "Airflow 3.x removed `airflow users create` (used by "
+            "scripts/airflow_setup.sh) and replaced the basic-auth REST API "
+            "with JWT/simple_auth_manager, which AirflowBasicAuthBackend does "
+            "not yet target. Bringing the integration suite forward to Airflow "
+            "3.x is tracked as follow-up work."
+        )
     assert os.environ["AIRFLOW_HOME"] == str(airflow_home), "AIRFLOW_HOME is not set correctly"
     temp_env = {
         **os.environ.copy(),

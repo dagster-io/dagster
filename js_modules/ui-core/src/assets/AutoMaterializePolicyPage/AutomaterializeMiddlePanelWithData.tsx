@@ -77,7 +77,7 @@ export const AutomaterializeMiddlePanelWithData = ({
             >
               <Tag intent="success">
                 <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  <StatusDot $color={Colors.accentGreen()} $size={8} />
+                  <StatusDot color={Colors.accentGreen()} size={8} />
                   {numRequested} requested
                 </Box>
               </Tag>
@@ -89,7 +89,7 @@ export const AutomaterializeMiddlePanelWithData = ({
       return (
         <Tag intent="success">
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            <StatusDot $color={Colors.accentGreen()} />
+            <StatusDot color={Colors.accentGreen()} />
             Requested
           </Box>
         </Tag>
@@ -99,7 +99,7 @@ export const AutomaterializeMiddlePanelWithData = ({
     return (
       <Tag>
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <StatusDot $color={Colors.accentGray()} />
+          <StatusDot color={Colors.accentGray()} />
           Not requested
         </Box>
       </Tag>

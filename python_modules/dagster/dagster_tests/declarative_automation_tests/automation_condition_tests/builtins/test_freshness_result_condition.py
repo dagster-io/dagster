@@ -22,7 +22,7 @@ class TestFreshnessResultCondition:
         self.instance = DagsterInstance.ephemeral()
         self.__state_cache = {}
         yield
-        self.instance = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.instance = None  # ty: ignore[invalid-assignment]
         self.__state_cache = {}
 
     def report_freshness_state(self, key: AssetKey, state: FreshnessState) -> None:
@@ -167,4 +167,4 @@ class TestFreshnessResultCondition:
                 FreshnessResultCondition,
             )
 
-            FreshnessResultCondition(state="Fresh")  # pyright: ignore[reportArgumentType]
+            FreshnessResultCondition(state="Fresh")  # ty: ignore[invalid-argument-type]

@@ -14,7 +14,12 @@ import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {cache as _cache} from '../../util/idb-lru-cache';
 import {__resetForJest, useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';
 
-const mockCache = _cache as any;
+const mockCache = _cache as unknown as jest.Mock<{
+  has: jest.Mock;
+  get: jest.Mock;
+  set: jest.Mock;
+  delete: jest.Mock;
+}>;
 
 jest.useFakeTimers();
 

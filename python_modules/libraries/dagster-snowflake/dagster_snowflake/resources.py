@@ -244,7 +244,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             "Indicate alternative database connection engine. Permissible option is "
             "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
         ),
-        is_required=False,  # type: ignore
+        is_required=False,
     )
 
     cache_column_metadata: str | None = Field(
@@ -568,7 +568,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             import adbc_driver_snowflake.dbapi
 
             conn = adbc_driver_snowflake.dbapi.connect(
-                db_kwargs=self._adbc_connection_args,  # pyright: ignore[reportArgumentType]
+                db_kwargs=self._adbc_connection_args,  # ty: ignore[invalid-argument-type]
             )
 
             yield conn

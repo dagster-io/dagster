@@ -1,12 +1,16 @@
 import {
   Box,
+  Caption,
+  Colors,
   Container,
   HorizontalControls,
   HoverButton,
   Icon,
   Inner,
   ListItem,
+  Popover,
   Skeleton,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {forwardRef, useMemo, useRef} from 'react';
@@ -21,6 +25,7 @@ import {AssetActionMenu} from '../AssetActionMenu';
 import {AssetHealthSummary} from '../AssetHealthSummary';
 import {AssetRecentUpdatesTrend, EventPopover} from '../AssetRecentUpdatesTrend';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+import {type LinkedAssetResult, findLinkedAssetResult} from '../overview/useLinkedAsset';
 import {useAllAssets} from '../useAllAssets';
 import {useAssetRecentUpdates} from '../useAssetRecentUpdates';
 import type {SortBy} from './useAssetCatalogGroupAndSortBy';
@@ -54,6 +59,7 @@ export type AssetCatalogV2VirtualizedTableProps<
   onToggleFactory: (id: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
   onToggleGroup: (group: T) => (checked: boolean) => void;
   sortBy?: SortBy;
+  connectionLocationNames?: Set<string>;
 };
 
 const AssetCatalogV2VirtualizedTableImpl = <
@@ -69,6 +75,7 @@ const AssetCatalogV2VirtualizedTableImpl = <
   onToggleFactory,
   onToggleGroup,
   sortBy,
+  connectionLocationNames,
 }: AssetCatalogV2VirtualizedTableProps<T, TAsset>) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -197,6 +204,7 @@ const AssetCatalogV2VirtualizedTableImpl = <
                 checked={checkedDisplayKeys.has(tokenForAssetKey(item.key))}
                 onToggle={onToggleFactory(tokenForAssetKey(item.key))}
                 sortBy={sortBy}
+                connectionLocationNames={connectionLocationNames}
               />
             );
           })}
@@ -216,16 +224,59 @@ interface RowProps<TAsset> {
   checked: boolean;
   onToggle: (values: {checked: boolean; shiftKey: boolean}) => void;
   sortBy?: SortBy;
+  connectionLocationNames?: Set<string>;
 }
+
+const LinkResultIcon = ({linkResult}: {linkResult: LinkedAssetResult}) => {
+  if (linkResult.type === 'linked') {
+    return (
+      <Popover
+        interactionKind="hover"
+        placement="top"
+        content={
+          <Box padding={{vertical: 8, horizontal: 16}} style={{maxWidth: 300}}>
+            <Caption>
+              This asset is linked to{' '}
+              <Link to={assetDetailsPathForKey(linkResult.linkedAssetKey)}>
+                {displayNameForAssetKey(linkResult.linkedAssetKey)}
+              </Link>{' '}
+              because it shares an underlying storage location.
+            </Caption>
+          </Box>
+        }
+      >
+        <Icon name="folder_match" color={Colors.accentGray()} />
+      </Popover>
+    );
+  }
+  if (linkResult.type === 'ambiguous') {
+    return (
+      <Tooltip
+        content="Dagster found multiple software-defined assets that may represent the same underlying table as this connection-generated asset. To help Dagster identify the correct match, define storage_kind on any software defined assets that share this asset's key."
+        placement="top"
+      >
+        <Icon name="info" color={Colors.accentYellow()} />
+      </Tooltip>
+    );
+  }
+  return null;
+};
 
 const AssetRow = forwardRef(
   <TAsset extends {key: {path: string[]}}>(
-    {asset, index, checked, onToggle, sortBy: _sortBy}: RowProps<TAsset>,
+    {asset, index, checked, onToggle, sortBy: _sortBy, connectionLocationNames}: RowProps<TAsset>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     const linkUrl = assetDetailsPathForKey({path: asset.key.path});
     const {recentEvents, latestInfo, loading} = useAssetRecentUpdates({asset});
-    const lastEvent = recentEvents[0];
+    const finalRecentEvents = recentEvents.filter(
+      (event) =>
+        event.__typename === 'MaterializationEvent' ||
+        event.__typename === 'ObservationEvent' ||
+        event.__typename === 'FailedToMaterializeEvent',
+    );
+    const lastEvent = finalRecentEvents[0] ? finalRecentEvents[0] : undefined;
+
     const showTimestamp = lastEvent?.__typename !== 'ObservationEvent';
     const latestInfoItem =
       latestInfo?.inProgressRunIds.length || latestInfo?.unstartedRunIds.length
@@ -245,6 +296,18 @@ const AssetRow = forwardRef(
       ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
       : null;
 
+    const isConnectionDerived =
+      connectionLocationNames &&
+      definition?.repository &&
+      connectionLocationNames.has(definition.repository.location.name);
+
+    const linkResult = useMemo(() => {
+      if (!isConnectionDerived || !definition?.storageAddress || !assets) {
+        return {type: 'none' as const};
+      }
+      return findLinkedAssetResult(asset.key, definition.storageAddress, assets);
+    }, [isConnectionDerived, definition, assets, asset.key]);
+
     return (
       <ListItem
         ref={ref}
@@ -257,6 +320,7 @@ const AssetRow = forwardRef(
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Icon name="asset" />
             {displayNameForAssetKey(asset.key)}
+            <LinkResultIcon linkResult={linkResult} />
           </Box>
         }
         right={
@@ -288,7 +352,10 @@ const AssetRow = forwardRef(
                 key: 'recent-events',
                 control: (
                   <Box padding={{horizontal: 8}}>
-                    <AssetRecentUpdatesTrend events={recentEvents} latestInfo={latestInfoItem} />
+                    <AssetRecentUpdatesTrend
+                      events={finalRecentEvents}
+                      latestInfo={latestInfoItem}
+                    />
                   </Box>
                 ),
               },

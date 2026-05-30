@@ -43,7 +43,7 @@ Environment variables will be read-only for branch deployments viewed in Dagster
 
 ### Reserved variables
 
-[Built-in (system) Dagster+ environment variables](/deployment/dagster-plus/management/environment-variables/built-in) are reserved and therefore unavailable for use. You will see an error in Dagster+ if you use a built-in variable name.
+Built-in (system) Dagster+ environment variables are reserved and therefore unavailable for use. You will see an error in Dagster+ if you use a built-in variable name. See [Built-in (system) Dagster+ environment variables](/deployment/dagster-plus/management/environment-variables/built-in).
 
 ## Adding environment variables \{#add}
 
@@ -81,6 +81,16 @@ Viewing an environment variable only reveals the value to you. It doesn't show t
 
 ## Exporting environment variables locally \{#export}
 
+Only variables tagged with the **Local** scope are included in the local export. To share an existing variable with your local environment, edit it in the UI and add the **Local** tag.
+
+You can pull the variables down two ways:
+
+**Using the `dg` CLI (recommended):**
+
+Run `dg plus pull env` from your project directory. The CLI authenticates against your Dagster+ deployment and writes any variables tagged **Local** into a `.env` file alongside your code.
+
+**Downloading from the UI:**
+
 1. On the **Environment variables** page, click the **arrow menu** to the right of the **+ Add environment variable** button.
 2. Click **Download local environment variables**.
 3. A file named `env.txt` will be downloaded.
@@ -110,7 +120,7 @@ For example, if you wanted to provide different Snowflake passwords for your pro
 
 ![Example SNOWFLAKE_PASSWORD variables configured with different values based on deployment](/images/dagster-plus/deployment/environment-variables/same-variable-diff-scope.png)
 
-## Next steps
+## Related documentation
 
-- Learn how to [access environment variables in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets#accessing-environment-variables)
-- Learn about the [built-in environment variables](/deployment/dagster-plus/management/environment-variables/built-in) provided by Dagster+
+- [Access environment variables in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets#accessing-environment-variables)
+- [Built-in environment variables](/deployment/dagster-plus/management/environment-variables/built-in)

@@ -374,7 +374,7 @@ def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
     assert len(asset_materializations) == 1
 
     found_asset_keys = [
-        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        mat.event_specific_data.materialization.asset_key  # ty: ignore
         for mat in asset_materializations
     ]
     assert found_asset_keys == [AssetKey(["dlt_pipeline_repo_issues"])]
@@ -611,7 +611,7 @@ def test_with_deps_replacements(dlt_pipeline: Pipeline) -> None:
 
 def test_with_deps_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_deps_asset_keys(self, _) -> Sequence[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_deps_asset_keys(self, _) -> Sequence[AssetKey]:  # ty: ignore[invalid-method-override]
             return []
 
     @dlt_assets(
@@ -648,7 +648,7 @@ def test_with_description_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_description = "customized description"
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_description(self, _) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_description(self, _) -> str | None:  # ty: ignore[invalid-method-override]
             return expected_description
 
     @dlt_assets(
@@ -685,7 +685,7 @@ def test_with_metadata_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_metadata(self, _) -> Mapping[str, Any] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_metadata(self, _) -> Mapping[str, Any] | None:  # ty: ignore[invalid-method-override]
             return expected_metadata
 
     @dlt_assets(
@@ -703,7 +703,7 @@ def test_with_group_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_group = "customized_group"
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_group_name(self, _) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_group_name(self, _) -> str | None:  # ty: ignore[invalid-method-override]
             return expected_group
 
     @dlt_assets(
@@ -721,7 +721,7 @@ def test_with_owner_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_owners(self, _) -> Sequence[str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_owners(self, _) -> Sequence[str] | None:  # ty: ignore[invalid-method-override]
             return expected_owners
 
     @dlt_assets(
@@ -774,7 +774,7 @@ def test_with_tag_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     }
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_tags(self, _) -> Mapping[str, str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_tags(self, _) -> Mapping[str, str] | None:  # ty: ignore[invalid-method-override]
             return expected_tags
 
         def get_kinds(self, resource: DltResource, destination: Destination) -> set[str]:

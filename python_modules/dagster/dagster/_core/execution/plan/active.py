@@ -1,3 +1,4 @@
+import logging
 import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from types import TracebackType
@@ -44,6 +45,8 @@ def _pool_key_for_step(step: ExecutionStep) -> str | None:
 
 CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
 CONCURRENCY_CLAIM_MESSAGE_INTERVAL = 300
+
+logger = logging.getLogger(__name__)
 
 
 class ActiveExecution:
@@ -201,27 +204,49 @@ class ActiveExecution:
         successful_or_skipped_steps = self._success | self._skipped
         step = self.get_step_by_key(step_key)
         for step_input in step.step_inputs:
-            missing_source_handles = []
-
+            # Blocking asset checks gate downstream on check failure (a yielded
+            # result with passed=False and ERROR severity), not on the absence
+            # of a result. Asset-check outputs are therefore tracked separately
+            # from regular outputs here and never contribute to skip-propagation
+            # on absence; their absence is logged instead.
+            gating_dep_handles = []
+            check_dep_handles = []
             for source_handle in step_input.get_step_output_handle_dependencies():
-                if (
-                    source_handle.step_key in successful_or_skipped_steps
-                    and source_handle not in self._step_outputs
-                ):
-                    missing_source_handles.append(source_handle)
+                step_output = self._plan.get_step_output(source_handle)
+                if step_output.properties.asset_check_key is not None:
+                    check_dep_handles.append(source_handle)
+                else:
+                    gating_dep_handles.append(source_handle)
 
-            if missing_source_handles:
+            missing_gating_handles = [
+                h
+                for h in gating_dep_handles
+                if h.step_key in successful_or_skipped_steps and h not in self._step_outputs
+            ]
+            missing_check_handles = [
+                h
+                for h in check_dep_handles
+                if h.step_key in successful_or_skipped_steps and h not in self._step_outputs
+            ]
+
+            for source_handle in missing_check_handles:
+                step_output = self._plan.get_step_output(source_handle)
+                check_key = check.not_none(step_output.properties.asset_check_key)
+                logger.warning(
+                    f"Blocking asset check {check_key.to_user_string()!r} emitted no result "
+                    f"in step {source_handle.step_key!r}; downstream step {step_key!r} "
+                    f"will proceed without gating on it."
+                )
+
+            if missing_gating_handles:
                 if (
                     # for the FromMultipleSources case (aka fan-in), we only skip if all sources
                     # are missing. for other cases, we skip if any source is missing
                     not isinstance(step_input.source, FromMultipleSources)
-                    or (
-                        len(missing_source_handles)
-                        == len(step_input.get_step_output_handle_dependencies())
-                    )
+                    or (len(missing_gating_handles) == len(gating_dep_handles))
                 ):
                     self._skipped_deps[step_key] = [
-                        f"{h.step_key}.{h.output_name}" for h in missing_source_handles
+                        f"{h.step_key}.{h.output_name}" for h in missing_gating_handles
                     ]
                     return True
         return False
@@ -328,8 +353,7 @@ class ActiveExecution:
         now = time.time()
         intervals = []
         if self._waiting_to_retry:
-            for t in self._waiting_to_retry.values():
-                intervals.append(t - now)
+            intervals.extend(t - now for t in self._waiting_to_retry.values())
         if (
             self._instance_concurrency_context
             and self._instance_concurrency_context.has_pending_claims()

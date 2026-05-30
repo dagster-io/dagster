@@ -88,7 +88,7 @@ def test_execute_run_with_secrets_loader(capfd):
     runner = CliRunner()
 
     # Restore original env after test
-    with environ({"FOO": None}):  # pyright: ignore[reportArgumentType]
+    with environ({"FOO": None}):  # ty: ignore[invalid-argument-type]
         with dg.instance_for_test(
             overrides={
                 "compute_logs": {
@@ -367,7 +367,7 @@ def test_execute_step_with_secrets_loader():
     runner = CliRunner()
 
     # Restore original env after test
-    with environ({"FOO": None}):  # pyright: ignore[reportArgumentType]
+    with environ({"FOO": None}):  # ty: ignore[invalid-argument-type]
         with dg.instance_for_test(
             overrides={
                 "compute_logs": {
@@ -673,7 +673,7 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             assert log_entry.step_key == "fake_step"
 
             assert "Unexpected framework error text" in str(
-                log_entry.dagster_event.event_specific_data.error  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+                log_entry.dagster_event.event_specific_data.error  # ty: ignore[unresolved-attribute]
             )
 
 

@@ -1,0 +1,30 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-keyline-default);
+  margin-bottom: 12px;
+}
+
+.grid .subheadingGlobal {
+  padding-bottom: 4px;
+  display: block;
+}
+
+.grid pre {
+  margin: 0;
+}
+
+.grid button {
+  margin-top: 4px;
+}
+
+.scheduleDescriptor {
+  padding-bottom: 2px;
+}
+
+.skipReasonNonIdealStateWrapper .dagster-non-ideal-state {
+  margin: auto !important;
+  width: unset !important;
+  max-width: unset !important;
+}

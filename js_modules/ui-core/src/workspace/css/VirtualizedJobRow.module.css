@@ -1,0 +1,13 @@
+.rowGrid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 180px 96px 80px;
+  height: 100%;
+}
+
+.scheduleSensorTagContainer {
+  width: 100%;
+}
+
+.scheduleSensorTagContainer > :global(.bp5-popover-target) {
+  width: 100%;
+}

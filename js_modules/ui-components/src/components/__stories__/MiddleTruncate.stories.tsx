@@ -1,10 +1,8 @@
-// eslint-disable-next-line no-restricted-imports
-import {Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
 import faker from 'faker';
-import {useMemo, useRef, useState} from 'react';
-import styled from 'styled-components';
+import React, {useMemo, useRef, useState} from 'react';
 
 import {Box} from '../Box';
+import {Breadcrumbs} from '../Breadcrumbs';
 import {Colors} from '../Color';
 import {Icon} from '../Icon';
 import {MiddleTruncate} from '../MiddleTruncate';
@@ -253,50 +251,24 @@ export const BreadcrumbsScenario = () => {
   return (
     <Title>
       <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '500px'}}>
-        <BreadcrumbsWithSlashes
+        <Breadcrumbs
           items={breadcrumbs}
-          currentBreadcrumbRenderer={({text, href}) => (
-            <span key={href}>
-              <TruncatedHeading>
-                <MiddleTruncate text={text as string} />
-              </TruncatedHeading>
-            </span>
+          currentBreadcrumbRenderer={({text}) => (
+            <TruncatedHeading>
+              <MiddleTruncate text={text as string} />
+            </TruncatedHeading>
           )}
-          $numHeaderBreadcrumbs={breadcrumbs.length}
-          breadcrumbRenderer={({text, href}) => (
-            <span key={href}>
-              <TruncatedHeading>
-                <MiddleTruncate text={text as string} />
-              </TruncatedHeading>
-            </span>
+          breadcrumbRenderer={({text}) => (
+            <TruncatedHeading>
+              <MiddleTruncate text={text as string} />
+            </TruncatedHeading>
           )}
-          popoverProps={{
-            minimal: true,
-            modifiers: {offset: {enabled: true, options: {offset: [0, 8]}}},
-            popoverClassName: 'dagster-popover',
-          }}
         />
       </Box>
     </Title>
   );
 };
 
-const TruncatedHeading = styled(Heading)`
-  max-width: 200px;
-  overflow: hidden;
-`;
-
-// Only add slashes within the asset key path
-const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
-  height: auto;
-
-  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
-    background: none;
-    font-size: 20px;
-    font-weight: bold;
-    color: ${Colors.textLighter()};
-    content: '/';
-    width: 8px;
-    line-height: 16px;
-  }
-`;
+const TruncatedHeading = ({children}: {children: React.ReactNode}) => (
+  <Heading style={{maxWidth: 200, overflow: 'hidden'}}>{children}</Heading>
+);

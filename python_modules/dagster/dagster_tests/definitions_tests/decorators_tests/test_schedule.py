@@ -163,11 +163,11 @@ def test_schedule_decorators_bad():
 def test_schedule_with_nested_tags():
     nested_tags = {"foo": {"bar": "baz"}}
 
-    @dg.schedule(cron_schedule="* * * * *", job_name="foo_job", tags=nested_tags)  # pyright: ignore[reportArgumentType]
+    @dg.schedule(cron_schedule="* * * * *", job_name="foo_job", tags=nested_tags)  # ty: ignore[invalid-argument-type]
     def my_tag_schedule():
         return {}
 
-    assert my_tag_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript]
+    assert my_tag_schedule.evaluate_tick(  # ty: ignore[not-subscriptable]
         dg.build_schedule_context(scheduled_execution_time=get_current_datetime())
     )[0][0].tags == merge_dicts(
         {key: json.dumps(val) for key, val in nested_tags.items()},
@@ -193,7 +193,7 @@ def test_invalid_tag_keys():
         )
         assert warning.filename.endswith("test_schedule.py")
 
-    assert my_tag_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript]
+    assert my_tag_schedule.evaluate_tick(  # ty: ignore[not-subscriptable]
         dg.build_schedule_context(scheduled_execution_time=get_current_datetime())
     )[0][0].tags == merge_dicts(tags, {"dagster/schedule_name": "my_tag_schedule"})
 
@@ -249,8 +249,8 @@ def test_request_based_schedule():
 
     # test direct invocation
     run_request = foo_schedule(context_without_time)
-    assert run_request.run_config == FOO_CONFIG  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert run_request.tags.get("foo") == "FOO"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert run_request.run_config == FOO_CONFIG  # ty: ignore[unresolved-attribute]
+    assert run_request.tags.get("foo") == "FOO"  # ty: ignore[unresolved-attribute]
 
 
 def test_request_based_schedule_no_context():
@@ -283,8 +283,8 @@ def test_request_based_schedule_no_context():
 
     # test direct invocation
     run_request = foo_schedule()
-    assert run_request.run_config == FOO_CONFIG  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert run_request.tags.get("foo") == "FOO"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert run_request.run_config == FOO_CONFIG  # ty: ignore[unresolved-attribute]
+    assert run_request.tags.get("foo") == "FOO"  # ty: ignore[unresolved-attribute]
 
 
 def test_config_based_schedule():
@@ -387,8 +387,8 @@ def test_request_based_schedule_generator():
     assert inspect.isgenerator(request_generator)
     requests = list(request_generator)
     assert len(requests) == 1
-    assert requests[0].run_config == FOO_CONFIG
-    assert requests[0].tags.get("foo") == "FOO"
+    assert requests[0].run_config == FOO_CONFIG  # ty: ignore[unresolved-attribute]
+    assert requests[0].tags.get("foo") == "FOO"  # ty: ignore[unresolved-attribute]
 
 
 def test_request_based_schedule_generator_no_context():
@@ -423,8 +423,8 @@ def test_request_based_schedule_generator_no_context():
     assert inspect.isgenerator(request_generator)
     requests = list(request_generator)
     assert len(requests) == 1
-    assert requests[0].run_config == FOO_CONFIG
-    assert requests[0].tags.get("foo") == "FOO"
+    assert requests[0].run_config == FOO_CONFIG  # ty: ignore[unresolved-attribute]
+    assert requests[0].tags.get("foo") == "FOO"  # ty: ignore[unresolved-attribute]
 
 
 def test_vixie_cronstring_schedule():

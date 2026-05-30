@@ -845,7 +845,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return self._source
 
     @property
-    def loaders(self) -> dict[type, DataLoader]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def loaders(self) -> dict[type, DataLoader]:
         return self._loaders
 
     @property

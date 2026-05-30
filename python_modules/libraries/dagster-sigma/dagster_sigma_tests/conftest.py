@@ -90,12 +90,12 @@ def lineage_warn_fixture(responses: aioresponses) -> None:
     # clear out the existing response
     url_to_warn = "https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/_MuHPbskp0"
     key_to_del = None
-    for key, response in responses._matches.items():  # noqa: SLF001
+    for key, response in responses._matches.items():  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         if str(response.url_or_pattern) == url_to_warn:
             key_to_del = key
 
     assert key_to_del
-    del responses._matches[key_to_del]  # noqa: SLF001
+    del responses._matches[key_to_del]  # noqa: SLF001  # ty: ignore[not-subscriptable]
 
     # failed responses don't get cached
     for _ in range(2):

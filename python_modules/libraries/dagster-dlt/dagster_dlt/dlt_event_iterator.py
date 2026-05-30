@@ -18,7 +18,7 @@ def _fetch_row_count(
     table_name: str,
 ) -> int | None:
     """Exists mostly for ease of testing."""
-    with dlt_pipeline.sql_client() as client:
+    with dlt_pipeline.sql_client() as client:  # ty: ignore[invalid-context-manager]
         with client.execute_query(
             f"select count(*) as row_count from {table_name}",
         ) as cursor:
@@ -47,7 +47,7 @@ def fetch_row_count_metadata(
     jobs_metadata = materialization.metadata.get("jobs")
     if not jobs_metadata or not isinstance(jobs_metadata, list):
         raise Exception("Missing jobs metadata to retrieve row count.")
-    table_name = jobs_metadata[0].get("table_name")
+    table_name = jobs_metadata[0].get("table_name")  # ty: ignore[unresolved-attribute]
     try:
         return TableMetadataSet(
             row_count=_fetch_row_count(dlt_pipeline, table_name),
@@ -103,7 +103,7 @@ class DltEventIterator(Iterator[T]):
                     dlt_pipeline=self._dlt_pipeline,
                 )
                 if event.metadata:
-                    yield event._replace(metadata={**row_count_metadata, **event.metadata})
+                    yield event._replace(metadata={**row_count_metadata, **event.metadata})  # ty: ignore[invalid-argument-type, invalid-yield]
 
         return DltEventIterator[T](
             _fetch_row_count(),

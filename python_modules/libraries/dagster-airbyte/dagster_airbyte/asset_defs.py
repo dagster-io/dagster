@@ -356,7 +356,7 @@ def build_airbyte_assets(
         name=f"airbyte_sync_{connection_id.replace('-', '_')}",
         deps=upstream_deps,
         outs=outputs,
-        internal_asset_deps=internal_deps,
+        internal_asset_deps=internal_deps,  # ty: ignore[invalid-argument-type]
         compute_kind="airbyte",
         group_name=group_name,
     )
@@ -897,7 +897,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 state_file = state_files[0]
 
-            with open(os.path.join(connection_dir, cast("str", state_file)), encoding="utf-8") as f:
+            with open(os.path.join(connection_dir, state_file), encoding="utf-8") as f:
                 state = yaml.safe_load(f.read())
                 connection_id = state.get("resource_id")
 

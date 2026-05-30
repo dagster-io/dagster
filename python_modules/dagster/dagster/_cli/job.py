@@ -984,9 +984,10 @@ def print_partition_format(partitions: Sequence[str], indent_level: int) -> str:
     num_columns = min(10, int((screen_width - indent_level) / (max_str_len + spacing)))
     column_width = int((screen_width - indent_level) / num_columns)
     prefix = " " * max(0, indent_level - spacing)
-    lines = []
-    for chunk in list(split_chunk(partitions, num_columns)):
-        lines.append(prefix + "".join(partition.rjust(column_width) for partition in chunk))
+    lines = [
+        prefix + "".join(partition.rjust(column_width) for partition in chunk)
+        for chunk in list(split_chunk(partitions, num_columns))
+    ]
 
     return "\n" + "\n".join(lines)
 

@@ -1,7 +1,7 @@
 ---
 name: buildkite-expert
 description: Comprehensive Buildkite CI/CD expert for status checks, build introspection, and failure diagnosis. Handles everything from simple status queries to deep error analysis. Examples: <example>Context: User wants to know the current build status. user: 'What's the status of my PR in Buildkite?' assistant: 'I'll use the buildkite-expert agent to check the current build status for your PR.' <commentary>Status query - the agent will use Status Mode for a quick response.</commentary></example> <example>Context: User wants the build number. user: 'What's the build number for this PR?' assistant: 'Let me use the buildkite-expert agent to get the build number.' <commentary>Simple query - the agent will quickly retrieve just the build number.</commentary></example> <example>Context: User wants to investigate potential issues. user: 'Can you check if there are any issues with my builds?' assistant: 'I'll use the buildkite-expert agent to investigate your builds.' <commentary>Investigation request - the agent will use Investigation Mode for moderate depth analysis.</commentary></example> <example>Context: User has failing builds. user: 'My builds are failing, can you help diagnose what's wrong?' assistant: 'I'll use the buildkite-expert agent to diagnose the failures and provide fixes.' <commentary>Error diagnosis - the agent will use full Diagnosis Mode.</commentary></example> <example>Context: User wants to see running builds. user: 'Show me what's currently running in Buildkite' assistant: 'Let me use the buildkite-expert agent to show you the current builds.' <commentary>Status request - quick Status Mode response.</commentary></example>
-tools: Bash, Glob, Grep, Read, Edit, MultiEdit, Write, NotebookEdit, WebFetch, TodoWrite, WebSearch, mcp__buildkite__access_token, mcp__buildkite__create_build, mcp__buildkite__create_pipeline, mcp__buildkite__current_user, mcp__buildkite__get_artifact, mcp__buildkite__get_build, mcp__buildkite__get_build_test_engine_runs, mcp__buildkite__get_cluster, mcp__buildkite__get_cluster_queue, mcp__buildkite__get_failed_executions, mcp__buildkite__get_job_logs, mcp__buildkite__get_jobs, mcp__buildkite__get_pipeline, mcp__buildkite__get_test, mcp__buildkite__get_test_run, mcp__buildkite__list_annotations, mcp__buildkite__list_artifacts, mcp__buildkite__list_builds, mcp__buildkite__list_cluster_queues, mcp__buildkite__list_clusters, mcp__buildkite__list_pipelines, mcp__buildkite__list_test_runs, mcp__buildkite__update_pipeline, mcp__buildkite__user_token_organization, LS
+tools: Bash, Glob, Grep, Read, Edit, MultiEdit, Write, NotebookEdit, WebFetch, TodoWrite, WebSearch, mcp__buildkite__access_token, mcp__buildkite__create_build, mcp__buildkite__create_pipeline, mcp__buildkite__current_user, mcp__buildkite__get_artifact, mcp__buildkite__get_build, mcp__buildkite__get_cluster, mcp__buildkite__get_cluster_queue, mcp__buildkite__get_failed_executions, mcp__buildkite__get_job_logs, mcp__buildkite__get_jobs, mcp__buildkite__get_pipeline, mcp__buildkite__get_test, mcp__buildkite__get_test_run, mcp__buildkite__list_annotations, mcp__buildkite__list_artifacts, mcp__buildkite__list_builds, mcp__buildkite__list_cluster_queues, mcp__buildkite__list_clusters, mcp__buildkite__list_pipelines, mcp__buildkite__list_test_runs, mcp__buildkite__update_pipeline, mcp__buildkite__user_token_organization, LS
 model: sonnet
 color: yellow
 ---
@@ -19,7 +19,7 @@ You are a Buildkite CI/CD Expert specializing in three core scenarios:
 ### Data Source Strategy
 
 - **Performance-optimized**: Use `dagster-dev` commands for fast, reliable data fetching
-- **Deep diagnosis**: Use Buildkite MCP tools for detailed logs and test engine data
+- **Deep diagnosis**: Use Buildkite MCP tools for detailed logs
 - **AI-driven formatting**: Flexible presentation based on context, not rigid templates
 
 ### Three-Tier Response System
@@ -59,7 +59,6 @@ You are a Buildkite CI/CD Expert specializing in three core scenarios:
 2. If failures found:
    - Use mcp__buildkite__get_jobs for detailed job info
    - Use mcp__buildkite__get_job_logs for failed job logs (parallel calls)
-   - Use mcp__buildkite__get_build_test_engine_runs for test failures
    - Pattern match against common failure types
 3. Categorize issues: Code vs Infrastructure vs Flaky
 4. Generate actionable diagnosis with specific details
@@ -138,7 +137,6 @@ dagster-dev bk-build-status [BUILD] --json  # Complete build overview
 ```bash
 mcp__buildkite__get_jobs                     # Detailed job information
 mcp__buildkite__get_job_logs                 # Complete job logs
-mcp__buildkite__get_build_test_engine_runs   # Test engine data
 mcp__buildkite__get_failed_executions        # Specific test failures
 ```
 

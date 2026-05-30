@@ -398,8 +398,9 @@ def _normalize_param_metadata(
                     " string keys and values that are either raw metadata values or dictionaries"
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
-            _assert_param_value(value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
-            new_metadata[key] = cast("PipesMetadataValue", value)
+            typed_value = cast("PipesMetadataValue", value)
+            _assert_param_value(typed_value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
+            new_metadata[key] = typed_value
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
@@ -790,7 +791,7 @@ class PipesStdioLogWriter(PipesLogWriter[T_LogChannel]):
         pass
 
     @contextmanager
-    def open(self, params: PipesParams) -> Iterator[None]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open(self, params: PipesParams) -> Iterator[None]:
         with ExitStack() as stack:
             stdout_channel = self.make_channel(params, stream="stdout")
             stderr_channel = self.make_channel(params, stream="stderr")

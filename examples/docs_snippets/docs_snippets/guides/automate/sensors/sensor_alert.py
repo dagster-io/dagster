@@ -88,7 +88,7 @@ from dagster_slack import make_slack_on_run_failure_sensor
 
 slack_on_run_failure = make_slack_on_run_failure_sensor(
     "#my_channel",
-    os.getenv("MY_SLACK_TOKEN"),  # type: ignore[arg-type]
+    os.getenv("MY_SLACK_TOKEN"),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 )
 
 
@@ -101,7 +101,7 @@ from dagster import make_email_on_run_failure_sensor
 
 email_on_run_failure = make_email_on_run_failure_sensor(
     email_from="no-reply@example.com",
-    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),  # type: ignore[arg-type]
+    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     email_to=["xxx@example.com", "xyz@example.com"],
 )
 

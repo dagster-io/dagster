@@ -13,8 +13,8 @@ import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AttributeNameContext} from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
 
-type LexerConstructor = new (...args: any[]) => Lexer;
-type ParserConstructor = new (...args: any[]) => Parser & {
+type LexerConstructor = new (...args: ConstructorParameters<typeof Lexer>) => Lexer;
+type ParserConstructor = new (...args: ConstructorParameters<typeof Parser>) => Parser & {
   start: () => ParserRuleContext;
 };
 

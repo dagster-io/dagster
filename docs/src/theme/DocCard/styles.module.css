@@ -87,6 +87,20 @@
   gap: 0.55rem;
 }
 
+.examplesBodyWithPanel {
+  padding-right: 8rem;
+}
+
+.cardLogoPanel {
+  position: absolute;
+  right: var(--examples-card-inset-x);
+  top: 0.75rem;
+  width: 7rem;
+  height: 7rem;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .examplesBody .cardLogo {
   width: 3rem;
   height: 3rem;
@@ -95,6 +109,16 @@
   border-radius: 10px !important;
   border: 1px solid var(--examples-logo-border);
   backdrop-filter: blur(4px);
+}
+
+.examplesBody .cardLogoFrameless {
+  width: 3rem;
+  height: 3rem;
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0 !important;
+  backdrop-filter: none;
 }
 
 .examplesFooter {

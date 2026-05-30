@@ -21,7 +21,7 @@ class LocalParquetIOManager(ConfigurableIOManager):
 def people() -> DataFrame:
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
-    spark = SparkSession.builder.getOrCreate()  # type: ignore
+    spark = SparkSession.builder.getOrCreate()
     return spark.createDataFrame(rows, schema)
 
 

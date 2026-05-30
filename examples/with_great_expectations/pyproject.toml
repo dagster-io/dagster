@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "with_great_expectations"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "dagster",
     "dagster-ge",
@@ -16,3 +17,23 @@ dev = ["dagster-webserver", "pytest"]
 [tool.dagster]
 module_name = "with_great_expectations.definitions"
 code_location_name = "with_great_expectations"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-pandas",
+    "dagster-ge",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-pandas = { path = "../../python_modules/libraries/dagster-pandas", editable = true }
+dagster-ge = { path = "../../python_modules/libraries/dagster-ge", editable = true }

@@ -22,3 +22,9 @@ The following run coordinators can be configured on your [Dagster instance](/dep
 If you use the `DefaultRunCoordinator`, no configuration is required on your part.
 
 However, if using the `QueuedRunCoordinator` or building a custom implementation, you can define [custom run prioritization rules](/deployment/execution/customizing-run-queue-priority) and [instance-level concurrency limits](/guides/operate/managing-concurrency).
+
+## Concurrency pools and dequeue ordering
+
+When runs are queued because a concurrency pool is at capacity, Dagster+ does **not** guarantee strict FIFO ordering across all runs. The dequeue order is determined by internal prioritization logic rather than strictly by queue arrival time, so jobs may not execute in the exact order they were submitted. See [Managing concurrency](/guides/operate/managing-concurrency).
+
+If your workload depends on a specific execution order, define explicit run prioritization rules with the `QueuedRunCoordinator` rather than relying on queue arrival time. See [Customizing run queue priority](/deployment/execution/customizing-run-queue-priority).

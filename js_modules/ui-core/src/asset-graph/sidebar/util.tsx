@@ -1,7 +1,7 @@
 import {Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import styled, {keyframes} from 'styled-components';
 
+import dotStyles from './css/Dot.module.css';
 import {AssetKeyInput} from '../../graphql/types';
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
@@ -71,7 +71,7 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
 
   switch (type) {
     case 'loading':
-      return <LoadingDot />;
+      return <div className={dotStyles.loadingDot} />;
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
@@ -90,29 +90,3 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
       return <Icon name="run_success" color={Colors.accentGreen()} />;
   }
 }
-
-const pulse = keyframes`
-  from {
-    background-color: ${Colors.accentGray()}
-  }
-
-  50% {
-    background-color: ${Colors.accentGrayHover()}
-  }
-
-  to {
-    background-color: ${Colors.accentGray()}
-  }
-`;
-
-// 1px margin for 12px total width (matches <Spinner /> size)
-const Dot = styled.div`
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin: 0 1px;
-`;
-
-const LoadingDot = styled(Dot)`
-  animation: ${pulse} 1s ease-out infinite;
-`;

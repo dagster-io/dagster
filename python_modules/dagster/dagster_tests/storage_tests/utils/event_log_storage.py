@@ -565,7 +565,7 @@ class TestEventLogStorage:
                 instance.delete_run(run)
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_log_storage_watch(
         self,
         test_run_id: str,
@@ -1112,7 +1112,7 @@ class TestEventLogStorage:
             assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_single_run_event(self, storage, test_run_id):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1133,7 +1133,7 @@ class TestEventLogStorage:
         assert all([isinstance(event, dg.EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_filter_run_event(self, instance, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1162,7 +1162,7 @@ class TestEventLogStorage:
             assert all([isinstance(event, dg.EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_filter_two_runs_event(self, storage, instance):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1584,7 +1584,7 @@ class TestEventLogStorage:
         materializations = [
             e
             for e in events
-            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # pyright: ignore[reportOptionalMemberAccess]
+            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # ty: ignore[unresolved-attribute]
         ]
         storage.store_event_batch(materializations)
 
@@ -1620,7 +1620,7 @@ class TestEventLogStorage:
         materializations = [
             e
             for e in events
-            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # pyright: ignore[reportOptionalMemberAccess]
+            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # ty: ignore[unresolved-attribute]
         ]
         storage.store_event_batch(materializations)
 
@@ -1723,7 +1723,7 @@ class TestEventLogStorage:
         def _get_counts(result):
             assert isinstance(result, dg.EventRecordsResult)
             return [
-                record.asset_materialization.metadata.get("count").value  # pyright: ignore[reportOptionalMemberAccess]
+                record.asset_materialization.metadata.get("count").value
                 for record in result.records
             ]
 
@@ -1878,8 +1878,7 @@ class TestEventLogStorage:
         def _get_counts(result):
             assert isinstance(result, dg.EventRecordsResult)
             return [
-                record.asset_observation.metadata.get("count").value  # pyright: ignore[reportOptionalMemberAccess]
-                for record in result.records
+                record.asset_observation.metadata.get("count").value for record in result.records
             ]
 
         # results come in descending order, by default
@@ -2000,7 +1999,7 @@ class TestEventLogStorage:
 
     def test_asset_materialization_null_key_fails(self):
         with pytest.raises(check.CheckError):
-            dg.AssetMaterialization(asset_key=None)  # pyright: ignore[reportArgumentType]
+            dg.AssetMaterialization(asset_key=None)  # ty: ignore[invalid-argument-type]
 
     def test_asset_events_error_parsing(self, storage, instance):
         if not isinstance(storage, SqlEventLogStorage):
@@ -2671,7 +2670,7 @@ class TestEventLogStorage:
             assert len(run_status_change_events) == 6
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_watch_exc_recovery(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -2711,10 +2710,11 @@ class TestEventLogStorage:
         assert all([isinstance(event, dg.EventLogEntry) for event in event_list])
 
     # https://github.com/dagster-io/dagster/issues/5127
-    @pytest.mark.skip
     def test_watch_unwatch(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
+        if not isinstance(storage, SqlEventLogStorage):
+            pytest.skip("test only applies to SqlEventLogStorage polling watchers")
 
         # test for dead lock bug
 
@@ -3199,7 +3199,7 @@ class TestEventLogStorage:
                 )
                 for partition in partitions
             ]
-            for step_key, partitions in materialize_partitions.items()
+            for partitions in materialize_partitions.values()
         ]
 
         events = [event for events in events_by_step for event in events]
@@ -5708,12 +5708,14 @@ class TestEventLogStorage:
         storage.delete_events(run_id=two)
         assert storage.get_concurrency_run_ids() == set()
 
-    @pytest.mark.flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=2)
     def test_threaded_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
-        TOTAL_TIMEOUT_TIME = 30
+        # Bumped from 30s: 100 threads contending a 5-slot pool over SQLite
+        # routinely hits the budget on noisy BK agents.
+        TOTAL_TIMEOUT_TIME = 90
 
         run_id = make_new_run_id()
 
@@ -5869,6 +5871,9 @@ class TestEventLogStorage:
         check_key_1 = dg.AssetCheckKey(dg.AssetKey(["my_asset"]), "my_check")
         check_key_2 = dg.AssetCheckKey(dg.AssetKey(["my_asset"]), "my_check_2")
 
+        # empty input short-circuits to empty mapping
+        assert storage.get_latest_asset_check_execution_by_key([]) == {}
+
         for asset_key in {dg.AssetKey(["my_asset"]), dg.AssetKey(["my_other_asset"])}:
             storage.store_event(
                 dg.EventLogEntry(
@@ -5911,6 +5916,13 @@ class TestEventLogStorage:
         assert len(latest_checks) == 1
         assert latest_checks[check_key_1].status == AssetCheckExecutionRecordStatus.PLANNED
         assert latest_checks[check_key_1].run_id == run_id_1
+
+        # PartitionKeyFilter(key=None) matches unpartitioned records
+        latest_unpartitioned = storage.get_latest_asset_check_execution_by_key(
+            [check_key_1], partition_filter=PartitionKeyFilter(key=None)
+        )
+        assert check_key_1 in latest_unpartitioned
+        assert latest_unpartitioned[check_key_1].partition is None
 
         # update the planned check
         storage.store_event(
@@ -6036,6 +6048,106 @@ class TestEventLogStorage:
 
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
         assert len(latest_checks) == 0
+
+    @pytest.mark.parametrize(
+        "partitions_def_type, partition_keys",
+        [
+            ("static", ["a", "b", "c"]),
+            ("dynamic", ["x", "y", "z"]),
+            ("time_window", ["2023-01-01", "2023-01-02", "2023-01-03"]),
+        ],
+        ids=["static", "dynamic", "time_window"],
+    )
+    def test_get_latest_asset_check_execution_by_key_partitioned_lifecycle(
+        self,
+        storage: EventLogStorage,
+        partitions_def_type: str,
+        partition_keys: list,
+    ):
+        run_id = make_new_run_id()
+        asset_key = dg.AssetKey(["my_partitioned_asset_focused"])
+        check_key = dg.AssetCheckKey(asset_key, "my_partitioned_check_focused")
+
+        if partitions_def_type == "static":
+            partitions_def = dg.StaticPartitionsDefinition(partition_keys)
+        elif partitions_def_type == "dynamic":
+            partitions_def = dg.DynamicPartitionsDefinition(
+                name="latest_check_focused_dynamic_partitions"
+            )
+            storage.add_dynamic_partitions(
+                partitions_def_name="latest_check_focused_dynamic_partitions",
+                partition_keys=partition_keys,
+            )
+        elif partitions_def_type == "time_window":
+            partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+        else:
+            raise ValueError(f"Unknown partitions_def_type: {partitions_def_type}")
+
+        partitions_subset = partitions_def.subset_with_partition_keys(
+            partition_keys
+        ).to_serializable_subset()
+        key_a, key_b, key_c = partition_keys
+
+        # a single planned event with a multi-partition subset creates one row per partition
+        storage.store_event(
+            _create_check_planned_event(run_id, check_key, partitions_subset=partitions_subset)
+        )
+
+        # each partition is PLANNED in isolation, with the correct partition + run_id
+        for partition_key in partition_keys:
+            result = storage.get_latest_asset_check_execution_by_key(
+                [check_key], partition_filter=PartitionKeyFilter(key=partition_key)
+            )
+            assert check_key in result
+            assert result[check_key].partition == partition_key
+            assert result[check_key].run_id == run_id
+            assert result[check_key].status == AssetCheckExecutionRecordStatus.PLANNED
+
+        # PartitionKeyFilter(key=None) excludes partitioned rows
+        result = storage.get_latest_asset_check_execution_by_key(
+            [check_key], partition_filter=PartitionKeyFilter(key=None)
+        )
+        assert check_key not in result
+
+        # complete partition "a" successfully
+        storage.store_event(
+            _create_check_evaluation_event(run_id, check_key, passed=True, partition=key_a)
+        )
+
+        # "a" is SUCCEEDED; "b" and "c" still PLANNED
+        assert (
+            storage.get_latest_asset_check_execution_by_key(
+                [check_key], partition_filter=PartitionKeyFilter(key=key_a)
+            )[check_key].status
+            == AssetCheckExecutionRecordStatus.SUCCEEDED
+        )
+        for partition_key in (key_b, key_c):
+            assert (
+                storage.get_latest_asset_check_execution_by_key(
+                    [check_key], partition_filter=PartitionKeyFilter(key=partition_key)
+                )[check_key].status
+                == AssetCheckExecutionRecordStatus.PLANNED
+            )
+
+        # fail partition "b"
+        storage.store_event(
+            _create_check_evaluation_event(run_id, check_key, passed=False, partition=key_b)
+        )
+
+        expected = {
+            key_a: AssetCheckExecutionRecordStatus.SUCCEEDED,
+            key_b: AssetCheckExecutionRecordStatus.FAILED,
+            key_c: AssetCheckExecutionRecordStatus.PLANNED,
+        }
+        for partition_key, status in expected.items():
+            record = storage.get_latest_asset_check_execution_by_key(
+                [check_key], partition_filter=PartitionKeyFilter(key=partition_key)
+            )[check_key]
+            assert record.partition == partition_key
+            assert record.status == status
+
+        latest = storage.get_latest_asset_check_execution_by_key([check_key])
+        assert check_key in latest
 
     def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
         run_id = make_new_run_id()

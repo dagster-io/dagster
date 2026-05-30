@@ -462,10 +462,10 @@ def test_asset_with_io_manager_def():
     events = []
 
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     @dg.io_manager
@@ -485,10 +485,10 @@ def test_asset_with_io_manager_def_plain_old_python_object_iomanager() -> None:
     events = []
 
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     @dg.asset(io_manager_def=MyIOManager())
@@ -547,7 +547,7 @@ def test_asset_with_io_manager_key_only():
 
 
 def test_asset_both_io_manager_args_provided():
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def the_io_manager():
         pass
 
@@ -638,10 +638,10 @@ def test_multi_asset_resources_execution():
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _context, obj):  # ty: ignore[invalid-method-override]
             self._the_list.append(obj)
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     foo_list = []
@@ -687,11 +687,11 @@ def test_multi_asset_io_manager_execution_specs() -> None:
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _context, obj):  # ty: ignore[invalid-method-override]
             assert isinstance(obj, int)
             self._the_list.append(obj)
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     foo_list = []
@@ -802,11 +802,11 @@ def test_graph_backed_asset_io_manager():
     events = []
 
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             events.append(f"entered handle_output for {context.step_key}")
 
         def load_input(self, context):
-            events.append(f"entered handle_input for {context.upstream_output.step_key}")  # pyright: ignore[reportOptionalMemberAccess]
+            events.append(f"entered handle_input for {context.upstream_output.step_key}")
 
     asset_provided_resources = AssetsDefinition.from_graph(
         graph_def=basic,
@@ -1309,7 +1309,7 @@ def test_graph_backed_asset_subset_two_routes():
     result = dg.materialize([assets], selection=["asset2"])
     assert result.success
     materialized_assets = [
-        event.event_specific_data.materialization.asset_key  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        event.event_specific_data.materialization.asset_key  # ty: ignore[unresolved-attribute]
         for event in result.get_asset_materialization_events()
     ]
     assert materialized_assets == [dg.AssetKey("asset2")]
@@ -1338,7 +1338,7 @@ def test_graph_backed_asset_subset_two_routes_yield_only_selected():
     result = dg.materialize([assets], selection=["asset2"])
     assert result.success
     materialized_assets = [
-        event.event_specific_data.materialization.asset_key  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        event.event_specific_data.materialization.asset_key  # ty: ignore[unresolved-attribute]
         for event in result.get_asset_materialization_events()
     ]
     assert materialized_assets == [dg.AssetKey("asset2")]
@@ -1477,8 +1477,8 @@ def test_nested_graph_subset_context(
 
     @dg.graph(out={"a": dg.GraphOut(), "b": dg.GraphOut(), "c": dg.GraphOut(), "d": dg.GraphOut()})
     def nested_graph():
-        a, b = two_outputs_graph()  # pyright: ignore[reportGeneralTypeIssues]
-        c, d = downstream_graph(b)  # pyright: ignore[reportGeneralTypeIssues]
+        a, b = two_outputs_graph()  # ty: ignore[not-iterable]
+        c, d = downstream_graph(b)  # ty: ignore[not-iterable]
         return {"a": a, "b": b, "c": c, "d": d}
 
     with dg.instance_for_test() as instance:
@@ -1679,7 +1679,7 @@ def test_asset_key_with_prefix():
     )
 
     with pytest.raises(CheckError):
-        dg.AssetKey("foo").with_prefix(1)  # pyright: ignore[reportArgumentType]
+        dg.AssetKey("foo").with_prefix(1)  # ty: ignore[invalid-argument-type]
 
 
 def _exec_asset(asset_def, selection=None):

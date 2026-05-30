@@ -31,12 +31,12 @@ def tutorial_job():
     templated(ds)
 
 
-dg.schedule = dg.ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
+dg.schedule = dg.ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")  # ty: ignore[invalid-assignment]
 
 
 defs = dg.Definitions(
     jobs=[tutorial_job],
-    schedules=[dg.schedule],
+    schedules=[dg.schedule],  # ty: ignore[invalid-argument-type]
 )
 
 

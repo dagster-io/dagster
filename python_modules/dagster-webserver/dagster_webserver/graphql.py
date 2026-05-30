@@ -313,6 +313,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
             if isawaitable(gql_result):
                 gql_result = await gql_result
 
+        assert isinstance(gql_result, ExecutionResult)
         response_data: dict[str, Any] = {"data": gql_result.data}
 
         if gql_result.errors:

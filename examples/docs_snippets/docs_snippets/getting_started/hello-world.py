@@ -12,5 +12,5 @@ def world(context: dg.AssetExecutionContext):
 
 
 if __name__ == "__main__":
-    dg.materialize(hello)
-    dg.materialize(world)
+    dg.materialize(hello)  # ty: ignore[invalid-argument-type]
+    dg.materialize(world)  # ty: ignore[invalid-argument-type]

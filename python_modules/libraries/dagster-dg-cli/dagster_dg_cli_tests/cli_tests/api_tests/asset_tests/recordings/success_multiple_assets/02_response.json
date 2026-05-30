@@ -16,7 +16,15 @@
             "slack"
           ],
           "dependencyKeys": [],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       },
       {
@@ -33,7 +41,15 @@
           "groupName": "aws_stages",
           "kinds": [],
           "dependencyKeys": [],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       },
       {
@@ -58,7 +74,15 @@
               ]
             }
           ],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       },
       {
@@ -83,7 +107,15 @@
               ]
             }
           ],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       },
       {
@@ -108,7 +140,15 @@
               ]
             }
           ],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       },
       {
@@ -133,7 +173,15 @@
               ]
             }
           ],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       },
       {
@@ -158,7 +206,15 @@
               ]
             }
           ],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       },
       {
@@ -183,7 +239,15 @@
               ]
             }
           ],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       }
     ]

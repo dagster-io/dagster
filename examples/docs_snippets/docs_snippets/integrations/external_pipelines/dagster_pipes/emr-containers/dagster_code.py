@@ -16,14 +16,14 @@ def emr_containers_asset(
         context=context,
         start_job_run_params={
             "releaseLabel": "emr-7.5.0-latest",
-            "virtualClusterId": ...,
+            "virtualClusterId": ...,  # ty: ignore[invalid-argument-type]
             "clientToken": context.run_id,  # idempotency identifier for the job run
-            "executionRoleArn": ...,
+            "executionRoleArn": ...,  # ty: ignore[invalid-argument-type]
             "jobDriver": {
                 "sparkSubmitJobDriver": {
                     "entryPoint": "local:///app/script.py",
                     "sparkSubmitParameters": f"--conf spark.kubernetes.container.image={image}",
                 }
             },
-        },
+        },  # ty: ignore[invalid-argument-type]
     ).get_materialize_result()

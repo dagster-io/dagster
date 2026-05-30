@@ -18,7 +18,7 @@ RUN \
         pandas
 
 
-WORKDIR /iris_analysis/
+WORKDIR /deploy_k8s/
 
 # Expose the port that your Dagster instance will run on
 EXPOSE 80

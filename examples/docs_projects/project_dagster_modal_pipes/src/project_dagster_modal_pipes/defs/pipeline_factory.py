@@ -3,10 +3,10 @@ import os
 from dataclasses import dataclass
 
 import dagster as dg
-import feedparser
-import yagmail
+import feedparser  # ty: ignore[unresolved-import]
+import yagmail  # ty: ignore[unresolved-import]
 from dagster_aws.s3 import S3Resource
-from dagster_modal import ModalClient
+from dagster_modal import ModalClient  # ty: ignore[unresolved-import]
 from dagster_openai import OpenAIResource
 
 from project_dagster_modal_pipes.defs.constants import DEFAULT_POLLING_INTERVAL, R2_BUCKET_NAME

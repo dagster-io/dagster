@@ -1,19 +1,29 @@
 import {waitFor} from '@testing-library/react';
 
+import {ApolloClient, DocumentNode} from '../../../apollo-client';
 import {LocationBaseDataFetcher} from '../LocationBaseDataFetcher';
+import type {WorkspaceStatusPoller} from '../WorkspaceStatusPoller';
+import type {LocationStatusEntryFragment} from '../types/WorkspaceQueries.types';
 
 const mockClearCachedData = jest.fn();
 const mockGetCachedData = jest.fn();
 
 jest.mock('../../../search/useIndexedDBCachedQuery', () => ({
-  clearCachedData: (...args: any[]) => mockClearCachedData(...args),
-  getCachedData: (...args: any[]) => mockGetCachedData(...args),
+  clearCachedData: (...args: unknown[]) => mockClearCachedData(...args),
+  getCachedData: (...args: unknown[]) => mockGetCachedData(...args),
 }));
+
+interface StatusUpdate {
+  added: string[];
+  updated: string[];
+  removed: string[];
+  locationStatuses: Record<string, Partial<LocationStatusEntryFragment>>;
+}
 
 // Add a mock status poller class
 class MockStatusPoller {
-  private subscriber: ((update: any) => void) | null = null;
-  subscribe = jest.fn((cb: any) => {
+  private subscriber: ((update: StatusUpdate) => void) | null = null;
+  subscribe = jest.fn((cb: (update: StatusUpdate) => void) => {
     this.subscriber = cb;
     return this.unsubscribe;
   });
@@ -21,7 +31,7 @@ class MockStatusPoller {
   unsubscribe = jest.fn(() => {
     this.subscriber = null;
   });
-  trigger(update: any) {
+  trigger(update: StatusUpdate) {
     if (this.subscriber) {
       this.subscriber(update);
     }
@@ -48,15 +58,15 @@ class TestDataFetcher extends LocationBaseDataFetcher<TestData, TestVariables> {
 const getData = jest.fn();
 describe('LocationBaseDataFetcher', () => {
   let fetcher: TestDataFetcher;
-  let statusPoller: any;
+  let statusPoller: MockStatusPoller;
 
   function createFetcher() {
     statusPoller = new MockStatusPoller();
     return new TestDataFetcher({
-      query: {} as any,
+      query: {} as unknown as DocumentNode,
       version: '1',
-      client: {} as any,
-      statusPoller,
+      client: {} as unknown as ApolloClient<unknown>,
+      statusPoller: statusPoller as unknown as WorkspaceStatusPoller,
       getData,
       key: 'test-key',
     });

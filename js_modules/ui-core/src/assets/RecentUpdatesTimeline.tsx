@@ -71,30 +71,32 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
         ) {
           return event;
         }
+        if (event.__typename === 'ObservationEvent') {
+          const timestampEntries = event.metadataEntries.filter(
+            (entry) => entry.__typename === 'TimestampMetadataEntry',
+          );
 
-        const timestampEntries = event.metadataEntries.filter(
-          (entry) => entry.__typename === 'TimestampMetadataEntry',
-        );
+          const lastUpdated = timestampEntries.find(
+            (entry) => entry.label === 'dagster/last_updated_timestamp',
+          );
 
-        const lastUpdated = timestampEntries.find(
-          (entry) => entry.label === 'dagster/last_updated_timestamp',
-        );
+          // The metadata timestamp is in seconds.
+          const lastUpdatedSec = lastUpdated?.timestamp;
+          const ts = lastUpdatedSec ? lastUpdatedSec * 1000 : event.timestamp;
 
-        // The metadata timestamp is in seconds.
-        const lastUpdatedSec = lastUpdated?.timestamp;
-        const ts = lastUpdatedSec ? lastUpdatedSec * 1000 : event.timestamp;
+          if (!seenTimestamps.has(ts)) {
+            seenTimestamps.add(ts);
+            return {
+              ...event,
+              timestamp: `${ts}`,
+            };
+          }
 
-        if (!seenTimestamps.has(ts)) {
-          seenTimestamps.add(ts);
-          return {
-            ...event,
-            timestamp: `${ts}`,
-          };
+          return null;
         }
-
         return null;
       })
-      .filter((e): e is AssetEventType => e !== null)
+      .filter((e) => e !== null)
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp));
   }, [events]);
 
@@ -324,7 +326,14 @@ const AssetUpdate = ({
   event: AssetEventType;
   last: boolean;
 }) => {
-  const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
+  const finalEvent =
+    event &&
+    (event.__typename === 'MaterializationEvent' ||
+      event.__typename === 'ObservationEvent' ||
+      event.__typename === 'FailedToMaterializeEvent')
+      ? event
+      : null;
+  const run = finalEvent?.runOrError.__typename === 'Run' ? finalEvent.runOrError : null;
   const icon = () => {
     switch (event.__typename) {
       case 'MaterializationEvent':
@@ -337,6 +346,8 @@ const AssetUpdate = ({
         ) : (
           <Icon name="status" color={Colors.accentGray()} />
         );
+      default:
+        return null;
     }
   };
 
@@ -348,6 +359,8 @@ const AssetUpdate = ({
         return 'Observed at';
       case 'FailedToMaterializeEvent':
         return 'Failed to materialize at';
+      default:
+        return null;
     }
   };
 
@@ -364,28 +377,28 @@ const AssetUpdate = ({
         <Link
           to={assetDetailsPathForKey(assetKey, {
             view: 'events',
-            time: event.timestamp,
+            time: finalEvent?.timestamp,
           })}
         >
           <Caption>
-            <Timestamp timestamp={{ms: Number(event.timestamp)}} />
+            <Timestamp timestamp={{ms: Number(finalEvent?.timestamp)}} />
           </Caption>
         </Link>
       </Box>
       <div>
-        {event && run ? (
+        {finalEvent && run ? (
           <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
             <div>in run</div>
             <AssetRunLink
               runId={run.id}
               assetKey={assetKey}
-              event={{stepKey: event.stepKey, timestamp: event.timestamp}}
+              event={{stepKey: finalEvent.stepKey, timestamp: finalEvent.timestamp}}
             >
               <CaptionMono>{titleForRun(run)}</CaptionMono>
             </AssetRunLink>
           </Box>
-        ) : event && isRunlessEvent(event) ? (
-          <RunlessEventTag tags={event.tags} />
+        ) : finalEvent && isRunlessEvent(finalEvent) ? (
+          <RunlessEventTag tags={finalEvent.tags} />
         ) : undefined}
       </div>
     </Box>

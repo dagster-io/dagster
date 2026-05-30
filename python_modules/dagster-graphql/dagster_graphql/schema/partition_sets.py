@@ -618,7 +618,6 @@ class GraphenePartitionDefinition(graphene.ObjectType):
             ]
         return {
             "__typename": "PartitionDefinition",
-            "description": str(partitions.get_partitions_definition()),
             "dimensionTypes": dimension_types,
         }
 

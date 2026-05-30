@@ -4,7 +4,7 @@ description: Running Dagster jobs on AWS Lambda instead of containers.
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Run.png
 ---
 
 In this example, we'll explore how to run Dagster jobs on [AWS Lambda functions](https://aws.amazon.com/pm/lambda/) instead of spinning up new ECS tasks or containers. This approach is useful for lightweight, configuration-driven jobs that benefit from Lambda's instant startup time.

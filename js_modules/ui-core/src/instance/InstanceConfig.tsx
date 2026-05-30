@@ -1,22 +1,14 @@
 import 'codemirror/addon/search/searchcursor';
 
-import {
-  Box,
-  Code,
-  Colors,
-  PageHeader,
-  Spinner,
-  Subheading,
-  Subtitle1,
-} from '@dagster-io/ui-components';
+import {Box, Code, PageHeader, Spinner, Subheading, Subtitle1} from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import CodeMirror from 'codemirror';
 import {memo, useContext, useMemo} from 'react';
-import {createGlobalStyle} from 'styled-components';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/InstanceConfig.module.css';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
 import {
   FIFTEEN_SECONDS,
@@ -25,19 +17,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-
-const InstanceConfigStyle = createGlobalStyle`
-  .CodeMirror.cm-s-instance-config.cm-s-instance-config {
-    background-color: ${Colors.backgroundDefault()};
-    box-shadow: 0 1px 0 ${Colors.keylineDefault()};
-    color: ${Colors.textDefault()};
-    height: 100%;
-
-    .config-highlight.config-highlight {
-      background-color: ${Colors.backgroundLimeHover()};
-    }
-  }
-`;
 
 export const InstanceConfigContent = memo(() => {
   useTrackPageView();
@@ -81,7 +60,6 @@ export const InstanceConfigContent = memo(() => {
 
   return (
     <>
-      <InstanceConfigStyle />
       <Box
         padding={{vertical: 16, horizontal: 24}}
         border="bottom"
@@ -93,7 +71,7 @@ export const InstanceConfigContent = memo(() => {
         <QueryRefreshCountdown refreshState={refreshState} />
       </Box>
       {/* Div wrapper on CodeMirror to allow entire page to scroll */}
-      <div style={{flex: 1, overflow: 'hidden'}}>
+      <div className={styles.configEditor} style={{flex: 1, overflow: 'hidden'}}>
         <StyledRawCodeMirror
           value={config || ''}
           options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}

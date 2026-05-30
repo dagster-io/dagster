@@ -331,13 +331,22 @@ export const TickHistoryTimeline = ({
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
+
+  // On the newest page (no pagination), floor the lookback window to roughly
+  // 5 minutes ago. Snapshotted at mount so the useQuery variables stay
+  // referentially stable across renders; polling keeps the data fresh.
+  const defaultAfterTimestamp = React.useMemo(
+    () => (beforeTimestamp ? undefined : Date.now() / 1000 - 5 * 60),
+    [beforeTimestamp],
+  );
+
   const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(TICK_HISTORY_QUERY, {
     variables: {
       instigationSelector,
       beforeTimestamp,
-      afterTimestamp,
+      afterTimestamp: afterTimestamp ?? defaultAfterTimestamp,
       statuses,
-      limit: beforeTimestamp ? undefined : 15,
+      limit: beforeTimestamp ? undefined : PAGE_SIZE,
     },
     notifyOnNetworkStatusChange: true,
   });

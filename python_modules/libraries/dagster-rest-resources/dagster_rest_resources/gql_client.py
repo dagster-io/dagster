@@ -15,9 +15,8 @@ from dagster_rest_resources.schemas.exception import (
 class IGraphQLClient(AriadneClient, ABC):
     """Base class for exposed graphql clients.
 
-    Extends AriadneClient so that generated methods inherit the overridden execute/get_data
-    behavior defined here and in subclasses. The generated methods are intentionally
-    excluded from the public API surface; callers use execute_generic.
+    Extends AriadneClient to support overriding behaviors (like the debug implementation)
+    and custom queries that are not available as code-generated methods (via execute_arbitrary).
     """
 
     def __init__(
@@ -45,30 +44,35 @@ class IGraphQLClient(AriadneClient, ABC):
             http_client=http_client,
         )
 
-    def get_data(self, response: httpx.Response) -> dict[str, Any]:
-        data = super().get_data(response)
-
-        value = next(iter(data.values()))
-        if isinstance(value, Mapping):
-            if value.get("__typename") == "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError("Unauthorized: " + value["message"])
-            elif value.get("__typename", "").endswith("Error"):
-                raise DagsterPlusGraphqlError("Error: " + value["message"])
-        return data
-
-    def execute_generic(
+    def execute_arbitrary(
         self,
         query: str,
         operation_name: str | None = None,
         variables: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        return self.get_data(
+        data = self.get_data(
             self.execute(
                 query=query,
                 operation_name=operation_name,
                 variables=dict(variables) if variables else None,
             )
         )
+
+        # extremely generic graphql error handling - since we don't know the queries being run by execute_arbitrary, the
+        # best we can do for detecting graphql errors and raising them as python exceptions is this stringly-typed thing
+        value = next(iter(data.values()))
+        if isinstance(value, Mapping):
+            typename = value.get("__typename", "")
+            if typename == "UnauthorizedError":
+                raise DagsterPlusUnauthorizedError("Unauthorized: " + value["message"])
+            elif typename.endswith("Error"):
+                raise DagsterPlusGraphqlError("Error: " + value["message"])
+
+        return data
+
+
+class DagsterPlusGraphQLClient(IGraphQLClient):
+    pass
 
 
 class DebugGraphQLClient(IGraphQLClient):
@@ -123,7 +127,3 @@ class DebugGraphQLClient(IGraphQLClient):
         self.__log("=" * 20)
 
         return data
-
-
-class DagsterPlusGraphQLClient(IGraphQLClient):
-    pass

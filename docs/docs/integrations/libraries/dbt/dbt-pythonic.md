@@ -106,3 +106,21 @@ Next, we separate our dbt executions: one `@dbt_assets` function (`dbt_analytics
   title="my_project/defs/assets.py"
   language="python"
 />
+
+### Microbatch incremental models
+
+dbt's microbatch strategy has a different batching model than regular incremental, see [Microbatch incremental models](/integrations/libraries/dbt/dbt-patterns#microbatch-incremental-models) for a full comparison. The key difference is that you use `--event-time-start` and `--event-time-end` instead of `--vars`:
+
+:::note
+
+`--vars` only passes values into the model SQL. It does **not** control which batches the microbatch engine runs.
+
+:::
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/assets_microbatch_incrementals.py"
+  title="my_project/defs/assets.py"
+  language="python"
+/>
+
+The `PartitionsDefinition` should match the model's `batch_size`, and `start_date` should match the model's `begin` config so Dagster backfills align with dbt's batch history.

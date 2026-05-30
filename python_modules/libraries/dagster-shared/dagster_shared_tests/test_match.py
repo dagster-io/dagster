@@ -1,14 +1,25 @@
 from collections.abc import Sequence
-from typing import Any, Literal, NamedTuple, Union
+from typing import Any, Literal, NamedTuple, TypedDict, Union
 
 import pytest
 from dagster_shared.match import match_type
+from typing_extensions import NotRequired, Required
 
 
 # Helper to simulate the is_named_tuple_instance logic used in match_type
 class MyTuple(NamedTuple):
     x: int
     y: str
+
+
+class SimpleTypedDict(TypedDict, total=False):
+    name: str
+    count: int
+
+
+class RequiredTypedDict(TypedDict):
+    name: Required[str]
+    count: NotRequired[int]
 
 
 @pytest.mark.parametrize(
@@ -61,6 +72,16 @@ class MyTuple(NamedTuple):
         ("abc", (int, str), True),
         ("abc", (int, Literal["abc", "def"]), True),
         ("ghi", (int, Literal["abc", "def"]), False),
+        # TypedDict - total=False (all optional)
+        ({"name": "x", "count": 1}, SimpleTypedDict, True),
+        ({"name": "x"}, SimpleTypedDict, True),
+        ({}, SimpleTypedDict, True),
+        ({"name": 1}, SimpleTypedDict, False),
+        ("not a dict", SimpleTypedDict, False),
+        # TypedDict - with Required/NotRequired
+        ({"name": "x"}, RequiredTypedDict, True),
+        ({}, RequiredTypedDict, False),
+        ({"name": "x", "count": "bad"}, RequiredTypedDict, False),
     ],
 )
 def test_match_type(obj, type_, expected):

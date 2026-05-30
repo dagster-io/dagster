@@ -260,9 +260,8 @@ class DbtCloudClient:
                 from dbt Cloud. This is technically a required field according to the API, but it
                 can be passed with an empty list where it will only load the default run
                 information. Valid values are "trigger", "job", "repository", and "environment".
-            job_definition_id (Optional[int]): This method can be optionally filtered to only
-                load runs for a specific job id if it is included here. If omitted it will pull
-                runs for every job.
+            job_id (Optional[int]): This method can be optionally filtered to only return runs
+                for a specific job by passing in the job's ID.
             order_by (Optional[str]): An identifier designated by dbt Cloud in which to sort the
                 results before returning them. Useful when combined with offset and limit to load
                 runs for a job. Defaults to "-id" where "-" designates reverse order and "id" is

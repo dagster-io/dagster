@@ -1,7 +1,6 @@
 import {Tabs, TokenizingFieldValue} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import {useMemo} from 'react';
-import {useLocation} from 'react-router-dom';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
@@ -25,8 +24,6 @@ const getDocumentTitle = (selected: SelectedTab) => {
       return 'Runs | In progress';
     case 'queued':
       return 'Runs | Queued';
-    case 'scheduled':
-      return 'Runs | Scheduled';
     default:
       return 'Runs';
   }
@@ -81,7 +78,6 @@ export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink id="scheduled" title="Scheduled" to="/runs/scheduled" />
     </Tabs>
   );
 
@@ -92,10 +88,6 @@ export const useSelectedRunsFeedTab = (
   filterTokens: TokenizingFieldValue[],
   view: RunsFeedView,
 ) => {
-  const {pathname} = useLocation();
-  if (pathname === '/runs/scheduled') {
-    return 'scheduled';
-  }
   if (view === RunsFeedView.BACKFILLS) {
     return 'backfills';
   }

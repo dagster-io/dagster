@@ -92,7 +92,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             " This is no longer used and will be removed in a 0.21."
         ),
     )
-    credentials_strategy: ResourceDependency[Optional[CredentialsStrategy]] = None  # type: ignore[assignment]  # noqa: UP045
+    credentials_strategy: ResourceDependency[Optional[CredentialsStrategy]] = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]  # noqa: UP045
 
     @model_validator(mode="before")
     def has_token_or_oauth_credentials(cls, values: dict[str, Any]) -> dict[str, Any]:

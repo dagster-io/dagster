@@ -33,11 +33,11 @@ class DgApiIssueApi:
 
         match result.typename__:
             case "Issue":
-                return self._build_issue(result)
+                return self._build_issue(result)  # ty: ignore[invalid-argument-type]
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error fetching issue: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching issue: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -64,14 +64,14 @@ class DgApiIssueApi:
         match result.typename__:
             case "IssueConnection":
                 return DgApiIssueList(
-                    items=[self._build_issue(i) for i in result.issues],
-                    cursor=result.cursor,
-                    has_more=result.has_more,
+                    items=[self._build_issue(i) for i in result.issues],  # ty: ignore[unresolved-attribute]
+                    cursor=result.cursor,  # ty: ignore[unresolved-attribute]
+                    has_more=result.has_more,  # ty: ignore[unresolved-attribute]
                 )
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error listing issues: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing issues: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -84,11 +84,11 @@ class DgApiIssueApi:
 
         match result.typename__:
             case "CreateIssueSuccess":
-                return self._build_issue(result.issue)
+                return self._build_issue(result.issue)  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error creating issue: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error creating issue: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -110,15 +110,15 @@ class DgApiIssueApi:
 
         match result.typename__:
             case "UpdateIssueSuccess":
-                return self._build_issue(result.issue)
+                return self._build_issue(result.issue)  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error updating issue: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error updating issue: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
-    def add_link_to_issue(
+    def create_link_on_issue(
         self,
         issue_id: str,
         run_id: str | None = None,
@@ -134,15 +134,15 @@ class DgApiIssueApi:
 
         match result.typename__:
             case "UpdateIssueSuccess":
-                return self._build_issue(result.issue)
+                return self._build_issue(result.issue)  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error adding link to issue: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error adding link to issue: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
-    def remove_link_from_issue(
+    def delete_link_from_issue(
         self,
         issue_id: str,
         run_id: str | None = None,
@@ -158,13 +158,13 @@ class DgApiIssueApi:
 
         match result.typename__:
             case "UpdateIssueSuccess":
-                return self._build_issue(result.issue)
+                return self._build_issue(result.issue)  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(
-                    f"Error removing link from issue: {result.message}"
+                    f"Error removing link from issue: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error removing link from issue: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error removing link from issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -173,9 +173,9 @@ class DgApiIssueApi:
         for lo in issue.linked_objects:
             match lo.typename__:
                 case "Asset":
-                    linked_objects.append(DgApiIssueLinkedAsset(asset_key="/".join(lo.key.path)))
+                    linked_objects.append(DgApiIssueLinkedAsset(asset_key="/".join(lo.key.path)))  # ty: ignore[unresolved-attribute]
                 case "Run":
-                    linked_objects.append(DgApiIssueLinkedRun(run_id=lo.id))
+                    linked_objects.append(DgApiIssueLinkedRun(run_id=lo.id))  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 

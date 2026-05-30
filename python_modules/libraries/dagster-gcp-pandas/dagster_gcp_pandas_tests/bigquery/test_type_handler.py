@@ -3,6 +3,7 @@ import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, cast
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pandas_gbq
@@ -17,6 +18,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_output_context,
     fs_io_manager,
     instance_for_test,
     job,
@@ -30,7 +32,9 @@ from dagster._core.definitions.partitions.definition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
+from dagster._core.storage.db_io_manager import TableSlice
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
+from dagster_gcp_pandas.bigquery.bigquery_pandas_type_handler import BigQueryPandasTypeHandler
 from google.cloud import bigquery
 
 if TYPE_CHECKING:
@@ -66,6 +70,50 @@ def temporary_bigquery_table(schema_name: str | None) -> Iterator[str]:
         bq_client.query(
             f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
         ).result()
+
+
+def test_handle_output_empty_dataframe():
+    handler = BigQueryPandasTypeHandler()
+    df = pd.DataFrame({"foo": pd.Series([], dtype="str"), "bar": pd.Series([], dtype="int64")})
+    connection = MagicMock()
+    output_context = build_output_context(resource_config={"location": "us"})
+
+    handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+        ),
+        df,
+        connection,
+    )
+
+    # Should not attempt to write to BigQuery
+    connection.load_table_from_dataframe.assert_not_called()
+
+
+def test_handle_output_nonempty_dataframe():
+    handler = BigQueryPandasTypeHandler()
+    df = pd.DataFrame({"foo": ["a", "b"], "bar": [1, 2]})
+    connection = MagicMock()
+    mock_job = MagicMock()
+    connection.load_table_from_dataframe.return_value = mock_job
+    output_context = build_output_context(resource_config={"location": "us"})
+
+    handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+        ),
+        df,
+        connection,
+    )
+
+    connection.load_table_from_dataframe.assert_called_once()
+    mock_job.result.assert_called_once()
 
 
 @pytest.mark.skipif(
@@ -490,7 +538,7 @@ def test_dynamic_partitioned_asset(io_manager):
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -505,7 +553,7 @@ def test_dynamic_partitioned_asset(io_manager):
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],

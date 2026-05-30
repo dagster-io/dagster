@@ -8,7 +8,7 @@ from dspy_modules.puzzle import (
     PuzzleGroup,
     create_game_state,
 )
-from project_dspy.definitions import defs
+from project_dspy.definitions import defs  # ty: ignore[unresolved-import]
 
 
 def test_defs_load():

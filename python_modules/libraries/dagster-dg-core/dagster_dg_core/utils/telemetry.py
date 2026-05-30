@@ -129,7 +129,7 @@ def _cli_telemetry_wrapper(
         raw_start_path = kwargs.get("target_path")
         telemetry_start_path = raw_start_path if isinstance(raw_start_path, Path) else None
         log_telemetry_action(
-            action=f.__name__ + "_started",
+            action=f.__name__ + "_started",  # ty: ignore[unresolved-attribute]
             client_time=start_time,
             metadata=metadata,
             start_path=telemetry_start_path,
@@ -145,7 +145,7 @@ def _cli_telemetry_wrapper(
             end_time = datetime.datetime.now()
 
             log_telemetry_action(
-                action=f.__name__ + "_ended",
+                action=f.__name__ + "_ended",  # ty: ignore[unresolved-attribute]
                 client_time=end_time,
                 elapsed_time=end_time - start_time,
                 metadata={

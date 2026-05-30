@@ -60,7 +60,7 @@ type Scalars = {
   Int: {input: number; output: number};
   Float: {input: number; output: number};
   GenericScalar: {input: any; output: any};
-  JSONString: {input: any; output: any};
+  JsonSchema: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
 
@@ -1016,6 +1016,26 @@ type CodeReferencesMetadataEntry = MetadataEntry & {
   label: Scalars['String']['output'];
 };
 
+type ComponentTypeInfo = {
+  __typename: 'ComponentTypeInfo';
+  description: Maybe<Scalars['String']['output']>;
+  example: Scalars['String']['output'];
+  isUiEditable: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  namespace: Scalars['String']['output'];
+  owners: Maybe<Array<Scalars['String']['output']>>;
+  schema: Maybe<Scalars['JsonSchema']['output']>;
+  tags: Maybe<Array<Scalars['String']['output']>>;
+};
+
+type ComponentTypes = {
+  __typename: 'ComponentTypes';
+  componentTypes: Array<ComponentTypeInfo>;
+  locationName: Scalars['String']['output'];
+};
+
+type ComponentTypesOrError = ComponentTypes | PythonError | RepositoryLocationNotFound;
+
 type CompositeConfigType = ConfigType & {
   __typename: 'CompositeConfigType';
   description: Maybe<Scalars['String']['output']>;
@@ -1345,6 +1365,14 @@ type DeletePipelineRunSuccess = {
 type DeleteRunMutation = {
   __typename: 'DeleteRunMutation';
   Output: DeletePipelineRunResult;
+};
+
+type DeleteUiComponentResult = DeleteUiComponentSuccess | PythonError | UnauthorizedError;
+
+type DeleteUiComponentSuccess = {
+  __typename: 'DeleteUIComponentSuccess';
+  componentId: Scalars['String']['output'];
+  locationName: Scalars['String']['output'];
 };
 
 type DimensionDefinitionType = {
@@ -2666,13 +2694,6 @@ type LocalFileCodeReference = {
   lineNumber: Maybe<Scalars['Int']['output']>;
 };
 
-type LocationDocsJson = {
-  __typename: 'LocationDocsJson';
-  json: Scalars['JSONString']['output'];
-};
-
-type LocationDocsJsonOrError = LocationDocsJson | PythonError;
-
 type LocationStateChangeEvent = {
   __typename: 'LocationStateChangeEvent';
   eventType: LocationStateChangeEventType;
@@ -2928,6 +2949,7 @@ type Mutation = {
   deleteDynamicPartitions: DeleteDynamicPartitionsResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
+  deleteUIComponent: DeleteUiComponentResult;
   freeConcurrencySlots: Scalars['Boolean']['output'];
   freeConcurrencySlotsForRun: Scalars['Boolean']['output'];
   launchMultipleRuns: LaunchMultipleRunsResultOrError;
@@ -2951,6 +2973,7 @@ type Mutation = {
   setConcurrencyLimit: Scalars['Boolean']['output'];
   setNuxSeen: Scalars['Boolean']['output'];
   setSensorCursor: SensorOrError;
+  setUIComponent: SetUiComponentResult;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
   startSchedule: ScheduleMutationResult;
   startSensor: SensorOrError;
@@ -2988,6 +3011,11 @@ type MutationDeletePipelineRunArgs = {
 
 type MutationDeleteRunArgs = {
   runId: Scalars['String']['input'];
+};
+
+type MutationDeleteUiComponentArgs = {
+  componentId: Scalars['String']['input'];
+  locationName: Scalars['String']['input'];
 };
 
 type MutationFreeConcurrencySlotsArgs = {
@@ -3082,6 +3110,13 @@ type MutationSetConcurrencyLimitArgs = {
 type MutationSetSensorCursorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   sensorSelector: SensorSelector;
+};
+
+type MutationSetUiComponentArgs = {
+  attributes: Scalars['String']['input'];
+  componentId: Scalars['String']['input'];
+  componentType: Scalars['String']['input'];
+  locationName: Scalars['String']['input'];
 };
 
 type MutationShutdownRepositoryLocationArgs = {
@@ -4083,6 +4118,7 @@ type Query = {
   canBulkTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
+  componentTypesForLocationOrError: ComponentTypesOrError;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
   instance: Instance;
@@ -4122,6 +4158,7 @@ type Query = {
   test: Maybe<TestFields>;
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
   truePartitionsForAutomationConditionEvaluationNode: Array<Scalars['String']['output']>;
+  uiComponentsForLocationOrError: UiComponentsOrError;
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String']['output'];
   workspaceLocationEntryOrError: Maybe<WorkspaceLocationEntryOrError>;
@@ -4229,6 +4266,10 @@ type QueryCapturedLogsArgs = {
 
 type QueryCapturedLogsMetadataArgs = {
   logKey: Array<Scalars['String']['input']>;
+};
+
+type QueryComponentTypesForLocationOrErrorArgs = {
+  locationName: Scalars['String']['input'];
 };
 
 type QueryExecutionPlanOrErrorArgs = {
@@ -4383,6 +4424,10 @@ type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
+};
+
+type QueryUiComponentsForLocationOrErrorArgs = {
+  locationName: Scalars['String']['input'];
 };
 
 type QueryUtilizedEnvVarsOrErrorArgs = {
@@ -4545,11 +4590,9 @@ type Repository = {
   assetNodes: Array<AssetNode>;
   assetNodesConnection: AssetNodeConnection;
   displayMetadata: Array<RepositoryMetadata>;
-  hasLocationDocs: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobs: Array<Job>;
   location: RepositoryLocation;
-  locationDocsJsonOrError: LocationDocsJsonOrError;
   name: Scalars['String']['output'];
   origin: RepositoryOrigin;
   partitionSets: Array<PartitionSet>;
@@ -5324,7 +5367,11 @@ type ScheduleData = {
   startTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
-type ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError;
+type ScheduleDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | ScheduleNotFoundError
+  | UnauthorizedError;
 
 type ScheduleMutationResult =
   | PythonError
@@ -5450,7 +5497,11 @@ type SensorData = {
   lastTickTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
-type SensorDryRunResult = DryRunInstigationTick | PythonError | SensorNotFoundError;
+type SensorDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | SensorNotFoundError
+  | UnauthorizedError;
 
 type SensorMetadata = {
   __typename: 'SensorMetadata';
@@ -5483,6 +5534,13 @@ type SensorsOrError = PythonError | RepositoryNotFoundError | Sensors;
 type SetSensorCursorMutation = {
   __typename: 'SetSensorCursorMutation';
   Output: SensorOrError;
+};
+
+type SetUiComponentResult = PythonError | SetUiComponentSuccess | UnauthorizedError;
+
+type SetUiComponentSuccess = {
+  __typename: 'SetUIComponentSuccess';
+  component: UiComponent;
 };
 
 type ShutdownRepositoryLocationMutation = {
@@ -5990,6 +6048,21 @@ type TypeCheck = DisplayableEvent & {
   >;
   success: Scalars['Boolean']['output'];
 };
+
+type UiComponent = {
+  __typename: 'UIComponent';
+  attributes: Scalars['String']['output'];
+  componentId: Scalars['String']['output'];
+  componentType: Scalars['String']['output'];
+};
+
+type UiComponents = {
+  __typename: 'UIComponents';
+  components: Array<UiComponent>;
+  locationName: Scalars['String']['output'];
+};
+
+type UiComponentsOrError = PythonError | UiComponents;
 
 type UnauthorizedError = Error & {
   __typename: 'UnauthorizedError';
@@ -8109,6 +8182,43 @@ export const buildCodeReferencesMetadataEntry = (
   };
 };
 
+export const buildComponentTypeInfo = (
+  overrides?: Partial<ComponentTypeInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ComponentTypeInfo'} & ComponentTypeInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ComponentTypeInfo');
+  return {
+    __typename: 'ComponentTypeInfo',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'fuga',
+    example: overrides && overrides.hasOwnProperty('example') ? overrides.example! : 'eveniet',
+    isUiEditable:
+      overrides && overrides.hasOwnProperty('isUiEditable') ? overrides.isUiEditable! : false,
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quae',
+    namespace:
+      overrides && overrides.hasOwnProperty('namespace') ? overrides.namespace! : 'similique',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
+    schema: overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : 'illum',
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+  };
+};
+
+export const buildComponentTypes = (
+  overrides?: Partial<ComponentTypes>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ComponentTypes'} & ComponentTypes => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ComponentTypes');
+  return {
+    __typename: 'ComponentTypes',
+    componentTypes:
+      overrides && overrides.hasOwnProperty('componentTypes') ? overrides.componentTypes! : [],
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'molestiae',
+  };
+};
+
 export const buildCompositeConfigType = (
   overrides?: Partial<CompositeConfigType>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8625,6 +8735,21 @@ export const buildDeleteRunMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
           ? ({} as DeletePipelineRunSuccess)
           : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+  };
+};
+
+export const buildDeleteUiComponentSuccess = (
+  overrides?: Partial<DeleteUiComponentSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DeleteUIComponentSuccess'} & DeleteUiComponentSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DeleteUiComponentSuccess');
+  return {
+    __typename: 'DeleteUIComponentSuccess',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'natus',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'placeat',
   };
 };
 
@@ -10809,18 +10934,6 @@ export const buildLocalFileCodeReference = (
   };
 };
 
-export const buildLocationDocsJson = (
-  overrides?: Partial<LocationDocsJson>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'LocationDocsJson'} & LocationDocsJson => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('LocationDocsJson');
-  return {
-    __typename: 'LocationDocsJson',
-    json: overrides && overrides.hasOwnProperty('json') ? overrides.json! : 'eos',
-  };
-};
-
 export const buildLocationStateChangeEvent = (
   overrides?: Partial<LocationStateChangeEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11408,6 +11521,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
           ? ({} as DeletePipelineRunSuccess)
           : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    deleteUIComponent:
+      overrides && overrides.hasOwnProperty('deleteUIComponent')
+        ? overrides.deleteUIComponent!
+        : relationshipsToOmit.has('DeleteUiComponentSuccess')
+          ? ({} as DeleteUiComponentSuccess)
+          : buildDeleteUiComponentSuccess({}, relationshipsToOmit),
     freeConcurrencySlots:
       overrides && overrides.hasOwnProperty('freeConcurrencySlots')
         ? overrides.freeConcurrencySlots!
@@ -11530,6 +11649,12 @@ export const buildMutation = (
     setSensorCursor:
       overrides && overrides.hasOwnProperty('setSensorCursor')
         ? overrides.setSensorCursor!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
+    setUIComponent:
+      overrides && overrides.hasOwnProperty('setUIComponent')
+        ? overrides.setUIComponent!
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
@@ -13410,6 +13535,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('CapturedLogsMetadata')
           ? ({} as CapturedLogsMetadata)
           : buildCapturedLogsMetadata({}, relationshipsToOmit),
+    componentTypesForLocationOrError:
+      overrides && overrides.hasOwnProperty('componentTypesForLocationOrError')
+        ? overrides.componentTypesForLocationOrError!
+        : relationshipsToOmit.has('ComponentTypes')
+          ? ({} as ComponentTypes)
+          : buildComponentTypes({}, relationshipsToOmit),
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!
@@ -13633,6 +13764,12 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('truePartitionsForAutomationConditionEvaluationNode')
         ? overrides.truePartitionsForAutomationConditionEvaluationNode!
         : [],
+    uiComponentsForLocationOrError:
+      overrides && overrides.hasOwnProperty('uiComponentsForLocationOrError')
+        ? overrides.uiComponentsForLocationOrError!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
     utilizedEnvVarsOrError:
       overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
         ? overrides.utilizedEnvVarsOrError!
@@ -13936,8 +14073,6 @@ export const buildRepository = (
           : buildAssetNodeConnection({}, relationshipsToOmit),
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
-    hasLocationDocs:
-      overrides && overrides.hasOwnProperty('hasLocationDocs') ? overrides.hasLocationDocs! : false,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -13949,12 +14084,6 @@ export const buildRepository = (
         : relationshipsToOmit.has('RepositoryLocation')
           ? ({} as RepositoryLocation)
           : buildRepositoryLocation({}, relationshipsToOmit),
-    locationDocsJsonOrError:
-      overrides && overrides.hasOwnProperty('locationDocsJsonOrError')
-        ? overrides.locationDocsJsonOrError!
-        : relationshipsToOmit.has('LocationDocsJson')
-          ? ({} as LocationDocsJson)
-          : buildLocationDocsJson({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dolor',
     origin:
       overrides && overrides.hasOwnProperty('origin')
@@ -15660,6 +15789,23 @@ export const buildSetSensorCursorMutation = (
   };
 };
 
+export const buildSetUiComponentSuccess = (
+  overrides?: Partial<SetUiComponentSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'SetUIComponentSuccess'} & SetUiComponentSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SetUiComponentSuccess');
+  return {
+    __typename: 'SetUIComponentSuccess',
+    component:
+      overrides && overrides.hasOwnProperty('component')
+        ? overrides.component!
+        : relationshipsToOmit.has('UiComponent')
+          ? ({} as UiComponent)
+          : buildUiComponent({}, relationshipsToOmit),
+  };
+};
+
 export const buildShutdownRepositoryLocationMutation = (
   overrides?: Partial<ShutdownRepositoryLocationMutation>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -16643,6 +16789,39 @@ export const buildTypeCheck = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
+  };
+};
+
+export const buildUiComponent = (
+  overrides?: Partial<UiComponent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UIComponent'} & UiComponent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UiComponent');
+  return {
+    __typename: 'UIComponent',
+    attributes:
+      overrides && overrides.hasOwnProperty('attributes') ? overrides.attributes! : 'perferendis',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'neque',
+    componentType:
+      overrides && overrides.hasOwnProperty('componentType')
+        ? overrides.componentType!
+        : 'mollitia',
+  };
+};
+
+export const buildUiComponents = (
+  overrides?: Partial<UiComponents>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UIComponents'} & UiComponents => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UiComponents');
+  return {
+    __typename: 'UIComponents',
+    components: overrides && overrides.hasOwnProperty('components') ? overrides.components! : [],
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'sequi',
   };
 };
 

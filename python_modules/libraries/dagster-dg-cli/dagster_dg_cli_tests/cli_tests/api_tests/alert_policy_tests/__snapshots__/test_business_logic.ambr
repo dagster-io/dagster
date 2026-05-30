@@ -1,7 +1,7 @@
 # serializer version: 1
 # name: TestFormatDgAlertPolicies.test_format_policies_json_output[0]
   dict({
-    'alert_policies': list([
+    'items': list([
       dict({
         'description': 'Send email on job failure',
         'event_types': list([
@@ -38,6 +38,7 @@
         ]),
       }),
     ]),
+    'total': 2,
   })
 # ---
 # name: TestFormatDgAlertPolicies.test_format_policies_text_output[0]
@@ -67,10 +68,11 @@
 # ---
 # name: TestFormatDgApiAlertPolicySyncResult.test_format_sync_result_json[0]
   dict({
-    'synced_policies': list([
+    'items': list([
       'email-on-failure',
       'slack-on-sla-miss',
     ]),
+    'total': 2,
   })
 # ---
 # name: TestFormatDgApiAlertPolicySyncResult.test_format_sync_result_text[0]

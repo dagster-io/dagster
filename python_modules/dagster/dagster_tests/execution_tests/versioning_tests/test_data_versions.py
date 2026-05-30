@@ -908,9 +908,9 @@ def test_legacy_data_version_tags():
         # This will create materializations with the legacy tags
         with mock.patch.dict("dagster._core.execution.plan.execute_step.__dict__", legacy_tags):
             mats = materialize_assets([foo, bar], instance)
-            assert mats["bar"].tags["dagster/logical_version"]  # pyright: ignore[reportOptionalSubscript]
-            assert mats["bar"].tags["dagster/input_logical_version/foo"]  # pyright: ignore[reportOptionalSubscript]
-            assert mats["bar"].tags["dagster/input_event_pointer/foo"]  # pyright: ignore[reportOptionalSubscript]
+            assert mats["bar"].tags["dagster/logical_version"]  # ty: ignore[not-subscriptable]
+            assert mats["bar"].tags["dagster/input_logical_version/foo"]  # ty: ignore[not-subscriptable]
+            assert mats["bar"].tags["dagster/input_event_pointer/foo"]  # ty: ignore[not-subscriptable]
 
         # We're now outside the mock context
         record = instance.get_latest_data_version_record(bar.key)
@@ -929,7 +929,7 @@ def test_stale_cause_comparison():
 
     cause_2 = StaleCause(key=dg.AssetKey(["foo"]), category=StaleCauseCategory.DATA, reason="ok")
 
-    assert cause_1 < cause_2
+    assert cause_1 < cause_2  # ty: ignore[unsupported-operator]
 
 
 # This test what happens if an "off-books" materialization of an upstream asset used in provenance
@@ -975,14 +975,14 @@ def test_materialize_result_overwrite_provenance_tag():
 
     @dg.asset(deps=["asset0"])
     def asset1():
-        return dg.MaterializeResult(tags={"dagster/input_event_pointer/asset0": 500})  # pyright: ignore[reportArgumentType]
+        return dg.MaterializeResult(tags={"dagster/input_event_pointer/asset0": 500})  # ty: ignore[invalid-argument-type]
 
     with dg.instance_for_test() as instance:
         dg.materialize([asset0], instance=instance)
         dg.materialize([asset1], instance=instance)
 
         record = instance.get_latest_data_version_record(asset1.key)
-        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {  # pyright: ignore[reportOptionalMemberAccess]
+        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {  # ty: ignore[unresolved-attribute]
             dg.AssetKey(["asset0"]): 500
         }
 
@@ -993,14 +993,14 @@ def test_output_overwrite_provenance_tag():
 
     @dg.asset(deps=["asset0"])
     def asset1():
-        return dg.Output(value=None, tags={"dagster/input_event_pointer/asset0": 500})  # pyright: ignore[reportArgumentType]
+        return dg.Output(value=None, tags={"dagster/input_event_pointer/asset0": 500})  # ty: ignore[invalid-argument-type]
 
     with dg.instance_for_test() as instance:
         dg.materialize([asset0], instance=instance)
         dg.materialize([asset1], instance=instance)
 
         record = instance.get_latest_data_version_record(asset1.key)
-        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {  # pyright: ignore[reportOptionalMemberAccess]
+        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {  # ty: ignore[unresolved-attribute]
             dg.AssetKey(["asset0"]): 500
         }
 
@@ -1030,7 +1030,7 @@ def test_fan_in():
     traced_counter.set(counter)
     materialize_assets(all_assets, instance)[downstream_asset.key]
     assert (
-        traced_counter.get().counts()  # pyright: ignore[reportOptionalMemberAccess]
+        traced_counter.get().counts()  # ty: ignore[unresolved-attribute]
         == {
             "DagsterInstance.get_asset_records": 1,
             "DagsterInstance.get_run_record_by_id": 3,  # get_run_record_by_id called when handling events for the run

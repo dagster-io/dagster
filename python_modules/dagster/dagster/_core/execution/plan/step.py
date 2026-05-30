@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, TypeGuard, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, TypeGuard, Union
 
 from dagster_shared.serdes import EnumSerializer, whitelist_for_serdes
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class StepKindSerializer(EnumSerializer["StepKind"]):
-    def unpack(self, storage_str: str) -> "StepKind":  # pyright: ignore[reportIncompatibleMethodOverride]
+    def unpack(self, storage_str: str) -> "StepKind":  # ty: ignore[invalid-method-override]
         # old name for unresolved mapped
         if storage_str == "UNRESOLVED":
             return StepKind.UNRESOLVED_MAPPED
@@ -115,7 +115,7 @@ class IExecutionStep:
         pass
 
 
-class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
+class ExecutionStep(
     NamedTuple(
         "_ExecutionStep",
         [
@@ -166,8 +166,7 @@ class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
                 },
                 check.opt_mapping_param(logging_tags, "logging_tags"),
             ),
-            # mypy can't tell that if default is set, this is guaranteed to be a str
-            key=cast("str", check.opt_str_param(key, "key", default=handle.to_key())),
+            key=check.opt_str_param(key, "key", default=handle.to_key()),
         )
 
     @property
@@ -219,7 +218,7 @@ class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
         return None
 
 
-class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
+class UnresolvedMappedExecutionStep(
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
@@ -381,7 +380,7 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
+class UnresolvedCollectExecutionStep(
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [

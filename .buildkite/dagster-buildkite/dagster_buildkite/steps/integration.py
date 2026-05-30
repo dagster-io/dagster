@@ -3,31 +3,53 @@ from collections.abc import Callable
 from pathlib import Path
 
 from buildkite_shared.context import BuildkiteContext
+from buildkite_shared.packages import (
+    PackageSpec,
+    PytestExtraCommandsFunction,
+    UnsupportedVersionsFunction,
+)
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
+from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, ResourceRequests
+from buildkite_shared.step_builders.resource_presets import KIND_TEST_RESOURCES
 from buildkite_shared.step_builders.step_builder import TopLevelStepConfiguration
-from buildkite_shared.utils import oss_path
+from buildkite_shared.tox import ToxFactor
+from buildkite_shared.utils import (
+    connect_sibling_docker_container,
+    network_buildkite_container,
+    oss_path,
+)
 from dagster_buildkite.defines import (
     GCP_CREDS_FILENAME,
     GCP_CREDS_LOCAL_FILE,
     LATEST_DAGSTER_RELEASE,
 )
-from dagster_buildkite.steps.packages import (
-    PackageSpec,
-    PytestExtraCommandsFunction,
-    UnsupportedVersionsFunction,
-)
 from dagster_buildkite.steps.test_project import test_project_depends_fn
-from dagster_buildkite.steps.tox import ToxFactor
-from dagster_buildkite.utils import (
-    connect_sibling_docker_container,
-    library_version_from_core_version,
-    network_buildkite_container,
-)
+from dagster_buildkite.utils import library_version_from_core_version
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
 EARLIEST_TESTED_RELEASE = "0.12.8"
+
+# Spins up a `webserver_service` docker-compose stack (dagster_webserver +
+# user-code sidecar) in the dind sidecar. Single-pair compose, comparable to
+# dagster-test's fixtures_tests sizing.
+_BACKCOMPAT_RESOURCES = ResourceRequests(
+    cpu="1000m",
+    memory="1Gi",
+    docker_memory="2Gi",
+    docker_memory_limit="4Gi",
+)
+
+# monitoring_daemon_tests cycles a postgres+minio compose stack plus pulls and
+# runs the `test_project` image per test. Same dind saturation shape as
+# dagster-docker / dagster-celery-docker (see packages.py:1185).
+_DAEMON_RESOURCES = ResourceRequests(
+    cpu="1000m",
+    memory="1Gi",
+    docker_cpu="4000m",
+    docker_memory="2Gi",
+    docker_memory_limit="8Gi",
+)
 
 
 # ########################
@@ -46,6 +68,8 @@ def build_backcompat_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         ctx,
         pytest_extra_cmds=backcompat_extra_cmds,
         pytest_tox_factors=tox_factors,
+        queue=BuildkiteQueue.KUBERNETES_EKS,
+        resources=_BACKCOMPAT_RESOURCES,
     )
 
 
@@ -117,7 +141,8 @@ def build_celery_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         directory,
         ctx,
         pytest_tox_factors,
-        queue=BuildkiteQueue.DOCKER,  # crashes on python 3.11/3.12 without additional resources
+        queue=BuildkiteQueue.KUBERNETES_EKS,
+        resources=KIND_TEST_RESOURCES,
         force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=celery_k8s_integration_suite_pytest_extra_cmds,
     )
@@ -136,6 +161,8 @@ def build_daemon_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigur
         ctx,
         pytest_tox_factors,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
+        queue=BuildkiteQueue.KUBERNETES_EKS,
+        resources=_DAEMON_RESOURCES,
     )
 
 
@@ -198,7 +225,8 @@ def build_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigurati
         pytest_tox_factors,
         force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=k8s_integration_suite_pytest_extra_cmds,
-        queue=BuildkiteQueue.DOCKER,
+        queue=BuildkiteQueue.KUBERNETES_EKS,
+        resources=KIND_TEST_RESOURCES,
     )
 
 
@@ -217,6 +245,8 @@ def build_integration_suite_steps(
     unsupported_python_versions: list[AvailablePythonVersion]
     | UnsupportedVersionsFunction
     | None = None,
+    *,
+    resources: ResourceRequests | None,
 ) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         directory,
@@ -233,32 +263,39 @@ def build_integration_suite_steps(
         pytest_tox_factors=pytest_tox_factors,
         timeout_in_minutes=30,
         queue=queue,
+        resources=resources,
         force_run_fn=force_run_fn,
         unsupported_python_versions=unsupported_python_versions,
     ).build_steps(ctx)
 
 
 def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
+    # ECR login is handled by the ecr-docker-login init container in the EKS
+    # pod-spec-patch (infra/k8s/buildkite/base/conf/buildkite.yaml).
     return [
+        # Materialize the IRSA web-identity token into AWS_ACCESS_KEY_ID/SECRET/SESSION_TOKEN
+        # env vars so the test fixtures can propagate them into kind step pods, which can
+        # reach neither IMDS nor the IRSA token file.
+        'eval "$(aws configure export-credentials --format env)"',
         "export DOCKER_API_VERSION=1.41",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login-password --region us-west-2 "
-        "| docker login --username AWS --password-stdin "
-        "$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com",
     ]
 
 
 def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
+    # ECR login is handled by the ecr-docker-login init container in the EKS
+    # pod-spec-patch (infra/k8s/buildkite/base/conf/buildkite.yaml).
     cmds = [
+        # Materialize the IRSA web-identity token into AWS_ACCESS_KEY_ID/SECRET/SESSION_TOKEN
+        # env vars so the test fixtures can propagate them into kind step pods, which can
+        # reach neither IMDS nor the IRSA token file.
+        'eval "$(aws configure export-credentials --format env)"',
         "export DOCKER_API_VERSION=1.41",
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login-password --region us-west-2 "
-        "| docker login --username AWS --password-stdin "
-        "$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com",
     ]
 
     # If integration tests are disabled, we won't have any gcp credentials to download.

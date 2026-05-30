@@ -16,6 +16,7 @@ from dagster_rest_resources.__generated__.reconcile_alert_policies import (
     ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentUnauthorizedError,
 )
 from dagster_rest_resources.api.alert_policy import DgApiAlertPolicyApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.alert_policy import (
     DgApiAlertPolicyDocument,
     DgApiAlertPolicySyncResult,
@@ -29,7 +30,7 @@ from dagster_rest_resources.schemas.exception import (
 class TestListAlertPolicies:
     def test_returns_alert_policies(self):
         document = {"alert_policies": [{"test_k": "test_v", "test_k_list": ["test_v_list"]}]}
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_alert_policies.return_value = ListAlertPolicies(
             alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(
                 __typename="AlertPoliciesAsDocument",
@@ -38,10 +39,10 @@ class TestListAlertPolicies:
         )
         result = DgApiAlertPolicyApi(client).list_alert_policies()
 
-        assert result == DgApiAlertPolicyDocument(alert_policies=document["alert_policies"])
+        assert result == DgApiAlertPolicyDocument(items=document["alert_policies"])
 
     def test_returns_empty_when_document_has_no_alert_policies(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_alert_policies.return_value = ListAlertPolicies(
             alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(
                 __typename="AlertPoliciesAsDocument",
@@ -50,10 +51,10 @@ class TestListAlertPolicies:
         )
         result = DgApiAlertPolicyApi(client).list_alert_policies()
 
-        assert result == DgApiAlertPolicyDocument(alert_policies=[])
+        assert result == DgApiAlertPolicyDocument(items=[])
 
     def test_none_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_alert_policies.return_value = ListAlertPolicies(
             alertPoliciesAsDocumentOrError=None
         )
@@ -64,7 +65,7 @@ class TestListAlertPolicies:
             DgApiAlertPolicyApi(client).list_alert_policies()
 
     def test_unauthorized_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_alert_policies.return_value = ListAlertPolicies(
             alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -74,7 +75,7 @@ class TestListAlertPolicies:
             DgApiAlertPolicyApi(client).list_alert_policies()
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_alert_policies.return_value = ListAlertPolicies(
             alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -84,9 +85,9 @@ class TestListAlertPolicies:
             DgApiAlertPolicyApi(client).list_alert_policies()
 
 
-class TestSyncAlertPolicies:
+class TestActionSyncAlertPolicies:
     def test_returns_sorted_synced_policy_names(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.reconcile_alert_policies.return_value = ReconcileAlertPolicies(
             reconcileAlertPoliciesFromDocument=ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentReconcileAlertPoliciesSuccess(
                 __typename="ReconcileAlertPoliciesSuccess",
@@ -101,39 +102,39 @@ class TestSyncAlertPolicies:
             )
         )
         policies = [{"name": "my-policy"}]
-        result = DgApiAlertPolicyApi(client).sync_alert_policies(policies)
+        result = DgApiAlertPolicyApi(client).action_sync_alert_policies(policies)
 
         client.reconcile_alert_policies.assert_called_once_with(
             document={"alert_policies": policies}
         )
-        assert result == DgApiAlertPolicySyncResult(synced_policies=["policy-a", "policy-b"])
+        assert result == DgApiAlertPolicySyncResult(items=["policy-a", "policy-b"])
 
     def test_invalid_alert_policy_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.reconcile_alert_policies.return_value = ReconcileAlertPolicies(
             reconcileAlertPoliciesFromDocument=ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentInvalidAlertPolicyError(
                 __typename="InvalidAlertPolicyError", message=""
             )
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Invalid alert policy"):
-            DgApiAlertPolicyApi(client).sync_alert_policies([])
+            DgApiAlertPolicyApi(client).action_sync_alert_policies([])
 
     def test_unauthorized_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.reconcile_alert_policies.return_value = ReconcileAlertPolicies(
             reconcileAlertPoliciesFromDocument=ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentUnauthorizedError(
                 __typename="UnauthorizedError", message=""
             )
         )
         with pytest.raises(DagsterPlusUnauthorizedError, match="Error fetching alert policies"):
-            DgApiAlertPolicyApi(client).sync_alert_policies([])
+            DgApiAlertPolicyApi(client).action_sync_alert_policies([])
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.reconcile_alert_policies.return_value = ReconcileAlertPolicies(
             reconcileAlertPoliciesFromDocument=ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentPythonError(
                 __typename="PythonError", message=""
             )
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Error reconciling alert policies"):
-            DgApiAlertPolicyApi(client).sync_alert_policies([])
+            DgApiAlertPolicyApi(client).action_sync_alert_policies([])

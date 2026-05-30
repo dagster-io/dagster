@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 import pytest
 import sqlalchemy as db
+import sqlalchemy.exc
 import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
@@ -72,15 +73,14 @@ def test_connection_leak(conn_string):
     num_instances = 20
 
     tempdir = TemporaryDirectory()
-    copies = []
-    for _ in range(num_instances):
-        copies.append(
-            DagsterInstance.from_ref(
-                InstanceRef.from_dir(
-                    tempdir.name, overrides=yaml.safe_load(full_mysql_config(hostname, port))
-                )
+    copies = [
+        DagsterInstance.from_ref(
+            InstanceRef.from_dir(
+                tempdir.name, overrides=yaml.safe_load(full_mysql_config(hostname, port))
             )
         )
+        for _ in range(num_instances)
+    ]
 
     engine = create_engine(conn_string, isolation_level=mysql_isolation_level(), poolclass=NullPool)
     with engine.connect() as conn:
@@ -91,7 +91,7 @@ def test_connection_leak(conn_string):
 
     # This includes a number of internal connections, so just ensure it did not scale
     # with number of instances
-    assert row[0] < num_instances  # pyright: ignore[reportOperatorIssue,reportOptionalSubscript]
+    assert row[0] < num_instances  # ty: ignore[not-subscriptable,unsupported-operator]
 
     for copy in copies:
         copy.dispose()
@@ -113,7 +113,7 @@ def test_load_instance(conn_string):
         file_relative_path(__file__, "../dagster_mysql/__init__.py")
     )
     with engine.connect() as conn:
-        stamp_alembic_rev(alembic_config, conn, rev=None)  # pyright: ignore[reportArgumentType]
+        stamp_alembic_rev(alembic_config, conn, rev=None)  # ty: ignore[invalid-argument-type]
 
     # Now load from scratch, verify it loads without errors
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))):
@@ -138,14 +138,14 @@ def test_statement_timeouts(conn_string):
         # ensure migration error is not raised by being up to date
         instance.upgrade()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
-            with instance._run_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
+            with instance._run_storage.connect() as conn:  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                 conn.execute(db.text("select sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
-            with instance._event_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
+            with instance._event_storage.connect() as conn:  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                 conn.execute(db.text("select sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
-            with instance._schedule_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                 conn.execute(db.text("select sleep(1)")).fetchone()

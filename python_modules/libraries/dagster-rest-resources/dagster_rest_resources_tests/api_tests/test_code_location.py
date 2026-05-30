@@ -32,6 +32,7 @@ from dagster_rest_resources.api.code_location import (
     DgApiCodeLocationDocument,
     DgApiCodeLocationList,
 )
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
     DagsterPlusGraphqlError,
     DagsterPlusUnauthorizedError,
@@ -83,7 +84,7 @@ class TestListCodeLocations:
         entries: list[ListCodeLocationsWorkspaceWorkspaceEntries],
         statuses: dict[str, RepositoryLocationLoadStatus] | None = None,
     ) -> Mock:
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_code_locations.return_value = ListCodeLocations(
             workspace=ListCodeLocationsWorkspace(workspaceEntries=entries)
         )
@@ -150,7 +151,7 @@ class TestListCodeLocations:
         assert result == DgApiCodeLocationList(items=[])
 
     def test_status_error_yields_no_statuses(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_code_locations.return_value = ListCodeLocations(
             workspace=ListCodeLocationsWorkspace(
                 workspaceEntries=[_make_entry("loc-a", image="test-image")]
@@ -167,7 +168,7 @@ class TestListCodeLocations:
         assert result.items[0].status is None
 
     def test_none_workspace_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_code_locations.return_value = ListCodeLocations(workspace=None)
         client.get_location_statuses.return_value = GetLocationStatuses(
             locationStatusesOrError=_make_status_entries({})
@@ -180,7 +181,7 @@ class TestListCodeLocations:
 
 class TestGetCodeLocation:
     def test_returns_matching_location(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_code_locations.return_value = ListCodeLocations(
             workspace=ListCodeLocationsWorkspace(
                 workspaceEntries=[
@@ -198,8 +199,8 @@ class TestGetCodeLocation:
         assert result is not None
         assert result.location_name == "loc-a"
 
-    def test_returns_none_when_not_found(self):
-        client = Mock()
+    def test_not_found_raises(self):
+        client = Mock(spec=IGraphQLClient)
         client.list_code_locations.return_value = ListCodeLocations(
             workspace=ListCodeLocationsWorkspace(workspaceEntries=[])
         )
@@ -207,20 +208,19 @@ class TestGetCodeLocation:
             locationStatusesOrError=_make_status_entries({})
         )
 
-        result = DgApiCodeLocationApi(_client=client).get_code_location("missing")
+        with pytest.raises(DagsterPlusGraphqlError, match="Code location not found"):
+            DgApiCodeLocationApi(_client=client).get_code_location("missing")
 
-        assert result is None
 
-
-class TestAddCodeLocation:
+class TestCreateCodeLocation:
     def test_returns_result(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.add_or_update_code_location.return_value = AddOrUpdateCodeLocation(
             addOrUpdateLocationFromDocument=AddOrUpdateCodeLocationAddOrUpdateLocationFromDocumentWorkspaceEntry(
                 __typename="WorkspaceEntry", locationName="test-loc"
             )
         )
-        result = DgApiCodeLocationApi(_client=client).add_code_location(
+        result = DgApiCodeLocationApi(_client=client).create_code_location(
             DgApiCodeLocationDocument(location_name="test-loc", image="test-image")
         )
 
@@ -231,20 +231,20 @@ class TestAddCodeLocation:
         assert result.location_name == "test-loc"
 
     def test_invalid_location_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.add_or_update_code_location.return_value = AddOrUpdateCodeLocation(
             addOrUpdateLocationFromDocument=AddOrUpdateCodeLocationAddOrUpdateLocationFromDocumentInvalidLocationError(
                 __typename="InvalidLocationError", errors=[]
             )
         )
 
-        with pytest.raises(DagsterPlusGraphqlError, match="Invalid location config"):
-            DgApiCodeLocationApi(_client=client).add_code_location(
+        with pytest.raises(DagsterPlusGraphqlError, match="Invalid code location config"):
+            DgApiCodeLocationApi(_client=client).create_code_location(
                 DgApiCodeLocationDocument(location_name="test-loc")
             )
 
     def test_unauthorized_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.add_or_update_code_location.return_value = AddOrUpdateCodeLocation(
             addOrUpdateLocationFromDocument=AddOrUpdateCodeLocationAddOrUpdateLocationFromDocumentUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -252,12 +252,12 @@ class TestAddCodeLocation:
         )
 
         with pytest.raises(DagsterPlusUnauthorizedError, match="Error adding code location"):
-            DgApiCodeLocationApi(_client=client).add_code_location(
+            DgApiCodeLocationApi(_client=client).create_code_location(
                 DgApiCodeLocationDocument(location_name="test-loc")
             )
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.add_or_update_code_location.return_value = AddOrUpdateCodeLocation(
             addOrUpdateLocationFromDocument=AddOrUpdateCodeLocationAddOrUpdateLocationFromDocumentPythonError(
                 __typename="PythonError", message=""
@@ -265,14 +265,14 @@ class TestAddCodeLocation:
         )
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error adding code location"):
-            DgApiCodeLocationApi(_client=client).add_code_location(
+            DgApiCodeLocationApi(_client=client).create_code_location(
                 DgApiCodeLocationDocument(location_name="test-loc")
             )
 
 
 class TestDeleteCodeLocation:
     def test_returns_result(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.delete_code_location.return_value = DeleteCodeLocation(
             deleteLocation=DeleteCodeLocationDeleteLocationDeleteLocationSuccess(
                 __typename="DeleteLocationSuccess", locationName="test-loc"
@@ -285,7 +285,7 @@ class TestDeleteCodeLocation:
         assert result.location_name == "test-loc"
 
     def test_unauthorized_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.delete_code_location.return_value = DeleteCodeLocation(
             deleteLocation=DeleteCodeLocationDeleteLocationUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -296,7 +296,7 @@ class TestDeleteCodeLocation:
             DgApiCodeLocationApi(_client=client).delete_code_location("test-loc")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.delete_code_location.return_value = DeleteCodeLocation(
             deleteLocation=DeleteCodeLocationDeleteLocationPythonError(
                 __typename="PythonError", message=""

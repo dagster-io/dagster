@@ -14,7 +14,9 @@ export const EXPECTED_PERMISSIONS = {
   launch_pipeline_reexecution: true,
   start_schedule: true,
   stop_running_schedule: true,
+  schedule_dry_run: true,
   edit_sensor: true,
+  sensor_dry_run: true,
   update_sensor_cursor: true,
   terminate_pipeline_execution: true,
   delete_pipeline_run: true,
@@ -27,6 +29,7 @@ export const EXPECTED_PERMISSIONS = {
   edit_dynamic_partitions: true,
   toggle_auto_materialize: true,
   edit_concurrency_limit: true,
+  edit_ui_definitions: true,
   edit_workspace: true,
 };
 
@@ -40,7 +43,9 @@ export type PermissionsFromJSON = {
   launch_pipeline_reexecution?: PermissionResult;
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
+  schedule_dry_run?: PermissionResult;
   edit_sensor?: PermissionResult;
+  sensor_dry_run?: PermissionResult;
   update_sensor_cursor?: PermissionResult;
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
@@ -52,6 +57,7 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: PermissionResult;
   toggle_auto_materialize?: PermissionResult;
   edit_concurrency_limit?: PermissionResult;
+  edit_ui_definitions?: PermissionResult;
   edit_workspace?: PermissionResult;
 };
 
@@ -68,7 +74,7 @@ export const extractPermissions = (
 ) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
-    (permsMap as any)[item.permission] = {
+    permsMap[item.permission as keyof PermissionsFromJSON] = {
       enabled: item.value,
       disabledReason: item.disabledReason || '',
     };
@@ -76,7 +82,7 @@ export const extractPermissions = (
 
   const fallbackMap: PermissionsFromJSON = {};
   for (const item of fallback) {
-    (fallbackMap as any)[item.permission] = {
+    fallbackMap[item.permission as keyof PermissionsFromJSON] = {
       enabled: item.value,
       disabledReason: item.disabledReason || '',
     };
@@ -91,8 +97,10 @@ export const extractPermissions = (
     canLaunchPipelineReexecution: permissionOrFallback('launch_pipeline_reexecution'),
     canStartSchedule: permissionOrFallback('start_schedule'),
     canStopRunningSchedule: permissionOrFallback('stop_running_schedule'),
+    canScheduleDryRun: permissionOrFallback('schedule_dry_run'),
     canStartSensor: permissionOrFallback('edit_sensor'),
     canStopSensor: permissionOrFallback('edit_sensor'),
+    canSensorDryRun: permissionOrFallback('sensor_dry_run'),
     canTerminatePipelineExecution: permissionOrFallback('terminate_pipeline_execution'),
     canDeletePipelineRun: permissionOrFallback('delete_pipeline_run'),
     canReloadRepositoryLocation: permissionOrFallback('reload_repository_location'),
@@ -180,13 +188,13 @@ export const permissionResultForKey = (
 const unpackPermissions = (
   permissions: PermissionsMap,
 ): {booleans: PermissionBooleans; disabledReasons: PermissionDisabledReasons} => {
-  const booleans = {};
-  const disabledReasons = {};
-  Object.keys(permissions).forEach((key) => {
-    const {enabled, disabledReason} = (permissions as any)[key] as PermissionResult;
-    (booleans as any)[key] = enabled;
-    (disabledReasons as any)[key] = disabledReason;
-  });
+  const booleans: Record<string, boolean> = {};
+  const disabledReasons: Record<string, string> = {};
+  for (const key of Object.keys(permissions) as Array<keyof PermissionsMap>) {
+    const {enabled, disabledReason} = permissions[key];
+    booleans[key] = enabled;
+    disabledReasons[key] = disabledReason;
+  }
   return {
     booleans: booleans as PermissionBooleans,
     disabledReasons: disabledReasons as PermissionDisabledReasons,

@@ -8,7 +8,7 @@ SNOWFLAKE_JARS = (
 
 @pytest.fixture(scope="module")
 def spark():
-    spark = SparkSession.builder.config(  # pyright: ignore[reportAttributeAccessIssue]
+    spark = SparkSession.builder.config(
         key="spark.jars.packages",
         value=SNOWFLAKE_JARS,
     ).getOrCreate()

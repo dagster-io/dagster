@@ -32,7 +32,7 @@ def get_dockerfile_path(
 def get_agent_type_and_platform_from_graphql(
     gql_client: "IGraphQLClient",
 ) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
-    result = gql_client.execute_generic(DEPLOYMENT_INFO_QUERY)
+    result = gql_client.execute_arbitrary(DEPLOYMENT_INFO_QUERY)
 
     agent_type = DgPlusAgentType(result["currentDeployment"]["agentType"])
 

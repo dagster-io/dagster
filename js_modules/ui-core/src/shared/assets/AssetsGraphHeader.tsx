@@ -10,7 +10,7 @@ export const AssetsGraphHeader = () => {
   }
   return (
     <PageHeader
-      title={<Subtitle1>Global Asset Lineage</Subtitle1>}
+      title={<Subtitle1>Global asset lineage</Subtitle1>}
       right={<ReloadAllButton label="Reload definitions" />}
     />
   );

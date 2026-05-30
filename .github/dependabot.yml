@@ -14,6 +14,6 @@ updates:
     schedule:
       interval: "daily"
     exclude-paths:
-      - "pyright/**"
+      - "ty/**"
       - "examples/**"
     open-pull-requests-limit: 0

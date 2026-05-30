@@ -1,0 +1,68 @@
+.showAllButton {
+  background: transparent;
+  border: none;
+  color: var(--color-accent-blue);
+  text-decoration: underline;
+  padding-top: 10px;
+  font-size: 0.9rem;
+}
+
+.typeWrapper {
+  margin-bottom: 10px;
+}
+
+.resourceHeader {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  margin: 2px 0 0 0;
+}
+
+.cell {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
+  width: 48%;
+}
+
+.resourceContainer {
+  display: flex;
+  align-items: flex-start;
+}
+
+.resourceContainer h4 {
+  margin-top: 0;
+}
+
+.resourceContainer :global(.iconGlobal) {
+  margin-right: 8px;
+}
+
+.dependencyTable {
+  width: 100%;
+}
+
+.dependencyHeaderCell {
+  font-size: 0.7rem;
+  color: var(--color-text-light);
+}
+
+.invocationContainer {
+  user-select: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-keyline-default);
+  font-family: var(--font-mono);
+}
+
+.invocationContainer:last-child {
+  border-bottom: none;
+}
+
+.invocationContainer:hover {
+  background: var(--color-background-light);
+}
+
+.invocationContainer :global(.op-column-container) {
+  margin-left: -12px;
+}

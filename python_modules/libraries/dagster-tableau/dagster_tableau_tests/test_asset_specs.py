@@ -51,7 +51,7 @@ def test_fetch_tableau_workspace_data(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
     resource.build_client()
 
     actual_workspace_data = resource.get_or_fetch_workspace_data()
@@ -94,7 +94,7 @@ def test_invalid_workbook(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
     resource.build_client()
 
     # Test invalid workbook
@@ -383,7 +383,7 @@ def test_tableau_workbook_selector(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
     resource.build_client()
 
     workbook_selector_fn = (

@@ -18,7 +18,7 @@ class TestFormatDgAlertPolicies:
 
     def _create_sample_alert_policies(self) -> DgApiAlertPolicyDocument:
         return DgApiAlertPolicyDocument(
-            alert_policies=[
+            items=[
                 {
                     "name": "email-on-failure",
                     "description": "Send email on job failure",
@@ -60,7 +60,7 @@ class TestFormatDgApiAlertPolicySyncResult:
 
     def _create_sample_alert_policy_sync_result(self) -> DgApiAlertPolicySyncResult:
         return DgApiAlertPolicySyncResult(
-            synced_policies=["email-on-failure", "slack-on-sla-miss"],
+            items=["email-on-failure", "slack-on-sla-miss"],
         )
 
     def test_format_sync_result_text(self, snapshot):

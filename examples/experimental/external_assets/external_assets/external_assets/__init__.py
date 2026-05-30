@@ -10,9 +10,7 @@ def build_asset_specs_from_external_definitions():
     with open(os.path.join(os.path.dirname(__file__), "asset_defs.yaml")) as f:
         data = yaml.load(f, Loader=yaml.SafeLoader)
         for asset in data["assets"]:
-            deps = []
-            for dep in asset.get("dependsOn", []):
-                deps.append(AssetKey(dep.split("/")))
+            deps = [AssetKey(dep.split("/")) for dep in asset.get("dependsOn", [])]
             specs.append(
                 AssetSpec(
                     key=AssetKey(asset["name"].split("/")), group_name="external_assets", deps=deps

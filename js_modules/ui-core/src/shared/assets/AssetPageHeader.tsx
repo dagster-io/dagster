@@ -1,21 +1,27 @@
-// eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
-import {Box, Colors, Icon, MiddleTruncate, PageHeader, Subtitle1} from '@dagster-io/ui-components';
+import {
+  Box,
+  BreadcrumbProps,
+  Breadcrumbs,
+  Colors,
+  Icon,
+  MiddleTruncate,
+  PageHeader,
+  Subtitle1,
+} from '@dagster-io/ui-components';
 import {observeEnabled} from '@shared/app/observeEnabled';
 import {
   getAssetSelectionQueryString,
   useAssetSelectionState,
 } from '@shared/asset-selection/useAssetSelectionState';
 import * as React from 'react';
-import {useContext} from 'react';
-import {Link, useHistory, useLocation} from 'react-router-dom';
-import styled from 'styled-components';
+import {Link, useLocation} from 'react-router-dom';
 
-import {AppContext} from '../../app/AppContext';
+import styles from './css/AssetPageHeader.module.css';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../../assets/globalAssetGraphPathToString';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {CopyIconButton} from '../../ui/CopyButton';
+import {MenuLink} from '../../ui/MenuLink';
 
 type Props = Partial<React.ComponentProps<typeof PageHeader>> & {
   assetKey: {path: string[]};
@@ -33,15 +39,21 @@ export const AssetPageHeader = ({
   view: _view,
   ...extra
 }: Props) => {
-  const history = useHistory();
-  const {basePath} = useContext(AppContext);
-
   const copyableString = tokenForAssetKey(assetKey);
 
   const location = useLocation();
   const assetSelection = getAssetSelectionQueryString(location.search);
 
   const breadcrumbs = React.useMemo(() => {
+    const appendSelection = (href: string) => {
+      if (!assetSelection) {
+        return href;
+      }
+      const url = new URL(href, window.location.origin);
+      url.searchParams.set('asset-selection', assetSelection);
+      return url.pathname + url.search;
+    };
+
     const keyPathItems: BreadcrumbProps[] = [];
     assetKey.path.reduce((accum: string, elem: string) => {
       const nextAccum = `${accum ? `${accum}/` : ''}${encodeURIComponent(elem)}`;
@@ -49,82 +61,50 @@ export const AssetPageHeader = ({
       if (observeEnabled()) {
         href = `/assets?asset-selection=key:"${nextAccum}/*"`;
       }
-      keyPathItems.push({text: elem, href});
+      keyPathItems.push({text: elem, href: appendSelection(href)});
       return nextAccum;
     }, '');
 
-    // Use createHref to prepend the basePath on all items. We don't have control over the
-    // breadcrumb overflow rendering, and Blueprint renders the overflow items with no awareness
-    // of the basePath. This allows us to render appropriate href values for the overflow items,
-    // and we can then remove the basePath for individual rendered breadcrumbs, which we are
-    // able to control.
-    const headerItems = headerBreadcrumbs.map((item) => {
-      const url = new URL(item.href ?? '', window.location.origin);
-      if (assetSelection) {
-        url.searchParams.set('asset-selection', assetSelection);
-      }
-      return {
-        ...item,
-        href: item.href
-          ? history.createHref({pathname: url.pathname, search: url.search})
-          : undefined,
-      };
-    });
+    const headerItems = headerBreadcrumbs.map((item) => ({
+      ...item,
+      href: item.href ? appendSelection(item.href) : undefined,
+    }));
 
-    // Attach the filter state querystring to key path items.
-    const keyPathItemsWithSearch = keyPathItems.map((item) => {
-      const url = new URL(item.href ?? '', window.location.origin);
-      if (assetSelection) {
-        url.searchParams.set('asset-selection', assetSelection);
-      }
-      return {
-        ...item,
-        href: history.createHref({pathname: url.pathname, search: url.search}),
-      };
-    });
-
-    return [...headerItems, ...keyPathItemsWithSearch];
-  }, [assetKey.path, headerBreadcrumbs, assetSelection, history]);
+    return [...headerItems, ...keyPathItems];
+  }, [assetKey.path, headerBreadcrumbs, assetSelection]);
 
   return (
     <PageHeader
       title={
         <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px'}}>
           <Title>
-            <BreadcrumbsWithSlashes
+            <Breadcrumbs
               items={breadcrumbs}
-              currentBreadcrumbRenderer={({text, href}) => (
-                <TruncatedHeading key={href}>
+              currentBreadcrumbRenderer={({text}) => (
+                <Subtitle1 className={styles.truncatedHeading}>
                   {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                </TruncatedHeading>
+                </Subtitle1>
               )}
               breadcrumbRenderer={({text, href}) => {
-                // Strip the leading basePath. It is prepended in order to make overflow
-                // items have the correct href values since we can't control the overflow
-                // rendering. Here, however, we can do what we want, and we render with
-                // react-router Link components that don't need the basePath.
                 if (href) {
                   return (
-                    <TruncatedHeading key={href}>
-                      <BreadcrumbLink to={href.replace(basePath, '') || '#'}>
+                    <Subtitle1 className={styles.truncatedHeading}>
+                      <Link className={styles.breadcrumbLink} to={href}>
                         {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                      </BreadcrumbLink>
-                    </TruncatedHeading>
+                      </Link>
+                    </Subtitle1>
                   );
                 }
 
                 return (
-                  <TruncatedHeading key={href}>
+                  <Subtitle1 className={styles.truncatedHeading}>
                     {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                  </TruncatedHeading>
+                  </Subtitle1>
                 );
               }}
-              $numHeaderBreadcrumbs={headerBreadcrumbs.length}
-              popoverProps={{
-                minimal: true,
-                modifiers: {offset: {enabled: true, options: {offset: [0, 8]}}},
-                popoverClassName: 'dagster-popover',
-              }}
+              overflowRenderer={({text, href}) =>
+                href ? <MenuLink to={href} text={text} /> : null
+              }
             />
             {copyableString ? <CopyIconButton value={copyableString} /> : undefined}
           </Title>
@@ -134,11 +114,6 @@ export const AssetPageHeader = ({
     />
   );
 };
-
-const TruncatedHeading = styled(Subtitle1)`
-  max-width: 300px;
-  overflow: hidden;
-`;
 
 export const AssetGlobalLineageLink = () => {
   const [assetSelection] = useAssetSelectionState();
@@ -157,33 +132,3 @@ export const AssetGlobalLineageButton = () => (
     View asset lineage
   </AnchorButton>
 );
-
-// Only add slashes within the asset key path
-const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
-  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
-    background: none;
-    font-size: 20px;
-    font-weight: bold;
-    color: ${Colors.textLighter()};
-    content: '/';
-    width: 8px;
-    line-height: 16px;
-  }
-  /**
-   * Blueprint breadcrumbs annoyingly have a built-in height.
-   */
-  .bp5-breadcrumbs {
-    height: auto;
-    min-height: 30px;
-  }
-`;
-
-const BreadcrumbLink = styled(Link)`
-  color: ${Colors.textLight()};
-  white-space: nowrap;
-
-  :hover,
-  :active {
-    color: ${Colors.textLight()};
-  }
-`;

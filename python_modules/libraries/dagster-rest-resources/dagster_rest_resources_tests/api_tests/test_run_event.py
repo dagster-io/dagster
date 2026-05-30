@@ -14,6 +14,7 @@ from dagster_rest_resources.__generated__.get_run_events import (
     GetRunEventsLogsForRunRunNotFoundError,
 )
 from dagster_rest_resources.api.run_event import DgApiRunEventApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
 from dagster_rest_resources.schemas.run_event import DgApiRunEventList
 
@@ -54,7 +55,7 @@ def _make_run_start_event(
 
 class TestGetEventsSinglePage:
     def test_returns_events(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(events=[_make_run_start_event()])
         )
@@ -67,7 +68,7 @@ class TestGetEventsSinglePage:
         assert not result.cursor
 
     def test_returns_cursor_and_has_more(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[_make_run_start_event()],
@@ -82,7 +83,7 @@ class TestGetEventsSinglePage:
         assert result.has_more is True
 
     def test_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(events=[])
         )
@@ -92,7 +93,7 @@ class TestGetEventsSinglePage:
         assert result == DgApiRunEventList(items=[], cursor=None, has_more=False)
 
     def test_empty_cursor_becomes_none(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(events=[], cursor="", has_more=False)
         )
@@ -102,7 +103,7 @@ class TestGetEventsSinglePage:
         assert result.cursor is None
 
     def test_run_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=GetRunEventsLogsForRunRunNotFoundError(
                 __typename="RunNotFoundError", message=""
@@ -113,7 +114,7 @@ class TestGetEventsSinglePage:
             DgApiRunEventApi(_client=client).get_events(_RUN_ID)
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=GetRunEventsLogsForRunPythonError(__typename="PythonError", message="")
         )
@@ -124,7 +125,7 @@ class TestGetEventsSinglePage:
 
 class TestGetEventsFiltered:
     def test_event_type_filter(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -142,7 +143,7 @@ class TestGetEventsFiltered:
         assert result.items[0].event_type == "PIPELINE_START"
 
     def test_event_type_filter_run_to_pipeline_alias(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -158,7 +159,7 @@ class TestGetEventsFiltered:
         assert result.items[0].event_type == "PIPELINE_START"
 
     def test_level_filter(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -174,7 +175,7 @@ class TestGetEventsFiltered:
         assert result.items[0].level == LogLevel.INFO
 
     def test_step_key_filter(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -190,7 +191,7 @@ class TestGetEventsFiltered:
         assert result.items[0].step_key == "test_step_abc"
 
     def test_filter_paginates_until_limit_then_truncates(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         page1 = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -222,7 +223,7 @@ class TestGetEventsFiltered:
         assert client.get_run_events.call_count == 2
 
     def test_filters_paginates_until_no_more(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         page1 = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[_make_run_start_event(message="message-1")],
@@ -252,7 +253,7 @@ class TestGetEventsFiltered:
 
 class TestGetEventsErrorConversion:
     def test_converts_step_failure_error(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(
                 events=[
@@ -285,7 +286,7 @@ class TestGetEventsErrorConversion:
         assert event.error.stack == ["  File foo.py line 1\n"]
 
     def test_converts_step_failure_error_nested(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         failure = GetRunEventsLogsForRunEventConnectionEventsExecutionStepFailureEvent(
             __typename="ExecutionStepFailureEvent",
             runId=_RUN_ID,
@@ -329,7 +330,7 @@ class TestGetEventsErrorConversion:
         assert error.cause.cause.cause is None
 
     def test_non_failure_event_has_no_error(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_run_events.return_value = GetRunEvents(
             logsForRun=_make_event_connection(events=[_make_run_start_event()])
         )

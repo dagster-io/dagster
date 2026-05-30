@@ -211,6 +211,13 @@ def execute_notebook(
                         output_path=executed_notebook_path,
                         engine_name="dagstermill",
                         log_output=True,
+                        # Bump kernel-startup timeout from papermill's 60s default
+                        # to 120s. Without this, papermill's default propagates
+                        # through to nbclient and shadows DagstermillEngine's own
+                        # 120s default in `execute_managed_notebook`, leading to
+                        # spurious "Kernel didn't respond in 60 seconds" failures
+                        # on slow / loaded CI hosts.
+                        start_timeout=120,
                     )
                     break
                 except RuntimeError as re:
@@ -233,7 +240,7 @@ def execute_notebook(
             )
 
             if isinstance(ex, ExecutionError):
-                exception_name = ex.ename  # type: ignore
+                exception_name = ex.ename
                 if exception_name in ["RetryRequested", "Failure"]:
                     step_context.log.warn(
                         f"Encountered raised {exception_name} in notebook. Use"
@@ -432,7 +439,7 @@ def define_dagstermill_op(
         required_resource_keys.add(io_mgr_key)
         outs = {
             **outs,
-            cast("str", output_notebook_name): Out(io_manager_key=io_mgr_key),
+            output_notebook_name: Out(io_manager_key=io_mgr_key),
         }
 
     if isinstance(asset_key_prefix, str):

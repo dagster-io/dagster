@@ -2498,8 +2498,6 @@ type Repository {
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
-  hasLocationDocs: Boolean!
-  locationDocsJsonOrError: LocationDocsJsonOrError!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2605,14 +2603,6 @@ type JobWithOps {
   jobName: String!
   opHandleIDs: [String!]!
 }
-
-union LocationDocsJsonOrError = LocationDocsJson | PythonError
-
-type LocationDocsJson {
-  json: JSONString!
-}
-
-scalar JSONString
 
 type RepositoryConnection {
   nodes: [Repository!]!
@@ -3680,6 +3670,52 @@ type UsedSolid {
   invocations: [NodeInvocationSite!]!
 }
 
+type UIComponent {
+  componentId: String!
+  componentType: String!
+  attributes: String!
+}
+
+type UIComponents {
+  locationName: String!
+  components: [UIComponent!]!
+}
+
+union UIComponentsOrError = UIComponents | PythonError
+
+type SetUIComponentSuccess {
+  component: UIComponent!
+}
+
+union SetUIComponentResult = SetUIComponentSuccess | UnauthorizedError | PythonError
+
+type DeleteUIComponentSuccess {
+  locationName: String!
+  componentId: String!
+}
+
+union DeleteUIComponentResult = DeleteUIComponentSuccess | UnauthorizedError | PythonError
+
+scalar JsonSchema
+
+type ComponentTypeInfo {
+  name: String!
+  namespace: String!
+  example: String!
+  schema: JsonSchema
+  description: String
+  owners: [String!]
+  tags: [String!]
+  isUiEditable: Boolean!
+}
+
+type ComponentTypes {
+  locationName: String!
+  componentTypes: [ComponentTypeInfo!]!
+}
+
+union ComponentTypesOrError = ComponentTypes | RepositoryLocationNotFound | PythonError
+
 type Query {
   version: String!
   repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
@@ -3827,6 +3863,8 @@ type Query {
     cursor: String
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
+  uiComponentsForLocationOrError(locationName: String!): UIComponentsOrError!
+  componentTypesForLocationOrError(locationName: String!): ComponentTypesOrError!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -4198,6 +4236,13 @@ type Mutation {
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
   ): DeleteDynamicPartitionsResult!
+  setUIComponent(
+    attributes: String!
+    componentId: String!
+    componentType: String!
+    locationName: String!
+  ): SetUIComponentResult!
+  deleteUIComponent(componentId: String!, locationName: String!): DeleteUIComponentResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   deleteConcurrencyLimit(concurrencyKey: String!): Boolean!
@@ -4218,9 +4263,17 @@ enum ReexecutionStrategy {
   ALL_STEPS
 }
 
-union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
+union SensorDryRunResult =
+  | PythonError
+  | SensorNotFoundError
+  | UnauthorizedError
+  | DryRunInstigationTick
 
-union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
+union ScheduleDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | ScheduleNotFoundError
+  | UnauthorizedError
 
 union TerminateRunsResultOrError = TerminateRunsResult | PythonError
 

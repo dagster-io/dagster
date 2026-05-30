@@ -268,7 +268,7 @@ def test_snapshot_id(
     assert len(set(results)) == 1
 
     # this should only update if the dbt project or asset producing code changes
-    assert results[0] == "4712da99dfd67a3964ed52a0b7852af831b55b20"
+    assert results[0] == "78112ce4276eb84a307025227c30985b5f78b206"
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
@@ -587,7 +587,7 @@ def test_with_description_replacements(test_jaffle_shop_manifest: dict[str, Any]
     expected_description = "customized description"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_description(self, _: Mapping[str, Any]) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_description(self, _: Mapping[str, Any]) -> str:  # ty: ignore[invalid-method-override]
             return expected_description
 
     expected_specs_by_key = {
@@ -627,7 +627,7 @@ def test_with_metadata_replacements(test_jaffle_shop_manifest: dict[str, Any]) -
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_metadata(self, _: Mapping[str, Any]) -> Mapping[str, Any]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_metadata(self, _: Mapping[str, Any]) -> Mapping[str, Any]:  # ty: ignore[invalid-method-override]
             return expected_metadata
 
     expected_specs_by_key = {
@@ -652,7 +652,7 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> Non
     expected_tags = {"customized": "tag"}
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:  # ty: ignore[invalid-method-override]
             return expected_tags
 
     expected_specs_by_key = {
@@ -677,7 +677,7 @@ def test_with_owner_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_owners(self, _: Mapping[str, Any]) -> Sequence[str] | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_owners(self, _: Mapping[str, Any]) -> Sequence[str] | None:  # ty: ignore[invalid-method-override]
             return expected_owners
 
     expected_specs_by_key = {
@@ -702,7 +702,7 @@ def test_with_group_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_group = "customized_group"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_group_name(self, _: Mapping[str, Any]) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_group_name(self, _: Mapping[str, Any]) -> str | None:  # ty: ignore[invalid-method-override]
             return expected_group
 
     expected_specs_by_key = {
@@ -728,7 +728,7 @@ def test_with_code_version_replacements(test_jaffle_shop_manifest: dict[str, Any
     expected_code_version = "customized_code_version"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_code_version(self, _: Mapping[str, Any]) -> str | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_code_version(self, _: Mapping[str, Any]) -> str | None:  # ty: ignore[invalid-method-override]
             return expected_code_version
 
     @dbt_assets(
@@ -758,7 +758,7 @@ def test_with_auto_materialize_policy_replacements(
     expected_auto_materialize_policy = AutoMaterializePolicy.eager()
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_auto_materialize_policy(  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_auto_materialize_policy(  # ty: ignore[invalid-method-override]
             self, _: Mapping[str, Any]
         ) -> AutoMaterializePolicy | None:
             return expected_auto_materialize_policy
@@ -791,7 +791,7 @@ def test_with_automation_condition_replacements(test_jaffle_shop_manifest: dict[
     expected_automation_condition = AutomationCondition.eager()
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_automation_condition(self, _: Mapping[str, Any]) -> AutomationCondition | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_automation_condition(self, _: Mapping[str, Any]) -> AutomationCondition | None:  # ty: ignore[invalid-method-override]
             return expected_automation_condition
 
     expected_specs_by_key = {
@@ -1163,7 +1163,7 @@ def test_dbt_with_semantic_models_and_saved_queries(
 
 
 @pytest.mark.skipif(
-    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.8.0"),
+    DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION < version.parse("1.8.0"),
     reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
 )
 @pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
@@ -1183,7 +1183,7 @@ def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: dict[str, Any], selec
 
 
 @pytest.mark.skipif(
-    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.11.0"),
+    DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION < version.parse("1.11.0"),
     reason="dbt udf support is only available in `dbt-core>=1.11.0`",
 )
 @pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
@@ -1354,6 +1354,84 @@ def test_dbt_enable_source_metadata_with_multiple_assets_defs(
     assert {AssetKey(["stg_customers"]), AssetKey(["stg_customers_again"])} <= {
         child for child in asset_graph.get(raw_customers_key).child_keys
     }
+
+
+def with_renamed_dbt_project(manifest: dict[str, Any], new_project: str) -> dict[str, Any]:
+    """Copy a manifest as if its sources belonged to a different dbt project.
+
+    The source AssetKeys are unchanged (they derive from source name + table) but each source
+    unique_id embeds the new project name, mirroring a single source referenced by two distinct
+    dbt projects.
+    """
+    renamed = copy.deepcopy(manifest)
+    old_project = renamed["metadata"]["project_name"]
+    unique_id_remap: dict[str, str] = {}
+
+    renamed_sources: dict[str, Any] = {}
+    for unique_id, source_props in renamed["sources"].items():
+        new_unique_id = unique_id.replace(f"source.{old_project}.", f"source.{new_project}.", 1)
+        unique_id_remap[unique_id] = new_unique_id
+        source_props["unique_id"] = new_unique_id
+        source_props["package_name"] = new_project
+        renamed_sources[new_unique_id] = source_props
+    renamed["sources"] = renamed_sources
+
+    for node_props in renamed["nodes"].values():
+        depends_on = node_props.get("depends_on", {}).get("nodes")
+        if depends_on:
+            node_props["depends_on"]["nodes"] = [
+                unique_id_remap.get(dep, dep) for dep in depends_on
+            ]
+
+    # dbt's node selector resolves the graph from parent_map/child_map, so remap those too.
+    for graph_key in ("parent_map", "child_map"):
+        graph = renamed.get(graph_key)
+        if graph:
+            renamed[graph_key] = {
+                unique_id_remap.get(node, node): [unique_id_remap.get(edge, edge) for edge in edges]
+                for node, edges in graph.items()
+            }
+
+    renamed["metadata"]["project_name"] = new_project
+    renamed["metadata"]["project_id"] = f"project_id_{new_project}"
+    return renamed
+
+
+def test_dbt_enable_source_metadata_across_distinct_manifests(
+    test_asset_checks_manifest: dict[str, Any],
+) -> None:
+    # A single source can be referenced by models built from two different dbt projects (e.g. one
+    # feeding a model and another feeding a snapshot). Each project's manifest gives that source a
+    # different unique_id and project_id, since the project identity is embedded in them. Such
+    # dbt-namespaced dep metadata must be omitted from source deps so the two projects produce
+    # identical metadata and the shared stub asset resolves instead of raising a conflict.
+    manifest_a = test_asset_checks_manifest
+    manifest_b = with_renamed_dbt_project(manifest_a, "other_project")
+
+    @dbt_assets(manifest=manifest_a, select="stg_customers")
+    def project_a_assets(): ...
+
+    @dbt_assets(manifest=manifest_b, select="stg_customers_again")
+    def project_b_assets(): ...
+
+    # Resolves without raising "Conflicting metadata found on AssetDeps".
+    asset_graph = Definitions(
+        assets=[project_a_assets, project_b_assets],
+    ).resolve_asset_graph()
+
+    raw_customers_key = AssetKey(["jaffle_shop", "raw_customers"])
+    assert {AssetKey(["stg_customers"]), AssetKey(["stg_customers_again"])} <= set(
+        asset_graph.get(raw_customers_key).child_keys
+    )
+
+    # Value-stable source metadata survives on the deps; dbt-namespaced metadata (which differs
+    # per project) does not.
+    for assets_def in (project_a_assets, project_b_assets):
+        for spec in assets_def.specs:
+            for dep in spec.deps:
+                if dep.asset_key == raw_customers_key:
+                    assert "dagster/table_name" in dep.metadata
+                    assert not any(key.startswith("dagster_dbt/") for key in dep.metadata)
 
 
 def test_dbt_enable_source_metadata_dedupes_collapsed_sources(

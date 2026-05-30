@@ -31,13 +31,13 @@ def make_option_group(
                 # This is borrowed from click itself, it is how its decorators operate on both commands
                 # and regular functions.
                 if not hasattr(fn, "__click_params__"):
-                    fn.__click_params__ = []  # type: ignore
+                    fn.__click_params__ = []  # ty: ignore[invalid-assignment]
                 for option in options:
-                    fn.__click_params__.append(option)  # type: ignore
+                    fn.__click_params__.append(option)  # ty: ignore[unresolved-attribute]
 
             return fn
         else:
-            return lambda fn: option_group(fn, names=names)  # type: ignore
+            return lambda fn: option_group(fn, names=names)  # ty: ignore[invalid-return-type]
 
     return option_group
 
@@ -60,7 +60,7 @@ GLOBAL_OPTIONS = {
             ["--use-component-module", "use_component_modules"],
             type=str,
             multiple=True,
-            default=DgCliConfig.__dataclass_fields__["use_component_modules"].default_factory(),
+            default=DgCliConfig.__dataclass_fields__["use_component_modules"].default_factory(),  # ty: ignore[call-non-callable]
             hidden=True,
             help=textwrap.dedent("""
                 Specify a list of remote environment modules expected to contain components.

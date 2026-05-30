@@ -286,12 +286,10 @@ def format_mismatch(
         lines.append(f"    https://github.com/{dest_repo_name}/commit/{m.dest.hash}")
     if m.extra_in_source:
         lines.append(f"  Files in source but NOT in dest ({len(m.extra_in_source)}):")
-        for f in m.extra_in_source:
-            lines.append(f"    - {f}")
+        lines.extend(f"    - {f}" for f in m.extra_in_source)
     if m.extra_in_dest:
         lines.append(f"  Files in dest but NOT in source ({len(m.extra_in_dest)}):")
-        for f in m.extra_in_dest:
-            lines.append(f"    + {f}")
+        lines.extend(f"    + {f}" for f in m.extra_in_dest)
     return "\n".join(lines)
 
 
@@ -304,8 +302,7 @@ def format_completeness_failure(result: CompletenessResult) -> str:
         f" Synced count: {result.synced_count}",
         "Missing commits:",
     ]
-    for c in result.missing[:10]:
-        lines.append(f"  {format_commit_info_short(c)}")
+    lines.extend(f"  {format_commit_info_short(c)}" for c in result.missing[:10])
     if len(result.missing) > 10:
         lines.append(f"  ... and {len(result.missing)} total")
     return "\n".join(lines)

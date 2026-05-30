@@ -17,7 +17,7 @@ from dagster.components.testing.test_cases import TestTranslation
 from dagster_looker.api.components import LookerComponent
 from dagster_shared.utils import environ
 
-BASIC_LOOKER_COMPONENT_BODY = {
+BASIC_LOOKER_COMPONENT_BODY: dict[str, Any] = {
     "type": "dagster_looker.LookerComponent",
     "attributes": {
         "looker_resource": {

@@ -16,14 +16,8 @@ classifiers = [
     "Environment :: Web Environment",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Topic :: System :: Monitoring",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
-    "Operating System :: OS Independent",
 ]
 dependencies = [
     # cli
@@ -59,7 +53,7 @@ dependencies = [
     "filelock",
     "dagster-pipes==1!0+dev",
     "dagster-shared==1!0+dev",
-    "antlr4-python3-runtime",
+    "antlr4-python3-runtime<4.14",
 ]
 
 [project.urls]
@@ -83,6 +77,13 @@ dagster = "dagster"
 
 [project.optional-dependencies]
 docker = ["docker"]
+# `test` is kept as a published extra (rather than a dependency-group) because
+# it is consumed cross-package by ~121 other tox.ini files via `dagster[test]`.
+# Other packages' test envs install this surface to pick up shared test
+# infrastructure (pytest plugins, responses, syrupy, etc.). Adding entries
+# here affects all of those downstream test envs — be deliberate.
+# Dagster-dev-only test deps that should NOT bleed into downstream consumers
+# go in [dependency-groups].test instead.
 test = [
     "docker",
     "grpcio-tools>=1.66.2; python_version>='3.13'",
@@ -97,14 +98,13 @@ test = [
     "pytest-timeout",
     "responses<=0.23.1",
     "syrupy>=4.0.0",
-    "tox>=4",
-    "tox-uv>=1",
+    "tox>=4.22",
+    "tox-uv>=1.16",
     "morefs[asynclocal]",
-    "fsspec<2024.5.0",
     "rapidfuzz",
-    "flaky",
+    "pytest-rerunfailures",
     "psutil",
-    "ruff==0.15.0",
+    "ruff==0.15.14",
 ]
 test-components = [
     "tomlkit",
@@ -135,9 +135,10 @@ pyright = [
     "types-toml",
 ]
 ruff = [
-    "ruff==0.15.0",
+    "ruff==0.15.14",
 ]
 ty = [
+    "ty==0.0.39",
     ### Stub packages for type checking
     "pandas-stubs",  # version will be resolved against pandas
     "types-backports",  # version will be resolved against backports
@@ -162,6 +163,51 @@ ty = [
     "boto3-stubs[essential]",
     "types-freezegun",
 ]
+
+[dependency-groups]
+# Dagster-dev test deps NOT exposed via dagster[test] — kept here so
+# downstream consumers of `dagster[test]` don't pull them in.
+test = [
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-cloud-cli",
+    "dagster-dg-core",
+    "create-dagster",
+    "dagster-graphql",
+    "dagster-webserver",
+]
+test-sqlalchemy-1-3 = ["sqlalchemy<1.4"]
+test-sqlalchemy-1-4 = ["sqlalchemy<2"]
+# Scoped to python<'3.11' because dagster's runtime requires
+# `protobuf>=4,<7` on py>=3.11. On py3.10 the protobuf upper bound is
+# absent, allowing protobuf<4 here. The tox env is py3.10-only as a
+# result.
+test-old-protobuf = [
+    "protobuf<4; python_version<'3.11'",
+    "setuptools<82; python_version<'3.11'",  # old protobuf versions require pkg_resources
+]
+test-components = [
+    "dagster-dg-cli",
+    "dagster-rest-resources",
+]
+
+[tool.uv]
+conflicts = [
+    [{group = "test-sqlalchemy-1-3"}, {group = "test-sqlalchemy-1-4"}],
+]
+
+[tool.uv.sources]
+dagster-test = { path = "../dagster-test", editable = true }
+dagster-pipes = { path = "../dagster-pipes", editable = true }
+dagster-shared = { path = "../libraries/dagster-shared", editable = true }
+dagster-cloud-cli = { path = "../libraries/dagster-cloud-cli", editable = true }
+dagster-dg-core = { path = "../libraries/dagster-dg-core", editable = true }
+dagster-dg-cli = { path = "../libraries/dagster-dg-cli", editable = true }
+create-dagster = { path = "../libraries/create-dagster", editable = true }
+dagster-graphql = { path = "../dagster-graphql", editable = true }
+dagster-webserver = { path = "../dagster-webserver", editable = true }
+dagster-rest-resources = { path = "../libraries/dagster-rest-resources", editable = true }
 
 [tool.hatch.build]
 force-include = {"dagster/_core/definitions/tags" = "dagster/_core/definitions/tags"}

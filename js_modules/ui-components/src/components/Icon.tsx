@@ -167,6 +167,7 @@ import filter from '../icon-svgs/filter.svg';
 import filter_alt from '../icon-svgs/filter_alt.svg';
 import flag from '../icon-svgs/flag.svg';
 import folder from '../icon-svgs/folder.svg';
+import folder_match from '../icon-svgs/folder_match.svg';
 import folder_open from '../icon-svgs/folder_open.svg';
 import forum from '../icon-svgs/forum.svg';
 import freshness from '../icon-svgs/freshness.svg';
@@ -601,6 +602,7 @@ export const Icons = {
   filter_alt,
   flag,
   folder,
+  folder_match,
   folder_open,
   forum,
   freshness,
@@ -890,7 +892,7 @@ export const Icon = React.memo((props: IconProps) => {
 
   // Storybook imports SVGs are string but nextjs imports them as object.
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
-  const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
+  const img = typeof Icons[name] === 'string' ? (Icons[name] as string) : Icons[name].src;
 
   return <BaseIcon {...rest} img={img} name={name} color={color} />;
 });

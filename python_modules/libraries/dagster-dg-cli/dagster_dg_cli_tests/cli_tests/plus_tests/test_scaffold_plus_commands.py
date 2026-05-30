@@ -323,7 +323,7 @@ def test_scaffold_github_actions_command_success_serverless(
     current_version = version.__version__
     try:
         if version_override:
-            version.__version__ = version_override
+            version.__version__ = version_override  # ty: ignore[invalid-assignment]
 
         mock_gql_response(
             query=gql.DEPLOYMENT_INFO_QUERY,

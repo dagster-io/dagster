@@ -11,13 +11,13 @@ from dagster_rest_resources.schemas.artifact import (
 from dagster_rest_resources.schemas.exception import S3Error
 
 
-class TestUpload:
+class TestActionUpload:
     def test_upload(self, tmp_path: Path):
         upload_file = tmp_path / "test-file.bin"
         upload_file.write_bytes(b"test content")
         client = Mock(spec=S3Client)
 
-        result = DgApiArtifactApi(client).upload(key="test-file.bin", path=upload_file)
+        result = DgApiArtifactApi(client).action_upload(key="test-file.bin", path=upload_file)
 
         client.upload.assert_called_once()
         key_arg, scope_arg, file_arg = client.upload.call_args[0]
@@ -33,7 +33,7 @@ class TestUpload:
         upload_file.write_bytes(b"test content")
         client = Mock(spec=S3Client)
 
-        result = DgApiArtifactApi(client).upload(
+        result = DgApiArtifactApi(client).action_upload(
             key="test-file.bin", path=upload_file, deployment="prod"
         )
 
@@ -50,7 +50,7 @@ class TestUpload:
         client = Mock(spec=S3Client)
 
         with pytest.raises(FileNotFoundError, match="Upload path does not exist"):
-            DgApiArtifactApi(client).upload(key="missing.bin", path=tmp_path / "missing.bin")
+            DgApiArtifactApi(client).action_upload(key="missing.bin", path=tmp_path / "missing.bin")
 
         client.upload.assert_not_called()
 
@@ -61,16 +61,16 @@ class TestUpload:
         client.upload.side_effect = Exception()
 
         with pytest.raises(S3Error, match="Error uploading file"):
-            DgApiArtifactApi(client).upload(key="test-file.bin", path=upload_file)
+            DgApiArtifactApi(client).action_upload(key="test-file.bin", path=upload_file)
 
 
-class TestDownload:
+class TestActionDownload:
     def test_download(self, tmp_path: Path):
         dest = tmp_path / "test-file.bin"
         client = Mock(spec=S3Client)
         client.download.return_value = b"test content"
 
-        result = DgApiArtifactApi(client).download(key="test-file.bin", path=dest)
+        result = DgApiArtifactApi(client).action_download(key="test-file.bin", path=dest)
 
         client.download.assert_called_once_with("test-file.bin", None)
         assert result == DgApiArtifactDownloadResult(
@@ -82,7 +82,7 @@ class TestDownload:
         client = Mock(spec=S3Client)
         client.download.return_value = b"test content"
 
-        result = DgApiArtifactApi(client).download(
+        result = DgApiArtifactApi(client).action_download(
             key="test-file.bin", path=dest, deployment="prod"
         )
 
@@ -96,7 +96,7 @@ class TestDownload:
         client = Mock(spec=S3Client)
         client.download.return_value = b"test content"
 
-        DgApiArtifactApi(client).download(key="test-file.bin", path=dest)
+        DgApiArtifactApi(client).action_download(key="test-file.bin", path=dest)
 
         assert dest.read_bytes() == b"test content"
 
@@ -106,4 +106,4 @@ class TestDownload:
         client.download.side_effect = Exception()
 
         with pytest.raises(S3Error, match="Error downloading file"):
-            DgApiArtifactApi(client).download(key="test-file.bin", path=dest)
+            DgApiArtifactApi(client).action_download(key="test-file.bin", path=dest)

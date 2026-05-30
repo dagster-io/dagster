@@ -1,13 +1,15 @@
 import time
 
-import kubernetes
+import kubernetes.client.rest
 import pytest
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient, WaitForPodState
+
+from tests.utils import BUSYBOX_IMAGE
 
 pytest_plugins = ["dagster_k8s_test_infra.helm"]
 
 
-def construct_pod_spec(name, cmd, image="busybox", container_kwargs=None):
+def construct_pod_spec(name, cmd, image=BUSYBOX_IMAGE, container_kwargs=None):
     return kubernetes.client.V1PodSpec(
         restart_policy="Never",
         containers=[
@@ -21,14 +23,14 @@ def construct_pod_spec(name, cmd, image="busybox", container_kwargs=None):
     )
 
 
-def construct_pod_manifest(name, cmd, image="busybox", container_kwargs=None):
+def construct_pod_manifest(name, cmd, image=BUSYBOX_IMAGE, container_kwargs=None):
     return kubernetes.client.V1Pod(
         metadata=kubernetes.client.V1ObjectMeta(name=name),
         spec=construct_pod_spec(name, cmd, image=image, container_kwargs=container_kwargs),
     )
 
 
-def construct_job_manifest(name, cmd, image="busybox", container_kwargs=None):
+def construct_job_manifest(name, cmd, image=BUSYBOX_IMAGE, container_kwargs=None):
     return kubernetes.client.V1Job(
         api_version="batch/v1",
         kind="Job",
@@ -368,12 +370,12 @@ Last 25 log lines for container 'goodpod1':"""
                             containers=[
                                 kubernetes.client.V1Container(
                                     name="goodcontainer1",
-                                    image="busybox",
+                                    image=BUSYBOX_IMAGE,
                                     args=["/bin/sh", "-c", 'echo "hello world"'],
                                 ),
                                 kubernetes.client.V1Container(
                                     name="goodcontainer2",
-                                    image="busybox",
+                                    image=BUSYBOX_IMAGE,
                                     args=["/bin/sh", "-c", 'echo "hello again world"'],
                                 ),
                             ],
@@ -467,7 +469,7 @@ def test_wait_for_job(cluster_provider, namespace, should_cleanup):
         if should_cleanup:
             for job in ["waitforjob", "sayhi2", "failwaitforjob"]:
                 try:
-                    api_client.batch_api.delete_namespaced_job(  # pyright: ignore[reportPossiblyUnboundVariable]
+                    api_client.batch_api.delete_namespaced_job(
                         job, namespace=namespace, propagation_policy="Foreground"
                     )
                 except kubernetes.client.rest.ApiException:

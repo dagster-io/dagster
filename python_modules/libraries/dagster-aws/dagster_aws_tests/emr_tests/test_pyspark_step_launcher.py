@@ -112,3 +112,41 @@ def test_emr_pyspark_step_launcher_legacy_arguments():
             }
         )
     )
+
+
+def test_emr_step_def_uses_configured_s3_job_package_path():
+    launcher = EmrPySparkStepLauncher(
+        region_name="us-west-1",
+        staging_bucket="bucket",
+        staging_prefix="prefix",
+        wait_for_logs=False,
+        action_on_failure="CANCEL_AND_WAIT",
+        cluster_id="j-123",
+        spark_config={},
+        local_job_package_path=os.path.abspath(os.path.dirname(__file__)),
+        deploy_local_job_package=False,
+        s3_job_package_path="s3://configured/code.zip",
+    )
+
+    args = launcher._get_emr_step_def("run1", "step1", "op1")["HadoopJarStep"]["Args"]  # noqa: SLF001
+
+    assert "--py-files" in args
+    assert args[args.index("--py-files") + 1] == "s3://configured/code.zip"
+
+
+def test_emr_step_def_omits_py_files_when_code_is_preinstalled():
+    launcher = EmrPySparkStepLauncher(
+        region_name="us-west-1",
+        staging_bucket="bucket",
+        staging_prefix="prefix",
+        wait_for_logs=False,
+        action_on_failure="CANCEL_AND_WAIT",
+        cluster_id="j-123",
+        spark_config={},
+        local_job_package_path=os.path.abspath(os.path.dirname(__file__)),
+        deploy_local_job_package=False,
+    )
+
+    args = launcher._get_emr_step_def("run1", "step1", "op1")["HadoopJarStep"]["Args"]  # noqa: SLF001
+
+    assert "--py-files" not in args

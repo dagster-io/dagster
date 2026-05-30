@@ -504,7 +504,7 @@ def _get_dagster_plus_keys(
         deployment=config.default_deployment,
     )
 
-    secrets_by_location = gql_client.execute_generic(
+    secrets_by_location = gql_client.execute_arbitrary(
         gql.GET_SECRETS_FOR_SCOPES_QUERY_NO_VALUE,
         variables={
             "locationName": location_name,

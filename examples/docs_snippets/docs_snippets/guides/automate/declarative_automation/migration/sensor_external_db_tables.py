@@ -20,7 +20,7 @@ def db_table_sensor(context: dg.SensorEvaluationContext):
         return dg.RunRequest()
 
 
-def query_information_schema(since_timestamp: float) -> list:
+def query_information_schema(since_timestamp: float) -> list:  # ty: ignore[empty-body]
     # In practice, this would query your database, e.g.:
     # SELECT table_name, last_altered
     # FROM information_schema.tables

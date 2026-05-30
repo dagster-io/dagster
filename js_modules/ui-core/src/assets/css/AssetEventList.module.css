@@ -1,0 +1,30 @@
+.assetListContainer {
+  outline: none;
+  padding: 8px;
+}
+
+.assetListContainer:focus {
+  box-shadow: 0 -1px var(--color-accent-blue);
+}
+
+.assetListRow {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 8px;
+}
+
+.assetListRow:focus,
+.assetListRow:active,
+.assetListRow:hover {
+  outline: none;
+  background: var(--color-background-light);
+}
+
+.assetListRowFocused {
+  background: var(--color-background-blue);
+  color: var(--color-text-blue);
+}
+
+.assetListRowFocused:hover {
+  background: var(--color-background-blue);
+}

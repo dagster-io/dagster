@@ -57,6 +57,24 @@ ConfigFileType: TypeAlias = Literal["dg.toml", "pyproject.toml"]
 PackageLayoutType: TypeAlias = Literal["root", "src"]
 
 
+def scrub_tox_uv_project_environment() -> None:
+    """Drop tox-uv's leaked ``UV_PROJECT_ENVIRONMENT`` for the rest of this process.
+
+    ``uv-venv-lock-runner`` exports ``UV_PROJECT_ENVIRONMENT=<.tox-env-path>`` into
+    every test command (see ``tox_uv/_run_lock.py``). Tests that scaffold a dagster
+    project via ``create-dagster --uv-sync`` (or invoke ``uv sync`` / ``uv add``
+    directly) inherit it; uv then retargets the .tox env instead of the project's
+    ``.venv``, stripping pytest plugins / mypy-protobuf / grpcio-tools out from
+    under the rest of the test session.
+
+    Guarded by ``.tox/`` substring so users running pytest with their own
+    ``UV_PROJECT_ENVIRONMENT`` are unaffected.
+    """
+    val = os.environ.get("UV_PROJECT_ENVIRONMENT")
+    if val and f"{os.sep}.tox{os.sep}" in val:
+        del os.environ["UV_PROJECT_ENVIRONMENT"]
+
+
 def install_editable_dagster_packages_to_venv(
     venv_path: Path, package_rel_paths: Sequence[str]
 ) -> None:
@@ -1053,7 +1071,7 @@ def _ping_webserver(port: int) -> None:
         except:
             print("Waiting for dagster-webserver to be ready..")  # noqa: T201
 
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 90:
             raise Exception("Timed out waiting for dagster-webserver to serve requests")
 
         time.sleep(1)

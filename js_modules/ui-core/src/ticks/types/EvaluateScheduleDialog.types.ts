@@ -66,7 +66,8 @@ export type ScheduleDryRunMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
-    | {__typename: 'ScheduleNotFoundError'; scheduleName: string};
+    | {__typename: 'ScheduleNotFoundError'; scheduleName: string}
+    | {__typename: 'UnauthorizedError'};
 };
 
 export const ScheduleDryRunMutationVersion = '130e70022d3025cc2ba6c88a553282f2c92335ac0a380cfda0307c663280f1f8';

@@ -46,7 +46,7 @@ def test_vanilla_set_input_fail():
 
 
 def test_open_typing_set_output():
-    @dg.op(out=dg.Out(typing.Set))
+    @dg.op(out=dg.Out(typing.Set))  # ty: ignore[invalid-argument-type]
     def emit_set():
         return {1, 2}
 
@@ -54,7 +54,7 @@ def test_open_typing_set_output():
 
 
 def test_open_typing_set_output_fail():
-    @dg.op(out=dg.Out(typing.Set))
+    @dg.op(out=dg.Out(typing.Set))  # ty: ignore[invalid-argument-type]
     def emit_set():
         return "foo"
 
@@ -63,7 +63,7 @@ def test_open_typing_set_output_fail():
 
 
 def test_open_typing_set_input():
-    @dg.op(ins={"tt": dg.In(dagster_type=typing.Set)})
+    @dg.op(ins={"tt": dg.In(dagster_type=typing.Set)})  # ty: ignore[invalid-argument-type]
     def take_set(tt):
         return tt
 
@@ -74,7 +74,7 @@ def test_open_typing_set_input():
 
 
 def test_open_typing_set_input_fail():
-    @dg.op(ins={"tt": dg.In(dagster_type=typing.Set)})
+    @dg.op(ins={"tt": dg.In(dagster_type=typing.Set)})  # ty: ignore[invalid-argument-type]
     def take_set(tt):
         return tt
 
@@ -85,30 +85,30 @@ def test_open_typing_set_input_fail():
 def test_runtime_set_of_int():
     set_dagster_type = create_typed_runtime_set(int)
 
-    set_dagster_type.type_check(None, {1})  # pyright: ignore[reportArgumentType]
-    set_dagster_type.type_check(None, set())  # pyright: ignore[reportArgumentType]
+    set_dagster_type.type_check(None, {1})
+    set_dagster_type.type_check(None, set())
 
-    res = set_dagster_type.type_check(None, None)  # pyright: ignore[reportArgumentType]
+    res = set_dagster_type.type_check(None, None)
     assert not res.success
 
-    res = set_dagster_type.type_check(None, "nope")  # pyright: ignore[reportArgumentType]
+    res = set_dagster_type.type_check(None, "nope")
     assert not res.success
 
-    res = set_dagster_type.type_check(None, {"nope"})  # pyright: ignore[reportArgumentType]
+    res = set_dagster_type.type_check(None, {"nope"})
     assert not res.success
 
 
 def test_runtime_optional_set():
     set_dagster_type = resolve_dagster_type(dg.Optional[create_typed_runtime_set(int)])
 
-    set_dagster_type.type_check(None, {1})  # pyright: ignore[reportArgumentType]
-    set_dagster_type.type_check(None, set())  # pyright: ignore[reportArgumentType]
-    set_dagster_type.type_check(None, None)  # pyright: ignore[reportArgumentType]
+    set_dagster_type.type_check(None, {1})  # ty: ignore[invalid-argument-type]
+    set_dagster_type.type_check(None, set())  # ty: ignore[invalid-argument-type]
+    set_dagster_type.type_check(None, None)  # ty: ignore[invalid-argument-type]
 
-    res = set_dagster_type.type_check(None, "nope")  # pyright: ignore[reportArgumentType]
+    res = set_dagster_type.type_check(None, "nope")  # ty: ignore[invalid-argument-type]
     assert not res.success
 
-    res = set_dagster_type.type_check(None, {"nope"})  # pyright: ignore[reportArgumentType]
+    res = set_dagster_type.type_check(None, {"nope"})  # ty: ignore[invalid-argument-type]
     assert not res.success
 
 

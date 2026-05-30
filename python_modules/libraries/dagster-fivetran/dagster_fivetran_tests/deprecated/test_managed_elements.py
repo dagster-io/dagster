@@ -162,7 +162,7 @@ class MockFivetran(AbstractContextManager):
             "code": "Success",
             "data": {
                 "id": connector_id,
-                "group_id": connector.destination.name,  # pyright: ignore[reportOptionalMemberAccess]
+                "group_id": cast("FivetranDestination", connector.destination).name,
                 "service": connector.source_type,
                 "service_version": 1,
                 "schema": connector.schema_name,

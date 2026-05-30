@@ -1,0 +1,5 @@
+.rowGrid {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 170px 120px 132px;
+  height: 100%;
+}

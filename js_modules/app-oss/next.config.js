@@ -57,9 +57,6 @@ const nextConfig = {
 
     return config;
   },
-  compiler: {
-    styledComponents: true,
-  },
   assetPrefix: 'BUILDTIME_ASSETPREFIX_REPLACE_ME',
 };
 

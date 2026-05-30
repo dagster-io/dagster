@@ -59,6 +59,12 @@ def _pyproject_toml_is_package(path: str) -> bool:
     return "\n[project]" in content or content.startswith("[project]")
 
 
+# These are directories that contain setup.py or pyproject.toml files but are
+# not actually packages we want to enforce py.typed files for. For example,
+# sample repos that are only used for testing and not published as packages.
+_EXCLUDE_PATTERNS = ["/sample-repos/"]
+
+
 def get_all_repo_packages() -> list[Path]:
     oss_root = discover_oss_root(Path(__file__))
     with pushd(oss_root):
@@ -83,10 +89,15 @@ def get_all_repo_packages() -> list[Path]:
             .split("\n")
         )
         package_dirs = set()
+
         for p in setup_paths:
-            if p:
+            if p and not any(exclude in p for exclude in _EXCLUDE_PATTERNS):
                 package_dirs.add(Path(p).parent)
         for p in pyproject_paths:
-            if p and _pyproject_toml_is_package(p):
+            if (
+                p
+                and _pyproject_toml_is_package(p)
+                and not any(exclude in p for exclude in _EXCLUDE_PATTERNS)
+            ):
                 package_dirs.add(Path(p).parent)
         return sorted(package_dirs)

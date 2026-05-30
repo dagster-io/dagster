@@ -39,7 +39,7 @@ check_schedule = dg.ScheduleDefinition(job=check_job, cron_schedule="0 6 * * *")
 # Send email on failure
 check_sensor = dg.make_email_on_run_failure_sensor(
     email_from="no-reply@example.com",
-    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
+    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),  # ty: ignore[invalid-argument-type]
     email_to=["xxx@example.com"],
     monitored_jobs=[check_job],
 )

@@ -58,7 +58,8 @@ export type SensorDryRunMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
-    | {__typename: 'SensorNotFoundError'};
+    | {__typename: 'SensorNotFoundError'}
+    | {__typename: 'UnauthorizedError'};
 };
 
 export type DynamicPartitionRequestFragment = {

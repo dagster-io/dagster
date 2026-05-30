@@ -145,7 +145,7 @@ def create_env_command(
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
     scope_text = f" in {', '.join(sorted(active_scopes))} scope"
 
-    existing_secrets = gql_client.execute_generic(
+    existing_secrets = gql_client.execute_arbitrary(
         gql.GET_SECRETS_FOR_SCOPES_QUERY,
         variables={
             "locationName": None if global_ else dg_context.project_name,
@@ -203,7 +203,7 @@ def create_env_command(
                 abort=True,
             )
 
-    gql_client.execute_generic(
+    gql_client.execute_arbitrary(
         gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
         variables={
             "secretName": env_name,

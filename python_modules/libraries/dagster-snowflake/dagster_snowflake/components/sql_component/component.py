@@ -44,11 +44,11 @@ def _copy_fields_to_model(
         for field_name, field in copy_from.model_fields.items()
     }
 
-    return create_model(
+    return create_model(  # ty: ignore[no-matching-overload]
         new_model_cls_name,
         __base__=copy_to,
         __doc__=copy_to.__doc__,
-        **field_definitions,  # type: ignore
+        **field_definitions,
     )
 
 

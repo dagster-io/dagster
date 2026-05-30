@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from dagster import DynamicOut, DynamicOutput, job, op
 from dagster._core.errors import DagsterInvalidConfigError
@@ -93,7 +95,7 @@ def test_tags_to_plan():
     @job
     def k8s_ready():
         blank.tag(
-            {  # pyright: ignore[reportArgumentType]
+            {  # ty: ignore[invalid-argument-type]
                 USER_DEFINED_K8S_CONFIG_KEY: {
                     "container_config": {
                         "resources": {
@@ -108,7 +110,7 @@ def test_tags_to_plan():
     plan = create_execution_plan(k8s_ready)
     step = next(iter(plan.step_dict.values()))
 
-    user_defined_k8s_config = get_user_defined_k8s_config(step.tags)  # pyright: ignore[reportArgumentType]
+    user_defined_k8s_config = get_user_defined_k8s_config(step.tags)  # ty: ignore[invalid-argument-type]
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -165,7 +167,7 @@ def test_tags_to_dynamic_plan():
     plan = create_execution_plan(k8s_ready, known_state=known_state)
 
     emit_step = plan.get_step_by_key(emit.name)
-    user_defined_k8s_config = get_user_defined_k8s_config(emit_step.tags)  # pyright: ignore[reportArgumentType]
+    user_defined_k8s_config = get_user_defined_k8s_config(emit_step.tags)  # ty: ignore[invalid-argument-type]
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -180,7 +182,7 @@ def test_tags_to_dynamic_plan():
     for mapping_key in range(3):
         multiply_inputs_step = plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]")
         dynamic_step_user_defined_k8s_config = get_user_defined_k8s_config(
-            multiply_inputs_step.tags  # pyright: ignore[reportArgumentType]
+            multiply_inputs_step.tags  # ty: ignore[invalid-argument-type]
         )
 
         assert dynamic_step_user_defined_k8s_config.container_config
@@ -207,7 +209,7 @@ def test_bad_user_defined_k8s_config_tags():
 
 
 def test_user_defined_config_from_tags():
-    config_args = {
+    config_args: dict[str, Any] = {
         "container_config": {
             "resources": {
                 "requests": {"cpu": "500m", "memory": "128Mi"},

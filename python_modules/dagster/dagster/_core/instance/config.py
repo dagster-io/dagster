@@ -344,7 +344,7 @@ def get_tick_retention_settings(
     purge_value = settings["purge_after_days"]
     if isinstance(purge_value, int):
         # set a number of days retention value for all tick types
-        return {status: purge_value for status, _ in default_retention_settings.items()}
+        return {status: purge_value for status in default_retention_settings.keys()}
 
     elif isinstance(purge_value, dict):
         return {

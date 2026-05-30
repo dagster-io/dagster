@@ -1,5 +1,4 @@
 import shutil
-import signal
 import tempfile
 import textwrap
 from pathlib import Path
@@ -25,7 +24,7 @@ from dagster_test.dg_utils.utils import (
 # (see tox.ini). They are not a thread-safety problem: each test uses its own tempdir and a
 # `find_free_port()`-allocated port. The issue is resource contention — each test does one or more
 # `uv sync`s and then spawns `dg dev`, which must boot `dagster-webserver` and answer a request
-# within a 30s handshake window (`_ping_webserver` in dagster_test.dg_utils.utils). Running four of
+# within a 90s handshake window (`_ping_webserver` in dagster_test.dg_utils.utils). Running four of
 # these in parallel under xdist starved webserver startup enough to blow past that deadline on CI.
 
 
@@ -194,7 +193,7 @@ def test_dev_project_context_success():
 )
 def test_dev_has_options_of_dagster_dev():
     from dagster._cli.dev import dev_command as dagster_dev_command
-    from dagster_dg_cli.cli import dev_command as dev_command
+    from dagster_dg_cli.cli.dev import dev_command as dev_command
 
     exclude_dagster_dev_params = {
         # Exclude options that are used to set the target. `dg dev` does not use.
@@ -294,31 +293,22 @@ def test_dev_uses_active_venv_when_flag_set():
             # Start dev server with --use-active-venv flag and capture output
             port = find_free_port()
             with (
-                tempfile.NamedTemporaryFile(mode="w+") as stdout_file,
-                tempfile.NamedTemporaryFile(mode="w+") as stderr_file,
+                tempfile.NamedTemporaryFile() as stdout_file,
+                tempfile.NamedTemporaryFile() as stderr_file,
+                open(stdout_file.name, "w", encoding="utf-8") as stdout,
+                open(stderr_file.name, "w", encoding="utf-8") as stderr,
             ):
-                with open(stdout_file.name, "w") as stdout, open(stderr_file.name, "w") as stderr:
-                    dev_process = launch_dev_command(
-                        ["--port", str(port), "--use-active-venv"], stdout=stdout, stderr=stderr
-                    )
+                dev_process = launch_dev_command(
+                    ["--port", str(port), "--use-active-venv"], stdout=stdout, stderr=stderr
+                )
+                # The "Using active Python environment:" line is emitted before
+                # the webserver boots, so webserver readiness implies the echo
+                # has already happened.
+                assert_projects_loaded_and_exit({"test-project"}, port, dev_process)
 
-                # Give it a moment to start and log the message
-                import time
-
-                time.sleep(2)
-
-                # Read the captured output
-                with open(stdout_file.name) as f:
-                    stdout_content = f.read()
-                with open(stderr_file.name) as f:
-                    stderr_content = f.read()
-
-                # Clean up the process
-                dev_process.send_signal(signal.SIGINT)
-                dev_process.communicate()
-
-                # Verify the log message is present
-                combined_output = stdout_content + stderr_content
+                combined_output = Path(stdout_file.name).read_text(encoding="utf-8") + Path(
+                    stderr_file.name
+                ).read_text(encoding="utf-8")
                 assert "Using active Python environment:" in combined_output, (
                     f"Expected log message about using active Python environment, but got:\n{combined_output}"
                 )

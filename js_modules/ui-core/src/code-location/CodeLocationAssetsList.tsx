@@ -8,10 +8,11 @@ import {
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import {ChangeEvent, useCallback, useContext, useRef, useState} from 'react';
-import styled from 'styled-components';
 
 import {SearchableListRow} from './CodeLocationSearchableList';
+import styles from './css/CodeLocationAssetsList.module.css';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useAssetSearch} from '../assets/useAssetSearch';
@@ -170,12 +171,15 @@ interface GroupNameRowProps {
 const GroupNameRow = (props: GroupNameRowProps) => {
   const {groupName, assetCount, expanded, height, start, canToggle, onToggle} = props;
   return (
-    <ClickableRow
-      $canToggle={canToggle}
+    <Row
+      className={clsx(
+        styles.clickableRow,
+        !expanded && styles.clickableRowCollapsed,
+        !canToggle && styles.notToggleable,
+      )}
       $height={height}
       $start={start}
       onClick={() => canToggle && onToggle(groupName)}
-      $open={expanded}
       tabIndex={0}
       onKeyDown={(e) => {
         if (canToggle && (e.code === 'Space' || e.code === 'Enter')) {
@@ -204,20 +208,6 @@ const GroupNameRow = (props: GroupNameRowProps) => {
           {canToggle && <Icon name="arrow_drop_down" size={20} />}
         </Box>
       </Box>
-    </ClickableRow>
+    </Row>
   );
 };
-
-const ClickableRow = styled(Row)<{$open: boolean; $canToggle: boolean}>`
-  cursor: ${({$canToggle}) => ($canToggle ? 'pointer' : 'default')};
-
-  :focus,
-  :active {
-    outline: none;
-  }
-
-  .iconGlobal[aria-label='arrow_drop_down'] {
-    transition: transform 100ms linear;
-    ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
-  }
-`;

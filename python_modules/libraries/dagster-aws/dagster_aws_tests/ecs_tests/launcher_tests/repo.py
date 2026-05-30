@@ -11,6 +11,6 @@ def job():
     node()
 
 
-@dagster.repository  # pyright: ignore[reportArgumentType]
+@dagster.repository
 def repository():
     return {"jobs": {"job": job}}

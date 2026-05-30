@@ -1,6 +1,5 @@
 import {
   Box,
-  Colors,
   FontFamily,
   Icon,
   Mono,
@@ -15,12 +14,12 @@ import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHead
 import {CodeLocationServerSection} from '@shared/code-location/CodeLocationServerSection';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {useCallback, useContext, useMemo, useState} from 'react';
-import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {CodeLocationDefsStateComparisonSection} from './CodeLocationDefsStateComparisonSection';
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
 import {useCopyToClipboard} from '../app/browser';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
@@ -166,8 +165,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
       <CodeLocationDefsStateComparisonSection locationName={repoAddress.location} />
       <CodeLocationAlertsSection locationName={repoAddress.location} />
       <CodeLocationOverviewSectionHeader label="Metadata" border="bottom" />
-      <CodeLocationMetadataStyle />
-      <div style={{height: '320px'}}>
+      <div className={styles.metadataEditor} style={{height: '320px'}}>
         <StyledRawCodeMirror
           options={{readOnly: true, lineNumbers: false}}
           theme={['code-location-metadata']}
@@ -179,6 +177,8 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 };
 
 const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  useDocumentTitle(`Code locations | ${repoAddressAsHumanString(repoAddress)}`);
+
   const {
     locationEntries,
     locationStatuses,
@@ -226,11 +226,3 @@ const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddre
 
 // eslint-disable-next-line import/no-default-export
 export default QueryfulCodeLocationOverviewRoot;
-
-const CodeLocationMetadataStyle = createGlobalStyle`
-  .CodeMirror.cm-s-code-location-metadata.cm-s-code-location-metadata {
-    background-color: ${Colors.backgroundDefault()};
-    padding: 12px 20px;
-    height: 300px;
-  }
-`;

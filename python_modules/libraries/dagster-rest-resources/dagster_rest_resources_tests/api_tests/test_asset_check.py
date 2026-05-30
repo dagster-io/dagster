@@ -26,6 +26,7 @@ from dagster_rest_resources.api.asset_check import (
     DgApiAssetCheckExecutionList,
     DgApiAssetCheckList,
 )
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
 
 
@@ -65,7 +66,7 @@ def _make_asset_node_result(
 
 class TestListAssetChecks:
     def test_returns_checks(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_checks.return_value = _make_asset_node_result(
             checks=[
                 _make_check(name="check_a"),
@@ -84,14 +85,14 @@ class TestListAssetChecks:
         assert result.items[1].asset_key == "other/path"
 
     def test_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_checks.return_value = _make_asset_node_result(checks=[])
         result = DgApiAssetCheckApi(client).list_asset_checks("test/key")
 
         assert result == DgApiAssetCheckList(items=[])
 
     def test_asset_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_checks.return_value = ListAssetChecks(
             assetNodeOrError=ListAssetChecksAssetNodeOrErrorAssetNotFoundError(
                 __typename="AssetNotFoundError",
@@ -102,7 +103,7 @@ class TestListAssetChecks:
             DgApiAssetCheckApi(client).list_asset_checks("missing/asset")
 
     def test_needs_migration_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_checks.return_value = ListAssetChecks(
             assetNodeOrError=ListAssetChecksAssetNodeOrErrorAssetNode(
                 __typename="AssetNode",
@@ -116,7 +117,7 @@ class TestListAssetChecks:
             DgApiAssetCheckApi(client).list_asset_checks("test/key")
 
     def test_needs_user_code_upgrade_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_checks.return_value = ListAssetChecks(
             assetNodeOrError=ListAssetChecksAssetNodeOrErrorAssetNode(
                 __typename="AssetNode",
@@ -130,7 +131,7 @@ class TestListAssetChecks:
             DgApiAssetCheckApi(client).list_asset_checks("test/key")
 
     def test_needs_agent_upgrade_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_checks.return_value = ListAssetChecks(
             assetNodeOrError=ListAssetChecksAssetNodeOrErrorAssetNode(
                 __typename="AssetNode",
@@ -164,7 +165,7 @@ def _make_execution(
 
 class TestGetCheckExecutions:
     def test_returns_executions(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_check_executions.return_value = ListAssetCheckExecutions(
             assetCheckExecutions=[
                 _make_execution(id="exec-h"),
@@ -189,7 +190,7 @@ class TestGetCheckExecutions:
         assert result.items[1].id == "exec-i"
 
     def test_returns_empty(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_asset_check_executions.return_value = ListAssetCheckExecutions(
             assetCheckExecutions=[]
         )

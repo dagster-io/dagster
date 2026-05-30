@@ -5,7 +5,11 @@ import {Link} from 'react-router-dom';
 import styles from './AssetCheckHistoricalEventsButton.module.css';
 import {ExecutionStatusIcon, assetCheckExecutionStatusText} from './util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {AssetCheckSeverity, RunStatus} from '../../graphql/types';
+import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+  RunStatus,
+} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {RunStatusWithStats} from '../../runs/RunStatusDots';
 import {titleForRun} from '../../runs/RunUtils';
@@ -92,10 +96,12 @@ export const AssetCheckHistoricalEventsButton = ({
                     <td>
                       <Box flex={{gap: 8, alignItems: 'center'}}>
                         <ExecutionStatusIcon
-                          status={execution.status as any}
+                          status={execution.status as AssetCheckExecutionResolvedStatus}
                           severity={execution.evaluation?.severity as AssetCheckSeverity | null}
                         />
-                        {assetCheckExecutionStatusText(execution.status as any)}
+                        {assetCheckExecutionStatusText(
+                          execution.status as AssetCheckExecutionResolvedStatus,
+                        )}
                       </Box>
                     </td>
                     <td>

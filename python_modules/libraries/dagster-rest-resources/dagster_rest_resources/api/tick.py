@@ -51,13 +51,13 @@ class DgApiTickApi:
 
         match result.typename__:
             case "Sensor":
-                return self._build_tick_list(result.sensor_state.ticks)
+                return self._build_tick_list(result.sensor_state.ticks)  # ty: ignore[unresolved-attribute]
             case "SensorNotFoundError":
-                raise DagsterPlusGraphqlError(f"Sensor not found: {result.message}")
+                raise DagsterPlusGraphqlError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError(f"Error fetching sensor ticks: {result.message}")
+                raise DagsterPlusUnauthorizedError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching sensor ticks: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -87,11 +87,11 @@ class DgApiTickApi:
 
         match result.typename__:
             case "Schedule":
-                return self._build_tick_list(result.schedule_state.ticks)
+                return self._build_tick_list(result.schedule_state.ticks)  # ty: ignore[unresolved-attribute]
             case "ScheduleNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -102,11 +102,13 @@ class DgApiTickApi:
         match result.typename__:
             case "RepositoryConnection":
                 matches: list[tuple[str, str]] = []
-                for repo in result.nodes:
+                for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                     entities = repo.sensors if entity_type == "sensor" else repo.schedules
-                    for entity in entities:
-                        if entity.name == name:
-                            matches.append((repo.location.name, repo.name))
+                    matches.extend(
+                        (repo.location.name, repo.name)
+                        for entity in entities
+                        if entity.name == name
+                    )
                 if not matches:
                     raise DagsterPlusGraphqlError(f"{entity_type.capitalize()} not found: {name}")
                 if len(matches) > 1:
@@ -117,9 +119,9 @@ class DgApiTickApi:
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

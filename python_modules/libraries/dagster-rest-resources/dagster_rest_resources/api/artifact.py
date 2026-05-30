@@ -15,7 +15,7 @@ from dagster_rest_resources.schemas.exception import S3Error
 class DgApiArtifactApi:
     _client: S3Client
 
-    def upload(
+    def action_upload(
         self,
         path: Path,
         key: str,
@@ -34,7 +34,7 @@ class DgApiArtifactApi:
         except Exception as e:
             raise S3Error(f"Error uploading file: {e}")
 
-    def download(
+    def action_download(
         self,
         path: Path,
         key: str,

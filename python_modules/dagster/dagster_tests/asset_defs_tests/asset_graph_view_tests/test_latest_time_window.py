@@ -212,8 +212,10 @@ def test_multi_dimesional_without_time_partition_latest_time_window() -> None:
 
     partition_keys = []
     for num_pk in num_partitions_def.get_partition_keys():
-        for letter_pk in letter_partitions_def.get_partition_keys():
-            partition_keys.append(dg.MultiPartitionKey({"num": num_pk, "letter": letter_pk}))
+        partition_keys.extend(
+            dg.MultiPartitionKey({"num": num_pk, "letter": letter_pk})
+            for letter_pk in letter_partitions_def.get_partition_keys()
+        )
 
     @dg.asset(partitions_def=multi_partitions_definition)
     def multi_dimensional(context: AssetExecutionContext) -> None: ...

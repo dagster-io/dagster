@@ -108,7 +108,7 @@ def test_airflow_filter(airflow_instance: None) -> None:
 def change_dag_limit_source_code(limit: int) -> None:
     import dagster_airlift.core.serialization.compute
 
-    dagster_airlift.core.serialization.compute.DEFAULT_MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL = limit
+    dagster_airlift.core.serialization.compute.DEFAULT_MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL = limit  # ty: ignore[invalid-assignment]
 
 
 def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:

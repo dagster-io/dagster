@@ -33,6 +33,7 @@ from dagster_rest_resources.schemas.asset import (
     DgApiPartitionMapping,
     DgApiPartitionStats,
 )
+from dagster_rest_resources.schemas.enums import DgApiAssetHealthStatus
 
 
 class TestFormatAssets:
@@ -448,10 +449,10 @@ class TestFormatAssetHealth:
         """Create a sample DgApiAssetStatus with health data."""
         return DgApiAssetStatus(
             asset_key="analytics/daily_metrics",
-            asset_health="HEALTHY",
-            materialization_status="MATERIALIZED",
-            freshness_status="FRESH",
-            asset_checks_status="HEALTHY",
+            asset_health=DgApiAssetHealthStatus.HEALTHY,
+            materialization_status=DgApiAssetHealthStatus.UNKNOWN,
+            freshness_status=DgApiAssetHealthStatus.DEGRADED,
+            asset_checks_status=DgApiAssetHealthStatus.HEALTHY,
             health_metadata=None,
             latest_materialization=DgApiAssetMaterialization(
                 timestamp=1706745600000,
@@ -466,7 +467,7 @@ class TestFormatAssetHealth:
                 cron_schedule="0 * * * *",
             ),
             checks_status=DgApiAssetChecksStatus(
-                status="HEALTHY",
+                status=DgApiAssetHealthStatus.HEALTHY,
                 num_failed_checks=0,
                 num_warning_checks=0,
                 total_num_checks=3,

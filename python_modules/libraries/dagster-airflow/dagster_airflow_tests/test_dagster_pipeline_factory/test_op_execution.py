@@ -185,7 +185,7 @@ def test_template_task_dag(tmpdir):
         dag=dag,
     )
 
-    t1 >> [t2, t3]  # pyright: ignore[reportUnusedExpression]
+    t1 >> [t2, t3]
 
     with instance_for_test() as instance:
         execution_date = get_current_datetime()

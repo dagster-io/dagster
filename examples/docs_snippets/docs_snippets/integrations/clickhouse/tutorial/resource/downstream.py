@@ -1,4 +1,4 @@
-from dagster_clickhouse import ClickhouseResource
+from dagster_clickhouse import ClickhouseResource  # ty: ignore[unresolved-import]
 
 # ruff: isort: split
 # start_example

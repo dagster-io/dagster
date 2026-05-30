@@ -6,3 +6,13 @@ selectors:
         - method: resource_type
           value: model
         - raw_customers+
+  - name: select_with_fqn
+    description: "Selects all resources by fully qualified name."
+    definition:
+      method: fqn
+      value: "*"
+  - name: select_with_path
+    description: "Selects all resources by path."
+    definition:
+      method: path
+      value: "*"

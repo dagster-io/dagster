@@ -36,7 +36,7 @@ export const ASSET_BASE_NODE_FRAGMENT = gql`
     automationCondition {
       __typename
     }
-    description
+    description(characterLimit: 240)
     owners {
       ... on UserAssetOwner {
         email
@@ -48,6 +48,10 @@ export const ASSET_BASE_NODE_FRAGMENT = gql`
     tags {
       key
       value
+    }
+    storageAddress {
+      storageKind
+      tableName
     }
     jobNames
     kinds

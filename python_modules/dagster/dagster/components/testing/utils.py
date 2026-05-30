@@ -135,7 +135,9 @@ class DefsFolderSandbox:
     project_name: str
 
     @contextmanager
-    def build_component_tree(self) -> Iterator[ComponentTree]:
+    def build_component_tree(
+        self, code_location_name: str | None = None
+    ) -> Iterator[ComponentTree]:
         """Builds a ComponentTree from this sandbox's defs folder."""
         with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
             module_path = f"{self.project_name}.defs"
@@ -143,6 +145,7 @@ class DefsFolderSandbox:
                 tree = ComponentTree(
                     defs_module=importlib.import_module(module_path),
                     project_root=self.project_root,
+                    code_location_name=code_location_name,
                 )
                 yield tree
 

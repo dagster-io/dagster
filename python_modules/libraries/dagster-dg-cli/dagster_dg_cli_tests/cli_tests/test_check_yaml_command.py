@@ -175,6 +175,9 @@ def test_actionable_error_message_no_defs_check_yaml():
         activate_venv(tmpdir / ".venv"),
     ):
         shutil.rmtree(Path("src") / "foo_bar" / "defs")
+        # Remove the scaffolded definitions.py so the auto-detection fallback
+        # cannot resolve it and the missing-defs-folder error fires.
+        (Path("src") / "foo_bar" / "definitions.py").unlink()
 
         Path(".env").write_text("FOO=bar")
         result = runner.invoke("check", "yaml")

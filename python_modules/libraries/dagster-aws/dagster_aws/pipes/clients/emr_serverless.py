@@ -84,7 +84,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -95,8 +95,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
         Args:
             context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
-            params (dict): Parameters for the ``start_job_run`` boto3 AWS EMR Serverless client call.
-                See `Boto3 EMR Serverless API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-serverless/client/start_job_run.html>`_
+            start_job_run_params (dict): Parameters for the start_job_run boto3 AWS EMR Serverless client call.
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:
@@ -146,7 +145,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             params["jobDriver"] = {}
 
         if "sparkSubmit" not in params["jobDriver"]:
-            params["jobDriver"]["sparkSubmit"] = {}  # pyright: ignore[reportGeneralTypeIssues]
+            params["jobDriver"]["sparkSubmit"] = {}
 
         params["jobDriver"]["sparkSubmit"]["sparkSubmitParameters"] = params.get(
             "jobDriver", {}
@@ -157,7 +156,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             ]
         )
 
-        return cast("StartJobRunRequestTypeDef", params)
+        return params
 
     def _start(
         self,
@@ -177,7 +176,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self,
         context: OpExecutionContext | AssetExecutionContext,
         start_response: "StartJobRunResponseTypeDef",
-    ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
+    ) -> "GetJobRunResponseTypeDef":
         job_run_id = start_response["jobRunId"]
         application_id = start_response["applicationId"]
 

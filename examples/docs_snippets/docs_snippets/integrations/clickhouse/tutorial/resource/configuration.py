@@ -8,7 +8,7 @@ def iris_dataset():
 
 # start_example
 
-from dagster_clickhouse import ClickhouseResource
+from dagster_clickhouse import ClickhouseResource  # ty: ignore[unresolved-import]
 
 from dagster import Definitions
 

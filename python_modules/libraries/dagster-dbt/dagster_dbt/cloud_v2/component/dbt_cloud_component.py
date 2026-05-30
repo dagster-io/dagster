@@ -29,7 +29,11 @@ from dagster_dbt.asset_utils import (
     build_dbt_specs,
     get_node,
 )
-from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
+from dagster_dbt.cloud_v2.resources import (
+    DbtCloudAdhocJobPoolMode,
+    DbtCloudCredentials,
+    DbtCloudWorkspace,
+)
 from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 from dagster_dbt.components.dbt_component_utils import (
     DagsterDbtComponentTranslatorSettings,
@@ -57,7 +61,27 @@ class DbtCloudWorkspaceArgs(dg.Model, dg.Resolvable):
     environment_id: int = Field(description="The ID of the dbt Cloud environment.")
     adhoc_job_name: str | None = Field(
         default=None,
-        description="Optional custom name for the ad hoc job created by Dagster.",
+        description=(
+            "Optional custom name for the ad hoc job created by Dagster. When "
+            "`adhoc_job_pool_size > 1`, this value is used as a prefix for the additional "
+            "jobs (which receive an `__{index}` suffix)."
+        ),
+    )
+    adhoc_job_pool_size: int = Field(
+        default=1,
+        ge=1,
+        description=(
+            "Number of ad hoc dbt Cloud jobs to create. dbt Cloud allows only one concurrent "
+            "run per job, so a value greater than 1 lets Dagster run concurrent invocations."
+        ),
+    )
+    adhoc_job_pool_mode: DbtCloudAdhocJobPoolMode = Field(
+        default="overflow",
+        description=(
+            "Behavior when every ad hoc job in the pool already has an active run: "
+            "`overflow` triggers on the first job and lets dbt Cloud queue it, `wait` "
+            "polls until a job frees up, `fail` raises immediately."
+        ),
     )
     request_max_retries: int = Field(
         default=3,
@@ -89,6 +113,8 @@ def resolve_workspace(context: ResolutionContext, model: Any) -> DbtCloudWorkspa
         project_id=args.project_id,
         environment_id=args.environment_id,
         adhoc_job_name=args.adhoc_job_name,
+        adhoc_job_pool_size=args.adhoc_job_pool_size,
+        adhoc_job_pool_mode=args.adhoc_job_pool_mode,
         request_max_retries=args.request_max_retries,
         request_retry_delay=args.request_retry_delay,
         request_timeout=args.request_timeout,
@@ -137,7 +163,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                 ],
             ],
         ),
-    ] = Field(default_factory=lambda: ["build"])
+    ] = Field(default_factory=lambda: ["build"])  # ty: ignore[invalid-assignment]
 
     op: Annotated[
         OpSpec | None,
@@ -345,7 +371,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
 
 
 class DbtCloudComponentTranslator(
-    create_component_translator_cls(DbtCloudComponent, DagsterDbtTranslator),
+    create_component_translator_cls(DbtCloudComponent, DagsterDbtTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[DbtCloudComponent],
 ):
     """Translator for :py:class:`DbtCloudComponent` that applies the optional ``translation``

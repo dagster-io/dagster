@@ -32,6 +32,7 @@ from dagster_rest_resources.__generated__.list_repositories_for_ticks import (
     ListRepositoriesForTicksRepositoriesOrErrorRepositoryNotFoundError,
 )
 from dagster_rest_resources.api.tick import DgApiTickApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
     DagsterPlusGraphqlError,
     DagsterPlusUnauthorizedError,
@@ -139,7 +140,7 @@ _SAMPLE_SCHEDULE_TICKS = [
 
 class TestGetSensorTicks:
     def test_returns_ticks(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(sensors=["test_sensor"])
         client.get_sensor_ticks.return_value = _make_sensor_ticks_result(_SAMPLE_SENSOR_TICKS)
 
@@ -171,7 +172,7 @@ class TestGetSensorTicks:
         assert result.cursor == "tick-3"
 
     def test_empty_ticks(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(sensors=["test_sensor"])
         client.get_sensor_ticks.return_value = _make_sensor_ticks_result([])
 
@@ -180,14 +181,14 @@ class TestGetSensorTicks:
         assert result == DgApiTickList(items=[], total=0, cursor=None)
 
     def test_sensor_not_found_in_repo_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(sensors=[])
 
         with pytest.raises(DagsterPlusGraphqlError, match="Sensor not found: nonexistent"):
             DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="nonexistent")
 
     def test_multiple_matching_sensor_found_in_repo_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = ListRepositoriesForTicks(
             repositoriesOrError=ListRepositoriesForTicksRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -227,7 +228,7 @@ class TestGetSensorTicks:
             DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="dup_sensor")
 
     def test_repo_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = ListRepositoriesForTicks(
             repositoriesOrError=ListRepositoriesForTicksRepositoriesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -238,7 +239,7 @@ class TestGetSensorTicks:
             DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="test_sensor")
 
     def test_python_error_from_repo_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = ListRepositoriesForTicks(
             repositoriesOrError=ListRepositoriesForTicksRepositoriesOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -249,7 +250,7 @@ class TestGetSensorTicks:
             DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="test_sensor")
 
     def test_sensor_not_found_error_from_sensor_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(sensors=["test_sensor"])
         client.get_sensor_ticks.return_value = GetSensorTicks(
             sensorOrError=GetSensorTicksSensorOrErrorSensorNotFoundError(
@@ -261,7 +262,7 @@ class TestGetSensorTicks:
             DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="test_sensor")
 
     def test_unauthorized_error_from_sensor_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(sensors=["test_sensor"])
         client.get_sensor_ticks.return_value = GetSensorTicks(
             sensorOrError=GetSensorTicksSensorOrErrorUnauthorizedError(
@@ -273,7 +274,7 @@ class TestGetSensorTicks:
             DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="test_sensor")
 
     def test_python_error_from_sensor_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(sensors=["test_sensor"])
         client.get_sensor_ticks.return_value = GetSensorTicks(
             sensorOrError=GetSensorTicksSensorOrErrorPythonError(
@@ -287,7 +288,7 @@ class TestGetSensorTicks:
 
 class TestGetScheduleTicks:
     def test_returns_ticks(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(schedules=["test_schedule"])
         client.get_schedule_ticks.return_value = _make_schedule_ticks_result(_SAMPLE_SCHEDULE_TICKS)
 
@@ -310,7 +311,7 @@ class TestGetScheduleTicks:
         assert result.items[0].id == "tick-1"
 
     def test_empty_ticks(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(schedules=["test_schedule"])
         client.get_schedule_ticks.return_value = _make_schedule_ticks_result([])
 
@@ -319,14 +320,14 @@ class TestGetScheduleTicks:
         assert result == DgApiTickList(items=[], total=0, cursor=None)
 
     def test_schedule_not_found_in_repo_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(schedules=[])
 
         with pytest.raises(DagsterPlusGraphqlError, match="Schedule not found"):
             DgApiTickApi(_client=client).get_schedule_ticks(schedule_name="nonexistent")
 
     def test_multiple_matching_schedule_found_in_repo_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = ListRepositoriesForTicks(
             repositoriesOrError=ListRepositoriesForTicksRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -366,7 +367,7 @@ class TestGetScheduleTicks:
             DgApiTickApi(_client=client).get_schedule_ticks(schedule_name="dup_schedule")
 
     def test_repo_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = ListRepositoriesForTicks(
             repositoriesOrError=ListRepositoriesForTicksRepositoriesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -377,7 +378,7 @@ class TestGetScheduleTicks:
             DgApiTickApi(_client=client).get_schedule_ticks(schedule_name="test_schedule")
 
     def test_python_error_from_repo_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = ListRepositoriesForTicks(
             repositoriesOrError=ListRepositoriesForTicksRepositoriesOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -388,7 +389,7 @@ class TestGetScheduleTicks:
             DgApiTickApi(_client=client).get_schedule_ticks(schedule_name="test_schedule")
 
     def test_schedule_not_found_error_from_schedule_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(schedules=["test_schedule"])
         client.get_schedule_ticks.return_value = GetScheduleTicks(
             scheduleOrError=GetScheduleTicksScheduleOrErrorScheduleNotFoundError(
@@ -400,7 +401,7 @@ class TestGetScheduleTicks:
             DgApiTickApi(_client=client).get_schedule_ticks(schedule_name="test_schedule")
 
     def test_python_error_from_schedule_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(schedules=["test_schedule"])
         client.get_schedule_ticks.return_value = GetScheduleTicks(
             scheduleOrError=GetScheduleTicksScheduleOrErrorPythonError(

@@ -12,19 +12,20 @@ import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvide
 import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/builders';
 import {AssetNode} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
-import {tokenForAssetKey} from '../Utils';
+import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../Utils';
 import {
   AssetNodeScenariosBase,
   AssetNodeScenariosPartitioned,
   AssetNodeScenariosSource,
 } from '../__fixtures__/AssetNode.fixtures';
 import {ASSET_NODE_NAME_MAX_LENGTH} from '../layout';
+import {AssetNodeFragment} from '../types/AssetNode.types';
 
 interface AssetNodeScenario {
   title: string;
-  liveData: any;
+  liveData: LiveDataForNodeWithStaleData | undefined;
   healthData?: AssetHealthFragment;
-  definition: any;
+  definition: AssetNodeFragment;
   expectedText: string[];
 }
 
@@ -71,7 +72,7 @@ describe('AssetNode', function () {
           const staleEntry = {
             [key]: buildAssetNode({
               assetKey: definitionCopy.assetKey,
-              staleCauses: staleCauses.map((cause: any) => buildStaleCause(cause)),
+              staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
               staleStatus,
             }),
           };

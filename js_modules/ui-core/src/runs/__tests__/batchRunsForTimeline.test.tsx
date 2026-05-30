@@ -248,9 +248,9 @@ describe('batchRunsForTimeline', () => {
   });
 
   describe('Overlap with "now"', () => {
-    let realDate: any;
+    let realDate: typeof Date.now;
     beforeEach(() => {
-      realDate = Date.now();
+      realDate = Date.now;
     });
 
     afterAll(() => {

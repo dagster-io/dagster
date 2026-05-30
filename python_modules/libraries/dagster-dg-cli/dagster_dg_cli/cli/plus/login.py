@@ -61,7 +61,7 @@ def login_command(region: str | None) -> None:
         organization=config.organization,
         deployment=config.default_deployment,
     )
-    result = gql_client.execute_generic(FULL_DEPLOYMENTS_QUERY)
+    result = gql_client.execute_arbitrary(FULL_DEPLOYMENTS_QUERY)
     deployment_names = [d["deploymentName"] for d in result["fullDeployments"]]
 
     click.echo("Available deployments: " + ", ".join(deployment_names))

@@ -208,7 +208,7 @@ class SlingEventIterator(Iterator[T]):
                     event, self._sling_cli, self._replication_config, self._context
                 )
                 if event.metadata:
-                    yield event._replace(metadata={**col_metadata, **event.metadata})
+                    yield event._replace(metadata={**col_metadata, **event.metadata})  # ty: ignore[invalid-argument-type, invalid-yield]
 
         return SlingEventIterator[T](
             _fetch_column_metadata(), self._sling_cli, self._replication_config, self._context
@@ -230,7 +230,7 @@ class SlingEventIterator(Iterator[T]):
                     event, self._sling_cli, self._replication_config, self._context
                 )
                 if event.metadata:
-                    yield event._replace(metadata={**row_count_metadata, **event.metadata})
+                    yield event._replace(metadata={**row_count_metadata, **event.metadata})  # ty: ignore[invalid-argument-type, invalid-yield]
 
         return SlingEventIterator[T](
             _fetch_row_count(), self._sling_cli, self._replication_config, self._context

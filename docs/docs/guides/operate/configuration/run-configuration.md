@@ -45,6 +45,8 @@ Here, we define a basic op in `ops.py` and its configurable parameters in `resou
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/op_example/ops.py"
   title="src/<project_name>/defs/ops.py"
+  startAfter="start"
+  endBefore="end"
 />
 
 <CodeExample
@@ -86,11 +88,15 @@ When specifying config from the Python API, you can use the `run_config` argumen
 </TabItem>
 <TabItem value="Dagster UI">
 
-From the UI's **Launchpad** tab, you can supply config as YAML using the config editor. Here, the YAML schema matches the layout of the defined config class. The editor has typeahead, schema validation, and schema documentation.
+How you access the config editor depends on whether you're working with a job or an asset:
 
-You can also click the **Scaffold Missing Config** button to generate dummy values based on the config schema. Note that a modal containing the Launchpad editor will pop up if you attempt to materialize an asset with a defined `config`.
+- **Jobs:** Navigate to the job and open the **Launchpad** tab to supply config as YAML.
 
 ![Config in the Dagster UI](/images/guides/operate/config-ui.png)
+
+- **Assets:** Click the dropdown arrow next to the **Materialize** button and select **Open launchpad**. If an asset has a defined `config`, a launchpad modal will also appear automatically when you click **Materialize**.
+
+In both cases, the YAML schema matches the layout of the defined config class. The editor has typeahead, schema validation, and schema documentation. You can also click the **Scaffold Missing Config** button to generate dummy values based on the config schema.
 
 </TabItem>
 <TabItem value="Command line">

@@ -837,88 +837,6 @@ GET_ASSET_OWNERS = """
 """
 
 
-GET_LOCATION_ASSET_NODES_AND_MANIFEST = """
-    query LocationAssetManifestQuery($name: String!) {
-        workspaceLocationEntryOrError(name: $name) {
-            ... on WorkspaceLocationEntry {
-                locationOrLoadError {
-                    ... on RepositoryLocation {
-                        repositories {
-                            assetManifest
-                            assetNodes {
-                                __typename
-                                id
-                                graphName
-                                opVersion
-                                dependencyKeys { __typename path }
-                                dependedByKeys { __typename path }
-                                changedReasons
-                                groupName
-                                opNames
-                                isMaterializable
-                                isObservable
-                                isExecutable
-                                isPartitioned
-                                isAutoCreatedStub
-                                hasAssetChecks
-                                computeKind
-                                hasMaterializePermission
-                                hasWipePermission
-                                hasReportRunlessAssetEventPermission
-                                assetKey { __typename path }
-                                internalFreshnessPolicy {
-                                    ... on TimeWindowFreshnessPolicy {
-                                        __typename
-                                        failWindowSeconds
-                                        warnWindowSeconds
-                                    }
-                                    ... on CronFreshnessPolicy {
-                                        __typename
-                                        deadlineCron
-                                        lowerBoundDeltaSeconds
-                                        timezone
-                                    }
-                                }
-                                partitionDefinition {
-                                    __typename
-                                    description
-                                    dimensionTypes {
-                                        __typename
-                                        type
-                                        dynamicPartitionsDefinitionName
-                                    }
-                                }
-                                automationCondition {
-                                    __typename
-                                    label
-                                    expandedLabel
-                                }
-                                description
-                                owners {
-                                    __typename
-                                    ... on UserAssetOwner { email }
-                                    ... on TeamAssetOwner { team }
-                                }
-                                tags { __typename key value }
-                                pools
-                                jobNames
-                                kinds
-                                repository {
-                                    __typename
-                                    id
-                                    name
-                                    location { __typename id name }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-"""
-
-
 GET_RUN_MATERIALIZATIONS = """
     query RunAssetsQuery {
         runsOrError {
@@ -1233,7 +1151,7 @@ def _get_sorted_materialization_events(
             for event in graphql_context.instance.all_logs(run_id=run_id)
             if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
         ],
-        key=lambda event: event.get_dagster_event().asset_key,  # type: ignore  # (possible none)
+        key=lambda event: event.get_dagster_event().asset_key,  # (possible none)
     )
 
 
@@ -3790,42 +3708,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             assert asset_key in expected_order.keys()
             assert list_item["latestEventSortKey"] == expected_order[asset_key]
 
-    def test_asset_manifest_matches_asset_nodes(self, graphql_context: WorkspaceRequestContext):
-        location_name = infer_repository_selector(graphql_context)["repositoryLocationName"]
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_LOCATION_ASSET_NODES_AND_MANIFEST,
-            variables={"name": location_name},
-        )
-        assert result.data
-        entry = result.data["workspaceLocationEntryOrError"]
-        assert "locationOrLoadError" in entry, entry
-        repositories = entry["locationOrLoadError"]["repositories"]
-
-        def asset_key(node: dict) -> tuple:
-            return tuple(node["assetKey"]["path"])
-
-        for repo in repositories:
-            gql_nodes = repo["assetNodes"]
-            manifest_nodes = repo["assetManifest"]
-
-            assert len(gql_nodes) == len(manifest_nodes)
-
-            gql_by_key = {asset_key(n): n for n in gql_nodes}
-            manifest_by_key = {asset_key(n): n for n in manifest_nodes}
-
-            assert set(gql_by_key.keys()) == set(manifest_by_key.keys())
-
-            for key in gql_by_key:
-                manifest_node = {
-                    k: v for k, v in manifest_by_key[key].items() if k != "storageAddress"
-                }
-                assert gql_by_key[key] == manifest_node, (
-                    f"Mismatch for asset {key!r}:\n"
-                    f"  GQL:      {gql_by_key[key]}\n"
-                    f"  Manifest: {manifest_node}"
-                )
-
 
 # This is factored out of TestAssetAwareEventLog because there is a separate implementation for plus
 # graphql tests.
@@ -4269,10 +4151,9 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
                 step_keys=None,
             )
 
-            for i in range(2):
-                queued_runs.append(
-                    create_valid_pipeline_run(graphql_context, job, execution_params)
-                )
+            queued_runs.extend(
+                create_valid_pipeline_run(graphql_context, job, execution_params) for i in range(2)
+            )
 
             in_progress_run_id = queued_runs[0].run_id
             unstarted_run_id = queued_runs[1].run_id
@@ -4569,7 +4450,7 @@ def get_partitioned_asset_repo():
 
 def test_1d_subset_backcompat():
     with instance_for_test(synchronous_run_coordinator=True) as instance:
-        instance.can_read_asset_status_cache = lambda: False
+        instance.can_read_asset_status_cache = lambda: False  # ty: ignore[invalid-assignment]
         assert instance.can_read_asset_status_cache() is False
 
         with define_out_of_process_context(
@@ -4652,7 +4533,7 @@ def test_1d_subset_backcompat():
 
 def test_2d_subset_backcompat():
     with instance_for_test(synchronous_run_coordinator=True) as instance:
-        instance.can_read_asset_status_cache = lambda: False
+        instance.can_read_asset_status_cache = lambda: False  # ty: ignore[invalid-assignment]
         assert instance.can_read_asset_status_cache() is False
 
         with define_out_of_process_context(

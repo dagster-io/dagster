@@ -91,7 +91,7 @@ def _fetch_column_metadata(
         except Exception as e:
             logger.warning(
                 "An error occurred while building column schema metadata from data"
-                f" `{col_data}` for the dbt resource"  # pyright: ignore[reportPossiblyUnboundVariable]
+                f" `{col_data}` for the dbt resource"
                 f" `{dbt_resource_props['original_file_path']}`."
                 " Column schema metadata will not be included in the event.\n\n"
                 f"Exception: {e}",
@@ -120,13 +120,14 @@ def _fetch_column_metadata(
 
                 lineage_metadata = _build_column_lineage_metadata(
                     event_history_metadata=EventHistoryMetadata(
-                        columns=column_schema_data,  # pyright: ignore[reportPossiblyUnboundVariable]
+                        columns=column_schema_data,
                         parents=parents,
                     ),
                     dbt_resource_props=dbt_resource_props,
                     manifest=invocation.manifest,
                     dagster_dbt_translator=invocation.dagster_dbt_translator,
                     target_path=invocation.target_path,
+                    project=invocation.project,
                 )
 
             except Exception as e:
@@ -243,7 +244,7 @@ class DbtEventIterator(Iterator[T]):
         column lineage metadata using sqlglot, if enabled.
 
         Args:
-            generate_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
+            with_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
@@ -305,7 +306,7 @@ class DbtEventIterator(Iterator[T]):
         ]:
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
-                thread_name_prefix=f"dbt_attach_metadata_{fn.__name__}",
+                thread_name_prefix=f"dbt_attach_metadata_{getattr(fn, '__name__', 'fn')}",
             ) as executor:
                 yield from imap(
                     executor=executor,
@@ -351,7 +352,7 @@ class DbtEventIterator(Iterator[T]):
         adapter_type = self._dbt_cli_invocation.manifest.get("metadata", {}).get("adapter_type")
         if adapter_type == "snowflake":
             try:
-                from dagster_cloud.dagster_insights import (  # pyright: ignore[reportMissingImports]
+                from dagster_cloud.dagster_insights import (  # ty: ignore[unresolved-import]
                     dbt_with_snowflake_insights,
                 )
             except ImportError as e:
@@ -372,7 +373,7 @@ class DbtEventIterator(Iterator[T]):
             )
         elif adapter_type == "bigquery":
             try:
-                from dagster_cloud.dagster_insights import (  # pyright: ignore[reportMissingImports]
+                from dagster_cloud.dagster_insights import (  # ty: ignore[unresolved-import]
                     dbt_with_bigquery_insights,
                 )
             except ImportError as e:

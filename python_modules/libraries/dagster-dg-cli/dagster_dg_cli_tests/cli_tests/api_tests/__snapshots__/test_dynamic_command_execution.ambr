@@ -264,7 +264,7 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_json]
   dict({
-    'alert_policies': list([
+    'items': list([
       dict({
         'description': 'Send email on job failure',
         'event_types': list([
@@ -301,6 +301,7 @@
         ]),
       }),
     ]),
+    'total': 2,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_text_text]
@@ -467,8 +468,8 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_partition_status_not_found_json]
   '''
-  {"error": "Error: Asset not found: nonexistent/asset"}
-  Error: dg api asset get-partition-status: Error: Asset not found: nonexistent/asset
+  {"error": "Error getting partition status: Asset not found: nonexistent/asset"}
+  Error: dg api asset get-partition-status: Error getting partition status: Asset not found: nonexistent/asset
   
   '''
 # ---
@@ -1184,8 +1185,44 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_run_id_json]
   '''
-  {"error": "Error: ''"}
-  Error: dg api run get: Error: ''
+  {"error": "Run not found: ''"}
+  Error: dg api run get: Run not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_invalid_config_json_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: --config-json is not valid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_invalid_tag_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: Invalid --tag value `invalid_no_equals`. Expected `key=value`.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_no_target_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: At least one of --job or --asset-key must be provided.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_partition_range_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: Partition ranges are not supported by `dg api run launch`. Use a single partition key.
   
   '''
 # ---
@@ -1265,7 +1302,7 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_error_run_not_found_text]
   '''
-  Error: dg api run get: Error: nonexistent-run-id
+  Error: dg api run get: Run not found: nonexistent-run-id
   
   '''
 # ---
@@ -1313,6 +1350,31 @@
         'timestamp': '1771476078298',
       }),
     ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_asset_json_json]
+  dict({
+    'run_id': '2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a',
+    'status': 'STARTED',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_job_json_json]
+  dict({
+    'run_id': '5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a',
+    'status': 'STARTED',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_job_text_text]
+  '''
+  Run ID: 5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+  Status: STARTED
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_with_partition_and_tags_json_json]
+  dict({
+    'run_id': '8c4d2e7f-1a9b-4e3d-7c5b-9f2a1d8e3b6c',
+    'status': 'STARTED',
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_basic_json_json]

@@ -1,6 +1,5 @@
-import {Box, CaptionMono, Colors, FontFamily, Popover} from '@dagster-io/ui-components';
+import {Box, CaptionMono, Colors, Popover} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {RunStatusIndicator} from './RunStatusDots';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
@@ -10,6 +9,7 @@ import {RunTimeFragment} from './types/RunUtils.types';
 import {RunStatus} from '../graphql/types';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 import {PezItem} from '../ui/PezItem';
+import styles from './css/RunStatusPez.module.css';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;
@@ -25,7 +25,7 @@ export const RunStatusPez = (props: Props) => {
   const {status, opacity = MAX_OPACITY} = props;
   const color = RUN_STATUS_COLORS[status];
 
-  return <Pez $color={color} $opacity={opacity} />;
+  return <div className={styles.pez} style={{backgroundColor: color, opacity}} />;
 };
 
 interface ListProps {
@@ -87,9 +87,9 @@ interface OverlayProps {
 
 export const RunStatusOverlay = ({name, run}: OverlayProps) => {
   return (
-    <OverlayContainer>
-      <OverlayTitle>{name}</OverlayTitle>
-      <RunRow>
+    <div className={styles.overlayContainer}>
+      <div className={styles.overlayTitle}>{name}</div>
+      <div className={styles.runRow}>
         <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
           <RunStatusIndicator status={run.status} />
           <Link to={`/runs/${run.id}`}>
@@ -100,57 +100,12 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
           <RunTime run={run} />
           <RunStateSummary run={run} />
         </Box>
-      </RunRow>
+      </div>
       {failedStatuses.has(run.status) || inProgressStatuses.has(run.status) ? (
-        <SummaryContainer>
+        <div className={styles.summaryContainer}>
           <StepSummaryForRun runId={run.id} />
-        </SummaryContainer>
+        </div>
       ) : null}
-    </OverlayContainer>
+    </div>
   );
 };
-
-const OverlayContainer = styled.div`
-  padding: 4px;
-  font-size: 12px;
-  width: 240px;
-`;
-
-const OverlayTitle = styled.div`
-  padding: 8px;
-  box-shadow: inset 0 -1px ${Colors.keylineDefault()};
-  font-family: ${FontFamily.default};
-  font-size: 14px;
-  font-weight: 500;
-  color: ${Colors.textDefault()};
-  max-width: 100%;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  min-width: 0px;
-`;
-
-const RunRow = styled.div`
-  padding: 8px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-`;
-
-const SummaryContainer = styled.div`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 4px 8px 8px;
-
-  :empty {
-    display: none;
-  }
-`;
-
-const Pez = styled.div<{$color: string; $opacity: number}>`
-  background-color: ${({$color}) => $color};
-  border-radius: 2px;
-  height: 16px;
-  opacity: ${({$opacity}) => $opacity};
-  width: 8px;
-`;

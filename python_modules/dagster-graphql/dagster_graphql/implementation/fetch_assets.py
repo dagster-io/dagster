@@ -184,14 +184,11 @@ def get_asset_node_definition_collisions(
 
             repos[asset_node_snap.asset_key].append(GrapheneRepository(info.handle))
 
-    results: list[GrapheneAssetNodeDefinitionCollision] = []
-    for asset_key in repos.keys():
-        if len(repos[asset_key]) > 1:
-            results.append(
-                GrapheneAssetNodeDefinitionCollision(
-                    assetKey=asset_key, repositories=repos[asset_key]
-                )
-            )
+    results: list[GrapheneAssetNodeDefinitionCollision] = [
+        GrapheneAssetNodeDefinitionCollision(assetKey=asset_key, repositories=repos[asset_key])
+        for asset_key in repos.keys()
+        if len(repos[asset_key]) > 1
+    ]
 
     return results
 

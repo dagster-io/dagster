@@ -71,7 +71,7 @@ def _parse_check_identifiers_from_yaml(yaml_path: Path, dataset: str) -> list[st
         if isinstance(item, dict):
             for check_def, config in item.items():
                 if isinstance(config, dict) and "name" in config:
-                    identifiers.append(_sanitize_check_name(str(config["name"])))
+                    identifiers.append(_sanitize_check_name(str(config["name"])))  # ty: ignore[invalid-argument-type]
                 else:
                     identifiers.append(_sanitize_check_name(str(check_def)) or f"soda_{i}")
                 break

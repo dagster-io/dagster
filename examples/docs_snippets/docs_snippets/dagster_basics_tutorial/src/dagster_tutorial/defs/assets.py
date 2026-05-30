@@ -1,5 +1,3 @@
-# type: ignore
-
 # Step 1: Define the assets
 # start_define_assets
 import dagster as dg

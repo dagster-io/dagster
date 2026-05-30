@@ -77,14 +77,24 @@ describe('useSuggestionFilter', () => {
     expect(result.current.state).toEqual([]);
 
     act(() => {
-      result.current.onSelect({value: {final: true, value: 'apple'}} as any);
+      result.current.onSelect({
+        value: {final: true, value: 'apple'},
+        close: () => {},
+        createPortal: () => () => {},
+        clearSearch: () => {},
+      });
     });
     rerender();
 
     expect(result.current.state).toEqual(['apple']);
 
     act(() => {
-      result.current.onSelect({value: {final: true, value: 'apple'}} as any);
+      result.current.onSelect({
+        value: {final: true, value: 'apple'},
+        close: () => {},
+        createPortal: () => () => {},
+        clearSearch: () => {},
+      });
     });
     rerender();
 
@@ -208,14 +218,24 @@ describe('useSuggestionFilter', () => {
     expect(result.current.state).toEqual(['']);
 
     act(() => {
-      result.current.onSelect({value: {final: true, value: 'apple'}} as any);
+      result.current.onSelect({
+        value: {final: true, value: 'apple'},
+        close: () => {},
+        createPortal: () => () => {},
+        clearSearch: () => {},
+      });
     });
     rerender();
 
     expect(result.current.state).toEqual(['apple']);
 
     act(() => {
-      result.current.onSelect({value: {final: true, value: 'banana'}} as any);
+      result.current.onSelect({
+        value: {final: true, value: 'banana'},
+        close: () => {},
+        createPortal: () => () => {},
+        clearSearch: () => {},
+      });
     });
     rerender();
 

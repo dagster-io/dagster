@@ -2,8 +2,8 @@ import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-com
 import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/VirtualizedAssetRow.module.css';
 import {RepoAddress} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {
@@ -88,7 +88,13 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border="bottom" $showRepoColumn={showRepoColumn}>
+      <Box
+        border="bottom"
+        className={styles.rowGrid}
+        style={{
+          gridTemplateColumns: showRepoColumn ? TEMPLATE_COLUMNS_FOR_CATALOG : TEMPLATE_COLUMNS,
+        }}
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Checkbox
@@ -215,7 +221,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
             />
           ) : null}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -240,7 +246,15 @@ export const VirtualizedAssetCatalogHeader = ({
 
 export const ShimmerRow = (props: {$height: number; $start: number; $showRepoColumn: boolean}) => (
   <Row {...props}>
-    <RowGrid border="bottom" $showRepoColumn={props.$showRepoColumn}>
+    <Box
+      border="bottom"
+      className={styles.rowGrid}
+      style={{
+        gridTemplateColumns: props.$showRepoColumn
+          ? TEMPLATE_COLUMNS_FOR_CATALOG
+          : TEMPLATE_COLUMNS,
+      }}
+    >
       <RowCell>
         <Skeleton $height={21} $width="45%" />
       </RowCell>
@@ -260,7 +274,7 @@ export const ShimmerRow = (props: {$height: number; $start: number; $showRepoCol
           </RowCell>
         </>
       ) : null}
-    </RowGrid>
+    </Box>
   </Row>
 );
 
@@ -273,13 +287,6 @@ export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showRepoColumn}) =>
-    $showRepoColumn ? TEMPLATE_COLUMNS_FOR_CATALOG : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 const LIVE_QUERY_DELAY = 250;
 

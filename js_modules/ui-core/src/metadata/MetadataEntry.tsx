@@ -14,9 +14,9 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {TableSchema} from './TableSchema';
+import styles from './css/MetadataEntry.module.css';
 import {
   MetadataEntryFragment_IntMetadataEntry as IntMetadataEntry,
   MetadataEntryFragment,
@@ -56,16 +56,26 @@ export const isCanonicalRowCountMetadataEntry = (
 ): m is IntMetadataEntry =>
   m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/row_count';
 
+export const isCanonicalSizeBytesMetadataEntry = (
+  m: MetadataEntryLabelOnly,
+): m is IntMetadataEntry =>
+  m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/size_bytes';
+
+export const isCanonicalQueryCountMetadataEntry = (
+  m: MetadataEntryLabelOnly,
+): m is IntMetadataEntry =>
+  m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/query_count';
+
 export type LogRowStructuredRow = {label: string; item: JSX.Element};
 
 export const LogRowStructuredContentTable = ({
   rows,
-  styles,
+  styles: tableStyles,
 }: {
   rows: LogRowStructuredRow[];
   styles?: React.CSSProperties;
 }) => (
-  <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
+  <div style={{overflow: 'auto', paddingBottom: 10, ...(tableStyles || {})}}>
     <StructuredContentTable cellPadding="0" cellSpacing="0">
       <tbody>
         {rows.map(({label, item}, idx) => (
@@ -124,9 +134,9 @@ export const MetadataEntry = ({
           <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
-          <IconButton onClick={(e) => copyValue(e, entry.path)}>
+          <button className={styles.iconButton} onClick={(e) => copyValue(e, entry.path)}>
             <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
-          </IconButton>
+          </button>
         </Box>
       );
 
@@ -268,9 +278,9 @@ export const MetadataEntry = ({
           <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
-          <IconButton onClick={(e) => copyValue(e, entry.path)}>
+          <button className={styles.iconButton} onClick={(e) => copyValue(e, entry.path)}>
             <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
-          </IconButton>
+          </button>
         </Box>
       );
     case 'CodeReferencesMetadataEntry':
@@ -301,14 +311,6 @@ export const MetadataEntry = ({
       return assertUnreachable(entry);
   }
 };
-
-const IconButton = styled.button`
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  display: block;
-  padding: 0;
-`;
 
 const PythonArtifactLink = ({
   name,
@@ -443,39 +445,18 @@ export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntryF
   );
 };
 
-const MetadataEntryAction = styled.a`
-  text-decoration: underline;
-  color: inherit;
-  &:hover {
-    color: inherit;
-  }
-`;
+const MetadataEntryAction = (
+  props: React.AnchorHTMLAttributes<HTMLAnchorElement> & {children: React.ReactNode},
+) => (
+  <a {...props} className={styles.metadataEntryAction}>
+    {props.children}
+  </a>
+);
 
-export const MetadataEntryLink = styled(Link)`
-  text-decoration: underline;
-  color: inherit;
-  &:hover {
-    color: inherit;
-  }
-`;
+export const MetadataEntryLink = (props: React.ComponentProps<typeof Link>) => (
+  <Link {...props} className={styles.metadataEntryLink} />
+);
 
-export const StructuredContentTable = styled.table`
-  width: 100%;
-  padding: 0;
-  margin-top: 4px;
-  border-top: 1px solid ${Colors.keylineDefault()};
-  border-left: 1px solid ${Colors.keylineDefault()};
-  background: ${Colors.backgroundLighter()};
-
-  td:first-child {
-    color: ${Colors.textLight()};
-  }
-
-  &&& tbody > tr > td {
-    padding: 4px 8px;
-    border-bottom: 1px solid ${Colors.keylineDefault()};
-    border-right: 1px solid ${Colors.keylineDefault()};
-    vertical-align: top;
-    box-shadow: none !important;
-  }
-`;
+export const StructuredContentTable = (props: React.TableHTMLAttributes<HTMLTableElement>) => (
+  <table {...props} className={styles.structuredContentTable} />
+);

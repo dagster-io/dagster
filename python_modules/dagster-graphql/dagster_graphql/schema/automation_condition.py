@@ -33,8 +33,8 @@ class GrapheneAutomationCondition(graphene.ObjectType):
         ac_snapshot = get_ac_snapshot(snap)
         if ac_snapshot is None:
             return None
-        return {
-            "__typename": "AutomationCondition",
-            "label": ac_snapshot.node_snapshot.label,
-            "expandedLabel": get_expanded_label(ac_snapshot),
-        }
+        # Workspace consumers only check truthiness; `label` / `expandedLabel`
+        # are read off the live AssetAutomationDataProvider query and per-asset
+        # detail fragments, not the workspace path. Keep the manifest in sync
+        # with the gql fragment (which only requests __typename).
+        return {"__typename": "AutomationCondition"}

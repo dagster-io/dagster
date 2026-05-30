@@ -7,7 +7,7 @@ context = ...
 # Within the Dagster pipes subprocess:
 markdown_content = "# Header\nSome **bold** text"
 # Then, when reporting the asset materialization:
-context.report_asset_materialization(
+context.report_asset_materialization(  # ty: ignore[unresolved-attribute]
     asset_key="foo",
     metadata={"md_meta": {"type": "md", "raw_value": markdown_content}},
 )

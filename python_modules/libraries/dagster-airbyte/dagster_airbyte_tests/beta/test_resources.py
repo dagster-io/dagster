@@ -488,7 +488,7 @@ def test_airbyte_sync_and_poll_poll_previous_running_sync(
     # Create existing running jobs based on test parameters
     existing_jobs_data = []
     for i in range(existing_jobs_count):
-        existing_jobs_data.append(get_job_details_sample(status=AirbyteJobStatusType.RUNNING))
+        existing_jobs_data.append(dict(get_job_details_sample(status=AirbyteJobStatusType.RUNNING)))
         if i > 0:  # Give different job IDs to multiple jobs
             existing_jobs_data[-1]["jobId"] = TEST_JOB_ID + i
 

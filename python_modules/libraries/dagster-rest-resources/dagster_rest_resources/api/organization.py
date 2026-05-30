@@ -36,14 +36,14 @@ class DgApiOrganizationApi:
 
         match result.typename__:
             case "OrganizationSettings":
-                return DgApiOrganizationSettings(settings=result.settings or {})
+                return DgApiOrganizationSettings(settings=result.settings or {})  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(
-                    f"Error setting organization settings: {result.message}"
+                    f"Error setting organization settings: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
                 raise DagsterPlusGraphqlError(
-                    f"Error setting organization settings: {result.message}"
+                    f"Error setting organization settings: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case _ as unreachable:
                 assert_never(unreachable)

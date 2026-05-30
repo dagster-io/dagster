@@ -52,6 +52,7 @@ export const NewTableStyle = () => {
       isPartitioned: false,
       numTrue: 0,
       childUniqueIds: ['b', 'c'],
+      operatorType: 'and',
     }),
     buildAutomationConditionEvaluationNode({
       startTimestamp: 0,
@@ -61,6 +62,7 @@ export const NewTableStyle = () => {
       expandedLabel: ['(a OR b)', 'NOT', '(c OR d)'],
       numTrue: 0,
       isPartitioned: false,
+      operatorType: 'or',
     }),
     buildAutomationConditionEvaluationNode({
       startTimestamp: 0,
@@ -70,6 +72,7 @@ export const NewTableStyle = () => {
       expandedLabel: ['(e OR f)', 'NOT', '(g OR h)'],
       numTrue: 1,
       isPartitioned: false,
+      operatorType: 'identity',
     }),
   ];
 

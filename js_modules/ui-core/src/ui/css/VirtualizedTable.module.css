@@ -1,0 +1,41 @@
+.headerCell {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.headerCellClickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.cellBox {
+  overflow: hidden;
+
+  &:first-child {
+    padding-left: 24px;
+  }
+
+  &:last-child {
+    padding-right: 24px;
+    box-shadow: none;
+  }
+}
+
+.container {
+  height: 100%;
+  overflow: auto;
+}
+
+.inner {
+  position: relative;
+  width: 100%;
+}
+
+.row {
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  overflow: hidden;
+}

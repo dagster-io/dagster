@@ -10,4 +10,8 @@ To view all sensors, navigate to **Overview > Sensors**. Here, you can start and
 
 ![Sensors overview](/images/guides/automate/sensors/all-sensors.png)
 
-Click on any sensor to [test the sensor](/guides/automate/sensors/testing-sensors), monitor all sensor evaluations on a timeline, and view a table of runs launched by the sensor.
+Click on any sensor to test the sensor, monitor all sensor evaluations on a timeline, and view a table of runs launched by the sensor. See [Testing sensors](/guides/automate/sensors/testing-sensors).
+
+## Viewing sensor-triggered runs in the timeline
+
+To distinguish sensor-triggered runs from ad-hoc materializations, navigate to **Overview > Activity** and use the view toggle to switch between display modes. Sensor-triggered runs appear as separate entries from manual launches and from runs initiated by other automation, which makes it easier to track sensor activity in isolation.

@@ -1,0 +1,21 @@
+.container {
+  overflow: hidden;
+  position: relative;
+}
+
+.container p:last-child {
+  margin-bottom: 0;
+}
+
+.container code,
+.container pre {
+  font-size: inherit;
+}
+
+.showMoreHandle {
+  position: absolute;
+  padding: 0 14px;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%);
+}

@@ -8,6 +8,7 @@ from contextlib import contextmanager
 
 import dagster._check as check
 import docker
+import docker.errors
 import kubernetes
 import psycopg2
 import pytest
@@ -43,7 +44,11 @@ class ClusterConfig(namedtuple("_ClusterConfig", "name kubeconfig_file")):
 def define_cluster_provider_fixture(additional_kind_images=None):
     @pytest.fixture(scope="session")
     def _cluster_provider(request):
-        from dagster_k8s_test_infra.kind import kind_cluster, kind_load_images
+        from dagster_k8s_test_infra.kind import (
+            _docker_pull_with_retry,
+            kind_cluster,
+            kind_load_images,
+        )
 
         if IS_BUILDKITE:
             print("Installing ECR credentials...")
@@ -67,8 +72,15 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             should_cleanup = True if IS_BUILDKITE else not request.config.getoption("--no-cleanup")
 
             with kind_cluster(cluster_name, should_cleanup=should_cleanup) as cluster_config:
-                if not IS_BUILDKITE:
-                    docker_image = get_test_project_docker_image()
+                docker_image = get_test_project_docker_image()
+                if IS_BUILDKITE:
+                    # The test-project image is built and pushed by an upstream step;
+                    # pull it into the dind sidecar's docker daemon so `kind load
+                    # docker-image` can copy it onto the kind node. With this preload
+                    # plus imagePullPolicy=IfNotPresent, kubelet never has to fetch
+                    # from ECR at test time (a 4-min round trip under the EKS queue).
+                    _docker_pull_with_retry(docker_image)
+                else:
                     try:
                         client = docker.from_env()
                         client.images.get(docker_image)
@@ -76,13 +88,22 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                             f"Found existing image tagged {docker_image}, skipping image build. To rebuild,"
                             f" first run: docker rmi {docker_image}"
                         )
-                    except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+                    except docker.errors.ImageNotFound:
                         build_and_tag_test_image(docker_image)
-                    kind_load_images(
-                        cluster_name=cluster_config.name,
-                        local_dagster_test_image=docker_image,
-                        additional_images=additional_kind_images,
-                    )
+                # On Buildkite, the supporting images (postgres / rabbitmq /
+                # redis / localstack) come through the kind-registry pull-
+                # through cache configured in create_kind_cluster -- kubelet
+                # inside kind pulls them via the docker.io mirror endpoint,
+                # never hitting docker.io directly. kind_load only needs to
+                # preload the test-project image, which lives in private ECR
+                # (the mirror only covers docker.io). Locally, additional_
+                # kind_images still gets preloaded to avoid devs paying the
+                # mirror's cold-cache pull on every test run.
+                kind_load_images(
+                    cluster_name=cluster_config.name,
+                    local_dagster_test_image=docker_image,
+                    additional_images=None if IS_BUILDKITE else additional_kind_images,
+                )
                 yield cluster_config
 
         # Use cluster from kubeconfig
@@ -236,7 +257,7 @@ def check_export_runs(instance):
 
     # example PYTEST_CURRENT_TEST: test_user_code_deployments.py::test_execute_on_celery_k8s (teardown)
     current_test = (
-        os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")  # pyright: ignore[reportOptionalMemberAccess]
+        os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")  # ty: ignore[unresolved-attribute]
     )
 
     for run in instance.get_runs():

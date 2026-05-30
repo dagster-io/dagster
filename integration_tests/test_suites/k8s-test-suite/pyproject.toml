@@ -1,6 +1,7 @@
 [project]
 name = "k8s-test-suite"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
     "dagster-graphql",
@@ -16,3 +17,42 @@ dependencies = [
     "dagster-aws",
     "dagster-gcp",
 ]
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-graphql",
+    "dagster-test",
+    "dagster-pandas",
+    "dagster-k8s",
+    "dagster-celery",
+    "dagster-celery-k8s",
+    "dagster-celery-docker",
+    "dagster-postgres",
+    "dagster-airflow",
+    "dagster-docker",
+    "dagster-aws",
+    "dagster-gcp",
+    "dagster-k8s-test-infra",
+    "dagster-pipes",
+    "dagster-shared",
+    "pyparsing<3.0.0",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../../python_modules/dagster", editable = true }
+dagster-graphql = { path = "../../../python_modules/dagster-graphql", editable = true }
+dagster-test = { path = "../../../python_modules/dagster-test", editable = true }
+dagster-pandas = { path = "../../../python_modules/libraries/dagster-pandas", editable = true }
+dagster-k8s = { path = "../../../python_modules/libraries/dagster-k8s", editable = true }
+dagster-celery = { path = "../../../python_modules/libraries/dagster-celery", editable = true }
+dagster-celery-k8s = { path = "../../../python_modules/libraries/dagster-celery-k8s", editable = true }
+dagster-celery-docker = { path = "../../../python_modules/libraries/dagster-celery-docker", editable = true }
+dagster-postgres = { path = "../../../python_modules/libraries/dagster-postgres", editable = true }
+dagster-airflow = { path = "../../../python_modules/libraries/dagster-airflow", editable = true }
+dagster-docker = { path = "../../../python_modules/libraries/dagster-docker", editable = true }
+dagster-aws = { path = "../../../python_modules/libraries/dagster-aws", editable = true }
+dagster-gcp = { path = "../../../python_modules/libraries/dagster-gcp", editable = true }
+dagster-k8s-test-infra = { path = "../../python_modules/dagster-k8s-test-infra", editable = true }
+dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }

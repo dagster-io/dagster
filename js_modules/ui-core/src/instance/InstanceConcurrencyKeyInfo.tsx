@@ -75,7 +75,7 @@ export const InstanceConcurrencyKeyInfo = ({
   readOnly: boolean;
 }) => {
   useTrackPageView();
-  useDocumentTitle(`Pool: ${concurrencyKey}`);
+  useDocumentTitle(`Pools | ${concurrencyKey}`);
   const [showEdit, setShowEdit] = React.useState<boolean>();
   const [showDelete, setShowDelete] = React.useState<boolean>(false);
   const queryResult = useQuery<PoolDetailsQuery, PoolDetailsQueryVariables>(POOL_DETAILS_QUERY, {

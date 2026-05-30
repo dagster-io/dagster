@@ -11,4 +11,4 @@ class ShellCommand(dg.Component, dg.Resolvable):
     script_path: str
     asset_specs: Sequence[dg.ResolvedAssetSpec]
 
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]

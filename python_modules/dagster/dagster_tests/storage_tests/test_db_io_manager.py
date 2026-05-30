@@ -164,7 +164,7 @@ def test_asset_out_partitioned():
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = dg.AssetKey(["schema1", "table1"])
     partitions_def = dg.DailyPartitionsDefinition(start_date="2020-01-02")
-    partitions_def.time_window_for_partition_key = MagicMock(
+    partitions_def.time_window_for_partition_key = MagicMock(  # ty: ignore[invalid-assignment]
         return_value=dg.TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3))
     )
     output_context = MagicMock(

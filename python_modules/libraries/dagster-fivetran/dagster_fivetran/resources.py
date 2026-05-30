@@ -220,8 +220,8 @@ class FivetranResource(ConfigurableResource):
         failed_at = parser.parse(connector_details["failed_at"] or min_time_str)
 
         return (
-            max(succeeded_at, failed_at),  # pyright: ignore[reportReturnType]
-            succeeded_at > failed_at,  # pyright: ignore[reportOperatorIssue]
+            max(succeeded_at, failed_at),
+            succeeded_at > failed_at,
             connector_details["status"]["sync_state"],
         )
 
@@ -609,7 +609,7 @@ class FivetranClient:
             except RequestException as e:
                 self._log.error("Request to Fivetran API failed: %s", e)
                 if num_retries == self.request_max_retries:
-                    return response  # type: ignore
+                    return response
                 num_retries += 1
                 delay = self.request_retry_delay * (self.request_backoff_factor**num_retries)
                 self._log.info(
@@ -845,7 +845,7 @@ class FivetranClient:
                 rescheduled_at = parser.parse(connector.rescheduled_for)
                 seconds_to_wait = max(
                     0,
-                    (rescheduled_at - datetime.now(timezone.utc)).total_seconds(),  # pyright: ignore[reportOperatorIssue]
+                    (rescheduled_at - datetime.now(timezone.utc)).total_seconds(),
                 )
                 if self.retry_on_reschedule:
                     self._log.warning(

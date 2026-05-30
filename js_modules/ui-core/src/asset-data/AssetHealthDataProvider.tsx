@@ -21,7 +21,7 @@ import {
 const BATCH_SIZE = 250;
 const PARALLEL_FETCHES = 4;
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 function init() {
   return liveDataFactory(

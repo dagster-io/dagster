@@ -24,7 +24,15 @@
               ]
             }
           ],
-          "metadataEntries": []
+          "metadataEntries": [],
+          "automationCondition": null,
+          "partitionDefinition": null,
+          "dependencies": [],
+          "dependedByKeys": [],
+          "owners": [],
+          "tags": [],
+          "backfillPolicy": null,
+          "jobNames": []
         }
       }
     ]

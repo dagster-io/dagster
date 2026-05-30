@@ -34,7 +34,10 @@ export const Suggest = <T,>(props: Props<T>) => {
   const allPopoverProps: Partial<PopoverProps> = {
     ...popoverProps,
     minimal: true,
-    modifiers: deepmerge({offset: {enabled: true, offset: '0, 8px'}}, popoverProps.modifiers || {}),
+    modifiers: deepmerge(
+      {offset: {enabled: true, options: {offset: [0, 4]}}},
+      popoverProps.modifiers || {},
+    ),
     popoverClassName: `dagster-popover ${props.popoverProps?.className || ''}`,
   };
 

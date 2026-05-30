@@ -62,7 +62,7 @@ class AzureWifTokenProvider(PgTokenProvider):
     def _fetch_token(self) -> tuple[str, float]:
         if self._credential is None:
             try:
-                from azure.identity import DefaultAzureCredential  # type: ignore[import-untyped]
+                from azure.identity import DefaultAzureCredential
             except ImportError:
                 raise ImportError(
                     "azure-identity is required for Azure WIF auth. "
@@ -88,8 +88,8 @@ class GcpWifTokenProvider(PgTokenProvider):
     def _fetch_token(self) -> tuple[str, float]:
         if self._credentials is None:
             try:
-                import google.auth  # type: ignore[import-untyped]
-                import google.auth.transport.requests  # type: ignore[import-untyped]
+                import google.auth
+                import google.auth.transport.requests
             except ImportError:
                 raise ImportError(
                     "google-auth is required for GCP WIF auth. "
@@ -132,7 +132,7 @@ class AwsWifTokenProvider(PgTokenProvider):
     def _fetch_token(self) -> tuple[str, float]:
         if self._client is None:
             try:
-                import boto3  # type: ignore[import-untyped]
+                import boto3
             except ImportError:
                 raise ImportError(
                     "boto3 is required for AWS WIF auth. "

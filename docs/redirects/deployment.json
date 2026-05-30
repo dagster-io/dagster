@@ -155,6 +155,11 @@
     "permanent": true
   },
   {
+    "source": "/dagster-plus/deployment/hybrid/multiple-agents",
+    "destination": "/deployment/dagster-plus/hybrid/multiple",
+    "permanent": true
+  },
+  {
     "source": "/dagster-plus/account",
     "destination": "/deployment/dagster-plus/management/tokens",
     "permanent": true
@@ -757,6 +762,11 @@
   {
     "source": "/deployment/guides/ecs",
     "destination": "/deployment/oss/deployment-options/aws",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/terraform",
+    "destination": "/deployment/dagster-plus/management/terraform",
     "permanent": true
   }
 ]

@@ -179,7 +179,7 @@ def test_refresh_state_command_dagster_home_not_set():
             runner, in_workspace=False, use_editable_dagster=True, uv_sync=True
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
-        environ({"DAGSTER_HOME": None}),  # pyright: ignore[reportArgumentType] # Temporarily unset DAGSTER_HOME
+        environ({"DAGSTER_HOME": None}),  # ty: ignore[invalid-argument-type] # Temporarily unset DAGSTER_HOME
     ):
         # no components to refresh, so command should succeed
         result = runner.invoke("utils", "refresh-defs-state")

@@ -158,7 +158,7 @@ def test_translation(
 ) -> None:
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
-        body = {
+        body: dict[str, Any] = {
             "type": "dagster_sigma.SigmaComponent",
             "attributes": {
                 "organization": {
@@ -166,9 +166,9 @@ def test_translation(
                     "client_id": uuid.uuid4().hex,
                     "client_secret": uuid.uuid4().hex,
                 },
+                "translation": attributes,
             },
         }
-        body["attributes"]["translation"] = attributes
         with (
             setup_sigma_component(
                 defs_yaml_contents=body,

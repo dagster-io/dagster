@@ -53,7 +53,7 @@ def my_asset():
 # start_asset_job_sensor_marker
 @sensor(target=[my_asset])
 def materializes_asset_sensor():
-    yield RunRequest(...)
+    yield RunRequest(...)  # ty: ignore[invalid-argument-type]
 
 
 # end_asset_job_sensor_marker
@@ -80,8 +80,8 @@ def sensor_to_test():
 
 
 def test_sensor():
-    for run_request in sensor_to_test():
-        assert validate_run_config(log_file_job, run_request.run_config)
+    for run_request in sensor_to_test():  # ty: ignore[not-iterable]
+        assert validate_run_config(log_file_job, run_request.run_config)  # ty: ignore[unresolved-attribute]
 
 
 # end_sensor_testing_no
@@ -139,8 +139,8 @@ from dagster import build_sensor_context
 
 def test_my_directory_sensor_cursor():
     context = build_sensor_context(cursor="0")
-    for run_request in my_directory_sensor_cursor(context):
-        assert validate_run_config(log_file_job, run_request.run_config)
+    for run_request in my_directory_sensor_cursor(context):  # ty: ignore[not-iterable]
+        assert validate_run_config(log_file_job, run_request.run_config)  # ty: ignore[unresolved-attribute]
 
 
 # end_sensor_testing_with_context

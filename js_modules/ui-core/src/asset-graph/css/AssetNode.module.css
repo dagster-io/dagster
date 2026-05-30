@@ -8,3 +8,201 @@
 .UserDisplayInTooltip * {
   color: var(--color-tooltip-text);
 }
+
+/* AssetNodeRowBox */
+.assetNodeRowBox {
+  white-space: nowrap;
+  line-height: 12px;
+  font-size: 12px;
+  height: 24px;
+}
+.assetNodeRowBox a:hover {
+  text-decoration: none;
+}
+.assetNodeRowBox:last-child {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* AssetNodeContainer */
+.assetNodeContainer {
+  user-select: none;
+  cursor: pointer;
+}
+.assetNodeContainer *:focus {
+  outline: 0;
+}
+
+/* AssetNodeShowOnHover */
+.assetNodeShowOnHover {
+  display: none;
+}
+
+/* AssetNodeBox */
+.assetNodeBox {
+  background: var(--color-background-default);
+  border-radius: 10px;
+  position: relative;
+  margin: 6px 0;
+  transition: all 150ms linear;
+}
+.assetNodeBox:hover {
+  box-shadow: var(--color-shadow-default) 0px 1px 4px 0px;
+  scale: 1.03;
+}
+.assetNodeBox.noScale:hover {
+  scale: 1;
+}
+.assetNodeBox:hover .assetNodeShowOnHover {
+  display: initial;
+}
+
+/* Materializable + not selected */
+.assetNodeBox.materializable {
+  border: 2px solid var(--color-lineage-node-border);
+}
+.assetNodeBox.materializable:hover {
+  border: 2px solid var(--color-lineage-node-border-hover);
+}
+.assetNodeBox.materializable.selected {
+  border: 2px solid var(--color-lineage-node-border-selected);
+  outline: 2px solid var(--color-lineage-node-border-selected);
+}
+.assetNodeBox.materializable.selected:hover {
+  border: 2px solid var(--color-lineage-node-border-selected);
+}
+
+/* Non-materializable (source) */
+.assetNodeBox.source {
+  border: 2px dashed var(--color-accent-gray);
+}
+.assetNodeBox.source:hover {
+  border: 2px solid var(--color-lineage-node-border-hover);
+}
+.assetNodeBox.source.selected {
+  border: 2px dashed var(--color-accent-gray-hover);
+  outline: 2px solid var(--color-lineage-node-border-selected);
+}
+.assetNodeBox.source.selected:hover {
+  border: 2px dashed var(--color-accent-gray-hover);
+}
+
+/* AssetName */
+.assetName {
+  padding: 3px 0 3px 6px;
+  color: var(--color-text-default);
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  display: flex;
+  gap: 4px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+.assetName.materializable {
+  background: var(--color-lineage-node-background);
+}
+.assetName.source {
+  background: var(--color-background-light);
+}
+
+/* MinimalAssetNodeContainer */
+.minimalAssetNodeContainer {
+  height: 100%;
+}
+
+/* MinimalAssetNodeBox */
+.minimalAssetNodeBox {
+  background: var(--minimal-bg);
+  overflow: hidden;
+  border-radius: 16px;
+  position: relative;
+  padding: 2px;
+  /* height set via inline style */
+}
+.minimalAssetNodeBox:hover {
+  box-shadow: var(--color-shadow-default) 0px 2px 12px 0px;
+}
+
+/* Materializable minimal */
+.minimalAssetNodeBox.materializable {
+  border: 4px solid var(--minimal-border);
+}
+.minimalAssetNodeBox.materializable.selected {
+  border: 4px solid var(--color-lineage-node-border-selected);
+}
+
+/* Source minimal */
+.minimalAssetNodeBox.source {
+  border: 4px dashed var(--minimal-border);
+}
+.minimalAssetNodeBox.source.selected {
+  border: 4px dashed var(--color-accent-gray);
+}
+
+/* In-progress shimmer animation */
+.minimalAssetNodeBox.inProgress {
+  background-color: var(--minimal-bg);
+}
+.minimalAssetNodeBox.inProgress::after {
+  inset: 0;
+  position: absolute;
+  transform: translateX(-100%);
+  mask-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3)
+  );
+  background: var(--minimal-bg);
+  animation: shimmer 1.5s infinite;
+  content: '';
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Queued pulse animation */
+.minimalAssetNodeBox.queued {
+  border: none;
+}
+.minimalAssetNodeBox.queued::after {
+  inset: 0;
+  position: absolute;
+  animation: pulse 0.75s infinite alternate;
+  border-radius: 16px;
+  border: 4px solid var(--minimal-border);
+  content: '';
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* MinimalName */
+.minimalName {
+  font-weight: 600;
+  font-size: 24px;
+  white-space: nowrap;
+  position: absolute;
+  background: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* AssetDescription */
+.assetDescription {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}

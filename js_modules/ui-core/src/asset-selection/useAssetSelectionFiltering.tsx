@@ -22,7 +22,7 @@ export type FilterableAssetDefinition = Nullable<
   >
 >;
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 export const useAssetSelectionFiltering = <
   T extends {

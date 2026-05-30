@@ -133,7 +133,7 @@ def test_file_loads(file_path: Generator[Any, Any, None]):
     if file_path in EXCLUDED_FILES:
         pytest.skip(f"Skipped {file_path}")
         return
-    spec = importlib.util.spec_from_file_location("module", file_path)
+    spec = importlib.util.spec_from_file_location("module", file_path)  # ty: ignore[invalid-argument-type]
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     try:

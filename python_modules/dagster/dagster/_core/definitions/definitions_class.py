@@ -194,7 +194,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
             }
         )
         for job in jobs
-        if job in unsatisfied_jobs
+        if isinstance(job, JobDefinition) and job in unsatisfied_jobs
     }
 
     # Update all jobs to use the resource bound version

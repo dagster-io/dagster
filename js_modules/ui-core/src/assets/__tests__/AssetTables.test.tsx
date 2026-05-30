@@ -55,7 +55,7 @@ jest.mock('../../asset-selection/input/useAssetSelectionInput', () => {
     assets,
     assetsLoading,
   }: {
-    assets: any;
+    assets: any[];
     assetsLoading?: boolean;
   }) => {
     return {
@@ -84,7 +84,7 @@ describe('AssetTable', () => {
   describe('Materialize button', () => {
     it('is enabled when rows are selected', async () => {
       const user = userEvent.setup();
-      const {findByTestId, findAllByRole} = render(
+      const {findByTestId, getByTestId, getAllByRole} = render(
         <RecoilRoot>
           <MemoryRouter>
             <MockedProvider mocks={MOCKS}>
@@ -100,11 +100,22 @@ describe('AssetTable', () => {
       expect(materializeButton).toBeDisabled();
       expect(materializeButton).toHaveTextContent('Materialize selected');
 
-      await waitFor(async () => {
-        const checkboxes = await findAllByRole('checkbox');
-        const goodAssetCheckbox = await findByTestId('checkbox-good_asset');
-        expect(checkboxes.indexOf(goodAssetCheckbox)).toBe(1);
-      });
+      // The asset list renders external (non-SDA) assets in fixture order until
+      // the WorkspaceContext query resolves and the software-defined assets
+      // (good_asset, late_asset, ...) sort to the front. good_asset only reaches
+      // checkbox index 1 (index 0 is the header "select all") once that load
+      // completes. On slow CI workers the workspace + asset-records + Apollo
+      // render chain can exceed waitFor's default 1000ms timeout, so give it more
+      // room. Use synchronous queries inside waitFor rather than nested findBy*,
+      // which would compound their own async timeouts.
+      await waitFor(
+        () => {
+          const checkboxes = getAllByRole('checkbox');
+          const goodAssetCheckbox = getByTestId('checkbox-good_asset');
+          expect(checkboxes.indexOf(goodAssetCheckbox)).toBe(1);
+        },
+        {timeout: 5000},
+      );
 
       const goodAssetCheckbox = await findByTestId('checkbox-good_asset');
       await user.click(goodAssetCheckbox);

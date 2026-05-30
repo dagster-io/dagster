@@ -16,7 +16,7 @@ from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestTranslation
 from dagster_tableau.components import TableauComponent
 
-BASIC_TABLEAU_COMPONENT_BODY = {
+BASIC_TABLEAU_COMPONENT_BODY: dict[str, Any] = {
     "type": "dagster_tableau.TableauComponent",
     "attributes": {
         "workspace": {

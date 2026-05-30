@@ -1,0 +1,459 @@
+# ty `master` environment.
+#
+# Self-contained env definition: deps + uv.lock + the env's `[tool.ty.*]`
+# config all live here. `scripts/run-ty.py` reads the `[tool.ty]` block,
+# translates it to a temp ty.toml at `dagster-oss/` (the project root,
+# per the convention: envs under `dagster-oss/` anchor at `dagster-oss/`,
+# everything else at the worktree root), and invokes ty with
+# `--config-file=<temp>` from that cwd. Include paths in `[tool.ty.src]`
+# are therefore anchored to `dagster-oss/`.
+#
+# To add a dependency: append it to `[project].dependencies` (and to
+# `[tool.uv.sources]` with an editable path entry if it lives in this repo),
+# then run `just rebuild_ty_pins` from `dagster-oss/`.
+
+[project]
+name = "ty-master"
+version = "0.0.0"
+description = "ty environment for the dagster-oss `master` profile."
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+  # ---- Helm
+  "dagster-helm",
+
+  # ---- Integration tests
+  "dagster-k8s-test-infra",
+
+  # ---- Top-level libraries
+  "automation",
+  "dagit",
+  "dagster[pyright,test]",
+  "dagster-graphql",
+  "dagster-pipes[stubs]",
+  "dagster-sphinx",
+  "dagster-test",
+  "dagster-webserver",
+
+  # ---- python_modules/libraries/*
+  "create-dagster",
+  "dagster-airbyte",
+  "dagster-airflow",
+  "dagster-airlift[mwaa]",      # pulls airflow
+  "dagster-aws[stubs]",
+  "dagster-azure",
+  "dagster-celery",
+  "dagster-celery-docker",
+  "dagster-celery-k8s",
+  "dagster-census",
+  "dagster-clickhouse",
+  "dagster-clickhouse-pandas",
+  "dagster-clickhouse-polars",
+  "dagster-cloud-cli",
+  "dagster-dask[yarn,pbs,kube]",
+  "dagster-databricks",
+  "dagster-datadog",
+  "dagster-datahub",
+  "dagster-dbt",
+  "dagster-deltalake",
+  "dagster-deltalake-pandas",
+  "dagster-deltalake-polars",
+  "dagster-dg-cli[ai]",
+  "dagster-dg-core[test]",
+  "dagster-dlt",
+  "dagster-docker",
+  "dagster-duckdb",
+  "dagster-duckdb-pandas",
+  "dagster-duckdb-polars",
+  "dagster-duckdb-pyspark",
+  "dagster-fivetran",
+  "dagster-gcp[dataproc]",
+  "dagster-gcp-pandas",
+  "dagster-gcp-pyspark",
+  "dagster-ge",
+  "dagster-github",
+  "dagster-k8s",
+  "dagster-looker",
+  "dagster-managed-elements",
+  "dagster-mlflow",
+  "dagster-msteams",
+  "dagster-mysql",
+  "dagster-openai",
+  "dagster-pagerduty",
+  "dagster-pandas",
+  "dagster-pandera",
+  "dagster-papertrail",
+  "dagster-polytomic",
+  "dagster-postgres",
+  "dagster-powerbi",
+  "dagster-prometheus",
+  "dagster-pyspark",
+  "dagster-rest-resources",
+  "dagster-shared",
+  "dagster-sigma",
+  "dagster-slack",
+  "dagster-sling",
+  "dagster-snowflake",
+  "dagster-snowflake-pandas",
+  "dagster-snowflake-polars",
+  "dagster-snowflake-pyspark",
+  "dagster-soda",
+  "dagster-spark",
+  "dagster-ssh",
+  "dagster-tableau",
+  "dagster-twilio",
+  "dagster-wandb[dev]",
+  "dagstermill",
+
+  # ---- airlift sub-projects (in-repo)
+  "kitchen-sink",                       # dagster-airlift/kitchen-sink/
+  "perf-harness",                       # dagster-airlift/perf-harness/
+  "dagster-dbt-cloud-kitchen-sink",     # dagster-dbt/kitchen-sink/
+
+  # ---- Community packages (PyPI, no editable source in-repo)
+  "dagster-anthropic",
+  "dagster-chroma",
+  "dagster-gemini",
+  "dagster-qdrant",
+  "dagster-weaviate",
+
+  # ---- Other
+  "wordcloud",   # quickstart-*
+
+  # ---- Test deps that in-repo packages declare via PEP 735 `dependency-groups`
+  # rather than `optional-dependencies`. uv sync doesn't propagate those from
+  # path dependencies, so list them here directly.
+  "aioresponses",          # dagster-sigma test code
+  "pandas-gbq",            # dagster-gcp-pandas, dagster-gcp-pyspark test code
+  "gcp-storage-emulator",  # dagster-gcp pipes test code
+  "requests-mock",         # dagster-aws test code
+  "pytest-cases",          # dagster-aws test code
+
+  # ---- Examples (in-repo, top-level)
+  "airlift-federation-tutorial",
+  "airlift-migration-tutorial",
+  "airlift-mwaa-example",
+  "assets_dynamic_partitions",
+  "assets_pandas_pyspark",
+  "assets_pandas_type_metadata",
+  "assets_smoke_test",
+  "data-quality-patterns",
+  "databricks-delta",
+  "deploy-docker",
+  "deploy-ecs",
+  "development_to_production",
+  "docs_snippets[full]",
+  "feature_graph_backed_assets",
+  "ingestion-patterns",
+  "project_fully_featured[tests]",
+  "project_multi_tenant",
+  "snowflake-medallion",
+  "starlift-demo",
+  "tutorial_notebook_assets",
+  "use_case_repository[dev]",
+  "with_great_expectations",
+  "with_openai",
+  "with_pyspark",
+  "with_pyspark_emr",
+  "with_wandb",
+
+  # ---- Examples — snowflake_cortex (dir name doesn't match dist name; see #24437)
+  "dagster-snowflake-ai",
+
+  # ---- Examples — docs_projects/*
+  "etl_tutorial",                       # examples/docs_projects/project_etl_tutorial/
+  "project_ask_ai_dagster",
+  "project_atproto_dashboard",
+  "project_components_pdf_extraction",
+  "project_dagster_modal_pipes",
+  "project_datastage",
+  "project_dbt",
+  "project_elt_pipeline",
+  "project_llm_fine_tune",
+  "project_mini",
+  "project_ml",
+  "project_multi_workspace_databricks",
+  "project_prompt_eng",
+
+  # ---- Experimental examples
+  "assets_yaml_dsl",
+  "external_assets",
+  "sling_decorator",
+
+  # ---- Constrained beyond runtime — typed-package floors/pins where the
+  # supported version range has bugged or incomplete annotations.
+  "apache-airflow>2.7",
+  "types-sqlalchemy==1.4.53.34",
+  "fastapi>=0.115.6",
+  "types-setuptools==80.9.0.20250822",
+  "clickhouse-driver==0.2.9",
+  "testcontainers[clickhouse]==4.9.1",
+  # Floors below prevent the resolver from picking ancient versions when the
+  # solution space widens; without them mlflow trades 3.x → 1.27 (and
+  # pydantic/cssutils similarly) to keep pyarrow/packaging on newest versions.
+  "mlflow>=3.11.1",
+  "pydantic>=2.13.3",
+  "cssutils>=2.15",
+  "starlette>=1.0",
+]
+
+# Aikido blocks PyPI packages newer than 48h. Pin globally so `uv lock` works
+# from dev machines without setting UV_EXCLUDE_NEWER ad-hoc.
+[tool.uv]
+exclude-newer = "48h"
+
+[tool.uv.sources]
+# In-repo editable paths. Relative to this pyproject.toml
+# (`dagster-oss/ty/master/`).
+
+# Top-level
+automation                  = { path = "../../python_modules/automation",                 editable = true }
+dagit                       = { path = "../../python_modules/dagit",                      editable = true }
+dagster                     = { path = "../../python_modules/dagster",                    editable = true }
+dagster-graphql             = { path = "../../python_modules/dagster-graphql",            editable = true }
+dagster-pipes               = { path = "../../python_modules/dagster-pipes",              editable = true }
+dagster-helm                = { path = "../../helm/dagster/schema",                       editable = true }
+dagster-k8s-test-infra      = { path = "../../integration_tests/python_modules/dagster-k8s-test-infra", editable = true }
+dagster-sphinx              = { path = "../../docs/sphinx/_ext/dagster-sphinx",           editable = true }
+dagster-test                = { path = "../../python_modules/dagster-test",               editable = true }
+dagster-webserver           = { path = "../../python_modules/dagster-webserver",          editable = true }
+
+# python_modules/libraries/*
+create-dagster              = { path = "../../python_modules/libraries/create-dagster",              editable = true }
+dagster-airbyte             = { path = "../../python_modules/libraries/dagster-airbyte",             editable = true }
+dagster-airflow             = { path = "../../python_modules/libraries/dagster-airflow",             editable = true }
+dagster-airlift             = { path = "../../python_modules/libraries/dagster-airlift",             editable = true }
+dagster-aws                 = { path = "../../python_modules/libraries/dagster-aws",                 editable = true }
+dagster-azure               = { path = "../../python_modules/libraries/dagster-azure",               editable = true }
+dagster-celery              = { path = "../../python_modules/libraries/dagster-celery",              editable = true }
+dagster-celery-docker       = { path = "../../python_modules/libraries/dagster-celery-docker",       editable = true }
+dagster-celery-k8s          = { path = "../../python_modules/libraries/dagster-celery-k8s",          editable = true }
+dagster-census              = { path = "../../python_modules/libraries/dagster-census",              editable = true }
+dagster-clickhouse          = { path = "../../python_modules/libraries/dagster-clickhouse",          editable = true }
+dagster-clickhouse-pandas   = { path = "../../python_modules/libraries/dagster-clickhouse-pandas",   editable = true }
+dagster-clickhouse-polars   = { path = "../../python_modules/libraries/dagster-clickhouse-polars",   editable = true }
+dagster-cloud-cli           = { path = "../../python_modules/libraries/dagster-cloud-cli",           editable = true }
+dagster-dask                = { path = "../../python_modules/libraries/dagster-dask",                editable = true }
+dagster-databricks          = { path = "../../python_modules/libraries/dagster-databricks",          editable = true }
+dagster-datadog             = { path = "../../python_modules/libraries/dagster-datadog",             editable = true }
+dagster-datahub             = { path = "../../python_modules/libraries/dagster-datahub",             editable = true }
+dagster-dbt                 = { path = "../../python_modules/libraries/dagster-dbt",                 editable = true }
+dagster-deltalake           = { path = "../../python_modules/libraries/dagster-deltalake",           editable = true }
+dagster-deltalake-pandas    = { path = "../../python_modules/libraries/dagster-deltalake-pandas",    editable = true }
+dagster-deltalake-polars    = { path = "../../python_modules/libraries/dagster-deltalake-polars",    editable = true }
+dagster-dg-cli              = { path = "../../python_modules/libraries/dagster-dg-cli",              editable = true }
+dagster-dg-core             = { path = "../../python_modules/libraries/dagster-dg-core",             editable = true }
+dagster-dlt                 = { path = "../../python_modules/libraries/dagster-dlt",                 editable = true }
+dagster-docker              = { path = "../../python_modules/libraries/dagster-docker",              editable = true }
+dagster-duckdb              = { path = "../../python_modules/libraries/dagster-duckdb",              editable = true }
+dagster-duckdb-pandas       = { path = "../../python_modules/libraries/dagster-duckdb-pandas",       editable = true }
+dagster-duckdb-polars       = { path = "../../python_modules/libraries/dagster-duckdb-polars",       editable = true }
+dagster-duckdb-pyspark      = { path = "../../python_modules/libraries/dagster-duckdb-pyspark",      editable = true }
+dagster-fivetran            = { path = "../../python_modules/libraries/dagster-fivetran",            editable = true }
+dagster-gcp                 = { path = "../../python_modules/libraries/dagster-gcp",                 editable = true }
+dagster-gcp-pandas          = { path = "../../python_modules/libraries/dagster-gcp-pandas",          editable = true }
+dagster-gcp-pyspark         = { path = "../../python_modules/libraries/dagster-gcp-pyspark",         editable = true }
+dagster-ge                  = { path = "../../python_modules/libraries/dagster-ge",                  editable = true }
+dagster-github              = { path = "../../python_modules/libraries/dagster-github",              editable = true }
+dagster-k8s                 = { path = "../../python_modules/libraries/dagster-k8s",                 editable = true }
+dagster-looker              = { path = "../../python_modules/libraries/dagster-looker",              editable = true }
+dagster-managed-elements    = { path = "../../python_modules/libraries/dagster-managed-elements",    editable = true }
+dagstermill                 = { path = "../../python_modules/libraries/dagstermill",                 editable = true }
+dagster-mlflow              = { path = "../../python_modules/libraries/dagster-mlflow",              editable = true }
+dagster-msteams             = { path = "../../python_modules/libraries/dagster-msteams",             editable = true }
+dagster-mysql               = { path = "../../python_modules/libraries/dagster-mysql",               editable = true }
+dagster-openai              = { path = "../../python_modules/libraries/dagster-openai",              editable = true }
+dagster-pagerduty           = { path = "../../python_modules/libraries/dagster-pagerduty",           editable = true }
+dagster-pandas              = { path = "../../python_modules/libraries/dagster-pandas",              editable = true }
+dagster-pandera             = { path = "../../python_modules/libraries/dagster-pandera",             editable = true }
+dagster-papertrail          = { path = "../../python_modules/libraries/dagster-papertrail",          editable = true }
+dagster-polytomic           = { path = "../../python_modules/libraries/dagster-polytomic",           editable = true }
+dagster-postgres            = { path = "../../python_modules/libraries/dagster-postgres",            editable = true }
+dagster-powerbi             = { path = "../../python_modules/libraries/dagster-powerbi",             editable = true }
+dagster-prometheus          = { path = "../../python_modules/libraries/dagster-prometheus",          editable = true }
+dagster-pyspark             = { path = "../../python_modules/libraries/dagster-pyspark",             editable = true }
+dagster-rest-resources      = { path = "../../python_modules/libraries/dagster-rest-resources",      editable = true }
+dagster-shared              = { path = "../../python_modules/libraries/dagster-shared",              editable = true }
+dagster-sigma               = { path = "../../python_modules/libraries/dagster-sigma",               editable = true }
+dagster-slack               = { path = "../../python_modules/libraries/dagster-slack",               editable = true }
+dagster-sling               = { path = "../../python_modules/libraries/dagster-sling",               editable = true }
+dagster-snowflake           = { path = "../../python_modules/libraries/dagster-snowflake",           editable = true }
+dagster-snowflake-pandas    = { path = "../../python_modules/libraries/dagster-snowflake-pandas",    editable = true }
+dagster-snowflake-polars    = { path = "../../python_modules/libraries/dagster-snowflake-polars",    editable = true }
+dagster-snowflake-pyspark   = { path = "../../python_modules/libraries/dagster-snowflake-pyspark",   editable = true }
+dagster-soda                = { path = "../../python_modules/libraries/dagster-soda",                editable = true }
+dagster-spark               = { path = "../../python_modules/libraries/dagster-spark",               editable = true }
+dagster-ssh                 = { path = "../../python_modules/libraries/dagster-ssh",                 editable = true }
+dagster-tableau             = { path = "../../python_modules/libraries/dagster-tableau",             editable = true }
+dagster-twilio              = { path = "../../python_modules/libraries/dagster-twilio",              editable = true }
+dagster-wandb               = { path = "../../python_modules/libraries/dagster-wandb",               editable = true }
+
+# Airlift / dbt sub-projects
+kitchen-sink                   = { path = "../../python_modules/libraries/dagster-airlift/kitchen-sink", editable = true }
+perf-harness                   = { path = "../../python_modules/libraries/dagster-airlift/perf-harness", editable = true }
+dagster-dbt-cloud-kitchen-sink = { path = "../../python_modules/libraries/dagster-dbt/kitchen-sink",     editable = true }
+
+# Examples — top-level
+airlift-federation-tutorial = { path = "../../examples/airlift-federation-tutorial", editable = true }
+airlift-migration-tutorial  = { path = "../../examples/airlift-migration-tutorial",  editable = true }
+airlift-mwaa-example        = { path = "../../examples/airlift-mwaa-example",        editable = true }
+assets_dynamic_partitions   = { path = "../../examples/assets_dynamic_partitions",   editable = true }
+assets_pandas_pyspark       = { path = "../../examples/assets_pandas_pyspark",       editable = true }
+assets_pandas_type_metadata = { path = "../../examples/assets_pandas_type_metadata", editable = true }
+assets_smoke_test           = { path = "../../examples/assets_smoke_test",           editable = true }
+data-quality-patterns       = { path = "../../examples/data-quality-patterns",       editable = true }
+databricks-delta            = { path = "../../examples/project_databricks_and_snowflake/projects/databricks-delta", editable = true }
+deploy-docker               = { path = "../../examples/deploy_docker",               editable = true }
+deploy-ecs                  = { path = "../../examples/deploy_ecs",                  editable = true }
+development_to_production   = { path = "../../examples/development_to_production",   editable = true }
+docs_snippets               = { path = "../../examples/docs_snippets",               editable = true }
+feature_graph_backed_assets = { path = "../../examples/feature_graph_backed_assets", editable = true }
+ingestion-patterns          = { path = "../../examples/ingestion-patterns",          editable = true }
+project_fully_featured      = { path = "../../examples/project_fully_featured",      editable = true }
+project_multi_tenant        = { path = "../../examples/project_multi_tenant",        editable = true }
+snowflake-medallion         = { path = "../../examples/project_databricks_and_snowflake/projects/snowflake-medallion", editable = true }
+starlift-demo               = { path = "../../examples/starlift-demo",               editable = true }
+tutorial_notebook_assets    = { path = "../../examples/tutorial_notebook_assets",    editable = true }
+use_case_repository         = { path = "../../examples/use_case_repository",         editable = true }
+with_great_expectations     = { path = "../../examples/with_great_expectations",     editable = true }
+with_openai                 = { path = "../../examples/with_openai",                 editable = true }
+with_pyspark                = { path = "../../examples/with_pyspark",                editable = true }
+with_pyspark_emr            = { path = "../../examples/with_pyspark_emr",            editable = true }
+with_wandb                  = { path = "../../examples/with_wandb",                  editable = true }
+
+# snowflake_cortex (dist name doesn't match dir name — see #24437)
+dagster-snowflake-ai        = { path = "../../examples/snowflake_cortex/dagster_snowflake", editable = true }
+
+# Examples — docs_projects/*
+etl_tutorial                       = { path = "../../examples/docs_projects/project_etl_tutorial",            editable = true }
+project_ask_ai_dagster             = { path = "../../examples/docs_projects/project_ask_ai_dagster",          editable = true }
+project_atproto_dashboard          = { path = "../../examples/docs_projects/project_atproto_dashboard",       editable = true }
+project_components_pdf_extraction  = { path = "../../examples/docs_projects/project_components_pdf_extraction", editable = true }
+project_dagster_modal_pipes        = { path = "../../examples/docs_projects/project_dagster_modal_pipes",     editable = true }
+project_datastage                  = { path = "../../examples/docs_projects/project_datastage",               editable = true }
+project_dbt                        = { path = "../../examples/docs_projects/project_dbt",                     editable = true }
+project_elt_pipeline               = { path = "../../examples/docs_projects/project_elt_pipeline",            editable = true }
+project_llm_fine_tune              = { path = "../../examples/docs_projects/project_llm_fine_tune",           editable = true }
+project_mini                       = { path = "../../examples/docs_projects/project_mini",                    editable = true }
+project_ml                         = { path = "../../examples/docs_projects/project_ml",                      editable = true }
+project_multi_workspace_databricks = { path = "../../examples/docs_projects/project_multi_workspace_databricks", editable = true }
+project_prompt_eng                 = { path = "../../examples/docs_projects/project_prompt_eng",              editable = true }
+
+# Experimental examples
+assets_yaml_dsl   = { path = "../../examples/experimental/assets_yaml_dsl",   editable = true }
+external_assets   = { path = "../../examples/experimental/external_assets",   editable = true }
+sling_decorator   = { path = "../../examples/experimental/sling_decorator",   editable = true }
+
+# ########################
+# ##### TY (Type Checker)
+# ########################
+#
+# [Docs root]
+#   https://docs.astral.sh/ty/
+# [Configuration reference]
+#   https://docs.astral.sh/ty/configuration/
+#
+# Include / exclude / extra-paths / override paths are anchored to
+# `dagster-oss/` (this env's project root, set by `run-ty.py` via cwd
+# when invoking ty).
+
+[tool.ty.environment]
+# Minimum version of Python on which code must run.
+python-version = "3.10"
+
+[tool.ty.rules]
+# Kept in lock-step with the other ty envs — the
+# `test_ty_config_consistency` lint asserts identical `[tool.ty.rules]`
+# across every committed ty config.
+#
+# ty is configured as a "strict mode" tool for selective use on specific files/packages.
+# It reports 10-100x more diagnostics than pyright because:
+#   1. pyright's `useLibraryCodeForTypes = false` treats untyped code as Any
+#   2. ty performs comprehensive type inference even on untyped dependencies
+#
+deprecated = "ignore"                  # Deprecation warnings across dependencies
+possibly-missing-attribute = "ignore"  # High false positive rate
+possibly-missing-import = "ignore"     # Often incorrect in complex imports
+# Suppress leftover `# type: ignore` / `# ty: ignore` directives that
+# no longer apply. Especially relevant for the data-platform and
+# internal envs after ty version bumps; no-op for master today.
+unused-type-ignore-comment = "ignore"
+unused-ignore-comment = "ignore"
+
+[tool.ty.src]
+
+# Paths owned by this env (previously `ty/master/ty.yaml`'s `paths:`).
+#
+# `.buildkite/` is intentionally not enrolled: it is not in pyright's
+# include.txt either, and buildkite-shared uses 3.11+ stdlib features
+# (typing.Self, enum.StrEnum, tomllib) while this env's
+# `tool.ty.environment.python-version` is "3.10" — checking it produces
+# ~90 cascading false positives. Enroll once buildkite-shared is either
+# made 3.10-compatible or this env is bumped.
+include = [
+  "examples",
+  "python_modules",
+  "docs/sphinx/_ext/dagster-sphinx",
+  "integration_tests",
+  "scripts",
+]
+
+exclude = [
+  # Example notebook intentionally references undefined names as placeholders.
+  "python_modules/libraries/dagstermill/dagstermill/examples/notebooks/yield_something.ipynb",
+  # Deliberately-malformed scaffold used as a fixture for notebook-creation tests.
+  "python_modules/libraries/dagstermill/dagstermill_tests/notebooks/cli_test_scaffold.ipynb",
+  # Documentation example trees contain illustrative snippets that reference
+  # community / scaffolded packages not installed in this env; type-checking
+  # them generates spurious unresolved-import diagnostics.
+  "examples/docs_snippets",
+  "examples/docs_projects",
+
+  # There is code in dagster_graphql/implementation that as of ty 0.0.35 breaks
+  # ty and causes runaway memory consumption. Tracked here:
+  #   https://github.com/astral-sh/ty/issues/3445#issuecomment-4426769715
+  # "python_modules/dagster-graphql/dagster_graphql/implementation",
+
+  # Vendored third-party code (croniter, dateutil).
+  "python_modules/dagster/dagster/_vendored",
+
+  # ty runner itself — uses 3.11+ stdlib (tomllib, typing.NotRequired) so
+  # it can run without external deps in CI's system Python (3.12). This
+  # env's python-version is 3.10 (matching dagster's minimum), so ty
+  # would flag those imports as unresolved here.
+  "scripts/run-ty.py",
+]
+
+# Ignore all files that are git-ignored unless explicitly included.
+respect-ignore-files = true
+
+# Override for dagster_graphql/schema and dagster_graphql/implementation:
+# graphene's ObjectType / Mutation / InputObjectType / Interface metaclass
+# synthesizes `__init__` kwargs from class-body field declarations, so e.g.
+# `GrapheneFooType(message=..., path=...)` is valid at runtime even though ty
+# can't see `message` or `path` as accepted kwargs. graphene doesn't ship
+# `@dataclass_transform`-decorated bases, so ty reports every such kwarg as
+# `unknown-argument` (and positional forms as `too-many-positional-arguments`).
+# Additionally, ty 0.0.35 doesn't narrow pydantic discriminated unions through
+# `match result.typename__: case 'X':`, causing unresolved-attribute,
+# invalid-argument-type, and not-subscriptable errors. Disable these rules for
+# both subtrees.
+[[tool.ty.overrides]]
+include = [
+  "python_modules/dagster-graphql/dagster_graphql/schema/**",
+  "python_modules/dagster-graphql/dagster_graphql/implementation/**",
+]
+
+[tool.ty.overrides.rules]
+# graphene's ObjectType / Mutation / etc. metaclass synthesizes __init__
+# from class-body fields. ty doesn't see it and flags every kwarg /
+# positional form.
+unknown-argument = "ignore"
+too-many-positional-arguments = "ignore"
+# All three below are caused by ty 0.0.35 not narrowing pydantic
+# discriminated unions through `match result.typename__: case "X":`,
+# which is the dominant pattern in schema files. Revisit when ty
+# adds discriminated-union narrowing.
+unresolved-attribute = "ignore"
+invalid-argument-type = "ignore"
+not-subscriptable = "ignore"

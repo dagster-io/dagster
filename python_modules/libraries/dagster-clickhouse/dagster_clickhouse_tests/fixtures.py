@@ -10,7 +10,7 @@ import pytest
 try:
     import docker
 except ImportError:
-    docker = None
+    docker = None  # ty: ignore[invalid-assignment]
 
 
 def _docker_available() -> bool:

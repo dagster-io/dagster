@@ -5,7 +5,7 @@ import pandas as pd
 
 import dagster as dg
 
-from .asset_input_managers import (
+from .asset_input_managers import (  # ty: ignore[unresolved-import]
     load_numpy_array,
     load_pandas_dataframe,
     store_pandas_dataframe,
@@ -31,7 +31,7 @@ class PandasAssetIOManager(dg.ConfigurableIOManager):
 
 
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context: dg.InputContext) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def load_input(self, context: dg.InputContext) -> np.ndarray:  # ty: ignore[invalid-method-override]
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 

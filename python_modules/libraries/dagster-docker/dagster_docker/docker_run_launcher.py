@@ -4,6 +4,7 @@ from typing import Any
 
 import dagster._check as check
 import docker
+import docker.errors
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
@@ -126,7 +127,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 **container_kwargs,
             )
 
-        except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+        except docker.errors.ImageNotFound:
             client.images.pull(docker_image)
             container = client.containers.create(
                 image=docker_image,
@@ -151,7 +152,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         self._instance.add_run_tags(
             run.run_id,
-            {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},  # pyright: ignore[reportArgumentType]
+            {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},
         )
 
         container.start()
@@ -199,7 +200,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client(container_context).containers.get(container_id)
-        except docker.errors.NotFound:  # pyright: ignore[reportAttributeAccessIssue]
+        except docker.errors.NotFound:
             return None
 
     def terminate(self, run_id):

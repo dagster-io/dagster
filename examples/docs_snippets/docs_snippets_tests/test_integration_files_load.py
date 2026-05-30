@@ -19,6 +19,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/salesforce.py",
     f"{snippets_folder}/sftp.py",
     f"{snippets_folder}/sharepoint.py",
+    f"{snippets_folder}/hf_datasets/dataset_pipeline_example.py",
     # FIXME: need to enable the following once we have a way to run their init/compile script in CI
     f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",
@@ -90,12 +91,15 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dbt/pythonic/assets.py",
     f"{snippets_folder}/dbt/pythonic/resources.py",
     f"{snippets_folder}/dbt/pythonic/assets_incrementals.py",
+    f"{snippets_folder}/dbt/pythonic/assets_microbatch_incrementals.py",
     f"{snippets_folder}/dbt/pythonic/assets_translator.py",
     f"{snippets_folder}/dbt/pythonic/remove_assets.py",
     f"{snippets_folder}/dbt/pythonic/remove_resources.py",
     f"{snippets_folder}/dbt/dbt_cloud_observability.py",
     f"{snippets_folder}/dbt/dbt_cloud_orchestration.py",
     f"{snippets_folder}/dbt/dbt_cloud_partitioned.py",
+    f"{snippets_folder}/dbt/dbt_patterns_extras.py",
+    f"{snippets_folder}/dbt/dbt_selectors.py",
     f"{snippets_folder}/deltalake/multi_partition.py",
     f"{snippets_folder}/dlt/customize_upstream_dependencies.py",
     f"{snippets_folder}/dlt/define_downstream_dependencies.py",
@@ -175,6 +179,8 @@ EXCLUDED_FILES = {
     # FIXME: serverless pipes files require Databricks environment/credentials
     f"{snippets_folder}/databricks/dagster_code_serverless.py",
     f"{snippets_folder}/databricks/databricks_code_serverless.py",
+    f"{snippets_folder}/databricks/databricks_notebook_uc_volumes.py",
+    f"{snippets_folder}/databricks/databricks_pipes_uc_volumes.py",
     f"{snippets_folder}/iceberg/io_manager_daft.py",
     f"{snippets_folder}/iceberg/partition_field_naming_config.py",
 }

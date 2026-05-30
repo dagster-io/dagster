@@ -52,7 +52,7 @@ def get_latest_output_metadata_value(
         )
     )
     metadata = (
-        event_log_entry.dagster_event.event_specific_data.materialization.metadata  # type: ignore
+        event_log_entry.dagster_event.event_specific_data.materialization.metadata
     )
     return metadata[metadata_key].value
 

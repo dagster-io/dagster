@@ -43,13 +43,13 @@ class DgApiScheduleApi:
                             repo_location_name=repository_location_name,
                             repo_name=repository_name,
                         )
-                        for s in result.results
+                        for s in result.results  # ty: ignore[unresolved-attribute]
                     ]
                     return DgApiScheduleList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
@@ -58,7 +58,7 @@ class DgApiScheduleApi:
             match result.typename__:
                 case "RepositoryConnection":
                     items = []
-                    for repo in result.nodes:
+                    for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                         for s in repo.schedules:
                             items.append(
                                 self._build_schedule(
@@ -69,9 +69,9 @@ class DgApiScheduleApi:
                             )
                     return DgApiScheduleList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")
+                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 
@@ -92,14 +92,14 @@ class DgApiScheduleApi:
         match result.typename__:
             case "Schedule":
                 return self._build_schedule(
-                    result,
+                    result,  # ty: ignore[invalid-argument-type]
                     repo_location_name=repository_location_name,
                     repo_name=repository_name,
                 )
             case "ScheduleNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -109,16 +109,16 @@ class DgApiScheduleApi:
         match result.typename__:
             case "RepositoryConnection":
                 matches: list[DgApiSchedule] = []
-                for repo in result.nodes:
-                    for s in repo.schedules:
-                        if s.name == schedule_name:
-                            matches.append(
-                                self._build_schedule(
-                                    s,
-                                    repo_location_name=repo.location.name,
-                                    repo_name=repo.name,
-                                )
-                            )
+                for repo in result.nodes:  # ty: ignore[unresolved-attribute]
+                    matches.extend(
+                        self._build_schedule(
+                            s,
+                            repo_location_name=repo.location.name,
+                            repo_name=repo.name,
+                        )
+                        for s in repo.schedules
+                        if s.name == schedule_name
+                    )
                 if not matches:
                     raise DagsterPlusGraphqlError(f"Schedule not found: {schedule_name}")
                 if len(matches) > 1:
@@ -129,9 +129,9 @@ class DgApiScheduleApi:
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")
+                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

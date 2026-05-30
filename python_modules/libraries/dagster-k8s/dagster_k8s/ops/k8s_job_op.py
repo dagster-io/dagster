@@ -383,9 +383,9 @@ def execute_k8s_job(
 
             api_client.wait_for_pod(
                 pod_to_watch,
-                namespace,  # pyright: ignore[reportArgumentType]
+                namespace,
                 wait_timeout=timeout,
-                start_time=start_time,  # pyright: ignore[reportArgumentType]
+                start_time=start_time,
             )
 
             log_stream = watch.stream(

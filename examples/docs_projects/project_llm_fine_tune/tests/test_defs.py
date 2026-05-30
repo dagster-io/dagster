@@ -2,8 +2,8 @@ import json
 
 import dagster as dg
 from dagster import AssetKey
-from project_llm_fine_tune.definitions import defs as _raw_defs
-from project_llm_fine_tune.defs.assets import (
+from project_llm_fine_tune.definitions import defs as _raw_defs  # ty: ignore[unresolved-import]
+from project_llm_fine_tune.defs.assets import (  # ty: ignore[unresolved-import]
     CATEGORIES,
     create_prompt_record,
     read_openai_file,

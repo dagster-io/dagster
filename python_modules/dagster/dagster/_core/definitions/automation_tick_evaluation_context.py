@@ -1,5 +1,7 @@
+import asyncio
 import datetime
 import logging
+import time
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, Any, cast  # noqa: UP035
@@ -19,6 +21,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
+    get_automation_tick_settle_delay_seconds,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
@@ -77,6 +80,7 @@ class AutomationTickEvaluationContext:
         self._observe_run_tags = observe_run_tags
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
         self._partition_loading_context = self._evaluator.asset_graph_view.partition_loading_context
+        self._logger = logger
 
     @property
     def cursor(self) -> AssetDaemonCursor:
@@ -174,6 +178,15 @@ class AutomationTickEvaluationContext:
     ) -> tuple[
         Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation[EntityKey]]
     ]:
+        settle_delay_seconds = get_automation_tick_settle_delay_seconds()
+        if settle_delay_seconds > 0:
+            max_storage_id = self._evaluator.asset_graph_view.last_event_id
+            self._logger.info(
+                f"Sleeping {settle_delay_seconds:g}s before evaluation to let in-flight "
+                f"transactions settle. Captured max_record_id={max_storage_id} as the upper "
+                f"bound for this tick."
+            )
+            await asyncio.sleep(settle_delay_seconds)
         observe_run_requests = self._legacy_build_auto_observe_run_requests()
         results, entity_subsets = await self._evaluator.async_evaluate()
 
@@ -189,6 +202,15 @@ class AutomationTickEvaluationContext:
     ) -> tuple[
         Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation[EntityKey]]
     ]:
+        settle_delay_seconds = get_automation_tick_settle_delay_seconds()
+        if settle_delay_seconds > 0:
+            max_storage_id = self._evaluator.asset_graph_view.last_event_id
+            self._logger.info(
+                f"Sleeping {settle_delay_seconds:g}s before evaluation to let in-flight "
+                f"transactions settle. Captured max_record_id={max_storage_id} as the upper "
+                f"bound for this tick."
+            )
+            time.sleep(settle_delay_seconds)
         observe_run_requests = self._legacy_build_auto_observe_run_requests()
         results, entity_subsets = self._evaluator.evaluate()
 

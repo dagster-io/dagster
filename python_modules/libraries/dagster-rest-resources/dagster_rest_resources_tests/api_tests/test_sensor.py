@@ -30,6 +30,7 @@ from dagster_rest_resources.__generated__.list_sensors import (
     ListSensorsSensorsOrErrorSensorsResultsSensorState,
 )
 from dagster_rest_resources.api.sensor import DgApiSensorApi
+from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
     DagsterPlusGraphqlError,
     DagsterPlusUnauthorizedError,
@@ -88,7 +89,7 @@ def _make_repos(
 
 class TestListSensorsFiltered:
     def test_returns_sensors_for_repo(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_sensors.return_value = ListSensors(
             sensorsOrError=ListSensorsSensorsOrErrorSensors(
                 __typename="Sensors",
@@ -118,7 +119,7 @@ class TestListSensorsFiltered:
         assert result.items[1].repository_origin == "loc@repo"
 
     def test_empty_results(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_sensors.return_value = ListSensors(
             sensorsOrError=ListSensorsSensorsOrErrorSensors(
                 __typename="Sensors",
@@ -134,7 +135,7 @@ class TestListSensorsFiltered:
         assert result == DgApiSensorList(items=[])
 
     def test_repository_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_sensors.return_value = ListSensors(
             sensorsOrError=ListSensorsSensorsOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -148,7 +149,7 @@ class TestListSensorsFiltered:
             )
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_sensors.return_value = ListSensors(
             sensorsOrError=ListSensorsSensorsOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -164,7 +165,7 @@ class TestListSensorsFiltered:
 
 class TestListSensorsAll:
     def test_returns_all_sensors_across_repos(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = _make_repos(
             sensors=[("sensor-a", "id-a"), ("sensor-b", "id-b")]
         )
@@ -178,7 +179,7 @@ class TestListSensorsAll:
         assert result.items[1].repository_origin == "test_location@__repository__"
 
     def test_empty_repos(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = _make_repos(sensors=[])
 
         result = DgApiSensorApi(_client=client).list_sensors()
@@ -186,7 +187,7 @@ class TestListSensorsAll:
         assert result == DgApiSensorList(items=[])
 
     def test_repo_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = ListRepositoriesWithSensors(
             repositoriesOrError=ListRepositoriesWithSensorsRepositoriesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -197,7 +198,7 @@ class TestListSensorsAll:
             DgApiSensorApi(_client=client).list_sensors()
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = ListRepositoriesWithSensors(
             repositoriesOrError=ListRepositoriesWithSensorsRepositoriesOrErrorPythonError(
                 __typename="PythonError", message=""
@@ -210,7 +211,7 @@ class TestListSensorsAll:
 
 class TestGetSensor:
     def test_returns_sensor(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_sensor.return_value = GetSensor(
             sensorOrError=GetSensorSensorOrErrorSensor(
                 __typename="Sensor",
@@ -247,7 +248,7 @@ class TestGetSensor:
         assert result.next_tick_timestamp is None
 
     def test_sensor_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_sensor.return_value = GetSensor(
             sensorOrError=GetSensorSensorOrErrorSensorNotFoundError(
                 __typename="SensorNotFoundError", message=""
@@ -262,7 +263,7 @@ class TestGetSensor:
             )
 
     def test_unauthorized_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_sensor.return_value = GetSensor(
             sensorOrError=GetSensorSensorOrErrorUnauthorizedError(
                 __typename="UnauthorizedError", message=""
@@ -277,7 +278,7 @@ class TestGetSensor:
             )
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.get_sensor.return_value = GetSensor(
             sensorOrError=GetSensorSensorOrErrorPythonError(__typename="PythonError", message="")
         )
@@ -292,7 +293,7 @@ class TestGetSensor:
 
 class TestGetSensorByName:
     def test_finds_sensor_by_name(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = _make_repos(
             sensors=[("target_sensor", "id-target"), ("other_sensor", "id-other")]
         )
@@ -303,7 +304,7 @@ class TestGetSensorByName:
         assert result.repository_origin == "test_location@__repository__"
 
     def test_sensor_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = _make_repos(
             sensors=[("other_sensor", "id-other")]
         )
@@ -312,7 +313,7 @@ class TestGetSensorByName:
             DgApiSensorApi(_client=client).get_sensor_by_name("missing_sensor")
 
     def test_multiple_matching_sensors_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = ListRepositoriesWithSensors(
             repositoriesOrError=ListRepositoriesWithSensorsRepositoriesOrErrorRepositoryConnection(
                 __typename="RepositoryConnection",
@@ -362,7 +363,7 @@ class TestGetSensorByName:
             DgApiSensorApi(_client=client).get_sensor_by_name("dup_sensor")
 
     def test_repo_not_found_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = ListRepositoriesWithSensors(
             repositoriesOrError=ListRepositoriesWithSensorsRepositoriesOrErrorRepositoryNotFoundError(
                 __typename="RepositoryNotFoundError", message=""
@@ -373,7 +374,7 @@ class TestGetSensorByName:
             DgApiSensorApi(_client=client).get_sensor_by_name("test_sensor_name")
 
     def test_python_error_raises(self):
-        client = Mock()
+        client = Mock(spec=IGraphQLClient)
         client.list_repositories_with_sensors.return_value = ListRepositoriesWithSensors(
             repositoriesOrError=ListRepositoriesWithSensorsRepositoriesOrErrorPythonError(
                 __typename="PythonError", message=""

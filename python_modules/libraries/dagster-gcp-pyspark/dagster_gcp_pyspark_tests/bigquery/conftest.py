@@ -57,7 +57,7 @@ def gcs_jar_path(tmp_path_factory):
 @pytest.fixture(scope="module")
 def spark(gcs_jar_path):
     spark = (
-        SparkSession.builder.config(  # pyright: ignore[reportAttributeAccessIssue]
+        SparkSession.builder.config(
             key="spark.jars.packages",
             value=BIGQUERY_JARS,
         )
@@ -65,14 +65,16 @@ def spark(gcs_jar_path):
         .getOrCreate()
     )
 
-    # required config for the gcs connector
-    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001
+    # required config for the gcs connector. SparkContext._jsc is typed as
+    # Optional[JavaObject] in pyspark stubs, but is guaranteed non-None after
+    # SparkSession construction.
+    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         "fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
     )
-    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001
+    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         "fs.gs.auth.service.account.enable", "true"
     )
-    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001
+    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         "google.cloud.auth.service.account.json.keyfile",
         os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
     )

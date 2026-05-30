@@ -4,7 +4,7 @@ description: Comparing Dagster's partitions with run configuration for parameter
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Partition.png
 ---
 
 In this example, we'll explore two different approaches to parameterizing Dagster pipelines. When you need to process data for different segments (like customers, regions, or dates), you can choose between Dagster's [partitions](/guides/build/partitions-and-backfills/partitioning-assets) or [run configuration](/guides/operate/configuration/run-configuration). Each approach has distinct trade-offs in terms of tracking, observability, and workflow.

@@ -99,7 +99,7 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -127,10 +127,6 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
                 Arguments to be forwarded to docker client containers.create.
             extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
-            context_injector (Optional[PipesContextInjector]):
-                Override the default ext protocol context injection.
-            message_reader (Optional[PipesMessageReader]):
-                Override the default ext protocol message reader.
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external

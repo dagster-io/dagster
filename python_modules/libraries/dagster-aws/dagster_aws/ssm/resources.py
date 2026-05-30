@@ -66,7 +66,7 @@ class SSMResource(ResourceWithBoto3Configuration):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def get_client(self) -> "botocore.client.ssm":  # pyright: ignore (reportAttributeAccessIssue)
+    def get_client(self) -> "botocore.client.ssm":  # ty: ignore[possibly-missing-submodule]
         return construct_ssm_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -83,7 +83,7 @@ class SSMResource(ResourceWithBoto3Configuration):
 @beta
 @dagster_maintained_resource
 @resource(config_schema=SSMResource.to_config_schema())
-def ssm_resource(context) -> "botocore.client.ssm":  # pyright: ignore (reportAttributeAccessIssue)
+def ssm_resource(context) -> "botocore.client.ssm":  # ty: ignore[possibly-missing-submodule]
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
     The underlying Parameter Store session is created by calling

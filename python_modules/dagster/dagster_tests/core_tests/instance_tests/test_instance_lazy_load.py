@@ -77,7 +77,7 @@ class InitFailRunCoordinator(DefaultRunCoordinator, ConfigurableClass):
         raise Exception("Expected init fail")
 
     @classmethod
-    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_config_value(  # ty: ignore[invalid-method-override]
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
         return cls(inst_data=inst_data)

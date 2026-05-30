@@ -199,7 +199,7 @@ def test_glue_pipes(
     )
 
     pipes_glue_client = PipesGlueClient(
-        client=LocalGlueMockClient(  # pyright: ignore[reportArgumentType]
+        client=LocalGlueMockClient(  # ty: ignore[invalid-argument-type]
             aws_endpoint_url=_MOTO_SERVER_URL,
             glue_client=glue_client,
             s3_client=s3_client,

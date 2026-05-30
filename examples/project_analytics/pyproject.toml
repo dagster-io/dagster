@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster_pypi"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
     "dagster-cloud",

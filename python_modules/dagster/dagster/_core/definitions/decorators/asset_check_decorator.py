@@ -195,7 +195,7 @@ def asset_check(
 
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
         check.callable_param(fn, "fn")
-        resolved_name = name or fn.__name__
+        resolved_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
         additional_dep_keys = (
@@ -358,7 +358,7 @@ def multi_asset_check(
     )
 
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
-        op_name = name or fn.__name__
+        op_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
         op_required_resource_keys = compute_required_resource_keys(
             required_resource_keys, resource_defs, fn=fn, decorator_name="@multi_asset_check"
         )

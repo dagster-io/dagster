@@ -3,6 +3,7 @@
   dict({
     'items': list([
     ]),
+    'total': 0,
   })
 # ---
 # name: TestFormatAssetEvaluations.test_format_empty_evaluations_text_output[0]
@@ -36,6 +37,7 @@
         'timestamp': 1706659200.0,
       }),
     ]),
+    'total': 2,
   })
 # ---
 # name: TestFormatAssetEvaluations.test_format_evaluations_text_output[0]
@@ -112,6 +114,7 @@
         'timestamp': 1706745600.0,
       }),
     ]),
+    'total': 1,
   })
 # ---
 # name: TestFormatAssetEvaluations.test_format_evaluations_with_nodes_text_output[0]
@@ -175,6 +178,7 @@
         'timestamp': '1706572800000',
       }),
     ]),
+    'total': 3,
   })
 # ---
 # name: TestFormatAssetEvents.test_format_asset_events_text_output[0]
@@ -189,6 +193,7 @@
   dict({
     'items': list([
     ]),
+    'total': 0,
   })
 # ---
 # name: TestFormatAssetEvents.test_format_empty_asset_events_text_output[0]
@@ -322,14 +327,14 @@
       'latest_materialization_minutes_late': None,
       'maximum_lag_minutes': 30.0,
     }),
-    'freshness_status': 'FRESH',
+    'freshness_status': 'DEGRADED',
     'health_metadata': None,
     'latest_materialization': dict({
       'partition': '2024-01-31',
       'run_id': 'run-abc-123',
       'timestamp': 1706745600000.0,
     }),
-    'materialization_status': 'MATERIALIZED',
+    'materialization_status': 'UNKNOWN',
   })
 # ---
 # name: TestFormatAssetHealth.test_format_asset_health_text_output[0]
@@ -337,8 +342,8 @@
   Asset Key: analytics/daily_metrics
   
   Asset Health: HEALTHY
-  Materialization Status: MATERIALIZED
-  Freshness Status: FRESH
+  Materialization Status: UNKNOWN
+  Freshness Status: DEGRADED
   Asset Checks Status: HEALTHY
   Latest Materialization: 2024-02-01 00:00:00 UTC
   Latest Run ID: run-abc-123

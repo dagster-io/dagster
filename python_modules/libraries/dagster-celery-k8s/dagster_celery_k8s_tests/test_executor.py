@@ -68,7 +68,7 @@ def celery_mock():
                         "execute_step_args_packed",
                     )
                 )
-                args = execute_step_args.get_command_args()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                args = execute_step_args.get_command_args()  # ty: ignore[unresolved-attribute]
                 result = subprocess.run(args, check=True, capture_output=True)
                 raw_logs = result.stdout
 
@@ -78,8 +78,8 @@ def celery_mock():
 
             # apply async must return AsyncResult
             rv = AsyncResult(id="123", task_name="execute_step_k8s_job", backend=celery_mock)
-            rv.ready = lambda: True
-            rv.get = lambda: serialized_events
+            rv.ready = lambda: True  # ty: ignore[invalid-assignment]
+            rv.get = lambda: serialized_events  # ty: ignore[invalid-assignment]
             return rv
 
     celery_mock.return_value.task.return_value = SimpleQueueWrapper

@@ -4,6 +4,7 @@
 | `airflow`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airflow-color.svg" width={20} height={20} />                        |
 | `airliftmapped`       | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airflow-color.svg" width={20} height={20} />                        |
 | `airtable`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airtable-color.svg" width={20} height={20} />                       |
+| `alteryx`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-alteryx-color.svg" width={20} height={20} />                        |
 | `arrow`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-arrow-color.svg" width={20} height={20} />                          |
 | `athena`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-aws-color.svg" width={20} height={20} />                            |
 | `atlan`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-atlan-color.svg" width={20} height={20} />                          |
@@ -16,7 +17,9 @@
 | `azuredevops`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-azuredevops-color.svg" width={20} height={20} />                    |
 | `azureml`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-azureml-color.svg" width={20} height={20} />                        |
 | `bigquery`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-bigquery-color.svg" width={20} height={20} />                       |
+| `boomi`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-boomi-color.svg" width={20} height={20} />                          |
 | `botorch`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-botorch-color.svg" width={20} height={20} />                        |
+| `braze`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-braze.svg" width={20} height={20} />                                |
 | `cassandra`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-cassandra-color.svg" width={20} height={20} />                      |
 | `catboost`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-catboost-color.svg" width={20} height={20} />                       |
 | `celery`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-celery-color.svg" width={20} height={20} />                         |
@@ -162,10 +165,12 @@
 | `redpanda`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-redpanda-color.svg" width={20} height={20} />                       |
 | `redshift`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-redshift-color.svg" width={20} height={20} />                       |
 | `rockset`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-rockset-color.svg" width={20} height={20} />                        |
+| `runpod`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-runpod.svg" width={20} height={20} />                               |
 | `rust`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-rust-color.svg" width={20} height={20} />                           |
 | `s3`                  | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-s3-color.svg" width={20} height={20} />                             |
 | `sagemaker`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-sagemaker-color.svg" width={20} height={20} />                      |
 | `salesforce`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-salesforce-color.svg" width={20} height={20} />                     |
+| `sap`                 | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-sap-color.svg" width={20} height={20} />                            |
 | `scala`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-scala-color.svg" width={20} height={20} />                          |
 | `scikitlearn`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-scikitlearn-color.svg" width={20} height={20} />                    |
 | `scipy`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-scipy-color.svg" width={20} height={20} />                          |

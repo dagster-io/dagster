@@ -415,7 +415,7 @@ def test_subset_with_asset_selection(
     asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 1
     found_asset_keys = {
-        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        mat.event_specific_data.materialization.asset_key  # ty: ignore
         for mat in asset_materializations
     }
     assert found_asset_keys == {AssetKey(["target", "main", "orders"])}
@@ -433,7 +433,7 @@ def test_subset_with_asset_selection(
     asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 2
     found_asset_keys = {
-        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        mat.event_specific_data.materialization.asset_key  # ty: ignore
         for mat in asset_materializations
     }
     assert found_asset_keys == {
@@ -476,7 +476,7 @@ def test_subset_with_run_config(
     asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 3  # no 'context_streams', no subset performed
     found_asset_keys = {
-        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        mat.event_specific_data.materialization.asset_key  # ty: ignore
         for mat in asset_materializations
     }
     assert found_asset_keys == {
@@ -507,7 +507,7 @@ def test_subset_with_run_config(
     asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 1
     found_asset_keys = {
-        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        mat.event_specific_data.materialization.asset_key  # ty: ignore
         for mat in asset_materializations
     }
     assert found_asset_keys == {

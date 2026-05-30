@@ -1,7 +1,10 @@
 from unittest.mock import MagicMock, patch
 
 import dagster as dg
-from project_atproto_dashboard.defs.ingestion import actor_feed_snapshot, starter_pack_snapshot
+from project_atproto_dashboard.defs.ingestion import (  # ty: ignore[unresolved-import]
+    actor_feed_snapshot,
+    starter_pack_snapshot,
+)
 
 
 def _make_mock_s3():
@@ -13,6 +16,7 @@ def _make_mock_s3():
 
 def _meta_val(result: dg.MaterializeResult, key: str):
     """Extract metadata value regardless of whether it's wrapped or raw."""
+    assert result.metadata is not None
     val = result.metadata[key]
     return val.value if hasattr(val, "value") else val
 

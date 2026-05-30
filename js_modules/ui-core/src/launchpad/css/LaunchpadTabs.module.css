@@ -1,0 +1,73 @@
+.launchpadTabsContainer {
+  display: flex;
+  flex-direction: row;
+  font-size: 13px;
+  gap: 8px;
+  z-index: 1;
+  padding-left: 12px;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tabContainer {
+  align-items: center;
+  user-select: none;
+  padding: 8px 12px;
+  display: inline-flex;
+  gap: 4px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  white-space: nowrap;
+
+  &:last-child {
+    padding-right: 12px;
+  }
+
+  input {
+    background-color: transparent;
+    font-size: 13px;
+    border: 0;
+    outline: none;
+    padding: 0;
+  }
+}
+
+.tabActive {
+  font-weight: 600;
+  background-color: var(--color-background-lighter);
+  color: var(--color-accent-primary);
+  box-shadow: var(--color-accent-primary) 0 -2px 0 inset;
+  cursor: inherit;
+}
+
+.tabInactive {
+  font-weight: normal;
+  background-color: var(--color-background-light);
+  color: var(--color-text-lighter);
+  box-shadow: var(--color-accent-gray) 0 -1px 0 inset;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-light);
+    box-shadow: var(--color-accent-gray) 0 -1px 0 inset;
+    color: var(--color-text-light);
+  }
+}
+
+.removeButton {
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+
+  .iconGlobal {
+    transition: background-color 100ms;
+  }
+
+  &:hover .iconGlobal {
+    background-color: var(--color-accent-primary-hover);
+  }
+}

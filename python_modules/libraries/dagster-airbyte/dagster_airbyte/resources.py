@@ -523,6 +523,9 @@ class BaseAirbyteWorkspace(ConfigurableResource):
 
     _client: AirbyteClient = PrivateAttr(default=None)  # type: ignore
 
+    def get_client(self) -> AirbyteClient:
+        raise NotImplementedError()
+
     @cached_method
     def fetch_airbyte_workspace_data(
         self,

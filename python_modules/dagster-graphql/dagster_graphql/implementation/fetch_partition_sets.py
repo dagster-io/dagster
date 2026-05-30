@@ -31,8 +31,8 @@ if TYPE_CHECKING:
         GraphenePartitions,
         GraphenePartitionSet,
         GraphenePartitionSets,
-        GraphenePartitionStatus,
         GraphenePartitionStatusCounts,
+        GraphenePartitionStatuses,
         GraphenePartitionTags,
     )
 
@@ -192,7 +192,7 @@ def get_partition_set_partition_statuses(
     graphene_info: ResolveInfo,
     remote_partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
-) -> Sequence["GraphenePartitionStatus"]:
+) -> "GraphenePartitionStatuses":
     check.inst_param(remote_partition_set, "remote_partition_set", RemotePartitionSet)
 
     repository_handle = remote_partition_set.repository_handle
@@ -220,7 +220,7 @@ def partition_statuses_from_run_partition_data(
     run_partition_data: Sequence[RunPartitionData],
     partition_names: Sequence[str],
     backfill_id: str | None = None,
-) -> Sequence["GraphenePartitionStatus"]:
+) -> "GraphenePartitionStatuses":
     from dagster_graphql.schema.partition_sets import (
         GraphenePartitionStatus,
         GraphenePartitionStatuses,
@@ -289,8 +289,10 @@ def get_partition_set_partition_runs(
     from dagster_graphql.schema.partition_sets import GraphenePartitionRun
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-    run_records = graphene_info.context.instance.get_run_records(
-        RunsFilter(tags={PARTITION_SET_TAG: partition_set.name})
+    instance = graphene_info.context.instance
+    run_records = instance.get_run_records(
+        RunsFilter(tags={PARTITION_SET_TAG: partition_set.name}),
+        limit=instance.get_default_graphql_run_records_limit(),
     )
 
     by_partition = {}

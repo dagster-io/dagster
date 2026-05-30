@@ -96,8 +96,6 @@ def evaluate_automation_conditions(
         cursor (Optional[AssetDaemonCursor]):
             The cursor for the computation. If you are evaluating multiple ticks within a test, this
             value should be supplied from the `cursor` property of the returned `result` object.
-        request_backfills (bool): Whether to evaluate the automation conditions under the condition of
-            DA requesting backfills. Defaults to False.
 
     Examples:
         **Missing asset** — an asset with ``eager()`` that has never been materialized is

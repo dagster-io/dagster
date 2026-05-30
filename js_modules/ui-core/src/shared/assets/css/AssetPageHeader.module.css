@@ -1,0 +1,14 @@
+.truncatedHeading {
+  max-width: 300px;
+  overflow: hidden;
+}
+
+.breadcrumbLink {
+  color: var(--color-text-light);
+  white-space: nowrap;
+}
+
+.breadcrumbLink:hover,
+.breadcrumbLink:active {
+  color: var(--color-text-light);
+}

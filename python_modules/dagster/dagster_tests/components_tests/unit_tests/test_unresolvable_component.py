@@ -10,7 +10,7 @@ class UnresolvableComponent(dg.Component, dg.Model):
 
     some_field: str
 
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]
 
 
 def test_unresolvable_component():

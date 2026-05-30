@@ -1,5 +1,5 @@
 import pyarrow as pa
-from dagster_iceberg.config import UpsertOptions
+from dagster_iceberg.config import UpsertOptions  # ty: ignore[unresolved-import]
 
 from dagster import AssetExecutionContext, asset
 

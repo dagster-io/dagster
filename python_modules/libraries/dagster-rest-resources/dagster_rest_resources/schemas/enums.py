@@ -2,6 +2,7 @@ from dagster_rest_resources.__generated__.enums import (
     AgentStatus as DgApiAgentStatus,  # noqa: F401
     AssetCheckCanExecuteIndividually as DgApiAssetCheckCanExecuteIndividually,  # noqa: F401
     AssetCheckExecutionResolvedStatus as DgApiAssetCheckExecutionResolvedStatus,  # noqa: F401
+    AssetHealthStatus as DgApiAssetHealthStatus,  # noqa: F401
     DagsterCloudDeploymentType as DgApiDagsterCloudDeploymentType,  # noqa: F401
     InstigationStatus as DgApiInstigationStatus,  # noqa: F401
     InstigationTickStatus as DgApiInstigationTickStatus,  # noqa: F401

@@ -11,8 +11,8 @@ import {
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import React, {useState} from 'react';
-import styled from 'styled-components';
 
 import {AssetCheckAutomationList} from './AssetCheckAutomationList';
 import {
@@ -27,14 +27,15 @@ import {AssetCheckPartitions} from './AssetCheckPartitions';
 import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
 import {AssetChecksTabType, AssetChecksTabs} from './AssetChecksTabs';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
+import styles from './css/AssetChecks.module.css';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
 } from './types/AssetCheckDetailDialog.types';
-import {useReportCheckEvaluationDialog} from './useReportCheckEvaluationDialog';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {useQuery} from '../../apollo-client';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecksQuery.types';
+import {useReportCheckEvaluationDialog} from './useReportCheckEvaluationDialog';
 import {DEFAULT_DISABLED_REASON} from '../../app/Permissions';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
@@ -213,11 +214,14 @@ export const AssetChecks = ({
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     const check = filteredChecks[index]!;
                     return (
-                      <CheckRow
+                      <Row
                         key={check.name}
                         $height={size}
                         $start={start}
-                        $selected={selectedCheck === check}
+                        className={clsx(
+                          styles.checkRow,
+                          selectedCheck === check && styles.checkRowSelected,
+                        )}
                         onClick={() => {
                           setSelectedCheckName(check.name);
                           setActiveTab('overview');
@@ -245,7 +249,7 @@ export const AssetChecks = ({
                             </Body2>
                           </Box>
                         </Box>
-                      </CheckRow>
+                      </Row>
                     );
                   })}
                 </Inner>
@@ -375,14 +379,3 @@ const FixedScrollContainer = ({children}: {children: React.ReactNode}) => {
     </Box>
   );
 };
-
-const CheckRow = styled(Row)<{$selected: boolean}>`
-  padding: 5px 8px 5px 12px;
-  cursor: pointer;
-  border-radius: 8px;
-  user-select: none;
-  &:hover {
-    background: ${Colors.backgroundLightHover()};
-  }
-  ${({$selected}) => ($selected ? `background: ${Colors.backgroundBlue()};` : '')}
-`;

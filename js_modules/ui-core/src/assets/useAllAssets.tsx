@@ -498,7 +498,9 @@ const combineAssetDefinitions = weakMapMemoize(
         ...asset.definition,
         ...MERGE_ARRAY_KEYS.reduce(
           (acc, key) => {
-            acc[key] = Array.from(new Set(sdas.map((sda) => sda.definition[key]).flat())) as any[];
+            acc[key] = Array.from(
+              new Set(sdas.map((sda) => sda.definition[key]).flat()),
+            ) as string[];
             return acc;
           },
           {} as Record<string, string[]>,

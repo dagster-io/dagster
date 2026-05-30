@@ -28,7 +28,7 @@ def scraped_story_content(
     Extracts main content from story pages and stores it in the description field.
     """
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         try:
             cursor.execute(f"""

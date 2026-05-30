@@ -235,6 +235,10 @@ class BuildkiteContext(Generic[T_Config]):
     def has_python_changes(self) -> bool:
         return any(path.suffix == ".py" for path in self.changed_files)
 
+    def has_javascript_changes(self) -> bool:
+        js_root = oss_path("js_modules")
+        return any(path.is_relative_to(js_root) for path in self.changed_files)
+
     def has_yaml_changes(self) -> bool:
         return any(path.suffix in (".yml", ".yaml") for path in self.changed_files)
 
@@ -247,11 +251,6 @@ class BuildkiteContext(Generic[T_Config]):
     def has_non_docs_markdown_changes(self) -> bool:
         return any(
             path.suffix == ".md" and Path("docs") not in path.parents for path in self.changed_files
-        )
-
-    def has_pyright_requirements_txt_changes(self) -> bool:
-        return any(
-            path.match(str(oss_path("pyright/*/requirements.txt"))) for path in self.changed_files
         )
 
     def has_dagster_airlift_changes(self) -> bool:
@@ -512,8 +511,6 @@ BuildkiteEnvVar: TypeAlias = Literal[
     "BUILDKITE_PIPELINE_PROVIDER",
     # The pipeline slug on Buildkite as used in URLs.
     "BUILDKITE_PIPELINE_SLUG",
-    # The slug of the step suite.
-    "BUILDKITE_STEP_SUITE_SLUG",
     # A colon separated list of the pipeline's non-private team slugs.
     "BUILDKITE_PIPELINE_TEAMS",
     # A JSON string holding the current plugin's configuration (as opposed to all the plugin configurations in the BUILDKITE_PLUGINS environment variable).
@@ -560,8 +557,6 @@ BuildkiteEnvVar: TypeAlias = Literal[
     "BUILDKITE_STEP_KEY",
     # The name of the tag being built, if this build was triggered from a tag.
     "BUILDKITE_TAG",
-    # The token used to access the Buildkite API for quarantined tests or steps
-    "BUILDKITE_TEST_QUARANTINE_TOKEN",
     # The number of minutes until Buildkite automatically cancels this job, if a timeout has been specified, otherwise it false if no timeout is set.
     "BUILDKITE_TIMEOUT",
     # Set to "datadog" to send metrics to the Datadog APM using localhost:8126, or DD_AGENT_HOST:DD_AGENT_APM_PORT.

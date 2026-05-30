@@ -171,7 +171,7 @@ def partitioned_assets_repository():
     ]
 
 
-@repository  # pyright: ignore[reportArgumentType]
+@repository
 def column_schema_repository():
     from dagster_test.toys import column_schema
 

@@ -1,11 +1,10 @@
 import * as React from 'react';
-import styled, {CSSProperties} from 'styled-components';
 
 import {Box} from './Box';
 import {Button} from './Button';
-import {Colors} from './Color';
 import {Popover} from './Popover';
 import {Subheading} from './Text';
+import styles from './css/ProductTour.module.css';
 
 export enum ProductTourPosition {
   TOP_LEFT = 'top-start',
@@ -33,7 +32,7 @@ type Props = {
     dismiss?: () => void;
   };
   position: ProductTourPosition;
-  width?: CSSProperties['width'];
+  width?: React.CSSProperties['width'];
   modifiers?: React.ComponentProps<typeof Popover>['modifiers'];
 } & ObjectType;
 
@@ -62,11 +61,11 @@ export const ProductTour = ({
 
   const actionsJsx = React.useMemo(() => {
     return (
-      <ActionsContainer flex={{gap: 6, direction: 'row'}} margin={{top: 8}}>
+      <Box className={styles.actions} flex={{gap: 6, direction: 'row'}} margin={{top: 8}}>
         {actions?.custom}
         {actions?.next ? <Button onClick={actions.next}>Next</Button> : null}
         {actions?.dismiss ? <Button onClick={actions.dismiss}>Dismiss</Button> : null}
-      </ActionsContainer>
+      </Box>
     );
   }, [actions?.custom, actions?.next, actions?.dismiss]);
 
@@ -88,14 +87,19 @@ export const ProductTour = ({
           }}
         >
           <div />
-          <ProductTourContainer flex={{direction: 'column', gap: 4}} padding={16} style={{width}}>
+          <Box
+            className={styles.container}
+            flex={{direction: 'column', gap: 4}}
+            padding={16}
+            style={{width}}
+          >
             <Box flex={{direction: 'column', gap: 8}}>
               {media}
               <Subheading style={{fontSize: '16px'}}>{title}</Subheading>
             </Box>
             <div>{description}</div>
             {actionsJsx}
-          </ProductTourContainer>
+          </Box>
           <div />
         </div>
       }
@@ -104,37 +108,3 @@ export const ProductTour = ({
     </Popover>
   );
 };
-
-const ProductTourContainer = styled(Box)`
-  pointer-events: all;
-  background: ${Colors.tooltipBackground()};
-  border-radius: 4px;
-  padding: 16px;
-  box-shadow: 0px 2px 12px ${Colors.shadowDefault()};
-
-  &,
-  button {
-    &,
-    &:hover,
-    &:focus {
-      color: ${Colors.tooltipText()};
-    }
-  }
-`;
-
-const ActionsContainer = styled(Box)`
-  > *:not(:first-child) {
-    &,
-    &:hover,
-    &:focus {
-      border: none;
-      box-shadow: none;
-    }
-  }
-  > * {
-    &:hover,
-    &:focus {
-      opacity: 0.9;
-    }
-  }
-`;

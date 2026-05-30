@@ -119,7 +119,7 @@ def _multiple_required_fields_config_permissive_dict():
 
 def _validate(config_field, value):
     res = process_config(config_field.config_type, value)
-    assert res.success, res.errors[0].message  # pyright: ignore[reportOptionalSubscript]
+    assert res.success, res.errors[0].message  # ty: ignore[not-subscriptable]
     return res.value
 
 
@@ -650,8 +650,8 @@ def test_build_optionality():
         }
     ).config_type
 
-    assert optional_test_type.fields["required"].is_required  # pyright: ignore[reportAttributeAccessIssue]
-    assert optional_test_type.fields["optional"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
+    assert optional_test_type.fields["required"].is_required  # ty: ignore[unresolved-attribute]
+    assert optional_test_type.fields["optional"].is_required is False  # ty: ignore[unresolved-attribute]
 
 
 def test_wrong_op_name():
@@ -907,7 +907,7 @@ def test_list_in_config_error():
 
     with pytest.raises(dg.DagsterInvalidDefinitionError, match=re.escape(error_msg)):
 
-        @dg.op(config_schema=dg.List[int])  # pyright: ignore[reportArgumentType]
+        @dg.op(config_schema=dg.List[int])
         def _no_runtime_list_in_config(_):
             pass
 
@@ -915,7 +915,7 @@ def test_list_in_config_error():
 def test_working_map_path():
     called = {}
 
-    @dg.op(config_schema={str: int})  # pyright: ignore[reportArgumentType]
+    @dg.op(config_schema={str: int})  # ty: ignore[invalid-argument-type]
     def required_map_int_op(context):
         assert context.op_config == {"foo": 1, "bar": 2}
         called["yup"] = True
@@ -935,7 +935,7 @@ def test_working_map_path():
 def test_item_error_map_path():
     called = {}
 
-    @dg.op(config_schema={str: int})  # pyright: ignore[reportArgumentType]
+    @dg.op(config_schema={str: int})  # ty: ignore[invalid-argument-type]
     def required_map_int_op(context):
         assert context.op_config == {"foo": 1, "bar": 2}
         called["yup"] = True
@@ -1077,7 +1077,7 @@ def test_typing_types_into_config():
 
     with pytest.raises(dg.DagsterInvalidDefinitionError, match=match_str):
 
-        @dg.op(config_schema=typing.List)
+        @dg.op(config_schema=typing.List)  # ty: ignore[invalid-argument-type]
         def _op(_):
             pass
 
@@ -1126,7 +1126,7 @@ def test_no_set_in_config_system():
 
     with pytest.raises(dg.DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @dg.op(config_schema=Set)  # pyright: ignore[reportArgumentType]
+        @dg.op(config_schema=Set)  # ty: ignore[invalid-argument-type]
         def _bare_open_set(_):
             pass
 
@@ -1138,7 +1138,7 @@ def test_no_set_in_config_system():
 
     with pytest.raises(dg.DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @dg.op(config_schema=dg.Set[int])  # pyright: ignore[reportArgumentType]
+        @dg.op(config_schema=dg.Set[int])
         def _bare_closed_set(_):
             pass
 

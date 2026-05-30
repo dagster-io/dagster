@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import textwrap
+from argparse import ArgumentParser
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
@@ -46,6 +47,7 @@ from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_uniq
 if TYPE_CHECKING:
     from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 
+DAGSTER_DBT_METADATA_NAMESPACE = "dagster_dbt/"
 DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
 DAGSTER_DBT_PROJECT_METADATA_KEY = "dagster_dbt/project"
@@ -67,6 +69,31 @@ DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 # Threshold for switching to selector file to avoid CLI argument length limits
 # https://github.com/dagster-io/dagster/issues/16997
 _SELECTION_ARGS_THRESHOLD: Final[int] = 200
+
+
+def extract_runtime_selection_from_args(
+    args: Sequence[str],
+) -> tuple[list[str], list[str], list[str]]:
+    """Pull --select/--exclude out of user-supplied dbt CLI args.
+
+    When the asset-graph selection is large enough to trigger the generated-selector branch,
+    dbt silently ignores runtime --select/--exclude passed alongside --selector. This helper
+    extracts those flags so callers can fold the values into the selector yaml and strip them
+    from the argv that dbt actually sees.
+
+    Returns:
+        (cleaned_args, runtime_selects, runtime_excludes)
+    """
+    parser = ArgumentParser()
+    parser.add_argument("--select", "-s", "--models", "-m", dest="select", action="append")
+    parser.add_argument("--exclude", action="append")
+    known, cleaned = parser.parse_known_args(list(args))
+
+    raw_selects = known.select if known.select is not None else []
+    raw_excludes = known.exclude if known.exclude is not None else []
+    selects = [v for raw in raw_selects for v in raw.split()]
+    excludes = [v for raw in raw_excludes for v in raw.split()]
+    return cleaned, selects, excludes
 
 
 def _parse_selection_args(
@@ -498,7 +525,21 @@ def get_updated_cli_invocation_params_for_context(
     context: OpExecutionContext | AssetExecutionContext | None,
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
+    *,
+    runtime_selects: Sequence[str] | None = None,
+    runtime_excludes: Sequence[str] | None = None,
 ) -> DbtCliInvocationPartialParams:
+    """Build the partial params (manifest, translator, selection_args, etc.) for a dbt CLI
+    invocation tied to a Dagster context.
+
+    ``runtime_selects`` and ``runtime_excludes`` carry the --select/--exclude values that
+    were passed to ``dbt.cli(args=...)`` — callers are expected to extract them from the
+    raw argv via ``extract_runtime_selection_from_args`` before invoking this function.
+    Splitting that parsing out keeps this function's concern narrow: routing already-parsed
+    runtime selection into either the generated selector yaml or the computed selection_args.
+    """
+    runtime_selects = runtime_selects or ()
+    runtime_excludes = runtime_excludes or ()
     try:
         assets_def = context.assets_def if context else None
     except DagsterInvalidPropertyError:
@@ -509,6 +550,7 @@ def get_updated_cli_invocation_params_for_context(
     selection_args: list[str] = []
     indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
     dbt_project = None
+    used_generated_selector = False
     if context and assets_def is not None:
         manifest, dagster_dbt_translator, dbt_project = get_manifest_and_translator_from_dbt_assets(
             [assets_def]
@@ -546,8 +588,11 @@ def get_updated_cli_invocation_params_for_context(
             # See: https://docs.getdbt.com/reference/node-selection/yaml-selectors
             # Note: exclude must be nested inside the union array, not a sibling key
             union_items: list[Any] = list(select_resources)
-            if exclude_resources:
-                union_items.append({"exclude": list(exclude_resources)})
+            union_items.extend(runtime_selects)
+            effective_excludes: list[str] = list(exclude_resources) if exclude_resources else []
+            effective_excludes.extend(runtime_excludes)
+            if effective_excludes:
+                union_items.append({"exclude": effective_excludes})
 
             temp_selectors = {
                 "selectors": [
@@ -558,19 +603,46 @@ def get_updated_cli_invocation_params_for_context(
                 ]
             }
             selectors_path.write_text(yaml.safe_dump(temp_selectors))
-            logger.info(
-                f"DBT selection of {total_resources} resources exceeds threshold of {_SELECTION_ARGS_THRESHOLD}. "
-                "This may exceed system argument length limits. "
-                f"Executing materialization against temporary copy of DBT project at {temp_project_dir} with ephemeral selector."
+            logger.warning(
+                f"DBT selection of {total_resources} resources exceeds threshold of "
+                f"{_SELECTION_ARGS_THRESHOLD}. Executing materialization against temporary "
+                f"copy of DBT project at {temp_project_dir} with ephemeral selector "
+                f"{selector_name!r}. dbt silently ignores runtime --select/--exclude flags "
+                "alongside --selector; any --select/--exclude passed to dbt.cli() has been "
+                "folded into this selector. To skip running tests on dbt build, pass "
+                "--exclude resource_type:test to dbt.cli()."
             )
+            if runtime_selects:
+                logger.warning(
+                    f"Folded runtime --select {runtime_selects!r} into generated selector "
+                    f"{selector_name!r} and stripped these flags from the dbt CLI args."
+                )
+            if runtime_excludes:
+                logger.warning(
+                    f"Folded runtime --exclude {runtime_excludes!r} into generated selector "
+                    f"{selector_name!r} and stripped these flags from the dbt CLI args."
+                )
             selection_args = ["--selector", selector_name]
             target_project = replace(dbt_project, project_dir=Path(temp_project_dir))
+            used_generated_selector = True
 
         indirect_selection = (
             indirect_selection_override if indirect_selection_override else indirect_selection
         )
     else:
         target_project = dbt_project
+
+    # extract_runtime_selection_from_args (in core/resource.py) stripped these flags
+    # from the user's argv; re-attach them onto selection_args so dbt still sees them.
+    # Skipped when the selector-yaml branch ran — that branch folded the values into
+    # the yaml and dbt silently ignores --select/--exclude alongside --selector.
+    # Prepended (not appended) to preserve pre-refactor argv order, which dbt's
+    # multi-flag precedence relies on.
+    if not used_generated_selector:
+        if runtime_selects:
+            selection_args = ["--select", " ".join(runtime_selects), *selection_args]
+        if runtime_excludes:
+            selection_args = ["--exclude", " ".join(runtime_excludes), *selection_args]
 
     return DbtCliInvocationPartialParams(
         manifest=manifest,

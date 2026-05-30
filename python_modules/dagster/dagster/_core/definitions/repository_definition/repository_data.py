@@ -339,16 +339,15 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definition (Dict[str, Dict[str, ...]]): A dict of the form:
-
+            repository_definitions (Dict[str, Dict[str, ...]]): A dict of the form:
                 {
-                    'jobs': Dict[str, Callable[[], JobDefinition]],
-                    'schedules': Dict[str, Callable[[], ScheduleDefinition]]
+                    'schedules': Dict[str, Callable[[], ScheduleDefinition]],
+                    'sensors': Dict[str, Callable[[], SensorDefinition]],
+                    'jobs': Dict[str, Callable[[], JobDefinition]]
                 }
-
-            This form is intended to allow definitions to be created lazily when accessed by name,
-            which can be helpful for performance when there are many definitions in a repository, or
-            when constructing the definitions is costly.
+                This form is intended to allow definitions to be created lazily when accessed by name,
+                which can be helpful for performance when there are many definitions in a repository, or
+                when constructing the definitions is costly.
         """
         from dagster._core.definitions.repository_definition.repository_data_builder import (
             build_caching_repository_data_from_dict,

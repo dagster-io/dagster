@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 from unittest import mock
 
 from dagster import ResourceDefinition, build_op_context, configured, op
@@ -141,7 +142,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
 def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
     did_it_run = dict(it_ran=False)
 
-    resource_config = {
+    resource_config: dict[str, Any] = {
         "storage_account": "some-storage-account",
         "credential": {
             "key": "some-key",

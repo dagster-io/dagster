@@ -94,7 +94,7 @@ class _Repository:
         check.callable_param(fn, "fn")
 
         if not self.name:
-            self.name = fn.__name__
+            self.name = fn.__name__  # ty: ignore[unresolved-attribute]
 
         cacheable_asset_data: dict[str, Sequence[AssetsDefinitionCacheableData]] = {}
 
@@ -178,7 +178,7 @@ class _Repository:
                         )
                     )
                 )
-            repository_data = CachingRepositoryData.from_dict(repository_definitions)
+            repository_data = CachingRepositoryData.from_dict(repository_definitions)  # ty: ignore[invalid-argument-type]
             repository_load_data = None
         elif isinstance(repository_definitions, RepositoryData):
             repository_data = repository_definitions
@@ -289,8 +289,6 @@ def repository(
         description (Optional[str]): A string description of the repository.
         metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository. Not
             displayed in the UI but accessible on RepositoryDefinition at runtime.
-        top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
-            resource keys to defintions, for resources which should be displayed in the UI.
 
     Example:
         .. code-block:: python

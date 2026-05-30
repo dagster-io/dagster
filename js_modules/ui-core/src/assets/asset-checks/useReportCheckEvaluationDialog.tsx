@@ -10,6 +10,7 @@ import {
   Icon,
   Radio,
   RadioContainer,
+  RadioGroup,
   TextInput,
   Tooltip,
   showToast,
@@ -242,18 +243,19 @@ const ReportCheckEvaluationDialogBody = ({
         <Box flex={{direction: 'column', gap: 4}}>
           <Caption>Evaluation result</Caption>
           <RadioContainer>
-            {EVALUATION_RESULT_OPTIONS.map((option) => (
-              <Radio
-                key={option.value}
-                checked={evaluationResult === option.value}
-                onChange={() => setEvaluationResult(option.value)}
-              >
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                  {option.icon}
-                  <span>{option.label}</span>
-                </Box>
-              </Radio>
-            ))}
+            <RadioGroup
+              value={evaluationResult}
+              onValueChange={(v) => setEvaluationResult(v as EvaluationResult)}
+            >
+              {EVALUATION_RESULT_OPTIONS.map((option) => (
+                <Radio key={option.value} value={option.value}>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                    {option.icon}
+                    <span>{option.label}</span>
+                  </Box>
+                </Radio>
+              ))}
+            </RadioGroup>
           </RadioContainer>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>

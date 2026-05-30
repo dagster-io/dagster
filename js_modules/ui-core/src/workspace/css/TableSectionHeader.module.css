@@ -1,0 +1,32 @@
+.sectionHeaderButton {
+  background-color: var(--color-background-light);
+  border: 0;
+  box-shadow:
+    inset 0px -1px 0 var(--color-keyline-default),
+    inset 0px 1px 0 var(--color-keyline-default);
+  color: var(--color-text-light);
+  cursor: pointer;
+  display: block;
+  padding: 0;
+  width: 100%;
+  margin: 0;
+  height: 32px;
+  text-align: left;
+}
+
+.sectionHeaderButton:focus,
+.sectionHeaderButton:active {
+  outline: none;
+}
+
+.sectionHeaderButton:hover {
+  background-color: var(--color-background-light-hover);
+}
+
+.sectionHeaderButton :global(.iconGlobal[aria-label='arrow_drop_down']) {
+  transition: transform 100ms linear;
+}
+
+.sectionHeaderButton.collapsed :global(.iconGlobal[aria-label='arrow_drop_down']) {
+  transform: rotate(-90deg);
+}

@@ -1,0 +1,46 @@
+.iconButton {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  padding: 0;
+}
+
+.metadataEntryAction {
+  text-decoration: underline;
+  color: inherit;
+}
+
+.metadataEntryAction:hover {
+  color: inherit;
+}
+
+.metadataEntryLink {
+  text-decoration: underline;
+  color: inherit;
+}
+
+.metadataEntryLink:hover {
+  color: inherit;
+}
+
+.structuredContentTable {
+  width: 100%;
+  padding: 0;
+  margin-top: 4px;
+  border-top: 1px solid var(--color-keyline-default);
+  border-left: 1px solid var(--color-keyline-default);
+  background: var(--color-background-lighter);
+}
+
+.structuredContentTable td:first-child {
+  color: var(--color-text-light);
+}
+
+.structuredContentTable tbody > tr > td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-keyline-default);
+  border-right: 1px solid var(--color-keyline-default);
+  vertical-align: top;
+  box-shadow: none !important;
+}

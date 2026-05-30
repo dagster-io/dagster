@@ -349,7 +349,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return None
         return self._instance.count_resume_run_attempts(run.run_id)
 
-    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def terminate(self, run_id):
         check.str_param(run_id, "run_id")
         run = self._instance.get_run_by_id(run_id)
 
@@ -416,7 +416,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
-            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)  # pyright: ignore[reportArgumentType]
+            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
             full_msg = (
                 full_msg
                 + "\n\n"
@@ -435,7 +435,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         try:
             status = self._api_client.get_job_status(
-                namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
+                namespace=container_context.namespace,
                 job_name=job_name,
             )
         except Exception:

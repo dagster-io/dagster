@@ -445,7 +445,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         apply_no_proxy_env_workaround()
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -459,6 +459,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         ignore_containers: set | None = None,
         enable_multi_container_logs: bool = False,
         pod_wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
+        delete_pod_on_completion: bool = True,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
@@ -487,15 +488,14 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                 `pod.spec.containers` will be able to communicate back to Dagster.
             extras (Optional[PipesExtras]):
                 Extra values to pass along as part of the ext protocol.
-            context_injector (Optional[PipesContextInjector]):
-                Override the default ext protocol context injection.
-            message_reader (Optional[PipesMessageReader]):
-                Override the default ext protocol message reader.
             ignore_containers (Optional[Set]): Ignore certain containers from waiting for termination. Defaults to
                 None.
             enable_multi_container_logs (bool): Whether or not to enable multi-container log consumption.
             pod_wait_timeout (float): How long to wait for the pod to terminate before raising an exception.
                 Defaults to 24h. Set to 0 to disable.
+            delete_pod_on_completion (bool): Whether to delete the pod after the run completes.
+                Set to False to leave the pod in the cluster for debugging or to let the cluster
+                handle pod deletion (e.g. via TTL or owner references). Defaults to True.
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
@@ -546,7 +546,8 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                         wait_timeout=pod_wait_timeout,
                     )
             finally:
-                client.core_api.delete_namespaced_pod(pod_name, namespace)
+                if delete_pod_on_completion:
+                    client.core_api.delete_namespaced_pod(pod_name, namespace)
 
         return PipesClientCompletedInvocation(pipes_session)
 
@@ -614,7 +615,7 @@ def build_pod_body(
     base_pod_meta: Mapping[str, Any] | None,
     base_pod_spec: Mapping[str, Any] | None,
 ):
-    meta = {
+    meta: dict[str, Any] = {
         **(k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, base_pod_meta or {})),
         "name": pod_name,
     }

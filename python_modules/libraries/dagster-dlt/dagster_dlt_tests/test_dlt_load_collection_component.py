@@ -87,7 +87,7 @@ def github_load():
     )
 
 
-BASIC_GITHUB_COMPONENT_BODY = {
+BASIC_GITHUB_COMPONENT_BODY: dict[str, Any] = {
     "type": "dagster_dlt.DltLoadCollectionComponent",
     "attributes": {
         "loads": [

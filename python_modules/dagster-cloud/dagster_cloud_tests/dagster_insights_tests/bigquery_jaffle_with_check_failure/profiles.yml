@@ -1,0 +1,15 @@
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: fake
+      dataset: fake
+      threads: 24
+      keyfile: fake/path/to/keyfile.json
+unittest:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb

@@ -46,6 +46,11 @@ def upload_artifact_command(
 
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to upload.
+
+    Example::
+
+        $ dg api artifact upload my-model/latest ./model.pkl --deployment prod
+        Uploaded artifact 'my-model/latest' to deployment 'prod'.
     """
     from dagster_rest_resources.api.artifact import DgApiArtifactApi
     from dagster_rest_resources.s3_client import S3Client
@@ -65,7 +70,7 @@ def upload_artifact_command(
     api = DgApiArtifactApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.upload(key=key, path=Path(path), deployment=deployment)
+        result = api.action_upload(key=key, path=Path(path), deployment=deployment)
         click.echo(format_artifact_upload(result, as_json=output_json))
 
 
@@ -100,6 +105,11 @@ def download_artifact_command(
 
     KEY is the artifact key (e.g. "my-model/latest").
     PATH is the local file path to save to.
+
+    Example::
+
+        $ dg api artifact download my-model/latest ./model.pkl --deployment prod
+        Downloaded artifact 'my-model/latest' from deployment 'prod' to model.pkl.
     """
     from dagster_rest_resources.api.artifact import DgApiArtifactApi
     from dagster_rest_resources.s3_client import S3Client
@@ -119,7 +129,7 @@ def download_artifact_command(
     api = DgApiArtifactApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.download(key=key, path=Path(path), deployment=deployment)
+        result = api.action_download(key=key, path=Path(path), deployment=deployment)
         click.echo(format_artifact_download(result, as_json=output_json))
 
 

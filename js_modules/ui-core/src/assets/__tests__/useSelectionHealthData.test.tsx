@@ -52,8 +52,8 @@ function TestComponent({
   onFilterData,
 }: {
   selection: string;
-  onHealthData?: (data: any) => void;
-  onFilterData?: (data: any) => void;
+  onHealthData?: (data: ReturnType<typeof useSelectionHealthData>) => void;
+  onFilterData?: (data: ReturnType<typeof useSelectionFilterData>) => void;
 }) {
   const healthData = useSelectionHealthData({selection});
   const filterData = useSelectionFilterData({selection});
@@ -74,7 +74,7 @@ function FilterOnlyComponent({
   onFilterData,
 }: {
   selection: string;
-  onFilterData?: (data: any) => void;
+  onFilterData?: (data: unknown) => void;
 }) {
   const filterData = useSelectionFilterData({selection});
 
@@ -90,7 +90,7 @@ function HealthOnlyComponent({
   onHealthData,
 }: {
   selection: string;
-  onHealthData?: (data: any) => void;
+  onHealthData?: (data: unknown) => void;
 }) {
   const healthData = useSelectionHealthData({selection});
 

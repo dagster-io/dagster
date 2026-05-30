@@ -1,3 +1,5 @@
+from typing import Any
+
 from dagster import AssetKey
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.merger import deep_merge_dicts
@@ -113,7 +115,7 @@ def sample_runs_details(include_related=None, **kwargs):
 
 
 def sample_run_details(include_related=None, **kwargs):
-    base_data = {
+    base_data: dict[str, Any] = {
         "id": SAMPLE_RUN_ID,
         "trigger_id": 33000000,
         "account_id": DBT_CLOUD_ACCOUNT_ID,
