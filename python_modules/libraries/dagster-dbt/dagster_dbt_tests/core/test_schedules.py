@@ -59,7 +59,7 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
             {"baz": "qux"},
             lambda x: True,
             "My schedule description",
-            ["user@example.com", "team:data"],
+            ["user@example.com", "team:Data Engineering"],
         ),
         (
             "test_job",
@@ -75,7 +75,7 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
             {"baz": "qux"},
             lambda x: False,
             "My schedule description",
-            ["user@example.com", "team:data"],
+            ["user@example.com", "team:Data Engineering"],
         ),
     ],
 )
