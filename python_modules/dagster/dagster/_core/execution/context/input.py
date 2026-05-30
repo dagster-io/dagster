@@ -338,7 +338,7 @@ class InputContext:
 
     @public
     @property
-    def asset_partition_key(self) -> str:
+    def partition_key(self) -> str:
         """The partition key for input asset.
 
         Raises an error if the input asset has no partitioning, or if the run covers a partition
@@ -358,9 +358,16 @@ class InputContext:
             f"but the number of input partitions != 1: '{subset}'."
         )
 
+    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partition_key` instead.")
     @public
     @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
+    def asset_partition_key(self) -> str:
+        """The partition key for input asset. Deprecated: use `partition_key`."""
+        return self.partition_key
+
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for input asset.
 
         Raises an error if the input asset has no partitioning.
@@ -369,7 +376,7 @@ class InputContext:
 
         if subset is None:
             check.failed(
-                "Tried to access asset_partition_key_range, but the asset is not partitioned.",
+                "Tried to access partition_key_range, but the asset is not partitioned.",
             )
 
         with partition_loading_context(dynamic_partitions_store=self._instance):
@@ -378,29 +385,43 @@ class InputContext:
             )
         if len(partition_key_ranges) != 1:
             check.failed(
-                "Tried to access asset_partition_key_range, but there are "
+                "Tried to access partition_key_range, but there are "
                 f"({len(partition_key_ranges)}) key ranges associated with this input.",
             )
 
         return partition_key_ranges[0]
 
+    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
-    def asset_partition_keys(self) -> Sequence[str]:
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for input asset. Deprecated: use `partition_key_range`."""
+        return self.partition_key_range
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
         """The partition keys for input asset.
 
         Raises an error if the input asset has no partitioning.
         """
         if self._asset_partitions_subset is None:
             check.failed(
-                "Tried to access asset_partition_keys, but the asset is not partitioned.",
+                "Tried to access partition_keys, but the asset is not partitioned.",
             )
 
         return list(self._asset_partitions_subset.get_partition_keys())
 
+    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partition_keys` instead.")
     @public
     @property
-    def asset_partitions_time_window(self) -> TimeWindow:
+    def asset_partition_keys(self) -> Sequence[str]:
+        """The partition keys for input asset. Deprecated: use `partition_keys`."""
+        return self.partition_keys
+
+    @public
+    @property
+    def partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the input asset.
 
         Raises an error if either of the following are true:
@@ -412,7 +433,7 @@ class InputContext:
 
         if subset is None:
             check.failed(
-                "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
+                "Tried to access partitions_time_window, but the asset is not partitioned.",
             )
 
         partitions_def = self._asset_partitions_def
@@ -428,7 +449,14 @@ class InputContext:
                 " to a partitioned asset that is not time-partitioned."
             )
 
-        return time_window_for_partition_key_range(partitions_def, self.asset_partition_key_range)
+        return time_window_for_partition_key_range(partitions_def, self.partition_key_range)
+
+    @deprecated(breaking_version="2.0.0", additional_warn_text="Use `partitions_time_window` instead.")
+    @public
+    @property
+    def asset_partitions_time_window(self) -> TimeWindow:
+        """The time window for partitions of the input asset. Deprecated: use `partitions_time_window`."""
+        return self.partitions_time_window
 
     @public
     def get_identifier(self) -> Sequence[str]:
