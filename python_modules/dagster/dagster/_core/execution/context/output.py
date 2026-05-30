@@ -466,6 +466,35 @@ class OutputContext:
 
     @public
     @property
+    def asset_partition_key(self) -> str:
+        """The partition key for output asset.
+
+        Raises an error if the output asset has no partitioning, or if the run covers a partition
+        range for the output asset.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partition_key. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        subset = self._asset_partitions_subset
+        if subset is None:
+            check.failed("The output does not correspond to a partitioned asset.")
+
+        keys_iter = iter(subset.get_partition_keys())
+        first = next(keys_iter, None)
+        if first is not None and next(keys_iter, None) is None:
+            return first
+        check.failed(
+            f"Tried to access partition key for asset '{self._asset_key}', "
+            f"but the number of output partitions != 1: '{subset}'."
+        )
+
+    @public
+    @property
     def partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for output asset.
 

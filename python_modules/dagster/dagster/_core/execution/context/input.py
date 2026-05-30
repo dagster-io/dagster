@@ -338,6 +338,27 @@ class InputContext:
 
     @public
     @property
+    def asset_partition_key(self) -> str:
+        """The partition key for input asset.
+
+        Raises an error if the input asset has no partitioning, or if the run covers a partition
+        range for the input asset.
+        """
+        subset = self._asset_partitions_subset
+        if subset is None:
+            check.failed("The input does not correspond to a partitioned asset.")
+
+        keys_iter = iter(subset.get_partition_keys())
+        first = next(keys_iter, None)
+        if first is not None and next(keys_iter, None) is None:
+            return first
+        check.failed(
+            f"Tried to access partition key for asset '{self.asset_key}', "
+            f"but the number of input partitions != 1: '{subset}'."
+        )
+
+    @public
+    @property
     def partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for input asset.
 
