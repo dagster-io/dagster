@@ -2,7 +2,10 @@ from contextlib import contextmanager
 from unittest import mock
 
 import dagster as dg
-from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.instigation_logger import (
+    InstigationLogger,
+    get_instigation_log_records,
+)
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 
 
@@ -74,3 +77,43 @@ def test_instigation_logger_log_failure(capsys):
             captured.err.count("Exception closing logger write stream: Exception: OOPS ON EXIT")
             == 1
         )
+
+
+def test_instigation_logger_logs_weird_record_ok(capsys):
+    class NonJsonSerializable:
+        """A class that json.dumps doesn't know what to do with (by default)."""
+
+        def __str__(self):
+            return "non-jsonable-object"
+
+    log_key = ["test-repo", "test-instigator", "123"]
+
+    with dg.instance_for_test() as instance:  # pyright: ignore[reportAttributeAccessIssue]
+        with InstigationLogger(
+            log_key=log_key,
+            instance=instance,
+            repository_name="test-repo",
+            instigator_name="test-instigator",
+        ) as logger:
+            logger.info("log without extras")
+            logger.info("log with extras", extra={"non_json": NonJsonSerializable()})
+
+            assert logger.has_captured_logs()
+
+        captured = capsys.readouterr()
+
+        assert "Exception initializing logger write stream" not in captured.err
+        assert "Exception writing to logger event stream" not in captured.err
+        assert "Exception closing logger write stream" not in captured.err
+        assert "NonJsonSerializable is not JSON serializable" not in captured.err
+
+        records = get_instigation_log_records(instance, log_key)
+
+        assert len(records) >= 2
+        assert "test-repo - test-instigator - log with extras" in {
+            record.get("msg") for record in records if record.get("msg")
+        }
+        matching_records = [record for record in records if record.get("non_json")]
+        assert matching_records and matching_records[0]["non_json"] == "non-jsonable-object"
+
+        instance.compute_log_manager.delete_logs(log_key=log_key)
