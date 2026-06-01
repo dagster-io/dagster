@@ -6,10 +6,10 @@ import {
   Dialog,
   DialogFooter,
   DialogHeader,
+  Heading,
   MiddleTruncate,
   NonIdealState,
   SpinnerWithText,
-  Subtitle2,
   Table,
   Tag,
 } from '@dagster-io/ui-components';
@@ -32,14 +32,14 @@ import {
   InstigationSelector,
   InstigationTickStatus,
 } from '../graphql/types';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {TickResultType} from '../ticks/TickStatusTag';
 type DynamicPartitionsRequestResult = {
   partitionKeys: string[] | null;
   partitionsDefName: string;
   skippedPartitionKeys: string[];
   type: DynamicPartitionsRequestType;
 };
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {TickResultType} from '../ticks/TickStatusTag';
 
 interface DialogProps extends InnerProps {
   onClose: () => void;
@@ -153,7 +153,9 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
           {tick.runIds.length ? (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
-                <Subtitle2>Requested runs</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Requested runs
+                </Heading>
               </Box>
               <RunList runIds={tick.runIds} />
             </>
@@ -163,7 +165,9 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
           {addedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle2>Added partitions</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Added partitions
+                </Heading>
               </Box>
               <PartitionsTable partitions={addedPartitionRequests} />
             </>
@@ -171,7 +175,9 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
           {deletedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle2>Deleted partitions</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Deleted partitions
+                </Heading>
               </Box>
               <PartitionsTable partitions={deletedPartitionRequests} />
             </>
@@ -215,7 +221,9 @@ export function TickDetailSummary({
     <>
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12}}>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Subtitle2>Status</Subtitle2>
+          <Heading size={14} weight={600}>
+            Status
+          </Heading>
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Tag intent={intent}>
               {tick.status === InstigationTickStatus.STARTED ? (
@@ -245,7 +253,9 @@ export function TickDetailSummary({
           </Box>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Subtitle2>Timestamp</Subtitle2>
+          <Heading size={14} weight={600}>
+            Timestamp
+          </Heading>
           <div>
             {tick ? (
               <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
@@ -255,7 +265,9 @@ export function TickDetailSummary({
           </div>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Subtitle2>Duration</Subtitle2>
+          <Heading size={14} weight={600}>
+            Duration
+          </Heading>
           <div>
             {tick?.endTimestamp
               ? formatElapsedTimeWithoutMsec(tick.endTimestamp * 1000 - tick.timestamp * 1000)

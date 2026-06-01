@@ -4,12 +4,12 @@ import {
   Caption,
   Colors,
   HeaderCell,
+  Heading,
   Icon,
   Inner,
   Row,
   RowCell,
   Spinner,
-  Subtitle2,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -127,7 +127,9 @@ export const TickMaterializationsTable = ({
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         border="bottom"
       >
-        <Subtitle2>Requested materializations</Subtitle2>
+        <Heading size={14} weight={600}>
+          Requested materializations
+        </Heading>
         <TextInput
           icon="search"
           value={queryString}

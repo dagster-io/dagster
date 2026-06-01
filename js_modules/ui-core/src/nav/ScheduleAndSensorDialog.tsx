@@ -1,4 +1,4 @@
-import {Box, Button, Dialog, DialogFooter, Subheading, Table} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogFooter, Heading, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
@@ -50,7 +50,9 @@ export const ScheduleAndSensorDialog = ({
           <>
             {sensorCount ? (
               <Box padding={{vertical: 16, horizontal: 24}}>
-                <Subheading>Schedules ({scheduleCount})</Subheading>
+                <Heading size={14} weight={600}>
+                  Schedules ({scheduleCount})
+                </Heading>
               </Box>
             ) : null}
             <Table>
@@ -91,7 +93,9 @@ export const ScheduleAndSensorDialog = ({
           <>
             {scheduleCount ? (
               <Box padding={{vertical: 16, horizontal: 24}}>
-                <Subheading>Sensors ({sensorCount})</Subheading>
+                <Heading size={14} weight={600}>
+                  Sensors ({sensorCount})
+                </Heading>
               </Box>
             ) : null}
             <Table>

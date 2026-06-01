@@ -1,4 +1,4 @@
-import {Box, PageHeader, Subheading, Subtitle1, TextInput} from '@dagster-io/ui-components';
+import {Box, Heading, PageHeader, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {InstancePageContext} from './InstancePageContext';
@@ -47,7 +47,9 @@ export const CodeLocationsPageContent = () => {
               style={{width: '400px'}}
             />
           ) : (
-            <Subheading id="repository-locations">{subheadingText()}</Subheading>
+            <Heading size={14} weight={600} id="repository-locations">
+              {subheadingText()}
+            </Heading>
           )}
         </Box>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
@@ -75,7 +77,11 @@ export const CodeLocationsPage = () => {
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
-        title={<Subtitle1>{pageTitle}</Subtitle1>}
+        title={
+          <Heading size={16} weight={600}>
+            {pageTitle}
+          </Heading>
+        }
         tabs={<InstanceTabs tab="locations" />}
       />
       <CodeLocationsPageContent />

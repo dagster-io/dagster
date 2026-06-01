@@ -6,9 +6,9 @@ import {
   Caption,
   CaptionSubtitle,
   Colors,
+  Heading,
   Icon,
   Popover,
-  Subtitle2,
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
@@ -203,10 +203,10 @@ const StaleCausesPopoverSummary = ({
   return (
     <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
       <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-        <Subtitle2>
+        <Heading size={14} weight={600}>
           {numberFormatter.format(totalCauses)} {ifPlural(totalCauses, 'change', 'changes')} since
           last materialization
-        </Subtitle2>
+        </Heading>
       </Box>
       {Object.entries(grouped).map(([label, causes], idx) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

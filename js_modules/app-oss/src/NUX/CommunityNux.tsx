@@ -104,7 +104,9 @@ const Form = ({dismiss, submit}: FormProps) => {
         border="bottom"
       >
         <Box flex={{direction: 'column', gap: 8, alignItems: 'start', justifyContent: 'start'}}>
-          <Heading>Join the Dagster community</Heading>
+          <Heading size={20} weight={500}>
+            Join the Dagster community
+          </Heading>
           <Body style={{color: Colors.textLight(), marginBottom: '4px'}}>
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.

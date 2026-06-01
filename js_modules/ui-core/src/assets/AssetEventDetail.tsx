@@ -1,4 +1,4 @@
-import {Box, Colors, Heading, Icon, Mono, Subheading} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, Mono} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -67,7 +67,7 @@ export const AssetEventDetail = ({
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box padding={{vertical: 24}} border="bottom" flex={{direction: 'column', gap: 8}}>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-          <Heading>
+          <Heading size={20} weight={500}>
             <Timestamp timestamp={{ms: Number(event.timestamp)}} />
           </Heading>
           {isRunlessEvent(event) ? <RunlessEventTag tags={event.tags} /> : undefined}
@@ -106,13 +106,17 @@ export const AssetEventDetail = ({
 
       {event.description && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Description</Subheading>
+          <Heading size={14} weight={600}>
+            Description
+          </Heading>
           <Description description={event.description} />
         </Box>
       )}
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>Metadata</Subheading>
+        <Heading size={14} weight={600}>
+          Metadata
+        </Heading>
         <AssetEventMetadataEntriesTable
           repoAddress={repoAddress}
           assetKey={assetKey}
@@ -122,13 +126,17 @@ export const AssetEventDetail = ({
       </Box>
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>Tags</Subheading>
+        <Heading size={14} weight={600}>
+          Tags
+        </Heading>
         <AssetEventSystemTags event={event} collapsible />
       </Box>
 
       {assetLineage.length > 0 && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Parent materializations</Subheading>
+          <Heading size={14} weight={600}>
+            Parent materializations
+          </Heading>
           <AssetLineageElements elements={assetLineage} timestamp={event.timestamp} />
         </Box>
       )}
@@ -143,7 +151,9 @@ export const AssetEventDetailEmpty = () => (
       border="bottom"
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
-      <Heading color={Colors.textLight()}>No event selected</Heading>
+      <Heading size={20} weight={500} color="textLight">
+        No event selected
+      </Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
@@ -151,18 +161,28 @@ export const AssetEventDetailEmpty = () => (
       padding={{vertical: 16}}
     >
       <Box flex={{gap: 4, direction: 'column'}}>
-        <Subheading>Event</Subheading>
+        <Heading size={14} weight={600}>
+          Event
+        </Heading>
       </Box>
       <Box flex={{gap: 4, direction: 'column'}} style={{minHeight: 64}}>
-        <Subheading>Run</Subheading>—
+        <Heading size={14} weight={600}>
+          Run
+        </Heading>
+        —
       </Box>
       <Box flex={{gap: 4, direction: 'column'}}>
-        <Subheading>Job</Subheading>—
+        <Heading size={14} weight={600}>
+          Job
+        </Heading>
+        —
       </Box>
     </Box>
 
     <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-      <Subheading>Metadata</Subheading>
+      <Heading size={14} weight={600}>
+        Metadata
+      </Heading>
       <AssetEventMetadataEntriesTable event={null} repoAddress={null} showDescriptions />
     </Box>
   </Box>

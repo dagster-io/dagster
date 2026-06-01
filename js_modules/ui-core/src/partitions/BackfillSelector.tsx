@@ -6,10 +6,10 @@ import {
   Colors,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
   NonIdealState,
   Spinner,
-  Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -496,7 +496,9 @@ const Section = ({
   children: React.ReactNode;
 }) => (
   <Box flex={{direction: 'column', gap: 4}}>
-    <Subheading>{title}</Subheading>
+    <Heading size={14} weight={600}>
+      {title}
+    </Heading>
     <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} border="top">
       {children}
     </Box>

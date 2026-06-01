@@ -1,4 +1,4 @@
-import {Body2, Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
+import {Body2, Box, Heading, NonIdealState} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {AutomaterializeMiddlePanelWithData} from './AutomaterializeMiddlePanelWithData';
@@ -102,7 +102,9 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
           padding={{horizontal: 16}}
           flex={{alignItems: 'center', justifyContent: 'space-between'}}
         >
-          <Subheading>Result</Subheading>
+          <Heading size={14} weight={600}>
+            Result
+          </Heading>
         </Box>
       </Box>
     );
