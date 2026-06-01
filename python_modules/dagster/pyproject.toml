@@ -138,7 +138,7 @@ ruff = [
     "ruff==0.15.14",
 ]
 ty = [
-    "ty==0.0.39",
+    "ty==0.0.40",
     ### Stub packages for type checking
     "pandas-stubs",  # version will be resolved against pandas
     "types-backports",  # version will be resolved against backports
