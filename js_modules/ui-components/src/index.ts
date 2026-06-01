@@ -6,6 +6,7 @@ export * from './components/Button';
 export * from './components/ButtonGroup';
 export * from './components/ButtonLink';
 export * from './components/Checkbox';
+export * from './components/Code';
 export * from './components/CollapsibleSection';
 export * from './components/ConfigTypeSchema';
 export * from './components/Countdown';
