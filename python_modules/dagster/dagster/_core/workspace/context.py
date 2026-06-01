@@ -106,11 +106,6 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
-    from dagster._core.remote_representation.external_data import (
-        PartitionConfigSnap,
-        PartitionExecutionErrorSnap,
-        PartitionSetExecutionParamSnap,
-    )
 
 T = TypeVar("T")
 
