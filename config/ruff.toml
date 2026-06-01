@@ -26,7 +26,7 @@ target-version = "py310"
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.15.15"
+required-version = "0.15.14"
 
 [lint]
 

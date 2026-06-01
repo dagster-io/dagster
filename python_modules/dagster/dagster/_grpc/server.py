@@ -626,7 +626,9 @@ class DagsterApiServer(DagsterApiServicer):
 
         return dagster_api_pb2.PingReply(
             echo=echo,
-            serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
+            serialized_server_utilization_metrics=json.dumps(
+                {**_UTILIZATION_METRICS, "server_id": self._server_id}
+            )
             if self._enable_metrics
             else "",
         )
