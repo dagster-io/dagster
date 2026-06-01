@@ -38,10 +38,6 @@ export const CaptionBolded = ({className, ...props}: TextProps) => (
   <Text className={clsx(styles.captionBolded, className)} {...props} />
 );
 
-export const Code = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.code, className)} {...props} />
-);
-
 export const Mono = ({className, ...props}: TextProps) => (
   <Text className={clsx(styles.mono, className)} {...props} />
 );
