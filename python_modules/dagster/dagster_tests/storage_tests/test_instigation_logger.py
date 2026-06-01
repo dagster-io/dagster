@@ -88,7 +88,7 @@ def test_instigation_logger_logs_weird_record_ok(capsys):
 
     log_key = ["test-repo", "test-instigator", "123"]
 
-    with dg.instance_for_test() as instance:  # pyright: ignore[reportAttributeAccessIssue]
+    with dg.instance_for_test() as instance:
         with InstigationLogger(
             log_key=log_key,
             instance=instance,
