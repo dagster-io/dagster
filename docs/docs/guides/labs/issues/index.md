@@ -11,22 +11,28 @@ import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
 
 <EarlyAccess />
 
-Issues let you link together multiple failures with a shared root cause, to help you get from noticing a problem to having a fix in production quickly and with full visibility across your team. Issues are designed for an AI-first dev cycle, together with the [Dagster+ AI Agent](/guides/labs/dagster-ai-agent) and [Dagster skills](/getting-started/ai-tools#about-dagster-skills).
+Issues let you link together multiple failures with a shared root cause, to help you get from noticing a problem to having a fix in production quickly and with full visibility across your team. Issues are designed for an AI-first dev cycle, together with [Dagster+ AI](/guides/labs/dagster-ai) and [Dagster skills](/getting-started/ai-tools#about-dagster-skills).
 
 ## Creating Issues
 
-Issues can be created from a failed run, from asset or run failure alerts, or from a conversation with Dagster+ AI. You can set a summary yourself, or let Dagster+ generate one for you.
+Issues are automatically created in the Triage state for you by Dagster+ AI through [proactive monitoring](/guides/labs/dagster-ai/proactive-monitoring). You can also create them directly in several ways:
+
+- **From a failed run** — Open a failed run and create an Issue to track the failure. You can set a summary yourself, or let Dagster+ generate one for you.
+- **From alerts** — Alert notifications for failed runs and degraded assets include a link to create an Issue directly from the notification.
+- **From a conversation with Dagster+ AI** — During a chat session, create an Issue to track the problem. The AI summary and context are attached automatically. For more information, see [Chat with Dagster+ AI](/guides/labs/dagster-ai/chat).
 
 ## Resolving Issues
 
-Issues are optimized for providing context to agents. Invoke the `dagster-expert` skill from an agent session in your codebase to analyze the root cause and develop a solution. For example:
+Issues provide context optimized for coding agents. You can resolve them by:
 
-```
-/dagster-expert fetch issue 3 and make a plan for resolving the problem
-```
+- **Auto-implement with AI** — Dispatch an AI agent directly from an Issue to create a fix as a GitHub pull request. See [Auto-implement with AI](/guides/labs/dagster-ai/auto-implement).
+- **Using the dagster-expert skill** — Invoke the `dagster-expert` skill from an agent session in your codebase to analyze the root cause and develop a solution. For example:
+
+  ```
+  /dagster-expert fetch issue 3 and make a plan for resolving the problem
+  ```
 
 ## Coming soon
 
-- **Autonomous triage**: The Dagster+ AI will scan failures and identify shared root causes.
-- **Suggested resolutions**: Issues will automatically suggest code changes for you to review and approve.
-- **Project tracker integrations**: Integrate directly into your existing workflows through integrations to Github Issues, Linear, JIRA, etc.
+- **Issue metadata:** Set an assignee, priority level, or tags on Issues
+- **Project tracker integrations:** Integrate directly into your existing workflows through integrations to GitHub Issues, Linear, Jira, etc.

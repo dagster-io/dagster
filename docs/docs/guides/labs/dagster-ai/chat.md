@@ -1,6 +1,7 @@
 ---
-title: Dagster+ AI Agent
-description: Use Dagster+ AI to summarize failures, track issues out of identified root causes, and interact with your data platform through chat
+title: 'Chat with Dagster+ AI'
+description: 'Summarize run failures, identify root causes, and ask follow-up questions with Dagster+ AI chat'
+sidebar_label: 'Chat with Dagster+ AI'
 sidebar_position: 10
 tags: [dagster-plus-feature]
 ---
@@ -9,7 +10,7 @@ import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
 
 <EarlyAccess />
 
-The Dagster+ AI Agent, powered by [Compass](https://docs.compass.dagster.io/), analyzes run logs, identifies root causes of failures, suggests debugging steps, and lets you ask follow-up questions in a conversational chat interface. You can start a conversation with Dagster+ AI from the homepage, or from any completed run.
+Dagster+ AI, powered by [Compass](https://docs.compass.dagster.io/), analyzes run logs, identifies root causes of failures, suggests debugging steps, and lets you ask follow-up questions in a conversational chat interface. You can start a conversation with Dagster+ AI from the homepage, or from any completed run.
 
 ## Generate a summary for a run or degraded asset
 
@@ -48,6 +49,10 @@ Conversation history is stored separately per user.
 By default, AI chats appear in a panel docked to the right edge of the page. You can toggle between this panel view and a full-screen dialog using the display mode icon in the upper-right corner of the chat interface.
 
 ![AI dialog display mode](/images/guides/labs/ai-dialog-open.png)
+
+## Creating Issues from conversations
+
+During a chat session, you can create an Issue to track the problem Dagster+ AI identified. The AI summary and conversation context are attached to the Issue, giving your team and coding agents the context they need to resolve it. For more information, see [Issues](/guides/labs/issues).
 
 ## Limitations during early access
 
