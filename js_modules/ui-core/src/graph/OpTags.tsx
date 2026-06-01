@@ -72,7 +72,6 @@ import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import evidence from './kindtag-images/tool-evidence.svg';
 import exasol from './kindtag-images/tool-exasol-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
-import fabric from './kindtag-images/tool-fabric-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
 import flink from './kindtag-images/tool-flink-color.svg';
@@ -133,7 +132,6 @@ import noteable from './kindtag-images/tool-noteable-color.svg';
 import notion from './kindtag-images/tool-notion-color.svg';
 import numpy from './kindtag-images/tool-numpy-color.svg';
 import omni from './kindtag-images/tool-omni-color.svg';
-import onelake from './kindtag-images/tool-onelake-color.svg';
 import openai from './kindtag-images/tool-openai-color.svg';
 import openmetadata from './kindtag-images/tool-openmetadata-color.svg';
 import optuna from './kindtag-images/tool-optuna-color.svg';
@@ -313,7 +311,6 @@ export type KnownTagType =
   | 'exasol'
   | 'excel'
   | 'expand'
-  | 'fabric'
   | 'facebook'
   | 'file'
   | 'fivetran'
@@ -384,7 +381,6 @@ export type KnownTagType =
   | 'notion'
   | 'numpy'
   | 'omni'
-  | 'onelake'
   | 'openai'
   | 'openmetadata'
   | 'optuna'
@@ -629,10 +625,6 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: omni,
     content: 'Omni',
   },
-  onelake: {
-    icon: onelake,
-    content: 'OneLake',
-  },
   datadog: {
     icon: datadog,
     content: 'Datadog',
@@ -872,10 +864,6 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   excel: {
     icon: excel,
     content: 'Excel',
-  },
-  fabric: {
-    icon: fabric,
-    content: 'Fabric',
   },
   ray: {
     icon: ray,

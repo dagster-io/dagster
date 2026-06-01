@@ -61,7 +61,6 @@
 | `evidence`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-evidence.svg" width={20} height={20} />                             |
 | `exasol`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-exasol-color.svg" width={20} height={20} />                         |
 | `excel`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-excel-color.svg" width={20} height={20} />                          |
-| `fabric`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-fabric-color.svg" width={20} height={20} />                         |
 | `facebook`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-facebook-color.svg" width={20} height={20} />                       |
 | `fivetran`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-fivetran-color.svg" width={20} height={20} />                       |
 | `flink`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-flink-color.svg" width={20} height={20} />                          |
@@ -129,7 +128,6 @@
 | `notion`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-notion-color.svg" width={20} height={20} />                         |
 | `numpy`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-numpy-color.svg" width={20} height={20} />                          |
 | `omni`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-omni-color.svg" width={20} height={20} />                           |
-| `onelake`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-onelake-color.svg" width={20} height={20} />                        |
 | `openai`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-openai-color.svg" width={20} height={20} />                         |
 | `openmetadata`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-openmetadata-color.svg" width={20} height={20} />                   |
 | `optuna`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-optuna-color.svg" width={20} height={20} />                         |
