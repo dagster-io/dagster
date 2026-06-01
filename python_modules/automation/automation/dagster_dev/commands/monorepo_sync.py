@@ -1,6 +1,7 @@
 """CLI command group for monorepo sync operations."""
 
 import json
+import subprocess
 from dataclasses import asdict
 from pathlib import Path
 
@@ -14,13 +15,20 @@ from automation.dagster_dev.monorepo_sync.audit import (
     audit_inbound_correctness,
     audit_outbound_completeness,
     audit_outbound_correctness,
+    denormalize_file_path,
     format_commit_info_short,
     format_mismatch,
+    normalize_internal_files,
 )
 from automation.dagster_dev.monorepo_sync.config import SYNC_CONFIGS, SyncConfig, get_sync_config
-from automation.dagster_dev.monorepo_sync.git_helpers import git
+from automation.dagster_dev.monorepo_sync.git_helpers import (
+    extract_label_values,
+    get_changed_files,
+    git,
+)
 
-SYNC_CHOICES = ["dagster-inbound", "dagster-outbound", "skills-inbound", "skills-outbound", "all"]
+SYNC_NAMES = ["dagster-inbound", "dagster-outbound", "skills-inbound", "skills-outbound"]
+SYNC_CHOICES = [*SYNC_NAMES, "all"]
 CHECK_CHOICES = ["completeness", "correctness", "all"]
 FORMAT_CHOICES = ["text", "json"]
 
@@ -345,3 +353,228 @@ def audit(
         )
         if has_errors:
             raise SystemExit(1)
+
+
+def _compute_extra_files(
+    *,
+    source_repo: Path,
+    dest_repo: Path,
+    source_hash: str,
+    dest_hash: str,
+    config: SyncConfig,
+) -> list[str]:
+    """Compute extra dest-repo file paths for a synced commit pair.
+
+    Returns a sorted list of actual dest-repo paths that are present in the dest
+    commit but not in the source commit. If the source commit cannot be read
+    (e.g. force-pushed away, shallow clone missing history), emits a warning
+    and returns an empty list — the dest commit is skipped, but any unintended
+    file reverts in it will not be caught. Raises if the dest commit cannot be
+    read, since dest_hash comes from a walk of dest_repo and missing it is a bug.
+    """
+    source_files = get_changed_files(source_repo, source_hash)
+    if source_files is None:
+        click.echo(
+            f"WARNING: source commit {source_hash[:10]} not found in {source_repo}. "
+            f"Skipping correctness check for dest commit {dest_hash[:10]}; "
+            f"any unintended file reverts in it will not be caught.",
+            err=True,
+        )
+        return []
+    dest_files = get_changed_files(dest_repo, dest_hash)
+    if dest_files is None:
+        raise click.ClickException(
+            f"dest commit {dest_hash[:10]} not found in {dest_repo}. "
+            f"This is unexpected (dest_hash comes from this repo's own commit walk)."
+        )
+
+    if config.direction == "inbound":
+        dest_normalized = normalize_internal_files(
+            dest_files, config.internal_path_prefix, config.file_renames
+        )
+        extra_normalized = dest_normalized - source_files
+    else:
+        source_normalized = normalize_internal_files(
+            source_files, config.internal_path_prefix, config.file_renames
+        )
+        extra_normalized = dest_files - source_normalized
+
+    if not extra_normalized:
+        return []
+
+    return [denormalize_file_path(f, config.direction, config) for f in sorted(extra_normalized)]
+
+
+def _amend_head(dest_repo: Path, extra_files: list[str]) -> None:
+    """Revert extra files from HEAD and amend the commit."""
+    for f in extra_files:
+        try:
+            git(["cat-file", "-e", f"HEAD^:{f}"], cwd=dest_repo)
+            git(["checkout", "HEAD^", "--", f], cwd=dest_repo)
+        except subprocess.CalledProcessError:
+            git(["rm", "-f", f], cwd=dest_repo)
+
+    git(["commit", "--amend", "--no-edit"], cwd=dest_repo)
+
+
+@monorepo_sync.command(name="fix-commit")
+@click.option(
+    "-s",
+    "--sync",
+    "sync_name",
+    type=click.Choice(SYNC_NAMES, case_sensitive=False),
+    required=True,
+    help="Which sync pair this commit belongs to.",
+)
+@click.option(
+    "--dagster-repo",
+    "dagster_repo_path",
+    type=click.Path(exists=True),
+    default=None,
+    help="Path to dagster-io/dagster clone.",
+)
+@click.option(
+    "--skills-repo",
+    "skills_repo_path",
+    type=click.Path(exists=True),
+    default=None,
+    help="Path to dagster-io/skills clone.",
+)
+@click.option(
+    "--internal-repo",
+    "internal_repo_path",
+    type=click.Path(exists=True),
+    default=None,
+    help="Path to internal repo. If omitted, auto-detects from CWD.",
+)
+@click.argument("commit_hash")
+def fix_commit(
+    sync_name: str,
+    dagster_repo_path: str | None,
+    skills_repo_path: str | None,
+    internal_repo_path: str | None,
+    commit_hash: str,
+):
+    """Fix correctness mismatches by amending dest commits to remove extra files.
+
+    Processes all commits from COMMIT_HASH to HEAD. For each synced commit in that
+    range, identifies files present in the dest but not in the source, and amends
+    the commit to remove them. Subsequent commits are rebased on top of each
+    amendment.
+
+    Examples:
+        dagster-dev monorepo-sync fix-commit -s dagster-outbound --dagster-repo /path/to/dagster abc123
+    """
+    config = get_sync_config(sync_name)
+    internal_repo = Path(internal_repo_path) if internal_repo_path else _detect_internal_repo()
+
+    slug = config.public_repo_slug
+    if slug == "dagster":
+        if not dagster_repo_path:
+            raise click.ClickException("--dagster-repo is required for dagster-* syncs.")
+        public_repo = Path(dagster_repo_path)
+    elif slug == "skills":
+        if not skills_repo_path:
+            raise click.ClickException("--skills-repo is required for skills-* syncs.")
+        public_repo = Path(skills_repo_path)
+    else:
+        raise click.ClickException(f"Unknown public repo slug: {slug}")
+
+    if config.direction == "inbound":
+        dest_repo = internal_repo
+        source_repo = public_repo
+    else:
+        dest_repo = public_repo
+        source_repo = internal_repo
+
+    # Resolve to full hash
+    commit_hash = git(["rev-parse", commit_hash], cwd=dest_repo).strip()
+    head = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+
+    # Collect all commits from commit_hash to HEAD (inclusive), oldest first
+    if commit_hash == head:
+        commits = [commit_hash]
+    else:
+        raw = git(["rev-list", "--reverse", f"{commit_hash}..HEAD"], cwd=dest_repo).strip()
+        commits = [commit_hash] + [h for h in raw.splitlines() if h.strip()]
+
+    # Build synced mapping (dest_hash -> source_hash) before rewriting history
+    synced = extract_label_values(dest_repo, config.synced_label)
+    dest_to_source = {v: k for k, v in synced.items()}
+
+    # Pre-compute which commits need fixing using original hashes
+    commit_fixes: dict[str, list[str]] = {}
+    for c in commits:
+        source_hash = dest_to_source.get(c)
+        if not source_hash:
+            continue
+        extra = _compute_extra_files(
+            source_repo=source_repo,
+            dest_repo=dest_repo,
+            source_hash=source_hash,
+            dest_hash=c,
+            config=config,
+        )
+        if extra:
+            commit_fixes[c] = extra
+
+    if not commit_fixes:
+        click.echo(f"No extra files found in {len(commits)} commit(s). Nothing to fix.")
+        return
+
+    click.echo(f"Found {len(commit_fixes)} commit(s) to fix in range of {len(commits)}.")
+
+    if len(commits) == 1:
+        # Single commit at HEAD -- simple amend
+        click.echo(f"\n  {commit_hash[:10]}: fixing {len(commit_fixes[commit_hash])} file(s)")
+        for f in commit_fixes[commit_hash]:
+            click.echo(f"    {f}")
+        _amend_head(dest_repo, commit_fixes[commit_hash])
+        new_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+        click.echo(f"    amended: {commit_hash[:10]} -> {new_hash[:10]}")
+    else:
+        # Multiple commits -- cherry-pick rebase
+        # Save current branch name (if on a branch) so we can update it at the end
+        try:
+            branch = git(["symbolic-ref", "--short", "HEAD"], cwd=dest_repo).strip()
+        except subprocess.CalledProcessError:
+            branch = None
+
+        parent = git(["rev-parse", f"{commit_hash}^"], cwd=dest_repo).strip()
+        git(["checkout", "--detach", parent], cwd=dest_repo)
+
+        for orig_hash in commits:
+            git(["cherry-pick", orig_hash], cwd=dest_repo)
+
+            # Recompute extras against the cherry-picked HEAD rather than using
+            # the precomputed table. The precompute was taken against the ORIGINAL
+            # commits in dest_repo, but after amending an earlier commit the
+            # tree state of later cherry-picked commits can shift in ways the
+            # precompute can't anticipate. The precompute above still serves as
+            # an early-exit guard for the "nothing to fix anywhere" case.
+            source_hash = dest_to_source.get(orig_hash)
+            if not source_hash:
+                continue
+            cherry_picked_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+            extra = _compute_extra_files(
+                source_repo=source_repo,
+                dest_repo=dest_repo,
+                source_hash=source_hash,
+                dest_hash=cherry_picked_hash,
+                config=config,
+            )
+            if extra:
+                click.echo(f"\n  {orig_hash[:10]}: fixing {len(extra)} file(s)")
+                for f in extra:
+                    click.echo(f"    {f}")
+                _amend_head(dest_repo, extra)
+                new_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+                click.echo(f"    amended: {orig_hash[:10]} -> {new_hash[:10]}")
+
+        # Update the branch ref to the new tip
+        new_tip = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+        if branch:
+            git(["branch", "-f", branch, new_tip], cwd=dest_repo)
+            git(["checkout", branch], cwd=dest_repo)
+
+    click.echo("\nDone.")
