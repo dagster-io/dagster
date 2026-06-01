@@ -298,7 +298,7 @@ def test_successful_run_from_pending(
 
 
 def test_invalid_instance_run():
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
         correct_run_storage_dir = os.path.join(temp_dir, "history", "")
         wrong_run_storage_dir = os.path.join(temp_dir, "wrong", "")
 
