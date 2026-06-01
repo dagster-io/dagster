@@ -7,8 +7,6 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from typing import IO, TYPE_CHECKING, Any, Optional
 
-from dagster_shared import seven
-
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
 from dagster._core.utils import coerce_valid_log_level
@@ -73,10 +71,12 @@ class CapturedLogHandler(logging.Handler):
             record_dict["exc_info"] = "".join(traceback.format_exception(*exc_info))
 
         try:
-            self._write_stream.write(seven.json.dumps(record_dict) + "\n")
+            self._write_stream.write(json.dumps(record_dict, default=str, sort_keys=True) + "\n")
         except Exception:
             sys.stderr.write(
-                f"Exception writing to logger event stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+                f"Exception writing to logger event stream: {serializable_error_info_from_exc_info(sys.exc_info())}."
+                f" The originating log call was made at: {record.pathname}:{record.funcName} (line {record.lineno})."
+                "\n"
             )
 
 
@@ -179,7 +179,7 @@ def get_instigation_log_records(
             continue
 
         try:
-            records.append(seven.json.loads(line))
+            records.append(json.loads(line, strict=False))
         except json.JSONDecodeError:
             continue
     return records
