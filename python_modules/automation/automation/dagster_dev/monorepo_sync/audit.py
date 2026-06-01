@@ -165,7 +165,7 @@ def audit_inbound_correctness(
         if internal_files is None:
             continue
 
-        internal_normalized = _normalize_internal_files(
+        internal_normalized = normalize_internal_files(
             internal_files, config.internal_path_prefix, config.file_renames
         )
 
@@ -219,7 +219,7 @@ def audit_outbound_correctness(
         if public_files is None:
             continue
 
-        internal_normalized = _normalize_internal_files(
+        internal_normalized = normalize_internal_files(
             internal_files, config.internal_path_prefix, config.file_renames
         )
 
@@ -339,7 +339,7 @@ def _make_commit_info(repo_path: Path, commit_hash: str) -> CommitInfo:
     return CommitInfo(hash=commit_hash, committer_date=date, author=author, title=title)
 
 
-def _normalize_internal_files(
+def normalize_internal_files(
     files: set[str],
     prefix: str,
     file_renames: dict[str, str],
@@ -362,3 +362,18 @@ def _normalize_internal_files(
             relative = reverse_renames[relative]
         result.add(relative)
     return result
+
+
+def denormalize_file_path(normalized_path: str, direction: str, config: SyncConfig) -> str:
+    """Convert a normalized file path back to an actual dest repo path.
+
+    For inbound (dest=internal): reverse the rename and prepend the internal path prefix.
+    For outbound (dest=public): the normalized path is already a public repo path.
+    """
+    if direction == "inbound":
+        # Reverse rename: file_renames maps internal->public, so reverse is public->internal
+        reverse_renames = {v: k for k, v in config.file_renames.items()}
+        actual = reverse_renames.get(normalized_path, normalized_path)
+        return config.internal_path_prefix + actual
+    else:
+        return normalized_path
