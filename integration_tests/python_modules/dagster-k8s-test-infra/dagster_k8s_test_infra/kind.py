@@ -40,26 +40,57 @@ KIND_NETWORK_NAME = "kind"
 _BUILDKITE_DOCKERHUB_MIRROR = "http://dockerhub-mirror.buildkite-agent.svc.cluster.local:5000"
 _DOCKERHUB_UPSTREAM = "https://registry-1.docker.io"
 
+# Docker Hub and ECR's S3 layer-blob backend both intermittently return 5xx; the
+# outage window can span tens of seconds, so exponential backoff with jitter widens
+# the recovery envelope to ~155s cumulative without masking real auth/404 errors
+# (those still fail every attempt).
+_PULL_ATTEMPTS = 6
+_PULL_BASE_BACKOFF_SECONDS = 5
+_PULL_MAX_BACKOFF_SECONDS = 60
 
-def _docker_pull_with_retry(image, attempts=6, base_backoff_seconds=5, max_backoff_seconds=60):
-    # Docker Hub and ECR's S3 layer-blob backend both intermittently return 5xx; the
-    # outage window can span tens of seconds, so exponential backoff with jitter widens
-    # the recovery envelope to ~155s cumulative without masking real auth/404 errors
-    # (those still fail every attempt).
-    for attempt in range(1, attempts + 1):
+
+def _run_with_retry(label: str, cmd: list[str]) -> None:
+    for attempt in range(1, _PULL_ATTEMPTS + 1):
         try:
-            check_output(["docker", "pull", image])
+            check_output(cmd)
             return
         except subprocess.CalledProcessError:
-            if attempt == attempts:
+            if attempt == _PULL_ATTEMPTS:
                 raise
-            sleep_s = min(base_backoff_seconds * 2 ** (attempt - 1), max_backoff_seconds)
+            sleep_s = min(
+                _PULL_BASE_BACKOFF_SECONDS * 2 ** (attempt - 1), _PULL_MAX_BACKOFF_SECONDS
+            )
             sleep_s *= 0.8 + 0.4 * random.random()
             print(
-                f"docker pull {image} failed (attempt {attempt}/{attempts}); "
+                f"{label} failed (attempt {attempt}/{_PULL_ATTEMPTS}); "
                 f"sleeping {sleep_s:.1f}s before retry..."
             )
             time.sleep(sleep_s)
+
+
+def _docker_pull_with_retry(image: str) -> None:
+    _run_with_retry(f"docker pull {image}", ["docker", "pull", image])
+
+
+def _kind_node_crictl_pull_with_retry(cluster_name: str, image: str) -> None:
+    # crictl is the CRI client, so it honors the `containerdConfigPatches`
+    # registry.mirrors config -- pulls flow kind-registry → EKS dockerhub-mirror →
+    # Docker Hub, into the kind node's containerd content store. This is the same
+    # path kubelet uses, so kubelet's later `imagePullPolicy=IfNotPresent` finds the
+    # image cached and never re-pulls. Doing this at fixture-init time (instead of
+    # at test-pod schedule time) means we can retry on the rare "failed commit on
+    # ref ... unexpected commit digest" content-store flake LOUDLY here, rather than
+    # have the dagster-k8s test client treat the resulting ErrImagePull as terminal
+    # (`client.py:768`) and fail every helm-postgres-dependent test in the run.
+    #
+    # We use crictl (not ctr) because ctr talks to containerd directly and bypasses
+    # the CRI mirror config -- it would pull straight from docker.io, defeating the
+    # rate-limit-avoidance + caching the mirror chain exists for.
+    node = f"{cluster_name}-control-plane"
+    _run_with_retry(
+        f"crictl pull {image} on {node}",
+        ["docker", "exec", node, "crictl", "pull", image],
+    )
 
 
 def _registry_proxy_remote_url() -> str:
@@ -139,21 +170,39 @@ def kind_load_images(cluster_name, local_dagster_test_image, additional_images=N
 
     print(f"Loading images into kind cluster {cluster_name}...")
 
-    def _load(image: str, pull_first: bool) -> None:
-        if pull_first:
-            _docker_pull_with_retry(image)
+    # The test-project image lives in private ECR (not docker.io), so the kind-
+    # registry mirror doesn't cover it. Use `kind load docker-image` -- it ships
+    # the bytes via `docker save` → `ctr image import` and inherits the dind
+    # daemon's ECR auth. pull_first=False because the test-project image is
+    # built / pulled by an upstream step into the dind daemon already.
+    def _kind_load(image: str) -> None:
         print(f"kind: Loading image {image} into kind cluster {cluster_name}")
         check_output(["kind", "load", "docker-image", "--name", cluster_name, image])
 
-    # Parallelize pull + kind-load. `kind load docker-image` is bounded by
-    # `docker save` -> tar streaming -> kind node's containerd import. The
-    # per-image steps overlap well enough that 4 concurrent loads cut total
-    # wall time from sum() to ~max() on the EBS-backed dind storage.
-    work = [(image, True) for image in additional_images]
-    work.append((local_dagster_test_image, False))
+    # Supporting Docker Hub images (postgres / rabbitmq / localstack / busybox)
+    # pull straight into the kind node's containerd via the CRI mirror chain.
+    # Avoids the `docker save` → `ctr image import` path entirely (which trips
+    # on OCI index references for some docker.io images, e.g. postgres:14.6 →
+    # `ctr: content digest sha256:bea0c648...: not found`).
+    def _crictl_pull(image: str) -> None:
+        print(f"kind: crictl pull {image} on {cluster_name}-control-plane")
+        _kind_node_crictl_pull_with_retry(cluster_name, image)
+
+    # Parallelize: per-image steps are I/O-bound (registry HTTP + content-store
+    # writes) and overlap well enough that 4 concurrent loads cut total wall
+    # time from sum() to ~max() on the EBS-backed dind storage.
+    def _dispatch(work_item):
+        kind, image = work_item
+        if kind == "crictl":
+            _crictl_pull(image)
+        else:
+            _kind_load(image)
+
+    work = [("crictl", image) for image in additional_images]
+    work.append(("kind_load", local_dagster_test_image))
 
     with ThreadPoolExecutor(max_workers=4) as executor:
-        list(executor.map(lambda args: _load(*args), work))
+        list(executor.map(_dispatch, work))
 
 
 def kind_cluster_exists(cluster_name):
