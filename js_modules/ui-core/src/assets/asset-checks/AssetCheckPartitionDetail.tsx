@@ -7,7 +7,6 @@ import {
   Mono,
   NonIdealState,
   Spinner,
-  Subheading,
   Tag,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -85,7 +84,7 @@ export const AssetCheckPartitionDetail = ({
     return (
       <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
         <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
-          <Heading>
+          <Heading size={20} weight={500}>
             <MiddleTruncate text={partitionKey} />
           </Heading>
           <div style={{flex: 1}} />
@@ -103,7 +102,7 @@ export const AssetCheckPartitionDetail = ({
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
-        <Heading>
+        <Heading size={20} weight={500}>
           <MiddleTruncate text={partitionKey} />
         </Heading>
         <div style={{flex: 1}} />
@@ -123,7 +122,9 @@ export const AssetCheckPartitionDetail = ({
       >
         {!latestExecution || !latestExecution.evaluation ? (
           <Box flex={{gap: 4, direction: 'column'}}>
-            <Subheading>Latest execution</Subheading>
+            <Heading size={14} weight={600}>
+              Latest execution
+            </Heading>
             <Box flex={{gap: 4}}>
               <Icon name="status" color={Colors.accentGray()} />
               None
@@ -131,7 +132,9 @@ export const AssetCheckPartitionDetail = ({
           </Box>
         ) : (
           <Box flex={{gap: 4, direction: 'column'}}>
-            <Subheading>Latest execution</Subheading>
+            <Heading size={14} weight={600}>
+              Latest execution
+            </Heading>
             <Box flex={{gap: 4}} style={{whiteSpace: 'nowrap'}}>
               <ExecutionStatusIcon
                 status={latestExecution.status}
@@ -143,7 +146,9 @@ export const AssetCheckPartitionDetail = ({
         )}
 
         <Box flex={{gap: 4, direction: 'column'}}>
-          <Subheading>Run</Subheading>
+          <Heading size={14} weight={600}>
+            Run
+          </Heading>
           {latestExecution ? (
             <Link
               to={linkToRunEvent(
@@ -159,7 +164,9 @@ export const AssetCheckPartitionDetail = ({
         </Box>
 
         <Box flex={{gap: 4, direction: 'column'}}>
-          <Subheading>Target materialization</Subheading>
+          <Heading size={14} weight={600}>
+            Target materialization
+          </Heading>
           {latestExecution?.evaluation?.targetMaterialization ? (
             <Box flex={{gap: 4}} style={{whiteSpace: 'nowrap'}}>
               <Icon name="materialization" />
@@ -192,13 +199,17 @@ export const AssetCheckPartitionDetail = ({
 
       {latestExecution?.evaluation?.description && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Description</Subheading>
+          <Heading size={14} weight={600}>
+            Description
+          </Heading>
           <Box style={{color: Colors.textDefault()}}>{latestExecution.evaluation.description}</Box>
         </Box>
       )}
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>Metadata</Subheading>
+        <Heading size={14} weight={600}>
+          Metadata
+        </Heading>
         {latestExecution?.evaluation?.metadataEntries &&
         latestExecution.evaluation.metadataEntries.length > 0 ? (
           <MetadataEntries entries={latestExecution.evaluation.metadataEntries} />

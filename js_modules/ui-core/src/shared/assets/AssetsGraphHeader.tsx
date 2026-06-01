@@ -1,4 +1,4 @@
-import {PageHeader, Subtitle1} from '@dagster-io/ui-components';
+import {Heading, PageHeader} from '@dagster-io/ui-components';
 
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {ReloadAllButton} from '../../workspace/ReloadAllButton';
@@ -10,7 +10,11 @@ export const AssetsGraphHeader = () => {
   }
   return (
     <PageHeader
-      title={<Subtitle1>Global asset lineage</Subtitle1>}
+      title={
+        <Heading size={16} weight={600}>
+          Global asset lineage
+        </Heading>
+      }
       right={<ReloadAllButton label="Reload definitions" />}
     />
   );

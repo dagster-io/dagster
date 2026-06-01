@@ -5,12 +5,12 @@ import {
   Colors,
   Dialog,
   DialogFooter,
+  Heading,
   Icon,
   ListItem,
   MiddleTruncate,
   NonIdealState,
   Spinner,
-  Subheading,
   Tag,
   TextInput,
   Tooltip,
@@ -455,7 +455,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           ) : null}
           {didSkip ? (
             <Box padding={{horizontal: 20, bottom: 16}} flex={{direction: 'column', gap: 8}}>
-              <Subheading style={{marginBottom: 8}}>Requested runs (0)</Subheading>
+              <Heading size={14} weight={600} style={{marginBottom: 8}}>
+                Requested runs (0)
+              </Heading>
               <NonIdealState
                 icon="missing"
                 title="No runs requested"
@@ -480,7 +482,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           {numRunRequests && runRequests ? (
             <Box flex={{direction: 'column'}}>
               <Box padding={{horizontal: 20, bottom: 12}} border="bottom">
-                <Subheading>Requested runs ({numRunRequests})</Subheading>
+                <Heading size={14} weight={600}>
+                  Requested runs ({numRunRequests})
+                </Heading>
               </Box>
               <RunRequestList
                 runRequests={runRequests}

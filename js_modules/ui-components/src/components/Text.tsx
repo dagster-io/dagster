@@ -14,30 +14,6 @@ const Text = ({as: Component = 'span', color, style, className, ...props}: TextP
   <Component className={className} style={color ? {...style, color} : style} {...props} />
 );
 
-export const Title = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.title, className)} {...props} />
-);
-
-export const Heading = ({className, ...props}: TextProps) => (
-  <Text className={clsx('headingGlobal', styles.heading, className)} {...props} />
-);
-
-export const Headline = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.headline, className)} {...props} />
-);
-
-export const Subheading = ({className, ...props}: TextProps) => (
-  <Text className={clsx('subheadingGlobal', styles.subheading, className)} {...props} />
-);
-
-export const Subtitle1 = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.subtitle1, className)} {...props} />
-);
-
-export const Subtitle2 = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.subtitle2, className)} {...props} />
-);
-
 export const Body = ({className, ...props}: TextProps) => (
   <Text className={clsx(styles.body, className)} {...props} />
 );
@@ -72,18 +48,6 @@ export const Mono = ({className, ...props}: TextProps) => (
 
 export const CaptionMono = ({className, ...props}: TextProps) => (
   <Text className={clsx(styles.captionMono, className)} {...props} />
-);
-
-export const SubtitleLarge = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.subtitleLarge, className)} {...props} />
-);
-
-export const Subtitle = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.subtitle, className)} {...props} />
-);
-
-export const SubtitleSmall = ({className, ...props}: TextProps) => (
-  <Text className={clsx(styles.subtitleSmall, className)} {...props} />
 );
 
 export const BodyLarge = ({className, ...props}: TextProps) => (

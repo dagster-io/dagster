@@ -8,11 +8,11 @@ import {
   Dialog,
   DialogFooter,
   DialogHeader,
+  Heading,
   Icon,
   Radio,
   RadioContainer,
   RadioGroup,
-  Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -451,7 +451,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             isInitiallyOpen={true}
             title={
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Subheading>Partition selection</Subheading>
+                <Heading size={14} weight={600}>
+                  Partition selection
+                </Heading>
                 <span>All partitions</span>
               </Box>
             }
@@ -472,7 +474,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             isInitiallyOpen={true}
             title={
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Subheading>Partition selection</Subheading>
+                <Heading size={14} weight={600}>
+                  Partition selection
+                </Heading>
                 {target.type === 'pureWithAnchorAsset' ? (
                   <span /> // we won't know until runtime
                 ) : (
@@ -488,7 +492,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 data-testid={testId('anchor-asset-label')}
               >
                 <Icon name="asset" />
-                <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
+                <Heading size={14} weight={600}>
+                  {displayNameForAssetKey(target.anchorAssetKey)}
+                </Heading>
               </Box>
             )}
             <DimensionRangeWizards
@@ -504,7 +510,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         <ToggleableSection
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Tags</Subheading>
+              <Heading size={14} weight={600}>
+                Tags
+              </Heading>
               <span>{tags.length} tags</span>
             </Box>
           }
@@ -542,7 +550,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         <ToggleableSection
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Config</Subheading>
+              <Heading size={14} weight={600}>
+                Config
+              </Heading>
               {savedConfig && <span>Config saved</span>}
             </Box>
           }
@@ -570,7 +580,11 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         {target.type === 'job' && (
           <ToggleableSection
             isInitiallyOpen={true}
-            title={<Subheading data-testid={testId('backfill-options')}>Options</Subheading>}
+            title={
+              <Heading size={14} weight={600} data-testid={testId('backfill-options')}>
+                Options
+              </Heading>
+            }
           >
             <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
               <Checkbox
@@ -582,7 +596,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               />
               {showSingleRunBackfillToggle ? (
                 <RadioContainer>
-                  <Subheading>Launch as...</Subheading>
+                  <Heading size={14} weight={600}>
+                    Launch as…
+                  </Heading>
                   <RadioGroup
                     value={
                       canLaunchWithRangesAsTags && launchWithRangesAsTags ? 'single' : 'multiple'
@@ -823,7 +839,9 @@ const Warnings = ({
         >
           <Box flex={{alignItems: 'center', gap: 12}}>
             <Icon name="warning" color={Colors.textYellow()} />
-            <Subheading>Warnings</Subheading>
+            <Heading size={14} weight={600}>
+              Warnings
+            </Heading>
           </Box>
           <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>
         </Box>

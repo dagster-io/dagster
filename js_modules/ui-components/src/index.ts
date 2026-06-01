@@ -55,6 +55,7 @@ export * from './components/Toaster';
 export * from './components/TokenizingField';
 export * from './components/Tooltip';
 export * from './components/Trace';
+export * from './components/Typography';
 export * from './components/UnstyledButton';
 export * from './components/useDelayedState';
 export * from './components/useSuggestionsForString';

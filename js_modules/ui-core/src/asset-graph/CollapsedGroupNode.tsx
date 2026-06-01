@@ -2,10 +2,10 @@ import {
   Box,
   Colors,
   FontFamily,
+  Heading,
   Icon,
   Menu,
   MenuItem,
-  Subtitle,
   Tag,
   Tooltip,
   ifPlural,
@@ -411,9 +411,9 @@ const DegradedStatusTooltip = ({
     <>
       {degraded ? (
         <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
-          <Subtitle>
+          <Heading size={14} weight={500}>
             {numberFormatter.format(degraded)} degraded asset{ifPlural(degraded, '', 's')}
-          </Subtitle>
+          </Heading>
         </Box>
       ) : null}
       {checksFailed ? (

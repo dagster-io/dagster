@@ -4,9 +4,9 @@ import {
   Caption,
   Colors,
   CursorPaginationControls,
+  Heading,
   Icon,
   MiddleTruncate,
-  Subtitle1,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import React from 'react';
@@ -79,7 +79,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <Subtitle1>Evaluations</Subtitle1>
+        <Heading size={16} weight={600}>
+          Evaluations
+        </Heading>
       </Box>
       <Box
         padding={{bottom: 8, horizontal: 12}}

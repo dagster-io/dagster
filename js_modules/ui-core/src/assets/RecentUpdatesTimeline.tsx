@@ -4,10 +4,10 @@ import {
   Caption,
   CaptionMono,
   Colors,
+  Heading,
   Icon,
   Popover,
   Skeleton,
-  Subtitle2,
   useViewport,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
@@ -155,7 +155,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
     return (
       <Box flex={{direction: 'column', gap: 4}}>
         <Box flex={{direction: 'row'}}>
-          <Subtitle2>Recent updates</Subtitle2>
+          <Heading size={14} weight={600}>
+            Recent updates
+          </Heading>
         </Box>
         <Skeleton $width="100%" $height={36} />
         <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
@@ -172,7 +174,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
   return (
     <Box flex={{direction: 'column', gap: 4}}>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-        <Subtitle2>Recent updates</Subtitle2>
+        <Heading size={14} weight={600}>
+          Recent updates
+        </Heading>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Caption color={Colors.textLighter()}>
             {totalCount === 100
@@ -267,7 +271,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                   content={
                     <div style={{width: 400}}>
                       <Box padding={{vertical: 8, horizontal: 12}} border="bottom">
-                        <Subtitle2>Updates</Subtitle2>
+                        <Heading size={14} weight={600}>
+                          Updates
+                        </Heading>
                       </Box>
                       <Box style={{maxHeight: '300px', overflowY: 'auto'}}>
                         {[...batch.runs]
