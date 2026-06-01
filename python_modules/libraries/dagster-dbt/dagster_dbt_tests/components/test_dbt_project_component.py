@@ -565,6 +565,13 @@ def test_subclass_override_get_asset_spec_translator_metadata(dbt_path: Path) ->
         "mismatch with the prefixed keys registered at definition time."
     )
 
+    # Verify dep keys are also prefixed by the subclass override
+    dep_keys = {dep.asset_key for dep in spec.deps}
+    for dep_key in dep_keys:
+        assert dep_key.path[:2] == ["my_db", "my_schema"], (
+            f"Expected dep key {dep_key} to have ['my_db', 'my_schema'] prefix"
+        )
+
     # Also verify via YAML translation path
     defs_yaml = build_component_defs_for_test(
         DbtProjectComponent,
@@ -582,6 +589,49 @@ def test_subclass_override_get_asset_spec_translator_metadata(dbt_path: Path) ->
     assert isinstance(yaml_translator, DbtProjectComponentTranslator), (
         f"Expected DbtProjectComponentTranslator in spec metadata (YAML path), got {type(yaml_translator)}."
     )
+
+
+def test_subclass_with_yaml_translation_translates_dep_keys(dbt_path: Path) -> None:
+    """Regression test for dagster-io/dagster#33632: YAML translation applied through a
+    subclass must translate both asset keys AND their upstream dependency keys.
+    """
+
+    @dataclass
+    class TaggingDbtComponent(DbtProjectComponent):
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
+        ) -> dg.AssetSpec:
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+            return base_spec.replace_attributes(tags={**base_spec.tags, "custom": "true"})
+
+    defs = build_component_defs_for_test(
+        TaggingDbtComponent,
+        {
+            "project": str(dbt_path),
+            "translation": {"key": "my_prefix/{{ node.name }}"},
+        },
+    )
+
+    # Verify all asset keys are translated with the prefix
+    all_keys = defs.resolve_asset_graph().get_all_asset_keys()
+    for key in all_keys:
+        assert key.path[0] == "my_prefix", f"Asset key {key} missing prefix"
+
+    # Verify that stg_customers depends on translated (prefixed) raw_customers,
+    # not the untranslated version
+    stg_key = AssetKey(["my_prefix", "stg_customers"])
+    assets_def = defs.resolve_assets_def(stg_key)
+    spec = assets_def.get_asset_spec(stg_key)
+    dep_keys = {dep.asset_key for dep in spec.deps}
+    assert AssetKey(["my_prefix", "raw_customers"]) in dep_keys, (
+        f"Expected translated dep key ['my_prefix', 'raw_customers'], got {dep_keys}"
+    )
+    assert AssetKey("raw_customers") not in dep_keys, (
+        "Dep key 'raw_customers' should be translated to ['my_prefix', 'raw_customers']"
+    )
+
+    # Verify custom tag was applied by the subclass
+    assert spec.tags["custom"] == "true"
 
 
 def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
