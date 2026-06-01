@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -248,3 +249,155 @@ def test_databricks_execution_failure(mock_workspace, mock_serializer, mock_dese
 
     assert "Job 101 failed: FAILED" in str(excinfo.value)
     mock_client.jobs.wait_get_run_job_terminated_or_skipped.assert_called_with(666)
+
+
+def test_databricks_fetch_jobs_pagination():
+    """Test that fetch_jobs paginates through all pages of the Databricks Jobs API."""
+    workspace = DatabricksWorkspace(host="https://fake.databricks.com", token="fake-token")
+
+    page1_data = {
+        "jobs": [
+            {"job_id": 1, "settings": {"name": "Job1"}},
+            {"job_id": 2, "settings": {"name": "Job2"}},
+        ],
+        "has_more": True,
+        "next_page_token": "token1",
+    }
+    page2_data = {
+        "jobs": [{"job_id": 3, "settings": {"name": "Job3"}}],
+        "has_more": False,
+    }
+
+    call_count = 0
+    captured_params: list[dict] = []
+
+    @asynccontextmanager
+    async def mock_get(url, params=None):
+        nonlocal call_count
+        captured_params.append(dict(params) if params else {})
+        resp = AsyncMock()
+        if call_count == 0:
+            resp.json = AsyncMock(return_value=page1_data)
+        else:
+            resp.json = AsyncMock(return_value=page2_data)
+        resp.raise_for_status = MagicMock()
+        call_count += 1
+        yield resp
+
+    @asynccontextmanager
+    async def mock_session_get_single(url):
+        """Mock for individual job GET requests."""
+        resp = AsyncMock()
+        resp.status = 200
+        resp.json = AsyncMock(
+            return_value={
+                "job_id": 1,
+                "settings": {
+                    "name": "Job1",
+                    "tasks": [{"task_key": "t1", "notebook_task": {"notebook_path": "/test"}}],
+                },
+            }
+        )
+        resp.raise_for_status = MagicMock()
+        yield resp
+
+    @asynccontextmanager
+    async def mock_client_session(headers=None):
+        session = MagicMock()
+        session.get = mock_get
+        yield session
+
+    @asynccontextmanager
+    async def mock_client_session_single(headers=None):
+        session = MagicMock()
+        session.get = mock_session_get_single
+        yield session
+
+    session_call_count = 0
+    original_mock_client_session = mock_client_session
+    original_mock_client_session_single = mock_client_session_single
+
+    @asynccontextmanager
+    async def mock_client_session_dispatch(headers=None):
+        nonlocal session_call_count
+        if session_call_count == 0:
+            session_call_count += 1
+            async with original_mock_client_session(headers=headers) as s:
+                yield s
+        else:
+            async with original_mock_client_session_single(headers=headers) as s:
+                yield s
+
+    with patch("aiohttp.ClientSession", side_effect=mock_client_session_dispatch):
+        jobs = asyncio.run(workspace.fetch_jobs(databricks_filter=None))
+
+    # All 3 jobs from both pages should be fetched
+    assert len(jobs) == 3
+    # First call should have no page_token
+    assert captured_params[0] == {}
+    # Second call should pass the page_token
+    assert captured_params[1] == {"page_token": "token1"}
+
+
+def test_databricks_fetch_jobs_rate_limit_retry():
+    """Test that individual job fetches retry on HTTP 429."""
+    workspace = DatabricksWorkspace(host="https://fake.databricks.com", token="fake-token")
+
+    list_data = {
+        "jobs": [{"job_id": 1, "settings": {"name": "Job1"}}],
+        "has_more": False,
+    }
+
+    @asynccontextmanager
+    async def mock_list_get(url, params=None):
+        resp = AsyncMock()
+        resp.json = AsyncMock(return_value=list_data)
+        resp.raise_for_status = MagicMock()
+        yield resp
+
+    single_call_count = 0
+
+    @asynccontextmanager
+    async def mock_single_get(url):
+        nonlocal single_call_count
+        resp = AsyncMock()
+        if single_call_count == 0:
+            resp.status = 429
+            single_call_count += 1
+        else:
+            resp.status = 200
+            resp.json = AsyncMock(
+                return_value={
+                    "job_id": 1,
+                    "settings": {
+                        "name": "Job1",
+                        "tasks": [{"task_key": "t1", "notebook_task": {"notebook_path": "/test"}}],
+                    },
+                }
+            )
+            resp.raise_for_status = MagicMock()
+        yield resp
+
+    session_idx = 0
+
+    @asynccontextmanager
+    async def mock_client_session(headers=None):
+        nonlocal session_idx
+        session = MagicMock()
+        if session_idx == 0:
+            session.get = mock_list_get
+            session_idx += 1
+        else:
+            session.get = mock_single_get
+        yield session
+
+    with (
+        patch("aiohttp.ClientSession", side_effect=mock_client_session),
+        patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+    ):
+        jobs = asyncio.run(workspace.fetch_jobs(databricks_filter=None))
+
+    assert len(jobs) == 1
+    assert jobs[0].name == "Job1"
+    # Verify sleep was called for the rate-limit retry
+    mock_sleep.assert_called_once_with(1)
