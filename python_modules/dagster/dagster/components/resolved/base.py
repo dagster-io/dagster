@@ -194,6 +194,8 @@ _Unset: Final[str] = UNSET_DEFAULT_SENTINEL
 def derive_model_type(
     target_type: type[Resolvable],
 ) -> type[BaseModel]:
+    from dagster.components.resolved.form_config import UI_ID_SOURCE
+
     if target_type not in _DERIVED_MODEL_REGISTRY:
         form_config = target_type.get_form_config()
         schema_extra = form_config.to_component_json_schema_extra() if form_config else {}
@@ -202,11 +204,24 @@ def derive_model_type(
         model_fields: dict[
             str, Any
         ] = {}  # use Any to appease type checker when **-ing in to create_model
+        id_source_field: str | None = None
 
         for name, annotation_info in _get_annotations(target_type).items():
             field_resolver = _get_resolver(annotation_info.type, name)
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation_info.type
+            if (field_resolver.json_schema_extra or {}).get(UI_ID_SOURCE) is True:
+                if annotation_info.has_default:
+                    raise ResolutionException(
+                        f"{target_type.__name__}.{name}: ComponentFormConfig(id_source=True) is "
+                        "only valid on required fields, but this field has a default value."
+                    )
+                if id_source_field is not None:
+                    raise ResolutionException(
+                        f"{target_type.__name__} marks both {id_source_field!r} and {name!r} as "
+                        "id_source; at most one field per component may set id_source=True."
+                    )
+                id_source_field = name
 
             field_infos = []
             if annotation_info.field_info:
