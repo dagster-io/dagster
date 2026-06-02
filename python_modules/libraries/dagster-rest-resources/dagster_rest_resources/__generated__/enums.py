@@ -926,6 +926,10 @@ class IssueStatus(str, Enum):
     CANCELED = "CANCELED"
 
 
+class IssuePullRequestProvider(str, Enum):
+    GITHUB = "GITHUB"
+
+
 class ReexecutionStrategy(str, Enum):
     FROM_ASSET_FAILURE = "FROM_ASSET_FAILURE"
     FROM_FAILURE = "FROM_FAILURE"
