@@ -76,11 +76,8 @@ class ResourceRequests:
 
 
 class BuildkiteQueue(StrEnum):
-    KUBERNETES_GKE = os.getenv("BUILDKITE_KUBERNETES_QUEUE_GKE", "kubernetes-gke")
     KUBERNETES_EKS = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
     DOCKER = os.getenv("BUILDKITE_DOCKER_QUEUE", "buildkite-docker-october22")
-    MEDIUM = os.getenv("BUILDKITE_MEDIUM_QUEUE", "buildkite-medium-october22")
-    WINDOWS = os.getenv("BUILDKITE_WINDOWS_QUEUE", "buildkite-windows-october22")
 
     @classmethod
     def contains(cls, value: str) -> bool:
@@ -662,16 +659,13 @@ class CommandStepBuilder:
 
     def build(self) -> CommandStepConfiguration:
         assert "agents" in self._step
-        on_k8s = self._step["agents"]["queue"] in (
-            BuildkiteQueue.KUBERNETES_GKE,
-            BuildkiteQueue.KUBERNETES_EKS,
-        )
+        on_k8s = self._step["agents"]["queue"] == BuildkiteQueue.KUBERNETES_EKS
         # Note: `self._requires_docker` is k8s-only. On non-k8s queues docker is
         # provided by the host agent regardless of the flag, so we don't gate.
 
         if not on_k8s and self._k8s_secrets:
             raise Exception(
-                "Specified a kubernetes secret on a non-kubernetes queue. Please call .on_queue(BuildkiteQueue.KUBERNETES_GKE) or .on_queue(BuildkiteQueue.KUBERNETES_EKS) if you want to run on k8s"
+                "Specified a kubernetes secret on a non-kubernetes queue. Please call .on_queue(BuildkiteQueue.KUBERNETES_EKS) if you want to run on k8s"
             )
 
         if on_k8s:

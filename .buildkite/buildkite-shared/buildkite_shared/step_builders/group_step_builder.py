@@ -2,10 +2,7 @@ from collections.abc import Sequence
 from typing import Any, TypeAlias
 
 from buildkite_shared.step_builders.block_step_builder import BlockStepConfiguration
-from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
-    CommandStepConfiguration,
-)
+from buildkite_shared.step_builders.command_step_builder import CommandStepConfiguration
 from buildkite_shared.step_builders.input_step_builder import InputStepConfiguration
 from buildkite_shared.step_builders.slug import make_label
 from buildkite_shared.step_builders.trigger_step_builder import TriggerStepConfiguration
@@ -44,10 +41,6 @@ class GroupStepBuilder:
         skip: str | None = None,
     ) -> None:
         emojis = list(label_emojis or [])
-        if all(
-            step.get("agents", {}).get("queue") == BuildkiteQueue.KUBERNETES_GKE for step in steps
-        ):
-            emojis = [":gcp:", *emojis]
         label = make_label(key, emojis)
 
         steps_list: list[Any] = list(steps)
