@@ -116,6 +116,26 @@ export const FlexboxContainerUsage = () => {
   );
 };
 
+export const CustomFontProperties = () => {
+  return (
+    <span>
+      This text should not be truncating:
+      <br />
+      <Box
+        flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
+        style={{
+          maxWidth: 120,
+          letterSpacing: '-0.05rem',
+          wordSpacing: '-0.05rem',
+          textRendering: 'geometricPrecision',
+        }}
+      >
+        <MiddleTruncate text="anthropic cost report" />
+      </Box>
+    </span>
+  );
+};
+
 export const TagUsage = () => {
   return (
     <Tag icon="job">

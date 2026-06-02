@@ -52,8 +52,8 @@ export const MiddleTruncate = memo(({text, showTitle = true}: Props) => {
 
   useLayoutEffect(() => {
     if (measure.current) {
-      const font = getComputedStyle(measure.current).font;
-      const result = calculateMiddleTruncatedText({font, width, text: textString});
+      const styles = getComputedStyle(measure.current);
+      const result = calculateMiddleTruncatedText({width, textString, styles});
       setTruncatedText(result ?? textString);
     }
   }, [textString, width]);
@@ -83,18 +83,17 @@ export const MiddleTruncate = memo(({text, showTitle = true}: Props) => {
 });
 
 type MeasurementConfig = {
-  font: string;
   width: number;
-  text: string;
+  styles: CSSStyleDeclaration;
+  textString: string;
 };
 
 /**
  * Given a font style and a container width, use a canvas to determine the longest possible
  * middle-truncated string that will fit within the container.
  */
-const calculateMiddleTruncatedText = ({font, width, text}: MeasurementConfig) => {
+const calculateMiddleTruncatedText = ({styles, width, textString}: MeasurementConfig) => {
   const body = document.body;
-
   const canvas = document.createElement('canvas');
   canvas.style.position = 'fixed';
   canvas.style.left = '-10000px';
@@ -108,13 +107,15 @@ const calculateMiddleTruncatedText = ({font, width, text}: MeasurementConfig) =>
   }
 
   const targetWidth = width;
-  ctx.font = font;
+
+  const {font, letterSpacing, wordSpacing, fontKerning, fontStretch, textRendering} = styles;
+  Object.assign(ctx, {font, letterSpacing, wordSpacing, fontKerning, fontStretch, textRendering});
   body.appendChild(canvas);
 
   // Search for the largest possible middle-truncated string that will fit within
   // the allotted width.
   const truncated = calculateMiddleTruncation(
-    text,
+    textString,
     targetWidth,
     (value: string) => ctx.measureText(value).width,
   );
