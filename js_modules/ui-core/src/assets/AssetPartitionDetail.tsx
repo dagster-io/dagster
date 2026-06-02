@@ -5,9 +5,9 @@ import {
   Heading,
   Icon,
   MiddleTruncate,
-  Mono,
   Spinner,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -343,7 +343,9 @@ export const AssetPartitionDetail = ({
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <RunStatusWithStats runId={latestEventRun.id} status={latestEventRun.status} />
               <Link to={linkToRunEvent(latestEventRun, latest)}>
-                <Mono>{titleForRun(latestEventRun)}</Mono>
+                <Text size={14} family="mono">
+                  {titleForRun(latestEventRun)}
+                </Text>
               </Link>
             </Box>
           ) : (

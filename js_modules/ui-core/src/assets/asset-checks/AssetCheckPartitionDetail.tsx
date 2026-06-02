@@ -4,10 +4,10 @@ import {
   Heading,
   Icon,
   MiddleTruncate,
-  Mono,
   NonIdealState,
   Spinner,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -156,7 +156,9 @@ export const AssetCheckPartitionDetail = ({
                 {stepKey: latestExecution.stepKey, timestamp: latestExecution.timestamp},
               )}
             >
-              <Mono>{titleForRun({id: latestExecution.runId})}</Mono>
+              <Text size={14} family="mono">
+                {titleForRun({id: latestExecution.runId})}
+              </Text>
             </Link>
           ) : (
             'None'

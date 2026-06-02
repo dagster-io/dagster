@@ -1,4 +1,4 @@
-import {CaptionMono, MetadataTable, Tag, Tooltip} from '@dagster-io/ui-components';
+import {MetadataTable, Tag, Text, Tooltip} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import styles from './css/CronTag.module.css';
@@ -21,7 +21,14 @@ export const CronTag = (props: Props) => {
   const tooltipContent = (
     <MetadataTable
       rows={[
-        {key: 'Cron value', value: <CaptionMono>{cronSchedule}</CaptionMono>},
+        {
+          key: 'Cron value',
+          value: (
+            <Text size={12} family="mono">
+              {cronSchedule}
+            </Text>
+          ),
+        },
         {key: 'Your time', value: <span>{withHumanTimezone}</span>},
       ]}
     />

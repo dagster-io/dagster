@@ -8,8 +8,8 @@ import {
   DialogFooter,
   FontFamily,
   Icon,
-  Mono,
   NonIdealState,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
@@ -131,7 +131,10 @@ export function MigrationRequired() {
           <Box flex={{direction: 'column'}}>
             <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
               A database schema migration is required to use asset checks. Run{' '}
-              <Mono>dagster instance migrate</Mono>.
+              <Text size={14} family="mono">
+                dagster instance migrate
+              </Text>
+              .
             </Body2>
           </Box>
         }

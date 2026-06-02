@@ -1,4 +1,4 @@
-import {Box, Button, Dialog, DialogBody, DialogFooter, Icon, Mono} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogBody, DialogFooter, Icon, Text} from '@dagster-io/ui-components';
 import {ReactNode} from 'react';
 
 import {AppManagedComponentMutationContext} from './appManagedComponentMutationContext';
@@ -19,20 +19,32 @@ const SUMMARY: Record<
 > = {
   add: (id) => (
     <>
-      Adding <Mono>{id}</Mono> caused the code location to fail to load. You can revert the change
-      to restore the location, or dismiss to investigate.
+      Adding{' '}
+      <Text size={14} family="mono">
+        {id}
+      </Text>{' '}
+      caused the code location to fail to load. You can revert the change to restore the location,
+      or dismiss to investigate.
     </>
   ),
   edit: (id) => (
     <>
-      Editing <Mono>{id}</Mono> caused the code location to fail to load. You can revert the change
-      to restore the location, or dismiss to investigate.
+      Editing{' '}
+      <Text size={14} family="mono">
+        {id}
+      </Text>{' '}
+      caused the code location to fail to load. You can revert the change to restore the location,
+      or dismiss to investigate.
     </>
   ),
   delete: (id) => (
     <>
-      Deleting <Mono>{id}</Mono> caused the code location to fail to load. You can revert the change
-      to restore the location, or dismiss to investigate.
+      Deleting{' '}
+      <Text size={14} family="mono">
+        {id}
+      </Text>{' '}
+      caused the code location to fail to load. You can revert the change to restore the location,
+      or dismiss to investigate.
     </>
   ),
 };

@@ -8,11 +8,11 @@ import {
   Heading,
   Icon,
   MetadataTableWIP,
-  Mono,
   NonIdealState,
   Page,
   PageHeader,
   SpinnerWithText,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -157,8 +157,15 @@ export const RunConcurrencyContent = ({
         </Box>
         <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
-          limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
-          <Mono>dagster.yaml</Mono>. See the{' '}
+          limits, configure your instance to use the{' '}
+          <Text size={14} family="mono">
+            QueuedRunCoordinator
+          </Text>{' '}
+          in your{' '}
+          <Text size={14} family="mono">
+            dagster.yaml
+          </Text>
+          . See the{' '}
           <a
             target="_blank"
             rel="noreferrer"

@@ -5,8 +5,8 @@ import {
   Dialog,
   DialogFooter,
   Icon,
-  Mono,
   Spinner,
+  Text,
 } from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 import * as React from 'react';
@@ -157,7 +157,10 @@ export const StepLogsDialogContent = ({
             {!metadata.exitedAt && logType === LogType.structured && (
               <Spinner purpose="body-text" />
             )}
-            View Run <Mono>{titleForRun({id: runId})}</Mono>
+            View Run{' '}
+            <Text size={14} family="mono">
+              {titleForRun({id: runId})}
+            </Text>
             <Icon name="open_in_new" color={Colors.linkDefault()} />
           </Box>
         </Link>

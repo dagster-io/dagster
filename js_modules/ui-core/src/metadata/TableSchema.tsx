@@ -4,8 +4,8 @@ import {
   Colors,
   Icon,
   IconName,
-  Mono,
   Tag,
+  Text,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -123,7 +123,9 @@ export const TableSchema = ({
             {rows.map((column) => (
               <tr key={column.name}>
                 <td>
-                  <Mono>{column.name}</Mono>
+                  <Text size={14} family="mono">
+                    {column.name}
+                  </Text>
                   {column.tags && (
                     <Box flex={{gap: 4, wrap: 'wrap'}} margin={{top: 4}}>
                       {column.tags.map((tag, i) => (

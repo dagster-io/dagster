@@ -1,4 +1,4 @@
-import {Box, Colors, Mono} from '@dagster-io/ui-components';
+import {Box, Colors, Text} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -28,7 +28,9 @@ export const RunStatusLink = ({run}: {run: RunStatusFragment}) => (
   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
     <RunStatusIndicator status={run.status} />
     <Link to={`/runs/${run.id}`} target="_blank" rel="noreferrer">
-      <Mono>{titleForRun({id: run.id})}</Mono>
+      <Text size={14} family="mono">
+        {titleForRun({id: run.id})}
+      </Text>
     </Link>
   </Box>
 );

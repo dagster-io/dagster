@@ -6,10 +6,10 @@ import {
   Dialog,
   DialogFooter,
   Heading,
-  Mono,
   Tab,
   Tabs,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -164,7 +164,9 @@ const AssetSelectionTag = ({
             <Heading size={14} weight={600}>
               Asset selection
             </Heading>
-            <Mono>{assetSelectionString}</Mono>
+            <Text size={14} family="mono">
+              {assetSelectionString}
+            </Text>
           </Box>
         </Box>
 

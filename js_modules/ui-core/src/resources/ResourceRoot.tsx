@@ -2,18 +2,17 @@ import {
   Alert,
   Box,
   ButtonLink,
-  CaptionMono,
   Colors,
   Heading,
   Icon,
   MiddleTruncate,
-  Mono,
   NonIdealState,
   Page,
   PageHeader,
   SplitPanelContainer,
   Table,
   Tag,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -204,7 +203,9 @@ export const ResourceRoot = (props: Props) => {
                         {displayName}
                       </Heading>
                       <Tooltip content={topLevelResourceDetailsOrError.resourceType || ''}>
-                        <Mono>{resourceTypeSuccinct}</Mono>
+                        <Text size={14} family="mono">
+                          {resourceTypeSuccinct}
+                        </Text>
                       </Tooltip>
                     </Box>
                     <Box
@@ -607,7 +608,9 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
           )}
         </div>
       </Box>
-      <CaptionMono>{description}</CaptionMono>
+      <Text size={12} family="mono">
+        {description}
+      </Text>
     </Box>
   );
 };

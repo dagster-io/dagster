@@ -1,4 +1,4 @@
-import {CaptionMono} from '@dagster-io/ui-components';
+import {Text} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {CSSProperties, useRef} from 'react';
 
@@ -32,7 +32,9 @@ export const VirtualizedSimpleAssetKeyList = ({
           const assetKey = assetKeys[index]!;
           return (
             <Row key={key} $height={size} $start={start}>
-              <CaptionMono>{displayNameForAssetKey(assetKey)}</CaptionMono>
+              <Text size={12} family="mono">
+                {displayNameForAssetKey(assetKey)}
+              </Text>
             </Row>
           );
         })}

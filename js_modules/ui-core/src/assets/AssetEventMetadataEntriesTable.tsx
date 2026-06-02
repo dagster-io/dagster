@@ -5,8 +5,8 @@ import {
   Caption,
   Colors,
   Icon,
-  Mono,
   Tag,
+  Text,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -228,7 +228,9 @@ export const AssetEventMetadataEntriesTable = ({
                   <tr key={`metadata-${timestamp}-${entry.label}`}>
                     <td>
                       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                        <Mono>{entry.label}</Mono>
+                        <Text size={14} family="mono">
+                          {entry.label}
+                        </Text>
                         {renderMetadataKeyExtra?.(entry.label)}
                       </Box>
                     </td>
@@ -253,9 +255,9 @@ export const AssetEventMetadataEntriesTable = ({
                           gap: 8,
                         }}
                       >
-                        <Mono>
+                        <Text size={14} family="mono">
                           <MetadataEntry entry={entry} expandSmallValues={true} />
-                        </Mono>
+                        </Text>
                         {renderMetadataValueExtra?.(entry)}
                       </Box>
                     </td>
@@ -312,7 +314,9 @@ const ObservedInRun = ({
     <Box>
       {`Observed in run `}
       <Link to={`/runs/${runId}?timestamp=${timestamp}`}>
-        <Mono>{titleForRun({id: runId})}</Mono>
+        <Text size={14} family="mono">
+          {titleForRun({id: runId})}
+        </Text>
       </Link>
     </Box>
     <Caption>

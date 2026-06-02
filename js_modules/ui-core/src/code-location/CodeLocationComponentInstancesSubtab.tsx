@@ -7,10 +7,10 @@ import {
   Icon,
   Menu,
   MenuItem,
-  Mono,
   NonIdealState,
   Popover,
   SpinnerWithText,
+  Text,
   showToast,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -376,7 +376,11 @@ export const CodeLocationComponentInstancesSubtab = ({
         <DialogBody>
           <Box flex={{direction: 'column', gap: 8}}>
             <span>
-              Are you sure you want to delete <Mono>{confirmDeleteTarget?.componentId ?? ''}</Mono>?
+              Are you sure you want to delete{' '}
+              <Text size={14} family="mono">
+                {confirmDeleteTarget?.componentId ?? ''}
+              </Text>
+              ?
             </span>
             <span>This will remove the component from the code location and cannot be undone.</span>
           </Box>
@@ -513,7 +517,9 @@ const ViewConfigDialog = ({
             <Box flex={{direction: 'column', gap: 12}}>
               <Box flex={{direction: 'column', gap: 4}}>
                 <span className={styles.fieldLabel}>Component type</span>
-                <Mono>{content.componentType}</Mono>
+                <Text size={14} family="mono">
+                  {content.componentType}
+                </Text>
               </Box>
               <Box flex={{direction: 'column', gap: 4}}>
                 <span className={styles.fieldLabel}>Attributes</span>

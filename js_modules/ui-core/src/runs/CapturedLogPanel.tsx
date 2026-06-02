@@ -1,8 +1,8 @@
 import {
   Box,
   Icon,
-  Mono,
   Table,
+  Text,
   Tooltip,
   UnstyledButton,
   showToast,
@@ -90,7 +90,9 @@ export const CapturedOrExternalLogPanel = React.memo(
                 <td>
                   <Tooltip content="Click to copy this shell command" placement="top">
                     <UnstyledButton className={styles.clickToCopyButton} onClick={onClickShellCmd}>
-                      <Mono>{shellCommand}</Mono>
+                      <Text size={14} family="mono">
+                        {shellCommand}
+                      </Text>
                     </UnstyledButton>
                   </Tooltip>
                 </td>

@@ -6,10 +6,10 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Mono,
   NonIdealState,
   SpinnerWithText,
   Tag,
+  Text,
   TextInput,
   showToast,
 } from '@dagster-io/ui-components';
@@ -311,7 +311,11 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
                   <span className={styles.typeRowName}>{t.name}</span>
                   <Tag>{sourceLabel(t.namespace)}</Tag>
                 </Box>
-                <Mono className={styles.typeRowNamespace}>{`${t.namespace}.${t.name}`}</Mono>
+                <Text
+                  size={14}
+                  family="mono"
+                  className={styles.typeRowNamespace}
+                >{`${t.namespace}.${t.name}`}</Text>
                 {t.description ? (
                   <span className={styles.typeRowDescription}>{firstParagraph(t.description)}</span>
                 ) : null}
@@ -334,7 +338,11 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
       <Box flex={{direction: 'column', gap: 16}}>
         <Box flex={{direction: 'column', gap: 2}}>
           <span className={styles.headerName}>{selected.name}</span>
-          <Mono className={styles.headerNamespace}>{`${selected.namespace}.${selected.name}`}</Mono>
+          <Text
+            size={14}
+            family="mono"
+            className={styles.headerNamespace}
+          >{`${selected.namespace}.${selected.name}`}</Text>
         </Box>
         {isEdit ? (
           <AppManagedComponentEditorBody

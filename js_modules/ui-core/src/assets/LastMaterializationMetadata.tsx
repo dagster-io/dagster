@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, NonIdealState, Table, Text} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -80,7 +80,9 @@ export const LatestMaterializationMetadata = ({
                           <Link
                             to={`/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
                           >
-                            <Mono>{titleForRun({id: latestEvent.runId})}</Mono>
+                            <Text size={14} family="mono">
+                              {titleForRun({id: latestEvent.runId})}
+                            </Text>
                           </Link>
                         </Box>
                         {stepLogs.button}

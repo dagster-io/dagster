@@ -1,4 +1,4 @@
-import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
+import {Text, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpTags} from './OpTags';
@@ -41,15 +41,26 @@ export const AssetKind = ({
       content={
         onChangeAssetSelection ? (
           <>
-            Filter to <CaptionMono>{kind}</CaptionMono> assets
+            Filter to{' '}
+            <Text size={12} family="mono">
+              {kind}
+            </Text>{' '}
+            assets
           </>
         ) : shouldLink ? (
           <>
-            View all <CaptionMono>{kind}</CaptionMono> assets
+            View all{' '}
+            <Text size={12} family="mono">
+              {kind}
+            </Text>{' '}
+            assets
           </>
         ) : (
           <>
-            Asset kind <CaptionMono>{kind}</CaptionMono>
+            Asset kind{' '}
+            <Text size={12} family="mono">
+              {kind}
+            </Text>
           </>
         )
       }
