@@ -1047,13 +1047,21 @@ def assert_projects_loaded_and_exit(projects: set[str], port: int, proc: subproc
     finally:
         proc.send_signal(signal.SIGINT)
         proc.communicate()
-        time.sleep(3)
         _assert_no_child_processes_running(child_processes)
 
 
 def _assert_no_child_processes_running(child_procs: list[psutil.Process]) -> None:
-    for proc in child_procs:
-        assert not proc.is_running(), f"Process {proc.pid} ({proc.cmdline()}) is still running"
+    _, alive = psutil.wait_procs(child_procs, timeout=30)
+    assert not alive, "Child processes still running after 30s: " + ", ".join(
+        f"{p.pid} ({_safe_cmdline(p)})" for p in alive
+    )
+
+
+def _safe_cmdline(proc: psutil.Process) -> list[str]:
+    try:
+        return proc.cmdline()
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return []
 
 
 def get_child_processes(pid) -> list[psutil.Process]:
