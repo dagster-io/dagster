@@ -26,6 +26,10 @@ query GetComponentTypes($locationName: String!) {
         namespace
         example
         schema
+        formSchema {
+          dataSchema
+          uiSchema
+        }
         description
         owners
         tags
@@ -116,6 +120,20 @@ def test_returns_component_types_with_schemas():
         properties = schema.get("properties") or {}
         assert "asset_key" in properties
         assert "value" in properties
+
+        # The server splits the raw schema into the RJSF (dataSchema, uiSchema)
+        # pair so the frontend doesn't reverse-engineer Dagster's conventions.
+        form_schema = simple["formSchema"]
+        assert isinstance(form_schema, dict)
+        data_schema = form_schema["dataSchema"]
+        ui_schema = form_schema["uiSchema"]
+        assert isinstance(data_schema, dict)
+        assert isinstance(ui_schema, dict)
+        # The data schema carries the same fields, with no Dagster sentinels or
+        # inline ui:* keys leaking through.
+        assert "asset_key" in (data_schema.get("properties") or {})
+        assert "__DAGSTER_UNSET_DEFAULT__" not in repr(data_schema)
+        assert "ui:" not in repr(data_schema)
 
         # Owners/tags from the component spec round-trip through.
         assert simple["owners"] == ["john@dagster.io", "jane@dagster.io"]

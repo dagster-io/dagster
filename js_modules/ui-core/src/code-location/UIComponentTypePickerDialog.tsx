@@ -65,6 +65,7 @@ interface PickableType {
   name: string;
   namespace: string;
   description: string | null | undefined;
+  formSchema: {dataSchema: unknown; uiSchema: unknown} | null | undefined;
 }
 
 // Match the catalog's ``descriptionStyle="truncated"`` behavior: render only
@@ -115,6 +116,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
         name: c.name,
         namespace: c.namespace,
         description: c.description,
+        formSchema: c.formSchema,
       }))
       .sort((a, b) => COMMON_COLLATOR.compare(a.name, b.name));
   }, [typesQ.data]);
@@ -298,6 +300,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
             componentType={selected.name}
             componentId={props.editTarget.componentId}
             initialAttributes={props.editTarget.attributes}
+            formSchema={selected.formSchema}
             onChange={setEditorState}
           />
         ) : (
@@ -306,6 +309,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
             mode="add"
             locationName={locationName}
             componentType={selected.name}
+            formSchema={selected.formSchema}
             onChange={setEditorState}
           />
         )}

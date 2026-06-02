@@ -22,6 +22,7 @@ export type CodeLocationComponentTypesQuery = {
           owners: Array<string> | null;
           tags: Array<string> | null;
           isUiEditable: boolean;
+          formSchema: {__typename: 'ComponentFormSchema'; dataSchema: any; uiSchema: any} | null;
         }>;
       }
     | {
@@ -37,4 +38,4 @@ export type CodeLocationComponentTypesQuery = {
     | {__typename: 'RepositoryLocationNotFound'; message: string};
 };
 
-export const CodeLocationComponentTypesQueryVersion = '1e28d6199105acb90e6c1d27ba70633db808324d6a0ffbe490bf0462645c6df6';
+export const CodeLocationComponentTypesQueryVersion = '2adaf5e2bbca06f7fcdeb9139df9f0a3bf11c5c1f47c7166f96e1cb5c8266924';

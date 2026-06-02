@@ -1016,10 +1016,17 @@ type CodeReferencesMetadataEntry = MetadataEntry & {
   label: Scalars['String']['output'];
 };
 
+type ComponentFormSchema = {
+  __typename: 'ComponentFormSchema';
+  dataSchema: Scalars['JsonSchema']['output'];
+  uiSchema: Scalars['JsonSchema']['output'];
+};
+
 type ComponentTypeInfo = {
   __typename: 'ComponentTypeInfo';
   description: Maybe<Scalars['String']['output']>;
   example: Scalars['String']['output'];
+  formSchema: Maybe<ComponentFormSchema>;
   isUiEditable: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
   namespace: Scalars['String']['output'];
@@ -8182,6 +8189,20 @@ export const buildCodeReferencesMetadataEntry = (
   };
 };
 
+export const buildComponentFormSchema = (
+  overrides?: Partial<ComponentFormSchema>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ComponentFormSchema'} & ComponentFormSchema => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ComponentFormSchema');
+  return {
+    __typename: 'ComponentFormSchema',
+    dataSchema:
+      overrides && overrides.hasOwnProperty('dataSchema') ? overrides.dataSchema! : 'earum',
+    uiSchema: overrides && overrides.hasOwnProperty('uiSchema') ? overrides.uiSchema! : 'dolorem',
+  };
+};
+
 export const buildComponentTypeInfo = (
   overrides?: Partial<ComponentTypeInfo>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8193,6 +8214,12 @@ export const buildComponentTypeInfo = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'fuga',
     example: overrides && overrides.hasOwnProperty('example') ? overrides.example! : 'eveniet',
+    formSchema:
+      overrides && overrides.hasOwnProperty('formSchema')
+        ? overrides.formSchema!
+        : relationshipsToOmit.has('ComponentFormSchema')
+          ? ({} as ComponentFormSchema)
+          : buildComponentFormSchema({}, relationshipsToOmit),
     isUiEditable:
       overrides && overrides.hasOwnProperty('isUiEditable') ? overrides.isUiEditable! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quae',

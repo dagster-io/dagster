@@ -3698,11 +3698,17 @@ union DeleteUIComponentResult = DeleteUIComponentSuccess | UnauthorizedError | P
 
 scalar JsonSchema
 
+type ComponentFormSchema {
+  dataSchema: JsonSchema!
+  uiSchema: JsonSchema!
+}
+
 type ComponentTypeInfo {
   name: String!
   namespace: String!
   example: String!
   schema: JsonSchema
+  formSchema: ComponentFormSchema
   description: String
   owners: [String!]
   tags: [String!]
