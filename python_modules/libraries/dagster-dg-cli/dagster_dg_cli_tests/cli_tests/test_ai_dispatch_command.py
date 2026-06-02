@@ -6,17 +6,20 @@ from unittest.mock import Mock
 from click.testing import CliRunner
 from dagster_dg_cli.cli.ai import ai_group
 from dagster_dg_cli.cli.ai.dispatch import (
-    _create_branch_and_prompt_commit,
+    _MAX_WORKFLOW_DISPATCH_PROMPT_BYTES,
+    _TRUNCATED_PROMPT_SUFFIX,
+    _create_branch_and_empty_commit,
     _create_draft_pr,
     _dispatch_workflow,
     _format_issue_context,
     _generate_branch_name,
     _get_repo_url,
+    _truncate_workflow_dispatch_prompt,
 )
 from dagster_dg_cli.cli.scaffold.github_actions_ai_dispatch import (
     labs_scaffold_github_actions_ai_dispatch_command,
 )
-from dagster_dg_cli.utils.github import parse_github_remote_url
+from dagster_dg_cli.utils.github import GitHubRepositoryClient, parse_github_remote_url
 from dagster_rest_resources.__generated__.enums import IssueStatus
 from dagster_rest_resources.schemas.issue import DgApiIssue
 from dagster_test.dg_utils.utils import ProxyRunner, assert_runner_result
@@ -108,7 +111,50 @@ def test_generate_branch_name() -> None:
     assert re.fullmatch(r"\d{2}-\d{2}-fix-flaky-test-in-scheduler", branch_name)
 
 
-def test_create_branch_and_prompt_commit_retries_with_time_ns_suffix(monkeypatch) -> None:
+def test_truncate_workflow_dispatch_prompt_preserves_small_prompts() -> None:
+    assert _truncate_workflow_dispatch_prompt("Fix flaky test") == "Fix flaky test"
+
+
+def test_truncate_workflow_dispatch_prompt_caps_large_prompts() -> None:
+    truncated = _truncate_workflow_dispatch_prompt("x" * (_MAX_WORKFLOW_DISPATCH_PROMPT_BYTES + 1))
+
+    assert len(truncated.encode("utf-8")) <= _MAX_WORKFLOW_DISPATCH_PROMPT_BYTES
+    assert truncated.endswith(_TRUNCATED_PROMPT_SUFFIX)
+
+
+def test_github_repository_client_create_empty_commit() -> None:
+    client = Mock()
+    client.request.side_effect = [
+        Mock(json=Mock(return_value={"tree": {"sha": "tree123"}})),
+        Mock(json=Mock(return_value={"sha": "commit456"})),
+        Mock(),
+    ]
+    repository = GitHubRepositoryClient(client, "dagster-io", "dagster")
+
+    commit_sha = repository.create_empty_commit("dispatch-branch", "abc123", "Dispatch: test")
+
+    assert commit_sha == "commit456"
+    assert client.request.call_args_list[0].args == (
+        "GET",
+        "/repos/dagster-io/dagster/git/commits/abc123",
+    )
+    assert client.request.call_args_list[1].args == (
+        "POST",
+        "/repos/dagster-io/dagster/git/commits",
+    )
+    assert client.request.call_args_list[1].kwargs["json"] == {
+        "message": "Dispatch: test",
+        "tree": "tree123",
+        "parents": ["abc123"],
+    }
+    assert client.request.call_args_list[2].args == (
+        "PATCH",
+        "/repos/dagster-io/dagster/git/refs/heads/dispatch-branch",
+    )
+    assert client.request.call_args_list[2].kwargs["json"] == {"sha": "commit456"}
+
+
+def test_create_branch_and_empty_commit_retries_with_time_ns_suffix(monkeypatch) -> None:
     repository = Mock()
     repository.get_branch_sha.return_value = "abc123"
     repository.branch_exists.return_value = True
@@ -118,7 +164,7 @@ def test_create_branch_and_prompt_commit_retries_with_time_ns_suffix(monkeypatch
     )
     monkeypatch.setattr("dagster_dg_cli.cli.ai.dispatch.time.time_ns", lambda: 1234567890123456789)
 
-    branch_name = _create_branch_and_prompt_commit(
+    branch_name = _create_branch_and_empty_commit(
         owner="dagster-io",
         repo="dagster",
         default_branch="main",
@@ -128,11 +174,10 @@ def test_create_branch_and_prompt_commit_retries_with_time_ns_suffix(monkeypatch
 
     assert branch_name == "dispatch-branch-e98115"
     repository.create_branch.assert_called_once_with("dispatch-branch-e98115", "abc123")
-    repository.create_file.assert_called_once_with(
-        ".dg/ai-dispatch/prompt.md",
-        "Dispatch: Fix flaky test",
-        b"Fix flaky test\n",
+    repository.create_empty_commit.assert_called_once_with(
         "dispatch-branch-e98115",
+        "abc123",
+        "Dispatch: Fix flaky test",
     )
 
 
@@ -173,7 +218,7 @@ def test_dispatch_requires_issue_id() -> None:
     assert "Missing argument 'ISSUE_ID'" in result.output
 
 
-def test_dispatch_workflow_uses_committed_prompt_file(monkeypatch) -> None:
+def test_dispatch_workflow_passes_prompt_as_input(monkeypatch) -> None:
     repository = Mock()
     monkeypatch.setattr(
         "dagster_dg_cli.cli.ai.dispatch.get_github_repository", lambda owner, repo: repository
@@ -186,6 +231,7 @@ def test_dispatch_workflow_uses_committed_prompt_file(monkeypatch) -> None:
         pr_number=123,
         submitted_by="octocat",
         distinct_id="abc123",
+        prompt="Fix flaky test",
         model="claude-opus-4-6",
         plan_only=True,
     )
@@ -198,6 +244,7 @@ def test_dispatch_workflow_uses_committed_prompt_file(monkeypatch) -> None:
             "pr_number": "123",
             "submitted_by": "octocat",
             "distinct_id": "abc123",
+            "prompt": "Fix flaky test",
             "model_name": "claude-opus-4-6",
             "plan_only": "true",
         },
@@ -234,7 +281,7 @@ def test_dispatch_accepts_integer_issue_ids(monkeypatch) -> None:
         "dagster_dg_cli.cli.ai.dispatch._generate_branch_name", lambda prompt: "dispatch-branch"
     )
     monkeypatch.setattr(
-        "dagster_dg_cli.cli.ai.dispatch._create_branch_and_prompt_commit",
+        "dagster_dg_cli.cli.ai.dispatch._create_branch_and_empty_commit",
         lambda owner, repo, default_branch, branch_name, prompt: branch_name,
     )
     monkeypatch.setattr(
@@ -284,13 +331,12 @@ def test_scaffold_github_actions_ai_dispatch_creates_workflow() -> None:
         assert "anthropics/claude-code-action@v1" in workflow_text
         assert "--permission-mode auto" in workflow_text
         assert "--dangerously-skip-permissions" not in workflow_text
-        assert (
-            "prompt:"
-            not in workflow_text.split("workflow_dispatch:", maxsplit=1)[1].split(
-                "concurrency:", maxsplit=1
-            )[0]
-        )
+        workflow_inputs = workflow_text.split("workflow_dispatch:", maxsplit=1)[1].split(
+            "concurrency:", maxsplit=1
+        )[0]
+        assert "prompt:" in workflow_inputs
         assert "Commit plan to branch" not in workflow_text
+        assert ".dg/ai-dispatch/prompt.md" not in workflow_text
         assert "ANTHROPIC_API_KEY GitHub Actions secret" in result.output
 
 
