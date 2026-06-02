@@ -2,12 +2,12 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
   Dialog,
   DialogFooter,
   NonIdealState,
   Spinner,
   Tag,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -74,7 +74,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <Tag intent={intent}>{label}</Tag>
         <ButtonLink onClick={() => setIsOpen(true)}>
-          <Caption>View details</Caption>
+          <Text size={12}>View details</Text>
         </ButtonLink>
       </Box>
       <Dialog

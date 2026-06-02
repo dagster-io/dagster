@@ -1,6 +1,5 @@
 import {
   Box,
-  Caption,
   Colors,
   Container,
   HorizontalControls,
@@ -10,6 +9,7 @@ import {
   ListItem,
   Popover,
   Skeleton,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -235,13 +235,13 @@ const LinkResultIcon = ({linkResult}: {linkResult: LinkedAssetResult}) => {
         placement="top"
         content={
           <Box padding={{vertical: 8, horizontal: 16}} style={{maxWidth: 300}}>
-            <Caption>
+            <Text size={12}>
               This asset is linked to{' '}
               <Link to={assetDetailsPathForKey(linkResult.linkedAssetKey)}>
                 {displayNameForAssetKey(linkResult.linkedAssetKey)}
               </Link>{' '}
               because it shares an underlying storage location.
-            </Caption>
+            </Text>
           </Box>
         }
       >

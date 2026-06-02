@@ -1,6 +1,5 @@
 import {
   Box,
-  Caption,
   CollapsibleSection,
   Colors,
   ExternalAnchorButton,
@@ -8,6 +7,7 @@ import {
   Heading,
   Icon,
   NonIdealState,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -75,9 +75,9 @@ export const AssetCheckOverview = ({
             name={blocking ? 'shield_check' : 'shield'}
             color={blocking ? Colors.accentYellow() : Colors.accentPrimary()}
           />
-          <Caption>
+          <Text size={12}>
             This is a <strong>{blocking ? 'blocking' : 'non-blocking'}</strong> asset check.
-          </Caption>
+          </Text>
           <Tooltip
             placement="top"
             display="block"
@@ -96,7 +96,9 @@ export const AssetCheckOverview = ({
           {selectedCheck.description ? (
             <Description description={selectedCheck.description} maxHeight={260} />
           ) : (
-            <Caption color={Colors.textLight()}>No description provided</Caption>
+            <Text size={12} color="textLight">
+              No description provided
+            </Text>
           )}
         </Box>
       </CollapsibleSection>

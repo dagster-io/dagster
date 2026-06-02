@@ -1,8 +1,8 @@
 import {
   Box,
-  Caption,
   Checkbox,
   MiddleTruncate,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
@@ -173,7 +173,7 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
                 />
                 {scheduleData.scheduleState.nextTick &&
                 scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
-                  <Caption>
+                  <Text size={12}>
                     <div
                       style={{
                         overflow: 'hidden',
@@ -190,7 +190,7 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
                         timeFormat={{showSeconds: false, showTimezone: true}}
                       />
                     </div>
-                  </Caption>
+                  </Text>
                 ) : null}
               </Box>
             ) : (

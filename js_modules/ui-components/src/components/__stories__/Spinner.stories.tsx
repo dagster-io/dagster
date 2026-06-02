@@ -2,7 +2,7 @@ import {Box} from '../Box';
 import {Code} from '../Code';
 import {Colors} from '../Color';
 import {Spinner} from '../Spinner';
-import {Caption} from '../Text';
+import {Text} from '../Typography';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -18,7 +18,7 @@ export const Sizes = () => {
           <Code>purpose=&quot;caption-text&quot;</Code>
           <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             <Spinner purpose="caption-text" />
-            <Caption>Waiting for something to load…</Caption>
+            <Text size={12}>Waiting for something to load…</Text>
           </Box>
         </Box>
       </Box>

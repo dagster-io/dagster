@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Heading} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Text} from '@dagster-io/ui-components';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import {useMemo, useState} from 'react';
@@ -54,7 +54,9 @@ export const AssetMaterializationGraphs = (props: {
             <Box style={{width: '100%'}}>
               {props.asSidebarSection ? (
                 <Box padding={{horizontal: 24, top: 8}} flex={{justifyContent: 'space-between'}}>
-                  <Caption style={{fontWeight: 700}}>{label}</Caption>
+                  <Text size={12} weight={600}>
+                    {label}
+                  </Text>
                 </Box>
               ) : (
                 <Box padding={{vertical: 16}} flex={{justifyContent: 'space-between'}}>

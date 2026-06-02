@@ -1,4 +1,4 @@
-import {BodySmall, Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Text} from '@dagster-io/ui-components';
 import debounce from 'lodash/debounce';
 import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
@@ -149,7 +149,9 @@ export const useSelectionInputLintingAndHighlighting = ({
       <div className={styles.content}>
         <Box padding={{horizontal: 12, vertical: 8}} flex={{direction: 'row', gap: 4}}>
           <Icon name="run_failed" color={Colors.accentRed()} />
-          <BodySmall color={Colors.textLight()}>{message}</BodySmall>
+          <Text size={12} color="textLight">
+            {message}
+          </Text>
         </Box>
       </div>
     </div>,

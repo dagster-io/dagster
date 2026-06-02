@@ -1,4 +1,4 @@
-import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
+import {Box, Checkbox, Colors, Icon, Skeleton, Text} from '@dagster-io/ui-components';
 import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -135,11 +135,12 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               maxWidth: '100%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            <Caption style={{color: Colors.textLight(), whiteSpace: 'nowrap'}}>
+            <Text size={12} color="textLight">
               {definition?.description}
-            </Caption>
+            </Text>
           </div>
         </RowCell>
         {showRepoColumn ? (
@@ -170,7 +171,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           {definition?.partitionDefinition && definition?.isMaterializable ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               <PartitionCountLabels partitionStats={liveData?.partitionStats} />
-              <Caption>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Caption>
+              <Text size={12}>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Text>
             </Box>
           ) : (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>

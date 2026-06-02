@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Caption, Tag} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Tag, Text} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
@@ -34,7 +34,7 @@ export const WaitingOnAssetKeysPartitionLink = ({assetKeysByPartition}: Props) =
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <Tag intent="warning">{count === 1 ? `1 partition` : `${count} partitions`}</Tag>
         <ButtonLink onClick={() => setIsOpen(true)}>
-          <Caption>View details</Caption>
+          <Text size={12}>View details</Text>
         </ButtonLink>
       </Box>
       <AssetKeysDialog

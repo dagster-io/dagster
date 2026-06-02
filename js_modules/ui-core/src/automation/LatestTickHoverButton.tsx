@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
   Colors,
   Dialog,
   DialogBody,
@@ -11,6 +10,7 @@ import {
   Icon,
   Popover,
   Spinner,
+  Text,
 } from '@dagster-io/ui-components';
 import {ReactNode, useState} from 'react';
 
@@ -32,7 +32,7 @@ export const LatestTickHoverButton = ({tick}: Props) => {
     if (!tick) {
       return (
         <Box padding={{vertical: 8, horizontal: 12}}>
-          <Caption>No ticks yet</Caption>
+          <Text size={12}>No ticks yet</Text>
         </Box>
       );
     }
@@ -84,7 +84,7 @@ export const LatestTickHoverButton = ({tick}: Props) => {
             icon={icon}
             title="Latest tick skipped"
             timestamp={timestamp}
-            content={<Caption>{tick.skipReason ?? 'No reason provided'}</Caption>}
+            content={<Text size={12}>{tick.skipReason ?? 'No reason provided'}</Text>}
           />
         );
     }

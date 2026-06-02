@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, MiddleTruncate, NonIdealState, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate, NonIdealState, Tag, Text} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -287,7 +287,7 @@ export function StatusBar({
         <div style={{background: Colors.accentRed()}} />
         <div style={{background: Colors.accentBlue()}} />
       </div>
-      <Caption color={Colors.textLight()}>{`${pctFinal}% completed`}</Caption>
+      <Text size={12} color="textLight">{`${pctFinal}% completed`}</Text>
     </Box>
   );
 }

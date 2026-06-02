@@ -1,11 +1,11 @@
 import {
   Box,
   ButtonLink,
-  Caption,
   Colors,
   Icon,
   MiddleTruncate,
   Tag,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
@@ -84,9 +84,9 @@ export const DefinitionSection = ({
           {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <RepositoryLink repoAddress={repoAddress!} />
           {location && (
-            <Caption color={Colors.textLighter()}>
+            <Text size={12} color="textLighter">
               Loaded <TimeFromNow unixTimestamp={location.updatedTimestamp} />
-            </Caption>
+            </Text>
           )}
         </Box>
       </AttributeAndValue>
@@ -230,14 +230,14 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
 
   if (!shown) {
     return (
-      <Caption>
+      <Text size={12}>
         <ButtonLink onClick={() => setShown(true)}>
           <Box flex={{alignItems: 'center'}}>
             <span>Show system tags ({tags.length || 0})</span>
             <Icon name="arrow_drop_down" style={{transform: 'rotate(0deg)'}} />
           </Box>
         </ButtonLink>
-      </Caption>
+      </Text>
     );
   } else {
     return (
@@ -247,14 +247,14 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
             <Tag key={idx}>{buildTagString(tag)}</Tag>
           ))}
         </Box>
-        <Caption>
+        <Text size={12}>
           <ButtonLink onClick={() => setShown(false)}>
             <Box flex={{alignItems: 'center'}}>
               <span>Hide system tags</span>
               <Icon name="arrow_drop_down" style={{transform: 'rotate(180deg)'}} />
             </Box>
           </ButtonLink>
-        </Caption>
+        </Text>
       </Box>
     );
   }

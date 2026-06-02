@@ -2,7 +2,6 @@ import {
   Body2,
   Box,
   Button,
-  Caption,
   Colors,
   Dialog,
   DialogFooter,
@@ -11,6 +10,7 @@ import {
   Radio,
   RadioContainer,
   RadioGroup,
+  Text,
   TextInput,
   Tooltip,
   showToast,
@@ -241,7 +241,7 @@ const ReportCheckEvaluationDialogBody = ({
         flex={{direction: 'column', gap: 12}}
       >
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Evaluation result</Caption>
+          <Text size={12}>Evaluation result</Text>
           <RadioContainer>
             <RadioGroup
               value={evaluationResult}
@@ -259,7 +259,7 @@ const ReportCheckEvaluationDialogBody = ({
           </RadioContainer>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Description</Caption>
+          <Text size={12}>Description</Text>
           <TextInput
             value={description}
             onChange={(e) => setDescription(e.target.value)}

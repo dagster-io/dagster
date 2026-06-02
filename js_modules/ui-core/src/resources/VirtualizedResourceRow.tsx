@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Icon, MiddleTruncate, Text, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, MiddleTruncate, Text, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {succinctType} from './ResourceRoot';
@@ -57,16 +57,12 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
                 maxWidth: '100%',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Caption
-                style={{
-                  color: Colors.textLight(),
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <Text size={12} color="textLight">
                 {description}
-              </Caption>
+              </Text>
             </div>
           </Box>
         </RowCell>
