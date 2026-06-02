@@ -64,6 +64,30 @@
   background: var(--color-background-default);
 }
 
+.formEditorFrame {
+  border-radius: 4px;
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  background: var(--color-background-default);
+}
+
+/* react-jsonschema-form renders <fieldset> for object groups; the user-agent
+ * default of min-width: min-content forces the fieldset to grow wider than
+ * its container if any nested field has a fixed natural width, producing
+ * horizontal overflow inside the form frame. */
+.formEditorFrame fieldset {
+  min-width: 0;
+}
+
+.formEditorFrame input,
+.formEditorFrame select,
+.formEditorFrame textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .fieldLabel {
   font-weight: 500;
 }

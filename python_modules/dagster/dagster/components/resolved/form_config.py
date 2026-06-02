@@ -17,6 +17,14 @@ from dagster_shared.record import record
 # component types appear in the editor's type picker.
 UI_EDITABLE = "x-ui-editable"
 
+# Sentinel emitted as the ``default`` for fields whose real default is not
+# JSON-serializable (see ``derive_model_type`` in ``base.py``). The form-schema
+# split (:func:`dagster.components.resolved.form_schema.split_form_schema`)
+# strips it so react-jsonschema-form sees "no default". Defined here so the
+# encode side (``base.py``) and the decode side (``form_schema.py``) share one
+# source of truth; ``base.py`` imports it as ``_Unset``.
+UNSET_DEFAULT_SENTINEL = "__DAGSTER_UNSET_DEFAULT__"
+
 
 @record
 class ComponentFormConfig:

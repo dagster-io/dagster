@@ -12,6 +12,29 @@ class GrapheneJsonSchema(GenericScalar, graphene.Scalar):
         name = "JsonSchema"
 
 
+class GrapheneComponentFormSchema(graphene.ObjectType):
+    """A component's JSON Schema pre-split server-side for react-jsonschema-form.
+
+    The raw ``schema`` carries Dagster-specific conventions (inline ``ui:*``
+    hints, unset-default sentinels, Jinja string escape-hatch variants). Rather
+    than have the frontend reverse-engineer those, the server splits the schema
+    once via ``dagster.components.resolved.form_schema.split_form_schema`` and
+    exposes the resulting RJSF-ready pair here.
+    """
+
+    dataSchema = graphene.NonNull(
+        GrapheneJsonSchema,
+        description="The cleaned JSON Schema RJSF validates and renders against.",
+    )
+    uiSchema = graphene.NonNull(
+        GrapheneJsonSchema,
+        description="The parallel RJSF uiSchema holding lifted ``ui:*`` hints.",
+    )
+
+    class Meta:
+        name = "ComponentFormSchema"
+
+
 class GrapheneComponentTypeInfo(graphene.ObjectType):
     """Metadata for a single Component class registered in a code location."""
 
@@ -32,6 +55,14 @@ class GrapheneComponentTypeInfo(graphene.ObjectType):
         description=(
             "The JSON Schema describing the component's attributes model. May be"
             " null if the component does not declare a model."
+        ),
+    )
+    formSchema = graphene.Field(
+        GrapheneComponentFormSchema,
+        description=(
+            "The ``schema`` split server-side into the (dataSchema, uiSchema)"
+            " pair react-jsonschema-form expects. Null when the component"
+            " declares no model."
         ),
     )
     description = graphene.String()
@@ -72,6 +103,7 @@ class GrapheneComponentTypesOrError(graphene.Union):
 
 types = [
     GrapheneJsonSchema,
+    GrapheneComponentFormSchema,
     GrapheneComponentTypeInfo,
     GrapheneComponentTypes,
     GrapheneComponentTypesOrError,

@@ -29,6 +29,7 @@ from dagster._annotations import public
 from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
+from dagster.components.resolved.form_config import UNSET_DEFAULT_SENTINEL
 from dagster.components.resolved.model import Model, Resolver
 
 if TYPE_CHECKING:
@@ -187,7 +188,7 @@ class Resolvable:
 
 # marker type for skipping kwargs and triggering defaults
 # must be a string to make sure it is json serializable
-_Unset: Final[str] = "__DAGSTER_UNSET_DEFAULT__"
+_Unset: Final[str] = UNSET_DEFAULT_SENTINEL
 
 
 def derive_model_type(
