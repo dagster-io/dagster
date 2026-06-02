@@ -122,6 +122,25 @@ class GitHubRepositoryClient:
             },
         )
 
+    def create_empty_commit(self, branch_name: str, parent_sha: str, message: str) -> str:
+        parent_commit = self._client.request(
+            "GET",
+            self._repo_path(f"/git/commits/{quote(parent_sha, safe='')}"),
+        ).json()
+        tree_sha = parent_commit["tree"]["sha"]
+        commit = self._client.request(
+            "POST",
+            self._repo_path("/git/commits"),
+            json={"message": message, "tree": tree_sha, "parents": [parent_sha]},
+        ).json()
+        commit_sha = commit["sha"]
+        self._client.request(
+            "PATCH",
+            self._repo_path(f"/git/refs/heads/{_ref_path(branch_name)}"),
+            json={"sha": commit_sha},
+        )
+        return commit_sha
+
     def create_pull_request(
         self,
         *,

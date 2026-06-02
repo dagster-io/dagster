@@ -36,6 +36,10 @@ if TYPE_CHECKING:
 
 _DISPATCH_WORKFLOW_FILE = "dg-ai-dispatch.yml"
 _DISPATCH_LABEL = "dagster-agent-dispatch"
+_MAX_WORKFLOW_DISPATCH_PROMPT_BYTES = 60_000
+_TRUNCATED_PROMPT_SUFFIX = (
+    "\n\n[Issue context truncated because GitHub workflow_dispatch inputs are limited.]"
+)
 
 
 class DispatchError(Exception):
@@ -116,10 +120,19 @@ def _dispatch_command_impl(
         view_graphql=view_graphql,
     )
     prompt = _format_issue_context(issue)
+    truncated_prompt = _truncate_workflow_dispatch_prompt(prompt)
+    if truncated_prompt != prompt:
+        click.echo(
+            click.style(
+                "Issue context was too large for GitHub workflow_dispatch inputs and was truncated.",
+                fg="yellow",
+            )
+        )
+        prompt = truncated_prompt
     submitted_by = get_authenticated_github_user_login()
     branch_name = _generate_branch_name(issue.title)
 
-    branch_name = _create_branch_and_prompt_commit(
+    branch_name = _create_branch_and_empty_commit(
         owner=owner,
         repo=repo,
         default_branch=default_branch,
@@ -142,6 +155,7 @@ def _dispatch_command_impl(
         pr_number=pull_request.number,
         submitted_by=submitted_by,
         distinct_id=distinct_id,
+        prompt=prompt,
         model=model,
         plan_only=plan_only,
     )
@@ -244,6 +258,18 @@ def _format_issue_context(issue: "DgApiIssue") -> str:
     )
 
 
+def _truncate_workflow_dispatch_prompt(prompt: str) -> str:
+    if len(prompt.encode("utf-8")) <= _MAX_WORKFLOW_DISPATCH_PROMPT_BYTES:
+        return prompt
+
+    suffix_bytes = _TRUNCATED_PROMPT_SUFFIX.encode("utf-8")
+    max_prompt_bytes = _MAX_WORKFLOW_DISPATCH_PROMPT_BYTES - len(suffix_bytes)
+    return (
+        prompt.encode("utf-8")[:max_prompt_bytes].decode("utf-8", errors="ignore").rstrip()
+        + _TRUNCATED_PROMPT_SUFFIX
+    )
+
+
 def _generate_branch_name(source_text: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", source_text.lower()).strip("-")
     slug = re.sub(r"-+", "-", slug)
@@ -265,7 +291,7 @@ def _get_repo_url(owner: str, repo: str, repo_url: str | None) -> str:
     return f"https://github.com/{owner}/{repo}"
 
 
-def _create_branch_and_prompt_commit(
+def _create_branch_and_empty_commit(
     *,
     owner: str,
     repo: str,
@@ -284,13 +310,10 @@ def _create_branch_and_prompt_commit(
         chosen_branch = f"{branch_name}-{suffix}"
 
     repository.create_branch(chosen_branch, sha)
-
-    commit_message = f"Dispatch: {prompt}"
-    repository.create_file(
-        ".dg/ai-dispatch/prompt.md",
-        commit_message,
-        f"{prompt}\n".encode(),
+    repository.create_empty_commit(
         chosen_branch,
+        sha,
+        f"Dispatch: {prompt[:60]}",
     )
     return chosen_branch
 
@@ -327,6 +350,7 @@ def _dispatch_workflow(
     pr_number: int,
     submitted_by: str,
     distinct_id: str,
+    prompt: str,
     model: str | None,
     plan_only: bool,
 ) -> None:
@@ -336,6 +360,7 @@ def _dispatch_workflow(
         "pr_number": str(pr_number),
         "submitted_by": submitted_by,
         "distinct_id": distinct_id,
+        "prompt": prompt,
     }
     if model:
         inputs["model_name"] = model
