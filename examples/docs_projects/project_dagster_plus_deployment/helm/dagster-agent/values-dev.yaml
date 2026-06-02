@@ -1,0 +1,43 @@
+dagsterCloud:
+  organization: "your-org"
+  deployment: "dev"
+  apiToken:
+    secretName: dagster-cloud-agent-token
+    secretKey: DAGSTER_CLOUD_AGENT_TOKEN
+  branchDeployments: true
+
+workspace:
+  serverTTL:
+    enabled: true
+    ttlSeconds: 7200
+
+dagsterCloudAgent:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      envSecrets:
+        - name: dagster-dev-env
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "1Gi"
+        limits:
+          cpu: "1"
+          memory: "2Gi"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: "dev-pool"
+
+serviceAccount:
+  create: true
+  name: dagster-agent-dev
+  annotations: {}

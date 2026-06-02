@@ -1,0 +1,49 @@
+dagsterCloud:
+  organization: "your-org"
+  deployment: "prod"
+  apiToken:
+    secretName: dagster-cloud-agent-token
+    secretKey: DAGSTER_CLOUD_AGENT_TOKEN
+  branchDeployments: false
+
+workspace:
+  serverTTL:
+    enabled: true
+    ttlSeconds: 86400
+
+dagsterCloudAgent:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      envSecrets:
+        - name: dagster-prod-env
+      resources:
+        requests:
+          cpu: "2"
+          memory: "4Gi"
+        limits:
+          cpu: "4"
+          memory: "8Gi"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: "prod-pool"
+      labels:
+        dagster/pdb-protected: "true"
+
+serviceAccount:
+  create: true
+  name: dagster-agent-prod
+  annotations: {}
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
