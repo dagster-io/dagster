@@ -8,9 +8,9 @@ import {
   Icon,
   ListItem,
   MetadataTable,
-  MonoSmall,
   Popover,
   Skeleton,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
@@ -191,7 +191,11 @@ export const ObserveAutomationScheduleRow = forwardRef(
                         rows={[
                           {
                             key: 'Cron value',
-                            value: <MonoSmall>{scheduleData?.cronSchedule ?? ''}</MonoSmall>,
+                            value: (
+                              <Text size={12} family="mono">
+                                {scheduleData?.cronSchedule ?? ''}
+                              </Text>
+                            ),
                           },
                           {key: 'Your time', value: <span>{withHumanTimezone}</span>},
                         ]}

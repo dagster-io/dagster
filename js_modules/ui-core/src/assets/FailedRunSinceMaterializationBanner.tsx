@@ -1,4 +1,4 @@
-import {Alert, Box, Mono} from '@dagster-io/ui-components';
+import {Alert, Box, Text} from '@dagster-io/ui-components';
 import {
   BorderSetting,
   BorderSide,
@@ -33,7 +33,9 @@ export const FailedRunSinceMaterializationBanner = ({
         <>
           Run{' '}
           <Link to={`/runs/${run.id}`}>
-            <Mono style={{fontWeight: 600}}>{titleForRun(run)}</Mono>
+            <Text size={14} family="mono" weight={600}>
+              {titleForRun(run)}
+            </Text>
           </Link>{' '}
           was canceled, and did not materialize this asset.
         </>
@@ -45,7 +47,9 @@ export const FailedRunSinceMaterializationBanner = ({
         <>
           Run{' '}
           <Link to={`/runs/${run.id}`}>
-            <Mono style={{fontWeight: 600}}>{titleForRun(run)}</Mono>
+            <Text size={14} family="mono" weight={600}>
+              {titleForRun(run)}
+            </Text>
           </Link>{' '}
           failed, and did not materialize this asset.
         </>

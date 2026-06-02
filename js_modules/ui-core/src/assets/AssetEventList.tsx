@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, MonoSmall, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Spinner, Text} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import clsx from 'clsx';
 import {useEffect, useRef} from 'react';
@@ -148,7 +148,9 @@ const AssetEventListEventRow = ({group}: {group: AssetEventGroup}) => {
       {partition ? (
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Icon name="partition" />
-          <MonoSmall color={Colors.textLight()}>{partition}</MonoSmall>
+          <Text size={12} family="mono" color="textLight">
+            {partition}
+          </Text>
         </Box>
       ) : undefined}
     </Box>

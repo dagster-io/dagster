@@ -1,4 +1,4 @@
-import {Box, Colors, Heading, Icon, Mono} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, Text} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -96,7 +96,9 @@ export const AssetEventDetail = ({
                 {' '}
                 in run{' '}
                 <Link to={linkToRunEvent(run, event)}>
-                  <Mono>{titleForRun(run)}</Mono>
+                  <Text size={14} family="mono">
+                    {titleForRun(run)}
+                  </Text>
                 </Link>
               </>
             )}

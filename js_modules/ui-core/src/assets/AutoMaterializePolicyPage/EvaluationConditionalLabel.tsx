@@ -1,11 +1,11 @@
 import {
   Box,
   ButtonLink,
-  CaptionMono,
   Code,
   Colors,
   Icon,
   MiddleTruncate,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
@@ -178,7 +178,9 @@ export const EvaluationUserLabel = ({
 const TooltipContent = ({text}: {text: string}) => {
   return (
     <div style={{maxWidth: '500px', whiteSpace: 'normal'}}>
-      <CaptionMono>{text}</CaptionMono>
+      <Text size={12} family="mono">
+        {text}
+      </Text>
     </div>
   );
 };

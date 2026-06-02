@@ -7,8 +7,8 @@ import {
   DialogBody,
   DialogFooter,
   Icon,
-  Mono,
   ProgressBar,
+  Text,
   showToast,
 } from '@dagster-io/ui-components';
 import chunk from 'lodash/chunk';
@@ -340,7 +340,9 @@ export const TerminationDialog = (props: Props) => {
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
                   <Box flex={{direction: 'row', gap: 8}}>
-                    <Mono>{runId.slice(0, 8)}</Mono>
+                    <Text size={14} family="mono">
+                      {runId.slice(0, 8)}
+                    </Text>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Box>
                 </li>

@@ -3,11 +3,11 @@ import {
   Colors,
   Icon,
   MiddleTruncate,
-  Mono,
   Popover,
   Row,
   Spinner,
   Tag,
+  Text,
   Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -781,12 +781,12 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
                       {run.status === 'SCHEDULED' ? (
                         <TimestampDisplay timestamp={run.startTime / 1000} />
                       ) : (
-                        <Mono>
+                        <Text size={14} family="mono">
                           <TimeElapsed
                             startUnix={run.startTime / 1000}
                             endUnix={run.endTime / 1000}
                           />
-                        </Mono>
+                        </Text>
                       )}
                     </div>
                   </Box>

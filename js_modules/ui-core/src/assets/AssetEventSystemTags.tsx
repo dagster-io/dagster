@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Caption, Icon, Mono} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Caption, Icon, Text} from '@dagster-io/ui-components';
 
 import {AssetEventGroup} from './groupByPartition';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -47,7 +47,9 @@ export const AssetEventSystemTags = ({
               .map((t) => (
                 <tr key={t.key}>
                   <td style={{paddingLeft}}>
-                    <Mono>{t.key.replace(DagsterTag.Namespace, '')}</Mono>
+                    <Text size={14} family="mono">
+                      {t.key.replace(DagsterTag.Namespace, '')}
+                    </Text>
                   </td>
                   <td>{t.value}</td>
                 </tr>

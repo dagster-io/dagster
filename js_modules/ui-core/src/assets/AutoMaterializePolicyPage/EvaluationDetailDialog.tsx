@@ -4,11 +4,11 @@ import {
   Dialog,
   DialogFooter,
   Icon,
-  Mono,
   NonIdealState,
   SpinnerWithText,
   Tab,
   Tabs,
+  Text,
 } from '@dagster-io/ui-components';
 import {ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 
@@ -208,7 +208,11 @@ const EvaluationDetailDialogContents = ({
               title="Evaluation not found"
               description={
                 <>
-                  Evaluation <Mono>{evaluationID}</Mono> not found
+                  Evaluation{' '}
+                  <Text size={14} family="mono">
+                    {evaluationID}
+                  </Text>{' '}
+                  not found
                 </>
               }
             />

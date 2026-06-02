@@ -6,8 +6,7 @@ import {
   Icon,
   IconName,
   MiddleTruncate,
-  Mono,
-  MonoSmall,
+  Text,
 } from '@dagster-io/ui-components';
 import React from 'react';
 
@@ -193,7 +192,9 @@ export const SuggestionJSXBase = ({
         <Body style={{overflow: 'hidden'}}>{label}</Body>
       </div>
       {rightLabel ? (
-        <Mono style={{textAlign: 'right', overflow: 'hidden'}}>{rightLabel}</Mono>
+        <Text size={14} family="mono" style={{textAlign: 'right', overflow: 'hidden'}}>
+          {rightLabel}
+        </Text>
       ) : null}
     </div>
   );
@@ -375,10 +376,12 @@ export const createProvider = <
         <SuggestionJSXBase
           label={
             <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-              <MonoSmall color={Colors.textLight()}>{attribute as string}:</MonoSmall>
-              <MonoSmall style={{overflow: 'hidden'}}>
+              <Text size={12} family="mono" color="textLight">
+                {attribute as string}:
+              </Text>
+              <Text size={12} family="mono" style={{overflow: 'hidden'}}>
                 <MiddleTruncate text={valueText} />
-              </MonoSmall>
+              </Text>
             </Box>
           }
         />
@@ -432,9 +435,9 @@ export const createProvider = <
             jsx: (
               <BodySmall color={Colors.textLight()}>
                 No match found for{' '}
-                <MonoSmall color={Colors.textDefault()}>
+                <Text size={12} family="mono" color="textDefault">
                   {attribute}:&quot;{query}&quot;
-                </MonoSmall>
+                </Text>
               </BodySmall>
             ),
             type: 'no-match',

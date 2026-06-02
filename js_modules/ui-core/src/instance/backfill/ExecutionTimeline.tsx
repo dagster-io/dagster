@@ -1,4 +1,4 @@
-import {Box, Colors, Mono, Spinner, useViewport} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner, Text, useViewport} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -168,7 +168,9 @@ export const ExecutionTimelineRow = ({
         <Box flex={{alignItems: 'center', gap: 4}}>
           <RunStatusDot status={run.status} size={12} />
           <Link to={`/runs/${run.id}`}>
-            <Mono>{titleForRun(run)}</Mono>
+            <Text size={14} family="mono">
+              {titleForRun(run)}
+            </Text>
           </Link>
         </Box>
         <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />

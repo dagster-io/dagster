@@ -1,4 +1,4 @@
-import {Body2, Box, Button, MonoSmall, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Body2, Box, Button, NonIdealState, Spinner, Text} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import capitalize from 'lodash/capitalize';
 import * as React from 'react';
@@ -55,7 +55,9 @@ export const InvalidSelectionQueryNotice = ({errors}: {errors: SyntaxError[]}) =
         description={
           <Box flex={{direction: 'column', gap: 8}}>
             The selection query you entered is invalid. Please try again.
-            <MonoSmall>{errors.map((error) => error.message).join('\n')}</MonoSmall>
+            <Text size={12} family="mono">
+              {errors.map((error) => error.message).join('\n')}
+            </Text>
           </Box>
         }
       />

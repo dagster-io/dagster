@@ -2,12 +2,12 @@ import {
   Box,
   ButtonLink,
   Caption,
-  CaptionMono,
   Colors,
   Heading,
   Icon,
   Popover,
   Skeleton,
+  Text,
   useViewport,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
@@ -400,7 +400,9 @@ const AssetUpdate = ({
               assetKey={assetKey}
               event={{stepKey: finalEvent.stepKey, timestamp: finalEvent.timestamp}}
             >
-              <CaptionMono>{titleForRun(run)}</CaptionMono>
+              <Text size={12} family="mono">
+                {titleForRun(run)}
+              </Text>
             </AssetRunLink>
           </Box>
         ) : finalEvent && isRunlessEvent(finalEvent) ? (

@@ -8,11 +8,11 @@ import {
   Icon,
   Menu,
   MenuItem,
-  Mono,
   NonIdealState,
   Popover,
   Spinner,
   Tag,
+  Text,
   Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -594,7 +594,7 @@ const EvaluateScheduleResult = ({
               Tick
             </Heading>
             <Box flex={{grow: 1, alignItems: 'center'}}>
-              <Mono>
+              <Text size={14} family="mono">
                 {timestampToString({
                   timestamp: {unix: timestamp},
                   locale,
@@ -603,7 +603,7 @@ const EvaluateScheduleResult = ({
                     showTimezone: true,
                   },
                 })}
-              </Mono>
+              </Text>
             </Box>
           </div>
         </div>

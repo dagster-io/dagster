@@ -5,8 +5,8 @@ import {
   Checkbox,
   Colors,
   Icon,
-  Mono,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -110,7 +110,9 @@ export const RunsFeedRow = ({
           >
             <Box flex={{gap: 4, alignItems: 'center'}}>
               <Icon name={entry.__typename === 'PartitionBackfill' ? 'run_with_subruns' : 'run'} />
-              <Mono>{titleForRun(entry)}</Mono>
+              <Text size={14} family="mono">
+                {titleForRun(entry)}
+              </Text>
             </Box>
           </Link>
           <Box

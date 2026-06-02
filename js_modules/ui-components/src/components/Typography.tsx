@@ -73,3 +73,33 @@ export const Heading = ({
     style={color ? {...style, color: Colors[color]()} : style}
   />
 );
+
+type TextProps = Omit<React.HTMLAttributes<HTMLElement>, 'color'> & {
+  size: FontSize;
+  weight?: FontWeight;
+  family?: FontFamily;
+  color?: ThemeColor;
+  as?: 'p' | 'div' | 'span';
+};
+
+export const Text = ({
+  size,
+  weight = 400,
+  family = 'default',
+  color,
+  as: Component = 'span',
+  className,
+  style,
+  ...props
+}: TextProps) => (
+  <Component
+    {...props}
+    className={clsx(
+      getSizeClass(size),
+      getWeightClass(weight),
+      family === 'mono' && styles.familyMono,
+      className,
+    )}
+    style={color ? {...style, color: Colors[color]()} : style}
+  />
+);

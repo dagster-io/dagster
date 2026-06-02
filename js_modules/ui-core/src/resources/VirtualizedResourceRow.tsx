@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Icon, MiddleTruncate, Mono, Tooltip} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, MiddleTruncate, Text, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {succinctType} from './ResourceRoot';
@@ -72,7 +72,9 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
         </RowCell>
         <RowCell>
           <Tooltip content={resourceType}>
-            <Mono>{resourceTypeSuccinct}</Mono>
+            <Text size={14} family="mono">
+              {resourceTypeSuccinct}
+            </Text>
           </Tooltip>
         </RowCell>
         <RowCell>
