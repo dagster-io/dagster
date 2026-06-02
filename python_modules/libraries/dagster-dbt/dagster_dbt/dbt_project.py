@@ -144,14 +144,23 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         self._invalidate_seeds_in_partial_parse(project)
 
     def _invalidate_seeds_in_partial_parse(self, project: "DbtProject") -> None:
-        """Remove seed entries from partial_parse.msgpack to force re-parsing.
+        """Force dbt to re-parse seeds by invalidating their partial-parse cache entry.
 
         Seeds contain root_path which is an absolute path from build time. When state
         is generated in one environment (e.g., CI/CD) and used in another (e.g., deployed
         container), the root_path points to the wrong location and seed loading fails.
 
-        By removing seed entries from the cache, dbt will re-parse them at runtime with
-        the correct current project path. Models keep their cached data for fast loading.
+        To force a re-parse we overwrite the saved checksum of each seed file entry with
+        a sentinel value that can never match the on-disk file. On the next parse, dbt's
+        partial-parser sees the checksum mismatch and treats the seed as a normally-changed
+        file, re-parsing it through its standard code path and refreshing root_path. Models
+        keep their cached data for fast loading.
+
+        We deliberately key off ``parse_file_type == "seed"`` rather than the ``.csv``
+        extension: dbt unit-test fixtures are also ``.csv`` files, and removing their file
+        entries while leaving the corresponding fixture objects in the saved manifest causes
+        dbt to re-add them on the next parse, raising a duplicate-resource compile error.
+        See https://github.com/dagster-io/dagster/issues/33471.
         """
         import msgpack
 
@@ -162,15 +171,12 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         with open(partial_parse_path, "rb") as f:
             data = msgpack.unpack(f, raw=False, strict_map_key=False)
 
-        # Remove seed nodes
-        seed_node_ids = [k for k in data.get("nodes", {}).keys() if k.startswith("seed.")]
-        for seed_id in seed_node_ids:
-            del data["nodes"][seed_id]
-
-        # Remove seed file entries (CSVs)
-        seed_file_ids = [k for k in data.get("files", {}).keys() if k.lower().endswith(".csv")]
-        for file_id in seed_file_ids:
-            del data["files"][file_id]
+        # Sentinel checksum that cannot match any real file, forcing dbt to re-parse
+        # the seed (and only the seed) on the next invocation.
+        invalid_checksum = {"name": "sha256", "checksum": "0" * 64}
+        for file_entry in data.get("files", {}).values():
+            if file_entry.get("parse_file_type") == "seed":
+                file_entry["checksum"] = invalid_checksum
 
         with open(partial_parse_path, "wb") as f:
             msgpack.pack(data, f)
