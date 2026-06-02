@@ -36,13 +36,13 @@ def _parse_schema(schema_field: Any) -> Any:
     return schema_field
 
 
-def _is_ui_editable(schema: Any) -> bool:
+def _is_app_managed(schema: Any) -> bool:
     """Whether this component supports the UI add/edit/delete workflow.
 
     Opt-in via ``ComponentFormConfig(editable=True)`` on the component class,
-    which serializes to ``x-ui-editable: true`` on the schema.
+    which serializes to ``x-app-managed: true`` on the schema.
     """
-    return bool(isinstance(schema, dict) and schema.get("x-ui-editable"))
+    return bool(isinstance(schema, dict) and schema.get("x-app-managed"))
 
 
 def _to_form_schema(schema: Any) -> "GrapheneComponentFormSchema | None":
@@ -77,7 +77,7 @@ def _to_component_type_info(
         description=component_json.get("description"),
         owners=component_json.get("owners"),
         tags=component_json.get("tags"),
-        isUiEditable=_is_ui_editable(schema),
+        isAppManaged=_is_app_managed(schema),
     )
 
 

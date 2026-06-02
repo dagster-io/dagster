@@ -18,23 +18,26 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useMutation, useQuery} from '../apollo-client';
+import {AppManagedComponentMutationFailedDialog} from './AppManagedComponentMutationFailedDialog';
 import {
-  CODE_LOCATION_UI_COMPONENTS_QUERY,
-  DELETE_UI_COMPONENT_MUTATION,
-  SET_UI_COMPONENT_MUTATION,
-} from './CodeLocationUIComponentsQuery';
-import {UIComponentMutationFailedDialog} from './UIComponentMutationFailedDialog';
-import {UIComponentEditTarget, UIComponentTypePickerDialog} from './UIComponentTypePickerDialog';
+  AppManagedComponentEditTarget,
+  AppManagedComponentTypePickerDialog,
+} from './AppManagedComponentTypePickerDialog';
+import {
+  CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY,
+  DELETE_APP_MANAGED_COMPONENT_MUTATION,
+  SET_APP_MANAGED_COMPONENT_MUTATION,
+} from './CodeLocationAppManagedComponentsQuery';
+import {AppManagedComponentMutationContext} from './appManagedComponentMutationContext';
 import styles from './css/CodeLocationComponentInstancesSubtab.module.css';
 import {
-  CodeLocationUiComponentsQuery,
-  CodeLocationUiComponentsQueryVariables,
-  DeleteUiComponentMutation,
-  DeleteUiComponentMutationVariables,
-  SetUiComponentMutation,
-  SetUiComponentMutationVariables,
-} from './types/CodeLocationUIComponentsQuery.types';
-import {UIComponentMutationContext} from './uiComponentMutationContext';
+  CodeLocationAppManagedComponentsQuery,
+  CodeLocationAppManagedComponentsQueryVariables,
+  DeleteAppManagedComponentMutation,
+  DeleteAppManagedComponentMutationVariables,
+  SetAppManagedComponentMutation,
+  SetAppManagedComponentMutationVariables,
+} from './types/CodeLocationAppManagedComponentsQuery.types';
 import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
@@ -48,14 +51,14 @@ interface Props {
   setIsAddOpen: (open: boolean) => void;
 }
 
-interface UIBackedRow {
+interface AppManagedRow {
   componentId: string;
   componentType: string;
   attributes: string;
 }
 
 interface FailedMutation {
-  ctx: UIComponentMutationContext;
+  ctx: AppManagedComponentMutationContext;
   errorMessage: string;
 }
 
@@ -65,9 +68,9 @@ export const CodeLocationComponentInstancesSubtab = ({
   setIsAddOpen,
 }: Props) => {
   const componentsQ = useQuery<
-    CodeLocationUiComponentsQuery,
-    CodeLocationUiComponentsQueryVariables
-  >(CODE_LOCATION_UI_COMPONENTS_QUERY, {
+    CodeLocationAppManagedComponentsQuery,
+    CodeLocationAppManagedComponentsQueryVariables
+  >(CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY, {
     variables: {locationName: repoAddress.location},
   });
   const {refetch: refetchComponents} = componentsQ;
@@ -85,10 +88,10 @@ export const CodeLocationComponentInstancesSubtab = ({
     reloadFn,
   });
 
-  const [editTarget, setEditTarget] = useState<UIComponentEditTarget | null>(null);
+  const [editTarget, setEditTarget] = useState<AppManagedComponentEditTarget | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [viewConfigTarget, setViewConfigTarget] = useState<UIBackedRow | null>(null);
-  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<UIBackedRow | null>(null);
+  const [viewConfigTarget, setViewConfigTarget] = useState<AppManagedRow | null>(null);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<AppManagedRow | null>(null);
 
   // Last mutation that returned a PythonError. The failure dialog renders
   // while this is set; dismissing or successfully reverting clears it.
@@ -101,7 +104,7 @@ export const CodeLocationComponentInstancesSubtab = ({
   // attribute it to whichever mutation we just kicked off and pop the revert
   // dialog. Tracked with a ref instead of state so handlers can publish a new
   // pending context without waiting for a render.
-  const pendingMutationRef = useRef<UIComponentMutationContext | null>(null);
+  const pendingMutationRef = useRef<AppManagedComponentMutationContext | null>(null);
   const wasReloadingRef = useRef(false);
 
   useEffect(() => {
@@ -121,13 +124,13 @@ export const CodeLocationComponentInstancesSubtab = ({
     wasReloadingRef.current = reloading;
   }, [reloading, reloadError]);
 
-  const uiBackedRows: UIBackedRow[] = useMemo(() => {
-    const payload = componentsQ.data?.uiComponentsForLocationOrError;
-    if (payload?.__typename !== 'UIComponents') {
+  const uiBackedRows: AppManagedRow[] = useMemo(() => {
+    const payload = componentsQ.data?.appManagedComponentsForLocationOrError;
+    if (payload?.__typename !== 'AppManagedComponents') {
       return [];
     }
     return payload.components.map(
-      (c): UIBackedRow => ({
+      (c): AppManagedRow => ({
         componentId: c.componentId,
         componentType: c.componentType,
         attributes: c.attributes,
@@ -135,13 +138,13 @@ export const CodeLocationComponentInstancesSubtab = ({
     );
   }, [componentsQ.data]);
 
-  const [deleteUIComponent, {loading: deleting}] = useMutation<
-    DeleteUiComponentMutation,
-    DeleteUiComponentMutationVariables
-  >(DELETE_UI_COMPONENT_MUTATION, {
+  const [deleteAppManagedComponent, {loading: deleting}] = useMutation<
+    DeleteAppManagedComponentMutation,
+    DeleteAppManagedComponentMutationVariables
+  >(DELETE_APP_MANAGED_COMPONENT_MUTATION, {
     refetchQueries: [
       {
-        query: CODE_LOCATION_UI_COMPONENTS_QUERY,
+        query: CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY,
         variables: {locationName: repoAddress.location},
       },
     ],
@@ -150,17 +153,17 @@ export const CodeLocationComponentInstancesSubtab = ({
 
   // Used to revert an edit (re-set previous attributes) or recreate a deleted
   // component during the revert flow. Add-revert uses the delete mutation.
-  const [setUIComponentForRevert] = useMutation<
-    SetUiComponentMutation,
-    SetUiComponentMutationVariables
-  >(SET_UI_COMPONENT_MUTATION);
-  const [deleteUIComponentForRevert] = useMutation<
-    DeleteUiComponentMutation,
-    DeleteUiComponentMutationVariables
-  >(DELETE_UI_COMPONENT_MUTATION);
+  const [setAppManagedComponentForRevert] = useMutation<
+    SetAppManagedComponentMutation,
+    SetAppManagedComponentMutationVariables
+  >(SET_APP_MANAGED_COMPONENT_MUTATION);
+  const [deleteAppManagedComponentForRevert] = useMutation<
+    DeleteAppManagedComponentMutation,
+    DeleteAppManagedComponentMutationVariables
+  >(DELETE_APP_MANAGED_COMPONENT_MUTATION);
 
   const handleAddCreated = useCallback(
-    (ctx: UIComponentMutationContext) => {
+    (ctx: AppManagedComponentMutationContext) => {
       refetchComponents();
       pendingMutationRef.current = ctx;
       tryReload();
@@ -169,7 +172,7 @@ export const CodeLocationComponentInstancesSubtab = ({
   );
 
   const handleSaved = useCallback(
-    (ctx: UIComponentMutationContext) => {
+    (ctx: AppManagedComponentMutationContext) => {
       refetchComponents();
       pendingMutationRef.current = ctx;
       tryReload();
@@ -178,7 +181,7 @@ export const CodeLocationComponentInstancesSubtab = ({
   );
 
   const handleMutationFailed = useCallback(
-    (ctx: UIComponentMutationContext, errorMessage: string) => {
+    (ctx: AppManagedComponentMutationContext, errorMessage: string) => {
       setFailedMutation({ctx, errorMessage});
     },
     [],
@@ -196,15 +199,15 @@ export const CodeLocationComponentInstancesSubtab = ({
     setIsReverting(true);
     let errorMessage: string | null = null;
     if (ctx.kind === 'add') {
-      const result = await deleteUIComponentForRevert({
+      const result = await deleteAppManagedComponentForRevert({
         variables: {
           locationName: repoAddress.location,
           componentId: ctx.componentId,
         },
       });
-      const data = result.data?.deleteUIComponent;
+      const data = result.data?.deleteAppManagedComponent;
       switch (data?.__typename) {
-        case 'DeleteUIComponentSuccess':
+        case 'DeleteAppManagedComponentSuccess':
           break;
         case 'UnauthorizedError':
           errorMessage = data.message ?? 'You do not have permission to revert this change.';
@@ -217,7 +220,7 @@ export const CodeLocationComponentInstancesSubtab = ({
       }
     } else {
       // Revert an edit or a delete by re-setting the prior attributes.
-      const result = await setUIComponentForRevert({
+      const result = await setAppManagedComponentForRevert({
         variables: {
           locationName: repoAddress.location,
           componentId: ctx.componentId,
@@ -225,9 +228,9 @@ export const CodeLocationComponentInstancesSubtab = ({
           attributes: ctx.prevAttributes ?? '',
         },
       });
-      const data = result.data?.setUIComponent;
+      const data = result.data?.setAppManagedComponent;
       switch (data?.__typename) {
-        case 'SetUIComponentSuccess':
+        case 'SetAppManagedComponentSuccess':
           break;
         case 'UnauthorizedError':
           errorMessage = data.message ?? 'You do not have permission to revert this change.';
@@ -250,20 +253,20 @@ export const CodeLocationComponentInstancesSubtab = ({
     refetchComponents();
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!confirmDeleteTarget) {
       return;
     }
     const target = confirmDeleteTarget;
-    const result = await deleteUIComponent({
+    const result = await deleteAppManagedComponent({
       variables: {
         locationName: repoAddress.location,
         componentId: target.componentId,
       },
     });
-    const data = result.data?.deleteUIComponent;
+    const data = result.data?.deleteAppManagedComponent;
     switch (data?.__typename) {
-      case 'DeleteUIComponentSuccess':
+      case 'DeleteAppManagedComponentSuccess':
         showToast({intent: 'success', message: `Deleted ${target.componentId}`});
         setConfirmDeleteTarget(null);
         pendingMutationRef.current = {
@@ -295,7 +298,13 @@ export const CodeLocationComponentInstancesSubtab = ({
         );
         return;
     }
-  };
+  }, [
+    confirmDeleteTarget,
+    deleteAppManagedComponent,
+    handleMutationFailed,
+    repoAddress.location,
+    tryReload,
+  ]);
 
   const libraryPath = `/locations/${repoAddressAsURLString(repoAddress)}/components/library`;
 
@@ -309,7 +318,7 @@ export const CodeLocationComponentInstancesSubtab = ({
     );
   }
 
-  const payload = componentsQ.data?.uiComponentsForLocationOrError;
+  const payload = componentsQ.data?.appManagedComponentsForLocationOrError;
   if (componentsQ.error || !payload || payload.__typename === 'PythonError') {
     return (
       <Box padding={32}>
@@ -317,7 +326,7 @@ export const CodeLocationComponentInstancesSubtab = ({
           icon="error"
           title="Could not load components"
           description={
-            payload && payload.__typename !== 'UIComponents'
+            payload && payload.__typename !== 'AppManagedComponents'
               ? payload.message
               : (componentsQ.error?.message ?? 'Unknown error')
           }
@@ -326,9 +335,20 @@ export const CodeLocationComponentInstancesSubtab = ({
     );
   }
 
+  const failureModal = (
+    <AppManagedComponentMutationFailedDialog
+      isOpen={failedMutation !== null}
+      ctx={failedMutation?.ctx ?? null}
+      errorMessage={failedMutation?.errorMessage ?? ''}
+      isReverting={isReverting}
+      onRevert={handleRevert}
+      onDismiss={handleDismissFailure}
+    />
+  );
+
   const dialogs = (
     <>
-      <UIComponentTypePickerDialog
+      <AppManagedComponentTypePickerDialog
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         onCreated={handleAddCreated}
@@ -336,7 +356,7 @@ export const CodeLocationComponentInstancesSubtab = ({
         locationName={repoAddress.location}
       />
       {editTarget ? (
-        <UIComponentTypePickerDialog
+        <AppManagedComponentTypePickerDialog
           mode="edit"
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
@@ -370,14 +390,7 @@ export const CodeLocationComponentInstancesSubtab = ({
           </Button>
         </DialogFooter>
       </Dialog>
-      <UIComponentMutationFailedDialog
-        isOpen={failedMutation !== null}
-        ctx={failedMutation?.ctx ?? null}
-        errorMessage={failedMutation?.errorMessage ?? ''}
-        isReverting={isReverting}
-        onRevert={handleRevert}
-        onDismiss={handleDismissFailure}
-      />
+      {failureModal}
     </>
   );
 
@@ -420,7 +433,7 @@ export const CodeLocationComponentInstancesSubtab = ({
     <div className={styles.container}>
       <div className={styles.scrollArea}>
         {uiBackedRows.map((row) => (
-          <UIBackedRowView
+          <AppManagedRowView
             key={row.componentId}
             row={row}
             onEdit={() => {
@@ -444,14 +457,14 @@ export const CodeLocationComponentInstancesSubtab = ({
   );
 };
 
-interface UIBackedRowViewProps {
-  row: UIBackedRow;
+interface AppManagedRowViewProps {
+  row: AppManagedRow;
   onEdit: () => void;
   onViewConfig: () => void;
   onDelete: () => void;
 }
 
-const UIBackedRowView = ({row, onEdit, onViewConfig, onDelete}: UIBackedRowViewProps) => (
+const AppManagedRowView = ({row, onEdit, onViewConfig, onDelete}: AppManagedRowViewProps) => (
   <div className={styles.row}>
     <span className={styles.rowId}>{row.componentId}</span>
     <span className={styles.rowType}>{row.componentType}</span>
@@ -473,8 +486,14 @@ const UIBackedRowView = ({row, onEdit, onViewConfig, onDelete}: UIBackedRowViewP
   </div>
 );
 
-const ViewConfigDialog = ({target, onClose}: {target: UIBackedRow | null; onClose: () => void}) => {
-  const [content, setContent] = useState<UIBackedRow | null>(target);
+const ViewConfigDialog = ({
+  target,
+  onClose,
+}: {
+  target: AppManagedRow | null;
+  onClose: () => void;
+}) => {
+  const [content, setContent] = useState<AppManagedRow | null>(target);
   useEffect(() => {
     if (target) {
       setContent(target);

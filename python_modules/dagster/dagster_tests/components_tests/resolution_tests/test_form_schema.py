@@ -10,7 +10,11 @@ from dataclasses import dataclass
 from typing import Annotated
 
 import dagster as dg
-from dagster.components.resolved.form_config import UNSET_DEFAULT_SENTINEL, ComponentFormConfig
+from dagster.components.resolved.form_config import (
+    APP_MANAGED,
+    UNSET_DEFAULT_SENTINEL,
+    ComponentFormConfig,
+)
 from dagster.components.resolved.form_schema import split_form_schema
 from dagster.components.resolved.model import Resolver
 
@@ -143,7 +147,7 @@ def test_end_to_end_real_model_schema():
     # Component-level form config surfaces as standard JSON Schema keys, retained
     # on the data schema.
     assert data.get("title") == "My Component"
-    assert data.get("x-ui-editable") is True
+    assert data.get(APP_MANAGED) is True
 
     # The injectable ``| str`` variant is gone where a richer variant exists; the
     # placeholder hint is lifted into the uiSchema.

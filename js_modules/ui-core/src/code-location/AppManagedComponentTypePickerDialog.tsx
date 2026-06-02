@@ -13,28 +13,31 @@ import {
   TextInput,
   showToast,
 } from '@dagster-io/ui-components';
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {useMutation, useQuery} from '../apollo-client';
-import {CODE_LOCATION_COMPONENT_TYPES_QUERY} from './CodeLocationComponentTypesQuery';
 import {
-  CODE_LOCATION_UI_COMPONENTS_QUERY,
-  SET_UI_COMPONENT_MUTATION,
-} from './CodeLocationUIComponentsQuery';
-import {UIComponentEditorBody, UIComponentEditorState} from './UIComponentEditorBody';
-import styles from './css/UIComponentTypePickerDialog.module.css';
+  AppManagedComponentEditorBody,
+  AppManagedComponentEditorState,
+} from './AppManagedComponentEditorBody';
+import {
+  CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY,
+  SET_APP_MANAGED_COMPONENT_MUTATION,
+} from './CodeLocationAppManagedComponentsQuery';
+import {CODE_LOCATION_COMPONENT_TYPES_QUERY} from './CodeLocationComponentTypesQuery';
+import {AppManagedComponentMutationContext} from './appManagedComponentMutationContext';
+import styles from './css/AppManagedComponentTypePickerDialog.module.css';
+import {
+  SetAppManagedComponentMutation,
+  SetAppManagedComponentMutationVariables,
+} from './types/CodeLocationAppManagedComponentsQuery.types';
 import {
   CodeLocationComponentTypesQuery,
   CodeLocationComponentTypesQueryVariables,
 } from './types/CodeLocationComponentTypesQuery.types';
-import {
-  SetUiComponentMutation,
-  SetUiComponentMutationVariables,
-} from './types/CodeLocationUIComponentsQuery.types';
-import {UIComponentMutationContext} from './uiComponentMutationContext';
 import {COMMON_COLLATOR} from '../app/Util';
 
-export interface UIComponentEditTarget {
+export interface AppManagedComponentEditTarget {
   componentId: string;
   componentType: string;
   attributes: string;
@@ -44,22 +47,22 @@ interface CommonProps {
   isOpen: boolean;
   onClose: () => void;
   /** Fires when a mutation returned PythonError. Parent surfaces this as the revert banner. */
-  onFailed: (ctx: UIComponentMutationContext, errorMessage: string) => void;
+  onFailed: (ctx: AppManagedComponentMutationContext, errorMessage: string) => void;
   locationName: string;
 }
 
 interface AddProps extends CommonProps {
   mode?: 'add';
   editTarget?: undefined;
-  onCreated: (ctx: UIComponentMutationContext) => void;
+  onCreated: (ctx: AppManagedComponentMutationContext) => void;
   onSaved?: undefined;
 }
 
 interface EditProps extends CommonProps {
   mode: 'edit';
-  editTarget: UIComponentEditTarget;
+  editTarget: AppManagedComponentEditTarget;
   onCreated?: undefined;
-  onSaved: (ctx: UIComponentMutationContext) => void;
+  onSaved: (ctx: AppManagedComponentMutationContext) => void;
 }
 
 type Props = AddProps | EditProps;
@@ -82,7 +85,7 @@ const firstParagraph = (md: string | null | undefined) =>
 // Source pill text — the namespace's top-level segment.
 const sourceLabel = (namespace: string) => namespace.split('.')[0] || namespace;
 
-export const UIComponentTypePickerDialog = (props: Props) => {
+export const AppManagedComponentTypePickerDialog = (props: Props) => {
   const isEdit = props.mode === 'edit';
   return (
     <Dialog
@@ -92,12 +95,12 @@ export const UIComponentTypePickerDialog = (props: Props) => {
       icon={isEdit ? 'edit' : 'add_circle'}
       style={{maxWidth: '90%', width: 720}}
     >
-      {props.isOpen ? <UIComponentTypePickerDialogBody {...props} /> : null}
+      {props.isOpen ? <AppManagedComponentTypePickerDialogBody {...props} /> : null}
     </Dialog>
   );
 };
 
-const UIComponentTypePickerDialogBody = (props: Props) => {
+const AppManagedComponentTypePickerDialogBody = (props: Props) => {
   const {onClose, onFailed, locationName} = props;
   const isEdit = props.mode === 'edit';
 
@@ -114,7 +117,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
       return [];
     }
     return payload.componentTypes
-      .filter((c) => c.isUiEditable)
+      .filter((c) => c.isAppManaged)
       .map((c) => ({
         name: c.name,
         namespace: c.namespace,
@@ -139,7 +142,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
       setSelected(match);
     }
   }, [isEdit, editableTypes, selected, editTargetComponentType]);
-  const [editorState, setEditorState] = useState<UIComponentEditorState>(() => ({
+  const [editorState, setEditorState] = useState<AppManagedComponentEditorState>(() => ({
     componentId: isEdit ? props.editTarget.componentId : '',
     attributes: isEdit ? props.editTarget.attributes : '',
     isValid: isEdit,
@@ -159,20 +162,22 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
     );
   }, [editableTypes, search]);
 
-  const [setUIComponent, {loading: saving}] = useMutation<
-    SetUiComponentMutation,
-    SetUiComponentMutationVariables
-  >(SET_UI_COMPONENT_MUTATION, {
-    refetchQueries: [{query: CODE_LOCATION_UI_COMPONENTS_QUERY, variables: {locationName}}],
+  const [setAppManagedComponent, {loading: saving}] = useMutation<
+    SetAppManagedComponentMutation,
+    SetAppManagedComponentMutationVariables
+  >(SET_APP_MANAGED_COMPONENT_MUTATION, {
+    refetchQueries: [
+      {query: CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY, variables: {locationName}},
+    ],
     awaitRefetchQueries: true,
   });
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!selected || !editorState.isValid) {
       return;
     }
     setError(null);
-    const result = await setUIComponent({
+    const result = await setAppManagedComponent({
       variables: {
         locationName,
         componentId: editorState.componentId,
@@ -180,9 +185,9 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
         attributes: editorState.attributes,
       },
     });
-    const data = result.data?.setUIComponent;
+    const data = result.data?.setAppManagedComponent;
     switch (data?.__typename) {
-      case 'SetUIComponentSuccess': {
+      case 'SetAppManagedComponentSuccess': {
         const verb = isEdit ? 'Saved' : 'Added';
         showToast({intent: 'success', message: `${verb} ${editorState.componentId}`});
         if (isEdit) {
@@ -234,7 +239,16 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
       default:
         setError('Unexpected response from server.');
     }
-  };
+  }, [
+    editorState,
+    isEdit,
+    locationName,
+    onClose,
+    onFailed,
+    props,
+    selected,
+    setAppManagedComponent,
+  ]);
 
   const phase: 'pick' | 'form' = selected ? 'form' : 'pick';
   let submitLabel: string;
@@ -323,7 +337,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
           <Mono className={styles.headerNamespace}>{`${selected.namespace}.${selected.name}`}</Mono>
         </Box>
         {isEdit ? (
-          <UIComponentEditorBody
+          <AppManagedComponentEditorBody
             key={`edit-${props.editTarget.componentId}`}
             isActive={props.isOpen}
             mode="edit"
@@ -335,7 +349,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
             onChange={setEditorState}
           />
         ) : (
-          <UIComponentEditorBody
+          <AppManagedComponentEditorBody
             key={`add-${selected.name}`}
             isActive={props.isOpen}
             mode="add"

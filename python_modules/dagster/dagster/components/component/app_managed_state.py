@@ -27,8 +27,8 @@ def import_component_class(type_name: str) -> "type[Component]":
 
 @whitelist_for_serdes
 @record
-class UIComponentEntry:
-    """A single UI-defined component, persisted at its own state key.
+class AppManagedComponentEntry:
+    """A single app-managed component, persisted at its own state key.
 
     ``attributes`` is the YAML source for the component's attributes block,
     stored verbatim so the editing UI can round-trip user input (including
@@ -39,16 +39,16 @@ class UIComponentEntry:
     attributes: str
 
 
-def get_ui_definitions_prefix(location_name: str) -> str:
-    """The shared prefix for all UI-defined component state keys at a location."""
-    return f"dagster-ui-definitions[{location_name}]/"
+def get_app_managed_prefix(location_name: str) -> str:
+    """The shared prefix for all app-managed component state keys at a location."""
+    return f"dagster-app-managed-components[{location_name}]/"
 
 
-def get_ui_component_state_key(location_name: str, component_id: str) -> str:
-    return f"{get_ui_definitions_prefix(location_name)}{component_id}"
+def get_app_managed_component_state_key(location_name: str, component_id: str) -> str:
+    return f"{get_app_managed_prefix(location_name)}{component_id}"
 
 
-def get_ui_component_ids(storage: DefsStateStorage, location_name: str) -> set[str]:
+def get_app_managed_component_ids(storage: DefsStateStorage, location_name: str) -> set[str]:
     """Discover all UI components for a location.
 
     Delegates to ``DefsStateStorage.list_state_keys_with_prefix`` and
@@ -56,44 +56,46 @@ def get_ui_component_ids(storage: DefsStateStorage, location_name: str) -> set[s
     implementation does the filter in memory; backends that grow large
     enough to care can override the listing primitive directly.
     """
-    prefix = get_ui_definitions_prefix(location_name)
+    prefix = get_app_managed_prefix(location_name)
     return {k[len(prefix) :] for k in storage.list_state_keys_with_prefix(prefix)}
 
 
-def read_ui_component_entry_at_version(
+def read_app_managed_component_entry_at_version(
     storage: DefsStateStorage, location_name: str, component_id: str, version: str
-) -> UIComponentEntry:
+) -> AppManagedComponentEntry:
     """Read the bytes for a specific version of a UI component entry."""
-    key = get_ui_component_state_key(location_name, component_id)
+    key = get_app_managed_component_state_key(location_name, component_id)
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "entry"
         storage.download_state_to_path(key, version, path)
-        return deserialize_value(path.read_text(encoding="utf-8"), as_type=UIComponentEntry)
+        return deserialize_value(path.read_text(encoding="utf-8"), as_type=AppManagedComponentEntry)
 
 
-def read_ui_component_entry(
+def read_app_managed_component_entry(
     storage: DefsStateStorage, location_name: str, component_id: str
-) -> UIComponentEntry | None:
+) -> AppManagedComponentEntry | None:
     """Read the latest UI component entry. Returns ``None`` if no version exists.
 
     Resolves the version against ``DefsStateStorage`` directly, so this
     reflects whatever is most recently written to storage. Callers that need
     a version pinned to the current ``DefinitionsLoadContext`` (e.g. component
     tree loads) should resolve the version themselves and use
-    ``read_ui_component_entry_at_version``.
+    ``read_app_managed_component_entry_at_version``.
     """
-    key = get_ui_component_state_key(location_name, component_id)
+    key = get_app_managed_component_state_key(location_name, component_id)
     version = storage.get_latest_version(key)
     if version is None:
         return None
-    return read_ui_component_entry_at_version(storage, location_name, component_id, version)
+    return read_app_managed_component_entry_at_version(
+        storage, location_name, component_id, version
+    )
 
 
-def write_ui_component_entry(
+def write_app_managed_component_entry(
     storage: DefsStateStorage,
     location_name: str,
     component_id: str,
-    entry: UIComponentEntry,
+    entry: AppManagedComponentEntry,
 ) -> str:
     """Write (or overwrite) a UI component entry. Returns the new version.
 
@@ -102,7 +104,7 @@ def write_ui_component_entry(
     because they target different keys; two writers targeting the same
     component_id silently resolve to whichever finishes last.
     """
-    key = get_ui_component_state_key(location_name, component_id)
+    key = get_app_managed_component_state_key(location_name, component_id)
     new_version = str(uuid4())
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "entry"
@@ -111,7 +113,7 @@ def write_ui_component_entry(
     return new_version
 
 
-def delete_ui_component_entry(
+def delete_app_managed_component_entry(
     storage: DefsStateStorage,
     location_name: str,
     component_id: str,
@@ -119,8 +121,10 @@ def delete_ui_component_entry(
     """Delete a UI component entry.
 
     Idempotent — deleting a component_id that doesn't exist is a no-op.
-    The next ``get_ui_component_ids`` call for this location will not
+    The next ``get_app_managed_component_ids`` call for this location will not
     include the deleted id, and the ``ComponentTree``'s next
     ``find_root_decl`` call will exclude it from the tree.
     """
-    storage.set_latest_version(get_ui_component_state_key(location_name, component_id), None)
+    storage.set_latest_version(
+        get_app_managed_component_state_key(location_name, component_id), None
+    )

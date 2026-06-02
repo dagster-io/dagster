@@ -226,20 +226,20 @@ class ComponentPath(ComponentLoc):
 
 
 @record
-class UIDefinitionsLoc(ComponentLoc):
+class AppManagedDefinitionsLoc(ComponentLoc):
     """Location for the UI-definitions subtree.
 
     With ``instance_key=None`` this identifies the aggregate container
-    (``UIDefinitionsDecl``) — analogous to ``YamlFileDecl``'s loc for a
+    (``AppManagedDefinitionsDecl``) — analogous to ``YamlFileDecl``'s loc for a
     yaml file containing several components. With an ``instance_key``
-    set it identifies a single UI-defined component, analogous to a
+    set it identifies a single app-managed component, analogous to a
     yaml document's loc.
     """
 
     instance_key: str | None = None
 
-    def without_instance_key(self) -> "UIDefinitionsLoc":
-        return UIDefinitionsLoc()
+    def without_instance_key(self) -> "AppManagedDefinitionsLoc":
+        return AppManagedDefinitionsLoc()
 
     def get_display_key(self, root_path: Path) -> str:
         if self.instance_key is not None:
@@ -247,8 +247,8 @@ class UIDefinitionsLoc(ComponentLoc):
         return "<ui>"
 
 
-class UIDefinitionsComponent(Component):
-    """Aggregate component for UI-defined components at a code location.
+class AppManagedDefinitionsComponent(Component):
+    """Aggregate component for app-managed components at a code location.
 
     Functionally minimal — its ``build_defs`` just merges children's defs,
     same as ``ComponentRootComponent`` does at the next level up. The

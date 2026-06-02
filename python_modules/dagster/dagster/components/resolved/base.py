@@ -129,9 +129,9 @@ class Resolvable:
 
     @classmethod
     def get_form_config(cls) -> "ComponentFormConfig | None":
-        """Return form metadata for this class to drive the UI definitions editor.
+        """Return form metadata for this class to drive the app-managed components editor.
 
-        Override on a :class:`Resolvable` subclass to mark it UI-editable
+        Override on a :class:`Resolvable` subclass to mark it app-managed
         and set its display label::
 
             @classmethod
@@ -194,7 +194,7 @@ _Unset: Final[str] = UNSET_DEFAULT_SENTINEL
 def derive_model_type(
     target_type: type[Resolvable],
 ) -> type[BaseModel]:
-    from dagster.components.resolved.form_config import UI_ID_SOURCE
+    from dagster.components.resolved.form_config import APP_ID_SOURCE
 
     if target_type not in _DERIVED_MODEL_REGISTRY:
         form_config = target_type.get_form_config()
@@ -210,7 +210,7 @@ def derive_model_type(
             field_resolver = _get_resolver(annotation_info.type, name)
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation_info.type
-            if (field_resolver.json_schema_extra or {}).get(UI_ID_SOURCE) is True:
+            if (field_resolver.json_schema_extra or {}).get(APP_ID_SOURCE) is True:
                 if annotation_info.has_default:
                     raise ResolutionException(
                         f"{target_type.__name__}.{name}: ComponentFormConfig(id_source=True) is "

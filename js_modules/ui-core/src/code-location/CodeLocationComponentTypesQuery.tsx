@@ -18,7 +18,7 @@ export const CODE_LOCATION_COMPONENT_TYPES_QUERY = gql`
           description
           owners
           tags
-          isUiEditable
+          isAppManaged
         }
       }
       ... on RepositoryLocationNotFound {

@@ -31,6 +31,9 @@ from dagster_graphql.implementation.external import (
     fetch_workspace,
     get_remote_job_or_raise,
 )
+from dagster_graphql.implementation.fetch_app_managed_components import (
+    get_app_managed_components_for_location,
+)
 from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_check_executions
 from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
     fetch_asset_condition_evaluation_record_for_partition,
@@ -91,7 +94,6 @@ from dagster_graphql.implementation.fetch_schedules import (
 from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from dagster_graphql.implementation.fetch_solids import get_graph_or_error
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
-from dagster_graphql.implementation.fetch_ui_definitions import get_ui_components_for_location
 from dagster_graphql.implementation.run_config_schema import resolve_run_config_schema_or_error
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
@@ -99,6 +101,7 @@ from dagster_graphql.implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
+from dagster_graphql.schema.app_managed_components import GrapheneAppManagedComponentsOrError
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluation,
@@ -212,7 +215,6 @@ from dagster_graphql.schema.schedules import (
 )
 from dagster_graphql.schema.sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from dagster_graphql.schema.test import GrapheneTestFields
-from dagster_graphql.schema.ui_definitions import GrapheneUIComponentsOrError
 from dagster_graphql.schema.util import ResolveInfo, get_compute_log_manager, non_null_list
 
 
@@ -668,11 +670,11 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve the latest available DefsStateInfo for the current workspace.",
     )
 
-    uiComponentsForLocationOrError = graphene.Field(
-        graphene.NonNull(GrapheneUIComponentsOrError),
+    appManagedComponentsForLocationOrError = graphene.Field(
+        graphene.NonNull(GrapheneAppManagedComponentsOrError),
         locationName=graphene.NonNull(graphene.String),
         description=(
-            "Retrieve all UI-defined components stored for a given code location. The"
+            "Retrieve all app-managed components stored for a given code location. The"
             " returned list is sourced from the instance's defs state storage and is"
             " independent of whether the location is currently loaded."
         ),
@@ -1433,8 +1435,10 @@ class GrapheneQuery(graphene.ObjectType):
         return GrapheneDefsStateInfo(latest_info) if latest_info else None
 
     @capture_error
-    def resolve_uiComponentsForLocationOrError(self, graphene_info: ResolveInfo, locationName: str):
-        return get_ui_components_for_location(graphene_info, locationName)
+    def resolve_appManagedComponentsForLocationOrError(
+        self, graphene_info: ResolveInfo, locationName: str
+    ):
+        return get_app_managed_components_for_location(graphene_info, locationName)
 
     @capture_error
     def resolve_componentTypesForLocationOrError(

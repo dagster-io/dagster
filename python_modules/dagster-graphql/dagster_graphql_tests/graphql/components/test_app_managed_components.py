@@ -1,4 +1,4 @@
-"""End-to-end GraphQL tests for the UI definitions endpoints."""
+"""End-to-end GraphQL tests for the app-managed components endpoints."""
 
 import tempfile
 from collections.abc import Iterator
@@ -15,11 +15,11 @@ from dagster_graphql.test.utils import define_out_of_process_context, execute_da
 LOCATION_NAME = "test_location"
 
 
-GET_UI_COMPONENTS_QUERY = """
-query GetUIComponents($locationName: String!) {
-  uiComponentsForLocationOrError(locationName: $locationName) {
+GET_APP_MANAGED_COMPONENTS_QUERY = """
+query GetAppManagedComponents($locationName: String!) {
+  appManagedComponentsForLocationOrError(locationName: $locationName) {
     __typename
-    ... on UIComponents {
+    ... on AppManagedComponents {
       locationName
       components {
         componentId
@@ -34,21 +34,21 @@ query GetUIComponents($locationName: String!) {
 }
 """
 
-SET_UI_COMPONENT_MUTATION = """
-mutation SetUIComponent(
+SET_APP_MANAGED_COMPONENT_MUTATION = """
+mutation SetAppManagedComponent(
   $locationName: String!,
   $componentId: String!,
   $componentType: String!,
   $attributes: String!,
 ) {
-  setUIComponent(
+  setAppManagedComponent(
     locationName: $locationName,
     componentId: $componentId,
     componentType: $componentType,
     attributes: $attributes,
   ) {
     __typename
-    ... on SetUIComponentSuccess {
+    ... on SetAppManagedComponentSuccess {
       component {
         componentId
         componentType
@@ -65,11 +65,11 @@ mutation SetUIComponent(
 }
 """
 
-DELETE_UI_COMPONENT_MUTATION = """
-mutation DeleteUIComponent($locationName: String!, $componentId: String!) {
-  deleteUIComponent(locationName: $locationName, componentId: $componentId) {
+DELETE_APP_MANAGED_COMPONENT_MUTATION = """
+mutation DeleteAppManagedComponent($locationName: String!, $componentId: String!) {
+  deleteAppManagedComponent(locationName: $locationName, componentId: $componentId) {
     __typename
-    ... on DeleteUIComponentSuccess {
+    ... on DeleteAppManagedComponentSuccess {
       locationName
       componentId
     }
@@ -117,7 +117,7 @@ def _set_component(
 ):
     return execute_dagster_graphql(
         context,
-        SET_UI_COMPONENT_MUTATION,
+        SET_APP_MANAGED_COMPONENT_MUTATION,
         variables={
             "locationName": location_name,
             "componentId": component_id,
@@ -130,7 +130,7 @@ def _set_component(
 def _list_components(context: WorkspaceRequestContext, location_name: str = LOCATION_NAME):
     return execute_dagster_graphql(
         context,
-        GET_UI_COMPONENTS_QUERY,
+        GET_APP_MANAGED_COMPONENTS_QUERY,
         variables={"locationName": location_name},
     )
 
@@ -142,7 +142,7 @@ def _delete_component(
 ):
     return execute_dagster_graphql(
         context,
-        DELETE_UI_COMPONENT_MUTATION,
+        DELETE_APP_MANAGED_COMPONENT_MUTATION,
         variables={"locationName": location_name, "componentId": component_id},
     )
 
@@ -150,8 +150,8 @@ def _delete_component(
 def test_query_empty():
     with graphql_context_with_storage() as context:
         result = _list_components(context)
-        payload = result.data["uiComponentsForLocationOrError"]
-        assert payload["__typename"] == "UIComponents"
+        payload = result.data["appManagedComponentsForLocationOrError"]
+        assert payload["__typename"] == "AppManagedComponents"
         assert payload["locationName"] == LOCATION_NAME
         assert payload["components"] == []
 
@@ -165,15 +165,15 @@ def test_set_then_query():
             component_type="dagster.SomeComponent",
             attributes=yaml_attributes,
         )
-        success = set_result.data["setUIComponent"]
-        assert success["__typename"] == "SetUIComponentSuccess"
+        success = set_result.data["setAppManagedComponent"]
+        assert success["__typename"] == "SetAppManagedComponentSuccess"
         assert success["component"]["componentId"] == "comp1"
         assert success["component"]["componentType"] == "dagster.SomeComponent"
         assert success["component"]["attributes"] == yaml_attributes
 
         list_result = _list_components(context)
-        payload = list_result.data["uiComponentsForLocationOrError"]
-        assert payload["__typename"] == "UIComponents"
+        payload = list_result.data["appManagedComponentsForLocationOrError"]
+        assert payload["__typename"] == "AppManagedComponents"
         assert payload["components"] == [
             {
                 "componentId": "comp1",
@@ -184,14 +184,14 @@ def test_set_then_query():
 
 
 def test_set_overwrites_existing_lww():
-    """SetUIComponent on an existing id is an upsert (last writer wins)."""
+    """SetAppManagedComponent on an existing id is an upsert (last writer wins)."""
     with graphql_context_with_storage() as context:
         _set_component(context, "comp1", attributes="version: 1\n")
         _set_component(
             context, "comp1", component_type="dagster.OtherComponent", attributes="version: 2\n"
         )
         list_result = _list_components(context)
-        components = list_result.data["uiComponentsForLocationOrError"]["components"]
+        components = list_result.data["appManagedComponentsForLocationOrError"]["components"]
         assert components == [
             {
                 "componentId": "comp1",
@@ -209,7 +209,7 @@ def test_set_multiple_components_returned_sorted():
         list_result = _list_components(context)
         ids = [
             c["componentId"]
-            for c in list_result.data["uiComponentsForLocationOrError"]["components"]
+            for c in list_result.data["appManagedComponentsForLocationOrError"]["components"]
         ]
         assert ids == ["alpha", "mango", "zebra"]
 
@@ -220,15 +220,15 @@ def test_delete_removes_component():
         _set_component(context, "comp2")
 
         delete_result = _delete_component(context, "comp1")
-        success = delete_result.data["deleteUIComponent"]
-        assert success["__typename"] == "DeleteUIComponentSuccess"
+        success = delete_result.data["deleteAppManagedComponent"]
+        assert success["__typename"] == "DeleteAppManagedComponentSuccess"
         assert success["componentId"] == "comp1"
         assert success["locationName"] == LOCATION_NAME
 
         list_result = _list_components(context)
         ids = [
             c["componentId"]
-            for c in list_result.data["uiComponentsForLocationOrError"]["components"]
+            for c in list_result.data["appManagedComponentsForLocationOrError"]["components"]
         ]
         assert ids == ["comp2"]
 
@@ -237,16 +237,22 @@ def test_delete_is_idempotent():
     """Deleting a non-existent component succeeds quietly."""
     with graphql_context_with_storage() as context:
         delete_result = _delete_component(context, "never-existed")
-        assert delete_result.data["deleteUIComponent"]["__typename"] == "DeleteUIComponentSuccess"
+        assert (
+            delete_result.data["deleteAppManagedComponent"]["__typename"]
+            == "DeleteAppManagedComponentSuccess"
+        )
 
         _set_component(context, "comp1")
         _delete_component(context, "comp1")
         # Second delete is also a no-op success.
         delete_result = _delete_component(context, "comp1")
-        assert delete_result.data["deleteUIComponent"]["__typename"] == "DeleteUIComponentSuccess"
+        assert (
+            delete_result.data["deleteAppManagedComponent"]["__typename"]
+            == "DeleteAppManagedComponentSuccess"
+        )
 
         list_result = _list_components(context)
-        assert list_result.data["uiComponentsForLocationOrError"]["components"] == []
+        assert list_result.data["appManagedComponentsForLocationOrError"]["components"] == []
 
 
 def test_locations_are_isolated():
@@ -257,10 +263,10 @@ def test_locations_are_isolated():
         _set_component(context, "only_in_a", attributes="loc: A\n", location_name="locA")
 
         loc_a = _list_components(context, location_name="locA").data[
-            "uiComponentsForLocationOrError"
+            "appManagedComponentsForLocationOrError"
         ]
         loc_b = _list_components(context, location_name="locB").data[
-            "uiComponentsForLocationOrError"
+            "appManagedComponentsForLocationOrError"
         ]
 
         assert sorted(c["componentId"] for c in loc_a["components"]) == [
@@ -277,10 +283,10 @@ def test_locations_are_isolated():
         # Delete in locA must not affect locB.
         _delete_component(context, "shared", location_name="locA")
         loc_a_after = _list_components(context, location_name="locA").data[
-            "uiComponentsForLocationOrError"
+            "appManagedComponentsForLocationOrError"
         ]
         loc_b_after = _list_components(context, location_name="locB").data[
-            "uiComponentsForLocationOrError"
+            "appManagedComponentsForLocationOrError"
         ]
         assert [c["componentId"] for c in loc_a_after["components"]] == ["only_in_a"]
         assert [c["componentId"] for c in loc_b_after["components"]] == ["shared"]
@@ -290,11 +296,14 @@ def test_mutations_blocked_when_read_only():
     """Read-only viewers cannot mutate UI components."""
     with graphql_context_with_storage(read_only=True) as context:
         set_result = _set_component(context, "comp1")
-        assert set_result.data["setUIComponent"]["__typename"] == "UnauthorizedError"
+        assert set_result.data["setAppManagedComponent"]["__typename"] == "UnauthorizedError"
 
         delete_result = _delete_component(context, "comp1")
-        assert delete_result.data["deleteUIComponent"]["__typename"] == "UnauthorizedError"
+        assert delete_result.data["deleteAppManagedComponent"]["__typename"] == "UnauthorizedError"
 
         # Listing must still work for read-only viewers.
         list_result = _list_components(context)
-        assert list_result.data["uiComponentsForLocationOrError"]["__typename"] == "UIComponents"
+        assert (
+            list_result.data["appManagedComponentsForLocationOrError"]["__typename"]
+            == "AppManagedComponents"
+        )

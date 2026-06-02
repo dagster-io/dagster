@@ -1,4 +1,4 @@
-"""Tests for ComponentTree integration with per-component UI definitions."""
+"""Tests for ComponentTree integration with per-component app-managed components."""
 
 import tempfile
 from collections.abc import Iterator
@@ -10,14 +10,18 @@ import dagster as dg
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
-from dagster.components.component.ui_definitions_state import (
-    UIComponentEntry,
-    delete_ui_component_entry,
-    write_ui_component_entry,
+from dagster.components.component.app_managed_state import (
+    AppManagedComponentEntry,
+    delete_app_managed_component_entry,
+    write_app_managed_component_entry,
 )
 from dagster.components.core.component_tree import ComponentTree
-from dagster.components.core.decl import ComponentRootDecl, UIDefinitionsDecl
-from dagster.components.core.defs_module import ComponentPath, ComponentRootLoc, UIDefinitionsLoc
+from dagster.components.core.decl import AppManagedDefinitionsDecl, ComponentRootDecl
+from dagster.components.core.defs_module import (
+    AppManagedDefinitionsLoc,
+    ComponentPath,
+    ComponentRootLoc,
+)
 from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_shared import check
 
@@ -49,25 +53,33 @@ def _component_tree_for_loc(location_name: str | None) -> Iterator[ComponentTree
             yield tree
 
 
-class TestUIDefinitionsLoc:
+class TestAppManagedDefinitionsLoc:
     def test_aggregate_loc_has_no_instance_key(self):
-        assert UIDefinitionsLoc().instance_key is None
+        assert AppManagedDefinitionsLoc().instance_key is None
 
     def test_distinct_from_root(self):
-        assert ComponentRootLoc() != UIDefinitionsLoc()
+        assert ComponentRootLoc() != AppManagedDefinitionsLoc()
 
     def test_distinct_by_instance_key(self):
-        assert UIDefinitionsLoc(instance_key="a") != UIDefinitionsLoc(instance_key="b")
-        assert UIDefinitionsLoc() != UIDefinitionsLoc(instance_key="a")
+        assert AppManagedDefinitionsLoc(instance_key="a") != AppManagedDefinitionsLoc(
+            instance_key="b"
+        )
+        assert AppManagedDefinitionsLoc() != AppManagedDefinitionsLoc(instance_key="a")
 
     def test_without_instance_key_strips_id(self):
-        assert UIDefinitionsLoc(instance_key="abc").without_instance_key() == UIDefinitionsLoc()
+        assert (
+            AppManagedDefinitionsLoc(instance_key="abc").without_instance_key()
+            == AppManagedDefinitionsLoc()
+        )
 
     def test_display_key_aggregate(self):
-        assert UIDefinitionsLoc().get_display_key(Path("/fake")) == "<ui>"
+        assert AppManagedDefinitionsLoc().get_display_key(Path("/fake")) == "<ui>"
 
     def test_display_key_with_instance(self):
-        assert UIDefinitionsLoc(instance_key="abc").get_display_key(Path("/fake")) == "<ui>/abc"
+        assert (
+            AppManagedDefinitionsLoc(instance_key="abc").get_display_key(Path("/fake"))
+            == "<ui>/abc"
+        )
 
 
 class TestCodeLocationNamePlumbing:
@@ -91,11 +103,11 @@ class TestRootDeclWithWrapper:
     def test_no_wrapper_when_no_code_location_name(self) -> None:
         """Without code_location_name, the UI subtree is omitted entirely."""
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "other_loc",
                 "comp1",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
             with _component_tree_for_loc(None) as tree:
                 root = tree.find_root_decl()
@@ -112,89 +124,91 @@ class TestRootDeclWithWrapper:
                 assert isinstance(root, ComponentRootDecl)
                 assert len(root.decls) == 2
                 ui_decl = root.decls[1]
-                assert isinstance(ui_decl, UIDefinitionsDecl)
+                assert isinstance(ui_decl, AppManagedDefinitionsDecl)
                 assert ui_decl.location_name == "test_loc"
                 assert ui_decl.children == []
 
-    def test_wrapper_holds_each_ui_component_as_a_child(self) -> None:
+    def test_wrapper_holds_each_app_managed_component_as_a_child(self) -> None:
         """Two UI components written → both appear as children of the wrapper,
         not as direct children of the root.
         """
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp_a",
-                UIComponentEntry(component_type="dagster.Component", attributes="k: a\n"),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes="k: a\n"),
             )
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp_b",
-                UIComponentEntry(component_type="dagster.Component", attributes="k: b\n"),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes="k: b\n"),
             )
 
             with _component_tree_for_loc("test_loc") as tree:
                 root = tree.find_root_decl()
                 # Root has filesystem + wrapper, no UI components hanging directly off root.
                 assert len(root.decls) == 2
-                ui_decl = check.inst(root.decls[1], UIDefinitionsDecl)
+                ui_decl = check.inst(root.decls[1], AppManagedDefinitionsDecl)
                 assert len(ui_decl.children) == 2
                 assert {c.entry.attributes for c in ui_decl.children} == {"k: a\n", "k: b\n"}
 
     def test_wrapper_filters_to_this_locations_components(self) -> None:
         """Components belonging to a different code location are filtered out."""
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "mine",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "other_loc",
                 "not_mine",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
 
             with _component_tree_for_loc("test_loc") as tree:
-                ui_decl = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
-                assert [c.loc for c in ui_decl.children] == [UIDefinitionsLoc(instance_key="mine")]
+                ui_decl = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
+                assert [c.loc for c in ui_decl.children] == [
+                    AppManagedDefinitionsLoc(instance_key="mine")
+                ]
 
     def test_loc_pairs_iteration_includes_wrapper_and_each_child(self) -> None:
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp_x",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
             with _component_tree_for_loc("test_loc") as tree:
                 pairs = dict(tree.find_root_decl().iterate_loc_component_decl_pairs())
                 # Root, wrapper, and the single UI component child all appear.
                 assert ComponentRootLoc() in pairs
-                assert UIDefinitionsLoc() in pairs
-                assert UIDefinitionsLoc(instance_key="comp_x") in pairs
+                assert AppManagedDefinitionsLoc() in pairs
+                assert AppManagedDefinitionsLoc(instance_key="comp_x") in pairs
 
 
 class TestPerComponentInvalidation:
     def test_each_ui_decl_registers_its_state_key(self) -> None:
-        """Each child UIComponentDecl is registered against its own state key,
+        """Each child AppManagedComponentDecl is registered against its own state key,
         so an invalidation of one component's key only affects that child.
         """
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp_a",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp_b",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
 
             with _component_tree_for_loc("test_loc") as tree:
@@ -202,17 +216,23 @@ class TestPerComponentInvalidation:
 
                 tracker = tree.state_tracker
                 tracker.set_cache_data(
-                    UIDefinitionsLoc(instance_key="comp_a"), defs=dg.Definitions()
+                    AppManagedDefinitionsLoc(instance_key="comp_a"), defs=dg.Definitions()
                 )
                 tracker.set_cache_data(
-                    UIDefinitionsLoc(instance_key="comp_b"), defs=dg.Definitions()
+                    AppManagedDefinitionsLoc(instance_key="comp_b"), defs=dg.Definitions()
                 )
 
-                tracker.invalidate_by_defs_state_key("dagster-ui-definitions[test_loc]/comp_a")
+                tracker.invalidate_by_defs_state_key(
+                    "dagster-app-managed-components[test_loc]/comp_a"
+                )
 
-                assert tracker.get_cache_data(UIDefinitionsLoc(instance_key="comp_a")).defs is None
                 assert (
-                    tracker.get_cache_data(UIDefinitionsLoc(instance_key="comp_b")).defs is not None
+                    tracker.get_cache_data(AppManagedDefinitionsLoc(instance_key="comp_a")).defs
+                    is None
+                )
+                assert (
+                    tracker.get_cache_data(AppManagedDefinitionsLoc(instance_key="comp_b")).defs
+                    is not None
                 )
 
     def test_listing_picks_up_newly_added_components(self) -> None:
@@ -222,20 +242,22 @@ class TestPerComponentInvalidation:
         with _instance_with_storage() as storage:
             with _component_tree_for_loc("test_loc") as tree:
                 first = tree.find_root_decl()
-                ui_decl_first = check.inst(first.decls[1], UIDefinitionsDecl)
+                ui_decl_first = check.inst(first.decls[1], AppManagedDefinitionsDecl)
                 assert ui_decl_first.children == []
 
-                write_ui_component_entry(
+                write_app_managed_component_entry(
                     storage,
                     "test_loc",
                     "new_comp",
-                    UIComponentEntry(component_type="dagster.Component", attributes=""),
+                    AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
                 )
 
                 second = tree.find_root_decl()
-                ui_decl_second = check.inst(second.decls[1], UIDefinitionsDecl)
+                ui_decl_second = check.inst(second.decls[1], AppManagedDefinitionsDecl)
                 assert len(ui_decl_second.children) == 1
-                assert ui_decl_second.children[0].loc == UIDefinitionsLoc(instance_key="new_comp")
+                assert ui_decl_second.children[0].loc == AppManagedDefinitionsLoc(
+                    instance_key="new_comp"
+                )
 
     def test_per_component_decls_are_cached_across_calls(self) -> None:
         """An unchanged component's decl should be the same cached instance
@@ -243,15 +265,15 @@ class TestPerComponentInvalidation:
         per-id rather than per-list.
         """
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "stable",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
             with _component_tree_for_loc("test_loc") as tree:
-                first = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
-                second = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                first = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
+                second = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
                 # Wrapper itself is freshly built each call (different list could differ),
                 # but each child decl is cached and reused.
                 assert first.children[0] is second.children[0]
@@ -259,38 +281,42 @@ class TestPerComponentInvalidation:
 
 class TestDeletion:
     def test_delete_removes_component_from_root_decl(self) -> None:
-        """After ``delete_ui_component_entry``, the next ``find_root_decl``
+        """After ``delete_app_managed_component_entry``, the next ``find_root_decl``
         call no longer includes the deleted component as a child of the
         UI wrapper — discovery is via fresh prefix-listing on each call.
         """
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp_a",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp_b",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
 
             with _component_tree_for_loc("test_loc") as tree:
-                ui_decl = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                ui_decl = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
                 assert {
-                    check.inst(c.loc, UIDefinitionsLoc).instance_key for c in ui_decl.children
+                    check.inst(c.loc, AppManagedDefinitionsLoc).instance_key
+                    for c in ui_decl.children
                 } == {
                     "comp_a",
                     "comp_b",
                 }
 
-                delete_ui_component_entry(storage, "test_loc", "comp_a")
+                delete_app_managed_component_entry(storage, "test_loc", "comp_a")
 
-                ui_decl_after = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                ui_decl_after = check.inst(
+                    tree.find_root_decl().decls[1], AppManagedDefinitionsDecl
+                )
                 assert [
-                    check.inst(c.loc, UIDefinitionsLoc).instance_key for c in ui_decl_after.children
+                    check.inst(c.loc, AppManagedDefinitionsLoc).instance_key
+                    for c in ui_decl_after.children
                 ] == ["comp_b"]
 
     def test_delete_does_not_purge_surviving_siblings_cached_decl(self) -> None:
@@ -298,34 +324,36 @@ class TestDeletion:
         another — per-id caching means siblings are independent.
         """
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "deleted",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "kept",
-                UIComponentEntry(component_type="dagster.Component", attributes=""),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
             )
 
             with _component_tree_for_loc("test_loc") as tree:
-                ui_decl = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                ui_decl = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
                 kept_decl_first = next(
                     c
                     for c in ui_decl.children
-                    if check.inst(c.loc, UIDefinitionsLoc).instance_key == "kept"
+                    if check.inst(c.loc, AppManagedDefinitionsLoc).instance_key == "kept"
                 )
 
-                delete_ui_component_entry(storage, "test_loc", "deleted")
+                delete_app_managed_component_entry(storage, "test_loc", "deleted")
 
-                ui_decl_after = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                ui_decl_after = check.inst(
+                    tree.find_root_decl().decls[1], AppManagedDefinitionsDecl
+                )
                 kept_decl_second = next(
                     c
                     for c in ui_decl_after.children
-                    if check.inst(c.loc, UIDefinitionsLoc).instance_key == "kept"
+                    if check.inst(c.loc, AppManagedDefinitionsLoc).instance_key == "kept"
                 )
                 # Same cached object — sibling unaffected.
                 assert kept_decl_first is kept_decl_second
@@ -333,35 +361,37 @@ class TestDeletion:
     def test_delete_then_re_add_with_same_id_appears_again(self) -> None:
         """Delete + re-add at the same id round-trips through the tree."""
         with _instance_with_storage() as storage:
-            write_ui_component_entry(
+            write_app_managed_component_entry(
                 storage,
                 "test_loc",
                 "comp1",
-                UIComponentEntry(component_type="dagster.Component", attributes="k: v1\n"),
+                AppManagedComponentEntry(component_type="dagster.Component", attributes="k: v1\n"),
             )
 
             with _component_tree_for_loc("test_loc") as tree:
-                first = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                first = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
                 assert first.children[0].entry.attributes == "k: v1\n"
 
-                delete_ui_component_entry(storage, "test_loc", "comp1")
+                delete_app_managed_component_entry(storage, "test_loc", "comp1")
 
-                gone = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                gone = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
                 assert gone.children == []
 
-                # Re-add: write fresh state. The cached UIComponentDecl from
+                # Re-add: write fresh state. The cached AppManagedComponentDecl from
                 # before will get re-used unless its state key was invalidated;
                 # callers that want to observe the new entry need to invalidate
                 # explicitly via the state tracker (the writer-side concern).
-                write_ui_component_entry(
+                write_app_managed_component_entry(
                     storage,
                     "test_loc",
                     "comp1",
-                    UIComponentEntry(component_type="dagster.Component", attributes="k: v2\n"),
+                    AppManagedComponentEntry(
+                        component_type="dagster.Component", attributes="k: v2\n"
+                    ),
                 )
-                tree.state_tracker.invalidate_loc(UIDefinitionsLoc(instance_key="comp1"))
+                tree.state_tracker.invalidate_loc(AppManagedDefinitionsLoc(instance_key="comp1"))
 
-                back = check.inst(tree.find_root_decl().decls[1], UIDefinitionsDecl)
+                back = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
                 assert back.children[0].entry.attributes == "k: v2\n"
 
 
@@ -375,12 +405,15 @@ class TestStorageListPrefix:
                 p.write_text("blob", encoding="utf-8")
                 # Two unrelated keys + one matching prefix.
                 storage.upload_state_from_path("UnrelatedFoo", "v1", p)
-                storage.upload_state_from_path("UIDefinitions[loc]/abc", "v1", p)
-                storage.upload_state_from_path("UIDefinitions[loc]/xyz", "v1", p)
+                storage.upload_state_from_path("AppManagedDefinitions[loc]/abc", "v1", p)
+                storage.upload_state_from_path("AppManagedDefinitions[loc]/xyz", "v1", p)
 
-                matches = sorted(storage.list_state_keys_with_prefix("UIDefinitions[loc]/"))
-                assert matches == ["UIDefinitions[loc]/abc", "UIDefinitions[loc]/xyz"]
+                matches = sorted(storage.list_state_keys_with_prefix("AppManagedDefinitions[loc]/"))
+                assert matches == [
+                    "AppManagedDefinitions[loc]/abc",
+                    "AppManagedDefinitions[loc]/xyz",
+                ]
 
     def test_empty_when_no_state(self) -> None:
         with _instance_with_storage() as storage:
-            assert storage.list_state_keys_with_prefix("UIDefinitions[loc]/") == []
+            assert storage.list_state_keys_with_prefix("AppManagedDefinitions[loc]/") == []

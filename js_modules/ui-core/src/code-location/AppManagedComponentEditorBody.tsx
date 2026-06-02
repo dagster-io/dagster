@@ -4,20 +4,20 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 
 import {useQuery} from '../apollo-client';
-import {CODE_LOCATION_UI_COMPONENTS_QUERY} from './CodeLocationUIComponentsQuery';
+import {CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY} from './CodeLocationAppManagedComponentsQuery';
 import {ComponentSchemaForm} from './component-form';
 import styles from './css/CodeLocationComponentInstancesSubtab.module.css';
 import {
-  CodeLocationUiComponentsQuery,
-  CodeLocationUiComponentsQueryVariables,
-} from './types/CodeLocationUIComponentsQuery.types';
+  CodeLocationAppManagedComponentsQuery,
+  CodeLocationAppManagedComponentsQueryVariables,
+} from './types/CodeLocationAppManagedComponentsQuery.types';
 
 // JSON Schema marker emitted by ``ComponentFormConfig(id_source=True)`` on the
 // Python side — flags a single field whose value should be interpolated into
 // the auto-generated component id (e.g. ``MyComponent[<field value>]``).
-const UI_ID_SOURCE = 'x-ui-id-source';
+const APP_ID_SOURCE = 'x-app-id-source';
 
-export type UIComponentEditorMode = 'add' | 'edit';
+export type AppManagedComponentEditorMode = 'add' | 'edit';
 type EditorView = 'form' | 'yaml';
 
 interface FormSchema {
@@ -32,7 +32,7 @@ interface BaseProps {
   // The component's schema, pre-split into the (dataSchema, uiSchema) pair RJSF
   // expects. Computed server-side; null when the component declares no model.
   formSchema?: FormSchema | null;
-  onChange: (state: UIComponentEditorState) => void;
+  onChange: (state: AppManagedComponentEditorState) => void;
 }
 
 interface AddProps extends BaseProps {
@@ -46,9 +46,9 @@ interface EditProps extends BaseProps {
   initialAttributes: string;
 }
 
-export type UIComponentEditorBodyProps = AddProps | EditProps;
+export type AppManagedComponentEditorBodyProps = AddProps | EditProps;
 
-export interface UIComponentEditorState {
+export interface AppManagedComponentEditorState {
   componentId: string;
   attributes: string;
   isValid: boolean;
@@ -76,7 +76,7 @@ const serializeFormValues = (values: Record<string, any>): string => {
   return yaml.stringify(values);
 };
 
-export const UIComponentEditorBody = (props: UIComponentEditorBodyProps) => {
+export const AppManagedComponentEditorBody = (props: AppManagedComponentEditorBodyProps) => {
   const {isActive, locationName, componentType, formSchema, onChange} = props;
   const isEditMode = props.mode === 'edit';
   const dataSchema = isPlainObject(formSchema?.dataSchema) ? formSchema.dataSchema : null;
@@ -90,7 +90,7 @@ export const UIComponentEditorBody = (props: UIComponentEditorBodyProps) => {
   }, [componentType]);
 
   // Optional ``id_source`` field marked via ComponentFormConfig. The
-  // ``x-ui-id-source`` marker is an ``x-ui-*`` key (not a ``ui:`` rendering
+  // ``x-app-id-source`` marker is an ``x-app-*`` key (not a ``ui:`` rendering
   // hint), so ``split_form_schema`` leaves it on the property in ``dataSchema``.
   const idSourceField = useMemo<string | null>(() => {
     if (!dataSchema) {
@@ -102,23 +102,23 @@ export const UIComponentEditorBody = (props: UIComponentEditorBodyProps) => {
     }
     return (
       Object.entries(properties).find(
-        ([, propSchema]) => isPlainObject(propSchema) && propSchema[UI_ID_SOURCE] === true,
+        ([, propSchema]) => isPlainObject(propSchema) && propSchema[APP_ID_SOURCE] === true,
       )?.[0] ?? null
     );
   }, [dataSchema]);
 
   // Existing ids — used for the integer-suffix dedup in Add mode only.
   const {data: existingComponentsData} = useQuery<
-    CodeLocationUiComponentsQuery,
-    CodeLocationUiComponentsQueryVariables
-  >(CODE_LOCATION_UI_COMPONENTS_QUERY, {
+    CodeLocationAppManagedComponentsQuery,
+    CodeLocationAppManagedComponentsQueryVariables
+  >(CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY, {
     variables: {locationName},
     skip: isEditMode || !isActive,
   });
 
   const existingIds = useMemo<Set<string>>(() => {
-    const result = existingComponentsData?.uiComponentsForLocationOrError;
-    if (result?.__typename !== 'UIComponents') {
+    const result = existingComponentsData?.appManagedComponentsForLocationOrError;
+    if (result?.__typename !== 'AppManagedComponents') {
       return new Set();
     }
     return new Set(result.components.map((c) => c.componentId));
