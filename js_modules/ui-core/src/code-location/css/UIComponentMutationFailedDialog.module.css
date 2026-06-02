@@ -1,0 +1,10 @@
+.errorBlock {
+  background: var(--color-background-light);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding: 8px 12px;
+}
