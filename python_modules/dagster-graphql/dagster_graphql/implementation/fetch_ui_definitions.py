@@ -72,6 +72,7 @@ def set_ui_component(
     storage = _require_storage(graphene_info)
     entry = UIComponentEntry(component_type=component_type, attributes=attributes)
     write_ui_component_entry(storage, location_name, component_id, entry)
+    graphene_info.context.reload_code_location(location_name)
     return GrapheneSetUIComponentSuccess(component=_to_graphene_component(component_id, entry))
 
 
@@ -83,4 +84,5 @@ def delete_ui_component(
     assert_permission_for_location(graphene_info, Permissions.EDIT_UI_DEFINITIONS, location_name)
     storage = _require_storage(graphene_info)
     delete_ui_component_entry(storage, location_name, component_id)
+    graphene_info.context.reload_code_location(location_name)
     return GrapheneDeleteUIComponentSuccess(locationName=location_name, componentId=component_id)
