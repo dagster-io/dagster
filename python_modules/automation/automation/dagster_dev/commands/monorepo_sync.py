@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
@@ -417,6 +418,112 @@ def _amend_head(dest_repo: Path, extra_files: list[str]) -> None:
     git(["commit", "--amend", "--no-edit"], cwd=dest_repo)
 
 
+def _fix_commits_in_range(
+    *,
+    source_repo: Path,
+    dest_repo: Path,
+    start_commit: str,
+    config: SyncConfig,
+) -> int:
+    """Fix correctness mismatches from start_commit to HEAD in dest_repo.
+
+    For each synced commit in the range, identifies files present in the dest but
+    not in the source and amends the commit to remove them. When the range spans
+    multiple commits, subsequent commits are rebased on top of each amendment.
+
+    Returns the number of commits that were amended.
+    """
+    start_commit = git(["rev-parse", start_commit], cwd=dest_repo).strip()
+    head = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+
+    # Collect all commits from start_commit to HEAD (inclusive), oldest first
+    if start_commit == head:
+        commits = [start_commit]
+    else:
+        raw = git(["rev-list", "--reverse", f"{start_commit}..HEAD"], cwd=dest_repo).strip()
+        commits = [start_commit] + [h for h in raw.splitlines() if h.strip()]
+
+    # Build synced mapping (dest_hash -> source_hash) before rewriting history
+    synced = extract_label_values(dest_repo, config.synced_label)
+    dest_to_source = {v: k for k, v in synced.items()}
+
+    # Pre-compute which commits need fixing using original hashes
+    commit_fixes: dict[str, list[str]] = {}
+    for c in commits:
+        source_hash = dest_to_source.get(c)
+        if not source_hash:
+            continue
+        extra = _compute_extra_files(
+            source_repo=source_repo,
+            dest_repo=dest_repo,
+            source_hash=source_hash,
+            dest_hash=c,
+            config=config,
+        )
+        if extra:
+            commit_fixes[c] = extra
+
+    if not commit_fixes:
+        click.echo(f"No extra files found in {len(commits)} commit(s). Nothing to fix.")
+        return 0
+
+    click.echo(f"Found {len(commit_fixes)} commit(s) to fix in range of {len(commits)}.")
+
+    if len(commits) == 1:
+        # Single commit at HEAD -- simple amend
+        click.echo(f"\n  {start_commit[:10]}: fixing {len(commit_fixes[start_commit])} file(s)")
+        for f in commit_fixes[start_commit]:
+            click.echo(f"    {f}")
+        _amend_head(dest_repo, commit_fixes[start_commit])
+        new_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+        click.echo(f"    amended: {start_commit[:10]} -> {new_hash[:10]}")
+    else:
+        # Multiple commits -- cherry-pick rebase
+        try:
+            branch = git(["symbolic-ref", "--short", "HEAD"], cwd=dest_repo).strip()
+        except subprocess.CalledProcessError:
+            branch = None
+
+        parent = git(["rev-parse", f"{start_commit}^"], cwd=dest_repo).strip()
+        git(["checkout", "--detach", parent], cwd=dest_repo)
+
+        for orig_hash in commits:
+            git(["cherry-pick", orig_hash], cwd=dest_repo)
+
+            # Recompute extras against the cherry-picked HEAD rather than using
+            # the precomputed table. The precompute was taken against the ORIGINAL
+            # commits in dest_repo, but after amending an earlier commit the
+            # tree state of later cherry-picked commits can shift in ways the
+            # precompute can't anticipate. The precompute above still serves as
+            # an early-exit guard for the "nothing to fix anywhere" case.
+            source_hash = dest_to_source.get(orig_hash)
+            if not source_hash:
+                continue
+            cherry_picked_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+            extra = _compute_extra_files(
+                source_repo=source_repo,
+                dest_repo=dest_repo,
+                source_hash=source_hash,
+                dest_hash=cherry_picked_hash,
+                config=config,
+            )
+            if extra:
+                click.echo(f"\n  {orig_hash[:10]}: fixing {len(extra)} file(s)")
+                for f in extra:
+                    click.echo(f"    {f}")
+                _amend_head(dest_repo, extra)
+                new_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+                click.echo(f"    amended: {orig_hash[:10]} -> {new_hash[:10]}")
+
+        # Update the branch ref to the new tip
+        new_tip = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
+        if branch:
+            git(["branch", "-f", branch, new_tip], cwd=dest_repo)
+            git(["checkout", branch], cwd=dest_repo)
+
+    return len(commit_fixes)
+
+
 @monorepo_sync.command(name="fix-commit")
 @click.option(
     "-s",
@@ -487,94 +594,207 @@ def fix_commit(
         dest_repo = public_repo
         source_repo = internal_repo
 
-    # Resolve to full hash
-    commit_hash = git(["rev-parse", commit_hash], cwd=dest_repo).strip()
-    head = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
-
-    # Collect all commits from commit_hash to HEAD (inclusive), oldest first
-    if commit_hash == head:
-        commits = [commit_hash]
+    fixed = _fix_commits_in_range(
+        source_repo=source_repo,
+        dest_repo=dest_repo,
+        start_commit=commit_hash,
+        config=config,
+    )
+    if fixed:
+        click.echo("\nDone.")
     else:
-        raw = git(["rev-list", "--reverse", f"{commit_hash}..HEAD"], cwd=dest_repo).strip()
-        commits = [commit_hash] + [h for h in raw.splitlines() if h.strip()]
+        click.echo("Nothing to fix.")
 
-    # Build synced mapping (dest_hash -> source_hash) before rewriting history
-    synced = extract_label_values(dest_repo, config.synced_label)
-    dest_to_source = {v: k for k, v in synced.items()}
 
-    # Pre-compute which commits need fixing using original hashes
-    commit_fixes: dict[str, list[str]] = {}
-    for c in commits:
-        source_hash = dest_to_source.get(c)
-        if not source_hash:
-            continue
-        extra = _compute_extra_files(
+# ########################
+# ##### RUN COMMAND
+# ########################
+
+
+def _adapt_copybara_config(config_path: Path, url_map: dict[str, str]) -> str:
+    """Read a copy.bara.sky config and substitute URLs."""
+    content = config_path.read_text()
+    for old_url, new_url in url_map.items():
+        if old_url not in content:
+            raise click.ClickException(
+                f"Expected URL {old_url!r} not found in {config_path}. "
+                f"The copybara config may have changed."
+            )
+        content = content.replace(old_url, new_url)
+    return content
+
+
+@monorepo_sync.command(name="run")
+@click.option(
+    "-s",
+    "--sync",
+    "sync_name",
+    type=click.Choice(SYNC_NAMES, case_sensitive=False),
+    required=True,
+    help="Which sync pair to run.",
+)
+@click.option(
+    "--copybara-config",
+    "copybara_config_path",
+    type=click.Path(exists=True),
+    default="copy.bara.sky",
+    help="Path to the copy.bara.sky file.",
+)
+@click.option(
+    "--dest-repo-url",
+    default=None,
+    help="Override the destination repo URL (default: from SyncConfig).",
+)
+@click.option(
+    "--git-committer-email",
+    default="devtools@dagsterlabs.com",
+    help="Committer email for copybara.",
+)
+@click.option(
+    "--git-committer-name",
+    default="Dagster Devtools",
+    help="Committer name for copybara.",
+)
+@click.option(
+    "--last-rev",
+    default=None,
+    help="Passthrough: copybara --last-rev.",
+)
+@click.option(
+    "--iterative-limit-changes",
+    default=None,
+    type=int,
+    help="Passthrough: copybara --iterative-limit-changes.",
+)
+def run_sync(
+    sync_name: str,
+    copybara_config_path: str,
+    dest_repo_url: str | None,
+    git_committer_email: str,
+    git_committer_name: str,
+    last_rev: str | None,
+    iterative_limit_changes: int | None,
+):
+    """Run a copybara sync with automatic fix-commit for correctness mismatches.
+
+    Clones the destination repo locally, runs copybara against the local clone,
+    inspects new commits for extra files, amends any mismatched commits, and
+    pushes the result to the remote destination.
+
+    Examples:
+        dagster-dev monorepo-sync run -s dagster-outbound
+
+        dagster-dev monorepo-sync run -s dagster-inbound --last-rev abc123 --iterative-limit-changes 1
+    """
+    config = get_sync_config(sync_name)
+    effective_dest_url = dest_repo_url or config.dest_repo_url
+
+    if not effective_dest_url or not config.copybara_workflow:
+        raise click.ClickException(
+            f"Sync config {sync_name!r} is missing copybara_workflow or dest_repo_url."
+        )
+
+    source_repo = Path.cwd()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dest_clone = Path(tmpdir) / "dest"
+
+        # Clone the destination repo (treeless for speed -- blobs fetched on demand)
+        click.echo(f"Cloning {effective_dest_url} ...")
+        git(
+            [
+                "clone",
+                "--filter=tree:0",
+                "--single-branch",
+                "--branch",
+                "master",
+                effective_dest_url,
+                str(dest_clone),
+            ]
+        )
+
+        # Allow copybara to push to the checked-out branch
+        git(["config", "receive.denyCurrentBranch", "updateInstead"], cwd=dest_clone)
+
+        pre_head = git(["rev-parse", "HEAD"], cwd=dest_clone).strip()
+
+        # Rewrite the copybara config to push to the local clone
+        adapted = _adapt_copybara_config(
+            Path(copybara_config_path),
+            {effective_dest_url: f"file://{dest_clone}"},
+        )
+        adapted_config = Path(tmpdir) / "copy.bara.sky"
+        adapted_config.write_text(adapted)
+
+        # Build copybara command
+        cmd = [
+            "copybara",
+            str(adapted_config),
+            config.copybara_workflow,
+            f"--git-committer-email={git_committer_email}",
+            f"--git-committer-name={git_committer_name}",
+        ]
+        if last_rev:
+            cmd.append(f"--last-rev={last_rev}")
+        if iterative_limit_changes is not None:
+            cmd.append(f"--iterative-limit-changes={iterative_limit_changes}")
+
+        click.echo(f"Running copybara {config.copybara_workflow} ...")
+        result = subprocess.run(cmd, check=False)
+
+        if result.returncode == 4:
+            click.echo("No changes to sync (copybara exit 4).")
+            return
+        if result.returncode != 0:
+            raise click.ClickException(f"Copybara failed with exit code {result.returncode}.")
+
+        post_head = git(["rev-parse", "HEAD"], cwd=dest_clone).strip()
+
+        if pre_head == post_head:
+            click.echo("No new commits after copybara.")
+            return
+
+        # Identify the first new commit (child of pre_head)
+        first_new = (
+            git(
+                ["rev-list", "--reverse", "--ancestry-path", f"{pre_head}..{post_head}"],
+                cwd=dest_clone,
+            )
+            .strip()
+            .splitlines()[0]
+        )
+
+        new_count = int(
+            git(["rev-list", "--count", f"{pre_head}..{post_head}"], cwd=dest_clone).strip()
+        )
+        click.echo(f"Copybara synced {new_count} commit(s). Checking for correctness ...")
+
+        # Determine source/dest for fix-commit
+        # For outbound: source=internal (cwd), dest=public (clone)
+        # For inbound: source=public (cwd), dest=internal (clone)
+        fixed = _fix_commits_in_range(
             source_repo=source_repo,
-            dest_repo=dest_repo,
-            source_hash=source_hash,
-            dest_hash=c,
+            dest_repo=dest_clone,
+            start_commit=first_new,
             config=config,
         )
-        if extra:
-            commit_fixes[c] = extra
 
-    if not commit_fixes:
-        click.echo(f"No extra files found in {len(commits)} commit(s). Nothing to fix.")
-        return
+        if fixed:
+            click.echo(f"Fixed {fixed} commit(s).")
 
-    click.echo(f"Found {len(commit_fixes)} commit(s) to fix in range of {len(commits)}.")
-
-    if len(commits) == 1:
-        # Single commit at HEAD -- simple amend
-        click.echo(f"\n  {commit_hash[:10]}: fixing {len(commit_fixes[commit_hash])} file(s)")
-        for f in commit_fixes[commit_hash]:
-            click.echo(f"    {f}")
-        _amend_head(dest_repo, commit_fixes[commit_hash])
-        new_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
-        click.echo(f"    amended: {commit_hash[:10]} -> {new_hash[:10]}")
-    else:
-        # Multiple commits -- cherry-pick rebase
-        # Save current branch name (if on a branch) so we can update it at the end
+        # Push to the real remote. A non-fast-forward error here means the
+        # destination's master advanced between our initial clone and now —
+        # rerunning the sync against fresh state should resolve it, since
+        # copybara is incremental.
+        click.echo(f"Pushing to {effective_dest_url} ...")
         try:
-            branch = git(["symbolic-ref", "--short", "HEAD"], cwd=dest_repo).strip()
-        except subprocess.CalledProcessError:
-            branch = None
-
-        parent = git(["rev-parse", f"{commit_hash}^"], cwd=dest_repo).strip()
-        git(["checkout", "--detach", parent], cwd=dest_repo)
-
-        for orig_hash in commits:
-            git(["cherry-pick", orig_hash], cwd=dest_repo)
-
-            # Recompute extras against the cherry-picked HEAD rather than using
-            # the precomputed table. The precompute was taken against the ORIGINAL
-            # commits in dest_repo, but after amending an earlier commit the
-            # tree state of later cherry-picked commits can shift in ways the
-            # precompute can't anticipate. The precompute above still serves as
-            # an early-exit guard for the "nothing to fix anywhere" case.
-            source_hash = dest_to_source.get(orig_hash)
-            if not source_hash:
-                continue
-            cherry_picked_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
-            extra = _compute_extra_files(
-                source_repo=source_repo,
-                dest_repo=dest_repo,
-                source_hash=source_hash,
-                dest_hash=cherry_picked_hash,
-                config=config,
-            )
-            if extra:
-                click.echo(f"\n  {orig_hash[:10]}: fixing {len(extra)} file(s)")
-                for f in extra:
-                    click.echo(f"    {f}")
-                _amend_head(dest_repo, extra)
-                new_hash = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
-                click.echo(f"    amended: {orig_hash[:10]} -> {new_hash[:10]}")
-
-        # Update the branch ref to the new tip
-        new_tip = git(["rev-parse", "HEAD"], cwd=dest_repo).strip()
-        if branch:
-            git(["branch", "-f", branch, new_tip], cwd=dest_repo)
-            git(["checkout", branch], cwd=dest_repo)
-
-    click.echo("\nDone.")
+            git(["push", "origin", "master"], cwd=dest_clone)
+        except subprocess.CalledProcessError as e:
+            raise click.ClickException(
+                f"Push to {effective_dest_url} failed (exit {e.returncode}). "
+                f"The destination's master likely advanced during sync "
+                f"(concurrent commits from another pipeline run, or a direct push). "
+                f"Rerun this command; copybara will pick up any new commits from "
+                f"both sides and the next push should succeed against fresh state."
+            ) from e
+        click.echo("Done.")
