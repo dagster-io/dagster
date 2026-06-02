@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
   CursorHistoryControls,
   FontFamily,
   Heading,
@@ -16,6 +15,7 @@ import {
   Select,
   Spinner,
   Table,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
@@ -531,7 +531,7 @@ function TickRow({
             </Box>
           )}
           {addedPartitions || deletedPartitions ? (
-            <Caption>
+            <Text size={12}>
               (
               {addedPartitions ? (
                 <span>
@@ -545,7 +545,7 @@ function TickRow({
                 </span>
               ) : null}
               )
-            </Caption>
+            </Text>
           ) : null}
         </Box>
       </td>

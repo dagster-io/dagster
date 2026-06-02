@@ -1,12 +1,11 @@
 import {
   Body2,
   Box,
-  Caption,
-  Colors,
   Heading,
   Icon,
   MiddleTruncate,
   NonIdealState,
+  Text,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -240,12 +239,13 @@ export const AssetChecks = ({
                             </Box>
                             <Body2 style={{overflow: 'hidden'}}>
                               <MiddleTruncate text={check.name} />
-                              <Caption
-                                color={Colors.textLight()}
+                              <Text
+                                size={12}
+                                color="textLight"
                                 style={{textTransform: 'capitalize'}}
                               >
                                 {assetCheckStatusDescription(check)}
-                              </Caption>
+                              </Text>
                             </Body2>
                           </Box>
                         </Box>

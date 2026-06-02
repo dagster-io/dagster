@@ -1,12 +1,4 @@
-import {
-  Box,
-  Caption,
-  Colors,
-  Heading,
-  NonIdealState,
-  Skeleton,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Heading, NonIdealState, Skeleton, Tag, Text} from '@dagster-io/ui-components';
 import {AssetAlertsSection} from '@shared/assets/AssetAlertsSection';
 import {AssetEventMetadataEntriesTable} from '@shared/assets/AssetEventMetadataEntriesTable';
 import React, {useMemo} from 'react';
@@ -376,7 +368,9 @@ export const AssetNodeOverviewNonSDA = ({
                   stepKey={null}
                 />
               ) : (
-                <Caption color={Colors.textLighter()}>Never materialized</Caption>
+                <Text size={12} color="textLighter">
+                  Never materialized
+                </Text>
               )}
             </div>
             <RecentUpdatesTimelineForAssetKey assetKey={assetKey} />

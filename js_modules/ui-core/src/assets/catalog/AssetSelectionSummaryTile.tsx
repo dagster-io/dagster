@@ -1,4 +1,4 @@
-import {BodySmall, Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Text} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -168,12 +168,14 @@ export const JobTile = ({name, repoAddress}: {name: string; repoAddress: RepoAdd
         {latestRun?.startTime ? (
           <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
             <RunStatusIndicator status={latestRun.runStatus} />
-            <BodySmall color={Colors.textLight()}>
+            <Text size={12} color="textLight">
               launched <TimeFromNow unixTimestamp={latestRun.startTime} />
-            </BodySmall>
+            </Text>
           </Box>
         ) : (
-          <BodySmall color={Colors.textLight()}>Never launched</BodySmall>
+          <Text size={12} color="textLight">
+            Never launched
+          </Text>
         )}
       </Box>
     </Link>

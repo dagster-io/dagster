@@ -1,5 +1,4 @@
 import {
-  BodySmall,
   Box,
   Checkbox,
   Colors,
@@ -182,7 +181,7 @@ export const ObserveAutomationScheduleRow = forwardRef(
                 ) : null}
               </Box>
               {withHumanTimezone ? (
-                <BodySmall>
+                <Text size={12}>
                   Scheduled{' '}
                   <Tooltip
                     placement="top"
@@ -204,7 +203,7 @@ export const ObserveAutomationScheduleRow = forwardRef(
                   >
                     <span>{withExecutionTimezone}</span>
                   </Tooltip>
-                </BodySmall>
+                </Text>
               ) : (
                 <Skeleton $width={80} $height={16} />
               )}

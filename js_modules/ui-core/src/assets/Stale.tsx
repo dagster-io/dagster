@@ -3,13 +3,12 @@ import {
   Body,
   Box,
   ButtonLink,
-  Caption,
-  CaptionSubtitle,
   Colors,
   Heading,
   Icon,
   Popover,
   Tag,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
@@ -129,7 +128,7 @@ export const StaleReasonsTag = ({
   if (!totalCauses) {
     return null;
   }
-  const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
+  const label = <Text size={12}>Unsynced ({numberFormatter.format(totalCauses)})</Text>;
   return (
     <Box
       flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
@@ -217,10 +216,10 @@ const StaleCausesPopoverSummary = ({
               padding={{horizontal: 12, vertical: 8}}
               border={idx === 0 ? 'bottom' : 'top-and-bottom'}
             >
-              <CaptionSubtitle>
+              <Text size={12} weight={600}>
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {getCollapsedHeaderLabel(isSelf, causes[0]!.category, causes.length)}
-              </CaptionSubtitle>
+              </Text>
             </Box>
             {causes.map((cause, idx) => (
               <Box
@@ -246,7 +245,7 @@ const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses'
         <Link to={assetDetailsPathForKey(key)}>
           <Tag icon="asset">{displayNameForAssetKey(key)}</Tag>
         </Link>
-        <Caption>{` ${reason}`}</Caption>
+        <Text size={12}>{` ${reason}`}</Text>
       </>
     );
   }
@@ -257,7 +256,7 @@ const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses'
     const reasonUpToDep = reason.slice(0, -dependencyPythonName.length);
     return (
       <>
-        <Caption>{reasonUpToDep}</Caption>
+        <Text size={12}>{reasonUpToDep}</Text>
         <Link to={assetDetailsPathForKey(dependency)}>
           <Tag icon="asset">{dependencyName}</Tag>
         </Link>
@@ -270,7 +269,7 @@ const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses'
       <Link to={assetDetailsPathForKey(dependency)}>
         <Tag icon="asset">{dependencyName}</Tag>
       </Link>
-      <Caption>{` ${reason} `}</Caption>
+      <Text size={12}>{` ${reason} `}</Text>
     </>
   );
 };

@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Button,
-  Caption,
   Colors,
   Dialog,
   DialogBody,
@@ -195,7 +194,9 @@ export const InstanceConcurrencyKeyInfo = ({
                             )}
                           </div>
                           {concurrencyLimit.usingDefaultLimit ? (
-                            <Caption color={Colors.textLighter()}>(default)</Caption>
+                            <Text size={12} color="textLighter">
+                              (default)
+                            </Text>
                           ) : null}
                         </Box>
                         {!readOnly && (

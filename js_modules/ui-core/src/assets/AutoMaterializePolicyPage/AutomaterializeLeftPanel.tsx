@@ -1,12 +1,12 @@
 import {
   Body2,
   Box,
-  Caption,
   Colors,
   CursorPaginationControls,
   Heading,
   Icon,
   MiddleTruncate,
+  Text,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import React from 'react';
@@ -108,7 +108,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         <Box flex={{direction: 'column', gap: 8}}>
           {evaluations.length === 0 ? (
             <Box padding={{left: 12, top: 12, right: 8}}>
-              <Caption color={Colors.textLight()}>No evaluations</Caption>
+              <Text size={12} color="textLight">
+                No evaluations
+              </Text>
             </Box>
           ) : null}
           {evaluations.map((evaluation) => {
@@ -120,14 +122,14 @@ export const AutomaterializeLeftList = (props: ListProps) => {
               if (hasRequested) {
                 if (definition?.partitionDefinition) {
                   return (
-                    <Caption>
+                    <Text size={12}>
                       {numberFormatter.format(evaluation.numRequested ?? 0)} Requested
-                    </Caption>
+                    </Text>
                   );
                 }
-                return <Caption>requested</Caption>;
+                return <Text size={12}>requested</Text>;
               }
-              return <Caption>not requested</Caption>;
+              return <Text size={12}>not requested</Text>;
             }
 
             return (
@@ -159,7 +161,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
           })}
         </Box>
         <Box border="top" padding={{vertical: 20, horizontal: 12}} margin={{top: 12}}>
-          <Caption>Evaluations are retained for 30 days</Caption>
+          <Text size={12}>Evaluations are retained for 30 days</Text>
         </Box>
       </Box>
     </Box>

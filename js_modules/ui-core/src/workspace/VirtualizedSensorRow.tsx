@@ -1,11 +1,11 @@
 import {
   Box,
-  Caption,
   Checkbox,
   Colors,
   IconName,
   MiddleTruncate,
   Tag,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
@@ -170,16 +170,12 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
                 maxWidth: '100%',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Caption
-                style={{
-                  color: Colors.textLight(),
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <Text size={12} color="textLight">
                 {sensorData?.description}
-              </Caption>
+              </Text>
             </div>
           </Box>
         </RowCell>

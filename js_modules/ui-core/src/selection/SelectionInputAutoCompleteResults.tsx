@@ -1,5 +1,4 @@
 import {
-  BodySmall,
   Box,
   Colors,
   Container,
@@ -8,6 +7,7 @@ import {
   Menu,
   MenuItem,
   Row,
+  Text,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect} from 'react';
@@ -108,19 +108,19 @@ export const SelectionInputAutoCompleteResults = React.memo(
                 <div className={styles.keyHintWrapper}>
                   <Icon name="arrow_downward" size={12} style={{margin: 0}} />
                 </div>
-                <BodySmall>to navigate</BodySmall>
+                <Text size={12}>to navigate</Text>
               </Box>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                 <div className={styles.keyHintWrapper}>
-                  <BodySmall>Tab</BodySmall>
+                  <Text size={12}>Tab</Text>
                 </div>
-                <BodySmall>to select</BodySmall>
+                <Text size={12}>to select</Text>
               </Box>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                 <div className={styles.keyHintWrapper}>
-                  <BodySmall>Enter</BodySmall>
+                  <Text size={12}>Enter</Text>
                 </div>
-                <BodySmall>to search</BodySmall>
+                <Text size={12}>to search</Text>
               </Box>
             </Box>
             <a
@@ -129,7 +129,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
               rel="noopener noreferrer"
             >
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <BodySmall>View documentation</BodySmall>
+                <Text size={12}>View documentation</Text>
                 <Icon name="open_in_new" color={Colors.linkDefault()} />
               </Box>
             </a>

@@ -1,13 +1,13 @@
 import {
   Alert,
   Box,
-  Caption,
   Colors,
   Icon,
   MenuItem,
   Select,
   Spinner,
   Tag,
+  Text,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -446,9 +446,9 @@ function SelectOnHover({
                       {displayNameForAssetKey(item.asset.key)}
                     </div>
                     {count && count > 0 ? (
-                      <Caption style={{color: Colors.textLight()}}>
+                      <Text size={12} color="textLight">
                         {partitionCountString(count)} {adjective}
-                      </Caption>
+                      </Text>
                     ) : null}
                   </Box>
                 }

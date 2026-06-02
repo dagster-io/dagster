@@ -1,10 +1,10 @@
 import {
   Box,
-  Caption,
   Checkbox,
   Colors,
   FontFamily,
   Heading,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import type {
@@ -210,10 +210,14 @@ export function FieldTemplate(props: FieldTemplateProps) {
       </Heading>
       {children}
       {schema.description ? (
-        <Caption color={Colors.textLighter()}>{schema.description}</Caption>
+        <Text size={12} color="textLighter">
+          {schema.description}
+        </Text>
       ) : null}
       {hasError && rawErrors ? (
-        <Caption color={Colors.accentRed()}>{rawErrors.join(', ')}</Caption>
+        <Text size={12} color="accentRed">
+          {rawErrors.join(', ')}
+        </Text>
       ) : null}
     </Box>
   );

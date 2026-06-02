@@ -1,4 +1,4 @@
-import {Caption, Colors} from '@dagster-io/ui-components';
+import {Colors, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {forwardRef} from 'react';
 
@@ -90,7 +90,9 @@ export const LoadingOrNone = ({
 export const CaptionText = ({children}: {children: React.ReactNode}) => {
   return (
     <div className={styles.captionTextContainer}>
-      <Caption>{children}</Caption>
+      <Text size={12} color="textLight">
+        {children}
+      </Text>
     </div>
   );
 };

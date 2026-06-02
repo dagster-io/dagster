@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Caption, Icon, Text} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Icon, Text} from '@dagster-io/ui-components';
 
 import {AssetEventGroup} from './groupByPartition';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -26,14 +26,14 @@ export const AssetEventSystemTags = ({
 
   if (collapsible && !shown) {
     return (
-      <Caption>
+      <Text size={12}>
         <ButtonLink onClick={() => setShown(true)}>
           <Box flex={{alignItems: 'center'}}>
             <span>Show tags ({event?.tags.length || 0})</span>
             <Icon name="arrow_drop_down" style={{transform: 'rotate(0deg)'}} />
           </Box>
         </ButtonLink>
-      </Caption>
+      </Text>
     );
   }
 
@@ -62,14 +62,14 @@ export const AssetEventSystemTags = ({
         </tbody>
       </table>
       {collapsible && (
-        <Caption>
+        <Text size={12}>
           <ButtonLink onClick={() => setShown(false)}>
             <Box flex={{alignItems: 'center'}}>
               <span>Hide tags</span>
               <Icon name="arrow_drop_down" style={{transform: 'rotate(180deg)'}} />
             </Box>
           </ButtonLink>
-        </Caption>
+        </Text>
       )}
     </>
   );

@@ -1,13 +1,13 @@
 import {
   Box,
   Button,
-  Caption,
   Checkbox,
   Colors,
   Icon,
   Menu,
   MiddleTruncate,
   Popover,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
@@ -185,7 +185,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               />
               {scheduleData.scheduleState.nextTick &&
               scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
-                <Caption>
+                <Text size={12}>
                   <div
                     style={{
                       overflow: 'hidden',
@@ -202,7 +202,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                       timeFormat={{showSeconds: false, showTimezone: true}}
                     />
                   </div>
-                </Caption>
+                </Text>
               ) : null}
             </Box>
           ) : (

@@ -1,13 +1,13 @@
 import {
   Body2,
   Box,
-  Caption,
   Colors,
   Heading,
   Icon,
   NonIdealState,
   PageHeader,
   SpinnerWithText,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -203,7 +203,7 @@ export const MergedAutomationRoot = () => {
               size="small"
               label={
                 <Box margin={{left: 4}} style={{marginTop: '-1px'}}>
-                  <Caption>Select all</Caption>
+                  <Text size={12}>Select all</Text>
                 </Box>
               }
             />

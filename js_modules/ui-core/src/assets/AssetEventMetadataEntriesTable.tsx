@@ -2,8 +2,6 @@ import {
   Box,
   Button,
   ButtonGroup,
-  Caption,
-  Colors,
   Icon,
   Tag,
   Text,
@@ -218,7 +216,9 @@ export const AssetEventMetadataEntriesTable = ({
               {filteredRows.length === 0 && (
                 <tr>
                   <td colSpan={4}>
-                    <Caption color={Colors.textLight()}>No metadata entries</Caption>
+                    <Text size={12} color="textLight">
+                      No metadata entries
+                    </Text>
                   </td>
                 </tr>
               )}
@@ -319,9 +319,9 @@ const ObservedInRun = ({
         </Text>
       </Link>
     </Box>
-    <Caption>
+    <Text size={12}>
       {`(${dayjs(Number(timestamp)).from(Number(relativeTo), true /* withoutSuffix */)} later)`}
-    </Caption>
+    </Text>
   </>
 );
 

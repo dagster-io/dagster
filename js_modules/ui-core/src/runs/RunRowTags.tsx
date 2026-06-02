@@ -1,11 +1,11 @@
 import {
   Button,
   ButtonLink,
-  Caption,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Text,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -79,7 +79,7 @@ export const RunRowTags = ({
         ) : null}
       </div>
       {allTagsWithPinned.length > tagsToShow.length ? (
-        <Caption>
+        <Text size={12}>
           <ButtonLink
             onClick={() => {
               setShowRunTags(true);
@@ -89,7 +89,7 @@ export const RunRowTags = ({
           >
             View all tags ({allTagsWithPinned.length})
           </ButtonLink>
-        </Caption>
+        </Text>
       ) : null}
 
       {isHovered && allTagsWithPinned.length ? (

@@ -1,13 +1,4 @@
-import {
-  Body,
-  BodySmall,
-  Box,
-  Colors,
-  Icon,
-  IconName,
-  MiddleTruncate,
-  Text,
-} from '@dagster-io/ui-components';
+import {Body, Box, Icon, IconName, MiddleTruncate, Text} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './SelectionAutoComplete.module.css';
@@ -433,12 +424,12 @@ export const createProvider = <
           {
             text: '',
             jsx: (
-              <BodySmall color={Colors.textLight()}>
+              <Text size={12} color="textLight">
                 No match found for{' '}
                 <Text size={12} family="mono" color="textDefault">
                   {attribute}:&quot;{query}&quot;
                 </Text>
-              </BodySmall>
+              </Text>
             ),
             type: 'no-match',
           },

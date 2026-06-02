@@ -2,11 +2,11 @@ import {
   Body2,
   Box,
   Button,
-  Caption,
   Dialog,
   DialogFooter,
   DialogHeader,
   Icon,
+  Text,
   TextInput,
   Tooltip,
   showToast,
@@ -247,7 +247,7 @@ const ReportEventDialogBody = ({
         flex={{direction: 'column', gap: 12}}
       >
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Description</Caption>
+          <Text size={12}>Description</Text>
           <TextInput
             value={description}
             onChange={(e) => setDescription(e.target.value)}

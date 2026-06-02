@@ -1,4 +1,4 @@
-import {Caption, Colors} from '@dagster-io/ui-components';
+import {Text} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -59,15 +59,15 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <Caption color={Colors.textLight()}>
+        <Text size={12} color="textLight">
           Failed at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
-        </Caption>
+        </Text>
       );
     }
     return (
-      <Caption color={Colors.textLight()}>
+      <Text size={12} color="textLight">
         Failed at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
-      </Caption>
+      </Text>
     );
   }
 
@@ -79,15 +79,15 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <Caption color={Colors.textLight()}>
+        <Text size={12} color="textLight">
           In progress at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
-        </Caption>
+        </Text>
       );
     }
     return (
-      <Caption color={Colors.textLight()}>
+      <Text size={12} color="textLight">
         In progress at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
-      </Caption>
+      </Text>
     );
   }
 
