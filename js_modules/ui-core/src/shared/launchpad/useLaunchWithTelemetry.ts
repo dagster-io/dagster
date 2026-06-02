@@ -3,6 +3,7 @@ import {useHistory} from 'react-router-dom';
 
 import {useMutation} from '../../apollo-client';
 import {TelemetryAction, useTelemetryAction} from '../../app/Telemetry';
+import {useOpenInNewTab} from '../../hooks/useOpenInNewTab';
 import {showLaunchError} from '../../launchpad/showLaunchError';
 import {paramsWithUIExecutionTags} from '../../launchpad/uiExecutionTags';
 import {
@@ -15,6 +16,11 @@ import {
   LaunchPipelineExecutionMutationVariables,
 } from '../../runs/types/RunUtils.types';
 
+interface LaunchWithTelemetryConfig {
+  behavior: LaunchBehavior;
+  openInNewTab?: boolean;
+}
+
 export function useLaunchWithTelemetry() {
   const [launchPipelineExecution] = useMutation<
     LaunchPipelineExecutionMutation,
@@ -24,11 +30,12 @@ export function useLaunchWithTelemetry() {
   });
   const logTelemetry = useTelemetryAction();
   const history = useHistory();
+  const openInNewTab = useOpenInNewTab();
 
   return useCallback(
     async (
       {executionParams, ...rest}: LaunchPipelineExecutionMutationVariables,
-      behavior: LaunchBehavior,
+      config: LaunchWithTelemetryConfig,
     ) => {
       const jobName = executionParams.selector.jobName || executionParams.selector.pipelineName;
 
@@ -45,13 +52,16 @@ export function useLaunchWithTelemetry() {
       const result = await launchPipelineExecution({variables: finalized});
       logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
       try {
-        handleLaunchResult(jobName, result.data?.launchPipelineExecution, history, {behavior});
+        handleLaunchResult(jobName, result.data?.launchPipelineExecution, history, {
+          behavior: config.behavior,
+          openInNewTab: config.openInNewTab ? openInNewTab : undefined,
+        });
       } catch (error) {
         showLaunchError(error as Error);
       }
 
       return result.data?.launchPipelineExecution;
     },
-    [history, launchPipelineExecution, logTelemetry],
+    [history, launchPipelineExecution, logTelemetry, openInNewTab],
   );
 }

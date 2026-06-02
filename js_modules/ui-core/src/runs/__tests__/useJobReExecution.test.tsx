@@ -23,8 +23,14 @@ const Wrapper = (props: {
   );
 };
 
+const windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
 describe('useJobReexecution', () => {
   const PARENT_RUN = {id: '1', pipelineName: 'abc', tags: []};
+
+  afterEach(() => {
+    windowOpenSpy.mockClear();
+  });
 
   it('creates the correct mutation for FROM_FAILURE', async () => {
     const user = userEvent.setup();
@@ -82,5 +88,73 @@ describe('useJobReexecution', () => {
     await waitFor(() => {
       expect(screen.getByText(/Successfully requested re-execution for 1 run./i)).toBeVisible();
     });
+  });
+
+  it('opens in a new tab when openInNewTab option is provided', async () => {
+    const user = userEvent.setup();
+    const {findByText, findByTestId} = render(
+      <MockedProvider
+        addTypename={false}
+        mocks={[
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId: '1',
+            strategy: ReexecutionStrategy.FROM_FAILURE,
+            extraTags: UI_EXECUTION_TAGS,
+          }),
+        ]}
+      >
+        <MemoryRouter>
+          <Wrapper
+            reexecuteParams={[
+              PARENT_RUN,
+              ReexecutionStrategy.FROM_FAILURE,
+              false,
+              {openInNewTab: true},
+            ]}
+          />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+
+    await user.click(await findByText('Re-execute'));
+
+    await waitFor(() => {
+      expect(windowOpenSpy).toHaveBeenCalledWith('/runs/1234', '_blank');
+    });
+
+    // Should NOT navigate in the same tab
+    expect((await findByTestId('location')).textContent).toEqual('/');
+  });
+
+  it('does not open in a new tab when openInNewTab is false', async () => {
+    const user = userEvent.setup();
+    const {findByText, findByTestId} = render(
+      <MockedProvider
+        addTypename={false}
+        mocks={[
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId: '1',
+            strategy: ReexecutionStrategy.FROM_FAILURE,
+            extraTags: UI_EXECUTION_TAGS,
+          }),
+        ]}
+      >
+        <MemoryRouter>
+          <Wrapper
+            reexecuteParams={[
+              PARENT_RUN,
+              ReexecutionStrategy.FROM_FAILURE,
+              false,
+              {openInNewTab: false},
+            ]}
+          />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+
+    await user.click(await findByText('Re-execute'));
+
+    expect((await findByTestId('location')).textContent).toEqual('/runs/1234');
+    expect(windowOpenSpy).not.toHaveBeenCalled();
   });
 });

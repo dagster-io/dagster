@@ -25,22 +25,22 @@ You don't need to migrate everything at once. A common approach:
 
 ## Concept mapping reference
 
-| Dagster                                                                         | Airflow                                    | Prefect                        |
-| ------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
-| Asset graph                                                                     | DAG                                        | Flow                           |
-| [`@asset`](/guides/build/assets/)                                               | `@task`                                    | `@task`                        |
-| [`@schedule`](/guides/automate/schedules/) with `define_asset_job`              | `schedule` on `@dag`                       | Deployment schedule on `@flow` |
-| `deps` for ordering; [I/O manager](/guides/build/io-managers/) for data handoff | XCom                                       | Task return values             |
-| [`retry_policy`](/api/dagster/ops#dagster.RetryPolicy) on asset                 | `retries`, `retry_delay` in `default_args` | `retries` on `@task`           |
-| `group_name`, `tags` on asset                                                   | DAG tags                                   | Flow tags                      |
-| [Resources](/guides/build/external-resources/)                                  | Airflow Variables / Connections            | Prefect Blocks                 |
-| [`@sensor`](/guides/automate/sensors)                                           | `ExternalTaskSensor`, `FileSensor`         | Prefect automations            |
+| Dagster                                                                        | Airflow                                    | Prefect                        |
+| ------------------------------------------------------------------------------ | ------------------------------------------ | ------------------------------ |
+| Asset graph                                                                    | DAG                                        | Flow                           |
+| [`@asset`](/guides/build/assets)                                               | `@task`                                    | `@task`                        |
+| [`@schedule`](/guides/automate/schedules) with `define_asset_job`              | `schedule` on `@dag`                       | Deployment schedule on `@flow` |
+| `deps` for ordering; [I/O manager](/guides/build/io-managers) for data handoff | XCom                                       | Task return values             |
+| [`retry_policy`](/api/dagster/ops#dagster.RetryPolicy) on asset                | `retries`, `retry_delay` in `default_args` | `retries` on `@task`           |
+| `group_name`, `tags` on asset                                                  | DAG tags                                   | Flow tags                      |
+| [Resources](/guides/build/external-resources)                                  | Airflow Variables / Connections            | Prefect Blocks                 |
+| [`@sensor`](/guides/automate/sensors)                                          | `ExternalTaskSensor`, `FileSensor`         | Prefect automations            |
 
 ## Common pitfalls
 
-**`deps` is ordering, not data passing.** The most common mistake when migrating from Airflow or Prefect: expecting downstream assets to receive the upstream return value automatically. They don't. Either read inputs from your storage layer inside each asset, or use an [I/O manager](/guides/build/io-managers/) to handle the handoff.
+**`deps` is ordering, not data passing.** The most common mistake when migrating from Airflow or Prefect: expecting downstream assets to receive the upstream return value automatically. They don't. Either read inputs from your storage layer inside each asset, or use an [I/O manager](/guides/build/io-managers) to handle the handoff.
 
-**Connections and secrets need to become resources.** Airflow Connections and Prefect Blocks store credentials in their respective metadata backends. In Dagster, move these to [Resources](/guides/build/external-resources/). Resources are injected at runtime via function parameters and can be configured per-environment.
+**Connections and secrets need to become resources.** Airflow Connections and Prefect Blocks store credentials in their respective metadata backends. In Dagster, move these to [Resources](/guides/build/external-resources). Resources are injected at runtime via function parameters and can be configured per-environment.
 
 **Sensors replace polling operators.** `ExternalTaskSensor`, `FileSensor`, `HttpSensor`, and similar Airflow operators don't have direct op-level equivalents. Replace them with a Dagster [`@sensor`](/guides/automate/sensors) that polls for the condition and yields a `RunRequest`.
 

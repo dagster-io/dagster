@@ -131,13 +131,10 @@ const RetrievedSchedulePartitionStatus = ({
   }
 
   const partitions = partitionSet.partitionStatusesOrError.results;
-  const partitionsByType = {};
+  const partitionsByType: Record<string, typeof partitions> = {};
   partitions.forEach((partition) => {
     const displayStatus = calculateDisplayStatus(partition);
-    (partitionsByType as any)[displayStatus] = [
-      ...((partitionsByType as any)[displayStatus] || []),
-      partition,
-    ];
+    partitionsByType[displayStatus] = [...(partitionsByType[displayStatus] || []), partition];
   });
 
   return (
@@ -156,10 +153,10 @@ const RetrievedSchedulePartitionStatus = ({
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
                     style={{color: Colors.textDefault()}}
                   >
-                    {(partitionsByType as any)[status].length}
+                    {partitionsByType[status]?.length}
                   </Link>
                 ) : (
-                  (partitionsByType as any)[status].length
+                  partitionsByType[status]?.length
                 )}
               </td>
             </tr>

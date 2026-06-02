@@ -1,3 +1,4 @@
+import builtins
 import os
 from pathlib import Path
 
@@ -5,36 +6,59 @@ import click
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DG_CLI_MAX_OUTPUT_WIDTH, DgClickGroup
 
-from dagster_dg_cli.cli.api import api_group
-from dagster_dg_cli.cli.check import check_group
-from dagster_dg_cli.cli.dev import dev_command
-from dagster_dg_cli.cli.launch import launch_command
-from dagster_dg_cli.cli.list import list_group
-from dagster_dg_cli.cli.plus import plus_group
-from dagster_dg_cli.cli.scaffold import scaffold_group
-from dagster_dg_cli.cli.utils import utils_group
 from dagster_dg_cli.version import __version__
+
+
+class DgCliGroup(DgClickGroup):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._commands_defined = False
+
+    def get_command(self, ctx: click.Context, cmd_name: str) -> "click.Command | None":
+        if cmd_name not in self.commands:
+            self._define_commands()
+        return super().get_command(ctx, cmd_name)
+
+    def list_commands(self, ctx: click.Context) -> builtins.list[str]:
+        self._define_commands()
+        return super().list_commands(ctx)
+
+    def _define_commands(self) -> None:
+        if self._commands_defined:
+            return
+
+        # Lazy command registration keeps the top-level dg CLI import lightweight.
+        from dagster_dg_cli.cli.api import api_group
+        from dagster_dg_cli.cli.check import check_group
+        from dagster_dg_cli.cli.dev import dev_command
+        from dagster_dg_cli.cli.labs import labs_group
+        from dagster_dg_cli.cli.launch import launch_command
+        from dagster_dg_cli.cli.list import list_group
+        from dagster_dg_cli.cli.plus import plus_group
+        from dagster_dg_cli.cli.scaffold import scaffold_group
+        from dagster_dg_cli.cli.utils import utils_group
+
+        self.add_command(check_group)
+        self.add_command(utils_group)
+        self.add_command(launch_command)
+        self.add_command(list_group)
+        self.add_command(scaffold_group)
+        self.add_command(dev_command)
+        self.add_command(api_group)
+        self.add_command(labs_group)
+        self.add_command(plus_group)
+        self._commands_defined = True
 
 
 def create_dg_cli():
     @click.group(
         name="dg",
-        commands={
-            "api": api_group,
-            "check": check_group,
-            "utils": utils_group,
-            "launch": launch_command,
-            "list": list_group,
-            "scaffold": scaffold_group,
-            "dev": dev_command,
-            "plus": plus_group,
-        },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
             "help_option_names": ["-h", "--help"],
         },
         invoke_without_command=True,
-        cls=DgClickGroup,
+        cls=DgCliGroup,
     )
     @dg_path_options
     @dg_global_options

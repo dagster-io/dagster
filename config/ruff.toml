@@ -26,9 +26,16 @@ target-version = "py310"
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.15.0"
+required-version = "0.15.15"
 
 [lint]
+
+# Enable preview-mode behavior for stable rules (tighter detection, additional autofixes
+# like PERF401's loop→comprehension transform). Required for preview-status rules too,
+# but explicit-preview-rules below prevents prefix selectors (e.g. "PERF") from sweeping
+# unrelated preview rules in — preview rules must be selected by exact code.
+preview = true
+explicit-preview-rules = true
 
 ignore = [
 
@@ -85,9 +92,8 @@ ignore = [
   "D205", # (blank line after summary)
   "D417", # (missing arg in docstring)
 
-  # (assorted perf rules) We have a lot of violations, enable when autofix is available
-  "PERF401", # (manual-list-comprehension)
-  "PERF402", # (manual-list-copy)
+  # (manual-list-copy) No autofix available; enable once violations are fixed by hand.
+  "PERF402",
 
 ]
 
@@ -113,6 +119,11 @@ select = [
   # (pydocstyle) Docstring-related rules. A large subset of these are ignored by the
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
+
+  # (pydoclint) Docstring lint. Preview-status rule; must be listed by exact code under
+  # explicit-preview-rules=true. DOC102 catches `Args:` entries that don't correspond to
+  # an actual function parameter.
+  "DOC102",
 
   # (pycodestyle) pycodestyle rules
   "E",

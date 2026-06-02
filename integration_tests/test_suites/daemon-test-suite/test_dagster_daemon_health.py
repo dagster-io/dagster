@@ -242,14 +242,14 @@ def test_error_daemon(monkeypatch):
                         )[SensorDaemon.daemon_type()]
 
                         # Errors build up until there are > 5, then pull off the last
-                        if status.healthy is False and len(status.last_heartbeat.errors) >= 5:  # pyright: ignore[reportArgumentType,reportOptionalMemberAccess]
-                            first_error_number = _get_error_number(status.last_heartbeat.errors[0])  # pyright: ignore[reportOptionalSubscript,reportOptionalMemberAccess]
+                        if status.healthy is False and len(status.last_heartbeat.errors) >= 5:  # ty: ignore[invalid-argument-type,unresolved-attribute]
+                            first_error_number = _get_error_number(status.last_heartbeat.errors[0])  # ty: ignore[not-subscriptable,unresolved-attribute]
 
                             if first_error_number > 5:
                                 # Verify error numbers decrease consecutively
                                 assert [
                                     _get_error_number(error)
-                                    for error in status.last_heartbeat.errors  # pyright: ignore[reportOptionalIterable,reportOptionalMemberAccess]
+                                    for error in status.last_heartbeat.errors  # ty: ignore[not-iterable,unresolved-attribute]
                                 ] == list(range(first_error_number, first_error_number - 5, -1))
 
                                 assert not get_daemon_statuses(
@@ -276,10 +276,10 @@ def test_error_daemon(monkeypatch):
                                 )[SensorDaemon.daemon_type()]
 
                                 # Error count does not rise above 5, continues to increase
-                                assert len(status.last_heartbeat.errors) == 5  # pyright: ignore[reportArgumentType,reportOptionalMemberAccess]
+                                assert len(status.last_heartbeat.errors) == 5  # ty: ignore[invalid-argument-type,unresolved-attribute]
 
                                 new_first_error_number = _get_error_number(
-                                    status.last_heartbeat.errors[0]  # pyright: ignore[reportOptionalSubscript,reportOptionalMemberAccess]
+                                    status.last_heartbeat.errors[0]  # ty: ignore[not-subscriptable,unresolved-attribute]
                                 )
 
                                 assert new_first_error_number > first_error_number
@@ -307,7 +307,7 @@ def test_error_daemon(monkeypatch):
                     )[SensorDaemon.daemon_type()]
 
                     # Error count does not rise above 5
-                    if len(status.last_heartbeat.errors) == 0:  # pyright: ignore[reportArgumentType,reportOptionalMemberAccess]
+                    if len(status.last_heartbeat.errors) == 0:  # ty: ignore[invalid-argument-type,unresolved-attribute]
                         break
 
                     if (now - init_time).total_seconds() > 15:
@@ -354,9 +354,9 @@ def test_multiple_error_daemon(monkeypatch):
                         instance, [SensorDaemon.daemon_type()], now.timestamp()
                     )[SensorDaemon.daemon_type()]
 
-                    if status.healthy is False and len(status.last_heartbeat.errors) == 2:  # pyright: ignore[reportArgumentType,reportOptionalMemberAccess]
-                        assert status.last_heartbeat.errors[0].message.strip() == "bizbuz"  # pyright: ignore[reportOptionalSubscript,reportOptionalMemberAccess]
-                        assert status.last_heartbeat.errors[1].message.strip() == "foobar"  # pyright: ignore[reportOptionalSubscript,reportOptionalMemberAccess]
+                    if status.healthy is False and len(status.last_heartbeat.errors) == 2:  # ty: ignore[invalid-argument-type,unresolved-attribute]
+                        assert status.last_heartbeat.errors[0].message.strip() == "bizbuz"  # ty: ignore[not-subscriptable,unresolved-attribute]
+                        assert status.last_heartbeat.errors[1].message.strip() == "foobar"  # ty: ignore[not-subscriptable,unresolved-attribute]
                         break
 
                 if (now - init_time).total_seconds() > 10:
@@ -403,7 +403,7 @@ def test_warn_multiple_daemons(capsys):
             now.timestamp(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         )[SensorDaemon.daemon_type()]
-        last_heartbeat_time = status.last_heartbeat.timestamp  # pyright: ignore[reportOptionalMemberAccess]
+        last_heartbeat_time = status.last_heartbeat.timestamp  # ty: ignore[unresolved-attribute]
 
         # No warning when a second controller starts up again
         with daemon_controller_from_instance(
@@ -437,7 +437,7 @@ def test_warn_multiple_daemons(capsys):
                 now.timestamp(),
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
             )[SensorDaemon.daemon_type()]
-            last_heartbeat_time = status.last_heartbeat.timestamp  # pyright: ignore[reportOptionalMemberAccess]
+            last_heartbeat_time = status.last_heartbeat.timestamp  # ty: ignore[unresolved-attribute]
 
             # Starting up a controller while one is running produces the warning though
             with daemon_controller_from_instance(

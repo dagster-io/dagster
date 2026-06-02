@@ -5,6 +5,7 @@ const MarkdownWithPlugins = lazy(() => import('./MarkdownWithPlugins'));
 
 interface Props {
   children: string;
+  softBreaks?: boolean;
 }
 
 export const Markdown = (props: Props) => {

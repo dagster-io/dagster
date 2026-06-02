@@ -1,17 +1,14 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-buildkite"
 version = "0.0.1"
+requires-python = ">=3.10,<3.15"
 description = "Tools for buildkite automation"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "buildkite-shared",
     "PyYAML",
@@ -30,7 +27,12 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/.buildkite/dagster
 dagster-buildkite = "dagster_buildkite.cli:dagster"
 dagster-buildkite-prerelease-package = "dagster_buildkite.cli:prerelease_package"
 
-[tool.setuptools.packages.find]
-exclude = [
-    "test",
+[dependency-groups]
+test = [
+    "buildkite-shared",
+    "pytest",
+    "flaky",
 ]
+
+[tool.uv.sources]
+buildkite-shared = { path = "../buildkite-shared", editable = true }

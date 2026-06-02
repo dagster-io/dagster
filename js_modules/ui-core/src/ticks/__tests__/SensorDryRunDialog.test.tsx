@@ -8,10 +8,10 @@ import {useTrackEvent} from '../../app/analytics';
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
 import * as Mocks from '../__fixtures__/SensorDryRunDialog.fixtures';
 
-// This component is unit tested separately so mocking it out
-jest.mock('../DryRunRequestTable', () => {
+// Mock run config dialog since it's not relevant to these tests
+jest.mock('../../runs/RunConfigDialog', () => {
   return {
-    RunRequestTable: () => <div />,
+    RunConfigDialog: () => <div />,
   };
 });
 
@@ -30,19 +30,21 @@ const onCloseMock = jest.fn();
 
 function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolvers}) {
   return (
-    <MockedProvider mocks={mocks} resolvers={resolvers}>
-      <SensorDryRunDialog
-        name="test"
-        onClose={onCloseMock}
-        isOpen={true}
-        repoAddress={{
-          name: 'testName',
-          location: 'testLocation',
-        }}
-        jobName="testJobName"
-        currentCursor="testCursor"
-      />
-    </MockedProvider>
+    <MemoryRouter>
+      <MockedProvider mocks={mocks} resolvers={resolvers}>
+        <SensorDryRunDialog
+          name="test"
+          onClose={onCloseMock}
+          isOpen={true}
+          repoAddress={{
+            name: 'testName',
+            location: 'testLocation',
+          }}
+          jobName="testJobName"
+          currentCursor="testCursor"
+        />
+      </MockedProvider>
+    </MemoryRouter>
   );
 }
 
@@ -146,6 +148,17 @@ describe('SensorDryRunTest', () => {
     });
   });
 
+  it('shows apply button for dynamic partition requests with no run requests', async () => {
+    const user = userEvent.setup();
+    render(<Test mocks={[Mocks.SensorDryRunMutationDynamicPartitionsOnly]} />);
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    // Should show "Apply requests & commit tick result", not just "Commit tick result"
+    expect(await screen.findByTestId('launch-all')).toBeVisible();
+    expect(screen.queryByTestId('commit-tick-result')).toBe(null);
+  });
+
   it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
     const user = userEvent.setup();
     const pushSpy = jest.fn();
@@ -173,7 +186,7 @@ describe('SensorDryRunTest', () => {
     await user.type(cursorInput, 'testing123');
     await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
-      expect(screen.getByText(/1\srun requests/g)).toBeVisible();
+      expect(screen.getByText(/1\srun request\b/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
       expect(screen.queryByText('Failed')).toBe(null);
     });

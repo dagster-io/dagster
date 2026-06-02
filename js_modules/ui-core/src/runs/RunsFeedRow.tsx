@@ -10,7 +10,6 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
@@ -23,6 +22,7 @@ import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunsFeedDialogState} from './RunsFeedTable';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
+import styles from './css/RunsFeedRow.module.css';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
@@ -89,7 +89,8 @@ export const RunsFeedRow = ({
     entry.__typename === 'Run' ? entry.tags.find((t) => t.key === DagsterTag.Partition) : null;
 
   return (
-    <RowGrid
+    <Box
+      className={styles.rowGrid}
       border="bottom"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -195,7 +196,7 @@ export const RunsFeedRow = ({
           <RunActionsMenu run={entry} onAddTag={onAddTag} anchorLabel="View" />
         )}
       </RowCell>
-    </RowGrid>
+    </Box>
   );
 };
 
@@ -218,9 +219,3 @@ export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => 
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;

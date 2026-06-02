@@ -1,7 +1,7 @@
 ---
 description: Track Snowflake usage metrics with the Dagster+ Insights UI or the dagster-cloud package.
 sidebar_label: Snowflake
-sidebar_position: 3000
+sidebar_position: 2000
 title: Track Snowflake usage with Dagster+ Insights
 ---
 
@@ -53,13 +53,13 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/snowflake/snowflake-resource.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/snowflake/snowflake-resource.py"
       language="python"
     />
   </TabItem>
   <TabItem value="after" label="After" default>
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/snowflake/snowflake-resource-insights.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/snowflake/snowflake-resource-insights.py"
       language="python"
     />
   </TabItem>
@@ -80,13 +80,13 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/snowflake/snowflake-dbt-asset.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/snowflake/snowflake-dbt-asset.py"
       language="python"
     />
   </TabItem>
   <TabItem value="after" label="After" default>
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/snowflake/snowflake-dbt-asset-insights.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/snowflake/snowflake-dbt-asset-insights.py"
       language="python"
     />
   </TabItem>
@@ -96,10 +96,10 @@ Then, add the following to your `dbt_project.yml`:
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample path="docs_snippets/docs_snippets/dagster-plus/insights/snowflake/dbt_project.yml" language="python" />
+    <CodeExample path="docs_snippets/docs_snippets/guides/observe/insights/snowflake/dbt_project.yml" language="python" />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample path="docs_snippets/docs_snippets/dagster-plus/insights/snowflake/dbt_project_insights.yml" language="python" />
+    <CodeExample path="docs_snippets/docs_snippets/guides/observe/insights/snowflake/dbt_project_insights.yml" language="python" />
     This adds a comment to each query, which is used by Dagster+ to attribute cost metrics to the correct assets.
   </TabItem>
 

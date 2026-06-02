@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import click
 import yaml
@@ -32,13 +32,14 @@ class Metric:
 
     @cached_property
     def geval(self) -> GEval:
+        llm_test_case_params = cast("Any", LLMTestCaseParams)
         return GEval(
             name=self.name,
             criteria=self.criteria,
             evaluation_steps=self.evaluation_steps,
             evaluation_params=[
-                LLMTestCaseParams.INPUT,
-                LLMTestCaseParams.ACTUAL_OUTPUT,
+                llm_test_case_params.INPUT,
+                llm_test_case_params.ACTUAL_OUTPUT,
             ],
         )
 
@@ -153,7 +154,7 @@ def evaluate_sessions(
 
     # Run evaluation
     click.echo(f"Evaluating {len(test_cases)} sessions for metric '{metric.id}'...")
-    results = evaluate(test_cases=test_cases, metrics=[metric.geval])
+    results = evaluate(test_cases=test_cases, metrics=[metric.geval])  # ty: ignore[call-non-callable]
 
     # Update cache with new results
     new_cache = dict(cached_results)

@@ -655,7 +655,7 @@ class AllAssetCheckSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def resolve_checks_inner(  # ty: ignore[invalid-method-override]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return asset_graph.asset_check_keys
@@ -674,7 +674,7 @@ class AssetChecksForAssetKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def resolve_checks_inner(  # ty: ignore[invalid-method-override]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return {
@@ -697,7 +697,7 @@ class AssetCheckKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def resolve_checks_inner(  # ty: ignore[invalid-method-override]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         specified_keys = set(self.selected_asset_check_keys)
@@ -744,7 +744,7 @@ class OperandListAssetSelection(AssetSelection):
     def needs_parentheses_when_operand(self) -> bool:
         return True
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
 
 @whitelist_for_serdes
@@ -760,7 +760,7 @@ class AndAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def resolve_checks_inner(  # ty: ignore[invalid-method-override]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -788,7 +788,7 @@ class OrAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def resolve_checks_inner(  # ty: ignore[invalid-method-override]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -816,7 +816,7 @@ class SubtractAssetSelection(AssetSelection):
             asset_graph, allow_missing=allow_missing
         ) - self.right.resolve_inner(asset_graph, allow_missing=allow_missing)
 
-    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def resolve_checks_inner(  # ty: ignore[invalid-method-override]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return self.left.resolve_checks_inner(
@@ -982,7 +982,7 @@ class KindAssetSelection(AssetSelection):
         if self.kind_str is None:
             return {
                 node.key
-                for key, node in base_nodes.items()
+                for node in base_nodes.values()
                 if (not any(tag_key.startswith(KIND_PREFIX) for tag_key in (node.tags or {})))
             }
         else:
@@ -1191,6 +1191,138 @@ class StatusAssetSelection(AssetSelection):
         if self.selected_status is None:
             return "status:<null>"
         return f'status:"{self.selected_status}"'
+
+
+@whitelist_for_serdes
+@record
+class AutomationTypeAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by automation type. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_automation_type: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        if self.selected_automation_type is None:
+            return "automation_type:<null>"
+        return f'automation_type:"{self.selected_automation_type}"'
+
+
+@whitelist_for_serdes
+@record
+class SensorNameAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by sensor name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_sensor: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        from dagster._core.definitions.assets.graph.remote_asset_graph import (
+            RemoteWorkspaceAssetGraph,
+        )
+
+        asset_graph = check.inst(
+            asset_graph,
+            RemoteWorkspaceAssetGraph,
+            "sensor: cannot be used to select assets in user code.",
+        )
+
+        if self.selected_sensor is None:
+            return set()
+
+        return {
+            key
+            for key, node in asset_graph.remote_asset_nodes_by_key.items()
+            if any(
+                self.selected_sensor in info.targeting_sensor_names
+                for info in node.repo_scoped_asset_infos
+            )
+        }
+
+    def to_selection_str(self) -> str:
+        if self.selected_sensor is None:
+            return "sensor:<null>"
+        return f'sensor:"{self.selected_sensor}"'
+
+
+@whitelist_for_serdes
+@record
+class ScheduleNameAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by schedule name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_schedule: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        from dagster._core.definitions.assets.graph.remote_asset_graph import (
+            RemoteWorkspaceAssetGraph,
+        )
+
+        asset_graph = check.inst(
+            asset_graph,
+            RemoteWorkspaceAssetGraph,
+            "schedule: cannot be used to select assets in user code.",
+        )
+
+        if self.selected_schedule is None:
+            return set()
+
+        return {
+            key
+            for key, node in asset_graph.remote_asset_nodes_by_key.items()
+            if any(
+                self.selected_schedule in info.targeting_schedule_names
+                for info in node.repo_scoped_asset_infos
+            )
+        }
+
+    def to_selection_str(self) -> str:
+        if self.selected_schedule is None:
+            return "schedule:<null>"
+        return f'schedule:"{self.selected_schedule}"'
+
+
+@whitelist_for_serdes
+@record
+class JobAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by job name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_job: str | None
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
+
+        asset_graph = check.inst(
+            asset_graph,
+            RemoteAssetGraph,
+            "job: cannot be used to select assets in user code.",
+        )
+
+        if self.selected_job is None:
+            return set()
+
+        return set(asset_graph.get_materialization_asset_keys_for_job(self.selected_job))
+
+    def to_selection_str(self) -> str:
+        if self.selected_job is None:
+            return "job:<null>"
+        return f'job:"{self.selected_job}"'
 
 
 @whitelist_for_serdes

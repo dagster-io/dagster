@@ -2,7 +2,6 @@
 import textwrap
 from pathlib import Path
 
-import responses
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -18,7 +17,6 @@ from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 # ###############################################################
 
 
-@responses.activate
 def test_list_env_succeeds(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,

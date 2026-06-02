@@ -11,9 +11,9 @@ def simple_existing_lambda(event: dict[str, Any], context: Any) -> dict[str, Any
     """Existing Lambda that expects a simple config dictionary."""
     logger.info("Simple existing Lambda handler")
 
-    source_bucket = event.get("source_bucket")
-    destination_bucket = event.get("destination_bucket")
-    file_pattern = event.get("file_pattern")
+    source_bucket = event.get("source_bucket", "")
+    destination_bucket = event.get("destination_bucket", "")
+    file_pattern = event.get("file_pattern", "")
 
     logger.info(f"Source: {source_bucket}")
     logger.info(f"Destination: {destination_bucket}")

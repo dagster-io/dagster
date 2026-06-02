@@ -9,6 +9,7 @@ import {
   LineElement,
   LinearScale,
   PointElement,
+  ScriptableContext,
   TimeScale,
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
@@ -95,8 +96,11 @@ export const AssetValueGraph = (props: {
     },
     elements: {
       point: {
-        radius: ((context: any) =>
-          context.dataset.data[context.dataIndex]?.x === xHover ? 13 : 2) as any,
+        radius: (context: ScriptableContext<'line'>) =>
+          (context.dataset.data[context.dataIndex] as {x?: string | number} | undefined)?.x ===
+          xHover
+            ? 13
+            : 2,
       },
     },
     scales: {
@@ -171,7 +175,12 @@ export const AssetValueGraph = (props: {
         props.onHoverX(null);
         return;
       }
-      const itemIdx = (activeElements[0] as any).index;
+      const first = activeElements[0];
+      if (!first) {
+        props.onHoverX(null);
+        return;
+      }
+      const itemIdx = first.index;
       if (itemIdx === 0) {
         // ChartJS errantly selects the first item when you're moving the mouse off the line
         props.onHoverX(null);

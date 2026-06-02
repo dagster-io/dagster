@@ -59,7 +59,6 @@ def airflow_examples_repo():
 def get_examples_airflow_repo_params():
     definitions = make_dagster_definitions_from_airflow_example_dags()
     repo = definitions.get_repository_def()
-    params = []
     no_job_run_dags = [
         # requires k8s environment to work
         # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
@@ -80,10 +79,10 @@ def get_examples_airflow_repo_params():
         "example_dynamic_task_mapping",
         "example_dynamic_task_mapping_with_no_taskflow_operators",
     ]
-    for job_name in repo.job_names:
-        params.append(
-            pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name),
-        )
+    params = [
+        pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name)
+        for job_name in repo.job_names
+    ]
 
     return params
 
@@ -141,7 +140,7 @@ def test_retry_conversion():
         retry_dag = dag_bag.get_dag(dag_id="retry_dag")
 
         job = make_dagster_job_from_airflow_dag(
-            dag=retry_dag,  # pyright: ignore[reportArgumentType]
+            dag=retry_dag,
         )
         result = job.execute_in_process()
         assert result.success

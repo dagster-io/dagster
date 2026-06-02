@@ -8,8 +8,6 @@ import {
   VirtualizedCodeLocationRepositoryRow,
   VirtualizedCodeLocationRow,
 } from './VirtualizedCodeLocationRow';
-import {DUNDER_REPO_NAME} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
 interface Props {
@@ -17,7 +15,6 @@ interface Props {
   codeLocations: CodeLocationRowType[];
   searchValue: string;
   isFilteredView: boolean;
-  locationsWithDocs: Set<string>;
 }
 
 export const RepositoryLocationsList = ({
@@ -25,7 +22,6 @@ export const RepositoryLocationsList = ({
   codeLocations,
   searchValue,
   isFilteredView,
-  locationsWithDocs,
 }: Props) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -96,39 +92,25 @@ export const RepositoryLocationsList = ({
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row: CodeLocationRowType = codeLocations[index]!;
           if (row.type === 'location') {
-            const repoAddressString = repoAddressAsHumanString({
-              location: row.locationStatus.name,
-              name: DUNDER_REPO_NAME,
-            });
-            const hasDocs = locationsWithDocs.has(repoAddressString);
-
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <VirtualizedCodeLocationRow
                   index={index}
                   locationEntry={row.locationEntry}
                   locationStatus={row.locationStatus}
-                  hasDocs={hasDocs}
                   ref={virtualizer.measureElement}
                 />
               </Row>
             );
           }
 
-          const repoAddressString = repoAddressAsHumanString({
-            location: row.locationStatus.name,
-            name: row.repository.name,
-          });
-          const hasDocs = locationsWithDocs.has(repoAddressString);
-
           return (
-            <Row $height={size} $start={start} key={key}>
+            <Row height={size} start={start} key={key}>
               <VirtualizedCodeLocationRepositoryRow
                 index={index}
                 locationStatus={row.locationStatus}
                 locationEntry={row.locationEntry}
                 repository={row.repository}
-                hasDocs={hasDocs}
                 ref={virtualizer.measureElement}
               />
             </Row>

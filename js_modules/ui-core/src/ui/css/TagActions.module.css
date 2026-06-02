@@ -1,0 +1,42 @@
+.actionContainer {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tagButtonShared {
+  border: none;
+  background: var(--color-tooltip-background);
+  color: var(--color-tooltip-text);
+  cursor: pointer;
+  padding: 8px 12px;
+  text-align: left;
+  opacity: 0.85;
+  transition: opacity 50ms linear;
+
+  &:not(:last-child) {
+    box-shadow: -1px 0 0 inset var(--color-border-hover);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.tagButton {
+  composes: tagButtonShared;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.tagButtonLink {
+  composes: tagButtonShared;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-tooltip-text);
+    text-decoration: none;
+    opacity: 1;
+  }
+}

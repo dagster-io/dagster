@@ -75,4 +75,4 @@ The `run_daily_script` variant uses [daily partitions](/guides/build/partitions-
 
 **Stdout and exit codes become observable.** Output that previously disappeared into cron logs is captured as asset metadata, giving you a searchable, linkable record of every run.
 
-**Secrets and environment variables remain in place.** Environment variables or config files read by the script continue to work as written, since the subprocess inherits the environment. For secrets that need per-environment configuration in Dagster, consider wrapping them in a Dagster [resource](/guides/build/external-resources/) and passing values through environment variables set on the resource.
+**Secrets and environment variables remain in place.** Environment variables or config files read by the script continue to work as written, since the subprocess inherits the environment. For secrets that need per-environment configuration in Dagster, consider wrapping them in a Dagster [resource](/guides/build/external-resources) and passing values through environment variables set on the resource.

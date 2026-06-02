@@ -165,7 +165,7 @@ class ReconstructableRepository(
 
 
 class ReconstructableJobSerializer(NamedTupleSerializer):
-    def before_unpack(self, _, unpacked_dict: dict[str, Any]) -> dict[str, Any]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def before_unpack(self, _, unpacked_dict: dict[str, Any]) -> dict[str, Any]:  # ty: ignore[invalid-method-override]
         solid_selection_str = unpacked_dict.get("solid_selection_str")
         solids_to_execute = unpacked_dict.get("solids_to_execute")
         if solid_selection_str:
@@ -177,7 +177,7 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
     def pack_items(self, *args, **kwargs):
         for k, v in super().pack_items(*args, **kwargs):
             if k == "op_selection":
-                new_v = json.dumps(v["__set__"]) if v else None  # pyright: ignore[reportCallIssue,reportArgumentType,reportIndexIssue]
+                new_v = json.dumps(v["__set__"]) if v else None  # ty: ignore[invalid-argument-type, not-subscriptable]
                 yield "solid_selection_str", new_v
             else:
                 yield k, v
@@ -190,7 +190,7 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
         "job_name": "pipeline_name",
     },
 )
-class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
+class ReconstructableJob(
     NamedTuple(
         "_ReconstructableJob",
         [
@@ -244,13 +244,13 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @lru_cache(maxsize=1)
-    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
         return self.repository.get_definition()
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
-    def get_definition(self) -> "JobDefinition":  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_definition(self) -> "JobDefinition":
         return check.not_none(self.get_repository_definition()).get_maybe_subset_job_def(
             self.job_name,
             self.op_selection,
@@ -408,8 +408,8 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
 
     if seven.qualname_differs(target):
         raise DagsterInvariantViolationError(
-            f'Reconstructable target "{target.__name__}" has a different '
-            f'__qualname__ "{target.__qualname__}" indicating it is not '
+            f'Reconstructable target "{target.__name__}" has a different '  # ty: ignore[unresolved-attribute]
+            f'__qualname__ "{target.__qualname__}" indicating it is not '  # ty: ignore[unresolved-attribute]
             "defined at module scope. Use a function or decorated function "
             "defined at module scope instead, or use build_reconstructable_job."
         )
@@ -420,7 +420,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
             and hasattr(target, "__name__")
             and getattr(inspect.getmodule(target), "__name__", None) != "__main__"
         ):
-            return ReconstructableJob.for_module(target.__module__, target.__name__)
+            return ReconstructableJob.for_module(target.__module__, target.__name__)  # ty: ignore[invalid-argument-type]
     except:
         pass
 
@@ -433,7 +433,9 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
         )
 
     pointer = FileCodePointer(
-        python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
+        python_file=python_file,
+        fn_name=target.__name__,  # ty: ignore[unresolved-attribute]
+        working_directory=os.getcwd(),
     )
 
     return bootstrap_standalone_recon_job(pointer)
@@ -596,7 +598,7 @@ def _check_is_loadable(definition: object) -> LoadableDefinition:
             "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, "
             f"or RepositoryDefinition. Got {definition!r}."
         )
-    return definition  # pyright: ignore[reportReturnType]
+    return definition  # ty: ignore[invalid-return-type]
 
 
 def load_def_in_module(
@@ -650,7 +652,7 @@ def def_from_pointer(
             f"Got {target}, {pointer.describe()}"
         )
 
-    return _check_is_loadable(target())
+    return _check_is_loadable(target())  # ty: ignore[call-top-callable]
 
 
 def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
@@ -714,7 +716,7 @@ def _repository_def_from_target_def_inner(
     ):
         return RepositoryDefinition(
             name=SINGLETON_REPOSITORY_NAME,
-            repository_data=CachingRepositoryData.from_list(target),
+            repository_data=CachingRepositoryData.from_list(target),  # ty: ignore[invalid-argument-type]
         )
     elif isinstance(target, RepositoryDefinition):
         return target

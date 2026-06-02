@@ -27,10 +27,10 @@ def test_repository_snap_all_props():
     repo_snap = RepositorySnap.from_def(noop_repo)
 
     assert repo_snap.name == "noop_repo"
-    assert len(repo_snap.job_datas) == 1  # pyright: ignore[reportArgumentType]
-    assert isinstance(repo_snap.job_datas[0], JobDataSnap)  # pyright: ignore[reportOptionalSubscript]
+    assert len(repo_snap.job_datas) == 1  # ty: ignore[invalid-argument-type]
+    assert isinstance(repo_snap.job_datas[0], JobDataSnap)  # ty: ignore[not-subscriptable]
 
-    job_snapshot = repo_snap.job_datas[0].job  # pyright: ignore[reportOptionalSubscript]
+    job_snapshot = repo_snap.job_datas[0].job  # ty: ignore[not-subscriptable]
     assert isinstance(job_snapshot, JobSnap)
     assert job_snapshot.name == "noop_job"
     assert job_snapshot.description is None
@@ -50,11 +50,11 @@ def test_repository_snap_definitions_resources_basic():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.resources) == 1  # pyright: ignore[reportArgumentType]
-    assert repo_snap.resources[0].name == "foo"  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.resources[0].resource_snapshot.name == "foo"  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.resources[0].resource_snapshot.description is None  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.resources[0].configured_values == {}  # pyright: ignore[reportOptionalSubscript]
+    assert len(repo_snap.resources) == 1  # ty: ignore[invalid-argument-type]
+    assert repo_snap.resources[0].name == "foo"  # ty: ignore[not-subscriptable]
+    assert repo_snap.resources[0].resource_snapshot.name == "foo"  # ty: ignore[not-subscriptable]
+    assert repo_snap.resources[0].resource_snapshot.description is None  # ty: ignore[not-subscriptable]
+    assert repo_snap.resources[0].configured_values == {}  # ty: ignore[not-subscriptable]
 
 
 def test_repository_snap_definitions_resources_nested() -> None:
@@ -239,20 +239,20 @@ def test_repository_snap_definitions_resources_complex():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.resources) == 1  # pyright: ignore[reportArgumentType]
-    assert repo_snap.resources[0].name == "foo"  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.resources[0].resource_snapshot.name == "foo"  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.resources[0].resource_snapshot.description == "My description."  # pyright: ignore[reportOptionalSubscript]
+    assert len(repo_snap.resources) == 1  # ty: ignore[invalid-argument-type]
+    assert repo_snap.resources[0].name == "foo"  # ty: ignore[not-subscriptable]
+    assert repo_snap.resources[0].resource_snapshot.name == "foo"  # ty: ignore[not-subscriptable]
+    assert repo_snap.resources[0].resource_snapshot.description == "My description."  # ty: ignore[not-subscriptable]
 
     # Ensure we get config snaps for the resource's fields
-    assert len(repo_snap.resources[0].config_field_snaps) == 1  # pyright: ignore[reportOptionalSubscript]
-    snap = repo_snap.resources[0].config_field_snaps[0]  # pyright: ignore[reportOptionalSubscript]
+    assert len(repo_snap.resources[0].config_field_snaps) == 1  # ty: ignore[not-subscriptable]
+    snap = repo_snap.resources[0].config_field_snaps[0]  # ty: ignore[not-subscriptable]
     assert snap.name == "my_string"
     assert not snap.is_required
     assert snap.default_value_as_json_str == '"bar"'
 
     # Ensure we get the configured values for the resource
-    assert repo_snap.resources[0].configured_values == {  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.resources[0].configured_values == {  # ty: ignore[not-subscriptable]
         "my_string": '"baz"',
     }
 
@@ -264,8 +264,8 @@ def test_repository_snap_empty():
 
     repo_snap = RepositorySnap.from_def(empty_repo)
     assert repo_snap.name == "empty_repo"
-    assert len(repo_snap.job_datas) == 0  # pyright: ignore[reportArgumentType]
-    assert len(repo_snap.resources) == 0  # pyright: ignore[reportArgumentType]
+    assert len(repo_snap.job_datas) == 0  # ty: ignore[invalid-argument-type]
+    assert len(repo_snap.resources) == 0  # ty: ignore[invalid-argument-type]
 
 
 def test_repository_snap_definitions_env_vars() -> None:
@@ -566,10 +566,10 @@ def test_asset_check():
     def my_asset():
         pass
 
-    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)
     def my_asset_check(): ...
 
-    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)
     def my_asset_check_2(): ...
 
     defs = dg.Definitions(
@@ -580,9 +580,9 @@ def test_asset_check():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.asset_check_nodes) == 2  # pyright: ignore[reportArgumentType]
-    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.asset_check_nodes[1].name == "my_asset_check_2"  # pyright: ignore[reportOptionalSubscript]
+    assert len(repo_snap.asset_check_nodes) == 2  # ty: ignore[invalid-argument-type]
+    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"  # ty: ignore[not-subscriptable]
+    assert repo_snap.asset_check_nodes[1].name == "my_asset_check_2"  # ty: ignore[not-subscriptable]
 
 
 def test_asset_check_in_asset_op():
@@ -595,7 +595,7 @@ def test_asset_check_in_asset_op():
     def my_asset():
         pass
 
-    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)
     def my_asset_check(): ...
 
     defs = dg.Definitions(
@@ -606,10 +606,10 @@ def test_asset_check_in_asset_op():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.asset_check_nodes) == 3  # pyright: ignore[reportArgumentType]
-    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.asset_check_nodes[1].name == "my_other_asset_check"  # pyright: ignore[reportOptionalSubscript]
-    assert repo_snap.asset_check_nodes[2].name == "my_other_asset_check_2"  # pyright: ignore[reportOptionalSubscript]
+    assert len(repo_snap.asset_check_nodes) == 3  # ty: ignore[invalid-argument-type]
+    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"  # ty: ignore[not-subscriptable]
+    assert repo_snap.asset_check_nodes[1].name == "my_other_asset_check"  # ty: ignore[not-subscriptable]
+    assert repo_snap.asset_check_nodes[2].name == "my_other_asset_check_2"  # ty: ignore[not-subscriptable]
 
 
 def test_asset_check_multiple_jobs():
@@ -621,7 +621,7 @@ def test_asset_check_multiple_jobs():
     def my_asset():
         pass
 
-    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)
     def my_asset_check(): ...
 
     my_job = dg.define_asset_job("my_job", [my_asset])

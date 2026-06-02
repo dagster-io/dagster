@@ -19,7 +19,7 @@ When modeling an ETL pipeline (or any multi-step process) in Dagster, you can re
 The simplest approach is to combine all phases—extract, load, and transform—into one asset. A single materialization runs one function that performs all phases. This works well for simple pipelines and quick prototypes, or when you don't need to retry individual phases or see each step in the UI. In the example below, `customer_etl_single` runs extract, load, and transform in one function.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/asset-granularity/single_asset_etl.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/asset-granularity/single_asset_etl.py"
   language="python"
   startAfter="start_single_asset"
   endBefore="end_single_asset"
@@ -37,7 +37,7 @@ When you need visibility into each phase, the ability to retry steps independent
 In the example below, `orders_extract`, `orders_load`, and `orders_transform` are three assets. Dagster infers the dependency chain from the function parameters: `orders_load` receives the output of `orders_extract`, and `orders_transform` receives the output of `orders_load`. Each phase appears in the asset graph and can be materialized or retried on its own.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/asset-granularity/three_asset_etl.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/asset-granularity/three_asset_etl.py"
   language="python"
   startAfter="start_three_assets"
   endBefore="end_three_assets"
@@ -55,7 +55,7 @@ When operations are tightly coupled, but you still want separate assets for down
 In the example below, `inventory_etl_multi_asset` returns three values that become the assets `inventory_raw`, `inventory_staged`, and `inventory_final`. Data flows from extract to load to transform in memory, so there is no intermediate I/O. Downstream assets can depend on any of the three outputs. With `can_subset=False`, all three are always materialized together.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/asset-granularity/multi_asset_etl.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/asset-granularity/multi_asset_etl.py"
   language="python"
   startAfter="start_multi_asset"
   endBefore="end_multi_asset"

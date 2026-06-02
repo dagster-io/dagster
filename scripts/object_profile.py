@@ -1,4 +1,3 @@
-# ruff: noqa: T201
 import cProfile
 import subprocess
 import timeit
@@ -21,9 +20,7 @@ def make_one(i: int = 0):
 
 
 def make_n(n: int):
-    things = []
-    for i in range(n):
-        things.append(make_one(i))
+    things = [make_one(i) for i in range(n)]
     return things
 
 

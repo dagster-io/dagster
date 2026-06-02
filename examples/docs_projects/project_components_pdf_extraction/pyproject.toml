@@ -63,7 +63,6 @@ dagster-census = { path = '../../../python_modules/libraries/dagster-census', ed
 dagster-airlift = { path = '../../../python_modules/libraries/dagster-airlift', editable = true }
 dagster-managed-elements = { path = '../../../python_modules/libraries/dagster-managed-elements', editable = true }
 dagster-snowflake-pandas = { path = '../../../python_modules/libraries/dagster-snowflake-pandas', editable = true }
-dagster-embedded-elt = { path = '../../../python_modules/libraries/dagster-embedded-elt', editable = true }
 dagster-powerbi = { path = '../../../python_modules/libraries/dagster-powerbi', editable = true }
 dagster-pandera = { path = '../../../python_modules/libraries/dagster-pandera', editable = true }
 dagster-datadog = { path = '../../../python_modules/libraries/dagster-datadog', editable = true }

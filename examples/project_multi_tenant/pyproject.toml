@@ -19,21 +19,11 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-include = [
-    "shared",
-    "shared.*",
-    "harbor_outfitters",
-    "harbor_outfitters.*",
-    "summit_financial",
-    "summit_financial.*",
-    "beacon_hq",
-    "beacon_hq.*",
-    "tests",
-]
+[tool.hatch.build.targets.wheel]
+packages = ["shared", "harbor_outfitters", "summit_financial", "beacon_hq"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
@@ -47,3 +37,23 @@ directory_type = "workspace"
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "catalog_coach_runtime",
+    "risk_reviewer_runtime",
+    "briefing_writer_runtime",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-dg-cli = { path = "../../python_modules/libraries/dagster-dg-cli", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+catalog_coach_runtime = { path = "vendor/catalog_coach_runtime", editable = true }
+risk_reviewer_runtime = { path = "vendor/risk_reviewer_runtime", editable = true }
+briefing_writer_runtime = { path = "vendor/briefing_writer_runtime", editable = true }

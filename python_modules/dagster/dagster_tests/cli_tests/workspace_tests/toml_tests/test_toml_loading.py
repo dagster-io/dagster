@@ -90,13 +90,13 @@ def test_is_valid_modules_list_from_toml():
 
 def test_is_valid_modules_list_not_a_list():
     with raises(ValueError, match=r"Modules should be a list."):
-        is_valid_modules_list("not a list")  # pyright: ignore[reportArgumentType]
+        is_valid_modules_list("not a list")  # ty: ignore[invalid-argument-type]
 
 
 def test_is_valid_modules_list_item_not_dict():
     modules = ["not a dictionary"]
     with raises(ValueError, match=r"Item at index 0 is not a dictionary."):
-        is_valid_modules_list(modules)  # pyright: ignore[reportArgumentType]
+        is_valid_modules_list(modules)  # ty: ignore[invalid-argument-type]
 
 
 def test_is_valid_modules_list_missing_type():
@@ -108,7 +108,7 @@ def test_is_valid_modules_list_missing_type():
 def test_is_valid_modules_list_type_not_string():
     modules = [{"type": 123, "name": "foo"}]
     with raises(ValueError, match=r"The 'type' value in dictionary at index 0 is not a string."):
-        is_valid_modules_list(modules)
+        is_valid_modules_list(modules)  # ty: ignore[invalid-argument-type]
 
 
 def test_is_valid_modules_list_missing_name():
@@ -120,4 +120,4 @@ def test_is_valid_modules_list_missing_name():
 def test_is_valid_modules_list_name_not_string():
     modules = [{"type": "module", "name": 123}]
     with raises(ValueError, match=r"The 'name' value in dictionary at index 0 is not a string."):
-        is_valid_modules_list(modules)
+        is_valid_modules_list(modules)  # ty: ignore[invalid-argument-type]

@@ -2,6 +2,7 @@
 
 import click
 
+from dagster_dg_cli.cli.plus.build import create_deploy_dockerfile, get_dockerfile_path
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.utils import (
     DgPlusDeployConfigureOptions,
@@ -10,7 +11,6 @@ from dagster_dg_cli.cli.plus.deploy.configure.utils import (
     get_scaffolded_container_context_yaml,
     prompt_for_registry_url,
 )
-from dagster_dg_cli.utils.plus.build import create_deploy_dockerfile, get_dockerfile_path
 
 # Registry comment block with examples
 REGISTRY_COMMENTS = """\

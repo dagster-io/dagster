@@ -5,8 +5,8 @@ import {
   Colors,
   Dialog,
   DialogFooter,
+  Heading,
   Mono,
-  Subtitle2,
   Tab,
   Tabs,
   Tag,
@@ -161,7 +161,9 @@ const AssetSelectionTag = ({
           border="bottom"
         >
           <Box flex={{direction: 'column', gap: 4}}>
-            <Subtitle2>Asset selection</Subtitle2>
+            <Heading size={14} weight={600}>
+              Asset selection
+            </Heading>
             <Mono>{assetSelectionString}</Mono>
           </Box>
         </Box>

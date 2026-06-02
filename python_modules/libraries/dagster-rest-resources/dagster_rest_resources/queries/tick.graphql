@@ -1,0 +1,114 @@
+query ListRepositoriesForTicks {
+  repositoriesOrError {
+    __typename
+    ... on RepositoryConnection {
+      nodes {
+        name
+        location {
+          name
+        }
+        sensors {
+          name
+        }
+        schedules {
+          name
+        }
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetSensorTicks(
+  $sensorSelector: SensorSelector!
+  $limit: Int
+  $cursor: String
+  $statuses: [InstigationTickStatus!]
+  $beforeTimestamp: Float
+  $afterTimestamp: Float
+) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on Sensor {
+      name
+      sensorState {
+        ticks(
+          limit: $limit
+          cursor: $cursor
+          statuses: $statuses
+          beforeTimestamp: $beforeTimestamp
+          afterTimestamp: $afterTimestamp
+        ) {
+          id
+          status
+          timestamp
+          endTimestamp
+          runIds
+          skipReason
+          cursor
+          error {
+            message
+            stack
+          }
+        }
+      }
+    }
+    ... on SensorNotFoundError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetScheduleTicks(
+  $scheduleSelector: ScheduleSelector!
+  $limit: Int
+  $cursor: String
+  $statuses: [InstigationTickStatus!]
+  $beforeTimestamp: Float
+  $afterTimestamp: Float
+) {
+  scheduleOrError(scheduleSelector: $scheduleSelector) {
+    __typename
+    ... on Schedule {
+      name
+      scheduleState {
+        ticks(
+          limit: $limit
+          cursor: $cursor
+          statuses: $statuses
+          beforeTimestamp: $beforeTimestamp
+          afterTimestamp: $afterTimestamp
+        ) {
+          id
+          status
+          timestamp
+          endTimestamp
+          runIds
+          skipReason
+          cursor
+          error {
+            message
+            stack
+          }
+        }
+      }
+    }
+    ... on ScheduleNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

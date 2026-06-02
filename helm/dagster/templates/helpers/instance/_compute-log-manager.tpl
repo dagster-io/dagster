@@ -49,6 +49,10 @@ config:
   show_url_only: {{ $azureBlobComputeLogManagerConfig.showUrlOnly }}
   {{- end }}
 
+  {{- if $azureBlobComputeLogManagerConfig.endpointSuffix }}
+  endpoint_suffix: {{ include "stringSource" $azureBlobComputeLogManagerConfig.endpointSuffix }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.gcs" }}

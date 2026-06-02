@@ -50,7 +50,7 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
         # subset
         return self._get_stable_unique_id(target_key)
 
-    async def evaluate(self, context: AutomationContext) -> AutomationResult:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(self, context: AutomationContext) -> AutomationResult:  # ty: ignore[invalid-method-override]
         # evaluate child condition
         child_result = await context.for_child_condition(
             self.operand,

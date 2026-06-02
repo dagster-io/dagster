@@ -25,7 +25,7 @@ Using the `execution_timezone` parameter allows you to specify a timezone for th
 This parameter accepts any [`tz` timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). For example, the following schedule will execute **every day at 9:00 AM in US Pacific time (America/Los_Angeles)**:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
+  path="docs_snippets/docs_snippets/guides/automate/schedules/schedules.py"
   startAfter="start_timezone"
   endBefore="end_timezone"
   title="src/<project_name>/defs/schedules.py"
@@ -38,7 +38,7 @@ Schedules constructed from partitioned jobs execute in the timezone defined on t
 For example, the following partition uses the **US Pacific (America/Los_Angeles)** timezone:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_timezone.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partition_with_timezone.py"
   title="src/<project_name>/defs/schedules.py"
 />
 

@@ -20,9 +20,8 @@ from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     DiagnosticsLevel,
     create_claude_diagnostics_service,
 )
-
-# Lazy import of ClaudeSDKClient to avoid docs build failures when claude_code_sdk is not available
 from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS, ModelType
+from dagster_dg_cli.cli.scaffold.branch.errors import ScaffoldBranchError
 from dagster_dg_cli.cli.scaffold.branch.git import (
     check_git_repository,
     create_branch_and_pr,
@@ -41,6 +40,7 @@ from dagster_dg_cli.cli.scaffold.branch.planning import (
 )
 from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
 from dagster_dg_cli.utils.claude_utils import is_claude_sdk_available
+from dagster_dg_cli.utils.github import GitHubError
 
 
 def is_prompt_valid_git_branch_name(prompt: str) -> bool:
@@ -151,6 +151,10 @@ def scaffold_branch_command(
                     "error_message": str(e),
                 },
             )
+        if isinstance(e, click.ClickException):
+            raise
+        if isinstance(e, ScaffoldBranchError | GitHubError):
+            raise click.ClickException(str(e)) from e
         raise
     finally:
         # Always flush diagnostics on exit
@@ -218,7 +222,7 @@ def execute_scaffold_branch_command(
     else:
         # Check if Claude Code SDK and api key are available before proceeding with AI operations
         if not is_claude_sdk_available():
-            raise click.ClickException(
+            raise ScaffoldBranchError(
                 "claude_code_sdk is required for AI scaffolding functionality. "
                 "Install with: pip install claude-code-sdk>=0.0.19"
             )
@@ -257,6 +261,7 @@ def execute_scaffold_branch_command(
         with diagnostics.time_operation("planning_mode", "planning"):
             ensure_claude_sdk_python_version()
 
+            # Lazy import to avoid build failures when claude_code_sdk is not available
             from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 
             claude_client = ClaudeSDKClient(diagnostics)

@@ -1,0 +1,5 @@
+.automationRowGrid {
+  display: grid;
+  grid-template-columns: 60px minmax(400px, 1.5fr) 240px 1fr 200px 200px;
+  height: 100%;
+}

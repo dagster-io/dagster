@@ -1,6 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps} from '@blueprintjs/core';
-import {Box} from '@dagster-io/ui-components';
+import {Box, BreadcrumbProps} from '@dagster-io/ui-components';
 import {observeEnabled} from '@shared/app/observeEnabled';
 import {AssetGlobalLineageLink, AssetPageHeader} from '@shared/assets/AssetPageHeader';
 import {useMemo} from 'react';
@@ -32,7 +30,7 @@ export const AssetsOverviewRoot = ({
 
   const history = useHistory();
 
-  const currentPathStr = (params as any)['0'];
+  const currentPathStr = (params as Record<string, string>)['0'];
   const currentPath: string[] = useMemo(
     () =>
       (currentPathStr || '')
@@ -49,7 +47,7 @@ export const AssetsOverviewRoot = ({
 
   useDocumentTitle(
     currentPath && currentPath.length
-      ? `${documentTitlePrefix}: ${displayNameForAssetKey(assetKey)}`
+      ? `${documentTitlePrefix} | ${displayNameForAssetKey(assetKey)}`
       : documentTitlePrefix,
   );
 

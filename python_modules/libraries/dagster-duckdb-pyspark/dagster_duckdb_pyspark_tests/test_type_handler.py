@@ -1,4 +1,5 @@
 import os
+from unittest.mock import MagicMock
 
 import duckdb
 import pandas as pd
@@ -10,6 +11,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_output_context,
     graph,
     instance_for_test,
     materialize,
@@ -23,11 +25,40 @@ from dagster._core.definitions.partitions.definition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
+from dagster._core.storage.db_io_manager import TableSlice
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager, duckdb_pyspark_io_manager
+from dagster_duckdb_pyspark.duckdb_pyspark_type_handler import DuckDBPySparkTypeHandler
 from pyspark.sql import (
     DataFrame as SparkDF,
     SparkSession,
 )
+from pyspark.sql.types import StringType, StructField, StructType
+
+
+def test_handle_output_empty_dataframe():
+    handler = DuckDBPySparkTypeHandler()
+    spark = SparkSession.builder.getOrCreate()
+    schema = StructType(
+        [StructField("col1", StringType(), True), StructField("col2", StringType(), True)]
+    )
+    df = spark.createDataFrame([], schema)
+    connection = MagicMock()
+    output_context = build_output_context()
+
+    handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+            columns=None,
+            partition_dimensions=[],
+        ),
+        df,
+        connection,
+    )
+
+    connection.execute.assert_not_called()
 
 
 @pytest.fixture
@@ -42,7 +73,7 @@ def io_managers(tmp_path):
 
 @op(out=Out(metadata={"schema": "a_df"}))
 def a_df() -> SparkDF:
-    spark = SparkSession.builder.getOrCreate()  # type: ignore
+    spark = SparkSession.builder.getOrCreate()
     data = [(1, 4), (2, 5), (3, 6)]
     return spark.createDataFrame(data)
 
@@ -81,7 +112,7 @@ def test_duckdb_io_manager_with_ops(tmp_path, io_managers):
 
 @asset(key_prefix=["my_schema"])
 def b_df() -> SparkDF:
-    spark = SparkSession.builder.getOrCreate()  # type: ignore
+    spark = SparkSession.builder.getOrCreate()
     data = [(1, 4), (2, 5), (3, 6)]
     return spark.createDataFrame(data)
 
@@ -114,7 +145,7 @@ def test_duckdb_io_manager_with_assets(tmp_path, io_managers):
 def test_duckdb_io_manager_with_schema(tmp_path):
     @asset
     def my_df() -> SparkDF:
-        spark = SparkSession.builder.getOrCreate()  # type: ignore
+        spark = SparkSession.builder.getOrCreate()
         data = [(1, 4), (2, 5), (3, 6)]
         return spark.createDataFrame(data)
 
@@ -190,7 +221,7 @@ def daily_partitioned(context: AssetExecutionContext) -> SparkDF:
             "b": [4, 5, 6],
         }
     )
-    spark = SparkSession.builder.getOrCreate()  # type: ignore
+    spark = SparkSession.builder.getOrCreate()
     return spark.createDataFrame(pd_df)
 
 
@@ -255,7 +286,7 @@ def static_partitioned(context: AssetExecutionContext) -> SparkDF:
         }
     )
 
-    spark = SparkSession.builder.getOrCreate()  # type: ignore
+    spark = SparkSession.builder.getOrCreate()
     return spark.createDataFrame(pd_df)
 
 
@@ -325,7 +356,7 @@ def multi_partitioned(context) -> SparkDF:
         }
     )
 
-    spark = SparkSession.builder.getOrCreate()  # type: ignore
+    spark = SparkSession.builder.getOrCreate()
     return spark.createDataFrame(pd_df)
 
 
@@ -404,7 +435,7 @@ def dynamic_partitioned(context: AssetExecutionContext) -> SparkDF:
         }
     )
 
-    spark = SparkSession.builder.getOrCreate()  # type: ignore
+    spark = SparkSession.builder.getOrCreate()
     return spark.createDataFrame(pd_df)
 
 
@@ -413,7 +444,7 @@ def test_dynamic_partition(tmp_path, io_managers):
         with instance_for_test() as instance:
             resource_defs = {"io_manager": io_manager}
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned],
@@ -428,7 +459,7 @@ def test_dynamic_partition(tmp_path, io_managers):
             assert out_df["a"].tolist() == ["1", "1", "1"]
             duckdb_conn.close()
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned],
@@ -498,7 +529,7 @@ def test_self_dependent_asset(tmp_path, io_managers):
             }
         )
 
-        spark = SparkSession.builder.getOrCreate()  # type: ignore
+        spark = SparkSession.builder.getOrCreate()
         return spark.createDataFrame(pd_df)
 
     for io_manager in io_managers:

@@ -295,7 +295,7 @@ def multi_observable_source_asset(
         builder = DecoratorAssetsDefinitionBuilder.from_multi_asset_specs(
             can_subset=can_subset,
             asset_specs=specs,
-            op_name=name or fn.__name__,
+            op_name=name or fn.__name__,  # ty: ignore[unresolved-attribute]
             asset_in_map={},
             passed_args=args,
             fn=fn,

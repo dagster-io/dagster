@@ -4,10 +4,10 @@ import {
   Caption,
   CaptionMono,
   Colors,
+  Heading,
   Icon,
   Popover,
   Skeleton,
-  Subtitle2,
   useViewport,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
@@ -71,30 +71,32 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
         ) {
           return event;
         }
+        if (event.__typename === 'ObservationEvent') {
+          const timestampEntries = event.metadataEntries.filter(
+            (entry) => entry.__typename === 'TimestampMetadataEntry',
+          );
 
-        const timestampEntries = event.metadataEntries.filter(
-          (entry) => entry.__typename === 'TimestampMetadataEntry',
-        );
+          const lastUpdated = timestampEntries.find(
+            (entry) => entry.label === 'dagster/last_updated_timestamp',
+          );
 
-        const lastUpdated = timestampEntries.find(
-          (entry) => entry.label === 'dagster/last_updated_timestamp',
-        );
+          // The metadata timestamp is in seconds.
+          const lastUpdatedSec = lastUpdated?.timestamp;
+          const ts = lastUpdatedSec ? lastUpdatedSec * 1000 : event.timestamp;
 
-        // The metadata timestamp is in seconds.
-        const lastUpdatedSec = lastUpdated?.timestamp;
-        const ts = lastUpdatedSec ? lastUpdatedSec * 1000 : event.timestamp;
+          if (!seenTimestamps.has(ts)) {
+            seenTimestamps.add(ts);
+            return {
+              ...event,
+              timestamp: `${ts}`,
+            };
+          }
 
-        if (!seenTimestamps.has(ts)) {
-          seenTimestamps.add(ts);
-          return {
-            ...event,
-            timestamp: `${ts}`,
-          };
+          return null;
         }
-
         return null;
       })
-      .filter((e): e is AssetEventType => e !== null)
+      .filter((e) => e !== null)
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp));
   }, [events]);
 
@@ -153,7 +155,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
     return (
       <Box flex={{direction: 'column', gap: 4}}>
         <Box flex={{direction: 'row'}}>
-          <Subtitle2>Recent updates</Subtitle2>
+          <Heading size={14} weight={600}>
+            Recent updates
+          </Heading>
         </Box>
         <Skeleton $width="100%" $height={36} />
         <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
@@ -170,7 +174,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
   return (
     <Box flex={{direction: 'column', gap: 4}}>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-        <Subtitle2>Recent updates</Subtitle2>
+        <Heading size={14} weight={600}>
+          Recent updates
+        </Heading>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Caption color={Colors.textLighter()}>
             {totalCount === 100
@@ -265,7 +271,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                   content={
                     <div style={{width: 400}}>
                       <Box padding={{vertical: 8, horizontal: 12}} border="bottom">
-                        <Subtitle2>Updates</Subtitle2>
+                        <Heading size={14} weight={600}>
+                          Updates
+                        </Heading>
                       </Box>
                       <Box style={{maxHeight: '300px', overflowY: 'auto'}}>
                         {[...batch.runs]
@@ -324,7 +332,14 @@ const AssetUpdate = ({
   event: AssetEventType;
   last: boolean;
 }) => {
-  const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
+  const finalEvent =
+    event &&
+    (event.__typename === 'MaterializationEvent' ||
+      event.__typename === 'ObservationEvent' ||
+      event.__typename === 'FailedToMaterializeEvent')
+      ? event
+      : null;
+  const run = finalEvent?.runOrError.__typename === 'Run' ? finalEvent.runOrError : null;
   const icon = () => {
     switch (event.__typename) {
       case 'MaterializationEvent':
@@ -337,6 +352,8 @@ const AssetUpdate = ({
         ) : (
           <Icon name="status" color={Colors.accentGray()} />
         );
+      default:
+        return null;
     }
   };
 
@@ -348,6 +365,8 @@ const AssetUpdate = ({
         return 'Observed at';
       case 'FailedToMaterializeEvent':
         return 'Failed to materialize at';
+      default:
+        return null;
     }
   };
 
@@ -364,28 +383,28 @@ const AssetUpdate = ({
         <Link
           to={assetDetailsPathForKey(assetKey, {
             view: 'events',
-            time: event.timestamp,
+            time: finalEvent?.timestamp,
           })}
         >
           <Caption>
-            <Timestamp timestamp={{ms: Number(event.timestamp)}} />
+            <Timestamp timestamp={{ms: Number(finalEvent?.timestamp)}} />
           </Caption>
         </Link>
       </Box>
       <div>
-        {event && run ? (
+        {finalEvent && run ? (
           <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
             <div>in run</div>
             <AssetRunLink
               runId={run.id}
               assetKey={assetKey}
-              event={{stepKey: event.stepKey, timestamp: event.timestamp}}
+              event={{stepKey: finalEvent.stepKey, timestamp: finalEvent.timestamp}}
             >
               <CaptionMono>{titleForRun(run)}</CaptionMono>
             </AssetRunLink>
           </Box>
-        ) : event && isRunlessEvent(event) ? (
-          <RunlessEventTag tags={event.tags} />
+        ) : finalEvent && isRunlessEvent(finalEvent) ? (
+          <RunlessEventTag tags={finalEvent.tags} />
         ) : undefined}
       </div>
     </Box>

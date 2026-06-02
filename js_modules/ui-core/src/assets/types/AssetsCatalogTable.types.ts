@@ -34,7 +34,6 @@ export type AssetCatalogTableQuery = {
             hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
-            pools: Array<string>;
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -53,23 +52,23 @@ export type AssetCatalogTableQuery = {
               | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
-              description: string;
               dimensionTypes: Array<{
                 __typename: 'DimensionDefinitionType';
                 type: Types.PartitionDefinitionType;
                 dynamicPartitionsDefinitionName: string | null;
               }>;
             } | null;
-            automationCondition: {
-              __typename: 'AutomationCondition';
-              label: string | null;
-              expandedLabel: Array<string>;
-            } | null;
+            automationCondition: {__typename: 'AutomationCondition'} | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -114,7 +113,6 @@ export type AssetCatalogGroupTableQuery = {
     hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
-    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -133,22 +131,22 @@ export type AssetCatalogGroupTableQuery = {
       | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
-      description: string;
       dimensionTypes: Array<{
         __typename: 'DimensionDefinitionType';
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    automationCondition: {
-      __typename: 'AutomationCondition';
-      label: string | null;
-      expandedLabel: Array<string>;
-    } | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -175,7 +173,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
-  pools: Array<string>;
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -194,22 +191,22 @@ export type AssetCatalogGroupTableNodeFragment = {
     | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
-    description: string;
     dimensionTypes: Array<{
       __typename: 'DimensionDefinitionType';
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
+  automationCondition: {__typename: 'AutomationCondition'} | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  storageAddress: {
+    __typename: 'StorageAddress';
+    storageKind: string | null;
+    tableName: string;
+  } | null;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -218,6 +215,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '9c59a1835a976dbc4f476a8d896056b63ff40a8ab8b482f941bfb963771831e5';
+export const AssetCatalogTableQueryVersion = '67bd29bba7f7d1ddc9c2d3e7bd5a1b3fe26d36875ba9dea6052c799ab4c98955';
 
-export const AssetCatalogGroupTableQueryVersion = 'f696bb1f797be58919716f04b0ef6e16daa3c030cecb9df0c09c7de47ac5f7f0';
+export const AssetCatalogGroupTableQueryVersion = '2a2ce4dd539e52f1a5c95072d6c41e61fd0939380ed25f5e0700188b1e6edd20';

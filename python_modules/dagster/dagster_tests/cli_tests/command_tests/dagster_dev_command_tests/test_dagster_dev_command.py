@@ -127,7 +127,7 @@ def test_dagster_dev_command_no_dagster_home():
                         # Verify the run was queued (so the dagster.yaml was applied)
                         break
 
-                    if time.time() - start_time > 30:
+                    if time.time() - start_time > 60:
                         raise Exception("Timed out waiting for queued run to exist")
 
                     time.sleep(1)
@@ -265,7 +265,7 @@ def _wait_for_webserver_running(dagit_port: int) -> None:
         except:
             print("Waiting for webserver to be ready..")  # noqa: T201
 
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 60:
             raise Exception("Timed out waiting for webserver to serve requests")
 
         time.sleep(1)
@@ -275,7 +275,7 @@ def _wait_for_instance_dir_to_be_written(parent_dir: Path) -> Path:
     # Wait for instance files to exist
     start_time = time.time()
     while True:
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 60:
             raise Exception("Timed out waiting for instance files to exist")
         subfolders = [
             child

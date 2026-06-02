@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import dagster as dg
 import pytest
@@ -33,9 +33,11 @@ from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_dbt import DbtCliResource, DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import (
+    DbtProjectArgs,
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dbt.dbt_project_manager import DbtProjectArgsManager
 from dagster_dbt_tests.dbt_projects import test_metadata_path
 from dagster_dg_cli.cli import cli as dg_cli
 from dagster_shared import check
@@ -563,6 +565,13 @@ def test_subclass_override_get_asset_spec_translator_metadata(dbt_path: Path) ->
         "mismatch with the prefixed keys registered at definition time."
     )
 
+    # Verify dep keys are also prefixed by the subclass override
+    dep_keys = {dep.asset_key for dep in spec.deps}
+    for dep_key in dep_keys:
+        assert dep_key.path[:2] == ["my_db", "my_schema"], (
+            f"Expected dep key {dep_key} to have ['my_db', 'my_schema'] prefix"
+        )
+
     # Also verify via YAML translation path
     defs_yaml = build_component_defs_for_test(
         DbtProjectComponent,
@@ -580,6 +589,49 @@ def test_subclass_override_get_asset_spec_translator_metadata(dbt_path: Path) ->
     assert isinstance(yaml_translator, DbtProjectComponentTranslator), (
         f"Expected DbtProjectComponentTranslator in spec metadata (YAML path), got {type(yaml_translator)}."
     )
+
+
+def test_subclass_with_yaml_translation_translates_dep_keys(dbt_path: Path) -> None:
+    """Regression test for dagster-io/dagster#33632: YAML translation applied through a
+    subclass must translate both asset keys AND their upstream dependency keys.
+    """
+
+    @dataclass
+    class TaggingDbtComponent(DbtProjectComponent):
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
+        ) -> dg.AssetSpec:
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+            return base_spec.replace_attributes(tags={**base_spec.tags, "custom": "true"})
+
+    defs = build_component_defs_for_test(
+        TaggingDbtComponent,
+        {
+            "project": str(dbt_path),
+            "translation": {"key": "my_prefix/{{ node.name }}"},
+        },
+    )
+
+    # Verify all asset keys are translated with the prefix
+    all_keys = defs.resolve_asset_graph().get_all_asset_keys()
+    for key in all_keys:
+        assert key.path[0] == "my_prefix", f"Asset key {key} missing prefix"
+
+    # Verify that stg_customers depends on translated (prefixed) raw_customers,
+    # not the untranslated version
+    stg_key = AssetKey(["my_prefix", "stg_customers"])
+    assets_def = defs.resolve_assets_def(stg_key)
+    spec = assets_def.get_asset_spec(stg_key)
+    dep_keys = {dep.asset_key for dep in spec.deps}
+    assert AssetKey(["my_prefix", "raw_customers"]) in dep_keys, (
+        f"Expected translated dep key ['my_prefix', 'raw_customers'], got {dep_keys}"
+    )
+    assert AssetKey("raw_customers") not in dep_keys, (
+        "Dep key 'raw_customers' should be translated to ['my_prefix', 'raw_customers']"
+    )
+
+    # Verify custom tag was applied by the subclass
+    assert spec.tags["custom"] == "true"
 
 
 def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
@@ -621,6 +673,36 @@ def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
             assert expected_key in load_context.accessed_defs_state_info.info_mapping
 
 
+def test_prepare_does_not_recurse_when_state_nested_in_project_dir() -> None:
+    """Regression test: when the dbt project sits at the root of the Dagster project, the local
+    state directory ends up nested inside the project dir, so the project snapshot copy's
+    destination is a subdirectory of its source. The copy must not recurse into its own
+    destination, which previously copied the project into itself unboundedly and filled the disk.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_dir = Path(temp_dir) / "dbt_project"
+        project_dir.mkdir()
+        (project_dir / "dbt_project.yml").write_text("name: jaffle_shop", encoding="utf-8")
+        (project_dir / "models").mkdir()
+        (project_dir / "models" / "a.sql").write_text("select 1", encoding="utf-8")
+
+        # state path nested INSIDE the project dir, as happens when the dbt project is at the
+        # project root and the defs module (which holds `.local_defs_state`) lives within it
+        state_path = project_dir / "defs" / ".local_defs_state" / "key" / "state"
+        state_path.parent.mkdir(parents=True)
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(project_dir)))
+
+        # skip the actual dbt compilation; we are exercising the project-snapshot copy
+        with patch.object(DbtProjectArgsManager, "get_project", return_value=MagicMock()):
+            manager.prepare(state_path)
+
+        snapshot = state_path.parent / "project"
+        assert (snapshot / "dbt_project.yml").exists()
+        # the snapshot must NOT contain a recursive copy of its own destination
+        assert not (snapshot / "defs" / ".local_defs_state" / "key" / "project").exists()
+
+
 def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
     with (
         instance_for_test(),
@@ -644,7 +726,8 @@ def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
             assert result.exit_code == 0
         # a side effect of running refresh-defs-state in process is that DAGSTER_IS_DEV_CLI is set to 1,
         # so avoid that by restoring the original environment
-        os.environ = original_env
+        os.environ.clear()
+        os.environ.update(original_env)
 
         # delete the original dbt project directory entirely to simulate a PEX deploy
         shutil.rmtree(tmp_dbt_path)
@@ -827,7 +910,7 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     assert source_spec.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET) is True
 
     # Should have the table_name metadata from the source definition that enables remapping
-    table_name = "master_jaffle_shop.main.raw_customers"
+    table_name = "master_jaffle_shop.main.source_raw_customers"
     assert source_spec.metadata["dagster/table_name"] == table_name
 
     # Now build defs with something matching that table name and verify key is remapped

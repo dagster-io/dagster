@@ -11,7 +11,7 @@ import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
 Any sensor can emit log messages during its evaluation function:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensors.py"
   startAfter="start_sensor_logging"
   endBefore="end_sensor_logging"
   title="src/<project_name>/defs/sensors.py"

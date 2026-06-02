@@ -16,9 +16,11 @@ from dataclasses import dataclass
 import click
 from dagster_shared.utils import find_uv_workspace_root
 from packaging import version
+from packaging.requirements import InvalidRequirement, Requirement
+from packaging.utils import canonicalize_name
 
 try:
-    import tomllib  # pyright: ignore[reportMissingImports]
+    import tomllib  # ty: ignore[unresolved-import]
 except ImportError:
     # Python < 3.11 fallback
     import tomli as tomllib
@@ -417,19 +419,15 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
     except Exception as e:
         raise ValueError(f"Error parsing pyproject.toml: {e}")
 
-    lines = []
-
     # Handle dependencies in [project] section (PEP 621)
     project_section = pyproject_data.get("project", {})
     dependencies = project_section.get("dependencies", [])
-    for dep in dependencies:
-        lines.append(str(dep))
+    lines = [str(dep) for dep in dependencies]
 
     # Handle optional dependencies in [project.optional-dependencies]
     optional_deps = project_section.get("optional-dependencies", {})
     for group_deps in optional_deps.values():
-        for dep in group_deps:
-            lines.append(str(dep))
+        lines.extend(str(dep) for dep in group_deps)
 
     # Handle legacy [tool.poetry.dependencies] for Poetry projects
     poetry_section = pyproject_data.get("tool", {}).get("poetry", {})
@@ -460,19 +458,39 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
             else:
                 lines.append(dep_name)
 
-    # Handle [tool.uv.sources] - resolve workspace and path dependencies to local paths
+    # Handle [tool.uv.sources] - resolve workspace and path dependencies to local paths.
+    # Match by canonical package name so version specifiers and extras in the requirement
+    # line don't defeat the lookup. Skip entries gated on a `group =` qualifier: pex builds
+    # have no active group context, so group-conditional sources must not be applied
+    # (otherwise a test-only local-path override would leak into the production deps pex).
     uv_sources = pyproject_data.get("tool", {}).get("uv", {}).get("sources", {})
     if uv_sources:
+        sources_by_canonical = {
+            canonicalize_name(name): cfg for name, cfg in uv_sources.items() if "group" not in cfg
+        }
         resolved_lines = []
         for line in lines:
-            source_config = uv_sources.get(line)
+            try:
+                package_name = canonicalize_name(Requirement(line).name)
+            except InvalidRequirement:
+                ui.print(
+                    f"[uv.sources] could not parse requirement line {line!r}; "
+                    "passing through unchanged"
+                )
+                resolved_lines.append(line)
+                continue
+            source_config = sources_by_canonical.get(package_name)
             if source_config:
                 if source_config.get("workspace"):
-                    resolved_path = _resolve_uv_workspace_dep(line, code_directory)
+                    resolved_path = _resolve_uv_workspace_dep(package_name, code_directory)
                     if resolved_path:
+                        ui.print(
+                            f"[uv.sources] resolved {line!r} to workspace path {resolved_path}"
+                        )
                         resolved_lines.append(resolved_path)
                         continue
                 elif "path" in source_config:
+                    ui.print(f"[uv.sources] resolved {line!r} to path {source_config['path']}")
                     resolved_lines.append(source_config["path"])
                     continue
             resolved_lines.append(line)

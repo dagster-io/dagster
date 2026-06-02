@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import styles from './css/CollapsibleSection.module.css';
@@ -22,7 +22,9 @@ export const CollapsibleSection = ({header, details, headerRightSide, children}:
           }}
         >
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, grow: 1}}>
-            <Subheading>{header}</Subheading>
+            <Heading size={14} weight={600}>
+              {header}
+            </Heading>
             {details ? (
               <Tooltip content={details} placement="top">
                 <Icon color={Colors.accentGray()} name="info" />

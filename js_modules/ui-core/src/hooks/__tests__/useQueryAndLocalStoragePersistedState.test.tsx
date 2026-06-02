@@ -66,10 +66,10 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             </MemoryRouter>
           );
         },
-      } as any,
+      } as unknown as {wrapper: React.ComponentType},
     );
 
-    let state, setter: any;
+    let state: Set<string>, setter: (val: Set<string>) => void;
 
     [state, setter] = hookResult.result.current;
 
@@ -129,7 +129,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             </MemoryRouter>
           );
         },
-      } as any,
+      } as unknown as {wrapper: React.ComponentType},
     );
 
     const [state] = hookResult.result.current;

@@ -31,7 +31,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
 
   const {sensorName} = useParams<{sensorName: string}>();
-  useDocumentTitle(`Sensor: ${sensorName}`);
+  useDocumentTitle(`Sensors | ${sensorName}`);
 
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),

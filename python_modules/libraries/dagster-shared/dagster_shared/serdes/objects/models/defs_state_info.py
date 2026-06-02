@@ -64,6 +64,21 @@ class DefsStateInfo(DagsterModel):
         else:
             return DefsStateInfo(info_mapping={**current_info.info_mapping, key: new_info})
 
+    @staticmethod
+    def remove_key(
+        current_info: Optional["DefsStateInfo"],
+        key: str,
+    ) -> "DefsStateInfo":
+        """Return a new DefsStateInfo with ``key`` dropped from the mapping.
+
+        Idempotent: removing a key that's not present is a no-op.
+        """
+        if current_info is None:
+            return DefsStateInfo(info_mapping={})
+        return DefsStateInfo(
+            info_mapping={k: v for k, v in current_info.info_mapping.items() if k != key}
+        )
+
     def get_version(self, key: str) -> str | None:
         info = self.info_mapping.get(key)
         return info.version if info else None

@@ -298,8 +298,8 @@ describe('DeferredCallbackRegistry', () => {
 
       // This should not throw
       registry.watch({
-        onChange: undefined as any,
-        onError: null as any,
+        onChange: undefined as unknown as TestCallbacks['onChange'],
+        onError: null as unknown as TestCallbacks['onError'],
       });
 
       expect(mockTargetFn).toHaveBeenCalledWith({});

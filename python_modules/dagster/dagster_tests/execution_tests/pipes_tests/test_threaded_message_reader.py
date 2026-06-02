@@ -20,7 +20,7 @@ from dagster_pipes import PipesDefaultMessageWriter, _make_message
 
 
 class PipesFileLogReader(PipesChunkedLogReader):
-    def __init__(self, *, path: str, interval: float = 10, target_stream: TextIO):
+    def __init__(self, *, path: str, interval: float = 0.1, target_stream: TextIO):
         super().__init__(interval=interval, target_stream=target_stream)
 
         self.path = path
@@ -216,7 +216,7 @@ def test_file_message_reader(tmp_path_factory, capsys):
     mat = mats[0]
     assert mat.asset_key == dg.AssetKey(["my_asset"])
     assert mat.materialization.metadata["foo"].value == "bar"
-    assert mat.materialization.tags[DATA_VERSION_TAG] == "alpha"  # pyright: ignore[reportOptionalSubscript]
+    assert mat.materialization.tags[DATA_VERSION_TAG] == "alpha"  # ty: ignore[not-subscriptable]
 
     captured = capsys.readouterr()
 

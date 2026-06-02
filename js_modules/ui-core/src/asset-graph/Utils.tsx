@@ -15,9 +15,9 @@ import {
   AssetNodeLiveObservationFragment,
 } from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import type {WorkspaceAssetNode} from '../assets/WorkspaceAssetNode';
 import {ILayoutOp} from '../graph/layout';
 import {RunStatus} from '../graphql/types';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum AssetGraphViewType {
   GLOBAL = 'global',
@@ -34,7 +34,7 @@ export enum AssetGraphViewType {
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
 
-type AssetNode = WorkspaceAssetFragment;
+type AssetNode = WorkspaceAssetNode;
 type AssetKey = AssetNodeKeyFragment;
 type AssetLiveNode = AssetNodeLiveFragment & {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
@@ -265,12 +265,36 @@ export function shouldDisplayRunFailure(
   return true;
 }
 
+// Mirrors Python's AssetKey.to_escaped_user_string / from_escaped_user_string
+// (dagster/_core/definitions/asset_key.py) so that AssetKey(["foo/bar"]) and
+// AssetKey(["foo", "bar"]) produce distinct tokens. Within a component, "/" is
+// escaped as "\/"; standalone backslashes are preserved.
 export function tokenForAssetKey(key: {path: string[]}) {
-  return key.path.join('/');
+  return key.path.map((part) => part.replace(/\//g, '\\/')).join('/');
 }
 
 export function tokenToAssetKey(token: string) {
-  return {path: token.split('/')};
+  const parts: string[] = [];
+  let current = '';
+  let escapeNext = false;
+  for (const char of token) {
+    if (escapeNext) {
+      current += '\\' + char;
+      escapeNext = false;
+    } else if (char === '\\') {
+      escapeNext = true;
+    } else if (char === '/') {
+      parts.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (escapeNext) {
+    current += '\\';
+  }
+  parts.push(current);
+  return {path: parts.map((part) => part.replace(/\\\//g, '/'))};
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {

@@ -80,16 +80,16 @@ def simulate_webhooks(
     interval: float,
 ) -> None:
     """Simulate webhook pushes to the storage buffer."""
-    print(f"Simulating {count} webhook pushes for source '{source_id}'...")  # noqa: T201
-    print(f"Storage directory: {WEBHOOK_STORAGE_DIR}")  # noqa: T201
-    print(f"Interval between events: {interval}s")  # noqa: T201
-    print("-" * 50)  # noqa: T201
+    print(f"Simulating {count} webhook pushes for source '{source_id}'...")
+    print(f"Storage directory: {WEBHOOK_STORAGE_DIR}")
+    print(f"Interval between events: {interval}s")
+    print("-" * 50)
 
     for i in range(1, count + 1):
         payload = create_webhook_payload(i)
         receive_webhook(source_id, payload)
 
-        print(  # noqa: T201
+        print(
             f"[{i}/{count}] Pushed webhook: id={payload['id'][:8]}... "
             f"type={payload['data']['event_type']}"
         )
@@ -100,11 +100,11 @@ def simulate_webhooks(
     # Show storage state
     pending_count = get_pending_count(source_id)
 
-    print("-" * 50)  # noqa: T201
-    print(f"Simulated {count} webhook pushes successfully!")  # noqa: T201
-    print(f"Pending payloads in storage for '{source_id}': {pending_count}")  # noqa: T201
-    print("\nTo process these payloads, materialize the 'process_webhook_data' asset")  # noqa: T201
-    print(f"with config: source_id='{source_id}'")  # noqa: T201
+    print("-" * 50)
+    print(f"Simulated {count} webhook pushes successfully!")
+    print(f"Pending payloads in storage for '{source_id}': {pending_count}")
+    print("\nTo process these payloads, materialize the 'process_webhook_data' asset")
+    print(f"with config: source_id='{source_id}'")
 
 
 def main():

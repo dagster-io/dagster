@@ -1,8 +1,8 @@
 import {Box, Caption, Colors, Icon, MiddleTruncate, Mono, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {succinctType} from './ResourceRoot';
+import styles from './css/VirtualizedResourceRow.module.css';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -40,7 +40,7 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border="bottom">
+      <Box className={styles.rowGrid} border="bottom">
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -78,7 +78,7 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
         <RowCell>
           <Link to={workspacePathFromAddress(repoAddress, `/resources/${name}/uses`)}>{uses}</Link>
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -92,9 +92,3 @@ export const VirtualizedResourceHeader = () => {
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;

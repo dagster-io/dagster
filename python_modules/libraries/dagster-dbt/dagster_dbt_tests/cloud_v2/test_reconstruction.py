@@ -53,8 +53,8 @@ def test_cacheable_dbt_cloud_workspace_data(
         pointer,
     )
 
-    # 7 call to creates the defs
-    assert len(fetch_workspace_data_api_mocks.calls) == 8
+    # 6 calls to create the defs
+    assert len(fetch_workspace_data_api_mocks.calls) == 6
 
     repository_load_data = init_repository_def.repository_load_data
 
@@ -65,4 +65,4 @@ def test_cacheable_dbt_cloud_workspace_data(
     )
 
     # no additional calls after a fresh load
-    assert len(fetch_workspace_data_api_mocks.calls) == 8
+    assert len(fetch_workspace_data_api_mocks.calls) == 6

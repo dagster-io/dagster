@@ -3,9 +3,18 @@ from typing import TYPE_CHECKING, Any
 
 import graphene
 from dagster._core.definitions.selector import SensorSelector
+from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.utils import capture_error
-from dagster_graphql.schema.errors import GraphenePythonError, GrapheneSensorNotFoundError
+from dagster_graphql.implementation.utils import (
+    assert_permission_for_sensor,
+    capture_error,
+    require_permission_check,
+)
+from dagster_graphql.schema.errors import (
+    GraphenePythonError,
+    GrapheneSensorNotFoundError,
+    GrapheneUnauthorizedError,
+)
 from dagster_graphql.schema.inputs import GrapheneSensorSelector
 from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
 
@@ -15,7 +24,12 @@ if TYPE_CHECKING:
 
 class GrapheneSensorDryRunResult(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneSensorNotFoundError, GrapheneDryRunInstigationTick)
+        types = (
+            GraphenePythonError,
+            GrapheneSensorNotFoundError,
+            GrapheneUnauthorizedError,
+            GrapheneDryRunInstigationTick,
+        )
         name = "SensorDryRunResult"
 
 
@@ -32,9 +46,10 @@ class GrapheneSensorDryRunMutation(graphene.Mutation):
         name = "SensorDryRunMutation"
 
     @capture_error
+    @require_permission_check(Permissions.SENSOR_DRY_RUN)
     def mutate(
         self, graphene_info: "ResolveInfo", selector_data: Mapping[str, Any], cursor: str | None
     ):
-        return GrapheneDryRunInstigationTick(
-            SensorSelector.from_graphql_input(selector_data), timestamp=None, cursor=cursor
-        )
+        selector = SensorSelector.from_graphql_input(selector_data)
+        assert_permission_for_sensor(graphene_info, Permissions.SENSOR_DRY_RUN, selector)
+        return GrapheneDryRunInstigationTick(selector, timestamp=None, cursor=cursor)

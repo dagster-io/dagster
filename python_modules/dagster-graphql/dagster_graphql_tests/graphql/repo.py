@@ -512,7 +512,7 @@ def scalar_output_job():
     def return_bool():
         return True
 
-    @op(out=Out(Any))  # pyright: ignore[reportArgumentType]
+    @op(out=Out(Any))
     def return_any():
         return "dkjfkdjfe"
 
@@ -628,7 +628,7 @@ def foo_logger(init_context):
     return logger_
 
 
-@logger({"log_level": Field(str), "prefix": Field(str)})  # pyright: ignore[reportArgumentType]
+@logger({"log_level": Field(str), "prefix": Field(str)})
 def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):
@@ -1909,12 +1909,20 @@ def asset_with_compute_storage_kinds():
 def asset_with_automation_condition() -> None: ...
 
 
+@asset(description="A" * 100)
+def asset_with_long_description() -> None: ...
+
+
+@asset
+def asset_without_description() -> None: ...
+
+
 class MyAutomationCondition(AutomationCondition):
     @property
     def name(self) -> str:
         return "some_custom_name"
 
-    def evaluate(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+    def evaluate(self): ...  # ty: ignore[invalid-method-override]
 
 
 @asset(automation_condition=MyAutomationCondition().since_last_handled())
@@ -2013,6 +2021,11 @@ def single_run_backfill_policy_asset(context):
     backfill_policy=BackfillPolicy.multi_run(10),
 )
 def multi_run_backfill_policy_asset(context):
+    pass
+
+
+@asset(op_tags={"foo": "bar", "baz": "qux", "dagster/kind/python": ""})
+def asset_with_op_tags():
     pass
 
 
@@ -2340,6 +2353,16 @@ def table_asset_4():
     pass
 
 
+@asset(
+    metadata={
+        "dagster/table_name": "db.schema.snowflake_table",
+        "dagster/storage_kind": "snowflake",
+    },
+)
+def table_asset_with_kind():
+    pass
+
+
 def define_assets():
     return [
         asset_one,
@@ -2379,6 +2402,7 @@ def define_assets():
         check_in_op_asset,
         single_run_backfill_policy_asset,
         multi_run_backfill_policy_asset,
+        asset_with_op_tags,
         executable_asset,
         unexecutable_asset,
         upstream_dynamic_partitioned_asset,
@@ -2406,6 +2430,8 @@ def define_assets():
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
         asset_with_custom_automation_condition,
+        asset_with_long_description,
+        asset_without_description,
         concurrency_asset,
         concurrency_graph_asset,
         concurrency_multi_asset,
@@ -2422,6 +2448,7 @@ def define_assets():
         table_asset_2,
         table_asset_3,
         table_asset_4,
+        table_asset_with_kind,
         partitioned_asset_for_checks,
     ]
 

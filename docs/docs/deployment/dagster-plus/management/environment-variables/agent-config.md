@@ -52,83 +52,65 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 <Tabs>
   <TabItem value="Amazon ECS agents">
 
-Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
+Using the `ecs.env_vars` and `ecs.secrets` properties in [`container_context.yaml`](/deployment/dagster-plus/management/build-yaml#container_contextyaml), you can configure environment variables and secrets for a specific code location.
 
 ```yaml
-# build.yaml
-locations:
-  - location_name: cloud-examples
-    image: dagster/dagster-cloud-examples:latest
-    code_source:
-      package_name: dagster_cloud_examples
-    container_context:
-      ecs:
-        env_vars:
-          - DATABASE_NAME=testing
-          - DATABASE_PASSWORD
-        secrets:
-          - name: 'MY_API_TOKEN'
-            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
-          - name: 'MY_PASSWORD'
-            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
-        secrets_tags:
-          - 'my_tag_name'
+# container_context.yaml
+ecs:
+  env_vars:
+    - DATABASE_NAME=testing
+    - DATABASE_PASSWORD
+  secrets:
+    - name: 'MY_API_TOKEN'
+      valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
+    - name: 'MY_PASSWORD'
+      valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
+  secrets_tags:
+    - 'my_tag_name'
 ```
 
-| Key                                  | Description                                                                                                                                                                 |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `container_context.ecs.env_vars`     | A list of keys or key-value pairs. If a value is not specified, it pulls from the agent task. E.g., `FOO_ENV_VAR` = `foo_value`, `BAR_ENV_VAR` = agent task value.          |
-| `container_context.ecs.secrets`      | Individual secrets using the [ECS API structure](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html).                                                |
-| `container_context.ecs.secrets_tags` | A list of tag names; secrets tagged with these in AWS Secrets Manager will be environment variables. The variable name is the secret name, the value is the secret's value. |
+| Key                | Description                                                                                                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ecs.env_vars`     | A list of keys or key-value pairs. If a value is not specified, it pulls from the agent task. E.g., `FOO_ENV_VAR` = `foo_value`, `BAR_ENV_VAR` = agent task value.          |
+| `ecs.secrets`      | Individual secrets using the [ECS API structure](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html).                                                |
+| `ecs.secrets_tags` | A list of tag names; secrets tagged with these in AWS Secrets Manager will be environment variables. The variable name is the secret name, the value is the secret's value. |
 
-After you've modified `build.yaml`, redeploy the code location in Dagster+ to apply the changes:
+After you've modified `container_context.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 !["Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 
 </TabItem>
 <TabItem value="Docker agents">
 
-Using the `container_context.docker.env_vars` property, you can include environment variables and secrets in the Docker container associated with a specific code location. For example:
+Using the `docker.env_vars` property in [`container_context.yaml`](/deployment/dagster-plus/management/build-yaml#container_contextyaml), you can include environment variables and secrets in the Docker container associated with a specific code location. For example:
 
 ```yaml
-# build.yaml
-locations:
-  - location_name: cloud-examples
-    image: dagster/dagster-cloud-examples:latest
-    code_source:
-      package_name: dagster_cloud_examples
-    container_context:
-      docker:
-        env_vars:
-          - DATABASE_NAME
-          - DATABASE_USERNAME=hooli_testing
+# container_context.yaml
+docker:
+  env_vars:
+    - DATABASE_NAME
+    - DATABASE_USERNAME=hooli_testing
 ```
 
-The `container_context.docker.env_vars` property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the local environment.
+The `docker.env_vars` property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the local environment.
 
-After you've modified `build.yaml`, redeploy the code location in Dagster+ to apply the changes:
+After you've modified `container_context.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 ![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 
 </TabItem>
 <TabItem value="Kubernetes agents">
 
-Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
+Using the `k8s.env_vars` and `k8s.env_secrets` properties in [`container_context.yaml`](/deployment/dagster-plus/management/build-yaml#container_contextyaml), you can specify environment variables and secrets for a specific code location. For example:
 
 ```yaml
-# build.yaml
-locations:
-  - location_name: cloud-examples
-    image: dagster/dagster-cloud-examples:latest
-    code_source:
-      package_name: dagster_cloud_examples
-    container_context:
-      k8s:
-        env_vars:
-          - database_name # value pulled from agent's environment
-          - database_username=hooli_testing
-        env_secrets:
-          - database_password
+# container_context.yaml
+k8s:
+  env_vars:
+    - database_name # value pulled from agent's environment
+    - database_username=hooli_testing
+  env_secrets:
+    - database_password
 ```
 
 | Key           | Description                                                                                                                                                                                                                                                                                                     |
@@ -136,7 +118,7 @@ locations:
 | `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                  |
 | `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. For more information, see the [Kubernetes](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables). |
 
-After you've modified `build.yaml`, redeploy the code location in Dagster+ to apply the changes:
+After you've modified `container_context.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
 ![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 

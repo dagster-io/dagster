@@ -14,3 +14,9 @@ export const useOpenInNewTab = () => {
     [basePath],
   );
 };
+
+// Returns true if Cmd (Mac) or Ctrl (Windows/Linux) was held during
+// a click or keyboard event, indicating the user wants a new tab.
+export function isNewTabClick(e: React.MouseEvent | KeyboardEvent): boolean {
+  return 'metaKey' in e && (e.metaKey || e.ctrlKey);
+}

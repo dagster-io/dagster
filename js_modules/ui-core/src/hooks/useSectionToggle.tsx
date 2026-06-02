@@ -7,10 +7,10 @@ import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
  * Hook to manage open/closed state for sectioned lists or grids.
  * Returns a Set of closed section ids and a toggle function for a given id.
  */
-export function useSectionToggle(storageKey: string) {
+export function useSectionToggle(storageKey: string, defaultClosedSections: string[] = []) {
   const key = usePrefixedCacheKey(storageKey);
   const [closedSections, setClosedSections] = useStateWithStorage<string[]>(key, (value) =>
-    value instanceof Array ? value : [],
+    value instanceof Array ? value : defaultClosedSections,
   );
   const closedSectionsSet = useMemo(() => new Set(closedSections), [closedSections]);
 

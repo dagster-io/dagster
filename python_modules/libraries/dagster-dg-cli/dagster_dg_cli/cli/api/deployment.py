@@ -3,6 +3,7 @@
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+from dagster_rest_resources.schemas.enums import DgApiPullRequestStatus
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
@@ -34,11 +35,12 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
 @click.option(
     "--pr-status",
     "pr_status",
-    type=click.Choice(["OPEN", "CLOSED", "MERGED"], case_sensitive=True),
+    type=click.Choice([e.value for e in DgApiPullRequestStatus], case_sensitive=False),
+    callback=lambda ctx, param, v: DgApiPullRequestStatus(v.upper()) if v else None,
     default=None,
     help="Filter branch deployments by pull request status (only applies with --type branch or all)",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="DeploymentList")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="DgApiDeploymentList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -46,21 +48,29 @@ def list_deployments_command(
     ctx: click.Context,
     output_json: bool,
     deployment_type: str,
-    pr_status: str | None,
+    pr_status: DgApiPullRequestStatus | None,
     organization: str,
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List deployments in the organization."""
+    """List deployments in the organization.
+
+    Example::
+
+        $ dg api deployment list
+        NAME     ID  TYPE
+        prod     1   PRODUCTION
+        staging  2   PRODUCTION
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
-    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
+    from dagster_rest_resources.schemas.deployment import DgApiDeploymentList
 
-    api = DgApiDeploymentApi(client)
+    api = DgApiDeploymentApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         if deployment_type == "production":
@@ -70,8 +80,8 @@ def list_deployments_command(
         else:  # all
             prod = api.list_deployments()
             branch = api.list_branch_deployments(pull_request_status=pr_status)
-            all_items = prod.items + branch.items
-            deployments = DeploymentList(items=all_items, total=len(all_items))
+            all_items = [*prod.items, *branch.items]
+            deployments = DgApiDeploymentList(items=all_items, total=len(all_items))
 
         output = format_deployments(deployments, as_json=output_json)
         click.echo(output)
@@ -85,7 +95,7 @@ def list_deployments_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="Deployment")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="DgApiDeployment")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -97,15 +107,23 @@ def get_deployment_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Show detailed information about a specific deployment."""
+    """Show detailed information about a specific deployment.
+
+    Example::
+
+        $ dg api deployment get prod
+        Name: prod
+        ID:   1
+        Type: PRODUCTION
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
 
-    api = DgApiDeploymentApi(client)
+    api = DgApiDeploymentApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         try:
@@ -126,7 +144,9 @@ def get_deployment_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="DeploymentSettings")
+@dg_response_schema(
+    module="dagster_rest_resources.schemas.deployment", cls="DgApiDeploymentSettings"
+)
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -138,16 +158,27 @@ def get_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get settings for a deployment."""
+    """Get settings for a deployment.
+
+    Example::
+
+        $ dg api deployment settings get
+        run_queue:
+          max_concurrent_runs: 10
+          tag_concurrency_limits: []
+        run_retries:
+          max_retries: 3
+        sso_default_role: VIEWER
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
 
-    api = DgApiDeploymentApi(client)
+    api = DgApiDeploymentApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         settings = api.get_deployment_settings()
@@ -163,7 +194,9 @@ def get_settings_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="DeploymentSettings")
+@dg_response_schema(
+    module="dagster_rest_resources.schemas.deployment", cls="DgApiDeploymentSettings"
+)
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -176,7 +209,18 @@ def set_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Set deployment settings from a YAML file."""
+    """Set deployment settings from a YAML file.
+
+    Example::
+
+        $ dg api deployment settings set deployment-settings.yaml
+        run_queue:
+          max_concurrent_runs: 25
+          tag_concurrency_limits: []
+        run_retries:
+          max_retries: 3
+        sso_default_role: VIEWER
+    """
     import yaml
 
     with open(file_path) as f:
@@ -193,14 +237,14 @@ def set_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
 
-    api = DgApiDeploymentApi(client)
+    api = DgApiDeploymentApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        from dagster_dg_cli.api_layer.schemas.deployment import DeploymentSettings
+        from dagster_rest_resources.schemas.deployment import DgApiDeploymentSettings
 
-        settings = api.update_deployment_settings(DeploymentSettings(settings=settings_dict))
+        settings = api.update_deployment_settings(DgApiDeploymentSettings(settings=settings_dict))
         output = format_deployment_settings(settings, as_json=output_json)
         click.echo(output)
 
@@ -219,7 +263,7 @@ def set_settings_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.deployment", cls="Deployment")
+@dg_response_schema(module="dagster_rest_resources.schemas.deployment", cls="DgApiDeployment")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -232,21 +276,32 @@ def delete_deployment_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Delete a deployment by name."""
+    """Delete a deployment by name.
+
+    Example::
+
+        $ dg api deployment delete pr-123-feature-branch
+        Name: pr-123-feature-branch
+        ID:   42
+        Type: BRANCH
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
+    from dagster_rest_resources.api.deployment import DgApiDeploymentApi
+    from dagster_rest_resources.schemas.exception import UnconfirmedProdDeletionError
 
-    api = DgApiDeploymentApi(client)
+    api = DgApiDeploymentApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         try:
             deployment = api.delete_deployment(name, allow_delete_full_deployment)
-        except ValueError as e:
-            raise click.ClickException(str(e))
+        except UnconfirmedProdDeletionError as e:
+            raise click.ClickException(
+                str(e) + " Use --allow-delete-full-deployment to confirm deletion."
+            )
         output = format_deployment(deployment, as_json=output_json)
         click.echo(output)
 

@@ -119,7 +119,7 @@ export const ExecuteChecksButton = ({
       },
     };
     setLaunching(true);
-    await launchWithTelemetry({executionParams}, 'toast');
+    await launchWithTelemetry({executionParams}, {behavior: 'toast'});
     setLaunching(false);
   };
 

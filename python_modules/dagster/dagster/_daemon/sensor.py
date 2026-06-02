@@ -53,7 +53,7 @@ from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.utils import DaemonErrorCapture
+from dagster._daemon.utils import DaemonErrorCapture, shuffled_round_robin_by_key
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import (
@@ -284,11 +284,11 @@ class SensorLaunchContext(AbstractContextManager):
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __exit__(
         self,
-        exception_type: type[BaseException],
-        exception_value: Exception,
-        traceback: TracebackType,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if exception_type and isinstance(exception_value, KeyboardInterrupt):
             return
@@ -439,7 +439,12 @@ def execute_sensor_iteration(
         yield
         return
 
-    for sensor in sensors.values():
+    # Round-robin across code locations so a single code location with many sensors
+    # cannot consistently push sensors from other code locations to the back of the
+    # thread pool queue.
+    for sensor in shuffled_round_robin_by_key(
+        sensors.values(), key=lambda s: s.handle.location_name
+    ):
         sensor_name = sensor.name
         sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
         sensor_state = all_sensor_states.get(sensor.selector_id)
@@ -1343,7 +1348,8 @@ def _get_or_create_sensor_run(
     existing_runs_by_key: dict[str, DagsterRun],
 ) -> DagsterRun | SkippedSensorRun:
     run_key = run_request.run_key
-    run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
+    existing_run = existing_runs_by_key.get(run_key) if run_key else None
+    run = existing_run or instance.get_run_by_id(run_id)
 
     if run:
         if run.status != DagsterRunStatus.NOT_STARTED:

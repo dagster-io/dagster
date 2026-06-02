@@ -87,7 +87,7 @@ def test_logging_custom_log_levels():
             dagster_run=dg.DagsterRun(job_name="system", run_id="123"),
         )
         with pytest.raises(AttributeError):
-            dl.foo("test")  # pyright: ignore[reportAttributeAccessIssue]
+            dl.foo("test")  # ty: ignore[unresolved-attribute]
 
 
 def test_logging_integer_log_levels():

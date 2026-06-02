@@ -845,6 +845,72 @@ def test_filtered_runs_multiple_filters():
             assert started_run_without_tags.run_id not in run_ids
 
 
+FILTERED_RUN_WITH_LIMIT_QUERY = """
+query PipelineRunsWithLimitQuery($filter: RunsFilter, $limit: Int) {
+  pipelineRunsOrError(filter: $filter, limit: $limit) {
+    ... on PipelineRuns {
+      results {
+        runId
+      }
+    }
+  }
+}
+"""
+
+
+def test_default_graphql_run_records_limit(monkeypatch):
+    monkeypatch.setenv("DAGSTER_DEFAULT_GRAPHQL_RUN_RECORDS_LIMIT", "2")
+
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        run_ids = [
+            instance.create_run_for_job(
+                repo.get_job("foo_job"),
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "bar"},
+            ).run_id
+            for _ in range(5)
+        ]
+
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            # No filter: cap kicks in.
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_WITH_LIMIT_QUERY,
+                variables={},
+            )
+            assert result.data
+            assert len(result.data["pipelineRunsOrError"]["results"]) == 2
+
+            # Tag-only filter: cap still kicks in (matches unboundedly many rows over time).
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_WITH_LIMIT_QUERY,
+                variables={"filter": {"tags": [{"key": "foo", "value": "bar"}]}},
+            )
+            assert result.data
+            assert len(result.data["pipelineRunsOrError"]["results"]) == 2
+
+            # run_ids filter: bounded by caller's input list, so the cap is bypassed.
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_WITH_LIMIT_QUERY,
+                variables={"filter": {"runIds": run_ids}},
+            )
+            assert result.data
+            returned = [r["runId"] for r in result.data["pipelineRunsOrError"]["results"]]
+            assert set(returned) == set(run_ids)
+
+            # Explicit limit is honored as-is.
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_WITH_LIMIT_QUERY,
+                variables={"limit": 1},
+            )
+            assert result.data
+            assert len(result.data["pipelineRunsOrError"]["results"]) == 1
+
+
 def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
@@ -918,7 +984,7 @@ def test_run_group():
                 tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
             )
             execute_run(InMemoryJob(foo_job), run, instance)
-            runs.append(run)  # pyright: ignore[reportArgumentType]
+            runs.append(run)
 
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
@@ -993,7 +1059,7 @@ def test_asset_batching():
             assert len(materializations) == 3
 
             counter = traced_counter.get()
-            counts = counter.counts()  # pyright: ignore[reportOptionalMemberAccess]
+            counts = counter.counts()  # ty: ignore[unresolved-attribute]
             assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1
 

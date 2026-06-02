@@ -124,9 +124,12 @@ class BaseAirbyteResource(ConfigurableResource):
                     request_args["json"] = data
 
                 if include_additional_request_params:
-                    request_args = deep_merge_dicts(
-                        request_args,
-                        self.all_additional_request_params,
+                    request_args = cast(
+                        "dict[str, Any]",
+                        deep_merge_dicts(
+                            request_args,
+                            self.all_additional_request_params,
+                        ),
                     )
 
                 response = requests.request(
@@ -370,7 +373,7 @@ class AirbyteResource(BaseAirbyteResource):
         )
         return {**auth_param, **self.request_additional_params}
 
-    def make_request(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def make_request(  # ty: ignore[invalid-method-override]
         self, endpoint: str, data: Mapping[str, object] | None
     ) -> Mapping[str, object] | None:
         """Creates and sends a request to the desired Airbyte REST API endpoint.

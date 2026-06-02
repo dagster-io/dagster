@@ -41,7 +41,7 @@ You can scaffold assets and sensors from the command line with the `dg scaffold`
 If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/simple-sensor-example.py"
+  path="docs_snippets/docs_snippets/guides/automate/simple-sensor-example.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -84,7 +84,7 @@ When dealing with a large number of events, you may want to implement a cursor t
 The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/sensor-cursor.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensor-cursor.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />

@@ -16,7 +16,6 @@ import {
   NonIdealState,
   Popover,
   SpinnerWithText,
-  Subheading,
   Table,
   TextInput,
   Tooltip,
@@ -75,7 +74,7 @@ export const InstanceConcurrencyKeyInfo = ({
   readOnly: boolean;
 }) => {
   useTrackPageView();
-  useDocumentTitle(`Pool: ${concurrencyKey}`);
+  useDocumentTitle(`Pools | ${concurrencyKey}`);
   const [showEdit, setShowEdit] = React.useState<boolean>();
   const [showDelete, setShowDelete] = React.useState<boolean>(false);
   const queryResult = useQuery<PoolDetailsQuery, PoolDetailsQueryVariables>(POOL_DETAILS_QUERY, {
@@ -105,7 +104,7 @@ export const InstanceConcurrencyKeyInfo = ({
               flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
               border="bottom"
             >
-              <Heading>
+              <Heading size={20} weight={500}>
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                   <div>
                     <Link to="/deployment/concurrency">Pools</Link>
@@ -136,7 +135,9 @@ export const InstanceConcurrencyKeyInfo = ({
               </Box>
             </Box>
             <Box padding={{vertical: 16, horizontal: 24}}>
-              <Subheading>Pool info</Subheading>
+              <Heading size={14} weight={600}>
+                Pool info
+              </Heading>
             </Box>
             {!hasRunQueue && granularity !== 'op' ? (
               <Box margin={{horizontal: 20, bottom: 20}}>
@@ -204,7 +205,9 @@ export const InstanceConcurrencyKeyInfo = ({
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress steps</Subheading>
+                  <Heading size={14} weight={600}>
+                    In progress steps
+                  </Heading>
                 </Box>
                 <Box style={{marginLeft: -1}}>
                   <PendingStepsTable
@@ -217,7 +220,9 @@ export const InstanceConcurrencyKeyInfo = ({
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>Queued runs</Subheading>
+                  <Heading size={14} weight={600}>
+                    Queued runs
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>
@@ -227,14 +232,18 @@ export const InstanceConcurrencyKeyInfo = ({
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress</Subheading>
+                  <Heading size={14} weight={600}>
+                    In progress
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={inProgressStatuses} />
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>Queued</Subheading>
+                  <Heading size={14} weight={600}>
+                    Queued
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>

@@ -4,6 +4,7 @@ from collections.abc import Callable
 import responses
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.test_utils import environ
 from dagster_fivetran import (
     DagsterFivetranTranslator,
@@ -368,3 +369,6 @@ def test_translator_non_custom_report_metadata() -> None:
     assert metadata_set.sync_frequency_minutes == 60
     assert metadata_set.schedule_type == "manual"
     assert metadata_set.daily_sync_time is None
+
+    # storage_kind should be derived from the destination service
+    assert TableMetadataSet.extract(asset_spec.metadata).storage_kind == "snowflake"

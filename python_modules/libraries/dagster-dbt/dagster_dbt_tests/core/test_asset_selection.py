@@ -8,11 +8,14 @@ import pytest
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
-from dagster_dbt import DagsterDbtTranslator, build_dbt_asset_selection
+from dagster_dbt import DagsterDbtTranslator, DbtProject, build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_shared.check.functions import ParameterCheckError
+
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AndAssetSelection
@@ -331,6 +334,74 @@ def test_dbt_asset_selection_selector(
     asset_selection = build_dbt_asset_selection([selected_dbt_assets])
     selected_asset_keys = asset_selection.resolve([selected_dbt_assets])
     assert selected_asset_keys == expected_asset_keys
+
+
+def test_dbt_asset_selection_path_selector_without_project_reproduces_issue(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    expected_asset_keys = {
+        AssetKey(key)
+        for key in {
+            "raw_customers",
+            "raw_orders",
+            "raw_payments",
+            "stg_customers",
+            "stg_orders",
+            "stg_payments",
+            "customers",
+            "orders",
+        }
+    }
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(): ...
+
+    fqn_asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_selector="select_with_fqn")
+    fqn_selected_asset_keys = fqn_asset_selection.resolve([my_dbt_assets])
+    assert fqn_selected_asset_keys == expected_asset_keys
+
+    path_asset_selection = build_dbt_asset_selection(
+        [my_dbt_assets], dbt_selector="select_with_path"
+    )
+    path_selected_asset_keys = path_asset_selection.resolve([my_dbt_assets])
+    assert path_selected_asset_keys == set()
+
+
+def test_dbt_asset_selection_path_selector_with_project(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    if (
+        DBT_PYTHON_VERSION is not None
+        and DBT_PYTHON_VERSION.major == 1
+        and DBT_PYTHON_VERSION.minor == 7
+    ):
+        pytest.skip("dbt-core 1.7 does not expose dbt_common project-root contextvars")
+
+    expected_asset_keys = {
+        AssetKey(key)
+        for key in {
+            "raw_customers",
+            "raw_orders",
+            "raw_payments",
+            "stg_customers",
+            "stg_orders",
+            "stg_payments",
+            "customers",
+            "orders",
+        }
+    }
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        project=DbtProject(project_dir=test_jaffle_shop_path),
+    )
+    def my_dbt_assets(): ...
+
+    path_asset_selection = build_dbt_asset_selection(
+        [my_dbt_assets], dbt_selector="select_with_path"
+    )
+    path_selected_asset_keys = path_asset_selection.resolve([my_dbt_assets])
+    assert path_selected_asset_keys == expected_asset_keys
 
 
 def test_dbt_asset_selection_selector_invalid(

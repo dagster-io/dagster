@@ -77,7 +77,7 @@ version: '3.7'
 services:
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
   # and event log storage. Depending on the hardware you run this Compose on, you may be able
-  # to reduce the interval and timeout in the healthcheck to speed up your `docker-compose up` times.
+  # to reduce the interval and timeout in the healthcheck to speed up your `docker compose up` times.
   docker_example_postgresql:
     image: postgres:11
     container_name: docker_example_postgresql
@@ -110,6 +110,7 @@ services:
       DAGSTER_POSTGRES_USER: 'postgres_user'
       DAGSTER_POSTGRES_PASSWORD: 'postgres_password'
       DAGSTER_POSTGRES_DB: 'postgres_db'
+      DAGSTER_POSTGRES_HOST: 'docker_example_postgresql'
       DAGSTER_CURRENT_IMAGE: 'docker_example_user_code_image'
     networks:
       - docker_example_network
@@ -138,6 +139,7 @@ services:
       DAGSTER_POSTGRES_USER: 'postgres_user'
       DAGSTER_POSTGRES_PASSWORD: 'postgres_password'
       DAGSTER_POSTGRES_DB: 'postgres_db'
+      DAGSTER_POSTGRES_HOST: 'docker_example_postgresql'
     volumes: # Make docker client accessible so we can terminate containers from the webserver
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage
@@ -164,6 +166,7 @@ services:
       DAGSTER_POSTGRES_USER: 'postgres_user'
       DAGSTER_POSTGRES_PASSWORD: 'postgres_password'
       DAGSTER_POSTGRES_DB: 'postgres_db'
+      DAGSTER_POSTGRES_HOST: 'docker_example_postgresql'
     volumes: # Make docker client accessible so we can launch containers using host docker
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage

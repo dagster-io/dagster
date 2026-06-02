@@ -45,25 +45,32 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ):
         """Stores the pandas DataFrame in BigQuery."""
-        with_uppercase_cols = obj.rename(columns=str.upper)
+        if obj.empty:
+            context.log.warning(
+                "Skipping BigQuery write for empty DataFrame. An empty table will not be created."
+            )
+        else:
+            with_uppercase_cols = obj.rename(columns=str.upper)
 
-        job = connection.load_table_from_dataframe(
-            dataframe=with_uppercase_cols,
-            destination=f"{table_slice.schema}.{table_slice.table}",
-            project=table_slice.database,
-            location=context.resource_config.get("location") if context.resource_config else None,
-            timeout=context.resource_config.get("timeout") if context.resource_config else None,
-        )
-        job.result()
+            job = connection.load_table_from_dataframe(
+                dataframe=with_uppercase_cols,
+                destination=f"{table_slice.schema}.{table_slice.table}",
+                project=table_slice.database,
+                location=context.resource_config.get("location")
+                if context.resource_config
+                else None,
+                timeout=context.resource_config.get("timeout") if context.resource_config else None,
+            )
+            job.result()
 
         context.add_output_metadata(
             {
                 # output object may be a slice/partition, so we output different metadata keys based on
                 # whether this output represents an entire table or just a slice/partition
                 **(
-                    TableMetadataSet(partition_row_count=obj.shape[0])
+                    TableMetadataSet(partition_row_count=obj.shape[0], storage_kind="bigquery")
                     if context.has_partition_key
-                    else TableMetadataSet(row_count=obj.shape[0])
+                    else TableMetadataSet(row_count=obj.shape[0], storage_kind="bigquery")
                 ),
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(

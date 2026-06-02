@@ -27,7 +27,7 @@ export const useAssetDefinition = (assetKey: AssetKey) => {
   >({
     query: ASSET_VIEW_DEFINITION_QUERY,
     variables: {assetKey: {path: assetKey.path}},
-    key: `${localCacheIdPrefix}/asset-definition-${assetKey.path.join(',')}`,
+    key: `${localCacheIdPrefix}/asset-definition-${tokenForAssetKey(assetKey)}`,
     version: AssetViewDefinitionQueryVersion,
   });
 

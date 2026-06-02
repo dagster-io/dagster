@@ -39,8 +39,8 @@ yarn build                  # Verify production build (ui-components changes onl
 
 # Development
 make rebuild_ui             # Rebuild React UI after changes
-make graphql               # Regenerate GraphQL schema
-make sanity_check          # Check for non-editable installs
+make graphql_codegen        # Regenerate GraphQL schema and codegen clients
+make sanity_check           # Check for non-editable installs
 ```
 
 ## Development Workflow

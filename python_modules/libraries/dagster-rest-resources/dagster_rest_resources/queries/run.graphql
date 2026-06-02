@@ -1,0 +1,39 @@
+query GetRun($runId: ID!) {
+  runOrError(runId: $runId) {
+    __typename
+    ... on Run {
+      runId
+      status
+      creationTime
+      startTime
+      endTime
+      jobName
+    }
+    ... on RunNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query ListRuns($filter: RunsFilter, $cursor: String, $limit: Int) {
+  runsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
+    __typename
+    ... on Runs {
+      results {
+        runId
+        status
+        creationTime
+        startTime
+        endTime
+        jobName
+      }
+      count
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

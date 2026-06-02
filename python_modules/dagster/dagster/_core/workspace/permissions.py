@@ -9,7 +9,9 @@ class Permissions(str, Enum):
     LAUNCH_PIPELINE_REEXECUTION = "launch_pipeline_reexecution"
     START_SCHEDULE = "start_schedule"
     STOP_RUNNING_SCHEDULE = "stop_running_schedule"
+    SCHEDULE_DRY_RUN = "schedule_dry_run"
     EDIT_SENSOR = "edit_sensor"
+    SENSOR_DRY_RUN = "sensor_dry_run"
     UPDATE_SENSOR_CURSOR = "update_sensor_cursor"
     TERMINATE_PIPELINE_EXECUTION = "terminate_pipeline_execution"
     DELETE_PIPELINE_RUN = "delete_pipeline_run"
@@ -22,6 +24,7 @@ class Permissions(str, Enum):
     EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
     TOGGLE_AUTO_MATERIALIZE = "toggle_auto_materialize"
     EDIT_CONCURRENCY_LIMIT = "edit_concurrency_limit"
+    EDIT_UI_DEFINITIONS = "edit_ui_definitions"
 
     def __str__(self) -> str:
         return str.__str__(self)
@@ -32,7 +35,9 @@ VIEWER_PERMISSIONS: dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
     Permissions.START_SCHEDULE: False,
     Permissions.STOP_RUNNING_SCHEDULE: False,
+    Permissions.SCHEDULE_DRY_RUN: False,
     Permissions.EDIT_SENSOR: False,
+    Permissions.SENSOR_DRY_RUN: False,
     Permissions.UPDATE_SENSOR_CURSOR: False,
     Permissions.TERMINATE_PIPELINE_EXECUTION: False,
     Permissions.DELETE_PIPELINE_RUN: False,
@@ -45,6 +50,7 @@ VIEWER_PERMISSIONS: dict[str, bool] = {
     Permissions.EDIT_DYNAMIC_PARTITIONS: False,
     Permissions.TOGGLE_AUTO_MATERIALIZE: False,
     Permissions.EDIT_CONCURRENCY_LIMIT: False,
+    Permissions.EDIT_UI_DEFINITIONS: False,
 }
 
 EDITOR_PERMISSIONS: dict[str, bool] = {
@@ -52,7 +58,9 @@ EDITOR_PERMISSIONS: dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION: True,
     Permissions.START_SCHEDULE: True,
     Permissions.STOP_RUNNING_SCHEDULE: True,
+    Permissions.SCHEDULE_DRY_RUN: True,
     Permissions.EDIT_SENSOR: True,
+    Permissions.SENSOR_DRY_RUN: True,
     Permissions.UPDATE_SENSOR_CURSOR: True,
     Permissions.TERMINATE_PIPELINE_EXECUTION: True,
     Permissions.DELETE_PIPELINE_RUN: True,
@@ -65,6 +73,7 @@ EDITOR_PERMISSIONS: dict[str, bool] = {
     Permissions.EDIT_DYNAMIC_PARTITIONS: True,
     Permissions.TOGGLE_AUTO_MATERIALIZE: True,
     Permissions.EDIT_CONCURRENCY_LIMIT: True,
+    Permissions.EDIT_UI_DEFINITIONS: True,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {
@@ -72,7 +81,9 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION,
     Permissions.START_SCHEDULE,
     Permissions.STOP_RUNNING_SCHEDULE,
+    Permissions.SCHEDULE_DRY_RUN,
     Permissions.EDIT_SENSOR,
+    Permissions.SENSOR_DRY_RUN,
     Permissions.UPDATE_SENSOR_CURSOR,
     Permissions.TERMINATE_PIPELINE_EXECUTION,
     Permissions.DELETE_PIPELINE_RUN,
@@ -82,6 +93,7 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.EDIT_DYNAMIC_PARTITIONS,
     Permissions.REPORT_RUNLESS_ASSET_EVENTS,
     Permissions.WIPE_ASSETS,
+    Permissions.EDIT_UI_DEFINITIONS,
 }
 
 

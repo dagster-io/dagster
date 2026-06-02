@@ -76,6 +76,38 @@ export const foo = (): number => {
   );
 };
 
+export const SingleNewlineCollapse = () => {
+  return (
+    <Markdown>
+      {`## Overview
+New line expected here as it follows a heading
+No new line expected here as there is only a single line break
+
+New line is expected here as there are two in a row`}
+    </Markdown>
+  );
+};
+
+export const BlockquoteNewlines = () => {
+  return (
+    <Markdown softBreaks>
+      {`> ✅ Step one
+> ✅ Step two
+> ✅ Step three`}
+    </Markdown>
+  );
+};
+
+export const BlockquoteHardBreaks = () => {
+  return (
+    <Markdown>
+      {`> ✅ Step one\\
+> ✅ Step two\\
+> ✅ Step three`}
+    </Markdown>
+  );
+};
+
 export const MarkdownBase64Image = () => {
   return (
     <Markdown>

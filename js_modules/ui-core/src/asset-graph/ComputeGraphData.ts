@@ -4,8 +4,8 @@ import groupBy from 'lodash/groupBy';
 import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {GraphData, buildGraphData, toGraphId} from './Utils';
 import {GraphDataState} from './useAssetGraphData';
+import type {WorkspaceAssetNode} from '../assets/WorkspaceAssetNode';
 import {doesFilterArrayMatchValueArray} from '../ui/Filters/doesFilterArrayMatchValueArray';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export function computeGraphData({
   repoFilteredNodes,
@@ -57,7 +57,7 @@ export function computeGraphData({
   };
 }
 
-const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: WorkspaceAssetFragment[]) => {
+const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: WorkspaceAssetNode[]) => {
   const allNodesById = groupBy(allNodes, (n) => toGraphId(n.assetKey));
   const notSourceAsset = (id: string) => !!allNodesById[id];
 

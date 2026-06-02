@@ -225,7 +225,7 @@ class ExecutionStepInputSnap(
             check.sequence_param(
                 upstream_output_handles, "upstream_output_handles", of_type=StepOutputHandle
             ),
-            check.opt_inst_param(source, "source", StepInputSourceUnion.__args__),  # type: ignore
+            check.opt_inst_param(source, "source", StepInputSourceUnion.__args__),
         )
 
     @property

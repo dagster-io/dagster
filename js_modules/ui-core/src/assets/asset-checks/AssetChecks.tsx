@@ -3,17 +3,16 @@ import {
   Box,
   Caption,
   Colors,
+  Heading,
   Icon,
   MiddleTruncate,
   NonIdealState,
-  Subtitle1,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
-import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import React, {useState} from 'react';
-import styled from 'styled-components';
 
 import {AssetCheckAutomationList} from './AssetCheckAutomationList';
 import {
@@ -28,14 +27,15 @@ import {AssetCheckPartitions} from './AssetCheckPartitions';
 import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
 import {AssetChecksTabType, AssetChecksTabs} from './AssetChecksTabs';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
+import styles from './css/AssetChecks.module.css';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
 } from './types/AssetCheckDetailDialog.types';
-import {useReportCheckEvaluationDialog} from './useReportCheckEvaluationDialog';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {useQuery} from '../../apollo-client';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecksQuery.types';
+import {useReportCheckEvaluationDialog} from './useReportCheckEvaluationDialog';
 import {DEFAULT_DISABLED_REASON} from '../../app/Permissions';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
@@ -192,9 +192,9 @@ export const AssetChecks = ({
             flex={{justifyContent: 'space-between', alignItems: 'center'}}
             padding={{left: 24, vertical: 12, right: 12}}
           >
-            <Subtitle1>
+            <Heading size={16} weight={600}>
               Checks {checks.length ? <>({numberFormatter.format(checks.length)})</> : null}
-            </Subtitle1>
+            </Heading>
             <ExecuteChecksButton assetNode={assetNode} checks={checks} />
           </Box>
           <Box
@@ -214,11 +214,14 @@ export const AssetChecks = ({
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     const check = filteredChecks[index]!;
                     return (
-                      <CheckRow
+                      <Row
                         key={check.name}
                         $height={size}
                         $start={start}
-                        $selected={selectedCheck === check}
+                        className={clsx(
+                          styles.checkRow,
+                          selectedCheck === check && styles.checkRowSelected,
+                        )}
                         onClick={() => {
                           setSelectedCheckName(check.name);
                           setActiveTab('overview');
@@ -246,7 +249,7 @@ export const AssetChecks = ({
                             </Body2>
                           </Box>
                         </Box>
-                      </CheckRow>
+                      </Row>
                     );
                   })}
                 </Inner>
@@ -263,7 +266,9 @@ export const AssetChecks = ({
           >
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Icon name="asset_check" />
-              <Subtitle1>{selectedCheck.name}</Subtitle1>
+              <Heading size={16} weight={600}>
+                {selectedCheck.name}
+              </Heading>
             </Box>
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               {reportDialogElement}
@@ -376,14 +381,3 @@ const FixedScrollContainer = ({children}: {children: React.ReactNode}) => {
     </Box>
   );
 };
-
-const CheckRow = styled(Row)<{$selected: boolean} & RowProps>`
-  padding: 5px 8px 5px 12px;
-  cursor: pointer;
-  border-radius: 8px;
-  user-select: none;
-  &:hover {
-    background: ${Colors.backgroundLightHover()};
-  }
-  ${({$selected}) => ($selected ? `background: ${Colors.backgroundBlue()};` : '')}
-`;

@@ -92,7 +92,7 @@ def _resolve_org(passed_org: str | None) -> str:
 
 
 def _resolve_token(passed_token: str | None) -> str:
-    api_token = get_user_token()
+    api_token = passed_token or get_user_token()
     if api_token is None:
         raise Exception(
             "Unable to resolve api_token, pass api_token or set the "

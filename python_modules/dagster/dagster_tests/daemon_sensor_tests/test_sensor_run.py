@@ -607,7 +607,7 @@ def all_code_locations_run_status_sensor():
 @sensor(job=the_job)
 def logging_sensor(context):
     class Handler(logging.Handler):
-        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle(self, record):
             try:
                 self.message = record.getMessage()
             except TypeError:
@@ -634,7 +634,7 @@ def logging_sensor(context):
 )
 def multi_asset_logging_sensor(context: MultiAssetSensorEvaluationContext) -> dg.SkipReason:
     class Handler(logging.Handler):
-        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle(self, record):
             try:
                 self.message = record.getMessage()
             except TypeError:
@@ -1137,7 +1137,7 @@ def wait_for_all_runs_to_finish(instance, timeout=30):
 
 def get_planned_asset_keys_for_run(instance: DagsterInstance, run_id: str):
     return [
-        record.event_log_entry.dagster_event.event_specific_data.asset_key  # type: ignore[attr-defined]
+        record.event_log_entry.dagster_event.event_specific_data.asset_key  # ty: ignore[unresolved-attribute]
         for record in instance.get_records_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -2103,7 +2103,7 @@ def test_run_request_check_selection_only_sensor(
         )
         assert get_planned_asset_keys_for_run(instance, run.run_id) == []
         planned_check_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_check_key  # type: ignore[attr-defined]
+            record.event_log_entry.dagster_event.event_specific_data.asset_check_key  # ty: ignore[unresolved-attribute]
             for record in instance.get_records_for_run(
                 run_id=run.run_id,
                 of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
@@ -2813,7 +2813,7 @@ def test_status_in_code_sensor(executor, instance):
     ) as workspace_context:
         remote_repo = next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
-        ).code_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        ).code_location.get_repository("the_status_in_code_repo")  # ty: ignore[unresolved-attribute]
 
         with freeze_time(freeze_datetime):
             running_sensor = remote_repo.get_sensor("always_running_sensor")
@@ -3071,11 +3071,11 @@ def test_repository_namespacing(executor):
                 full_workspace_context.create_request_context().get_code_location_entries().values()
             )
         ).code_location
-        repo = full_location.get_repository("the_repo")  # pyright: ignore[reportOptionalMemberAccess]
-        other_repo = full_location.get_repository("the_other_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        repo = full_location.get_repository("the_repo")  # ty: ignore[unresolved-attribute]
+        other_repo = full_location.get_repository("the_other_repo")  # ty: ignore[unresolved-attribute]
 
         # stop always on sensor
-        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")  # ty: ignore[unresolved-attribute]
         running_sensor = status_in_code_repo.get_sensor("always_running_sensor")
         instance.stop_sensor(
             running_sensor.get_remote_origin_id(), running_sensor.selector_id, running_sensor

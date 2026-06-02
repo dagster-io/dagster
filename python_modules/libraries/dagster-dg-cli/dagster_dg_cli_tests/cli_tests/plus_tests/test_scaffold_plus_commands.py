@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import responses
 import yaml
 from dagster_aws.ecs.container_context import EcsContainerContext
 from dagster_dg_core.utils import pushd
@@ -76,7 +75,6 @@ def validate_github_actions_workflow(workflow_path: Path, *, expected_version: s
         )
 
 
-@responses.activate
 def test_scaffold_build_artifacts_container_context_no_running_agent(
     dg_plus_cli_config,
     setup_populated_git_workspace: ProxyRunner,
@@ -103,7 +101,6 @@ def test_scaffold_build_artifacts_container_context_no_running_agent(
     return
 
 
-@responses.activate
 @pytest.mark.parametrize(
     "agent_class_name, agent_platform, container_context_class",
     [
@@ -145,7 +142,6 @@ def test_scaffold_build_artifacts_container_context_platforms(
     assert container_context_class.create_from_config(yaml.safe_load(container_context_contents))
 
 
-@responses.activate
 def test_scaffold_build_artifacts_command_workspace(
     dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
 ):
@@ -207,7 +203,6 @@ def test_scaffold_build_artifacts_command_workspace(
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
 
-@responses.activate
 def test_scaffold_build_artifacts_command_project(
     dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
 ):
@@ -280,7 +275,6 @@ def setup_populated_git_workspace():
         yield runner
 
 
-@responses.activate
 def test_deploy_configure_serverless_github_default_pex_sets_python_executable_strategy(
     dg_plus_cli_config,
 ):
@@ -312,7 +306,6 @@ def test_deploy_configure_serverless_github_default_pex_sets_python_executable_s
         assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
 
-@responses.activate
 @pytest.mark.parametrize(
     "version_override",
     [
@@ -330,7 +323,7 @@ def test_scaffold_github_actions_command_success_serverless(
     current_version = version.__version__
     try:
         if version_override:
-            version.__version__ = version_override
+            version.__version__ = version_override  # ty: ignore[invalid-assignment]
 
         mock_gql_response(
             query=gql.DEPLOYMENT_INFO_QUERY,
@@ -358,7 +351,6 @@ def test_scaffold_github_actions_command_success_serverless(
         version.__version__ = current_version
 
 
-@responses.activate
 def test_scaffold_github_actions_command_success_project_serverless(
     dg_plus_cli_config,
 ):
@@ -385,7 +377,6 @@ def test_scaffold_github_actions_command_success_project_serverless(
         validate_github_actions_workflow(workflow_path)
 
 
-@responses.activate
 def test_scaffold_github_actions_command_no_plus_config_serverless(
     setup_populated_git_workspace,
     monkeypatch,
@@ -414,7 +405,6 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
         validate_github_actions_workflow(workflow_path)
 
 
-@responses.activate
 def test_scaffold_github_actions_command_no_git_root_serverless(
     dg_plus_cli_config,
 ):
@@ -466,7 +456,6 @@ FAKE_REGISTRY_URLS = [
 ]
 
 
-@responses.activate
 @pytest.mark.parametrize(
     "registry_url, registry_info",
     zip(FAKE_REGISTRY_URLS, REGISTRY_INFOS),
@@ -514,7 +503,6 @@ def test_scaffold_github_actions_command_success_hybrid(
     validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
-@responses.activate
 def test_scaffold_github_actions_command_success_project_hybrid(
     dg_plus_cli_config,
 ):
@@ -551,7 +539,6 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert f"python:{PYTHON_VERSION}-slim-bookworm" in Path("Dockerfile").read_text()
 
 
-@responses.activate
 def test_scaffold_github_actions_command_no_plus_config_hybrid(
     setup_populated_git_workspace,
     monkeypatch,
@@ -581,7 +568,6 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
-@responses.activate
 def test_scaffold_github_actions_git_root_above_workspace(
     dg_plus_cli_config,
 ):
@@ -620,7 +606,6 @@ def test_scaffold_github_actions_git_root_above_workspace(
         )
 
 
-@responses.activate
 def test_scaffold_github_actions_git_root_above_project(
     dg_plus_cli_config,
 ):

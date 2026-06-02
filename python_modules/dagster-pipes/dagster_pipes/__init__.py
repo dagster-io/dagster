@@ -195,20 +195,10 @@ class PipesException(TypedDict):
 ESCAPE_CHARACTER = "\\"
 
 
-def de_escape_asset_key(asset_key: str) -> str:
-    r"""Removes the backward slashes escape characters from the asset key.
+def to_asset_key_path(asset_key: str) -> list[str]:
+    r"""Converts an escaped user string into an asset key's parts.
 
-    Example: "foo\/bar" -> "foo/bar"
-    """
-    # make sure to keep any standalone backslashes since they may be
-    # coming from the original (non-escaped) key
-    return asset_key.replace(ESCAPE_CHARACTER + "/", "/")
-
-
-def to_assey_key_path(asset_key: str) -> list[str]:
-    """Converts an asset key to a collection of key parts.
-
-    Forward slash (except escaped) is used as separator. De-escapes the key.
+    Forward slashes (except escaped ones) separate parts; ``\X`` de-escapes to ``X``.
     """
     parts = []
     current_part = []
@@ -216,8 +206,7 @@ def to_assey_key_path(asset_key: str) -> list[str]:
 
     for char in asset_key:
         if escape_next:
-            # Include escaped character (including backslash itself) in the current part
-            current_part.append(ESCAPE_CHARACTER + char)
+            current_part.append(char)
             escape_next = False
         elif char == ESCAPE_CHARACTER:
             escape_next = True
@@ -227,12 +216,10 @@ def to_assey_key_path(asset_key: str) -> list[str]:
         else:
             current_part.append(char)
 
-    # Add the final part to parts
     if current_part:
         parts.append("".join(current_part))
 
-    # De-escape each part, ensuring standalone backslashes remain intact
-    return [de_escape_asset_key(part) for part in parts]
+    return parts
 
 
 _T = TypeVar("_T")
@@ -411,8 +398,9 @@ def _normalize_param_metadata(
                     " string keys and values that are either raw metadata values or dictionaries"
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
-            _assert_param_value(value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
-            new_metadata[key] = cast("PipesMetadataValue", value)
+            typed_value = cast("PipesMetadataValue", value)
+            _assert_param_value(typed_value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
+            new_metadata[key] = typed_value
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
@@ -803,7 +791,7 @@ class PipesStdioLogWriter(PipesLogWriter[T_LogChannel]):
         pass
 
     @contextmanager
-    def open(self, params: PipesParams) -> Iterator[None]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open(self, params: PipesParams) -> Iterator[None]:
         with ExitStack() as stack:
             stdout_channel = self.make_channel(params, stream="stdout")
             stderr_channel = self.make_channel(params, stream="stderr")

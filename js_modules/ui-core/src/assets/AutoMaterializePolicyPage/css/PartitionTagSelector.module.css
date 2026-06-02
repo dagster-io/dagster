@@ -1,0 +1,19 @@
+.tagSelectorWrapper {
+  position: relative;
+}
+
+.tagSelectorWrapper :global(.tagSelectorContainerGlobal) {
+  width: 370px;
+  padding-left: 32px;
+  height: 36px;
+}
+
+.searchIconWrapper {
+  position: absolute;
+  left: 12px;
+  top: 0px;
+  bottom: 0px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}

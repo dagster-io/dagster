@@ -310,7 +310,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        return self._base_translator.get_asset_spec(manifest, unique_id, project)
+        return DagsterDbtTranslator.get_asset_spec(self.translator, manifest, unique_id, project)
 
     def get_asset_check_spec(
         self,
@@ -453,7 +453,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
 
 class DbtProjectComponentTranslator(
-    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),
+    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[DbtProjectComponent],
 ):
     def __init__(

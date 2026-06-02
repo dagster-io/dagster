@@ -1,12 +1,76 @@
+import os
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import kubernetes
-from dagster import __version__ as dagster_version
+from dagster import (
+    __version__ as dagster_version,
+    _check as check,
+)
 
 if TYPE_CHECKING:
     from dagster_k8s.job import UserDefinedDagsterK8sConfig
+
+
+def load_kubernetes_config(
+    *,
+    load_incluster_config: bool,
+    kubeconfig_file: str | None = None,
+    k8s_api_ssl_ca_cert_file: str | None = None,
+) -> None:
+    """Load kubernetes client configuration and apply dagster-k8s workarounds.
+
+    If ``load_incluster_config`` is True, load from the in-cluster service account
+    token; otherwise load from ``kubeconfig_file``. When ``k8s_api_ssl_ca_cert_file``
+    is provided, it is applied to the default Configuration after load.
+    """
+    if load_incluster_config:
+        check.invariant(
+            kubeconfig_file is None,
+            "`kubeconfig_file` is set but `load_incluster_config` is True.",
+        )
+        kubernetes.config.load_incluster_config()
+    else:
+        kubernetes.config.load_kube_config(config_file=kubeconfig_file)
+
+    no_proxy = _get_no_proxy_env()
+    if not (no_proxy or k8s_api_ssl_ca_cert_file):
+        return
+    config = kubernetes.client.Configuration.get_default_copy()
+    changed = False
+    if no_proxy and hasattr(config, "no_proxy") and config.no_proxy is None:
+        config.no_proxy = no_proxy
+        changed = True
+    if k8s_api_ssl_ca_cert_file:
+        config.ssl_ca_cert = k8s_api_ssl_ca_cert_file
+        changed = True
+    if changed:
+        kubernetes.client.Configuration.set_default(config)
+
+
+def apply_no_proxy_env_workaround() -> None:
+    # Works around https://github.com/kubernetes-client/python/issues/2520:
+    # kubernetes.client.Configuration.__init__ reads NO_PROXY/no_proxy from the env
+    # and then immediately overwrites self.no_proxy with None, so proxy-bypass rules
+    # from the environment are silently dropped and all traffic is routed through
+    # the configured proxy. We re-apply the env var onto the default Configuration
+    # after kubeconfig load — but only when the default is still None, so this
+    # becomes a true no-op on client versions where the bug is fixed. Client versions
+    # that predate the `no_proxy` attribute never honored the env var at all, so
+    # there is nothing to work around on those either.
+    no_proxy = _get_no_proxy_env()
+    if not no_proxy:
+        return
+    config = kubernetes.client.Configuration.get_default_copy()
+    if not hasattr(config, "no_proxy") or config.no_proxy is not None:
+        return
+    config.no_proxy = no_proxy
+    kubernetes.client.Configuration.set_default(config)
+
+
+def _get_no_proxy_env() -> str | None:
+    return os.environ.get("NO_PROXY") or os.environ.get("no_proxy")
 
 
 def sanitize_k8s_label(label_name: str):

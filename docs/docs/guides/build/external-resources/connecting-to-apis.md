@@ -42,15 +42,15 @@ This example fetches the sunrise time for a given location from a REST API.
 
 Using `ConfigurableResource`, define a Dagster resource with a method that returns the sunrise time for a location. In the first version of this resource, the location is hard-coded to San Francisco International Airport.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/minimal_resource.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/apis/minimal_resource.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 ## Step 2: Use the resource in an asset
 
 To use the resource, provide it as a parameter to an asset and define a function using <PyObject section="definitions" module="dagster" object="Definitions" decorator />:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/use_minimal_resource_in_asset.py" language="python" startAfter="start_use_minimal_resource_in_asset" endBefore="end_use_minimal_resource_in_asset" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/apis/use_minimal_resource_in_asset.py" language="python" startAfter="start_use_minimal_resource_in_asset" endBefore="end_use_minimal_resource_in_asset" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/use_minimal_resource_in_asset.py" language="python" startAfter="start_use_minimal_resource_in_asset_defs" endBefore="end_use_minimal_resource_in_asset_defs" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/apis/use_minimal_resource_in_asset.py" language="python" startAfter="start_use_minimal_resource_in_asset_defs" endBefore="end_use_minimal_resource_in_asset_defs" title="src/<project_name>/defs/resources.py" />
 
 When you materialize `sfo_sunrise`, Dagster will provide an initialized `SunResource` to the `sun_resource` parameter.
 
@@ -58,9 +58,9 @@ When you materialize `sfo_sunrise`, Dagster will provide an initialized `SunReso
 
 Many APIs have configuration you can set to customize your usage. The following example updates the resource with configuration to allow for setting the query location:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/use_configurable_resource_in_asset.py" language="python" startAfter="start_use_configurable_resource_in_asset" endBefore="end_use_configurable_resource_in_asset" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/apis/use_configurable_resource_in_asset.py" language="python" startAfter="start_use_configurable_resource_in_asset" endBefore="end_use_configurable_resource_in_asset" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/use_configurable_resource_in_asset.py" language="python" startAfter="start_use_configurable_resource_in_asset_defs" endBefore="end_use_configurable_resource_in_asset_defs" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/apis/use_configurable_resource_in_asset.py" language="python" startAfter="start_use_configurable_resource_in_asset_defs" endBefore="end_use_configurable_resource_in_asset_defs" title="src/<project_name>/defs/resources.py" />
 
 The configurable resource can be provided to an asset exactly as before. When the resource is initialized, you can pass values for each of the configuration options.
 
@@ -72,9 +72,9 @@ Resources can also be configured with environment variables. You can use Dagster
 
 In this example, there's a new `home_sunrise` asset. Rather than hard-coding the location of your home, you can set it in environment variables and configure the `SunResource` by reading those values:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/env_var_configuration.py" language="python" startAfter="start_env_var_configuration" endBefore="end_env_var_configuration" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/apis/env_var_configuration.py" language="python" startAfter="start_env_var_configuration" endBefore="end_env_var_configuration" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/env_var_configuration.py" language="python" startAfter="start_env_var_configuration_defs" endBefore="end_env_var_configuration_defs" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/apis/env_var_configuration.py" language="python" startAfter="start_env_var_configuration_defs" endBefore="end_env_var_configuration_defs" title="src/<project_name>/defs/resources.py" />
 
 When you materialize `home_sunrise`, Dagster will read the values set for the `HOME_LATITUDE`, `HOME_LONGITUDE`, and `HOME_TIMEZONE` environment variables and initialize a `SunResource` with those values.
 

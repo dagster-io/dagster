@@ -4,7 +4,7 @@ description: Comparing backfill strategies for partitioned assets - one run per 
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Backfill.png
 ---
 
 In this example, we'll explore three different strategies for [backfilling](/guides/build/partitions-and-backfills/backfilling-data) partitioned assets. When you need to materialize multiple partitions (for initial setup or reprocessing), you can choose between Dagster's default one-run-per-partition approach, a batched approach, or a single-run approach using <PyObject section="partitions" module="dagster" object="BackfillPolicy" />. Each strategy has distinct trade-offs in terms of overhead, fault isolation, and resource utilization.

@@ -6,6 +6,14 @@
   margin-bottom: 2px;
 }
 
+.CodeMirror-gutter-elt .CodeMirror-lint-marker-warning {
+  background-image: none;
+  background: var(--color-accent-yellow);
+  mask-image: url("data:image/svg+xml,%3Csvg%20width=%2220%22%20height=%2220%22%20viewBox=%220%200%2020%2020%22%20fill=%22none%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%0A%3Cpath%20d=%22M2.72572%2017.5H17.2743C18.5243%2017.5%2019.2909%2016.1083%2018.6659%2015.0417L11.3909%202.47917C10.7659%201.4125%209.23239%201.4125%208.60739%202.47917L1.33239%2015.0417C0.707389%2016.1083%201.47572%2017.5%202.72572%2017.5ZM9.99989%2011.6667C9.54155%2011.6667%209.16655%2011.2917%209.16655%2010.8333V9.16667C9.16655%208.70833%209.54155%208.33333%209.99989%208.33333C10.4582%208.33333%2010.8332%208.70833%2010.8332%209.16667V10.8333C10.8332%2011.2917%2010.4582%2011.6667%209.99989%2011.6667ZM10.8332%2015H9.16655V13.3333H10.8332V15Z%22%20fill=%22%23030615%22/%3E%0A%3C/svg%3E");
+  mask-size: cover;
+  margin-bottom: 2px;
+}
+
 .CodeMirror-cursor.CodeMirror-cursor {
   border-color: var(--color-text-light);
 }
@@ -133,7 +141,8 @@ div.CodeMirror-lint-tooltip {
   background: transparent;
 }
 
-.CodeMirror-lint-message.CodeMirror-lint-message-error {
+.CodeMirror-lint-message.CodeMirror-lint-message-error,
+.CodeMirror-lint-message.CodeMirror-lint-message-warning {
   background: transparent;
 }
 

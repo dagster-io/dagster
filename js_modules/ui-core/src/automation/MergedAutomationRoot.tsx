@@ -3,11 +3,11 @@ import {
   Box,
   Caption,
   Colors,
+  Heading,
   Icon,
   NonIdealState,
   PageHeader,
   SpinnerWithText,
-  Subtitle1,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -222,7 +222,13 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
+      <PageHeader
+        title={
+          <Heading size={16} weight={600}>
+            Automation
+          </Heading>
+        }
+      />
       {automaterializeSensorsFlagState === 'has-global-amp' ? (
         <Box padding={{horizontal: 24}} border="bottom">
           <AutomationTabs tab="schedules-and-sensors" />

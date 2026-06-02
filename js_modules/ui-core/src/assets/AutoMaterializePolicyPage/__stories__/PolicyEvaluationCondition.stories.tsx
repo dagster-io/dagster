@@ -10,7 +10,7 @@ export default {
 
 export const Default = () => {
   return (
-    <Table $compact>
+    <Table compact>
       <tbody>
         <tr>
           <td>

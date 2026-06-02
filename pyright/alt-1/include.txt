@@ -1,2 +1,0 @@
-examples/assets_pandas_type_metadata
-examples/project_fully_featured

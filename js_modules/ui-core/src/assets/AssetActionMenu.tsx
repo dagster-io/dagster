@@ -16,7 +16,7 @@ import {memo, useContext, useMemo} from 'react';
 import {optionsForExecuteButton, useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {globalAssetGraphPathForGroup} from './globalAssetGraphPathToString';
-import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
+import {AssetWorkspaceNodeFragment} from './types/AssetTableFragment.types';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {useObserveAction} from './useObserveAction';
 import {useReportEventsDialog} from './useReportEventsDialog';
@@ -28,7 +28,7 @@ import {RepoAddress} from '../workspace/types';
 
 interface Props {
   path: string[];
-  definition: AssetTableDefinitionFragment | null;
+  definition: AssetWorkspaceNodeFragment | null;
   repoAddress: RepoAddress | null;
   onRefresh?: () => void;
   unstyledButton?: boolean;

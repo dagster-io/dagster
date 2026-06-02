@@ -11,7 +11,7 @@ from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
-from dagster._utils import alter_sys_path
+from dagster._utils import alter_sys_path, pushd
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.core.component_tree import ComponentTree
@@ -60,6 +60,7 @@ def setup_airbyte_component(
             component_cls=AirbyteWorkspaceComponent, defs_yaml_contents=defs_yaml_contents
         )
         with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (
                 component,
@@ -357,12 +358,18 @@ def test_custom_filter_fn_python(
     config_api_url: str,
     resource: AirbyteCloudWorkspace | AirbyteWorkspace,
 ) -> None:
-    defs = component_class(
-        workspace=resource,
-        connection_selector=filter_fn,
-        translation=None,
-    ).build_defs(ComponentTree.for_test().load_context)
-    assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        alter_sys_path(to_add=[str(sandbox.project_root / "src")], to_remove=[]),
+        pushd(str(sandbox.project_root)),
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        defs = component_class(
+            workspace=resource,
+            connection_selector=filter_fn,
+            translation=None,
+        ).build_defs(ComponentTree.for_test().load_context)
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 @pytest.mark.parametrize(
@@ -446,9 +453,15 @@ def test_subclass_override_get_asset_spec(
                 tags={**base_spec.tags, "custom_tag": "override_test"},
             )
 
-    defs = CustomAirbyteWorkspaceComponent(
-        workspace=resource,
-    ).build_defs(ComponentTree.for_test().load_context)
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        alter_sys_path(to_add=[str(sandbox.project_root / "src")], to_remove=[]),
+        pushd(str(sandbox.project_root)),
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        defs = CustomAirbyteWorkspaceComponent(
+            workspace=resource,
+        ).build_defs(ComponentTree.for_test().load_context)
 
     # Verify that the custom get_asset_spec method is being used
     assets_def = defs.get_assets_def(AssetKey(["test_prefix_test_stream"]))

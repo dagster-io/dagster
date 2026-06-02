@@ -34,7 +34,7 @@ beforeEach(() => {
             ],
       ),
     },
-  ] as any;
+  ] as unknown as FilterObject[];
 });
 
 beforeAll(() => {
@@ -119,7 +119,7 @@ describe('FilterDropdownButton', () => {
 });
 
 describe('FilterDropdown Accessibility', () => {
-  const testKeyboardNavigation = async (nextKey: any, prevKey: any, enterKey: any) => {
+  const testKeyboardNavigation = async (nextKey: string, prevKey: string, enterKey: string) => {
     const user = userEvent.setup();
     render(<FilterDropdownButton filters={mockFilters} />);
 

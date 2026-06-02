@@ -1,4 +1,5 @@
-# Read the docs on Resources to learn more: https://docs.dagster.io/deployment/resources
+# To learn more about Dagster resources, see https://docs.dagster.io/api/dagster/resources
+
 from dagster_twilio import TwilioResource
 
 import dagster as dg
@@ -6,7 +7,7 @@ import dagster as dg
 
 @dg.asset
 def twilio_message(twilio: TwilioResource):
-    twilio.get_client().messages.create(
+    twilio.get_client().messages.create(  # ty: ignore[unresolved-attribute]
         to="+15551234567", from_="+15558901234", body="Hello world!"
     )
 

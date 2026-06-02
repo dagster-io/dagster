@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.code_location import DgApiCodeLocationDocument
+    from dagster_rest_resources.schemas.code_location import DgApiCodeLocationDocument
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -29,8 +29,7 @@ def build_code_location_document(
 ) -> "DgApiCodeLocationDocument":
     """Build a code location document from CLI args, optionally merging with a YAML file."""
     import yaml
-
-    from dagster_dg_cli.api_layer.schemas.code_location import (
+    from dagster_rest_resources.schemas.code_location import (
         DgApiCodeLocationDocument,
         DgApiCodeSource,
         DgApiGitMetadata,
@@ -116,7 +115,7 @@ def build_code_location_document(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.code_location", cls="DgApiAddCodeLocationResult"
+    module="dagster_rest_resources.schemas.code_location", cls="DgApiAddCodeLocationResult"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -140,8 +139,14 @@ def add_code_location_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Add or update a code location in the deployment."""
-    from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
+    """Add or update a code location in the deployment.
+
+    Example::
+
+        $ dg api code-location add ingestion --image dagster/ingestion:1.12.0 --module-name ingestion.definitions
+        Added or updated code location 'ingestion'.
+    """
+    from dagster_rest_resources.api.code_location import DgApiCodeLocationApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
@@ -165,7 +170,7 @@ def add_code_location_command(
             commit_hash=commit_hash,
             git_url=git_url,
         )
-        result = api.add_code_location(document)
+        result = api.create_code_location(document)
         output = format_add_code_location_result(result, as_json=output_json)
         click.echo(output)
 
@@ -178,7 +183,7 @@ def add_code_location_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.code_location", cls="DgApiCodeLocationList"
+    module="dagster_rest_resources.schemas.code_location", cls="DgApiCodeLocationList"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -191,8 +196,17 @@ def list_code_locations_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List code locations in the deployment."""
-    from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
+    """List code locations in the deployment.
+
+    Example::
+
+        $ dg api code-location list
+        NAME       IMAGE                       STATUS
+        ingestion  dagster/ingestion:1.12.0    LOADED
+        analytics  dagster/analytics:1.12.0    LOADED
+        marts      dagster/marts:1.11.5        LOAD_ERROR
+    """
+    from dagster_rest_resources.api.code_location import DgApiCodeLocationApi
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
@@ -216,9 +230,7 @@ def list_code_locations_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.code_location", cls="DgApiCodeLocation"
-)
+@dg_response_schema(module="dagster_rest_resources.schemas.code_location", cls="DgApiCodeLocation")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -231,14 +243,22 @@ def get_code_location_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get detailed information about a specific code location."""
+    """Get detailed information about a specific code location.
+
+    Example::
+
+        $ dg api code-location get ingestion
+        Name:   ingestion
+        Image:  dagster/ingestion:1.12.0
+        Module: ingestion.definitions
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
+    from dagster_rest_resources.api.code_location import DgApiCodeLocationApi
 
     api = DgApiCodeLocationApi(client)
 
@@ -259,7 +279,7 @@ def get_code_location_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.code_location", cls="DgApiDeleteCodeLocationResult"
+    module="dagster_rest_resources.schemas.code_location", cls="DgApiDeleteCodeLocationResult"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -273,14 +293,20 @@ def delete_code_location_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Delete a code location from the deployment."""
+    """Delete a code location from the deployment.
+
+    Example::
+
+        $ dg api code-location delete ingestion
+        Deleted code location 'ingestion'.
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.code_location import DgApiCodeLocationApi
+    from dagster_rest_resources.api.code_location import DgApiCodeLocationApi
 
     api = DgApiCodeLocationApi(client)
 

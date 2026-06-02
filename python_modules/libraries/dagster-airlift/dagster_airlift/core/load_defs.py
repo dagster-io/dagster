@@ -66,7 +66,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
             retrieval_filter=self.retrieval_filter,
         )
 
-    def defs_from_state(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def defs_from_state(  # ty: ignore[invalid-method-override]
         self, serialized_airflow_data: SerializedAirflowDefinitionsData
     ) -> Definitions:
         raise Exception(
@@ -264,12 +264,9 @@ def _apply_airflow_data_to_specs(
     serialized_data: SerializedAirflowDefinitionsData,
 ) -> Sequence[MappedAsset]:
     """Apply asset spec transformations to the assets."""
-    return cast(
-        "Sequence[MappedAsset]",
-        map_asset_specs(
-            func=get_airflow_data_to_spec_mapper(serialized_data),
-            iterable=assets,
-        ),
+    return map_asset_specs(
+        func=get_airflow_data_to_spec_mapper(serialized_data),
+        iterable=assets,
     )
 
 

@@ -8,6 +8,14 @@ All automation conditions must be evaluated by a [sensor](/guides/automate/senso
 
 By default, this sensor will evaluate all automation conditions in your code location, and execute the asset or asset check if the condition is met.
 
+The `default_automation_condition_sensor` is created when all of the following are true:
+
+- The code location contains at least one asset with an `AutomationCondition` (or legacy `AutoMaterializePolicy`).
+- You're on Dagster 1.5 or later.
+- The code location loads and registers definitions successfully.
+
+If you're migrating from `AutoMaterializePolicy`, you must set `use_sensors: true` in your `auto_materialize` configuration. Toggling sensors on in the UI alone is not enough; without `use_sensors: true`, the sensor will not drive automation. If a default sensor is missing, verify the conditions above before troubleshooting further.
+
 ### Adding additional sensors
 
 If you have a code location with a large number of assets using automation conditions, you may want to create additional sensors to evaluate only a subset of the conditions. This has a few benefits:
@@ -19,7 +27,7 @@ If you have a code location with a large number of assets using automation condi
 To add an additional sensor, create a <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" /> and pass it to the `sensors` argument of your `Definitions` object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/multiple_sensors.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/sensors/multiple_sensors.py"
   title="src/<project_name>/defs/sensors.py"
 />
 
@@ -30,7 +38,7 @@ When you create new sensors, the `default_automation_condition_sensor` will only
 As with other sensor types, all `AutomationConditionSensorDefinitions` will default to the `STOPPED` state when they are first added to a code location. To modify this behavior, create an `AutomationConditionSensorDefinition` with the `default_status` argument set to `RUNNING`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/default_running.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/sensors/default_running.py"
   title="src/<project_name>/defs/sensors.py"
 />
 
@@ -39,6 +47,6 @@ As with other sensor types, all `AutomationConditionSensorDefinitions` will defa
 To add tags to runs produced by a given <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" />, pass a `run_tags` argument to the `AutomationConditionSensorDefinition`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/run_tags.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/sensors/run_tags.py"
   title="src/<project_name>/defs/sensors.py"
 />

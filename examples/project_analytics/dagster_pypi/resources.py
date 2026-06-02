@@ -6,7 +6,7 @@ from dagster import ConfigurableResource, EnvVar
 from dagster_dbt import DbtCliResource
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 from dagster_gcp_pandas import BigQueryPandasIOManager
-from dagster_hex.resources import hex_resource
+from dagster_hex.resources import hex_resource  # ty: ignore[unresolved-import]
 from google.cloud import bigquery
 from pydantic import Field
 
@@ -24,7 +24,7 @@ bigquery_pandas_io_manager = BigQueryPandasIOManager(project="westmarindata")
 
 
 class PyPiResource(ConfigurableResource):
-    def get_pypi_download_counts(self, _) -> pd.DataFrame:
+    def get_pypi_download_counts(self, date) -> pd.DataFrame:
         raise NotImplementedError()
 
 
@@ -62,7 +62,7 @@ class PyPiBigQueryResource(PyPiResource):
 
 
 class GithubResource(ConfigurableResource):
-    def get_github_stars(self, _) -> pd.DataFrame:
+    def get_github_stars(self, date) -> pd.DataFrame:
         raise NotImplementedError()
 
 

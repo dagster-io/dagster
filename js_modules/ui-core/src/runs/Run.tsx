@@ -68,15 +68,19 @@ export const Run = memo((props: RunProps) => {
     defaults: {selection: ''},
   });
 
+  const documentTitle = useMemo(() => {
+    const shortId = runId.slice(0, 8);
+    if (!run) {
+      return `Runs | ${shortId}`;
+    }
+    if (isHiddenAssetGroupJob(run.pipelineName)) {
+      return `Runs | ${shortId} [${run.status}]`;
+    }
+    return `Runs | ${run.pipelineName} | ${shortId} [${run.status}]`;
+  }, [run, runId]);
+
+  useDocumentTitle(documentTitle);
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
-  useDocumentTitle(
-    run
-      ? `${!isHiddenAssetGroupJob(run.pipelineName) ? run.pipelineName : ''} ${runId.slice(
-          0,
-          8,
-        )} [${run.status}]`
-      : `Run: ${runId}`,
-  );
 
   const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
     const errorNode = logs.find(
@@ -94,7 +98,7 @@ export const Run = memo((props: RunProps) => {
     setSelectionQuery(query);
     setLogsFilter({
       ...logsFilter,
-      logQuery: query !== '*' ? [{token: 'query', value: query}] : [],
+      logQuery: query && query !== '*' ? [{token: 'query', value: query}] : [],
     });
   };
 
@@ -254,18 +258,18 @@ const RunWithData = ({
         nextSelectionQuery = addStepToSelection(nextSelectionQuery, stepKey);
       }
     } else {
-      // deselect the step if already selected
+      // If the step is already the only selected step, do nothing.
       if (selectionStepKeys.length === 1 && index !== -1) {
-        nextSelectionQuery = '';
-      } else {
-        // select the step otherwise
-        nextSelectionQuery = `name:"${stepKey}"`;
+        return;
+      }
 
-        // When only one step is selected, set the compute log key as well.
-        const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
-        if (matchingLogKey) {
-          setComputeLogFileKey(matchingLogKey);
-        }
+      // select the step
+      nextSelectionQuery = `name:"${stepKey}"`;
+
+      // When only one step is selected, set the compute log key as well.
+      const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
+      if (matchingLogKey) {
+        setComputeLogFileKey(matchingLogKey);
       }
     }
 

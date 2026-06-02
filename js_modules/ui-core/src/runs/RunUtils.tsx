@@ -70,7 +70,11 @@ export async function handleLaunchResult(
   pipelineName: string,
   result: void | null | LaunchPipelineExecutionMutation['launchPipelineExecution'],
   history: History<unknown>,
-  options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
+  options: {
+    behavior: LaunchBehavior;
+    preserveQuerystring?: boolean;
+    openInNewTab?: (path: string) => void;
+  },
 ) {
   if (!result) {
     showCustomAlert({body: `No data was returned. Did dagster-webserver crash?`});
@@ -82,7 +86,9 @@ export async function handleLaunchResult(
     const search = options.preserveQuerystring ? history.location.search : '';
     const openInSameTab = () => history.push({pathname, search});
 
-    if (options.behavior === 'open') {
+    if (options.openInNewTab) {
+      options.openInNewTab(`${pathname}${search}`);
+    } else if (options.behavior === 'open') {
       openInSameTab();
     } else {
       showToast({

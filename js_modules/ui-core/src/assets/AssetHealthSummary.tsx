@@ -1,15 +1,14 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
 import {
   Body,
   Box,
   Colors,
+  Heading,
   HoverButton,
   Icon,
   IconName,
+  Intent,
   Popover,
   Skeleton,
-  SubtitleLarge,
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
@@ -143,7 +142,9 @@ export const AssetHealthSummaryPopover = ({
         <div onClick={(e) => e.stopPropagation()}>
           <Box padding={12} flex={{direction: 'row', alignItems: 'center', gap: 6}} border="bottom">
             <Icon name={iconName} color={iconColor} />
-            <SubtitleLarge>{text}</SubtitleLarge>
+            <Heading size={16} weight={500}>
+              {text}
+            </Heading>
           </Box>
           {content()}
         </div>

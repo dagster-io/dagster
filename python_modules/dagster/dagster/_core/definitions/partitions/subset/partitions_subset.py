@@ -110,6 +110,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @abstractmethod
     def __contains__(self, value) -> bool: ...
 
+    @abstractmethod
     def empty_subset(self) -> "PartitionsSubset[T_str]": ...
 
     @classmethod

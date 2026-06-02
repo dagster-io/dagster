@@ -631,6 +631,7 @@ type Asset {
   latestEventSortKey: ID
   assetHealth: AssetHealth
   latestMaterializationTimestamp: Float
+  latestObservationTimestamp: Float
   hasDefinitionOrRecord: Boolean!
   latestFailedToMaterializeTimestamp: Float
   freshnessStatusChangedTimestamp: Float
@@ -708,7 +709,7 @@ type AssetNode {
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!
-  description: String
+  description(characterLimit: Int): String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
   freshnessStatusInfo: FreshnessStatusInfo
@@ -732,11 +733,13 @@ type AssetNode {
   assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
+  storageAddress: StorageAddress
   tags: [DefinitionTag!]!
   kinds: [String!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
+  opTags: [DefinitionTag!]!
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
@@ -979,6 +982,11 @@ type PartitionStats {
   numPartitions: Int!
   numFailed: Int!
   numMaterializing: Int!
+}
+
+type StorageAddress {
+  storageKind: String
+  tableName: String!
 }
 
 type DefinitionTag {
@@ -2485,11 +2493,11 @@ type Repository {
   schedules: [Schedule!]!
   sensors(sensorType: SensorType): [Sensor!]!
   assetNodes: [AssetNode!]!
+  assetNodesConnection(cursor: String, limit: Int!): AssetNodeConnection!
+  assetManifest: GenericScalar
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
-  hasLocationDocs: Boolean!
-  locationDocsJsonOrError: LocationDocsJsonOrError!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2538,6 +2546,12 @@ enum SensorType {
   AUTO_MATERIALIZE
   AUTOMATION
   UNKNOWN
+}
+
+type AssetNodeConnection {
+  nodes: [AssetNode!]!
+  cursor: String
+  hasMore: Boolean!
 }
 
 type AssetGroup {
@@ -2589,14 +2603,6 @@ type JobWithOps {
   jobName: String!
   opHandleIDs: [String!]!
 }
-
-union LocationDocsJsonOrError = LocationDocsJson | PythonError
-
-type LocationDocsJson {
-  json: JSONString!
-}
-
-scalar JSONString
 
 type RepositoryConnection {
   nodes: [Repository!]!
@@ -2861,6 +2867,7 @@ type RunQueueConfig {
   maxConcurrentRuns: Int!
   tagConcurrencyLimitsYaml: String
   isOpConcurrencyAware: Boolean
+  maxConcurrentRunsAllBranchDeployments: Int
 }
 
 type ConcurrencyKeyInfo {
@@ -3411,7 +3418,7 @@ union RunsOrError = Runs | InvalidPipelineRunsFilterError | PythonError
 
 type Runs implements PipelineRuns {
   results: [Run!]!
-  count: Int
+  count: Int!
 }
 
 interface PipelineRuns {
@@ -3663,6 +3670,52 @@ type UsedSolid {
   invocations: [NodeInvocationSite!]!
 }
 
+type UIComponent {
+  componentId: String!
+  componentType: String!
+  attributes: String!
+}
+
+type UIComponents {
+  locationName: String!
+  components: [UIComponent!]!
+}
+
+union UIComponentsOrError = UIComponents | PythonError
+
+type SetUIComponentSuccess {
+  component: UIComponent!
+}
+
+union SetUIComponentResult = SetUIComponentSuccess | UnauthorizedError | PythonError
+
+type DeleteUIComponentSuccess {
+  locationName: String!
+  componentId: String!
+}
+
+union DeleteUIComponentResult = DeleteUIComponentSuccess | UnauthorizedError | PythonError
+
+scalar JsonSchema
+
+type ComponentTypeInfo {
+  name: String!
+  namespace: String!
+  example: String!
+  schema: JsonSchema
+  description: String
+  owners: [String!]
+  tags: [String!]
+  isUiEditable: Boolean!
+}
+
+type ComponentTypes {
+  locationName: String!
+  componentTypes: [ComponentTypeInfo!]!
+}
+
+union ComponentTypesOrError = ComponentTypes | RepositoryLocationNotFound | PythonError
+
 type Query {
   version: String!
   repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
@@ -3810,6 +3863,8 @@ type Query {
     cursor: String
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
+  uiComponentsForLocationOrError(locationName: String!): UIComponentsOrError!
+  componentTypesForLocationOrError(locationName: String!): ComponentTypesOrError!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -4181,6 +4236,13 @@ type Mutation {
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
   ): DeleteDynamicPartitionsResult!
+  setUIComponent(
+    attributes: String!
+    componentId: String!
+    componentType: String!
+    locationName: String!
+  ): SetUIComponentResult!
+  deleteUIComponent(componentId: String!, locationName: String!): DeleteUIComponentResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   deleteConcurrencyLimit(concurrencyKey: String!): Boolean!
@@ -4201,9 +4263,17 @@ enum ReexecutionStrategy {
   ALL_STEPS
 }
 
-union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
+union SensorDryRunResult =
+  | PythonError
+  | SensorNotFoundError
+  | UnauthorizedError
+  | DryRunInstigationTick
 
-union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
+union ScheduleDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | ScheduleNotFoundError
+  | UnauthorizedError
 
 union TerminateRunsResultOrError = TerminateRunsResult | PythonError
 

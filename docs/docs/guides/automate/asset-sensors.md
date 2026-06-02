@@ -14,11 +14,22 @@ For situations where you are automating execution of assets only, we recommend u
 
 :::
 
+## Triggering code after an asset materializes
+
+Two mechanisms let you run code after an asset materializes:
+
+| Mechanism                                                                     | When to use                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject section="hooks" module="dagster" object="success_hook" decorator /> | Lightweight side effects (notifications, metrics emission) tied directly to the producing op or asset. The hook fires automatically once the materialization succeeds.                            |
+| Asset sensor                                                                  | Any case requiring conditional logic, multi-asset coordination, cross-job triggering, or behavior that depends on the run/materialization metadata. Sensors give you the full evaluation context. |
+
+For success hook usage, see [Op hooks](/guides/build/ops/op-hooks). The remainder of this guide covers asset sensors.
+
 ## Getting started
 
 To get started, you can use the <PyObject module="dagster" section="schedules-sensors" object="asset_sensor" decorator /> decorator to create an asset sensor where the decorated function is used as the asset sensor's evaluation function.
 
-Asset sensors monitor an asset for new materialization events and target a [job](/guides/build/jobs) when a new materialization occurs.
+Asset sensors monitor an asset for new materialization events and target a job when a new materialization occurs. See [Jobs](/guides/build/jobs).
 
 Typically, asset sensors return a <PyObject module="dagster" section="schedules-sensors" object="RunRequest" /> when a new job is to be triggered. However, they may provide a <PyObject module="dagster" section="schedules-sensors" object="SkipReason" /> if the asset materialization doesn't trigger a job.
 
@@ -65,7 +76,7 @@ end
 This is an example of an asset sensor that triggers a job when an asset is materialized. The `daily_sales_data` asset is in the same code location as the job and other asset for this example, but the same pattern can be applied to assets in different code locations.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/simple-asset-sensor-example.py"
+  path="docs_snippets/docs_snippets/guides/automate/simple-asset-sensor-example.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -98,7 +109,7 @@ stateDiagram-v2
 In the following example, the `@asset_sensor` decorator defines a custom evaluation function that returns a `RunRequest` object when the asset is materialized and certain metadata is present, otherwise it skips the run.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/asset-sensor-custom-eval.py"
+  path="docs_snippets/docs_snippets/guides/automate/asset-sensor-custom-eval.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -110,7 +121,7 @@ By providing a configuration to the `RunRequest` object, you can trigger a job w
 For example, you might use a sensor to trigger a job when an asset is materialized, but also pass metadata about that materialization to the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/asset-sensor-with-config.py"
+  path="docs_snippets/docs_snippets/guides/automate/asset-sensor-with-config.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -128,7 +139,7 @@ When building a pipeline, you may want to monitor multiple assets with a single 
 The following example uses a `@multi_asset_sensor` to monitor two assets that triggers an asset job once both have been materialized. You can also trigger op jobs this way.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/multi-asset-sensor.py"
+  path="docs_snippets/docs_snippets/guides/automate/multi-asset-sensor.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />

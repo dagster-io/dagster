@@ -37,7 +37,7 @@ describe('AssetRunLogObserver', () => {
   it('should open a subscription when a callback is added, send asset events and reference count correctly', async () => {
     jest.useFakeTimers();
 
-    const received: any[] = [];
+    const received: Parameters<ObservedRunCallback>[0] = [];
     const cb: ObservedRunCallback = (events) => {
       received.push(...events);
     };

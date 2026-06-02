@@ -57,12 +57,12 @@ export const SelectionInputAutoCompleteResults = React.memo(
       <div style={{minWidth: width}}>
         <Menu>
           <Container ref={menuRef} style={{maxHeight: '300px', overflowY: 'auto'}}>
-            <Inner $totalHeight={totalHeight}>
+            <Inner totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const result = results!.list[index]!;
                 return (
-                  <Row key={key} $height={size} $start={start}>
+                  <Row key={key} height={size} start={start}>
                     <div ref={rowVirtualizer.measureElement} data-index={index}>
                       {'type' in result && result.type === 'no-match' ? (
                         <Box
@@ -73,9 +73,13 @@ export const SelectionInputAutoCompleteResults = React.memo(
                         </Box>
                       ) : (
                         <MenuItem
+                          key={result.text}
                           text={result.jsx}
                           active={index === selectedIndex}
-                          onClick={() => onSelect(result)}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            onSelect(result);
+                          }}
                         />
                       )}
                     </div>

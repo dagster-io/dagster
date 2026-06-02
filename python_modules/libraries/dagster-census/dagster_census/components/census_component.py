@@ -47,13 +47,13 @@ def resolve_sync_selector(
 ) -> Callable[[CensusSync], bool] | None:
     if isinstance(model, str):
         resolved = context.resolve_value(model)
-        resolved = check.callable_param(resolved, "unknown")  # pyright: ignore[reportArgumentType]
+        resolved = check.callable_param(resolved, "unknown")
         return resolved
     if isinstance(model, CensusSyncSelectorByName.model()):
-        resolved = resolve_fields(model, CensusSyncSelectorByName.model(), context)
+        resolved = resolve_fields(model, CensusSyncSelectorByName.model(), context)  # ty: ignore[invalid-argument-type]
         return lambda sync: sync.name in resolved["by_name"]
     elif isinstance(model, CensusSyncSelectorById.model()):
-        resolved = resolve_fields(model, CensusSyncSelectorById.model(), context)
+        resolved = resolve_fields(model, CensusSyncSelectorById.model(), context)  # ty: ignore[invalid-argument-type]
         return lambda sync: sync.id in resolved["by_id"]
     else:
         check.failed(f"Unknown sync target type: {type(model)}")

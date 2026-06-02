@@ -113,3 +113,29 @@ Below is an example of a `dg.toml` file for a workspace. The
   title="dg.toml"
   language="toml"
 />
+
+## Using a custom Python executable
+
+By default, `dg` assumes that a project's Python executable is located at
+`.venv/bin/python` (Unix) or `.venv\Scripts\python.exe` (Windows) relative to
+the project root. If your virtual environment is stored in a different
+location, you can override the default by setting the
+`DG_PROJECT_PYTHON_EXECUTABLE` environment variable in a `.env` file at the
+project root:
+
+```shell
+# my-project/.env
+DG_PROJECT_PYTHON_EXECUTABLE=../.venvs/my-project/bin/python
+```
+
+The value is interpreted as a path relative to the project root (absolute
+paths are also supported). When `dg` launches a project, it will use the
+Python executable at this path instead of the one at the default `.venv`
+location.
+
+:::note
+
+`DG_PROJECT_PYTHON_EXECUTABLE` is only read from a `.env` file in the project
+root. Setting it in your shell environment will have no effect.
+
+:::

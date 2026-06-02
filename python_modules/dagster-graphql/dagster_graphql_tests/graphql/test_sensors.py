@@ -925,6 +925,18 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
         assert result.data
         assert result.data["setSensorCursor"]["__typename"] == "UnauthorizedError"
 
+    def test_sensor_dry_run_failure(self, graphql_context: WorkspaceRequestContext):
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": sensor_selector, "cursor": None},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "UnauthorizedError"
+
 
 class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
     def test_start_sensor(self, graphql_context: WorkspaceRequestContext):

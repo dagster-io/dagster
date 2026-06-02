@@ -409,7 +409,7 @@ class DgClickHelpMixin:
         rich_format_help(obj=self, ctx=context, markup_mode="rich")
 
 
-class DgClickCommand(DgClickHelpMixin, click.Command):  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickCommand(DgClickHelpMixin, click.Command):
     def __init__(self, *args, unlaunched: bool = False, **kwargs):
         """DgClickCommand with conditional hiding for unlaunched features.
 
@@ -422,7 +422,7 @@ class DgClickCommand(DgClickHelpMixin, click.Command):  # pyright: ignore[report
         super().__init__(*args, **kwargs)
 
 
-class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):
     def __init__(self, *args, unlaunched: bool = False, **kwargs):
         """DgClickGroup with conditional hiding for unlaunched features.
 
@@ -570,7 +570,7 @@ def set_toml_node(doc: TomlDoc, path: TomlPath, value: object) -> None:
     an error if the leading keys do not already lead to a TOML container node.
     """
     container = _gather_toml_nodes(doc, path[:-1])[-1] if len(path) > 1 else doc
-    key_or_index = path[-1]  # type: ignore  # pyright bug
+    key_or_index = path[-1]
     if isinstance(container, dict):
         if not isinstance(key_or_index, str):
             raise TypeError(f"Expected key to be a string, but got {type(key_or_index).__name__}")

@@ -1,0 +1,47 @@
+.breadcrumbsContainer {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: max-content;
+  height: auto;
+  min-height: 30px;
+}
+
+.breadcrumbItem {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.separator {
+  color: var(--color-text-lighter);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+.breadcrumb {
+  text-decoration: none;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumbButton {
+  all: unset;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

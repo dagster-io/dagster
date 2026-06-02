@@ -55,6 +55,7 @@ def test_translator_asset_spec(
     assert TableMetadataSet.extract(asset_spec.metadata).column_schema == generate_table_schema(
         TEST_JSON_SCHEMA.get("properties", {})
     )
+    assert TableMetadataSet.extract(asset_spec.metadata).storage_kind == TEST_DESTINATION_TYPE
     assert has_kind(asset_spec.tags, "airbyte")
     deps = list(asset_spec.deps)
     assert len(deps) == 0

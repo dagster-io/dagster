@@ -47,7 +47,7 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
 The snippet below shows example instantiation of the client:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  path="docs_snippets/docs_snippets/api/graphql/client_example.py"
   startAfter="start_setup_marker"
   endBefore="end_setup_marker"
 />
@@ -55,7 +55,7 @@ The snippet below shows example instantiation of the client:
 If you are using Dagster+, you can configure your client against the Dagster+ API by passing your deployment-specific URL and a User Token to the client as follows:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  path="docs_snippets/docs_snippets/api/graphql/client_example.py"
   startAfter="start_cloud_usage"
   endBefore="end_cloud_usage"
 />
@@ -67,7 +67,7 @@ If you are using Dagster+, you can configure your client against the Dagster+ AP
 You can use the client to get the status of a job run as follows:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  path="docs_snippets/docs_snippets/api/graphql/client_example.py"
   startAfter="start_run_status_marker"
   endBefore="end_run_status_marker"
 />
@@ -79,7 +79,7 @@ You can also reload a repository location in a Dagster deployment.
 This reloads all repositories in that repository location. This is useful in a variety of contexts, including refreshing the Dagster UI without restarting the server. Example usage is as follows:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  path="docs_snippets/docs_snippets/api/graphql/client_example.py"
   startAfter="start_reload_repo_location_marker"
   endBefore="end_reload_repo_location_marker"
 />
@@ -89,7 +89,7 @@ This reloads all repositories in that repository location. This is useful in a v
 You can use the client to submit a job run as follows:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  path="docs_snippets/docs_snippets/api/graphql/client_example.py"
   startAfter="start_submit_marker_default"
   endBefore="end_submit_marker_default"
 />
@@ -103,7 +103,7 @@ One way to cause your server to restart and your repositories to be reloaded is 
 Example usage:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  path="docs_snippets/docs_snippets/api/graphql/client_example.py"
   startAfter="start_shutdown_repo_location_marker"
   endBefore="end_shutdown_repo_location_marker"
 />
@@ -113,7 +113,7 @@ Example usage:
 Note that specifying the repository location name and repository name are not always necessary; the GraphQL client will infer the repository name and repository location name if the job name is unique.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  path="docs_snippets/docs_snippets/api/graphql/client_example.py"
   startAfter="start_submit_marker_job_name_only"
   endBefore="end_submit_marker_job_name_only"
 />

@@ -392,7 +392,7 @@ class K8sStepHandler(StepHandler):
         container_context = self._get_container_context(step_handler_context)
 
         status = self._api_client.get_job_status(
-            namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
+            namespace=container_context.namespace,
             job_name=job_name,
         )
         if not status:

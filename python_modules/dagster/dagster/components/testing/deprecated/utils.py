@@ -18,7 +18,7 @@ from dagster._utils import alter_sys_path
 from dagster.components.component.component import Component
 from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.component_tree import ComponentTree
-from dagster.components.core.defs_module import CompositeYamlComponent, get_component
+from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent, get_component
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
 
 
@@ -287,10 +287,14 @@ def get_all_components_defs_from_defs_path(
     project_root: str | Path,
 ) -> list[tuple[Component, Definitions]]:
     module = importlib.import_module(module_path)
-    context = ComponentTree(
+    tree = ComponentTree(
         defs_module=module,
         project_root=Path(project_root),
-    ).load_context
+    )
+    # Root load_context is keyed at ComponentRootLoc(); this deprecated helper
+    # passes the context straight to get_component / build_defs, which expect
+    # a filesystem-path-keyed context.
+    context = tree.load_context.for_component_loc(ComponentPath.from_path(tree.defs_module_path))
     components = flatten_components(get_component(context))
     return [(component, component.build_defs(context)) for component in components]
 

@@ -34,7 +34,10 @@ export const Suggest = <T,>(props: Props<T>) => {
   const allPopoverProps: Partial<PopoverProps> = {
     ...popoverProps,
     minimal: true,
-    modifiers: deepmerge({offset: {enabled: true, offset: '0, 8px'}}, popoverProps.modifiers || {}),
+    modifiers: deepmerge(
+      {offset: {enabled: true, options: {offset: [0, 4]}}},
+      popoverProps.modifiers || {},
+    ),
     popoverClassName: `dagster-popover ${props.popoverProps?.className || ''}`,
   };
 
@@ -108,7 +111,7 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef} style={{maxHeight: MAX_MENU_HEIGHT, width: menuWidth}}>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             const item = filteredItems[index];
             if (!item) {
@@ -116,7 +119,7 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
             }
 
             return (
-              <Row key={key} $height={size} $start={start}>
+              <Row key={key} height={size} start={start}>
                 {props.renderItem(item, index)}
               </Row>
             );

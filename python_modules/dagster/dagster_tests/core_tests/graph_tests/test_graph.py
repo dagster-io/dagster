@@ -377,11 +377,11 @@ def test_logger_defs():
     def my_graph():
         my_op()
 
-    @dg.logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.logger
     def my_logger(_):
         pass
 
-    my_job = my_graph.to_job(logger_defs={"abc": my_logger})  # pyright: ignore[reportArgumentType]
+    my_job = my_graph.to_job(logger_defs={"abc": my_logger})
     assert my_job.loggers == {"abc": my_logger}
 
 
@@ -506,8 +506,10 @@ def test_to_job_incomplete_default_config():
     def my_graph():
         my_op()
 
-    default_config_error = "Error in config when building job 'my_job' "
-    invalid_default_error = "Invalid default_value for Field."
+    default_config_error = "Error in config when building job 'my_job': the provided config is missing required fields or contains invalid entries"
+    invalid_default_error = (
+        "Invalid default_value for Field. Ensure all required config entries are provided"
+    )
     invalid_configs = [
         (
             {},

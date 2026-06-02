@@ -9,10 +9,6 @@ description = "Package for Deltalake-specific Dagster framework op and resource 
 authors = [{name = "Elementl", email = "hello@elementl.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "deltalake>=1.0.0",
     "pyarrow",
@@ -26,3 +22,15 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 pandas = [
     "pandas<3.0.0",
 ]
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }

@@ -7,9 +7,9 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from threading import Event, Thread
-from typing import IO, TypeVar
+from typing import IO, Any, TypeVar, cast
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -17,6 +17,7 @@ from dagster_pipes import (
     PipesDefaultContextLoader,
     PipesDefaultMessageWriter,
     PipesExtras,
+    PipesMessage,
     PipesOpenedData,
     PipesParams,
 )
@@ -25,11 +26,12 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._annotations import public
+from dagster._annotations import preview, public
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesLaunchedData, PipesMessageReader
 from dagster._core.pipes.context import (
+    PIPES_COMPOSITE_WRITERS_KEY,
     PipesMessageHandler,
     PipesSession,
     build_external_execution_context_data,
@@ -87,12 +89,9 @@ class PipesTempFileContextInjector(PipesContextInjector):
     """
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
         """Inject context to external environment by writing it to an automatically-generated
         temporary file as JSON and exposing the path to the file.
-
-        Args:
-            context_data (PipesContextData): The context data to inject.
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
@@ -153,7 +152,7 @@ class PipesFileMessageReader(PipesMessageReader):
         )
         self._cleanup_file = cleanup_file
 
-    def on_launched(self, params: PipesLaunchedData) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def on_launched(self, params: PipesLaunchedData) -> None:  # ty: ignore[invalid-method-override]
         self.launched_payload = params
 
     @contextmanager
@@ -265,6 +264,127 @@ WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL = 10
 # received; (2) for the log files to exist (which may not occur until some time
 # after the external process has completed).
 WAIT_FOR_LOGS_TIMEOUT = 60
+
+
+@public
+@preview
+class PipesCompositeMessageReader(PipesMessageReader):
+    """A message reader that composes multiple underlying readers, one per external writer.
+
+    Use this when a single Dagster invocation launches multiple external processes that each
+    open their own Pipes session (e.g. Databricks multi-task jobs). Each underlying reader
+    owns its own independent destination (S3 prefix, DBFS/UC Volumes tempdir, local file, etc.)
+    so writers never collide on chunk filenames. Messages from all underlying readers are
+    funneled into the same :py:class:`PipesMessageHandler`, which tracks aggregate
+    `opened`/`closed` state via its `expected_writer_count`-aware counters.
+
+    The `read_messages` method yields a params dict of the form
+    ``{PIPES_COMPOSITE_WRITERS_KEY: [<per-writer params>, ...]}``. Session helpers
+    :py:meth:`PipesSession.get_per_writer_bootstrap_env_vars` and
+    :py:meth:`PipesSession.get_per_writer_bootstrap_cli_arguments` unpack that list; callers
+    are responsible for pairing each external process with its corresponding writer params.
+
+    Args:
+        readers (Sequence[PipesMessageReader]): The underlying readers, one per expected
+            external writer. Each reader must itself be single-writer; composing composite
+            readers is not supported.
+    """
+
+    def __init__(self, readers: Sequence[PipesMessageReader]):
+        if not readers:
+            raise DagsterInvariantViolationError(
+                "PipesCompositeMessageReader requires at least one underlying reader."
+            )
+        for reader in readers:
+            if reader.expected_writer_count != 1:
+                raise DagsterInvariantViolationError(
+                    "PipesCompositeMessageReader only supports single-writer readers as children;"
+                    f" got {type(reader).__name__} with"
+                    f" expected_writer_count={reader.expected_writer_count}."
+                )
+        self._readers = tuple(readers)
+
+    @property
+    def expected_writer_count(self) -> int:
+        return len(self._readers)
+
+    @contextmanager
+    def read_messages(self, handler: "PipesMessageHandler") -> Iterator[PipesParams]:
+        # Each child reader gets a _ChildMessageHandler wrapper so that on_opened/on_launched
+        # callbacks route to only that child, preventing one writer's opened_payload from
+        # overwriting another's (e.g. cluster_driver_log_root in Databricks log readers).
+        with ExitStack() as stack:
+            per_writer_params = [
+                stack.enter_context(
+                    reader.read_messages(
+                        _ChildMessageHandler(handler, reader)  # ty: ignore[invalid-argument-type]
+                    )
+                )
+                for reader in self._readers
+            ]
+            yield {PIPES_COMPOSITE_WRITERS_KEY: per_writer_params}
+
+    def on_opened(self, opened_payload: PipesOpenedData) -> None:
+        # No-op: each child receives on_opened via its own _ChildMessageHandler wrapper.
+        pass
+
+    def on_launched(self, launched_payload: PipesLaunchedData) -> None:
+        # on_launched is called externally (not via a protocol message), so it must be
+        # fanned out here. Unlike on_opened, there is no per-writer payload concern.
+        for reader in self._readers:
+            reader.on_launched(launched_payload)
+
+    def no_messages_debug_text(self) -> str:
+        parts = [
+            f"[writer {i}] {reader.no_messages_debug_text()}"
+            for i, reader in enumerate(self._readers)
+        ]
+        return "\n".join(parts)
+
+
+class _ChildMessageHandler:
+    """Thin wrapper around PipesMessageHandler used by PipesCompositeMessageReader.
+
+    Delegates all message handling to the real handler, then routes
+    ``on_opened``/``on_launched`` callbacks to only the child reader that
+    produced the message. The composite reader's own ``on_opened`` /
+    ``on_launched`` are no-ops, so the handler's built-in call to
+    ``self._message_reader.on_opened(...)`` is harmless. After that, this
+    wrapper explicitly calls the child reader's hook. This avoids the need
+    for any mutable state swap on the shared handler and is thread-safe.
+    """
+
+    def __init__(self, handler: "PipesMessageHandler", reader: PipesMessageReader):
+        self._handler = handler
+        self._reader = reader
+
+    def handle_message(self, message: "PipesMessage") -> None:
+        # Delegate to the real handler. Its _handle_opened/_handle_closed will call
+        # self._message_reader.on_opened/on_launched on the *composite* reader, which
+        # is a no-op. We then explicitly route the callback to our specific child reader.
+        self._handler.handle_message(message)
+
+        method = message.get("method")
+        if method == "opened":
+            self._reader.on_opened(cast("PipesOpenedData", message.get("params") or {}))
+
+    def report_pipes_framework_exception(self, origin: str, exc_info: Any) -> None:
+        self._handler.report_pipes_framework_exception(origin, exc_info)
+
+    @property
+    def _context(self) -> "OpExecutionContext | AssetExecutionContext":
+        """Expose the execution context so that PipesThreadedMessageReader internals
+        (e.g. _log_unstartable_warning) can log through the child handler.
+        """
+        return self._handler._context  # noqa: SLF001
+
+    @property
+    def received_closed_message(self) -> bool:
+        return self._handler.received_closed_message
+
+    @property
+    def received_opened_message(self) -> bool:
+        return self._handler.received_opened_message
 
 
 class PipesThreadedMessageReader(PipesMessageReader):
@@ -472,6 +592,21 @@ class PipesThreadedMessageReader(PipesMessageReader):
         # only write logs after the process has completed).
         try:
             unstarted_log_readers = {**self.log_readers}
+            started_keys: set[str] = set()
+
+            def _discover_new_readers() -> None:
+                """Check for readers added via add_log_reader() since the last iteration."""
+                for key in list(self.log_readers.keys()):
+                    if key not in unstarted_log_readers and key not in started_keys:
+                        unstarted_log_readers[key] = self.log_readers[key]
+
+            def _start_readable_readers() -> None:
+                """Start any unstarted readers whose targets are now readable."""
+                for key in list(unstarted_log_readers.keys()):
+                    if unstarted_log_readers[key].target_is_readable(params):
+                        reader = unstarted_log_readers.pop(key)
+                        started_keys.add(key)
+                        reader.start(params, is_session_closed)
 
             while True:
                 if self.opened_payload is not None:
@@ -479,14 +614,8 @@ class PipesThreadedMessageReader(PipesMessageReader):
 
                 # periodically check for new readers which may be added after the
                 # external process has started and add them to the unstarted log readers
-                for key in self.log_readers:
-                    if key not in unstarted_log_readers:
-                        unstarted_log_readers[key] = self.log_readers[key]
-
-                for key in list(unstarted_log_readers.keys()).copy():
-                    if unstarted_log_readers[key].target_is_readable(params):
-                        reader = unstarted_log_readers.pop(key)
-                        reader.start(params, is_session_closed)
+                _discover_new_readers()
+                _start_readable_readers()
 
                 # In some cases logs might not be written out until after the external process has
                 # exited. That will leave us in this state, where some log readers have not been
@@ -496,6 +625,15 @@ class PipesThreadedMessageReader(PipesMessageReader):
                 if is_session_closed.is_set():
                     if wait_for_logs_start is None:
                         wait_for_logs_start = datetime.datetime.now()
+
+                    # Re-check for readers that may have been added between the
+                    # discovery pass above and is_session_closed being set. Since
+                    # add_log_reader() is called before is_session_closed is set
+                    # (both from the main thread), seeing is_session_closed=True
+                    # guarantees the new reader is in self.log_readers-- but we
+                    # may have read self.log_readers before it was added.
+                    _discover_new_readers()
+                    _start_readable_readers()
 
                     if not unstarted_log_readers:
                         return
@@ -565,9 +703,7 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
         ...
         # historical reasons, keeping the original interface of PipesBlobStoreMessageReader
 
-    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, cursor: int | None, params: PipesParams
-    ) -> tuple[int, str] | None:
+    def download_messages(self, cursor: int | None, params: PipesParams) -> tuple[int, str] | None:
         # mapping new interface to the old one
         # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
         chunk = self.download_messages_chunk(self.counter, params)

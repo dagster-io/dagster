@@ -10,6 +10,7 @@ from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSe
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster_shared.serdes import whitelist_for_serdes
+from dateutil.parser import isoparse
 
 from dagster_airbyte.utils import generate_table_schema, get_airbyte_connection_table_name
 
@@ -146,10 +147,8 @@ class AirbyteJob:
             status=job_details["status"],
             type=job_details["jobType"],
             connection_id=job_details.get("connectionId"),
-            start_time=datetime.fromisoformat(job_details["startTime"])
-            if "startTime" in job_details
-            else None,
-            last_updated_at=datetime.fromisoformat(job_details["lastUpdatedAt"])
+            start_time=isoparse(job_details["startTime"]) if "startTime" in job_details else None,
+            last_updated_at=isoparse(job_details["lastUpdatedAt"])
             if "lastUpdatedAt" in job_details
             else None,
             duration=job_details.get("duration"),
@@ -178,24 +177,24 @@ class AirbyteWorkspaceData:
         for connection in self.connections_by_id.values():
             destination = self.destinations_by_id[connection.destination_id]
 
-            for stream in connection.streams.values():
-                if stream.selected:
-                    data.append(
-                        AirbyteConnectionTableProps(
-                            table_name=get_airbyte_connection_table_name(
-                                stream_prefix=connection.stream_prefix,
-                                stream_name=stream.name,
-                            ),
-                            stream_prefix=connection.stream_prefix,
-                            stream_name=stream.name,
-                            json_schema=stream.json_schema,
-                            connection_id=connection.id,
-                            connection_name=connection.name,
-                            destination_type=destination.type,
-                            database=destination.database,
-                            schema=destination.schema,
-                        )
-                    )
+            data.extend(
+                AirbyteConnectionTableProps(
+                    table_name=get_airbyte_connection_table_name(
+                        stream_prefix=connection.stream_prefix,
+                        stream_name=stream.name,
+                    ),
+                    stream_prefix=connection.stream_prefix,
+                    stream_name=stream.name,
+                    json_schema=stream.json_schema,
+                    connection_id=connection.id,
+                    connection_name=connection.name,
+                    destination_type=destination.type,
+                    database=destination.database,
+                    schema=destination.schema,
+                )
+                for stream in connection.streams.values()
+                if stream.selected
+            )
 
         return data
 
@@ -229,6 +228,7 @@ class DagsterAirbyteTranslator:
             **TableMetadataSet(
                 column_schema=column_schema,
                 table_name=props.fully_qualified_table_name,
+                storage_kind=props.destination_type,
             ),
             **AirbyteMetadataSet(
                 connection_id=props.connection_id,

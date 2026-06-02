@@ -28,7 +28,7 @@ By default, logs generated using the Python logging module aren't captured into 
 For example, imagine you have the following code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
+  path="docs_snippets/docs_snippets/guides/log_debug/logging/python_logger.py"
   title="src/<project_name>/defs/ops.py"
   startAfter="start_python_logger"
   endBefore="end_python_logger"
@@ -41,7 +41,7 @@ However, this default behavior can be changed to treat these sort of log stateme
 
 <CodeExample
   language="yaml"
-  path="docs_snippets/docs_snippets/concepts/logging/python_logging_managed_loggers_config.yaml"
+  path="docs_snippets/docs_snippets/guides/log_debug/logging/python_logging_managed_loggers_config.yaml"
 />
 
 Once this key is set, Dagster will treat any normal Python log call from one of the listed loggers in the exact same way as a `context.log` call. This means you should be able to see this log statement in the UI:
@@ -64,7 +64,7 @@ Setting a global log level allows you to filter out logs below a given level. Fo
 
 <CodeExample
   language="yaml"
-  path="docs_snippets/docs_snippets/concepts/logging/python_logging_python_log_level_config.yaml"
+  path="docs_snippets/docs_snippets/guides/log_debug/logging/python_logging_python_log_level_config.yaml"
 />
 
 ## Configuring Python log handlers
@@ -73,7 +73,10 @@ In your `dagster.yaml` file, you can configure handlers, formatters and filters 
 
 For example:
 
-<CodeExample language="yaml" path="docs_snippets/docs_snippets/concepts/logging/python_logging_handler_config.yaml" />
+<CodeExample
+  language="yaml"
+  path="docs_snippets/docs_snippets/guides/log_debug/logging/python_logging_handler_config.yaml"
+/>
 
 Handler, filter and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the `handlers`, `formatters` and `filters` dictionary keys will be accepted, as Dagster creates loggers internally.
 
@@ -90,7 +93,7 @@ To create a logger that's captured by Dagster without modifying your `dagster.ya
 For example:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
+  path="docs_snippets/docs_snippets/guides/log_debug/logging/python_logger.py"
   title="src/<project_name>/defs/ops.py"
   startAfter="start_get_logger"
   endBefore="end_get_logger"
@@ -111,7 +114,7 @@ To enable this, define a new `myHandler` handler in your `dagster.yaml` file to 
 
 <CodeExample
   language="yaml"
-  path="docs_snippets/docs_snippets/concepts/logging/python_logging_file_output_config.yaml"
+  path="docs_snippets/docs_snippets/guides/log_debug/logging/python_logging_file_output_config.yaml"
 />
 
 You can also configure a formatter to apply a custom format to the logs. For example, to include a timestamp with the logs, we defined a custom formatter named `timeFormatter` and attached it to `myHandler`.
@@ -119,7 +122,7 @@ You can also configure a formatter to apply a custom format to the logs. For exa
 If we execute the following job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/logging/file_output_pipeline.py"
+  path="docs_snippets/docs_snippets/guides/log_debug/logging/file_output_pipeline.py"
   title="src/<project_name>/defs/jobs.py"
 />
 

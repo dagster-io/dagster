@@ -12,13 +12,12 @@ from dagster_dbt.cloud_v2.sensor_builder import (
     DbtCloudPollingSensorCursor,
     build_dbt_cloud_polling_sensor,
 )
-from dagster_dbt.utils import clean_name
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
-    TEST_ACCOUNT_NAME,
-    TEST_ENVIRONMENT_NAME,
-    TEST_PROJECT_NAME,
+    TEST_ACCOUNT_ID,
+    TEST_ENVIRONMENT_ID,
+    TEST_PROJECT_ID,
     TEST_REST_API_BASE_URL,
     TEST_RUN_URL,
     build_and_invoke_sensor,
@@ -26,13 +25,11 @@ from dagster_dbt_tests.cloud_v2.conftest import (
 )
 
 
-def test_sensor_name(
-    workspace: DbtCloudWorkspace,
-    sensor_builder_api_mocks: responses.RequestsMock,
-) -> None:
+def test_sensor_name(workspace: DbtCloudWorkspace) -> None:
     sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
-    assert sensor.name == clean_name(
-        f"{TEST_ACCOUNT_NAME}_{TEST_PROJECT_NAME}_{TEST_ENVIRONMENT_NAME}__run_status_sensor"
+    assert (
+        sensor.name
+        == f"dbt_cloud_{TEST_ACCOUNT_ID}_{TEST_PROJECT_ID}_{TEST_ENVIRONMENT_ID}__run_status_sensor"
     )
 
 
@@ -67,6 +64,24 @@ def test_runs_triggered_by_dagster(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the case where runs were triggered by Dagster."""
+    result, _ = build_and_invoke_sensor(
+        instance=instance,
+    )
+    assert len(result.asset_events) == 0
+
+    captured = capsys.readouterr()
+    assert re.search(
+        r"dagster - INFO - Run (?s:.)+ was triggered by Dagster. Continuing.", captured.err
+    )
+
+
+def test_runs_triggered_by_stale_dagster_job(
+    init_load_context: None,
+    instance: DagsterInstance,
+    sensor_runs_triggered_by_stale_dagster_job_api_mocks: responses.RequestsMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Test that runs from a stale adhoc job (old naming convention) are still filtered out."""
     result, _ = build_and_invoke_sensor(
         instance=instance,
     )

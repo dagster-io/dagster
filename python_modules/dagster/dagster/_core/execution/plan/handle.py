@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple, Union, cast
+from typing import NamedTuple, Union
 
 import dagster._check as check
 from dagster._core.definitions.dependency import NodeHandle
@@ -15,8 +15,7 @@ class StepHandle(NamedTuple("_StepHandle", [("node_handle", NodeHandle), ("key",
         return super().__new__(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
-            # mypy can't tell that if default is set, this is guaranteed to be a str
-            key=cast("str", check.opt_str_param(key, "key", default=str(node_handle))),
+            key=check.opt_str_param(key, "key", default=str(node_handle)),
         )
 
     def to_key(self) -> str:
@@ -75,11 +74,7 @@ class ResolvedFromDynamicStepHandle(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
             mapping_key=check.str_param(mapping_key, "mapping_key"),
-            # mypy can't tell that if default is set, this is guaranteed to be a str
-            key=cast(
-                "str",
-                check.opt_str_param(key, "key", default=f"{node_handle}[{mapping_key}]"),
-            ),
+            key=check.opt_str_param(key, "key", default=f"{node_handle}[{mapping_key}]"),
         )
 
     def to_key(self) -> str:

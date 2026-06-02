@@ -96,7 +96,7 @@ def create_tableau_component_translator(component_cls):
     """Creates a translator class for a Tableau component."""
 
     class TableauComponentTranslator(
-        create_component_translator_cls(component_cls, DagsterTableauTranslator),
+        create_component_translator_cls(component_cls, DagsterTableauTranslator),  # ty: ignore[unsupported-base]
         ComponentTranslator[component_cls],
     ):
         def __init__(self, component):

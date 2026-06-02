@@ -4,6 +4,7 @@ description: 'Automatically discover and sync data warehouse assets and metadata
 tags: [dagster-plus-feature]
 canonicalUrl: '/guides/labs/connections'
 slug: '/guides/labs/connections'
+sidebar_position: 30
 ---
 
 import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
@@ -34,4 +35,14 @@ You can use alerts to monitor two kinds of changes to your Connections assets: s
 
 The assets created by a Connection are independent from existing Dagster definitions, and use the name of your Connection as both the group name and code location name.
 
-Currently, metadata on assets from Connections does not impact code-defined assets, even if they point to the same underlying data warehouse table (though this may change in the future).
+Connection assets emit freshness and data version information as the underlying warehouse tables change, so they can be used as dependencies to trigger downstream materializations.
+
+Currently, metadata on assets from Connections does not impact code-defined assets, even if they point to the same underlying data warehouse table.
+
+:::note Coming soon
+
+Dagster is expanding what Connection assets can do across Snowflake, BigQuery, Postgres, and Databricks:
+
+- **Linking to code-defined assets** — emitted metadata on Connection assets will be linked to matching code-defined assets that point to the same underlying warehouse table.
+
+:::

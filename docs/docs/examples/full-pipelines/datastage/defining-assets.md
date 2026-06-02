@@ -71,7 +71,7 @@ Using a factory function keeps the asset definition tightly coupled to the proje
 
 ## The component
 
-`DataStageJobComponent` ties the translator, resource, and multi-asset factory together as a reusable [Dagster component](/guides/build/components/). Its `build_defs` method constructs all Dagster definitions from the component's YAML attributes:
+`DataStageJobComponent` ties the translator, resource, and multi-asset factory together as a reusable [Dagster component](/guides/build/components). Its `build_defs` method constructs all Dagster definitions from the component's YAML attributes:
 
 <CodeExample
   path="docs_projects/project_datastage/src/project_datastage/components/data_stage_job_component.py"

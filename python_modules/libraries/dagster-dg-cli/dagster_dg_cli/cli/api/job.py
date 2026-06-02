@@ -19,7 +19,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.job", cls="DgApiJobList")
+@dg_response_schema(module="dagster_rest_resources.schemas.job", cls="DgApiJobList")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -31,14 +31,23 @@ def list_jobs_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List jobs in the deployment."""
+    """List jobs in the deployment.
+
+    Example::
+
+        $ dg api job list
+        NAME                          DESCRIPTION              SCHEDULES  SENSORS  ASSET JOB
+        __ASSET_JOB                                            1          0        Yes
+        ingest_customers              Daily customer ingest    1          0        No
+        retrain_recommendation_model  Weekly model retrain     0          1        No
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.job import DgApiJobApi
+    from dagster_rest_resources.api.job import DgApiJobApi
 
     api = DgApiJobApi(client)
 
@@ -56,7 +65,7 @@ def list_jobs_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.job", cls="DgApiJob")
+@dg_response_schema(module="dagster_rest_resources.schemas.job", cls="DgApiJob")
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -69,14 +78,24 @@ def get_job_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get specific job details."""
+    """Get specific job details.
+
+    Example::
+
+        $ dg api job get ingest_customers
+        Name:        ingest_customers
+        Description: Daily customer ingest
+        Asset Job:   No
+        Tags:        team=data-platform
+        Schedule:    daily_customer_ingest (0 6 * * *) [RUNNING]
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.job import DgApiJobApi
+    from dagster_rest_resources.api.job import DgApiJobApi
 
     api = DgApiJobApi(client)
 

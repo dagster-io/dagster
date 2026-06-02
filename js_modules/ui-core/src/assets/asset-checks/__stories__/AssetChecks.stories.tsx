@@ -21,7 +21,7 @@ import {
   testLatestMaterializationTimeStamp,
 } from '../__fixtures__/AssetChecks.fixtures';
 import {AssetCheckDetailsQueryVariables} from '../types/AssetCheckDetailDialog.types';
-import {AssetChecksQueryVariables} from '../types/AssetChecksQuery.types';
+import {AssetChecksQuery, AssetChecksQueryVariables} from '../types/AssetChecksQuery.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -48,7 +48,7 @@ export const MigrationRequired = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<any, AssetChecksQueryVariables>({
+        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
@@ -67,7 +67,7 @@ export const AgentUpgradeRequired = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<any, AssetChecksQueryVariables>({
+        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
@@ -86,7 +86,7 @@ export const NeedsUserCodeUpgradeRequired = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<any, AssetChecksQueryVariables>({
+        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
@@ -105,7 +105,7 @@ export const NoChecks = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<any, AssetChecksQueryVariables>({
+        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
@@ -126,7 +126,7 @@ export const Default = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<any, AssetChecksQueryVariables>({
+        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
@@ -145,6 +145,7 @@ export const Default = () => {
             }),
           },
         }),
+
         buildQueryMock<any, AssetCheckDetailsQueryVariables>({
           query: ASSET_CHECK_DETAILS_QUERY,
           variables: {

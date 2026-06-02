@@ -19,6 +19,40 @@ if TYPE_CHECKING:
     from upath import UPath
 
 
+def escape_leading_slash(segment: str) -> str:
+    """Escape a leading ``/`` to ``%2F``. ``pathlib``'s ``/`` operator
+    drops the left side when the right side is absolute, so this is required
+    to keep a string joinable as a relative subpath. Escaping (rather than
+    stripping) preserves uniqueness: ``"/foo"`` and ``"foo"`` are distinct.
+    """
+    return "%2F" + segment[1:] if segment.startswith("/") else segment
+
+
+def escape_dotdot_segments(s: str) -> str:
+    """Escape ``..`` *path segments* between ``/`` separators to ``%2E%2E``.
+    Substrings like ``my..backup`` are left intact; only whole-segment
+    matches are escaped.
+
+    Required for hierarchical filesystems where the OS resolves ``..`` as
+    an upward traversal at write time.
+    """
+    parts = s.split("/")
+    escaped = ["%2E%2E" if p == ".." else p for p in parts]
+    return "/".join(escaped)
+
+
+def coerce_to_relative_parts(path: "UPath") -> tuple[str, ...]:
+    """Return ``path.parts`` with the absolute-root marker dropped and the
+    "this path was absolute" intent encoded as a ``%2F`` escape on the
+    first component. The result can be joined onto a base path as a
+    relative subpath without an absolute right side dropping the base.
+    """
+    non_root = tuple(p for p in path.parts if p != "/")
+    if path.is_absolute() and non_root:
+        non_root = ("%2F" + non_root[0],) + non_root[1:]
+    return non_root
+
+
 class UPathIOManager(IOManager):
     """Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 
@@ -43,6 +77,16 @@ class UPathIOManager(IOManager):
 
         assert not self.extension or "." in self.extension
         self._base_path = base_path or UPath(".")
+
+    def make_safe_partition_path(self, base_path: "UPath", partition: str) -> "UPath":
+        """Join ``partition`` onto ``base_path``, escaping characters whose
+        pathlib interpretation would relocate the result off of ``base_path``.
+
+        Default escapes a leading ``/``. Subclasses backed by hierarchical
+        filesystems should override to also escape ``..`` path segments —
+        see :py:func:`escape_dotdot_segments`.
+        """
+        return base_path / escape_leading_slash(partition)
 
     @abstractmethod
     def dump_to_path(self, context: OutputContext, obj: Any, path: "UPath"):
@@ -117,7 +161,7 @@ class UPathIOManager(IOManager):
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
-            return self._base_path._kwargs.copy()  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+            return self._base_path._kwargs.copy()  # noqa
         elif isinstance(self._base_path, Path):
             return {}
         else:
@@ -164,7 +208,9 @@ class UPathIOManager(IOManager):
             # we are dealing with an op output
             context_path = self.get_op_output_relative_path(context)
 
-        return self._base_path.joinpath(context_path)
+        # Coerce absolute components to relative ones so the join can't drop
+        # the configured base.
+        return self._base_path.joinpath(*coerce_to_relative_parts(context_path))
 
     def get_asset_relative_path(self, context: InputContext | OutputContext) -> "UPath":
         from upath import UPath
@@ -214,7 +260,7 @@ class UPathIOManager(IOManager):
         Returns:
             UPath: The path to the file with the partition key appended.
         """
-        return path / partition
+        return self.make_safe_partition_path(path, partition)
 
     def _get_paths_for_partitions(
         self, context: InputContext | OutputContext
@@ -262,11 +308,14 @@ class UPathIOManager(IOManager):
         partition_keys = context.asset_partition_keys
 
         asset_path = self._get_path_without_extension(context)
-        return {
-            partition_key: self._with_extension(asset_path / partition_key)
-            for partition_key in partition_keys
-            if isinstance(partition_key, MultiPartitionKey)
-        }
+        result: dict[str, UPath] = {}
+        for partition_key in partition_keys:
+            if not isinstance(partition_key, MultiPartitionKey):
+                continue
+            result[partition_key] = self._with_extension(
+                self.make_safe_partition_path(asset_path, partition_key)
+            )
+        return result
 
     def _load_single_input(self, path: "UPath", context: InputContext) -> Any:
         context.log.debug(self.get_loading_input_log_message(path))
@@ -338,19 +387,17 @@ class UPathIOManager(IOManager):
         async def collect():
             loop = asyncio.get_running_loop()
 
-            tasks = []
-
-            for partition_key in context.asset_partition_keys:
-                tasks.append(
-                    loop.create_task(
-                        self._load_partition_from_path(
-                            context,
-                            partition_key,
-                            paths[partition_key],
-                            backcompat_paths.get(partition_key),
-                        )
+            tasks = [
+                loop.create_task(
+                    self._load_partition_from_path(
+                        context,
+                        partition_key,
+                        paths[partition_key],
+                        backcompat_paths.get(partition_key),
                     )
                 )
+                for partition_key in context.asset_partition_keys
+            ]
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 

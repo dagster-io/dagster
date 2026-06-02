@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "use_case_repository"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
     "dagster-aws",
@@ -25,3 +26,27 @@ dev = ["dagster-webserver", "pytest", "ruff"]
 [tool.dagster]
 module_name = "use_case_repository.definitions"
 code_location_name = "use_case_repository"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-shared",
+    "dagster-sling",
+    "dagster-snowflake",
+    "dagster-aws",
+    "dagster-postgres",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-sling = { path = "../../python_modules/libraries/dagster-sling", editable = true }
+dagster-snowflake = { path = "../../python_modules/libraries/dagster-snowflake", editable = true }
+dagster-aws = { path = "../../python_modules/libraries/dagster-aws", editable = true }
+dagster-postgres = { path = "../../python_modules/libraries/dagster-postgres", editable = true }

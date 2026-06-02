@@ -138,7 +138,9 @@ export const PartitionGraph = React.memo(
         return {jobData: [], stepData: {}};
       }
       const jobData: Point[] = [];
-      const stepData = {};
+      // Step data has y values that are PointValue[] (arrays from stepDataByPartition)
+
+      const stepData: Record<string, any[]> = {};
 
       partitionNames.forEach((partitionName) => {
         const hidden = !!hiddenPartitions[partitionName];
@@ -155,8 +157,8 @@ export const PartitionGraph = React.memo(
             if (hiddenStepKeys?.includes(stepKey) || !step) {
               return;
             }
-            (stepData as any)[stepKey] = [
-              ...((stepData as any)[stepKey] || []),
+            stepData[stepKey] = [
+              ...(stepData[stepKey] || []),
               {
                 x: partitionName,
                 y: !hidden ? step : undefined,
@@ -169,7 +171,7 @@ export const PartitionGraph = React.memo(
       // stepData may have holes due to missing runs or missing steps.  For these to
       // render properly, fill in the holes with `undefined` values.
       Object.keys(stepData).forEach((stepKey) => {
-        (stepData as any)[stepKey] = _fillPartitions(partitionNames, (stepData as any)[stepKey]);
+        stepData[stepKey] = _fillPartitions(partitionNames, stepData[stepKey] || []);
       });
 
       return {jobData, stepData};
@@ -256,13 +258,13 @@ export const PartitionGraph = React.memo(
 );
 
 const _fillPartitions = (partitionNames: string[], points: Point[]) => {
-  const pointData = {};
+  const pointData: Record<string, PointValue> = {};
   points.forEach((point) => {
-    (pointData as any)[point.x] = point.y;
+    pointData[point.x] = point.y;
   });
 
   return partitionNames.map((partitionName) => ({
     x: partitionName,
-    y: (pointData as any)[partitionName],
+    y: pointData[partitionName],
   }));
 };

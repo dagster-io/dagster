@@ -60,7 +60,7 @@ describe('weakMapMemoize', () => {
 
   // Test 5: Function with null and undefined arguments
   it('should handle null and undefined arguments correctly', () => {
-    const spy = jest.fn((a: any, b: any) => {
+    const spy = jest.fn((a: unknown, b: unknown) => {
       if (a === null && b === undefined) {
         return 'null-undefined';
       }
@@ -214,9 +214,10 @@ describe('weakMapMemoize', () => {
 
   // Test 13: Should handle mixed argument types in same slot
   it('Should handle mixed argument types in same slot', () => {
-    const spy = jest.fn((a: any, b: any) => {
-      const toString = (arg: any) => (typeof arg === 'object' ? Object.keys(arg).length : arg);
-      return toString(a) + toString(b);
+    const spy = jest.fn((a: unknown, b: unknown) => {
+      const toValue = (arg: unknown): any =>
+        typeof arg === 'object' && arg !== null ? Object.keys(arg).length : arg;
+      return toValue(a) + toValue(b);
     });
     const memoizedFn = weakMapMemoize(spy, {maxEntries: 3});
 

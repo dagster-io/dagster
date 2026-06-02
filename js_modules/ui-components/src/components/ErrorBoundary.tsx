@@ -2,13 +2,14 @@ import * as React from 'react';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {Body, Subheading} from './Text';
+import {Body} from './Text';
+import {Heading} from './Typography';
 import styles from './css/ErrorBoundary.module.css';
 
 export type ErrorCollectionContextValue = {
   errorStackIncluded: boolean;
   errorCollectionMessage: string;
-  onReportError: (error: Error, context: Record<string, any>) => void;
+  onReportError: (error: Error, context: Record<string, unknown>) => void;
 };
 
 export const ErrorCollectionContext = React.createContext<ErrorCollectionContextValue>({
@@ -24,7 +25,7 @@ export const ErrorCollectionContext = React.createContext<ErrorCollectionContext
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   region: string;
-  resetErrorOnChange?: any[];
+  resetErrorOnChange?: unknown[];
 }
 
 interface ErrorBoundaryState {
@@ -46,7 +47,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
   }
 
-  componentDidCatch(error: Error, info: any) {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
     if (typeof jest !== 'undefined') {
       throw error;
     }
@@ -70,7 +71,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           flex={{direction: 'column', gap: 8}}
           padding={16}
         >
-          <Subheading>Sorry, {this.props.region} can&apos;t be displayed.</Subheading>
+          <Heading size={14} weight={600}>
+            Sorry, {this.props.region} can&apos;t be displayed.
+          </Heading>
           <Body color={Colors.textLight()}>{errorCollectionMessage}</Body>
           {errorStackIncluded && (
             <div className={styles.trace}>{`${error.message}\n\n${error.stack}`}</div>

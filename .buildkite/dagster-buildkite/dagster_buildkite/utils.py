@@ -3,30 +3,17 @@ import subprocess
 import packaging.version
 
 
-def network_buildkite_container(network_name: str) -> list[str]:
-    return [
-        # Set Docker API version for compatibility with older daemons
-        "export DOCKER_API_VERSION=1.41",
-        # hold onto your hats, this is docker networking at its best. First, we figure out
-        # the name of the currently running container...
-        "export CONTAINER_ID=`cat /etc/hostname`",
-        r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
-        # then, we dynamically bind this container into the user-defined bridge
-        # network to make the target containers visible...
-        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
-    ]
-
-
-def connect_sibling_docker_container(
-    network_name: str, container_name: str, env_variable: str
-) -> list[str]:
-    return [
-        # Now, we grab the IP address of the target container from within the target
-        # bridge network and export it; this will let the tox tests talk to the target cot.
-        f"export {env_variable}=`docker inspect --format "
-        f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
-        f"{container_name}`"
-    ]
+def wait_for_mysql_container(container_name: str, port: int = 3306) -> str:
+    """Shell command that polls `mysqladmin ping` inside `container_name` until it
+    succeeds, or fails after ~120s. `docker compose up -d` returns before mysqld
+    finishes initializing, so tests that run early were hitting ECONNREFUSED (111).
+    """
+    return (
+        rf"i=0; until docker exec {container_name} mysqladmin ping -h 127.0.0.1 "
+        rf"-P {port} --silent >/dev/null 2>&1; do i=\$((i+1)); "
+        rf'if [ \$i -ge 60 ]; then echo "{container_name} not ready" >&2; exit 1; fi; '
+        r"sleep 2; done"
+    )
 
 
 # Preceding a line of BK output with "---" turns it into a section header.

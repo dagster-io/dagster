@@ -142,7 +142,7 @@
         "__typename": "LogsCapturedEvent",
         "eventType": "LOGS_CAPTURED",
         "level": "DEBUG",
-        "message": "Started capturing logs in process (pid: 19).",
+        "message": "Capturing logs for process (pid: 19).",
         "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
         "stepKey": null,
         "timestamp": "1758817833507"

@@ -1,6 +1,8 @@
 import pandas as pd
-from dagster_iceberg.config import IcebergCatalogConfig
-from dagster_iceberg.resource import IcebergTableResource
+from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
+from dagster_iceberg.resource import (
+    IcebergTableResource,  # ty: ignore[unresolved-import]
+)
 
 from dagster import Definitions, asset
 

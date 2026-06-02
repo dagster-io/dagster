@@ -40,15 +40,15 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 Consider the following example, which contains assets that construct a DuckDB connection object, read data from an upstream table, apply some in-memory transform, and write the result to a new table in DuckDB:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-without-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/io_management/assets-without-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-without-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/io_management/resources-without-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 Using an I/O manager would remove the code that reads and writes data from the assets themselves, instead delegating it to the I/O manager. The assets would be left only with the code that applies transformations or retrieves the initial CSV file.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/io_management/assets-with-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/io_management/resources-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 To load upstream assets using an I/O manager, specify the asset as an input parameter to the asset function. In this example, the `DuckDBPandasIOManager` I/O manager will read the DuckDB table with the same name as the upstream asset (`raw_sales_data`) and pass the data to `clean_sales_data` as a Pandas DataFrame.
 
@@ -62,9 +62,9 @@ With I/O managers, swapping data stores consists of changing the implementation 
 
 In the following example, a Snowflake I/O manager replaced the DuckDB I/O manager.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/io_management/assets-with-snowflake-io-manager.py" language="python" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-snowflake.py" language="python" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/io_management/resources-snowflake.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 ## Built-in I/O managers \{#built-in}
 
@@ -81,9 +81,11 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 | <PyObject section="libraries" integration="gcp" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />                | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           |
 | <PyObject section="libraries" integration="snowflake" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />           | Stores Pandas DataFrame outputs in Snowflake.                                 |
 | <PyObject section="libraries" integration="snowflake" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />         | Stores PySpark DataFrame outputs in Snowflake.                                |
-| <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
-| <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
-| <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
+| <PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse_pandas" object="ClickhousePandasIOManager" />           | Stores Pandas DataFrame outputs in ClickHouse.                                |
+| <PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse_polars" object="ClickhousePolarsIOManager" />           | Stores Polars DataFrame outputs in ClickHouse.                                |
+| <PyObject section="libraries" integration="motherduck" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
+| <PyObject section="libraries" integration="motherduck" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
+| <PyObject section="libraries" integration="motherduck" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
 
 ## Next steps
 

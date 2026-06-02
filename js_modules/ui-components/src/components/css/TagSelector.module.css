@@ -1,0 +1,68 @@
+.tagSelectorContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  /* Inline TextInputStyles */
+  background-color: var(--color-background-default);
+  border: none;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  outline: none;
+  border-radius: 8px;
+  color: var(--color-text-default);
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 6px 6px 6px 12px;
+  margin: 0;
+  transition: box-shadow 150ms;
+  min-height: 32px;
+  padding: 4px 8px;
+}
+
+.tagSelectorContainer::placeholder {
+  color: var(--color-text-lighter);
+}
+
+.tagSelectorContainer:disabled {
+  box-shadow: var(--color-keyline-default) inset 0px 0px 0px 1px;
+  background-color: var(--color-background-light);
+  color: var(--color-text-disabled);
+}
+
+.tagSelectorContainer:disabled::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.tagSelectorContainer:focus {
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
+    var(--color-keyline-default) inset 2px 2px 1.5px,
+    var(--color-focus-ring) 0 0 0 2px;
+  outline: none;
+}
+
+.tagSelectorContainer.disabled {
+  box-shadow:
+    var(--color-border-disabled) inset 0px 0px 0px 1px,
+    var(--color-keyline-default) inset 2px 2px 1.5px;
+  background-color: var(--color-background-disabled);
+  color: var(--color-text-disabled);
+}
+
+.placeholder {
+  color: var(--color-text-disabled);
+}
+
+.tagsContainer {
+  overflow-x: auto;
+}
+
+.tagsContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.tagsContainer {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}

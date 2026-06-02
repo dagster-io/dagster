@@ -159,7 +159,7 @@ export const ExecutionTimelineRow = ({
   }, [run, start, end, width]);
 
   return (
-    <TimelineRowContainer $height={height} $start={top}>
+    <TimelineRowContainer height={height} start={top}>
       <Box
         style={{width: LEFT_SIDE_SPACE_ALLOTTED}}
         padding={{horizontal: 24}}
@@ -176,8 +176,8 @@ export const ExecutionTimelineRow = ({
       <RunChunks>
         {chunk && (
           <RunChunk
-            $background={mergeStatusToBackground(chunk.runs)}
-            $multiple={false}
+            background={mergeStatusToBackground(chunk.runs)}
+            multiple={false}
             style={{
               left: `${chunk.left}px`,
               width: `${chunk.width}px`,

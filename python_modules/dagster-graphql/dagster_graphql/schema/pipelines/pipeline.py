@@ -152,7 +152,7 @@ class GrapheneTimePartitionRange(graphene.ObjectType):
 class GrapheneTimePartitionRangeStatus(GrapheneTimePartitionRange):
     status = graphene.NonNull(GraphenePartitionRangeStatus)
 
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "TimePartitionRangeStatus"
 
 
@@ -290,6 +290,7 @@ class GrapheneAsset(graphene.ObjectType):
     latestEventSortKey = graphene.Field(graphene.ID)
     assetHealth = graphene.Field(GrapheneAssetHealth)
     latestMaterializationTimestamp = graphene.Float()
+    latestObservationTimestamp = graphene.Float()
     hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
     latestFailedToMaterializeTimestamp = graphene.Float()
     freshnessStatusChangedTimestamp = graphene.Float()
@@ -494,6 +495,15 @@ class GrapheneAsset(graphene.ObjectType):
         return (
             latest_materialization_event.timestamp * 1000  # FE prefers timestamp in milliseconds
             if latest_materialization_event
+            else None
+        )
+
+    async def resolve_latestObservationTimestamp(self, graphene_info: ResolveInfo) -> float | None:
+        record = await AssetRecord.gen(graphene_info.context, self._asset_key)
+        latest_observation_event = record.asset_entry.last_observation if record else None
+        return (
+            latest_observation_event.timestamp * 1000  # FE prefers timestamp in milliseconds
+            if latest_observation_event
             else None
         )
 
@@ -1217,7 +1227,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     hasLaunchReexecutionPermission = graphene.NonNull(graphene.Boolean)
     nodeNames = non_null_list(graphene.String)
 
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
@@ -1318,7 +1328,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
 
 class GrapheneJob(GraphenePipeline):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Job"
 
@@ -1326,7 +1336,7 @@ class GrapheneJob(GraphenePipeline):
     def __init__(
         self, remote_job: RemoteJob, batch_loader: RepositoryScopedBatchLoader | None = None
     ):
-        super().__init__()  # pyright: ignore[reportCallIssue]
+        super().__init__()  # ty: ignore[missing-argument]
         self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
         self._batch_loader = check.opt_inst_param(
             batch_loader, "batch_loader", RepositoryScopedBatchLoader

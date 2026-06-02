@@ -32,7 +32,7 @@ def test_asset_defs(
     @dbt_cloud_assets(workspace=workspace)
     def my_dbt_cloud_assets(): ...
 
-    assert len(fetch_workspace_data_api_mocks.calls) == 8
+    assert len(fetch_workspace_data_api_mocks.calls) == 6
 
     assets_def_specs = list(my_dbt_cloud_assets.specs)
     all_assets_keys = [asset.key for asset in assets_def_specs]
@@ -87,7 +87,7 @@ class MyCustomTranslatorWithGroupName(DagsterDbtTranslator):
 
 def test_translator_invariant_group_name_with_asset_decorator(
     workspace: DbtCloudWorkspace,
-    asset_decorator_group_name_api_mocks: responses.RequestsMock,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -289,7 +289,7 @@ def test_selections(
         exclude=exclude,
         selector=selector,
     )
-    def my_dbt_assets(context: context_type): ...  # pyright: ignore
+    def my_dbt_assets(context: context_type): ...  # ty: ignore
 
     assert len(my_dbt_assets.keys) == len(expected_specs)
     assert my_dbt_assets.keys == {spec.key for spec in expected_specs}

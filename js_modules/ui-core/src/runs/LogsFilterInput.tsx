@@ -1,15 +1,15 @@
 import {
-  Colors,
   Icon,
   Popover,
   SuggestionProvider,
   TextInput,
   useSuggestionsForString,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/LogsFilterInput.module.css';
 import {ClearButton} from '../ui/ClearButton';
 
 interface Props {
@@ -167,7 +167,7 @@ export const LogsFilterInput = (props: Props) => {
       isOpen={shown && suggestions.length > 0}
       position="bottom-left"
       content={
-        <Results>
+        <ul className={styles.results}>
           {suggestions.map((suggestion, ii) => (
             <ResultItem
               key={suggestion}
@@ -176,10 +176,11 @@ export const LogsFilterInput = (props: Props) => {
               onSelect={onSelect}
             />
           ))}
-        </Results>
+        </ul>
       }
     >
-      <FilterInput
+      <TextInput
+        className={styles.filterInput}
         placeholder="Filter…"
         spellCheck={false}
         autoCorrect="off"
@@ -214,54 +215,15 @@ const ResultItem = (props: {
   }, [isHighlight]);
 
   return (
-    <Item
+    <li
       ref={element}
-      isHighlight={isHighlight}
+      className={clsx(styles.item, isHighlight && styles.itemHighlight)}
       onMouseDown={(e: React.MouseEvent<any>) => {
         e.preventDefault();
         onSelect(suggestion);
       }}
     >
       {suggestion}
-    </Item>
+    </li>
   );
 };
-
-const FilterInput = styled(TextInput)`
-  width: 300px;
-`;
-
-const Results = styled.ul`
-  list-style: none;
-  margin: 0;
-  max-height: 200px;
-  max-width: 800px;
-  min-width: 300px;
-  overflow-y: auto;
-  padding: 4px 0;
-`;
-
-interface HighlightableTextProps {
-  readonly isHighlight: boolean;
-}
-
-const Item = styled.li<HighlightableTextProps>`
-  align-items: center;
-  background-color: ${({isHighlight}) =>
-    isHighlight ? Colors.backgroundBlue() : Colors.backgroundDefault()};
-  color: ${({isHighlight}) => (isHighlight ? Colors.accentPrimary() : 'default')};
-  cursor: pointer;
-  display: flex;
-  flex-direction: row;
-  font-size: 12px;
-  list-style: none;
-  margin: 0;
-  padding: 4px 8px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  &:hover {
-    background-color: ${({isHighlight}) =>
-      isHighlight ? Colors.backgroundBlue() : Colors.backgroundGray()};
-  }
-`;

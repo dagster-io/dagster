@@ -1,5 +1,6 @@
 import sys
 from collections.abc import Mapping
+from functools import cached_property
 from typing import TYPE_CHECKING
 
 from dagster_shared.serdes import whitelist_for_serdes
@@ -54,6 +55,10 @@ class RepositoryHandle:
         return check.not_none(
             self.repository_python_origin, "Repository does not have a RepositoryPythonOrigin"
         )
+
+    @cached_property
+    def selector_id(self) -> str:
+        return self.to_selector().selector_id
 
     def to_selector(self) -> RepositorySelector:
         return RepositorySelector(

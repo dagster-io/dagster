@@ -16,10 +16,12 @@ def temp_dir(tmp_path: Path):
             "DAGSTER_CPU_CFS_PERIOD_US_PATH": f"{tmp_path}/cpu.cfs_period_us",
             "DAGSTER_MEMORY_USAGE_PATH_V1": f"{tmp_path}/memory.usage_in_bytes",
             "DAGSTER_MEMORY_LIMIT_PATH_V1": f"{tmp_path}/memory.limit_in_bytes",
+            "DAGSTER_MEMORY_STAT_PATH_V1": f"{tmp_path}/memory.stat.v1",
             "DAGSTER_CPU_STAT_PATH": f"{tmp_path}/cpu.stat",
             "DAGSTER_CPU_MAX_PATH": f"{tmp_path}/cpu.max",
             "DAGSTER_MEMORY_USAGE_PATH_V2": f"{tmp_path}/memory.current",
             "DAGSTER_MEMORY_LIMIT_PATH_V2": f"{tmp_path}/memory.max",
+            "DAGSTER_MEMORY_STAT_PATH_V2": f"{tmp_path}/memory.stat.v2",
         }
     ):
         yield tmp_path
@@ -86,6 +88,10 @@ def test_containerized_utilization_metrics_cgroup_v1(
     if memory_usage_val:
         with open(f"{temp_dir}/memory.usage_in_bytes", "w") as f:
             f.write(str(memory_usage_val))
+        # memory.stat is required for the working-set calculation; in real
+        # cgroup environments it sits alongside memory.usage_in_bytes.
+        with open(f"{temp_dir}/memory.stat.v1", "w") as f:
+            f.write("total_inactive_file 0\n")
 
     if memory_limit_val:
         with open(f"{temp_dir}/memory.limit_in_bytes", "w") as f:
@@ -112,6 +118,78 @@ def test_containerized_utilization_metrics_cgroup_v1(
     assert utilization_metrics["previous_measurement_timestamp"] == (
         1.0 if was_previous_timestamp_previously_set else None
     )
+
+
+@pytest.mark.parametrize(
+    "raw_usage,inactive_file_line,expected_usage",
+    [
+        # Working set = raw - total_inactive_file (clamped at 0).
+        (1000, "total_inactive_file 300\n", 700),
+        # Multi-line memory.stat: only the matching key matters.
+        (1000, "cache 500\ntotal_inactive_file 250\nrss 250\n", 750),
+        # Defensive clamp: if inactive somehow exceeds usage, return 0 rather than negative.
+        (100, "total_inactive_file 500\n", 0),
+        # No memory.stat present -> return None, never silently swap in raw usage.
+        (1000, None, None),
+        # memory.stat present but missing the key -> same: return None.
+        (1000, "cache 500\nrss 500\n", None),
+    ],
+    ids=["typical", "multi-line", "clamped", "missing-stat-file", "missing-key"],
+)
+def test_memory_usage_subtracts_inactive_file_v1(
+    temp_dir: Path,
+    raw_usage: int,
+    inactive_file_line: str | None,
+    expected_usage: int | None,
+    cgroup_version_mock: mock.Mock,
+):
+    cgroup_version_mock.return_value = CGroupVersion.V1
+
+    with open(f"{temp_dir}/memory.usage_in_bytes", "w") as f:
+        f.write(str(raw_usage))
+    if inactive_file_line is not None:
+        with open(f"{temp_dir}/memory.stat.v1", "w") as f:
+            f.write(inactive_file_line)
+
+    metrics = retrieve_containerized_utilization_metrics(
+        logger=None, previous_measurement_timestamp=None, previous_cpu_usage=None
+    )
+    assert metrics["memory_usage"] == expected_usage
+
+
+@pytest.mark.parametrize(
+    "raw_usage,inactive_file_line,expected_usage",
+    [
+        # cgroup v2's memory.stat key is `inactive_file` (no `total_` prefix).
+        (1000, "inactive_file 300\n", 700),
+        (1000, "anon 400\ninactive_file 250\nfile 600\n", 750),
+        (100, "inactive_file 500\n", 0),
+        # No memory.stat present -> return None, never silently swap in raw usage.
+        (1000, None, None),
+        # memory.stat present but missing the key -> same: return None.
+        (1000, "anon 400\nfile 600\n", None),
+    ],
+    ids=["typical", "multi-line", "clamped", "missing-stat-file", "missing-key"],
+)
+def test_memory_usage_subtracts_inactive_file_v2(
+    temp_dir: Path,
+    raw_usage: int,
+    inactive_file_line: str | None,
+    expected_usage: int | None,
+    cgroup_version_mock: mock.Mock,
+):
+    cgroup_version_mock.return_value = CGroupVersion.V2
+
+    with open(f"{temp_dir}/memory.current", "w") as f:
+        f.write(str(raw_usage))
+    if inactive_file_line is not None:
+        with open(f"{temp_dir}/memory.stat.v2", "w") as f:
+            f.write(inactive_file_line)
+
+    metrics = retrieve_containerized_utilization_metrics(
+        logger=None, previous_measurement_timestamp=None, previous_cpu_usage=None
+    )
+    assert metrics["memory_usage"] == expected_usage
 
 
 @pytest.mark.parametrize("cpu_usage_val", [1.0, None], ids=["cpu-set", "cpu-not-set"])
@@ -161,6 +239,10 @@ def test_containerized_utilization_metrics_cgroup_v2(
     if memory_usage_val:
         with open(f"{temp_dir}/memory.current", "w") as f:
             f.write(str(memory_usage_val))
+        # memory.stat is required for the working-set calculation; in real
+        # cgroup v2 environments it sits alongside memory.current.
+        with open(f"{temp_dir}/memory.stat.v2", "w") as f:
+            f.write("inactive_file 0\n")
 
     if memory_limit_val:
         with open(f"{temp_dir}/memory.max", "w") as f:

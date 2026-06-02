@@ -70,5 +70,21 @@ describe('RunActionButtons', () => {
       expect(await screen.findByRole('button', {name: /re-execute/i})).toBeVisible();
       expect(screen.queryByRole('button', {name: /terminate/i})).toBeNull();
     });
+
+    it('is disabled when user lacks terminate permission', async () => {
+      const run = buildRun({status: RunStatus.STARTED, hasTerminatePermission: false});
+      render(<Test run={run} />);
+      const button = await screen.findByRole('button', {name: /terminate/i});
+      expect(button).toBeVisible();
+      expect(button).toBeDisabled();
+    });
+
+    it('is enabled when user has terminate permission', async () => {
+      const run = buildRun({status: RunStatus.STARTED, hasTerminatePermission: true});
+      render(<Test run={run} />);
+      const button = await screen.findByRole('button', {name: /terminate/i});
+      expect(button).toBeVisible();
+      expect(button).not.toBeDisabled();
+    });
   });
 });

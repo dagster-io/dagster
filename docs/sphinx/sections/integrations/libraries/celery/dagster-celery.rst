@@ -13,7 +13,7 @@ directory run:
 
 .. code-block:: bash
 
-    docker-compose up
+    docker compose up
 
 
 To run a celery worker:

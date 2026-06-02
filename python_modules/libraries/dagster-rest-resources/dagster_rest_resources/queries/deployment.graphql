@@ -1,0 +1,75 @@
+query ListDeployments {
+  fullDeployments {
+    deploymentName
+    deploymentId
+    deploymentType
+  }
+}
+
+query ListBranchDeployments(
+  $limit: Int!
+  $pullRequestStatus: PullRequestStatus
+) {
+  branchDeployments(limit: $limit, pullRequestStatus: $pullRequestStatus) {
+    nodes {
+      deploymentName
+      deploymentId
+      deploymentType
+    }
+  }
+}
+
+query GetDeployment($deploymentName: String!) {
+  deploymentByName(name: $deploymentName) {
+    __typename
+    ... on DagsterCloudDeployment {
+      deploymentName
+      deploymentId
+      deploymentType
+    }
+    ... on DeploymentNotFoundError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetDeploymentSettings {
+  deploymentSettings {
+    settings
+  }
+}
+
+mutation SetDeploymentSettings($deploymentSettings: DeploymentSettingsInput!) {
+  setDeploymentSettings(deploymentSettings: $deploymentSettings) {
+    __typename
+    ... on DeploymentSettings {
+      settings
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+mutation DeleteDeployment($deploymentId: Int!) {
+  deleteDeployment(deploymentId: $deploymentId) {
+    __typename
+    ... on DagsterCloudDeployment {
+      deploymentId
+      deploymentName
+      deploymentType
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

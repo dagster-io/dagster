@@ -1,4 +1,3 @@
-# ruff: noqa: T201
 import argparse
 import itertools
 import subprocess
@@ -75,6 +74,7 @@ def main(
         "python_modules/libraries/dagster-deltalake",
         "python_modules/libraries/dagster-deltalake-pandas",
         "python_modules/libraries/dagster-deltalake-polars",
+        "python_modules/libraries/dagster-rest-resources",
         "python_modules/libraries/dagster-dg-core",
         "python_modules/libraries/dagster-dg-cli",
         "python_modules/libraries/dagster-dlt",
@@ -82,7 +82,6 @@ def main(
         "python_modules/libraries/dagster-gcp[test, dataproc]",
         "python_modules/libraries/dagster-gcp-pandas",
         "python_modules/libraries/dagster-gcp-pyspark",
-        "python_modules/libraries/dagster-embedded-elt",
         "python_modules/libraries/dagster-fivetran",
         "python_modules/libraries/dagster-k8s",
         "python_modules/libraries/dagster-celery-k8s",
@@ -103,6 +102,7 @@ def main(
         "python_modules/libraries/dagster-pyspark",
         "python_modules/libraries/dagster-slack",
         "python_modules/libraries/dagster-sling",
+        "python_modules/libraries/dagster-soda",
         "python_modules/libraries/dagster-snowflake",
         "python_modules/libraries/dagster-snowflake-pandas",
         "python_modules/libraries/dagster-snowflake-polars",
@@ -118,6 +118,9 @@ def main(
 
     if sys.version_info <= (3, 12):
         editable_target_paths += [
+            "python_modules/libraries/dagster-clickhouse",
+            "python_modules/libraries/dagster-clickhouse-pandas",
+            "python_modules/libraries/dagster-clickhouse-polars",
             "python_modules/libraries/dagster-duckdb",
             "python_modules/libraries/dagster-duckdb-pandas",
             "python_modules/libraries/dagster-duckdb-polars",

@@ -17,12 +17,12 @@ def test_coerce_to_asset_selection():
     @dg.sensor(asset_selection=["asset1", "asset2"])
     def sensor1(): ...
 
-    assert sensor1.asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
+    assert sensor1.asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # ty: ignore[unresolved-attribute]
 
     @dg.sensor(asset_selection=[asset1, asset2])
     def sensor2(): ...
 
-    assert sensor2.asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
+    assert sensor2.asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # ty: ignore[unresolved-attribute]
 
 
 def test_jobless_sensor_uses_eval_fn_name():

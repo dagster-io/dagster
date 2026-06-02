@@ -4,7 +4,18 @@ from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
 from types import UnionType
-from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Final,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
@@ -19,6 +30,9 @@ from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotate
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Model, Resolver
+
+if TYPE_CHECKING:
+    from dagster.components.resolved.form_config import ComponentFormConfig
 
 
 class _TypeContainer(Enum):
@@ -113,6 +127,21 @@ class Resolvable:
         return derive_model_type(cls)
 
     @classmethod
+    def get_form_config(cls) -> "ComponentFormConfig | None":
+        """Return form metadata for this class to drive the UI definitions editor.
+
+        Override on a :class:`Resolvable` subclass to mark it UI-editable
+        and set its display label::
+
+            @classmethod
+            def get_form_config(cls) -> ComponentFormConfig:
+                return ComponentFormConfig(label="My Component", editable=True)
+
+        Returns ``None`` (the default) to opt out of the UI editor entirely.
+        """
+        return None
+
+    @classmethod
     def resolve_from_model(cls, context: "ResolutionContext", model: BaseModel):
         return cls(**resolve_fields(model, cls, context))
 
@@ -165,6 +194,8 @@ def derive_model_type(
     target_type: type[Resolvable],
 ) -> type[BaseModel]:
     if target_type not in _DERIVED_MODEL_REGISTRY:
+        form_config = target_type.get_form_config()
+        schema_extra = form_config.to_component_json_schema_extra() if form_config else {}
         model_name = f"{target_type.__name__}Model"
 
         model_fields: dict[
@@ -200,31 +231,40 @@ def derive_model_type(
                         default=default_value,
                         description=field_resolver.description,
                         examples=field_resolver.examples,
+                        json_schema_extra=field_resolver.json_schema_extra,
                     ),
                 )
-            elif field_resolver.description or field_resolver.examples:
+            elif (
+                field_resolver.description
+                or field_resolver.examples
+                or field_resolver.json_schema_extra
+            ):
                 field_infos.append(
                     Field(
                         description=field_resolver.description,
                         examples=field_resolver.examples,
+                        json_schema_extra=field_resolver.json_schema_extra,
                     )
                 )
 
             # make all fields injectable
             if field_type != str:
-                field_type = field_type | str
+                field_type = field_type | str  # ty: ignore[unsupported-operator]
 
             model_fields[field_name] = (
                 field_type,
-                FieldInfo.merge_field_infos(*field_infos),
+                FieldInfo.merge_field_infos(*field_infos),  # ty: ignore[invalid-argument-type]
             )
 
         try:
-            _DERIVED_MODEL_REGISTRY[target_type] = create_model(
+            derived = create_model(
                 model_name,
                 __base__=Model,
                 **model_fields,
             )
+            if schema_extra:
+                derived.model_config["json_schema_extra"] = schema_extra
+            _DERIVED_MODEL_REGISTRY[target_type] = derived
         except PydanticSchemaGenerationError as e:
             raise ResolutionException(f"Unable to derive Model for {target_type}") from e
 
@@ -357,7 +397,7 @@ def _get_init_kwargs(
 
 def resolve_fields(
     model: BaseModel,
-    resolved_cls: type,
+    resolved_cls: type[Resolvable],
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""

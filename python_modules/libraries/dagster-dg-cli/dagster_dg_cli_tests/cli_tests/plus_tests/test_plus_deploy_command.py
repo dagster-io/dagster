@@ -7,7 +7,6 @@ from unittest import mock
 from unittest.mock import patch
 
 import pytest
-import responses
 import yaml
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
@@ -243,7 +242,6 @@ def mock_external_dagster_cloud_cli_command() -> Generator[MockedCloudCliCommand
         )
 
 
-@responses.activate
 def test_plus_deploy_command_agent_type_from_graphql(
     logged_in_dg_cli_config, project: Path, runner
 ):
@@ -995,7 +993,6 @@ def test_plus_deploy_subcommands_with_location(
         )
 
 
-@responses.activate
 def test_plus_deploy_hybrid_with_build_yaml_scaffold(
     logged_in_dg_cli_config, project, runner, mocker
 ):
@@ -1039,7 +1036,6 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
             )
 
 
-@responses.activate
 def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
     logged_in_dg_cli_config,
     workspace,

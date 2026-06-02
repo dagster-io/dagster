@@ -28,7 +28,7 @@ class EtlTableFactory(dg.Component, dg.Model, dg.Resolvable):
                 @dg.asset(name=table_config.name, deps=table_config.deps)
                 def etl_table(snowflake: SnowflakeResource):
                     with snowflake.get_connection() as conn:
-                        conn.cursor.execute(table_config.query)
+                        conn.cursor.execute(table_config.query)  # ty: ignore[unresolved-attribute]
 
                 return etl_table
 

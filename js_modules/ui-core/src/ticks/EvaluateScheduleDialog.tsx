@@ -1,10 +1,10 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
   Menu,
   MenuItem,
@@ -12,17 +12,16 @@ import {
   NonIdealState,
   Popover,
   Spinner,
-  Subheading,
   Tag,
   Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
 import {useCallback, useContext, useMemo, useRef, useState} from 'react';
-import styled from 'styled-components';
 
 import {RunRequestTable} from './DryRunRequestTable';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {gql, useMutation, useQuery} from '../apollo-client';
+import styles from './css/EvaluateScheduleDialog.module.css';
 import {
   GetScheduleQuery,
   GetScheduleQueryVariables,
@@ -157,6 +156,11 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
           title: 'Schedule not found',
           body: `Could not find a schedule named: ${name}`,
         });
+      } else if (data?.__typename === 'UnauthorizedError') {
+        showCustomAlert({
+          title: 'Unauthorized',
+          body: 'You do not have permission to dry run this schedule.',
+        });
       } else {
         setScheduleExecutionError(data);
       }
@@ -272,7 +276,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
       selectedTimestampRef.current = selectedTimestamp || timestamps[0] || null;
       return (
         <Box flex={{direction: 'column', gap: 8}}>
-          <ScheduleDescriptor>Select an evaluation time to simulate</ScheduleDescriptor>
+          <div className={styles.scheduleDescriptor}>Select an evaluation time to simulate</div>
           <Popover
             isOpen={isTickSelectionOpen}
             position="bottom-left"
@@ -516,9 +520,11 @@ const EvaluateScheduleResult = ({
     if (!evaluationResult.runRequests?.length) {
       return (
         <Box flex={{direction: 'column', gap: 8}}>
-          <Subheading style={{marginBottom: 8}}>Requested runs (0)</Subheading>
+          <Heading size={14} weight={600} style={{marginBottom: 8}}>
+            Requested runs (0)
+          </Heading>
           <div>
-            <SkipReasonNonIdealStateWrapper>
+            <div className={styles.skipReasonNonIdealStateWrapper}>
               <NonIdealState
                 icon="missing"
                 title="No runs requested"
@@ -538,14 +544,16 @@ const EvaluateScheduleResult = ({
                   </>
                 }
               />
-            </SkipReasonNonIdealStateWrapper>
+            </div>
           </div>
         </Box>
       );
     } else {
       return (
         <Box flex={{direction: 'column', gap: 8}}>
-          <Subheading>Requested runs ({numRunRequests})</Subheading>
+          <Heading size={14} weight={600}>
+            Requested runs ({numRunRequests})
+          </Heading>
           <RunRequestTable
             runRequests={evaluationResult.runRequests}
             repoAddress={repoAddress}
@@ -564,9 +572,11 @@ const EvaluateScheduleResult = ({
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <Box>
-        <Grid>
+        <div className={styles.grid}>
           <div>
-            <Subheading>Result</Subheading>
+            <Heading size={14} weight={600} className={styles.gridHeading}>
+              Result
+            </Heading>
             <Box flex={{grow: 1, alignItems: 'center'}}>
               <div>
                 {error ? (
@@ -580,7 +590,9 @@ const EvaluateScheduleResult = ({
             </Box>
           </div>
           <div>
-            <Subheading>Tick</Subheading>
+            <Heading size={14} weight={600} className={styles.gridHeading}>
+              Tick
+            </Heading>
             <Box flex={{grow: 1, alignItems: 'center'}}>
               <Mono>
                 {timestampToString({
@@ -594,7 +606,7 @@ const EvaluateScheduleResult = ({
               </Mono>
             </Box>
           </div>
-        </Grid>
+        </div>
       </Box>
       {innerContent()}
     </Box>
@@ -624,34 +636,4 @@ export const SCHEDULE_DRY_RUN_MUTATION = gql`
   }
   ${PYTHON_ERROR_FRAGMENT}
   ${RUN_REQUEST_FRAGMENT}
-`;
-
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  margin-bottom: 12px;
-  ${Subheading} {
-    padding-bottom: 4px;
-    display: block;
-  }
-  pre {
-    margin: 0;
-  }
-  button {
-    margin-top: 4px;
-  }
-`;
-
-const ScheduleDescriptor = styled.div`
-  padding-bottom: 2px;
-`;
-
-const SkipReasonNonIdealStateWrapper = styled.div`
-  .dagster-non-ideal-state {
-    margin: auto !important;
-    width: unset !important;
-    max-width: unset !important;
-  }
 `;

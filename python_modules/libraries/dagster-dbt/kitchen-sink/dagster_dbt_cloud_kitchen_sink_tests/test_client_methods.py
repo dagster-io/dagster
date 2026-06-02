@@ -25,9 +25,7 @@ def test_cloud_job_apis(
     )
     job_name = get_dagster_adhoc_job_name(
         project_id=project.id,
-        project_name=project.name,
         environment_id=environment.id,
-        environment_name=environment.name,
     )
     created_job = DbtCloudJob.from_job_details(
         job_details=client.create_job(

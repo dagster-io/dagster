@@ -1,5 +1,6 @@
 .tile {
   flex: 1;
+  min-width: 0;
   border-radius: 12px;
   padding: 16px;
   flex-direction: column;
@@ -35,16 +36,24 @@
   text-decoration: none;
   color: var(--color-text-default);
   flex: 1;
+  min-width: 0;
   display: flex;
 }
 
 .header {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 12px;
 }
 
 .title {
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font-size: 14px;
   font-weight: 400;
   margin-bottom: 4px;

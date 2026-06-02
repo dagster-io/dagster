@@ -1,6 +1,6 @@
 from dagster_duckdb.resource import DuckDBResource
 
-from .create_table import iris_dataset
+from .create_table import iris_dataset  # ty: ignore[unresolved-import]
 
 # ruff: isort: split
 # start_example

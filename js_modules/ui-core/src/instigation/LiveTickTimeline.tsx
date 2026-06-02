@@ -1,8 +1,9 @@
 import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 import {memo, useEffect, useMemo, useState} from 'react';
-import styled from 'styled-components';
 
+import styles from './css/LiveTickTimeline.module.css';
 import {Timestamp} from '../app/time/Timestamp';
 import {TickResultType} from '../ticks/TickStatusTag';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
@@ -12,18 +13,11 @@ import {InstigationTickStatus} from '../graphql/types';
 
 import '../util/dayjsExtensions';
 
-const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: Colors.accentGreen(),
-  [InstigationTickStatus.FAILURE]: Colors.accentRed(),
-  [InstigationTickStatus.STARTED]: Colors.accentLavender(),
-  [InstigationTickStatus.SKIPPED]: Colors.backgroundDisabled(),
-};
-
-const HoverColorMap = {
-  [InstigationTickStatus.SUCCESS]: Colors.accentGreenHover(),
-  [InstigationTickStatus.FAILURE]: Colors.accentRedHover(),
-  [InstigationTickStatus.STARTED]: Colors.accentLavenderHover(),
-  [InstigationTickStatus.SKIPPED]: Colors.accentGrayHover(),
+const TICK_STATUS_CLASS: Record<InstigationTickStatus, string | undefined> = {
+  [InstigationTickStatus.SUCCESS]: styles.tickSuccess,
+  [InstigationTickStatus.FAILURE]: styles.tickFailure,
+  [InstigationTickStatus.STARTED]: styles.tickStarted,
+  [InstigationTickStatus.SKIPPED]: styles.tickSkipped,
 };
 
 const REFRESH_INTERVAL = 100;
@@ -117,23 +111,24 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   return (
     <div style={{marginRight: '8px'}}>
       <div {...containerProps}>
-        <TicksWrapper>
+        <div className={styles.ticksWrapper}>
           {gridTicks.map((tick) => (
-            <GridTick
+            <div
+              className={styles.gridTick}
               key={tick.time}
               style={{
                 transform: `translateX(${tick.x}px)`,
               }}
             >
-              <GridTickLine />
+              <div className={styles.gridTickLine} />
               {tick.showLabel ? (
-                <GridTickTime>
+                <div className={styles.gridTickTime}>
                   <Caption>
                     <Timestamp timestamp={{ms: tick.time}} timeFormat={{showSeconds: true}} />
                   </Caption>
-                </GridTickTime>
+                </div>
               ) : null}
-            </GridTick>
+            </div>
           ))}
           {ticksToDisplay.map((tick) => {
             const count =
@@ -141,13 +136,13 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
                 ? tick.requestedAssetMaterializationCount
                 : tick.runIds?.length) ?? 0;
             return (
-              <Tick
+              <div
                 key={tick.id}
+                className={clsx(styles.tick, TICK_STATUS_CLASS[tick.status])}
                 style={{
                   transform: `translateX(${tick.startX}px)`,
                   width: `${tick.width}px`,
                 }}
-                status={tick.status}
                 onMouseEnter={() => {
                   onHoverTick(tick);
                   setPaused(true);
@@ -165,18 +160,19 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
                     {count > 0 ? count : null}
                   </div>
                 </Tooltip>
-              </Tick>
+              </div>
             );
           })}
           {showNowLine ? (
-            <NowIndicator
+            <div
+              className={styles.nowIndicator}
               style={{
                 transform: `translateX(${getX(now, viewport.width, minX, fullRange)}px)`,
               }}
             />
           ) : null}
-        </TicksWrapper>
-        <TimeAxisWrapper></TimeAxisWrapper>
+        </div>
+        <div className={styles.timeAxisWrapper} />
       </div>
     </div>
   );
@@ -228,76 +224,6 @@ const TickTooltip = memo(
     );
   },
 );
-
-const TicksWrapper = styled.div`
-  position: relative;
-  height: 100px;
-  padding: 10px 2px;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-`;
-
-const TimeAxisWrapper = styled.div`
-  height: 24px;
-`;
-
-const Tick = styled.div<{status: InstigationTickStatus}>`
-  cursor: pointer;
-  position: absolute;
-  top: 10px;
-  height: 80px;
-  will-change: transform, width;
-  border-radius: 2px;
-  div {
-    place-content: center;
-    display: grid;
-  }
-  color: ${Colors.backgroundDefault()};
-  ${({status}) => `
-    background: ${COLOR_MAP[status]};
-    &:hover {
-      background: ${HoverColorMap[status]};
-    }
-  `}
-`;
-
-const GridTick = styled.div`
-  position: absolute;
-  top: 0;
-  height: 124px;
-  will-change: transform;
-`;
-const GridTickLine = styled.div`
-  position: absolute;
-  top: 0;
-  height: 108px;
-  width: 1px;
-  background: ${Colors.keylineDefault()};
-`;
-const GridTickTime = styled.div`
-  height: 16px;
-  position: absolute;
-  bottom: 0;
-  width: 100px;
-  margin-left: -24px;
-`;
-
-const NowIndicator = styled.div`
-  position: absolute;
-  top: 0;
-  height: 126px;
-  width: 2px;
-  background: ${Colors.accentPrimary()};
-  &:after {
-    content: 'Now';
-    position: absolute;
-    left: 0;
-    background: ${Colors.accentPrimary()};
-    color: ${Colors.accentReversed()};
-    bottom: 0;
-    font-size: 12px;
-    padding: 3px 4px;
-  }
-`;
 
 function getX(timestamp: number, viewportWidth: number, minX: number, timeRange: number) {
   return (viewportWidth * (timestamp - minX)) / timeRange;

@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import dagster as dg
 from dagster import AssetKey
-from project_prompt_eng.definitions import defs as _raw_defs
-from project_prompt_eng.defs.assets import (
+from project_prompt_eng.definitions import defs as _raw_defs  # ty: ignore[unresolved-import]
+from project_prompt_eng.defs.assets import (  # ty: ignore[unresolved-import]
     InputLocation,
     UserInputSchema,
     available_fuel_stations,

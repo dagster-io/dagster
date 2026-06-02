@@ -122,14 +122,14 @@ class PatchedApiClient(ApiClient):
             for attr, attr_type in six.iteritems(klass.openapi_types):
                 if klass.attribute_map[attr] in data:
                     value = data[klass.attribute_map[attr]]
-                    kwargs[attr] = self._ApiClient__deserialize(value, attr_type)
+                    kwargs[attr] = self._ApiClient__deserialize(value, attr_type)  # ty: ignore[unresolved-attribute]
 
         instance = klass(**kwargs)
 
         if hasattr(instance, "get_real_child_model"):
             klass_name = instance.get_real_child_model(data)
             if klass_name:
-                instance = self._ApiClient__deserialize(data, klass_name)
+                instance = self._ApiClient__deserialize(data, klass_name)  # ty: ignore[unresolved-attribute]
         return instance
 
 
@@ -937,8 +937,7 @@ class DagsterKubernetesClient:
                 namespace=namespace,
                 field_selector=f"involvedObject.name={job_name}",
             ).items
-            for event in events:
-                event_strs.append(f"{event.reason}: {event.message}")
+            event_strs.extend(f"{event.reason}: {event.message}" for event in events)
 
         return (
             f"Debug information for job {job_name}:"

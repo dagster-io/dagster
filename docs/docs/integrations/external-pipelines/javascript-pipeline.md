@@ -33,7 +33,7 @@ First, you'll create a JavaScript script that reads a CSV file and uses Tensorfl
 Create a file named `tensorflow/main.js` with the following contents:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/non-python/pipes-contrived-javascript.js"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/non_python/pipes-contrived-javascript.js"
   language="javascript"
   title="src/<project_name>/defs/tensorflow/main.js"
 />
@@ -50,7 +50,7 @@ In Dagster, create an asset that:
 - Sets the `compute_kind` to `javascript`. This makes it easy to identify that an alternate compute will be used for materialization.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/non-python/pipes-asset.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/non_python/pipes-asset.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -66,7 +66,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 To make the resource loadable and accessible, such as the CLI, UI, and Dagster+, you’ll create a function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/non-python/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/non_python/resources.py"
   language="python"
   title="src/<project_name>/defs/resources.py"
 />
@@ -81,7 +81,7 @@ To send context to your script or emit events back to Dagster, you can use envir
 Create a new file with the following helper functions that read the environment variables, decode the data, and write messages back to Dagster:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/non-python/pipes-javascript-utility.js"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/non_python/pipes-javascript-utility.js"
   language="javascript"
   title="src/<project_name>/defs/tensorflow/main.js"
 />
@@ -98,7 +98,7 @@ Update the `tensorflow/main.js` script to:
 - Report an asset materialization back to Dagster with model metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/non-python/pipes-full-featured-javascript.js"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/non_python/pipes-full-featured-javascript.js"
   language="javascript"
   title="src/<project_name>/defs/tensorflow/main.js"
 />
@@ -114,7 +114,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 Finally, update your Dagster asset to pass in the model information that's used by the script:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/non-python/pipes-asset-with-context.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/non_python/pipes-asset-with-context.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />

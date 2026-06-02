@@ -5,16 +5,16 @@ import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
-    from dagster_dg_cli.api_layer.schemas.alert_policy import (
-        AlertPolicyDocument,
-        AlertPolicySyncResult,
+    from dagster_rest_resources.schemas.agent import DgApiAgent, DgApiAgentList
+    from dagster_rest_resources.schemas.alert_policy import (
+        DgApiAlertPolicyDocument,
+        DgApiAlertPolicySyncResult,
     )
-    from dagster_dg_cli.api_layer.schemas.artifact import (
-        ArtifactDownloadResult,
-        ArtifactUploadResult,
+    from dagster_rest_resources.schemas.artifact import (
+        DgApiArtifactDownloadResult,
+        DgApiArtifactUploadResult,
     )
-    from dagster_dg_cli.api_layer.schemas.asset import (
+    from dagster_rest_resources.schemas.asset import (
         DgApiAsset,
         DgApiAssetEventList,
         DgApiAssetList,
@@ -22,35 +22,36 @@ if TYPE_CHECKING:
         DgApiEvaluationRecordList,
         DgApiPartitionStats,
     )
-    from dagster_dg_cli.api_layer.schemas.asset_check import (
+    from dagster_rest_resources.schemas.asset_check import (
         DgApiAssetCheckExecutionList,
         DgApiAssetCheckList,
     )
-    from dagster_dg_cli.api_layer.schemas.code_location import (
+    from dagster_rest_resources.schemas.code_location import (
         DgApiAddCodeLocationResult,
         DgApiCodeLocation,
         DgApiCodeLocationList,
         DgApiDeleteCodeLocationResult,
     )
-    from dagster_dg_cli.api_layer.schemas.compute_log import (
+    from dagster_rest_resources.schemas.compute_log import (
         DgApiComputeLogLinkList,
         DgApiComputeLogList,
     )
-    from dagster_dg_cli.api_layer.schemas.deployment import (
-        Deployment,
-        DeploymentList,
-        DeploymentSettings,
+    from dagster_rest_resources.schemas.deployment import (
+        DgApiDeployment,
+        DgApiDeploymentList,
+        DgApiDeploymentSettings,
     )
-    from dagster_dg_cli.api_layer.schemas.issue import DgApiIssue, DgApiIssueList
-    from dagster_dg_cli.api_layer.schemas.job import DgApiJob, DgApiJobList
-    from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
-    from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunList
-    from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
-    from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
-    from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
-    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
-    from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
-    from dagster_dg_cli.api_layer.schemas.tick import DgApiTickList
+    from dagster_rest_resources.schemas.issue import DgApiIssue, DgApiIssueList
+    from dagster_rest_resources.schemas.job import DgApiJob, DgApiJobList
+    from dagster_rest_resources.schemas.organization import DgApiOrganizationSettings
+    from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunLaunchResult, DgApiRunList
+    from dagster_rest_resources.schemas.run_event import DgApiRunEventList
+    from dagster_rest_resources.schemas.schedule import DgApiSchedule, DgApiScheduleList
+    from dagster_rest_resources.schemas.secret import DgApiSecret, DgApiSecretList
+    from dagster_rest_resources.schemas.sensor import DgApiSensor, DgApiSensorList
+    from dagster_rest_resources.schemas.tick import DgApiTickList
+
+    from dagster_dg_cli.cli.api.schema import SamlOperationResult
 
 MAX_COL_WIDTH = 60
 
@@ -86,8 +87,7 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
         return "  ".join(parts)
 
     lines = [_format_row(headers)]
-    for row in rows:
-        lines.append(_format_row(row))
+    lines.extend(_format_row(row) for row in rows)
 
     return "\n".join(lines)
 
@@ -138,7 +138,7 @@ def _format_timestamp_epoch(epoch: float) -> str:
 # ---------------------------------------------------------------------------
 
 
-def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
+def format_deployments(deployments: "DgApiDeploymentList", as_json: bool) -> str:
     """Format deployment list for output."""
     if as_json:
         return deployments.model_dump_json(indent=2)
@@ -148,7 +148,7 @@ def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
     return format_table(headers, rows)
 
 
-def format_deployment(deployment: "Deployment", as_json: bool) -> str:
+def format_deployment(deployment: "DgApiDeployment", as_json: bool) -> str:
     """Format single deployment for output."""
     if as_json:
         return deployment.model_dump_json(indent=2)
@@ -162,7 +162,7 @@ def format_deployment(deployment: "Deployment", as_json: bool) -> str:
     )
 
 
-def format_deployment_settings(settings: "DeploymentSettings", as_json: bool) -> str:
+def format_deployment_settings(settings: "DgApiDeploymentSettings", as_json: bool) -> str:
     """Format deployment settings for output."""
     if as_json:
         return settings.model_dump_json(indent=2)
@@ -177,7 +177,10 @@ def format_deployment_settings(settings: "DeploymentSettings", as_json: bool) ->
 # ---------------------------------------------------------------------------
 
 
-def format_organization_settings(settings: "OrganizationSettings", as_json: bool) -> str:
+def format_organization_settings(
+    settings: "DgApiOrganizationSettings",
+    as_json: bool,
+) -> str:
     """Format organization settings for output."""
     if as_json:
         return settings.model_dump_json(indent=2)
@@ -205,7 +208,7 @@ def format_saml_result(result: "SamlOperationResult", as_json: bool) -> str:
 # ---------------------------------------------------------------------------
 
 
-def format_artifact_upload(result: "ArtifactUploadResult", as_json: bool) -> str:
+def format_artifact_upload(result: "DgApiArtifactUploadResult", as_json: bool) -> str:
     """Format artifact upload result for output."""
     if as_json:
         return result.model_dump_json(indent=2)
@@ -214,7 +217,7 @@ def format_artifact_upload(result: "ArtifactUploadResult", as_json: bool) -> str
     return f"Uploaded artifact '{result.key}' to {scope_desc}."
 
 
-def format_artifact_download(result: "ArtifactDownloadResult", as_json: bool) -> str:
+def format_artifact_download(result: "DgApiArtifactDownloadResult", as_json: bool) -> str:
     """Format artifact download result for output."""
     if as_json:
         return result.model_dump_json(indent=2)
@@ -228,7 +231,7 @@ def format_artifact_download(result: "ArtifactDownloadResult", as_json: bool) ->
 # ---------------------------------------------------------------------------
 
 
-def format_alert_policies(policies: "AlertPolicyDocument", as_json: bool) -> str:
+def format_alert_policies(policies: "DgApiAlertPolicyDocument", as_json: bool) -> str:
     """Format alert policies for output."""
     if as_json:
         return policies.model_dump_json(indent=2)
@@ -236,18 +239,18 @@ def format_alert_policies(policies: "AlertPolicyDocument", as_json: bool) -> str
     import yaml
 
     return yaml.dump(
-        {"alert_policies": policies.alert_policies},
+        {"alert_policies": policies.items},
         default_flow_style=False,
         sort_keys=False,
     ).rstrip()
 
 
-def format_alert_policy_sync_result(result: "AlertPolicySyncResult", as_json: bool) -> str:
+def format_alert_policy_sync_result(result: "DgApiAlertPolicySyncResult", as_json: bool) -> str:
     """Format alert policy sync result for output."""
     if as_json:
         return result.model_dump_json(indent=2)
 
-    return f"Synced alert policies: {', '.join(result.synced_policies)}"
+    return f"Synced alert policies: {', '.join(result.items)}"
 
 
 # ---------------------------------------------------------------------------
@@ -261,16 +264,15 @@ def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
         return assets.model_dump_json(indent=2)
 
     headers = ["ASSET KEY", "GROUP", "DESCRIPTION", "KINDS"]
-    rows = []
-    for asset in assets.items:
-        rows.append(
-            [
-                asset.asset_key,
-                asset.group_name,
-                asset.description or "",
-                ", ".join(asset.kinds) if asset.kinds else "",
-            ]
-        )
+    rows: list[list[str]] = [
+        [
+            asset.asset_key,
+            asset.group_name or "",
+            asset.description or "",
+            ", ".join(asset.kinds) if asset.kinds else "",
+        ]
+        for asset in assets.items
+    ]
 
     return format_table(headers, rows)
 
@@ -298,13 +300,13 @@ def _format_asset_status_lines(status) -> list[str]:
 
     # Overall health status
     if status.asset_health:
-        lines.append(f"Asset Health: {status.asset_health}")
+        lines.append(f"Asset Health: {status.asset_health.value}")
     if status.materialization_status:
-        lines.append(f"Materialization Status: {status.materialization_status}")
+        lines.append(f"Materialization Status: {status.materialization_status.value}")
     if status.freshness_status:
-        lines.append(f"Freshness Status: {status.freshness_status}")
+        lines.append(f"Freshness Status: {status.freshness_status.value}")
     if status.asset_checks_status:
-        lines.append(f"Asset Checks Status: {status.asset_checks_status}")
+        lines.append(f"Asset Checks Status: {status.asset_checks_status.value}")
 
     # Health metadata details
     if status.health_metadata:
@@ -386,16 +388,15 @@ def format_asset_events(event_list: "DgApiAssetEventList", as_json: bool) -> str
         return "No events found."
 
     headers = ["TIMESTAMP", "TYPE", "RUN ID", "PARTITION"]
-    rows = []
-    for event in event_list.items:
-        rows.append(
-            [
-                _format_timestamp(float(event.timestamp), "milliseconds"),
-                event.event_type,
-                event.run_id,
-                event.partition or "",
-            ]
-        )
+    rows = [
+        [
+            _format_timestamp(float(event.timestamp), "milliseconds"),
+            event.event_type,
+            event.run_id,
+            event.partition or "",
+        ]
+        for event in event_list.items
+    ]
 
     return format_table(headers, rows)
 
@@ -454,15 +455,14 @@ def format_asset_checks(checks: "DgApiAssetCheckList", as_json: bool) -> str:
         return "No asset checks found."
 
     headers = ["NAME", "BLOCKING", "DESCRIPTION"]
-    rows = []
-    for check in checks.items:
-        rows.append(
-            [
-                check.name,
-                "Yes" if check.blocking else "No",
-                check.description or "",
-            ]
-        )
+    rows = [
+        [
+            check.name,
+            "Yes" if check.blocking else "No",
+            check.description or "",
+        ]
+        for check in checks.items
+    ]
 
     return format_table(headers, rows)
 
@@ -476,16 +476,15 @@ def format_asset_check_executions(executions: "DgApiAssetCheckExecutionList", as
         return "No check executions found."
 
     headers = ["STATUS", "RUN_ID", "TIMESTAMP", "PARTITION"]
-    rows = []
-    for execution in executions.items:
-        rows.append(
-            [
-                execution.status.value,
-                execution.run_id,
-                _format_timestamp(execution.timestamp, "seconds"),
-                execution.partition or "",
-            ]
-        )
+    rows = [
+        [
+            execution.status.value,
+            execution.run_id,
+            _format_timestamp(execution.timestamp, "seconds"),
+            execution.partition or "",
+        ]
+        for execution in executions.items
+    ]
 
     return format_table(headers, rows)
 
@@ -557,8 +556,7 @@ def format_agent(agent: "DgApiAgent", as_json: bool) -> str:
     if agent.metadata:
         lines.append("")
         lines.append("Metadata:")
-        for meta in agent.metadata:
-            lines.append(f"  {meta.key}: {meta.value}")
+        lines.extend(f"  {meta.key}: {meta.value}" for meta in agent.metadata)
 
     return "\n".join(lines)
 
@@ -586,7 +584,7 @@ def format_secrets(secrets: "DgApiSecretList", as_json: bool) -> str:
         scopes = _format_secret_scopes(secret)
         updated = ""
         if secret.update_timestamp:
-            updated = secret.update_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            updated = _format_timestamp(secret.update_timestamp, unit="seconds")
         rows.append([secret.name, locations, scopes, updated])
 
     return format_table(headers, rows)
@@ -651,7 +649,7 @@ def format_secret(secret: "DgApiSecret", as_json: bool, show_value: bool = False
         )
 
     if secret.update_timestamp:
-        lines.append(f"Updated: {secret.update_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append(f"Updated: {_format_timestamp(secret.update_timestamp, unit='seconds')}")
 
     return "\n".join(lines)
 
@@ -701,6 +699,19 @@ def format_run(run: "DgApiRun", as_json: bool) -> str:
     return format_detail(fields)
 
 
+def format_run_launch_result(result: "DgApiRunLaunchResult", as_json: bool) -> str:
+    """Format launch run result for output."""
+    if as_json:
+        return result.model_dump_json(indent=2)
+
+    return format_detail(
+        [
+            ("Run ID", result.run_id),
+            ("Status", result.status.value),
+        ]
+    )
+
+
 def format_runs_list(runs_list: "DgApiRunList", as_json: bool) -> str:
     """Format run list for output."""
     if as_json:
@@ -710,21 +721,20 @@ def format_runs_list(runs_list: "DgApiRunList", as_json: bool) -> str:
         return "No runs found."
 
     headers = ["ID", "STATUS", "JOB", "CREATED"]
-    rows = []
-    for run in runs_list.items:
-        rows.append(
-            [
-                run.id,
-                run.status.value,
-                run.job_name or "N/A",
-                _format_timestamp_epoch(run.created_at),
-            ]
-        )
+    rows = [
+        [
+            run.id,
+            run.status.value,
+            run.job_name or "N/A",
+            _format_timestamp_epoch(run.created_at),
+        ]
+        for run in runs_list.items
+    ]
 
     return format_table(headers, rows)
 
 
-def format_logs_table(events: "RunEventList", run_id: str) -> str:
+def format_logs_table(events: "DgApiRunEventList", run_id: str) -> str:
     """Format logs as human-readable table."""
     if not events.items:
         return f"No logs found for run {run_id}"
@@ -753,19 +763,19 @@ def format_logs_table(events: "RunEventList", run_id: str) -> str:
             lines.append("")
             lines.append("Stack Trace:")
             stack_trace = event.error.get_stack_trace_string()
-            for stack_line in stack_trace.split("\n"):
-                if stack_line.strip():
-                    lines.append(f"  {stack_line}")
+            lines.extend(
+                f"  {stack_line}" for stack_line in stack_trace.split("\n") if stack_line.strip()
+            )
             lines.append("")
 
-    lines.extend(["", f"Total log entries: {events.total}"])
+    lines.extend(["", f"Total log entries: {len(events.items)}"])
     if events.has_more:
         lines.append("Note: More logs available (use --limit to increase or --cursor to paginate)")
 
     return "\n".join(lines)
 
 
-def format_logs_json(events: "RunEventList") -> str:
+def format_logs_json(events: "DgApiRunEventList") -> str:
     """Format logs as JSON."""
     return events.model_dump_json(indent=2)
 
@@ -816,16 +826,15 @@ def format_compute_log_links(links: "DgApiComputeLogLinkList", as_json: bool) ->
         return f"No compute log links found for run {links.run_id}"
 
     headers = ["FILE KEY", "STEP KEY(S)", "STDOUT URL", "STDERR URL"]
-    rows = []
-    for item in links.items:
-        rows.append(
-            [
-                item.file_key,
-                ", ".join(item.step_keys) if item.step_keys else "(none)",
-                item.stdout_download_url or "(none)",
-                item.stderr_download_url or "(none)",
-            ]
-        )
+    rows = [
+        [
+            item.file_key,
+            ", ".join(item.step_keys) if item.step_keys else "(none)",
+            item.stdout_download_url or "(none)",
+            item.stderr_download_url or "(none)",
+        ]
+        for item in links.items
+    ]
 
     return format_table(headers, rows)
 
@@ -844,16 +853,15 @@ def format_ticks(ticks: "DgApiTickList", name: str, as_json: bool) -> str:
         return f"No ticks found for {name}"
 
     headers = ["TIMESTAMP", "STATUS", "RUN IDS", "SKIP REASON"]
-    rows = []
-    for tick in ticks.items:
-        rows.append(
-            [
-                _format_timestamp(tick.timestamp, "seconds"),
-                tick.status.value,
-                ", ".join(tick.run_ids) if tick.run_ids else "-",
-                tick.skip_reason or "",
-            ]
-        )
+    rows = [
+        [
+            _format_timestamp(tick.timestamp, "seconds"),
+            tick.status.value,
+            ", ".join(tick.run_ids) if tick.run_ids else "-",
+            tick.skip_reason or "",
+        ]
+        for tick in ticks.items
+    ]
 
     lines = [format_table(headers, rows)]
 
@@ -864,9 +872,9 @@ def format_ticks(ticks: "DgApiTickList", name: str, as_json: bool) -> str:
             lines.append(f"  {tick.error.message}")
             if tick.error.stack:
                 for stack_line in tick.error.stack:
-                    for sub_line in stack_line.split("\n"):
-                        if sub_line.strip():
-                            lines.append(f"    {sub_line}")
+                    lines.extend(
+                        f"    {sub_line}" for sub_line in stack_line.split("\n") if sub_line.strip()
+                    )
 
     lines.append(f"\nTotal ticks: {ticks.total}")
 
@@ -888,16 +896,15 @@ def format_schedules(schedules: "DgApiScheduleList", as_json: bool) -> str:
         return json.dumps(schedules_dict, indent=2)
 
     headers = ["NAME", "STATUS", "CRON", "PIPELINE"]
-    rows = []
-    for schedule in schedules.items:
-        rows.append(
-            [
-                schedule.name,
-                schedule.status.value,
-                schedule.cron_schedule,
-                schedule.pipeline_name,
-            ]
-        )
+    rows = [
+        [
+            schedule.name,
+            schedule.status.value,
+            schedule.cron_schedule,
+            schedule.pipeline_name,
+        ]
+        for schedule in schedules.items
+    ]
 
     return format_table(headers, rows)
 
@@ -943,15 +950,14 @@ def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
         return json.dumps(sensors_dict, indent=2)
 
     headers = ["NAME", "STATUS", "TYPE"]
-    rows = []
-    for sensor in sensors.items:
-        rows.append(
-            [
-                sensor.name,
-                sensor.status.value,
-                sensor.sensor_type.value,
-            ]
-        )
+    rows = [
+        [
+            sensor.name,
+            sensor.status.value,
+            sensor.sensor_type.value,
+        ]
+        for sensor in sensors.items
+    ]
 
     return format_table(headers, rows)
 
@@ -985,19 +991,30 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
 
 def format_issue(issue: "DgApiIssue", as_json: bool) -> str:
     """Format a single issue for output."""
+    from dagster_rest_resources.schemas.issue import DgApiIssueLinkedAsset, DgApiIssueLinkedRun
+
     if as_json:
         return issue.model_dump_json(indent=2)
 
     fields: list[tuple[str, str]] = [
         ("Title", issue.title),
         ("Status", issue.status.value),
-        ("Created By", issue.created_by_email),
+        ("Created By", issue.created_by_name),
     ]
 
-    if issue.run_id is not None:
-        fields.append(("Run ID", issue.run_id))
-    if issue.asset_key is not None:
-        fields.append(("Asset Key", str(issue.asset_key)))
+    run_ids = []
+    asset_keys = []
+    if issue.linked_objects:
+        for linked_object in issue.linked_objects:
+            if isinstance(linked_object, DgApiIssueLinkedRun):
+                run_ids.append(linked_object.run_id)
+            elif isinstance(linked_object, DgApiIssueLinkedAsset):
+                asset_keys.append(linked_object.asset_key)
+
+    if run_ids:
+        fields.append(("Run IDs", ", ".join(run_ids)))
+    if asset_keys:
+        fields.append(("Asset Keys", ", ".join(asset_keys)))
 
     fields.append(("Description", issue.description))
 
@@ -1017,7 +1034,7 @@ def format_issues(issue_list: "DgApiIssueList", as_json: bool) -> str:
 
     headers = ["STATUS", "TITLE", "ID", "CREATED BY"]
     rows = [
-        [issue.status.value, issue.title, issue.id, issue.created_by_email]
+        [issue.status.value, issue.title, issue.id, issue.created_by_name]
         for issue in issue_list.items
     ]
 
@@ -1098,17 +1115,16 @@ def format_jobs(jobs: "DgApiJobList", as_json: bool) -> str:
         return json.dumps(jobs_dict, indent=2)
 
     headers = ["NAME", "DESCRIPTION", "SCHEDULES", "SENSORS", "ASSET JOB"]
-    rows = []
-    for job in jobs.items:
-        rows.append(
-            [
-                job.name,
-                (job.description or "")[:50],
-                str(len(job.schedules)),
-                str(len(job.sensors)),
-                "Yes" if job.is_asset_job else "No",
-            ]
-        )
+    rows = [
+        [
+            job.name,
+            (job.description or "")[:50],
+            str(len(job.schedules)),
+            str(len(job.sensors)),
+            "Yes" if job.is_asset_job else "No",
+        ]
+        for job in jobs.items
+    ]
 
     return format_table(headers, rows)
 
@@ -1132,11 +1148,11 @@ def format_job(job: "DgApiJob", as_json: bool) -> str:
         fields.append(("Tags", tags_str))
 
     if job.schedules:
-        for s in job.schedules:
-            fields.append(("Schedule", f"{s.name} ({s.cron_schedule}) [{s.status}]"))
+        fields.extend(
+            ("Schedule", f"{s.name} ({s.cron_schedule}) [{s.status}]") for s in job.schedules
+        )
 
     if job.sensors:
-        for s in job.sensors:
-            fields.append(("Sensor", f"{s.name} [{s.status}]"))
+        fields.extend(("Sensor", f"{s.name} [{s.status}]") for s in job.sensors)
 
     return format_detail(fields)

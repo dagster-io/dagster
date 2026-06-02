@@ -1,4 +1,6 @@
-from collections.abc import Sequence
+import os
+import subprocess
+from collections.abc import Generator, Sequence
 
 import pytest
 import requests
@@ -6,7 +8,7 @@ from dagster import Definitions
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 from dagster_airlift.constants import PEERED_DAG_MAPPING_METADATA_KEY, SOURCE_CODE_METADATA_KEY
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -14,6 +16,7 @@ from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import Dataset
 from dagster_airlift.core.top_level_dag_def_api import assets_with_dag_mappings
+from dagster_airlift.test.shared_fixtures import stand_up_airflow
 from dagster_airlift.test.test_utils import asset_spec
 from kitchen_sink.airflow_instance import (
     AIRFLOW_BASE_URL,
@@ -25,10 +28,48 @@ from kitchen_sink.airflow_instance import (
 )
 from pytest_mock import MockFixture
 
+from kitchen_sink_tests.integration_tests.conftest import makefile_dir
 
-@pytest.fixture
-def expected_num_dags() -> int:
+# Override conftest fixtures to function-scope for test_api.py. Tests in this module check DAG run
+# counts via sensors, so they need a fresh Airflow instance per test to avoid cross-test state
+# (e.g. test_sensor_iteration_multiple_batches creates runs that would be visible to
+# test_sensor_explicitly_mapped_assets if they shared an Airflow).
+
+
+@pytest.fixture(name="local_env")
+def local_env_fixture() -> Generator[None, None, None]:
+    subprocess.run(["make", "setup_local_env"], cwd=makefile_dir(), check=True)
+    with environ(
+        {
+            "AIRFLOW_HOME": str(makefile_dir() / ".airflow_home"),
+            "DAGSTER_HOME": str(makefile_dir() / ".dagster_home"),
+        }
+    ):
+        yield
+
+    subprocess.run(
+        ["make", "wipe"],
+        cwd=makefile_dir(),
+        check=False,
+    )
+
+
+@pytest.fixture(name="expected_num_dags")
+def expected_num_dags_fixture() -> int:
     return EXPECTED_NUM_DAGS
+
+
+@pytest.fixture(name="airflow_instance")
+def airflow_instance_fixture(
+    local_env: None, expected_num_dags: int
+) -> Generator[subprocess.Popen, None, None]:
+    with stand_up_airflow(
+        airflow_cmd=["make", "run_airflow"],
+        env=os.environ,
+        cwd=makefile_dir(),
+        expected_num_dags=expected_num_dags,
+    ) as process:
+        yield process
 
 
 def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -> None:
@@ -67,7 +108,7 @@ def test_airflow_filter(airflow_instance: None) -> None:
 def change_dag_limit_source_code(limit: int) -> None:
     import dagster_airlift.core.serialization.compute
 
-    dagster_airlift.core.serialization.compute.DEFAULT_MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL = limit
+    dagster_airlift.core.serialization.compute.DEFAULT_MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL = limit  # ty: ignore[invalid-assignment]
 
 
 def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:

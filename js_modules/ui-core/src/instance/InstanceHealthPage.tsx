@@ -1,4 +1,4 @@
-import {Box, Colors, PageHeader, Subheading, Subtitle1} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, PageHeader} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {DaemonList} from './DaemonList';
@@ -47,7 +47,9 @@ export const InstanceHealthPageContent = () => {
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       >
-        <Subheading>Daemon statuses</Subheading>
+        <Heading size={14} weight={600}>
+          Daemon statuses
+        </Heading>
         <div>
           <QueryRefreshCountdown refreshState={refreshState} />
         </div>
@@ -61,7 +63,14 @@ export const InstanceHealthPage = () => {
   const {pageTitle} = useContext(InstancePageContext);
   return (
     <>
-      <PageHeader title={<Subtitle1>{pageTitle}</Subtitle1>} tabs={<InstanceTabs tab="health" />} />
+      <PageHeader
+        title={
+          <Heading size={16} weight={600}>
+            {pageTitle}
+          </Heading>
+        }
+        tabs={<InstanceTabs tab="health" />}
+      />
       <InstanceHealthPageContent />
     </>
   );

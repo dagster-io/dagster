@@ -228,12 +228,13 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         base_dir_path = Path(self._base_dir).resolve()
         directory = base_dir_path.joinpath(*log_key_prefix)
         objects = directory.iterdir()
-        results = []
         list_key_prefix = list(log_key_prefix)
 
-        for obj in objects:
-            if obj.is_file() and obj.suffix == "." + IO_TYPE_EXTENSION[io_type]:
-                results.append(list_key_prefix + [obj.stem])
+        results = [
+            list_key_prefix + [obj.stem]
+            for obj in objects
+            if obj.is_file() and obj.suffix == "." + IO_TYPE_EXTENSION[io_type]
+        ]
 
         return results
 

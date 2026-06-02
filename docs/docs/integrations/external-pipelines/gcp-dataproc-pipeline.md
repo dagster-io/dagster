@@ -59,7 +59,7 @@ dataproc:pip.packages: 'dagster-pipes,google-cloud-storage'
 
 Call `open_dagster_pipes` in the Dataproc script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/gcp/dataproc_job/script.py" />
 
 :::tip
 
@@ -76,7 +76,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesDataprocJobClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/gcp/dataproc_job/dagster_code.py"
   startAfter="start_asset_marker"
   endBefore="end_asset_marker"
   title="src/<project_name>/defs/assets.py"
@@ -91,7 +91,7 @@ Setting `include_stdtio_in_messages=True` in the `PipesDataprocJobClient` constr
 Next, add the `PipesDataprocJobClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/gcp/dataproc_job/dagster_code.py"
   startAfter="start_definitions_marker"
   endBefore="end_definitions_marker"
   title="src/<project_name>/defs/resources.py"

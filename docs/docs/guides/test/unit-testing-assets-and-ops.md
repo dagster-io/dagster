@@ -27,7 +27,7 @@ Before you begin implementing unit tests, note that:
 The simplest assets to test are those with no arguments. In these cases, you can directly invoke definitions.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-no-argument.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-no-argument.py"
   language="python"
   startAfter="start_file"
   endBefore="end_file"
@@ -35,7 +35,7 @@ The simplest assets to test are those with no arguments. In these cases, you can
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-no-argument.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-no-argument.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"
@@ -47,7 +47,7 @@ The simplest assets to test are those with no arguments. In these cases, you can
 If an asset has an upstream dependency, you can directly pass a value for that dependency when invoking the definition.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-dependency.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-dependency.py"
   language="python"
   startAfter="start_file"
   endBefore="end_file"
@@ -55,7 +55,7 @@ If an asset has an upstream dependency, you can directly pass a value for that d
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-dependency.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-dependency.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"
@@ -67,7 +67,7 @@ If an asset has an upstream dependency, you can directly pass a value for that d
 If an asset uses config, you can construct an instance of the required config object and pass it in directly.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-config.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-config.py"
   language="python"
   startAfter="start_file"
   endBefore="end_file"
@@ -75,7 +75,7 @@ If an asset uses config, you can construct an instance of the required config ob
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-config.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-config.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"
@@ -87,7 +87,7 @@ If an asset uses config, you can construct an instance of the required config ob
 If an asset uses a resource, it can be useful to create a mock instance of the resource to avoid interacting with external services.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-resource.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-resource.py"
   language="python"
   startAfter="start_file"
   endBefore="end_file"
@@ -95,7 +95,7 @@ If an asset uses a resource, it can be useful to create a mock instance of the r
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-resource.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-resource.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"
@@ -107,7 +107,7 @@ If an asset uses a resource, it can be useful to create a mock instance of the r
 If an asset uses a `context` argument, you can use `build_asset_context()` to construct a context object.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-context.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-context.py"
   language="python"
   startAfter="start_file"
   endBefore="end_file"
@@ -115,7 +115,7 @@ If an asset uses a `context` argument, you can use `build_asset_context()` to co
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-context.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-context.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"
@@ -127,7 +127,7 @@ If an asset uses a `context` argument, you can use `build_asset_context()` to co
 If an asset has multiple parameters, we recommended using keyword arguments for clarity.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-combo.py"
   language="python"
   startAfter="start_file"
   endBefore="end_file"
@@ -135,7 +135,7 @@ If an asset has multiple parameters, we recommended using keyword arguments for 
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-combo.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"
@@ -147,7 +147,7 @@ If an asset has multiple parameters, we recommended using keyword arguments for 
 When testing [multi-assets](/guides/build/assets/defining-assets#multi-asset) with upstream dependencies, you cannot use `input_values`, as it's not designed to work with assets. Instead, define standalone source assets and use a mock IO manager to provide test data for the upstream assets. The mock IO manager should return the appropriate test data based on the asset key being loaded.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-multi-upstream.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-multi-upstream.py"
   language="python"
   startAfter="start_file"
   endBefore="end_file"
@@ -155,7 +155,7 @@ When testing [multi-assets](/guides/build/assets/defining-assets#multi-asset) wi
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-multi-upstream.py"
+  path="docs_snippets/docs_snippets/guides/test/unit-testing-assets-and-ops/asset-multi-upstream.py"
   language="python"
   startAfter="start_test"
   endBefore="end_test"

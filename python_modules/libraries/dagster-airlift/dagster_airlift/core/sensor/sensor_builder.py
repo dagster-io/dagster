@@ -100,7 +100,7 @@ def build_airflow_polling_sensor(
     This allows Dagster to correctly order the materializations in the event stream.
 
     Args:
-        mapped_defs (Definitions): The `Definitions` object containing assets with metadata mapping them to Airflow dags and tasks.
+        mapped_assets (Sequence[MappedAsset]): The assets with metadata mapping them to Airflow dags and tasks.
         airflow_instance (AirflowInstance): The Airflow instance to poll for dag runs.
         event_transformer_fn (Optional[DagsterEventTransformerFn]): A function that transforms the materializations emitted by the sensor.
         minimum_interval_seconds (int): The minimum interval in seconds between sensor runs. Defaults to 1.
@@ -162,7 +162,7 @@ def build_airflow_polling_sensor(
             )
             latest_offset = batch_result.idx
 
-        if batch_result is not None:  # pyright: ignore[reportPossiblyUnboundVariable]
+        if batch_result is not None:
             new_cursor = AirflowPollingSensorCursor(
                 end_date_gte=end_date_gte,
                 end_date_lte=end_date_lte,

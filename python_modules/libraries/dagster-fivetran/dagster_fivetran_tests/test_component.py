@@ -3,6 +3,7 @@ import copy
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 import responses
@@ -10,6 +11,9 @@ import yaml
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._utils import alter_sys_path, pushd
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.core.component_tree import ComponentTree
@@ -23,12 +27,18 @@ from dagster_shared.merger import deep_merge_dicts
 from dagster_fivetran_tests.conftest import (
     EXTRA_TEST_CONNECTOR_ID,
     EXTRA_TEST_CONNECTOR_NAME,
+    SAMPLE_SOURCE_TABLE_COLUMNS_CONFIG,
     TEST_ACCOUNT_ID,
     TEST_API_KEY,
     TEST_API_SECRET,
     TEST_CONNECTOR_ID,
     TEST_CONNECTOR_NAME,
     TEST_GROUP_ID,
+    TEST_SCHEMA_NAME,
+    TEST_SECOND_SCHEMA_NAME,
+    TEST_SECOND_TABLE_NAME,
+    TEST_TABLE_NAME,
+    get_fivetran_connector_api_url,
 )
 
 
@@ -42,15 +52,18 @@ def setup_fivetran_component(
             component_cls=FivetranAccountComponent,
             defs_yaml_contents=defs_yaml_contents,
         )
-        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-            component,
-            defs,
+        with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+                component,
+                defs,
+            ),
         ):
             assert isinstance(component, FivetranAccountComponent)
             yield component, defs
 
 
-BASIC_FIVETRAN_COMPONENT_BODY = {
+BASIC_FIVETRAN_COMPONENT_BODY: dict[str, Any] = {
     "type": "dagster_fivetran.FivetranAccountComponent",
     "attributes": {
         "workspace": {
@@ -202,16 +215,22 @@ def test_custom_filter_fn_python(
     filter_fn: Callable[[FivetranConnector], bool],
     num_assets: int,
 ) -> None:
-    defs = FivetranAccountComponent(
-        workspace=FivetranWorkspace(
-            api_key=TEST_API_KEY,
-            api_secret=TEST_API_SECRET,
-            account_id=TEST_ACCOUNT_ID,
-        ),
-        connector_selector=filter_fn,
-        translation=None,
-    ).build_defs(ComponentTree.for_test().load_context)
-    assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        alter_sys_path(to_add=[str(sandbox.project_root / "src")], to_remove=[]),
+        pushd(str(sandbox.project_root)),
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        defs = FivetranAccountComponent(
+            workspace=FivetranWorkspace(
+                api_key=TEST_API_KEY,
+                api_secret=TEST_API_SECRET,
+                account_id=TEST_ACCOUNT_ID,
+            ),
+            connector_selector=filter_fn,
+            translation=None,
+        ).build_defs(ComponentTree.for_test().load_context)
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 class TestFivetranTranslation(TestTranslation):
@@ -261,13 +280,19 @@ def test_subclass_override_get_asset_spec(
                 tags={**base_spec.tags, "custom_tag": "override_test"},
             )
 
-    defs = CustomFivetranAccountComponent(
-        workspace=FivetranWorkspace(
-            api_key=TEST_API_KEY,
-            api_secret=TEST_API_SECRET,
-            account_id=TEST_ACCOUNT_ID,
-        ),
-    ).build_defs(ComponentTree.for_test().load_context)
+    with (
+        create_defs_folder_sandbox() as sandbox,
+        alter_sys_path(to_add=[str(sandbox.project_root / "src")], to_remove=[]),
+        pushd(str(sandbox.project_root)),
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        defs = CustomFivetranAccountComponent(
+            workspace=FivetranWorkspace(
+                api_key=TEST_API_KEY,
+                api_secret=TEST_API_SECRET,
+                account_id=TEST_ACCOUNT_ID,
+            ),
+        ).build_defs(ComponentTree.for_test().load_context)
 
     # Verify that the custom get_asset_spec method is being used
     assets_def = defs.resolve_assets_def(
@@ -435,3 +460,103 @@ def test_component_with_retry_on_reschedule_false(
     ):
         assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 8
         assert component.workspace.retry_on_reschedule is False
+
+
+INCLUDE_COLUMN_METADATA_COMPONENT_BODY = deep_merge_dicts(
+    BASIC_FIVETRAN_COMPONENT_BODY,
+    {"attributes": {"include_metadata": ["column_metadata"]}},
+)
+
+
+def test_component_with_include_metadata(
+    fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
+) -> None:
+    """Component round-trips include_metadata: ['column_metadata'] from yaml."""
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        setup_fivetran_component(
+            defs_yaml_contents=INCLUDE_COLUMN_METADATA_COMPONENT_BODY,
+        ) as (
+            component,
+            defs,
+        ),
+    ):
+        assert component.include_metadata == ["column_metadata"]
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 8
+
+
+def test_component_default_include_metadata(
+    fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
+) -> None:
+    """include_metadata defaults to an empty list."""
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        setup_fivetran_component(
+            defs_yaml_contents=BASIC_FIVETRAN_COMPONENT_BODY,
+        ) as (
+            component,
+            _defs,
+        ),
+    ):
+        assert component.include_metadata == []
+
+
+def test_component_materialize_with_column_metadata(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    sync_and_poll: MagicMock,
+) -> None:
+    """Materializing the component with include_metadata=['column_metadata'] attaches column_schema metadata."""
+    test_connector_api_url = get_fivetran_connector_api_url(TEST_CONNECTOR_ID)
+    for schema_name, table_name in [
+        (TEST_SCHEMA_NAME, TEST_TABLE_NAME),
+        (TEST_SCHEMA_NAME, TEST_SECOND_TABLE_NAME),
+        (TEST_SECOND_SCHEMA_NAME, TEST_TABLE_NAME),
+        (TEST_SECOND_SCHEMA_NAME, TEST_SECOND_TABLE_NAME),
+    ]:
+        fetch_workspace_data_api_mocks.add(
+            method=responses.GET,
+            url=f"{test_connector_api_url}/schemas/{schema_name}/tables/{table_name}/columns",
+            json=SAMPLE_SOURCE_TABLE_COLUMNS_CONFIG,
+            status=200,
+        )
+
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        setup_fivetran_component(
+            defs_yaml_contents=INCLUDE_COLUMN_METADATA_COMPONENT_BODY,
+        ) as (
+            _component,
+            defs,
+        ),
+    ):
+        assets_def = defs.resolve_assets_def(AssetKey([TEST_SCHEMA_NAME, TEST_TABLE_NAME]))
+        result = materialize([assets_def])
+        assert result.success
+
+        events = result.get_asset_materialization_events()
+        assert len(events) == 4
+        for event in events:
+            column_schema = TableMetadataSet.extract(event.materialization.metadata).column_schema
+            assert column_schema is not None
+            assert [c.name for c in column_schema.columns] == [
+                "column_name_in_destination_1",
+                "column_name_in_destination_2",
+            ]

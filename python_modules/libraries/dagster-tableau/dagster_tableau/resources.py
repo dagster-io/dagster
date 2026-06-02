@@ -647,7 +647,7 @@ class BaseTableauWorkspace(ConfigurableResource):
                 workbook_name = wb.name
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
-                    workbook["data"]["workbooks"],  # pyright: ignore[reportIndexIssue]
+                    workbook["data"]["workbooks"],  # ty: ignore[not-subscriptable]
                     additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
                 )
                 if not workbook_data_list:

@@ -1,5 +1,7 @@
 """Test Dagster definitions load correctly."""
 
+import dagster as dg
+
 from dagster_snowflake_ai.definitions import defs
 
 
@@ -9,11 +11,15 @@ class TestDagsterDefinitions:
     def test_definitions_load(self):
         """Verify all definitions can be loaded without errors."""
         assert defs is not None
-        assert len(defs.assets) > 0
+        assets = list(defs.assets or [])
+        assert len(assets) > 0
 
     def test_assets_exist(self):
         """Verify expected assets are present."""
-        asset_keys = [asset.key for asset in defs.assets]
+        assets = list(defs.assets or [])
+        asset_keys = [
+            asset.key for asset in assets if isinstance(asset, dg.AssetsDefinition)
+        ]
 
         expected_assets = [
             "raw_stories",
@@ -31,28 +37,32 @@ class TestDagsterDefinitions:
 
     def test_resources_exist(self):
         """Verify resources are configured."""
+        assert defs.resources is not None
         assert len(defs.resources) > 0
         assert "snowflake" in defs.resources
 
     def test_jobs_exist(self):
         """Verify jobs are defined."""
-        assert len(defs.jobs) > 0
+        jobs = list(defs.jobs or [])
+        assert len(jobs) > 0
 
-        job_names = [job.name for job in defs.jobs]
+        job_names = [job.name for job in jobs]
         assert "daily_intelligence" in job_names
         assert "weekly_reports" in job_names
 
     def test_schedules_exist(self):
         """Verify schedules are defined."""
-        assert len(defs.schedules) > 0
+        schedules = list(defs.schedules or [])
+        assert len(schedules) > 0
 
-        schedule_names = [schedule.name for schedule in defs.schedules]
+        schedule_names = [schedule.name for schedule in schedules]
         assert "daily_intelligence_schedule" in schedule_names
         assert "weekly_reports_schedule" in schedule_names
 
     def test_sensors_exist(self):
         """Verify sensors are defined."""
-        assert len(defs.sensors) > 0
+        sensors = list(defs.sensors or [])
+        assert len(sensors) > 0
 
-        sensor_names = [sensor.name for sensor in defs.sensors]
+        sensor_names = [sensor.name for sensor in sensors]
         assert "dynamic_table_freshness_sensor" in sensor_names

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import dagster as dg
 from dagster_aws.s3 import S3Resource
-from dagster_modal import ModalClient
+from dagster_modal import ModalClient  # ty: ignore[unresolved-import]
 from dagster_openai import OpenAIResource
 
 

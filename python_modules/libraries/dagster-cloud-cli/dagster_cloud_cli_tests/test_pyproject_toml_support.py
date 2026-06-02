@@ -163,8 +163,9 @@ dependencies = ["requests>=2.25.0"]
 
 
 @patch("subprocess.run")
-def test_build_local_package_with_pyproject_toml(mock_run, temp_dir):
-    """Test building a package with pyproject.toml."""
+@patch("shutil.which", return_value=None)
+def test_build_local_package_with_pyproject_toml(mock_which, mock_run, temp_dir):
+    """Test building a package with pyproject.toml falls back to pip when uv is not available."""
     mock_run.return_value = None
 
     pyproject_path = Path(temp_dir) / "pyproject.toml"
@@ -188,6 +189,42 @@ version = "0.1.0"
         "-m",
         "pip",
         "install",
+        "--target",
+        str(build_dir),
+        "--no-deps",
+        ".",
+    ]
+    assert command == expected_command
+
+
+@patch("subprocess.run")
+@patch("shutil.which", return_value="/usr/bin/uv")
+def test_build_local_package_with_pyproject_toml_uses_uv(mock_which, mock_run, temp_dir):
+    """Test building a package with pyproject.toml uses uv when available."""
+    mock_run.return_value = None
+
+    pyproject_path = Path(temp_dir) / "pyproject.toml"
+    pyproject_path.write_text("""
+[project]
+name = "test-package"
+version = "0.1.0"
+""")
+
+    build_dir = Path(temp_dir) / "build"
+    build_dir.mkdir()
+
+    source._build_local_package(temp_dir, str(build_dir), "python")  # noqa: SLF001
+
+    mock_run.assert_called_once()
+    args, _kwargs = mock_run.call_args
+    command = args[0]
+
+    expected_command = [
+        "/usr/bin/uv",
+        "pip",
+        "install",
+        "--python",
+        "python",
         "--target",
         str(build_dir),
         "--no-deps",
@@ -609,6 +646,64 @@ build-backend = "hatchling.build"
     )
     assert not any("local-utils" in dep for dep in deps_lines), (
         f"local-utils should NOT be in deps (it's a local package): {deps_lines}"
+    )
+
+
+def test_get_deps_requirements_uv_sources_path_with_version_specifier(tmp_path):
+    """[tool.uv.sources] entries must resolve even when the dependency line carries a
+    version specifier or extras (e.g. `pkg==1.0.0`, `pkg[test]`).
+    """
+    python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
+
+    app_dir = tmp_path / "my-app"
+    app_dir.mkdir()
+    (app_dir / "my_app").mkdir()
+    (app_dir / "my_app" / "__init__.py").write_text("")
+    (app_dir / "pyproject.toml").write_text("""
+[project]
+name = "my-app"
+version = "0.1.0"
+dependencies = [
+    "local-utils==1!0+dev",
+    "Local-Utils-Extras[test]",
+]
+
+[tool.uv.sources]
+local-utils = { path = "../local-utils" }
+local-utils-extras = { path = "../local-utils-extras" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    for name in ("local-utils", "local-utils-extras"):
+        d = tmp_path / name
+        d.mkdir()
+        (d / name.replace("-", "_")).mkdir()
+        (d / name.replace("-", "_") / "__init__.py").write_text("")
+        (d / "pyproject.toml").write_text(f"""
+[project]
+name = "{name}"
+version = "0.1.0"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+""")
+
+    local_packages, deps_requirements = deps.get_deps_requirements(str(app_dir), python_version)
+    deps_lines = [
+        line.strip()
+        for line in deps_requirements.requirements_txt.strip().split("\n")
+        if line.strip()
+    ]
+
+    assert str(tmp_path / "local-utils") in local_packages.local_package_paths
+    assert str(tmp_path / "local-utils-extras") in local_packages.local_package_paths
+    assert not any("local-utils" in dep for dep in deps_lines), (
+        f"local-utils* should resolve to local paths, not deps: {deps_lines}"
     )
 
 

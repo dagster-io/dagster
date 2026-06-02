@@ -10,6 +10,11 @@
     "permanent": true
   },
   {
+    "source": "/_apidocs/automation",
+    "destination": "/api/dagster/assets#declarative-automation",
+    "permanent": true
+  },
+  {
     "source": "/_apidocs/metadata",
     "destination": "/api/dagster/metadata",
     "permanent": true
@@ -113,6 +118,10 @@
     "source": "/api/python-api/dagster-shell",
     "destination": "/api/dagster/pipes",
     "permanent": true
+  },
+  {
+    "source": "/api/python-api/events",
+    "destination": "/api/dagster"
   },
   {
     "source": "/api/dg/create-dagster",
@@ -261,42 +270,47 @@
   },
   {
     "source": "/_modules/dagster/_core/definitions/backfill_policy",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/partitions#backfill-policy",
     "permanent": true
   },
   {
     "source": "/_modules/dagster/_core/definitions/declarative_automation/automation_condition",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/assets#declarative-automation",
+    "permanent": true
+  },
+  {
+    "source": "/_modules/dagster/_core/definitions/declarative_automation/legacy/asset_condition",
+    "destination": "/api/dagster/assets#declarative-automation",
     "permanent": true
   },
   {
     "source": "/_modules/dagster/_core/definitions/decorators/asset_check_decorator",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/asset-checks",
     "permanent": true
   },
   {
     "source": "/_modules/dagster/_core/definitions/decorators/asset_decorator",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/assets",
     "permanent": true
   },
   {
     "source": "/_modules/dagster/_core/definitions/decorators/op_decorator",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/ops",
     "permanent": true
   },
   {
     "source": "/_modules/dagster/_core/definitions/decorators/repository_decorator",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/repositories",
     "permanent": true
   },
   {
     "source": "/_modules/dagster/_core/definitions/decorators/schedule_decorator",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/schedules-sensors",
     "permanent": true
   },
   {
     "source": "/_modules/dagster/_core/definitions/decorators/sensor_decorator",
-    "destination": "/api/dagster/definitions",
+    "destination": "/api/dagster/schedules-sensors",
     "permanent": true
   },
   {
@@ -765,6 +779,11 @@
     "permanent": true
   },
   {
+    "source": "/api/dagster/external-assets-rest-api",
+    "destination": "/api/rest-apis/external-assets-rest-api",
+    "permanent": true
+  },
+  {
     "source": "/api/python-api/graphs",
     "destination": "/api/dagster/graphs",
     "permanent": true
@@ -855,6 +874,106 @@
     "permanent": true
   },
   {
+    "source": "/api/asset-checks",
+    "destination": "/api/dagster/asset-checks",
+    "permanent": true
+  },
+  {
+    "source": "/api/assets",
+    "destination": "/api/dagster/assets",
+    "permanent": true
+  },
+  {
+    "source": "/api/definitions",
+    "destination": "/api/dagster/definitions",
+    "permanent": true
+  },
+  {
+    "source": "/api/dynamic",
+    "destination": "/api/dagster/dynamic",
+    "permanent": true
+  },
+  {
+    "source": "/api/errors",
+    "destination": "/api/dagster/errors",
+    "permanent": true
+  },
+  {
+    "source": "/api/execution",
+    "destination": "/api/dagster/execution",
+    "permanent": true
+  },
+  {
+    "source": "/api/hooks",
+    "destination": "/api/dagster/hooks",
+    "permanent": true
+  },
+  {
+    "source": "/api/internals",
+    "destination": "/api/dagster/internals",
+    "permanent": true
+  },
+  {
+    "source": "/api/io-managers",
+    "destination": "/api/dagster/io-managers",
+    "permanent": true
+  },
+  {
+    "source": "/api/jobs",
+    "destination": "/api/dagster/jobs",
+    "permanent": true
+  },
+  {
+    "source": "/api/loggers",
+    "destination": "/api/dagster/loggers",
+    "permanent": true
+  },
+  {
+    "source": "/api/metadata",
+    "destination": "/api/dagster/metadata",
+    "permanent": true
+  },
+  {
+    "source": "/api/ops",
+    "destination": "/api/dagster/ops",
+    "permanent": true
+  },
+  {
+    "source": "/api/partitions",
+    "destination": "/api/dagster/partitions",
+    "permanent": true
+  },
+  {
+    "source": "/api/pipes",
+    "destination": "/api/dagster/pipes",
+    "permanent": true
+  },
+  {
+    "source": "/api/libraries/dagster-pipes",
+    "destination": "/integrations/libraries/pipes",
+    "permanent": true
+  },
+  {
+    "source": "/api/repositories",
+    "destination": "/api/dagster/repositories",
+    "permanent": true
+  },
+  {
+    "source": "/api/resources",
+    "destination": "/api/dagster/resources",
+    "permanent": true
+  },
+  {
+    "source": "/api/schedules-sensors",
+    "destination": "/api/dagster/schedules-sensors",
+    "permanent": true
+  },
+  {
+    "source": "/api/types",
+    "destination": "/api/dagster/types",
+    "permanent": true
+  },
+  {
     "source": "/guides/labs/dg/dagster-dg-cli",
     "destination": "/api/clis/dg-cli/dg-cli-reference",
     "permanent": true
@@ -880,6 +999,11 @@
     "permanent": true
   },
   {
+    "source": "/guides/build/components/built-in-components",
+    "destination": "/api/dagster/components#built-in-components",
+    "permanent": true
+  },
+  {
     "source": "/guides/labs/dg/dagster-definitions",
     "destination": "/api/clis/dg-cli/dg-cli-reference",
     "permanent": true
@@ -902,6 +1026,11 @@
   {
     "source": "/concepts/webserver/graphql",
     "destination": "/api/graphql",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/resources",
+    "destination": "/api/dagster/resources",
     "permanent": true
   }
 ]

@@ -1,0 +1,25 @@
+.container {
+  height: 100%;
+  overflow: auto;
+}
+
+.inner {
+  position: relative;
+  width: 100%;
+}
+
+.row {
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  overflow: hidden;
+}
+
+.cellBox:first-child {
+  padding-left: 24px;
+}
+
+.cellBox:last-child {
+  padding-right: 24px;
+}

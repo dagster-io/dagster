@@ -9,14 +9,6 @@ description = "Toolkit for Dagster integrations with transform logic outside of 
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Operating System :: OS Independent",
-]
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-pipes"
@@ -25,3 +17,13 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dag
 stubs = [
     "google-cloud-storage",
 ]
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-shared",
+]
+
+[tool.uv.sources]
+dagster = { path = "../dagster", editable = true }
+dagster-shared = { path = "../libraries/dagster-shared", editable = true }

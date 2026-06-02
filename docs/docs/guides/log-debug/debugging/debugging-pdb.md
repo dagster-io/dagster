@@ -19,7 +19,7 @@ To follow the steps in this guide, you'll need to [create a Dagster project](/gu
 First, add the `context` parameter to your asset definition, and add `context.pdb.set_trace()` to the asset code where you want to add a breakpoint. You should insert your breakpoint after the variables you are interested in have been initialized but before any mutations. With `pdb` you will be able to proceed to the next statement of the asset but will not be able to reverse the state of a variable so it is better to set the break point early.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/log-debug/debugging/pdb.py"
+  path="docs_snippets/docs_snippets/guides/log_debug/debugging/pdb.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -41,7 +41,7 @@ In the terminal where `dagster dev` is running, you should now see a `pdb` debug
 2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - pdb_asset - STEP_WORKER_STARTED - Executing step "pdb_asset" in subprocess.
 2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - pdb_asset - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
 2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - pdb_asset - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
-2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - LOGS_CAPTURED - Started capturing logs in process (pid: 52540).
+2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - LOGS_CAPTURED - Capturing logs for process (pid: 52540).
 2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - pdb_asset - STEP_START - Started execution of step "pdb_asset".
 --Return--
 > /dagster/debugging.py(11)pdb_asset()

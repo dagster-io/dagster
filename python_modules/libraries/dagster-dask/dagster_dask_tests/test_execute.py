@@ -57,7 +57,15 @@ def test_composite_execute():
         with execute_job(
             reconstructable(dask_nested_graph_job),
             run_config={
-                "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
+                # Cap workers — with default n_workers=nproc, this deeply
+                # nested graph races for the SQLite event-log file lock.
+                "execution": {
+                    "config": {
+                        "cluster": {
+                            "local": {"timeout": 30, "n_workers": 2, "threads_per_worker": 1}
+                        }
+                    }
+                },
             },
             instance=instance,
         ) as result:
@@ -184,8 +192,8 @@ def test_dask_terminate():
             run_config=run_config,
         )
 
-        for event in execute_run_iterator(  # pyright: ignore[reportCallIssue]
-            i_job=reconstructable(sleepy_dask_job),  # pyright: ignore[reportCallIssue]
+        for event in execute_run_iterator(
+            job=reconstructable(sleepy_dask_job),
             dagster_run=dagster_run,
             instance=instance,
         ):
@@ -195,7 +203,7 @@ def test_dask_terminate():
                 interrupt_thread.start()
 
             if event.event_type == DagsterEventType.STEP_FAILURE:
-                assert "DagsterExecutionInterruptedError" in event.event_specific_data.error.message
+                assert "DagsterExecutionInterruptedError" in event.event_specific_data.error.message  # ty: ignore[unresolved-attribute]
 
             result_types.append(event.event_type)
 

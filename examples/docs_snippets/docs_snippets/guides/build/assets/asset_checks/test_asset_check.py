@@ -1,0 +1,23 @@
+from dagster import asset
+
+
+@asset
+def orders(): ...
+
+
+# start
+
+
+from dagster import AssetCheckResult, asset_check
+
+
+@asset_check(asset=orders)
+def orders_id_has_no_nulls():
+    return AssetCheckResult(passed=True)
+
+
+def test_orders_check():
+    assert orders_id_has_no_nulls().passed  # ty: ignore[unresolved-attribute]
+
+
+# end

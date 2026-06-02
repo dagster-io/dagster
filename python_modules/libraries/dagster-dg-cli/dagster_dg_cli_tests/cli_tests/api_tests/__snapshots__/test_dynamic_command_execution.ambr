@@ -264,7 +264,7 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_json]
   dict({
-    'alert_policies': list([
+    'items': list([
       dict({
         'description': 'Send email on job failure',
         'event_types': list([
@@ -301,6 +301,7 @@
         ]),
       }),
     ]),
+    'total': 2,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[alert_policy_success_list_policies_text_text]
@@ -467,8 +468,8 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_partition_status_not_found_json]
   '''
-  {"error": "Asset not found: nonexistent/asset"}
-  Error: dg api asset get-partition-status: Asset not found: nonexistent/asset
+  {"error": "Error getting partition status: Asset not found: nonexistent/asset"}
+  Error: dg api asset get-partition-status: Error getting partition status: Asset not found: nonexistent/asset
   
   '''
 # ---
@@ -943,6 +944,17 @@
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_get_settings_json]
   dict({
     'settings': dict({
+      'run_monitoring': dict({
+        'start_timeout_seconds': 300,
+      }),
+      'run_queue': dict({
+        'max_concurrent_runs': 25,
+        'tag_concurrency_limits': list([
+        ]),
+      }),
+      'run_retries': dict({
+        'max_retries': 0,
+      }),
     }),
   })
 # ---
@@ -1163,7 +1175,6 @@
     'has_more': False,
     'items': list([
     ]),
-    'total': 0,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_level_text_text]
@@ -1176,6 +1187,42 @@
   '''
   {"error": "Run not found: ''"}
   Error: dg api run get: Run not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_invalid_config_json_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: --config-json is not valid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_invalid_tag_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: Invalid --tag value `invalid_no_equals`. Expected `key=value`.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_no_target_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: At least one of --job or --asset-key must be provided.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_error_launch_partition_range_no_recording_json]
+  '''
+  Usage: dg api run launch [OPTIONS]
+  Try 'dg api run launch -h' for help.
+  
+  Error: Partition ranges are not supported by `dg api run launch`. Use a single partition key.
   
   '''
 # ---
@@ -1303,7 +1350,31 @@
         'timestamp': '1771476078298',
       }),
     ]),
-    'total': 2,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_asset_json_json]
+  dict({
+    'run_id': '2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a',
+    'status': 'STARTED',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_job_json_json]
+  dict({
+    'run_id': '5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a',
+    'status': 'STARTED',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_job_text_text]
+  '''
+  Run ID: 5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+  Status: STARTED
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[run_success_launch_with_partition_and_tags_json_json]
+  dict({
+    'run_id': '8c4d2e7f-1a9b-4e3d-7c5b-9f2a1d8e3b6c',
+    'status': 'STARTED',
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_basic_json_json]
@@ -1450,7 +1521,7 @@
         'error': None,
         'event_type': 'LOGS_CAPTURED',
         'level': 'DEBUG',
-        'message': 'Started capturing logs in process (pid: 19).',
+        'message': 'Capturing logs for process (pid: 19).',
         'run_id': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
         'step_key': None,
         'timestamp': '1758817833507',
@@ -1492,7 +1563,6 @@
         'timestamp': '1758817833807',
       }),
     ]),
-    'total': 20,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_basic_text_text]
@@ -1516,7 +1586,7 @@
   2025-09-25 16:30:29  DEBUG    anomaly_detection_freshn  Executing step "anomaly_detection_freshness_check_458e9b8f" in subprocess.
   2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Starting initialization of resources [io_manager].
   2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Finished initialization of resources [io_manager].
-  2025-09-25 16:30:33  DEBUG                              Started capturing logs in process (pid: 19).
+  2025-09-25 16:30:33  DEBUG                              Capturing logs for process (pid: 19).
   2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Started execution of step "anomaly_detection_freshness_check_458e9b8f".
   2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Yielded output "MARKETING__avg_orders_anomaly_detection_freshness_check" of type "Any". (Type check passed).
   2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Asset check 'anomaly_detection_freshness_check' on 'MARKETING/avg_orders' did not pass. Description: 'Asset is overdue for an update. The last update was 2 days, 16 hours, 25 minutes, 24 seconds ago, which is past the allowed distance of 2 days, 5 minutes, 11 seconds ago.'
@@ -1542,7 +1612,6 @@
         'timestamp': '1758808865047',
       }),
     ]),
-    'total': 1,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_debug_level_text_text]
@@ -1681,7 +1750,6 @@
         'timestamp': '1758808878519',
       }),
     ]),
-    'total': 3,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_error_level_only_text_text]
@@ -1766,7 +1834,6 @@
         'timestamp': '1758808867189',
       }),
     ]),
-    'total': 5,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_small_limit_text_text]
@@ -1819,7 +1886,6 @@
         'timestamp': '1758808873361',
       }),
     ]),
-    'total': 3,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_step_filter_text_text]
@@ -1989,7 +2055,7 @@
         'error': None,
         'event_type': 'LOGS_CAPTURED',
         'level': 'DEBUG',
-        'message': 'Started capturing logs in process (pid: 16).',
+        'message': 'Capturing logs for process (pid: 16).',
         'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
         'step_key': None,
         'timestamp': '1758808873570',
@@ -2061,7 +2127,7 @@
         'error': None,
         'event_type': 'LOGS_CAPTURED',
         'level': 'DEBUG',
-        'message': 'Started capturing logs in process (pid: 26).',
+        'message': 'Capturing logs for process (pid: 26).',
         'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
         'step_key': None,
         'timestamp': '1758808875526',
@@ -2133,7 +2199,7 @@
         'error': None,
         'event_type': 'LOGS_CAPTURED',
         'level': 'DEBUG',
-        'message': 'Started capturing logs in process (pid: 36).',
+        'message': 'Capturing logs for process (pid: 36).',
         'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
         'step_key': None,
         'timestamp': '1758808877439',
@@ -2302,7 +2368,6 @@
         'timestamp': '1758808880071',
       }),
     ]),
-    'total': 41,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_logs_with_errors_text_text]
@@ -2327,7 +2392,7 @@
   2025-09-25 14:01:12  DEBUG    enriched_data.process_ch  Executing step "enriched_data.process_chunk[11]" in subprocess.
   2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
   2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Finished initialization of resources [api, io_manager].
-  2025-09-25 14:01:13  DEBUG                              Started capturing logs in process (pid: 16).
+  2025-09-25 14:01:13  DEBUG                              Capturing logs for process (pid: 16).
   2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Started execution of step "enriched_data.process_chunk[11]".
   2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...
   2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Execution of step "enriched_data.process_chunk[11]" failed and has requested a retry.
@@ -2335,7 +2400,7 @@
   2025-09-25 14:01:14  DEBUG    enriched_data.process_ch  Executing step "enriched_data.process_chunk[11]" in subprocess.
   2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
   2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Finished initialization of resources [api, io_manager].
-  2025-09-25 14:01:15  DEBUG                              Started capturing logs in process (pid: 26).
+  2025-09-25 14:01:15  DEBUG                              Capturing logs for process (pid: 26).
   2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Started re-execution (attempt # 2) of step "enriched_data.process_chunk[11]".
   2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...
   2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Execution of step "enriched_data.process_chunk[11]" failed and has requested a retry.
@@ -2343,7 +2408,7 @@
   2025-09-25 14:01:16  DEBUG    enriched_data.process_ch  Executing step "enriched_data.process_chunk[11]" in subprocess.
   2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
   2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Finished initialization of resources [api, io_manager].
-  2025-09-25 14:01:17  DEBUG                              Started capturing logs in process (pid: 36).
+  2025-09-25 14:01:17  DEBUG                              Capturing logs for process (pid: 36).
   2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Started re-execution (attempt # 3) of step "enriched_data.process_chunk[11]".
   2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...
   2025-09-25 14:01:17  ERROR    enriched_data.process_ch  Execution of step "enriched_data.process_chunk[11]" failed.
@@ -2641,7 +2706,7 @@
         ]),
         'name': 'SNOWFLAKE_USER',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2023-05-04T19:14:15.542825Z',
+        'update_timestamp': 1683227655.542825,
         'updated_by': dict({
           'email': 'lopp@elementl.com',
         }),
@@ -2658,7 +2723,7 @@
         ]),
         'name': 'SNOWFLAKE_ROLE',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2023-11-29T21:58:48.844959Z',
+        'update_timestamp': 1701295128.844959,
         'updated_by': dict({
           'email': 'izzy@dagsterlabs.com',
         }),
@@ -2675,7 +2740,7 @@
         ]),
         'name': 'SNOWFLAKE_USERNAME',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2023-02-28T21:57:07.192470Z',
+        'update_timestamp': 1677621427.19247,
         'updated_by': dict({
           'email': 'lopp@elementl.com',
         }),
@@ -2692,7 +2757,7 @@
         ]),
         'name': 'SNOWFLAKE_ACCOUNT',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2023-05-04T19:12:08.067031Z',
+        'update_timestamp': 1683227528.067031,
         'updated_by': dict({
           'email': 'lopp@elementl.com',
         }),
@@ -2709,7 +2774,7 @@
         ]),
         'name': 'AWS_REGION',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2023-11-30T15:18:08.570713Z',
+        'update_timestamp': 1701357488.570713,
         'updated_by': dict({
           'email': 'izzy@dagsterlabs.com',
         }),
@@ -2726,7 +2791,7 @@
         ]),
         'name': 'SNOWFLAKE_HOST',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2023-12-11T23:27:02.879755Z',
+        'update_timestamp': 1702337222.879755,
         'updated_by': dict({
           'email': 'izzy@dagsterlabs.com',
         }),
@@ -2743,7 +2808,7 @@
         ]),
         'name': 'DAGSTER_DBT_PARSE_PROJECT_ON_LOAD',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2024-04-05T17:52:55.019563Z',
+        'update_timestamp': 1712339575.019563,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2760,7 +2825,7 @@
         ]),
         'name': 'AWS_S3_BUCKET',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2024-04-09T20:03:38.240532Z',
+        'update_timestamp': 1712693018.240532,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2777,7 +2842,7 @@
         ]),
         'name': 'AZURE_POWERBI_CLIENT_SECRET_ID',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2024-10-09T13:43:43.483920Z',
+        'update_timestamp': 1728481423.48392,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2794,7 +2859,7 @@
         ]),
         'name': 'AZURE_POWERBI_CLIENT_ID',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2024-10-09T01:13:45.360461Z',
+        'update_timestamp': 1728436425.360461,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2811,7 +2876,7 @@
         ]),
         'name': 'AZURE_POWERBI_CLIENT_SECRET',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2024-10-09T01:13:56.007341Z',
+        'update_timestamp': 1728436436.007341,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2828,7 +2893,7 @@
         ]),
         'name': 'AZURE_POWERBI_TENANT_ID',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2024-10-09T01:14:04.180889Z',
+        'update_timestamp': 1728436444.180889,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2845,7 +2910,7 @@
         ]),
         'name': 'AZURE_POWERBI_WORKSPACE_ID',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2024-10-09T01:14:12.436403Z',
+        'update_timestamp': 1728436452.436403,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2862,7 +2927,7 @@
         ]),
         'name': 'SNOWFLAKE_SCHEMA',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-06-27T19:20:59.521047Z',
+        'update_timestamp': 1751052059.521047,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2879,7 +2944,7 @@
         ]),
         'name': 'EXAMPLE_ENVIRONMENT_VARIABLE',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-09-22T20:18:39.564529Z',
+        'update_timestamp': 1758572319.564529,
         'updated_by': dict({
           'email': 'colton@dagsterlabs.com',
         }),
@@ -2896,7 +2961,7 @@
         ]),
         'name': 'MWAA_AWS_ACCESS_KEY_ID',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-03-08T03:26:30.092809Z',
+        'update_timestamp': 1741404390.092809,
         'updated_by': dict({
           'email': 'colton@dagsterlabs.com',
         }),
@@ -2913,7 +2978,7 @@
         ]),
         'name': 'MWAA_AWS_SECRET_ACCESS_KEY',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-03-08T03:26:41.762188Z',
+        'update_timestamp': 1741404401.762188,
         'updated_by': dict({
           'email': 'colton@dagsterlabs.com',
         }),
@@ -2930,7 +2995,7 @@
         ]),
         'name': 'DATABRICKS_TOKEN',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-07-26T00:32:00.876120Z',
+        'update_timestamp': 1753489920.87612,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2947,7 +3012,7 @@
         ]),
         'name': 'DATABRICKS_HOST',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-07-26T00:32:11.161514Z',
+        'update_timestamp': 1753489931.161514,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2964,7 +3029,7 @@
         ]),
         'name': 'DATABRICKS_HOST',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-07-26T00:32:44.377634Z',
+        'update_timestamp': 1753489964.377634,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2981,7 +3046,7 @@
         ]),
         'name': 'DATABRICKS_TOKEN',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-07-26T00:33:33.657806Z',
+        'update_timestamp': 1753490013.657806,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -2998,7 +3063,7 @@
         ]),
         'name': 'GITHUB_TOKEN',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-08-11T19:39:12.247125Z',
+        'update_timestamp': 1754941152.247125,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -3015,7 +3080,7 @@
         ]),
         'name': 'SNOWFLAKE_KEY',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2025-09-10T17:02:38.934973Z',
+        'update_timestamp': 1757523758.934973,
         'updated_by': dict({
           'email': 'christian@dagsterlabs.com',
         }),
@@ -3028,29 +3093,29 @@
 # name: TestDynamicCommandExecution.test_command_execution[secret_success_multiple_secrets_text_text]
   '''
   NAME                               LOCATIONS  SCOPES                                                     UPDATED
-  SNOWFLAKE_USER                     All        Full Deployment, All Branch Deployments, Local Deployment  2023-05-04 19:14:15
-  SNOWFLAKE_ROLE                     All        Full Deployment, All Branch Deployments, Local Deployment  2023-11-29 21:58:48
-  SNOWFLAKE_USERNAME                 All        Full Deployment, All Branch Deployments, Local Deployment  2023-02-28 21:57:07
-  SNOWFLAKE_ACCOUNT                  All        Full Deployment, All Branch Deployments, Local Deployment  2023-05-04 19:12:08
-  AWS_REGION                         All        Full Deployment, All Branch Deployments, Local Deployment  2023-11-30 15:18:08
-  SNOWFLAKE_HOST                     All        Full Deployment, All Branch Deployments, Local Deployment  2023-12-11 23:27:02
-  DAGSTER_DBT_PARSE_PROJECT_ON_LOAD  All        All Branch Deployments, Local Deployment                   2024-04-05 17:52:55
-  AWS_S3_BUCKET                      All        Full Deployment, All Branch Deployments, Local Deployment  2024-04-09 20:03:38
-  AZURE_POWERBI_CLIENT_SECRET_ID     All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 13:43:43
-  AZURE_POWERBI_CLIENT_ID            All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:13:45
-  AZURE_POWERBI_CLIENT_SECRET        All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:13:56
-  AZURE_POWERBI_TENANT_ID            All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:14:04
-  AZURE_POWERBI_WORKSPACE_ID         All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:14:12
-  SNOWFLAKE_SCHEMA                   All        Full Deployment, All Branch Deployments, Local Deployment  2025-06-27 19:20:59
-  EXAMPLE_ENVIRONMENT_VARIABLE       All        Full Deployment, All Branch Deployments, Local Deployment  2025-09-22 20:18:39
-  MWAA_AWS_ACCESS_KEY_ID             All        Full Deployment, All Branch Deployments, Local Deployment  2025-03-08 03:26:30
-  MWAA_AWS_SECRET_ACCESS_KEY         All        Full Deployment, All Branch Deployments, Local Deployment  2025-03-08 03:26:41
-  DATABRICKS_TOKEN                   All        Full Deployment, Local Deployment                          2025-07-26 00:32:00
-  DATABRICKS_HOST                    All        Full Deployment, Local Deployment                          2025-07-26 00:32:11
-  DATABRICKS_HOST                    All        All Branch Deployments                                     2025-07-26 00:32:44
-  DATABRICKS_TOKEN                   All        All Branch Deployments                                     2025-07-26 00:33:33
-  GITHUB_TOKEN                       All        Full Deployment, All Branch Deployments, Local Deployment  2025-08-11 19:39:12
-  SNOWFLAKE_KEY                      All        Full Deployment, All Branch Deployments, Local Deployment  2025-09-10 17:02:38
+  SNOWFLAKE_USER                     All        Full Deployment, All Branch Deployments, Local Deployment  2023-05-04 19:14:15 UTC
+  SNOWFLAKE_ROLE                     All        Full Deployment, All Branch Deployments, Local Deployment  2023-11-29 21:58:48 UTC
+  SNOWFLAKE_USERNAME                 All        Full Deployment, All Branch Deployments, Local Deployment  2023-02-28 21:57:07 UTC
+  SNOWFLAKE_ACCOUNT                  All        Full Deployment, All Branch Deployments, Local Deployment  2023-05-04 19:12:08 UTC
+  AWS_REGION                         All        Full Deployment, All Branch Deployments, Local Deployment  2023-11-30 15:18:08 UTC
+  SNOWFLAKE_HOST                     All        Full Deployment, All Branch Deployments, Local Deployment  2023-12-11 23:27:02 UTC
+  DAGSTER_DBT_PARSE_PROJECT_ON_LOAD  All        All Branch Deployments, Local Deployment                   2024-04-05 17:52:55 UTC
+  AWS_S3_BUCKET                      All        Full Deployment, All Branch Deployments, Local Deployment  2024-04-09 20:03:38 UTC
+  AZURE_POWERBI_CLIENT_SECRET_ID     All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 13:43:43 UTC
+  AZURE_POWERBI_CLIENT_ID            All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:13:45 UTC
+  AZURE_POWERBI_CLIENT_SECRET        All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:13:56 UTC
+  AZURE_POWERBI_TENANT_ID            All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:14:04 UTC
+  AZURE_POWERBI_WORKSPACE_ID         All        Full Deployment, All Branch Deployments, Local Deployment  2024-10-09 01:14:12 UTC
+  SNOWFLAKE_SCHEMA                   All        Full Deployment, All Branch Deployments, Local Deployment  2025-06-27 19:20:59 UTC
+  EXAMPLE_ENVIRONMENT_VARIABLE       All        Full Deployment, All Branch Deployments, Local Deployment  2025-09-22 20:18:39 UTC
+  MWAA_AWS_ACCESS_KEY_ID             All        Full Deployment, All Branch Deployments, Local Deployment  2025-03-08 03:26:30 UTC
+  MWAA_AWS_SECRET_ACCESS_KEY         All        Full Deployment, All Branch Deployments, Local Deployment  2025-03-08 03:26:41 UTC
+  DATABRICKS_TOKEN                   All        Full Deployment, Local Deployment                          2025-07-26 00:32:00 UTC
+  DATABRICKS_HOST                    All        Full Deployment, Local Deployment                          2025-07-26 00:32:11 UTC
+  DATABRICKS_HOST                    All        All Branch Deployments                                     2025-07-26 00:32:44 UTC
+  DATABRICKS_TOKEN                   All        All Branch Deployments                                     2025-07-26 00:33:33 UTC
+  GITHUB_TOKEN                       All        Full Deployment, All Branch Deployments, Local Deployment  2025-08-11 19:39:12 UTC
+  SNOWFLAKE_KEY                      All        Full Deployment, All Branch Deployments, Local Deployment  2025-09-10 17:02:38 UTC
   
   '''
 # ---
@@ -3066,7 +3131,7 @@
     ]),
     'name': 'EXAMPLE_ENVIRONMENT_VARIABLE',
     'specific_branch_deployment_scope': None,
-    'update_timestamp': '2025-09-22T20:18:39.564529Z',
+    'update_timestamp': 1758572319.564529,
     'updated_by': dict({
       'email': 'colton@dagsterlabs.com',
     }),
@@ -3085,7 +3150,7 @@
   Value: <hidden - use --show-value to display>
   
   Updated By: colton@dagsterlabs.com
-  Updated: 2025-09-22 20:18:39
+  Updated: 2025-09-22 20:18:39 UTC
   
   '''
 # ---
@@ -3101,7 +3166,7 @@
     ]),
     'name': 'EXAMPLE_ENVIRONMENT_VARIABLE',
     'specific_branch_deployment_scope': None,
-    'update_timestamp': '2025-09-22T20:18:39.564529Z',
+    'update_timestamp': 1758572319.564529,
     'updated_by': dict({
       'email': 'colton@dagsterlabs.com',
     }),
@@ -3121,7 +3186,7 @@
     Hello, World!
   
   Updated By: colton@dagsterlabs.com
-  Updated: 2025-09-22 20:18:39
+  Updated: 2025-09-22 20:18:39 UTC
   
   '''
 # ---
@@ -3271,7 +3336,7 @@
   Usage: dg api sensor list [OPTIONS]
   Try 'dg api sensor list -h' for help.
   
-  Error: Invalid value for '--status': 'INVALID_STATUS' is not one of 'RUNNING', 'STOPPED', 'PAUSED'.
+  Error: Invalid value for '--status': 'INVALID_STATUS' is not one of 'RUNNING', 'STOPPED'.
   
   '''
 # ---
@@ -3292,19 +3357,6 @@
 # name: TestDynamicCommandExecution.test_command_execution[sensor_error_sensor_not_found_text_text]
   '''
   Error: dg api sensor get: Exhausted 0 responses
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_paused_json]
-  dict({
-    'items': list([
-    ]),
-    'total': 0,
-  })
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_paused_text_text]
-  '''
-  
   
   '''
 # ---

@@ -1,5 +1,6 @@
 import graphene
 
+from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError, GraphenePythonError
 from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset, GrapheneAssetRecord
 from dagster_graphql.schema.util import non_null_list
@@ -19,6 +20,15 @@ class GrapheneAssetRecordConnection(graphene.ObjectType):
 
     class Meta:
         name = "AssetRecordConnection"
+
+
+class GrapheneAssetNodeConnection(graphene.ObjectType):
+    nodes = non_null_list(GrapheneAssetNode)
+    cursor = graphene.Field(graphene.String)
+    hasMore = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "AssetNodeConnection"
 
 
 class GrapheneAssetsOrError(graphene.Union):

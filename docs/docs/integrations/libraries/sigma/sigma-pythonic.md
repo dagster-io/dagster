@@ -96,9 +96,38 @@ The below example defines `my_upstream_asset` as an upstream dependency of `my_s
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-## Related
+## Handling Sigma API rate limits and timeouts
+
+Workbook loading against the Sigma API can hit rate limits or timeouts when a code location starts up, especially with large Sigma organizations. A typical symptom looks like:
+
+```text
+aiohttp.client_exceptions.ConnectionTimeoutError: Connection timeout to host https://api.sigmacomputing.com/v2/workbooks/...
+```
+
+Two adjustments usually resolve this:
+
+1. Raise the local startup timeout for the code server in your Dagster instance configuration:
+
+   ```yaml
+   code_servers:
+     local_startup_timeout: 600
+   ```
+
+2. Reduce the data fetched at load time by skipping lineage and column metadata you don't need:
+
+   ```python
+   sigma_assets = load_sigma_asset_specs_with_retry(
+       organization=sigma_organization,
+       fetch_lineage_data=False,
+       fetch_column_data=False,
+   )
+   ```
+
+If you continue to hit rate limits in CI, newer CI-focused APIs in `dagster-sigma` are designed to avoid this by loading definitions without polling per-workbook detail endpoints. Upgrade to a recent version of the integration to access them.
+
+## Related documentation
 
 - [`dagster-sigma` API reference](/integrations/libraries/sigma/dagster-sigma)
 - [Asset definitions](/guides/build/assets/defining-assets)
-- [Resources](/guides/build/external-resources)
-- [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)
+- [External resources](/guides/build/external-resources)
+- [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets)

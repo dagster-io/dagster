@@ -90,6 +90,11 @@
     "permanent": true
   },
   {
+    "source": "/examples/full-pipelines/dbt/data",
+    "destination": "/examples/full-pipelines/dbt/ingestion",
+    "permanent": true
+  },
+  {
     "source": "/examples/etl-pipeline",
     "destination": "/examples/full-pipelines/etl-pipeline",
     "permanent": true

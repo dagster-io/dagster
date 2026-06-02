@@ -48,11 +48,11 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: dict[str, Any])
         ) or reference.file_path.endswith(asset_key.path[-1] + ".csv")
         assert os.path.exists(reference.file_path), reference.file_path
 
-        result = dg.materialize(
-            [my_dbt_assets],
-            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
-        )
-        assert result.success
+    result = dg.materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+    )
+    assert result.success
 
 
 def test_basic_attach_code_references_no_project_dir(
@@ -137,5 +137,5 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: dict[str, Any]) -> None:
 
         source_reference = references[1]
         assert isinstance(source_reference, UrlCodeReference)
-        line_no = inspect.getsourcelines(my_dbt_assets.op.compute_fn.decorated_fn)[1]  # pyright: ignore[reportFunctionMemberAccess]
+        line_no = inspect.getsourcelines(my_dbt_assets.op.compute_fn.decorated_fn)[1]  # ty: ignore[unresolved-attribute]
         assert source_reference.url.endswith(f"test_code_references.py#L{line_no}")

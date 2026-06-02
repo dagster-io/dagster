@@ -34,7 +34,7 @@ class TestPostgresInstance:
         from dagster_postgres.utils import get_conn_string
 
         return get_conn_string(
-            **dict(  # pyright: ignore[reportArgumentType]
+            **dict(  # ty: ignore[invalid-argument-type]
                 dict(
                     username="test",
                     password="test",
@@ -113,19 +113,19 @@ class TestPostgresInstance:
             return
 
         subprocess.run(
-            ["docker-compose", "-f", docker_compose_file, "down", service_name],
+            ["docker", "compose", "-f", docker_compose_file, "down", service_name],
             check=False,
         )
 
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name],
+                ["docker", "compose", "-f", docker_compose_file, "up", "-d", service_name],
                 stderr=subprocess.STDOUT,  # capture STDERR for error handling
             )
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode("utf-8")
             raise PostgresDockerError(
-                f"Failed to launch docker container(s) via docker-compose: {err_text}",
+                f"Failed to launch docker container(s) via docker compose: {err_text}",
                 ex,
             ) from ex
 
@@ -135,7 +135,7 @@ class TestPostgresInstance:
             yield conn_str
         finally:
             subprocess.run(
-                ["docker-compose", "-f", docker_compose_file, "down", service_name],
+                ["docker", "compose", "-f", docker_compose_file, "down", service_name],
                 check=False,
             )
 

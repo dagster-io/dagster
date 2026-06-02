@@ -247,7 +247,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
     def __call__(self, *args, **kwargs):
         from dagster._core.execution.context.init import UnboundInitResourceContext
 
-        if has_at_least_one_parameter(self.resource_fn):
+        if has_at_least_one_parameter(self.resource_fn):  # ty: ignore[invalid-argument-type]
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Resource initialization function has context argument, but no context was"
@@ -320,14 +320,14 @@ class _ResourceDecoratorCallable:
     def __call__(self, resource_fn: ResourceFunction) -> ResourceDefinition:
         check.callable_param(resource_fn, "resource_fn")
 
-        any_name = ["*"] if has_at_least_one_parameter(resource_fn) else []
+        any_name = ["*"] if has_at_least_one_parameter(resource_fn) else []  # ty: ignore[invalid-argument-type]
 
         params = get_function_params(resource_fn)
 
         missing_positional = validate_expected_params(params, any_name)
         if missing_positional:
             raise DagsterInvalidDefinitionError(
-                f"@resource decorated function '{resource_fn.__name__}' expects a single "
+                f"@resource decorated function '{resource_fn.__name__}' expects a single "  # ty: ignore[unresolved-attribute]
                 "positional argument."
             )
 
@@ -336,7 +336,7 @@ class _ResourceDecoratorCallable:
         required_extras = list(filter(is_required_param, extras))
         if required_extras:
             raise DagsterInvalidDefinitionError(
-                f"@resource decorated function '{resource_fn.__name__}' expects only a single"
+                f"@resource decorated function '{resource_fn.__name__}' expects only a single"  # ty: ignore[unresolved-attribute]
                 " positional required argument. Got required extra params"
                 f" {', '.join(positional_arg_name_list(required_extras))}"
             )
@@ -399,7 +399,7 @@ def resource(
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        return _ResourceDecoratorCallable()(config_schema)
+        return _ResourceDecoratorCallable()(config_schema)  # ty: ignore[invalid-argument-type]
 
     def _wrap(resource_fn: ResourceFunction) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(

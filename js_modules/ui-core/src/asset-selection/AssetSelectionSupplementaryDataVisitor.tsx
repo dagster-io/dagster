@@ -1,12 +1,22 @@
 import {AbstractParseTreeVisitor, CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
-import {AssetSelectionParser, StatusAttributeExprContext} from './generated/AssetSelectionParser';
+import {
+  AssetSelectionParser,
+  AutomationTypeAttributeExprContext,
+  ScheduleAttributeExprContext,
+  SensorAttributeExprContext,
+  StatusAttributeExprContext,
+} from './generated/AssetSelectionParser';
 import {AssetSelectionVisitor} from './generated/AssetSelectionVisitor';
 import {AntlrInputErrorListener} from './parseAssetSelectionQuery';
 import {getValue} from './util';
 
-export type Filter = {field: 'status'; value: string};
+export type Filter =
+  | {field: 'status'; value: string}
+  | {field: 'automation_type'; value: string}
+  | {field: 'sensor'; value: string}
+  | {field: 'schedule'; value: string};
 
 export class AssetSelectionSupplementaryDataVisitor
   extends AbstractParseTreeVisitor<void>
@@ -23,6 +33,21 @@ export class AssetSelectionSupplementaryDataVisitor
   visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
     const value: string = getValue(ctx.value()).toUpperCase();
     this.filters.push({field: 'status', value});
+  }
+
+  visitAutomationTypeAttributeExpr(ctx: AutomationTypeAttributeExprContext) {
+    const value: string = getValue(ctx.value());
+    this.filters.push({field: 'automation_type', value});
+  }
+
+  visitSensorAttributeExpr(ctx: SensorAttributeExprContext) {
+    const value: string = getValue(ctx.value());
+    this.filters.push({field: 'sensor', value});
+  }
+
+  visitScheduleAttributeExpr(ctx: ScheduleAttributeExprContext) {
+    const value: string = getValue(ctx.value());
+    this.filters.push({field: 'schedule', value});
   }
 }
 

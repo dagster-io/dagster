@@ -1,6 +1,8 @@
 import dagster as dg
 
-from project_multi_workspace_databricks.definitions import defs
+from project_multi_workspace_databricks.definitions import (
+    defs,  # ty: ignore[unresolved-import]
+)
 
 
 def test_defs_load():

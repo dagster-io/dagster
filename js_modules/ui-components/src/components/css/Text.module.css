@@ -1,0 +1,80 @@
+.body {
+  font-family: var(--font-family-default);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.body1 {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.body2 {
+  font-family: var(--font-family-default);
+  line-height: 20px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.caption {
+  font-family: var(--font-family-default);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.captionSubtitle {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.captionBolded {
+  font-family: var(--font-family-default);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.captionMono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.bodyLarge {
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.bodySmall {
+  font-family: var(--font-family-default);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.monoLarge {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.monoSmall {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}

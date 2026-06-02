@@ -76,7 +76,6 @@ const ExampleAssetNode: AssetNodeFragment = {
   isMaterializable: true,
   jobNames: ['job1'],
   opNames: ['asset1'],
-  opVersion: '1',
   changedReasons: [],
   owners: [
     {

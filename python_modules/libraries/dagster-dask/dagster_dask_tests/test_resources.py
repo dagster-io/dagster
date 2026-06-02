@@ -80,7 +80,7 @@ def test_multiple_local_cluster():
 def _assert_scheduler_info_result(result: ExecutionResult, config: Mapping[str, Any]):
     scheduler_info = result.output_for_node("scheduler_info_op", "scheduler_info")
     assert isinstance(scheduler_info, dict)
-    assert len(scheduler_info["workers"]) == config["n_workers"]
+    assert len(scheduler_info["workers"]) == config["n_workers"]  # ty: ignore[invalid-argument-type]
 
     nthreads = result.output_for_node("scheduler_info_op", "nthreads")
     assert isinstance(nthreads, dict)

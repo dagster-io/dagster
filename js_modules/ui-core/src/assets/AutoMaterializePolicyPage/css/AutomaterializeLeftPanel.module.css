@@ -1,0 +1,48 @@
+.paginationWrapper {
+  position: sticky;
+  bottom: 0;
+  background: var(--color-background-light);
+  box-shadow:
+    inset -1px 0 var(--color-keyline-default),
+    inset 0 1px var(--color-keyline-default);
+  margin-top: -1px;
+  padding-bottom: 16px;
+  padding-top: 16px;
+}
+
+.evaluationListItem {
+  background-color: var(--color-background-default);
+  border: none;
+  border-radius: 8px;
+  color: var(--color-text-default);
+  cursor: pointer;
+  margin: 2px 0;
+  text-align: left;
+  transition:
+    100ms background-color linear,
+    100ms color linear;
+  user-select: none;
+  padding: 8px 12px;
+}
+
+.evaluationListItem:hover {
+  background-color: var(--color-background-default-hover);
+}
+
+.evaluationListItem:focus,
+.evaluationListItem:active {
+  outline: none;
+}
+
+.evaluationListItemSelected {
+  background-color: var(--color-background-blue);
+  color: var(--color-text-blue);
+}
+
+.evaluationListItemSelected:hover {
+  background-color: var(--color-background-blue-hover);
+}
+
+.statusDot {
+  border-radius: 50%;
+}

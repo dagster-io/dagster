@@ -1,11 +1,13 @@
 import dagster as dg
-from project_datastage.components.data_stage_job_component import (
+from project_datastage.components.data_stage_job_component import (  # ty: ignore[unresolved-import]
     DataStageJobComponent,
     DataStageProject,
     DataStageTranslator,
     datastage_assets,
 )
-from project_datastage.components.scheduled_job_component import ScheduledJobComponent
+from project_datastage.components.scheduled_job_component import (  # ty: ignore[unresolved-import]
+    ScheduledJobComponent,
+)
 
 
 def test_translator_asset_key():

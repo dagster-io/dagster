@@ -26,6 +26,7 @@ class AzureBlobComputeLogManager(BaseModel):
     prefix: StringSource | None = None
     uploadInterval: int | None = None
     showUrlOnly: bool | None = None
+    endpointSuffix: StringSource | None = None
 
 
 class GCSComputeLogManager(BaseModel):

@@ -1,7 +1,8 @@
 import {Box} from '../Box';
+import {Code} from '../Code';
 import {Colors} from '../Color';
 import {Spinner} from '../Spinner';
-import {Caption, Code} from '../Text';
+import {Caption} from '../Text';
 
 // eslint-disable-next-line import/no-default-export
 export default {

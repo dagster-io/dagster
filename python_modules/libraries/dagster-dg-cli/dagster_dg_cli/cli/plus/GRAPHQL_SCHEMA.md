@@ -121,7 +121,7 @@ The schemas are **mostly disjoint** but share core Dagster domain types:
 The schema is designed to work with `DagsterPlusGraphQLClient`:
 
 ```python
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
 
 # Example: Query deployments
 query = """

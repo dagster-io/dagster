@@ -4,7 +4,6 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 import dagster._check as check
-import kubernetes
 import kubernetes.client
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
@@ -52,6 +51,7 @@ class K8sContainerContext(
             ("server_k8s_config", UserDefinedDagsterK8sConfig),
             ("run_k8s_config", UserDefinedDagsterK8sConfig),
             ("namespace", str | None),
+            ("server_replica_count", int | None),
         ],
     )
 ):
@@ -79,6 +79,7 @@ class K8sContainerContext(
         server_k8s_config: UserDefinedDagsterK8sConfig | None = None,
         run_k8s_config: UserDefinedDagsterK8sConfig | None = None,
         env: Sequence[Mapping[str, Any]] | None = None,
+        server_replica_count: int | None = None,
     ):
         top_level_k8s_config = K8sContainerContext._get_base_user_defined_k8s_config(
             image_pull_policy=check.opt_str_param(image_pull_policy, "image_pull_policy"),
@@ -128,6 +129,7 @@ class K8sContainerContext(
             run_k8s_config=run_k8s_config,
             server_k8s_config=server_k8s_config,
             namespace=namespace,
+            server_replica_count=check.opt_int_param(server_replica_count, "server_replica_count"),
         )
 
     @staticmethod
@@ -273,6 +275,9 @@ class K8sContainerContext(
             ),
             run_k8s_config=self._merge_k8s_config(self.run_k8s_config, other.run_k8s_config),
             namespace=other.namespace if other.namespace else self.namespace,
+            server_replica_count=other.server_replica_count
+            if other.server_replica_count is not None
+            else self.server_replica_count,
         )
 
     def _snake_case_allowed_fields(
@@ -346,9 +351,11 @@ class K8sContainerContext(
 
             for key, used_fields_with_key in used_fields.items():
                 if isinstance(used_fields_with_key, set):
-                    for used_field in used_fields_with_key:
-                        if not snake_case_allowlist.get(key, {}).get(used_field):
-                            disallowed_fields.append(f"{key}.{used_field}")
+                    disallowed_fields.extend(
+                        f"{key}.{used_field}"
+                        for used_field in used_fields_with_key
+                        if not snake_case_allowlist.get(key, {}).get(used_field)
+                    )
                 else:
                     check.invariant(isinstance(used_fields_with_key, bool))
                     if used_fields_with_key and not only_allow_user_defined_k8s_config_fields.get(
@@ -555,6 +562,7 @@ class K8sContainerContext(
                     processed_context_value.get("run_k8s_config", {})
                 ),
                 env=processed_context_value.get("env"),
+                server_replica_count=processed_context_value.get("server_replica_count"),
             ),
         )
 

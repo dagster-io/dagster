@@ -25,7 +25,7 @@ class ConfigurableClassDataSerializer(NamedTupleSerializer["ConfigurableClassDat
     def pack_items(self, *args, **kwargs):
         for k, v in super().pack_items(*args, **kwargs):
             if k == "module_name":
-                yield k, convert_dagster_submodule_name(v, "public")  # pyright: ignore[reportArgumentType]
+                yield k, convert_dagster_submodule_name(v, "public")  # ty: ignore[invalid-argument-type]
             else:
                 yield k, v
 

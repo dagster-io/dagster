@@ -1,15 +1,35 @@
 from collections.abc import Iterator
 from os import path
+from pathlib import Path
 
 from docutils import nodes
 from docutils.io import StringOutput
 from sphinx.builders import Builder
 from sphinx.util import logging
+from sphinx.util.inventory import InventoryFile
 from sphinx.util.osutil import ensuredir
 
 from ..writers.mdx import MdxWriter  # noqa
 
 logger = logging.getLogger(__name__)
+
+
+class _PublishedInventoryUriBuilder:
+    """Expose published doc URLs when generating ``objects.inv``.
+
+    The MDX builder writes ``.mdx`` files to disk for Docusaurus ingestion, but the
+    published site is served at clean, extensionless routes. Inventory entries must
+    point at those published routes so intersphinx links resolve correctly.
+    """
+
+    @staticmethod
+    def get_target_uri(docname: str, typ: str | None = None) -> str:
+        del typ
+        if docname == "index":
+            return ""
+        if docname.endswith("/index"):
+            return docname[: -len("index")]
+        return f"{docname}/"
 
 
 class MdxBuilder(Builder):
@@ -84,5 +104,9 @@ class MdxBuilder(Builder):
             logger.warning(f"error writing file {outfilename}: {err}")
             raise err
 
-    def finish(self):
-        pass
+    def finish(self) -> None:
+        InventoryFile.dump(
+            Path(self.outdir) / "objects.inv",
+            self.env,
+            _PublishedInventoryUriBuilder(),
+        )

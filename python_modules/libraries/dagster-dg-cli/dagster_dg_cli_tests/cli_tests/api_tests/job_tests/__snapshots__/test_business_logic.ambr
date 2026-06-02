@@ -130,36 +130,3 @@
   __ASSET_JOB_0                                            0          0        Yes
   '''
 # ---
-# name: TestJobDataProcessing.test_job_list_serialization[0]
-  dict({
-    'items': list([
-      dict({
-        'description': 'First job',
-        'id': 'job-a',
-        'is_asset_job': True,
-        'name': 'job_a',
-        'repository_origin': None,
-        'schedules': list([
-        ]),
-        'sensors': list([
-        ]),
-        'tags': list([
-        ]),
-      }),
-      dict({
-        'description': None,
-        'id': 'job-b',
-        'is_asset_job': False,
-        'name': 'job_b',
-        'repository_origin': None,
-        'schedules': list([
-        ]),
-        'sensors': list([
-        ]),
-        'tags': list([
-        ]),
-      }),
-    ]),
-    'total': 2,
-  })
-# ---

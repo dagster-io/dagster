@@ -1,13 +1,15 @@
 import time
 
-import kubernetes
+import kubernetes.client.rest
 import pytest
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient, WaitForPodState
+
+from tests.utils import BUSYBOX_IMAGE
 
 pytest_plugins = ["dagster_k8s_test_infra.helm"]
 
 
-def construct_pod_spec(name, cmd, image="busybox", container_kwargs=None):
+def construct_pod_spec(name, cmd, image=BUSYBOX_IMAGE, container_kwargs=None):
     return kubernetes.client.V1PodSpec(
         restart_policy="Never",
         containers=[
@@ -21,14 +23,14 @@ def construct_pod_spec(name, cmd, image="busybox", container_kwargs=None):
     )
 
 
-def construct_pod_manifest(name, cmd, image="busybox", container_kwargs=None):
+def construct_pod_manifest(name, cmd, image=BUSYBOX_IMAGE, container_kwargs=None):
     return kubernetes.client.V1Pod(
         metadata=kubernetes.client.V1ObjectMeta(name=name),
         spec=construct_pod_spec(name, cmd, image=image, container_kwargs=container_kwargs),
     )
 
 
-def construct_job_manifest(name, cmd, image="busybox", container_kwargs=None):
+def construct_job_manifest(name, cmd, image=BUSYBOX_IMAGE, container_kwargs=None):
     return kubernetes.client.V1Job(
         api_version="batch/v1",
         kind="Job",
@@ -40,6 +42,23 @@ def construct_job_manifest(name, cmd, image="busybox", container_kwargs=None):
             backoff_limit=0,
         ),
     )
+
+
+def wait_for_pod_debug_info(api_client, job_name, namespace, marker, timeout=60):
+    """Poll get_pod_debug_info for a job's first pod until ``marker`` appears, returning (pod_name, debug_info)."""
+    start_time = time.time()
+    while True:
+        if time.time() - start_time > timeout:
+            raise Exception(f"No {marker!r} in pod debug info after {timeout} seconds")
+
+        pod_names = api_client.get_pod_names_in_job(job_name, namespace=namespace)
+
+        if pod_names:
+            pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
+            if marker in pod_debug_info:
+                return pod_names[0], pod_debug_info
+
+        time.sleep(5)
 
 
 @pytest.mark.default
@@ -117,14 +136,14 @@ def test_pod_debug_info_failure(cluster_provider, namespace, should_cleanup):
         api_client.wait_for_job("resourcelimit", namespace=namespace)
         api_client.wait_for_job_to_have_pods("resourcelimit", namespace=namespace)
 
-        pod_names = api_client.get_pod_names_in_job("resourcelimit", namespace=namespace)
-
-        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
+        pod_name, pod_debug_info = wait_for_pod_debug_info(
+            api_client, "resourcelimit", namespace, "FailedScheduling"
+        )
 
         print(str(pod_debug_info))  # noqa
 
         assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+            f"""Debug information for pod {pod_name}:
 
 Pod status: Pending
 
@@ -143,23 +162,14 @@ FailedScheduling: 0/1 nodes are available: 1 Insufficient memory."""
         )
         api_client.wait_for_job("waitforever", namespace=namespace)
 
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > 60:
-                raise Exception("No error state after 60 seconds")
-
-            pod_names = api_client.get_pod_names_in_job("waitforever", namespace=namespace)
-            if pod_names:
-                pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
-                if "time for sleep" in pod_debug_info:
-                    break
-
-            time.sleep(5)
+        pod_name, pod_debug_info = wait_for_pod_debug_info(
+            api_client, "waitforever", namespace, "time for sleep"
+        )
 
         print(str(pod_debug_info))  # noqa
 
         assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+            f"""Debug information for pod {pod_name}:
 
 Pod status: Running
 Container 'waitforever' status: Ready
@@ -223,26 +233,14 @@ Last 25 log lines for container 'execformaterror':
 
         api_client.wait_for_job("missingsecret", namespace=namespace)
 
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > 60:
-                raise Exception("No error state after 60 seconds")
-
-            pod_names = api_client.get_pod_names_in_job("missingsecret", namespace=namespace)
-
-            if pod_names:
-                pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
-                if "CreateContainerConfigError" in pod_debug_info:
-                    break
-
-            time.sleep(5)
-
-        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
+        pod_name, pod_debug_info = wait_for_pod_debug_info(
+            api_client, "missingsecret", namespace, "CreateContainerConfigError"
+        )
 
         print(str(pod_debug_info))  # noqa
 
         assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+            f"""Debug information for pod {pod_name}:
 
 Pod status: Pending
 Container 'missingsecret' status: Waiting: CreateContainerConfigError: secret "missing-secret" not found
@@ -260,31 +258,21 @@ Warning events for pod:"""
 
         api_client.wait_for_job("pullfail", namespace=namespace)
 
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > 60:
-                raise Exception("No error state after 60 seconds")
-
-            pod_names = api_client.get_pod_names_in_job("pullfail", namespace=namespace)
-
-            if pod_names:
-                pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
-                if "ImagePullBackOff" in pod_debug_info:
-                    break
-
-            time.sleep(5)
+        pod_name, pod_debug_info = wait_for_pod_debug_info(
+            api_client, "pullfail", namespace, "ImagePullBackOff"
+        )
 
         print(str(pod_debug_info))  # noqa
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
-
-Pod status: Pending
-Container 'pullfail' status: Waiting: ErrImagePull: rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/fakeimage:latest": failed to resolve reference "docker.io/library/fakeimage:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
-
-No logs for container 'pullfail'.
-
-Warning events for pod:"""
+        # Avoid asserting on the exact ErrImagePull line — its prefix
+        # (e.g. "rpc error: code = Unknown desc = ") varies across containerd versions.
+        assert pod_debug_info.startswith(f"Debug information for pod {pod_name}:")
+        assert "Pod status: Pending" in pod_debug_info
+        assert "Container 'pullfail' status: Waiting: ErrImagePull:" in pod_debug_info
+        assert (
+            'failed to pull and unpack image "docker.io/library/fakeimage:latest"' in pod_debug_info
         )
+        assert "No logs for container 'pullfail'." in pod_debug_info
+        assert "Warning events for pod:" in pod_debug_info
         assert "Failed: Error: ErrImagePull" in pod_debug_info
         assert "Failed: Error: ImagePullBackOff" in pod_debug_info
 
@@ -382,12 +370,12 @@ Last 25 log lines for container 'goodpod1':"""
                             containers=[
                                 kubernetes.client.V1Container(
                                     name="goodcontainer1",
-                                    image="busybox",
+                                    image=BUSYBOX_IMAGE,
                                     args=["/bin/sh", "-c", 'echo "hello world"'],
                                 ),
                                 kubernetes.client.V1Container(
                                     name="goodcontainer2",
-                                    image="busybox",
+                                    image=BUSYBOX_IMAGE,
                                     args=["/bin/sh", "-c", 'echo "hello again world"'],
                                 ),
                             ],
@@ -481,7 +469,7 @@ def test_wait_for_job(cluster_provider, namespace, should_cleanup):
         if should_cleanup:
             for job in ["waitforjob", "sayhi2", "failwaitforjob"]:
                 try:
-                    api_client.batch_api.delete_namespaced_job(  # pyright: ignore[reportPossiblyUnboundVariable]
+                    api_client.batch_api.delete_namespaced_job(
                         job, namespace=namespace, propagation_policy="Foreground"
                     )
                 except kubernetes.client.rest.ApiException:

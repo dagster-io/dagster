@@ -7,12 +7,16 @@ from dagster._core.types.python_tuple import Tuple, create_typed_tuple
 from dagster._utils.typing_api import (
     get_dict_key_value_types,
     get_list_inner_type,
+    get_mapping_key_value_types,
     get_optional_inner_type,
+    get_sequence_inner_type,
     get_set_inner_type,
     get_tuple_type_params,
     is_closed_python_dict_type,
     is_closed_python_list_type,
+    is_closed_python_mapping_type,
     is_closed_python_optional_type,
+    is_closed_python_sequence_type,
     is_closed_python_set_type,
     is_closed_python_tuple_type,
 )
@@ -43,5 +47,16 @@ def transform_typing_type(type_annotation):
         return create_typed_runtime_dict(
             transform_typing_type(key_type), transform_typing_type(value_type)
         )
+    elif type_annotation is typing.Mapping:
+        return Dict
+    elif type_annotation is typing.Sequence:
+        return List
+    elif is_closed_python_mapping_type(type_annotation):
+        key_type, value_type = get_mapping_key_value_types(type_annotation)
+        return create_typed_runtime_dict(
+            transform_typing_type(key_type), transform_typing_type(value_type)
+        )
+    elif is_closed_python_sequence_type(type_annotation):
+        return List[transform_typing_type(get_sequence_inner_type(type_annotation))]
     else:
         return type_annotation

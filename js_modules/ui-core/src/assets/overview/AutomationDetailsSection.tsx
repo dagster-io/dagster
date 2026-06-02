@@ -9,8 +9,8 @@ import {PipelineTag} from '../../pipelines/PipelineReference';
 import {RepoAddress} from '../../workspace/types';
 import {EvaluationUserLabel} from '../AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {freshnessPolicyDescription} from '../OverdueTag';
-import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+import {WorkspaceAssetNode} from '../useAllAssets';
 
 export const AutomationDetailsSection = ({
   repoAddress,
@@ -19,7 +19,7 @@ export const AutomationDetailsSection = ({
 }: {
   repoAddress: RepoAddress | null;
   assetNode: AssetViewDefinitionNodeFragment | null | undefined;
-  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment;
+  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | WorkspaceAssetNode;
 }) => {
   const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
   const visibleJobNames =

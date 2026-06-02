@@ -2,7 +2,7 @@
 
 import os
 
-from dagster_hashicorp.vault import vault_resource
+from dagster_hashicorp.vault import vault_resource  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

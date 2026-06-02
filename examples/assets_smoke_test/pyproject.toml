@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "assets_smoke_test"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "dagster",
     "dagster-pandas",
@@ -21,3 +22,27 @@ dev = ["dagster-webserver", "pytest"]
 [tool.dagster]
 module_name = "assets_smoke_test.definitions"
 code_location_name = "assets_smoke_test"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-pandas",
+    "dagster-dbt",
+    "dagster-snowflake",
+    "dagster-snowflake-pandas",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-pandas = { path = "../../python_modules/libraries/dagster-pandas/", editable = true }
+dagster-dbt = { path = "../../python_modules/libraries/dagster-dbt/", editable = true }
+dagster-snowflake = { path = "../../python_modules/libraries/dagster-snowflake/", editable = true }
+dagster-snowflake-pandas = { path = "../../python_modules/libraries/dagster-snowflake-pandas/", editable = true }

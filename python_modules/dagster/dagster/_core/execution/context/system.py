@@ -70,7 +70,7 @@ from dagster._core.types.dagster_type import DagsterType
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
-    from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -1001,10 +1001,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 )
             else:
                 if isinstance(self.run_partitions_def, MultiPartitionsDefinition):
-                    return self.run_partitions_def.get_partition_key_from_str(
-                        cast("str", range_start)
-                    )
-                return cast("str", range_start)
+                    return self.run_partitions_def.get_partition_key_from_str(range_start)
+                return range_start
 
     @property
     def multi_partition_key(self) -> "MultiPartitionKey":
@@ -1069,7 +1067,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         with partition_loading_context(dynamic_partitions_store=self.instance):
             partition_key_ranges = subset.get_partition_key_ranges(
-                partitions_def=cast("PartitionsDefinition", upstream_asset_partitions_def),
+                partitions_def=upstream_asset_partitions_def,
             )
 
         if len(partition_key_ranges) != 1:

@@ -264,12 +264,13 @@ def _read_docstring_from_file(dotted_path: str) -> str | None:
 
         # Look for the function definition
         function_name = symbol_info.name
-        candidates = []
 
         # Find all functions with the matching name
-        for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef) and node.name == function_name:
-                candidates.append(node)
+        candidates = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef) and node.name == function_name
+        ]
 
         # If we have candidates, pick the one closest to the expected line number
         # or the last one (which is usually the main implementation)
@@ -416,14 +417,12 @@ class SymbolImporter:
         Raises:
             ImportError: If the module cannot be imported
         """
-        public_symbols = []
-
         # Get top-level exported symbols that are also marked with @public
         exported_symbols = SymbolImporter.get_all_exported_symbols(module_path)
         # Filter to only include symbols that are marked as @public
-        for symbol_info in exported_symbols:
-            if is_public(symbol_info.symbol):
-                public_symbols.append(symbol_info)
+        public_symbols = [
+            symbol_info for symbol_info in exported_symbols if is_public(symbol_info.symbol)
+        ]
 
         # Get all @public-annotated methods from @public classes
         method_symbols = SymbolImporter.get_all_public_annotated_methods(module_path)

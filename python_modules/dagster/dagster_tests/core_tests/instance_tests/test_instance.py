@@ -126,12 +126,12 @@ def test_unified_storage_env_var(tmpdir):
                 }
             }
         ) as instance:
-            assert _runs_directory(str(tmpdir)) in instance.run_storage._conn_string  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+            assert _runs_directory(str(tmpdir)) in instance.run_storage._conn_string  # noqa: SLF001  # ty: ignore[unresolved-attribute]
             assert (
-                _event_logs_directory(str(tmpdir)) == instance.event_log_storage._base_dir + "/"  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                _event_logs_directory(str(tmpdir)) == instance.event_log_storage._base_dir + "/"  # noqa: SLF001  # ty: ignore[unresolved-attribute]
             )
             assert (
-                _schedule_directory(str(tmpdir)) in instance.schedule_storage._conn_string  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                _schedule_directory(str(tmpdir)) in instance.schedule_storage._conn_string  # noqa: SLF001  # ty: ignore[unresolved-attribute]
             )
 
 
@@ -316,7 +316,7 @@ def test_create_job_snapshot():
 
         run = instance.get_run_by_id(result.run_id)
 
-        assert run.job_snapshot_id == noop_job.get_job_snapshot().snapshot_id  # pyright: ignore[reportOptionalMemberAccess]
+        assert run.job_snapshot_id == noop_job.get_job_snapshot().snapshot_id  # ty: ignore[unresolved-attribute]
 
 
 def test_create_execution_plan_snapshot():
@@ -331,8 +331,8 @@ def test_create_execution_plan_snapshot():
 
         run = instance.get_run_by_id(result.run_id)
 
-        assert run.execution_plan_snapshot_id == ep_snapshot_id  # pyright: ignore[reportOptionalMemberAccess]
-        assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)  # pyright: ignore[reportOptionalMemberAccess]
+        assert run.execution_plan_snapshot_id == ep_snapshot_id  # ty: ignore[unresolved-attribute]
+        assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)  # ty: ignore[unresolved-attribute]
 
 
 def test_submit_run():
@@ -360,8 +360,8 @@ def test_submit_run():
 
             instance.submit_run(run.run_id, workspace)
 
-            assert len(instance.run_coordinator.queue()) == 1  # pyright: ignore[reportAttributeAccessIssue]
-            assert instance.run_coordinator.queue()[0].run_id == run.run_id  # pyright: ignore[reportAttributeAccessIssue]
+            assert len(instance.run_coordinator.queue()) == 1  # ty: ignore[unresolved-attribute]
+            assert instance.run_coordinator.queue()[0].run_id == run.run_id  # ty: ignore[unresolved-attribute]
 
 
 def test_create_run_adds_code_location_tag():
@@ -893,7 +893,7 @@ def test_dagster_env_vars_from_dotenv_file():
             )
 
         with new_cwd(working_dir):
-            with environ({"DAGSTER_HOME": None}):  # pyright: ignore[reportArgumentType]
+            with environ({"DAGSTER_HOME": None}):  # ty: ignore[invalid-argument-type]
                 # without .env file with a DAGSTER_HOME, loading fails
                 with pytest.raises(DagsterHomeNotSetError):
                     with get_instance_for_cli():
@@ -907,7 +907,7 @@ def test_dagster_env_vars_from_dotenv_file():
 
                 with get_instance_for_cli() as instance:
                     assert (
-                        _runs_directory(str(storage_dir)) in instance.run_storage._conn_string  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        _runs_directory(str(storage_dir)) in instance.run_storage._conn_string  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                     )
 
 
@@ -934,7 +934,7 @@ class MockInstanceSubclass(dg.DagsterInstance):
     @staticmethod
     def config_defaults(base_dir):
         defaults = InstanceRef.config_defaults(base_dir)
-        defaults["run_coordinator"] = ConfigurableClassData(  # pyright: ignore[reportIndexIssue]
+        defaults["run_coordinator"] = ConfigurableClassData(  # ty: ignore[invalid-assignment]
             "dagster._core.run_coordinator.queued_run_coordinator",
             "QueuedRunCoordinator",
             yaml.dump({}),
@@ -958,8 +958,8 @@ def test_instance_subclass():
         # Likely because the imported/dynamically loaded class is different from the local one
 
         assert subclass_instance.__class__.__name__ == "MockInstanceSubclass"
-        assert subclass_instance.foo() == "bar"  # pyright: ignore[reportAttributeAccessIssue]
-        assert subclass_instance.baz is None  # pyright: ignore[reportAttributeAccessIssue]
+        assert subclass_instance.foo() == "bar"  # ty: ignore[unresolved-attribute]
+        assert subclass_instance.baz is None  # ty: ignore[unresolved-attribute]
 
         assert isinstance(subclass_instance.run_coordinator, dg.QueuedRunCoordinator)
 
@@ -976,8 +976,8 @@ def test_instance_subclass():
         assert isinstance(subclass_instance, dg.DagsterInstance)
 
         assert subclass_instance.__class__.__name__ == "MockInstanceSubclass"
-        assert subclass_instance.foo() == "bar"  # pyright: ignore[reportAttributeAccessIssue]
-        assert subclass_instance.baz == "quux"  # pyright: ignore[reportAttributeAccessIssue]
+        assert subclass_instance.foo() == "bar"  # ty: ignore[unresolved-attribute]
+        assert subclass_instance.baz == "quux"  # ty: ignore[unresolved-attribute]
 
     # omitting foo leads to a config schema validation error
 
@@ -999,7 +999,7 @@ class InvalidRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         pass
 
-    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def terminate(self, run_id):
         pass
 
 

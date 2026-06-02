@@ -108,7 +108,6 @@ def make_dagster_definitions_from_airflow_dags_path(
 
     Args:
         dag_path (str): Path to directory or file that contains Airflow Dags
-        include_examples (bool): True to include Airflow's example DAGs. (default: False)
         safe_mode (bool): True to use Airflow's default heuristic to find files that contain DAGs
             (ie find files that contain both b'DAG' and b'airflow') (default: True)
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB
@@ -125,12 +124,12 @@ def make_dagster_definitions_from_airflow_dags_path(
         resource_defs["airflow_db"] = make_ephemeral_airflow_db_resource(connections=connections)
 
     if (
-        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
+        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]  # ty: ignore[unresolved-attribute]
         == "AirflowEphemeralDatabase"
     ):
         AirflowEphemeralDatabase._initialize_database(connections=connections)  # noqa: SLF001
     elif (
-        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
+        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]  # ty: ignore[unresolved-attribute]
         == "AirflowPersistentDatabase"
     ):
         AirflowPersistentDatabase._initialize_database(  # noqa: SLF001

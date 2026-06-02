@@ -1,6 +1,5 @@
 import {
   Box,
-  Colors,
   MiddleTruncate,
   NonIdealState,
   SplitPanelContainer,
@@ -11,15 +10,16 @@ import {
   tokenizedValuesFromString,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import qs from 'qs';
 import * as React from 'react';
 import {useMemo, useRef} from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/OpsRoot.module.css';
 import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {COMMON_COLLATOR} from '../app/Util';
@@ -216,7 +216,7 @@ export const OpsRootWithData = (props: OpsRootWithDataProps) => {
         firstInitialPercent={40}
         firstMinSize={448}
         first={
-          <OpListColumnContainer>
+          <div className={styles.opListColumnContainer}>
             <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
               <TokenizingField
                 values={search}
@@ -228,7 +228,7 @@ export const OpsRootWithData = (props: OpsRootWithDataProps) => {
             <div style={{flex: 1, overflow: 'hidden'}}>
               <OpList selected={selected} onClickOp={onClickOp} items={sorted} />
             </div>
-          </OpListColumnContainer>
+          </div>
         }
         second={
           selected ? (
@@ -284,12 +284,15 @@ const OpList = (props: OpListProps) => {
           const solid = items[index]!;
           return (
             <Row key={solid.definition.name} $height={size} $start={start}>
-              <OpListItem
-                $selected={selectedIndex === index}
+              <div
+                className={clsx(
+                  styles.opListItem,
+                  selectedIndex === index ? styles.opListItemSelected : styles.opListItemUnselected,
+                )}
                 onClick={() => props.onClickOp(solid.definition.name)}
               >
                 <MiddleTruncate text={solid.definition.name} />
-              </OpListItem>
+              </div>
             </Row>
           );
         })}
@@ -327,26 +330,4 @@ export const OPS_ROOT_QUERY = gql`
 
   ${OP_TYPE_SIGNATURE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const OpListItem = styled.div<{$selected: boolean}>`
-  background: ${({$selected}) =>
-    $selected ? Colors.backgroundLight() : Colors.backgroundDefault()};
-  box-shadow:
-    ${({$selected}) => ($selected ? Colors.accentBlue() : 'transparent')} 4px 0 0 inset,
-    ${Colors.keylineDefault()} 0 -1px 0 inset;
-  color: ${({$selected}) => ($selected ? Colors.textDefault() : Colors.textLight())};
-  cursor: pointer;
-  font-size: 14px;
-  gap: 8px;
-  padding: 12px 24px;
-  user-select: none;
-  overflow: hidden;
-  white-space: nowrap;
-`;
-
-const OpListColumnContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
 `;

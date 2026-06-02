@@ -1,5 +1,7 @@
 import warnings
 
+from dagster_azure._constants import DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX
+
 try:
     # Centralise Azure imports here so we only need to warn in one place
     from azure.core.exceptions import ResourceNotFoundError
@@ -16,13 +18,21 @@ except ImportError:
     raise
 
 
-def _create_url(storage_account: str, subdomain: str) -> str:
-    return f"https://{storage_account}.{subdomain}.core.windows.net/"
+def _create_url(
+    storage_account: str,
+    subdomain: str,
+    endpoint_suffix: str = DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX,
+) -> str:
+    return f"https://{storage_account}.{subdomain}.{endpoint_suffix}/"
 
 
-def create_adls2_client(storage_account: str, credential) -> DataLakeServiceClient:
+def create_adls2_client(
+    storage_account: str,
+    credential,
+    endpoint_suffix: str = DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX,
+) -> DataLakeServiceClient:
     """Create an ADLS2 client."""
-    account_url = _create_url(storage_account, "dfs")
+    account_url = _create_url(storage_account, "dfs", endpoint_suffix)
     return DataLakeServiceClient(account_url, credential)
 
 

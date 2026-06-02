@@ -1,5 +1,6 @@
-import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
+import clsx from 'clsx';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import debounce from 'lodash/debounce';
 import React, {
@@ -11,12 +12,11 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import styled from 'styled-components';
 
 import {SyntaxError} from './CustomErrorListener';
 import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
-import {SelectionAutoCompleteInputCSS} from './SelectionInputHighlighter';
+import inputStyles from './css/SelectionInput.module.css';
 import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
 import {upgradeSyntax} from '../asset-selection/syntaxUpgrader';
@@ -40,6 +40,8 @@ type SelectionAutoCompleteInputProps = {
   onErrorStateChange?: (errors: SyntaxError[]) => void;
   onChange?: (value: string) => void;
   // Omitting onChange will make the input read only
+  onSubmit?: (value: string) => void;
+  className?: string;
 
   wildcardAttributeName: string;
 };
@@ -50,12 +52,15 @@ export const SelectionAutoCompleteInput = ({
   value,
   placeholder,
   onChange,
+  onSubmit,
   linter,
   useAutoComplete,
   saveOnBlur = false,
   onErrorStateChange,
   wildcardAttributeName,
+  className,
 }: SelectionAutoCompleteInputProps) => {
+  const onSubmitRef = useUpdatingRef(onSubmit);
   const trackEvent = useTrackEvent();
 
   const trackSelection = useMemo(() => {
@@ -209,9 +214,17 @@ export const SelectionAutoCompleteInput = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Suppress lint errors while the autocomplete dropdown is open — the
+  // in-progress expression often produces cascading parser errors that span
+  // the current token and everything after it, which is noisy while the user
+  // is still picking a suggestion.
+  const suppressErrors =
+    !!(loading || autoCompleteResults?.list.length) && showResults.current && !!onChange;
+
   const errorTooltip = useSelectionInputLintingAndHighlighting({
     cmInstance,
     linter,
+    suppressErrors,
   });
 
   const [currentHeight, setCurrentHeight] = useState(20);
@@ -258,11 +271,12 @@ export const SelectionAutoCompleteInput = ({
   const selectedItem = autoCompleteResults?.list[selectedIndexRef.current];
 
   const onSelect = useCallback(
-    (suggestion: {text: string}) => {
+    (suggestion: {text: string; trailingSpace?: boolean}) => {
       if (autoCompleteResults && suggestion && cmInstance.current) {
         const editor = cmInstance.current;
+        const insertText = suggestion.trailingSpace ? suggestion.text + ' ' : suggestion.text;
         editor.replaceRange(
-          suggestion.text,
+          insertText,
           {line: 0, ch: autoCompleteResults.from},
           {line: 0, ch: autoCompleteResults.to},
           'complete',
@@ -274,7 +288,7 @@ export const SelectionAutoCompleteInput = ({
         }
         editor.setCursor({
           line: 0,
-          ch: autoCompleteResults.from + suggestion.text.length + offset,
+          ch: autoCompleteResults.from + insertText.length + offset,
         });
       }
     },
@@ -287,11 +301,14 @@ export const SelectionAutoCompleteInput = ({
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
         if (selectedIndexRef.current !== -1 && selectedItem) {
+          e.preventDefault();
+          e.stopPropagation();
           onSelect(selectedItem);
         } else {
           e.stopPropagation();
           e.preventDefault();
           onSelectionChange(innerValueRef.current);
+          onSubmitRef.current?.(innerValueRef.current);
           setShowResults({current: false});
         }
       } else if (!showResults.current) {
@@ -327,6 +344,7 @@ export const SelectionAutoCompleteInput = ({
       selectedItem,
       onSelect,
       onSelectionChange,
+      onSubmitRef,
       innerValueRef,
       setShowResults,
       autoCompleteResults?.list.length,
@@ -425,23 +443,28 @@ export const SelectionAutoCompleteInput = ({
         targetTagName="div"
         canEscapeKeyClose={true}
       >
-        <InputDiv
-          $isCommitted={innerValue === value}
-          $hasErrors={errors.length > 0}
+        <div
+          className={clsx(
+            inputStyles.inputDiv,
+            className,
+            innerValue !== value && inputStyles.uncommitted,
+            errors.length > 0 && inputStyles.hasErrors,
+            disabled && inputStyles.disabled,
+          )}
           style={{
             display: 'grid',
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
             contain: 'layout paint style',
           }}
-          $disabled={disabled}
           ref={inputRef}
           onKeyDownCapture={handleKeyDown} // Added keyboard event handler
-          tabIndex={0} // Make the div focusable to capture keyboard events
+          tabIndex={-1} // Make the div focusable to capture keyboard events
           onClick={() => {
             setShowResults({current: true});
+            cmInstance.current?.focus();
           }}
         >
-          <div style={{alignSelf: currentHeight > 20 ? 'flex-start' : 'center'}}>
+          <div style={{alignSelf: currentHeight > 20 ? 'flex-start' : 'center', width: 18}}>
             <Icon name="search" style={{marginTop: 2}} />
           </div>
           <div ref={editorRef} />
@@ -461,38 +484,9 @@ export const SelectionAutoCompleteInput = ({
               </UnstyledButton>
             )}
           </Box>
-        </InputDiv>
+        </div>
       </Popover>
       {errorTooltip}
     </div>
   );
 };
-
-export const InputDiv = styled.div<{
-  $isCommitted: boolean;
-  $hasErrors: boolean;
-  $disabled: boolean;
-}>`
-  ${SelectionAutoCompleteInputCSS}
-  ${({$isCommitted}) =>
-    $isCommitted
-      ? ''
-      : `
-      background: ${Colors.backgroundLight()}; 
-      `}
-  ${({$hasErrors}) =>
-    $hasErrors
-      ? `
-      border: 1px solid ${Colors.accentRed()};
-      `
-      : ''}
-  ${({$disabled}) =>
-    $disabled
-      ? `
-        background: ${Colors.backgroundDisabled()};
-        * {
-          color: ${Colors.textLight()} !important;
-        }
-      `
-      : ''}
-`;

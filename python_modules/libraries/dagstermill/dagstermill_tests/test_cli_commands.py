@@ -45,13 +45,13 @@ def scaffold(notebook_name=None, kernel=None):
         raise res.exception
     assert res.exit_code == 0
 
-    yield os.path.abspath(notebook_name)  # pyright: ignore[reportCallIssue,reportArgumentType]
+    yield os.path.abspath(notebook_name)  # ty: ignore[no-matching-overload]
 
-    if os.path.exists(notebook_name):  # pyright: ignore[reportArgumentType]
-        os.unlink(notebook_name)  # pyright: ignore[reportArgumentType]
+    if os.path.exists(notebook_name):  # ty: ignore[invalid-argument-type]
+        os.unlink(notebook_name)  # ty: ignore[invalid-argument-type]
 
-    if os.path.exists(notebook_name + ".ipynb"):  # pyright: ignore[reportOptionalOperand]
-        os.unlink(notebook_name + ".ipynb")  # pyright: ignore[reportOptionalOperand]
+    if os.path.exists(notebook_name + ".ipynb"):  # ty: ignore[unsupported-operator]
+        os.unlink(notebook_name + ".ipynb")  # ty: ignore[unsupported-operator]
 
 
 def test_scaffold():
@@ -110,5 +110,5 @@ def test_double_scaffold():
         assert res.exception.code == 1
         assert "already exists and continuing will overwrite the existing notebook." in res.output
     finally:
-        if os.path.exists(notebook_path):  # pyright: ignore[reportPossiblyUnboundVariable]
-            os.unlink(notebook_path)  # pyright: ignore[reportPossiblyUnboundVariable]
+        if os.path.exists(notebook_path):
+            os.unlink(notebook_path)

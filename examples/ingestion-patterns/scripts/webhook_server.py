@@ -107,9 +107,7 @@ def receive_webhook(source_id: str):
 
     payload_id = save_payload(source_id, payload)
 
-    print(  # noqa: T201
-        f"[{datetime.now().isoformat()}] Received webhook: source={source_id}, id={payload_id}"
-    )
+    print(f"[{datetime.now().isoformat()}] Received webhook: source={source_id}, id={payload_id}")
 
     return jsonify(
         {
@@ -153,9 +151,9 @@ def main():
     args = parser.parse_args()
 
     ensure_storage_dir()
-    print(f"Webhook server starting on {args.host}:{args.port}")  # noqa: T201
-    print(f"Storage directory: {WEBHOOK_STORAGE_DIR}")  # noqa: T201
-    print(f"Send webhooks to: POST http://localhost:{args.port}/webhook/<source_id>")  # noqa: T201
+    print(f"Webhook server starting on {args.host}:{args.port}")
+    print(f"Storage directory: {WEBHOOK_STORAGE_DIR}")
+    print(f"Send webhooks to: POST http://localhost:{args.port}/webhook/<source_id>")
 
     app.run(host=args.host, port=args.port, debug=False)
 

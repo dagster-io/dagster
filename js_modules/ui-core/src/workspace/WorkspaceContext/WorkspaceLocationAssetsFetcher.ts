@@ -1,8 +1,13 @@
 import {LocationBaseDataFetcher} from './LocationBaseDataFetcher';
-import {LOCATION_WORKSPACE_ASSETS_QUERY} from './WorkspaceQueries';
+import {
+  LOCATION_WORKSPACE_ASSETS_MANIFEST_QUERY,
+  LOCATION_WORKSPACE_ASSETS_QUERY,
+} from './WorkspaceQueries';
 import {WorkspaceStatusPoller} from './WorkspaceStatusPoller';
 import {ApolloClient} from '../../apollo-client';
 import {
+  LocationWorkspaceAssetsManifestQuery,
+  LocationWorkspaceAssetsManifestQueryVersion,
   LocationWorkspaceAssetsQuery,
   LocationWorkspaceAssetsQueryVariables,
   LocationWorkspaceAssetsQueryVersion,
@@ -10,9 +15,14 @@ import {
 import {useGetData} from '../../search/useIndexedDBCachedQuery';
 
 export const LOCATION_WORKSPACE_ASSETS_QUERY_KEY = '/LocationWorkspaceAssets';
+export const LOCATION_WORKSPACE_ASSETS_MANIFEST_QUERY_KEY = '/LocationWorkspaceAssetsManifest';
+
+export type RawWorkspaceAssetsResponse =
+  | LocationWorkspaceAssetsQuery
+  | LocationWorkspaceAssetsManifestQuery;
 
 export class WorkspaceLocationAssetsFetcher extends LocationBaseDataFetcher<
-  LocationWorkspaceAssetsQuery,
+  RawWorkspaceAssetsResponse,
   LocationWorkspaceAssetsQueryVariables
 > {
   constructor(args: {
@@ -20,18 +30,26 @@ export class WorkspaceLocationAssetsFetcher extends LocationBaseDataFetcher<
     readonly localCacheIdPrefix: string | undefined;
     readonly getData: ReturnType<typeof useGetData>;
     readonly statusPoller: WorkspaceStatusPoller;
+    readonly shouldUseAssetManifest: boolean;
   }) {
+    const keySuffix = args.shouldUseAssetManifest
+      ? LOCATION_WORKSPACE_ASSETS_MANIFEST_QUERY_KEY
+      : LOCATION_WORKSPACE_ASSETS_QUERY_KEY;
     super({
-      query: LOCATION_WORKSPACE_ASSETS_QUERY,
-      version: LocationWorkspaceAssetsQueryVersion,
-      key: `${args.localCacheIdPrefix}${LOCATION_WORKSPACE_ASSETS_QUERY_KEY}`,
+      query: args.shouldUseAssetManifest
+        ? LOCATION_WORKSPACE_ASSETS_MANIFEST_QUERY
+        : LOCATION_WORKSPACE_ASSETS_QUERY,
+      version: args.shouldUseAssetManifest
+        ? LocationWorkspaceAssetsManifestQueryVersion
+        : LocationWorkspaceAssetsQueryVersion,
+      key: `${args.localCacheIdPrefix}${keySuffix}`,
       client: args.client,
       statusPoller: args.statusPoller,
       getData: args.getData,
     });
   }
 
-  getVersion(data: LocationWorkspaceAssetsQuery) {
+  getVersion(data: RawWorkspaceAssetsResponse) {
     if (data.workspaceLocationEntryOrError?.__typename === 'WorkspaceLocationEntry') {
       return data.workspaceLocationEntryOrError.versionKey;
     }

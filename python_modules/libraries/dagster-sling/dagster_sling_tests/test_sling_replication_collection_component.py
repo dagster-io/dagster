@@ -8,7 +8,6 @@ import pytest
 import yaml
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
-from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
@@ -161,7 +160,7 @@ def test_load_from_path() -> None:
         connections = component.connections
         assert connections[0].name == "DUCKDB"
         assert connections[0].type == "duckdb"
-        assert connections[0].password == "password"
+        assert connections[0].password == "password"  # ty: ignore[unresolved-attribute]
 
         assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),

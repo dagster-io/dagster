@@ -36,7 +36,7 @@ dg scaffold defs dagster.schedule path/to/schedules.py
 which will create
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/automate/scaffolded-schedule-defs.py"
+  path="docs_snippets/docs_snippets/guides/automate/scaffolded-schedule-defs.py"
   title="src/<project_name>/defs/schedules.py"
 />
 

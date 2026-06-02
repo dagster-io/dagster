@@ -1,5 +1,5 @@
 import torch
-from project_ml.defs.assets.model_assets import DigitCNN
+from project_ml.defs.assets.model_assets import DigitCNN  # ty: ignore[unresolved-import]
 
 
 def test_model_creation():

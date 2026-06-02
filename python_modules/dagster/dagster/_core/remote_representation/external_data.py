@@ -685,23 +685,6 @@ class AssetParentEdgeSnap:
     partition_mapping: PartitionMapping | None = None
 
 
-@whitelist_for_serdes(
-    storage_name="ExternalAssetDependedBy",
-    storage_field_names={"child_asset_key": "downstream_asset_key"},
-)
-@record
-class AssetChildEdgeSnap:
-    """A definition of a directed edge in the logical asset graph.
-
-    An downstream asset that's depended by, and the corresponding input name in the upstream
-    asset that it depends on.
-    """
-
-    child_asset_key: AssetKey
-    input_name: str | None = None
-    output_name: str | None = None
-
-
 @whitelist_for_serdes(storage_name="ExternalResourceConfigEnvVar")
 @record
 class ResourceConfigEnvVarSnap:
@@ -955,7 +938,6 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
 @whitelist_for_serdes(
     storage_name="ExternalAssetNode",
     storage_field_names={
-        "child_edges": "depended_by",
         "parent_edges": "dependencies",
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
@@ -968,6 +950,13 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         "metadata": MetadataFieldSerializer,
         "owners": BackcompatTeamOwnerFieldDeserializer,
     },
+    # `depended_by` (formerly `child_edges` on the class) was redundant with `dependencies` -
+    # downstream is derived from upstream during read in RemoteRepositoryAssetGraph.build. We
+    # still emit an empty list on the wire so older deployed readers, whose `__new__` still
+    # requires the kwarg, continue to deserialize. Old snapshots with a populated `depended_by`
+    # also deserialize cleanly: serdes treats the now-removed `ExternalAssetDependedBy` entries
+    # as unknown values and discards them along with the unknown wire field.
+    old_fields={"depended_by": []},
 )
 @suppress_dagster_warnings
 @record_custom
@@ -979,7 +968,6 @@ class AssetNodeSnap(IHaveNew):
 
     asset_key: AssetKey
     parent_edges: Sequence[AssetParentEdgeSnap]
-    child_edges: Sequence[AssetChildEdgeSnap]
     execution_type: AssetExecutionType
     pools: set[str]
     compute_kind: str | None
@@ -1015,7 +1003,6 @@ class AssetNodeSnap(IHaveNew):
         cls,
         asset_key: AssetKey,
         parent_edges: Sequence[AssetParentEdgeSnap],
-        child_edges: Sequence[AssetChildEdgeSnap],
         execution_type: AssetExecutionType | None = None,
         pools: set[str] | None = None,
         compute_kind: str | None = None,
@@ -1093,7 +1080,6 @@ class AssetNodeSnap(IHaveNew):
             cls,
             asset_key=asset_key,
             parent_edges=parent_edges or [],
-            child_edges=child_edges or [],
             compute_kind=compute_kind,
             pools=pools or set(),
             op_name=op_name,
@@ -1315,9 +1301,6 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                     )
                     for pk in sorted(asset_node.parent_keys)
                 ],
-                child_edges=[
-                    AssetChildEdgeSnap(child_asset_key=k) for k in sorted(asset_node.child_keys)
-                ],
                 execution_type=asset_node.execution_type,
                 compute_kind=compute_kind,
                 pools=pools,
@@ -1521,7 +1504,7 @@ class ComponentTreeSnap:
         leaves = []
 
         for comp_path, comp_inst in check.inst(
-            tree.load_root_component(), DefsFolderComponent
+            tree.load_structural_component_at_loc(tree.defs_module_path), DefsFolderComponent
         ).iterate_path_component_pairs():
             if not isinstance(
                 comp_inst,

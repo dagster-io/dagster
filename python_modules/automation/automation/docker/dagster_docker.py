@@ -178,6 +178,13 @@ class DagsterDockerImage(
 
         # Set Dagster version
         docker_args["DAGSTER_VERSION"] = dagster_version
+
+        # Allow callers (e.g. CI) to override BASE_IMAGE without editing
+        # versions.yaml — used to route the build through a private registry
+        # mirror like an ECR pull-through cache.
+        if base_image_override := os.environ.get("BASE_IMAGE"):
+            docker_args["BASE_IMAGE"] = base_image_override
+
         return docker_args
 
     def build(

@@ -39,6 +39,7 @@ def setup_sigma_component(
             defs_yaml_contents=defs_yaml_contents,
         )
         with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
@@ -157,7 +158,7 @@ def test_translation(
 ) -> None:
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
-        body = {
+        body: dict[str, Any] = {
             "type": "dagster_sigma.SigmaComponent",
             "attributes": {
                 "organization": {
@@ -165,9 +166,9 @@ def test_translation(
                     "client_id": uuid.uuid4().hex,
                     "client_secret": uuid.uuid4().hex,
                 },
+                "translation": attributes,
             },
         }
-        body["attributes"]["translation"] = attributes
         with (
             setup_sigma_component(
                 defs_yaml_contents=body,
@@ -254,6 +255,7 @@ def test_subclass_override_get_asset_spec(sigma_sample_data: Any, sigma_auth_tok
             },
         )
         with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (_, defs),
         ):

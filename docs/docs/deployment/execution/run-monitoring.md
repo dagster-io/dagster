@@ -10,7 +10,7 @@ Dagster can detect hanging runs and restart crashed [run workers](/deployment/os
 - Enabling run monitoring in the Dagster Instance:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  path="docs_snippets/docs_snippets/deployment/oss/dagster_instance/dagster.yaml"
   startAfter="start_run_monitoring"
   endBefore="end_run_monitoring"
 />
@@ -51,11 +51,33 @@ run_monitoring:
 The below code example shows how to set a run timeout of 10 seconds on a per-job basis:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/deploying/monitoring_daemon/run_timeouts.py"
+  path="docs_snippets/docs_snippets/deployment/execution/run_timeouts.py"
   startAfter="start_timeout"
   endBefore="end_timeout"
   title="src/my_project/assets.py"
 />
+
+## Freeing concurrency slots after run completion
+
+When using [op concurrency limits](/guides/operate/managing-concurrency) with the `dagster/concurrency_key` tag, concurrency slots are claimed by steps during execution. If a run is cancelled or fails while steps hold concurrency slots, those slots can become stale and permanently block the concurrency pool. Without cleanup, this results in a deadlock where no future runs can claim slots for that concurrency key.
+
+To prevent this, configure `free_slots_after_run_end_seconds` to automatically free concurrency slots held by finished runs after a timeout period. The timeout gives executor processes time to exit gracefully before their slots are reclaimed:
+
+```yaml
+run_monitoring:
+  enabled: true
+  free_slots_after_run_end_seconds: 300
+```
+
+:::warning
+
+If you use op concurrency limits and do not configure `free_slots_after_run_end_seconds`, cancelled or failed runs will hold their concurrency slots indefinitely. With a limit of 1 (common for single-writer databases like DuckDB), a single cancelled run will permanently block all future runs from claiming that concurrency key. The only recovery is to manually free slots via the Dagster UI or direct database cleanup.
+
+:::
+
+| Property                                        | Description                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| run_monitoring.free_slots_after_run_end_seconds | The number of seconds after a run finishes (succeeds, fails, or is cancelled) before the daemon automatically frees any concurrency slots still held by that run. This prevents stale slots from permanently blocking concurrency pools. <ul><li>**Default** - Not set (no automatic cleanup)</li></ul> |
 
 ## Detecting run worker crashes
 

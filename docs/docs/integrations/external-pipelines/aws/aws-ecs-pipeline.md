@@ -60,7 +60,7 @@ COPY . .
 
 Call `open_dagster_pipes` in the ECS task script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/task.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/ecs/task.py" />
 
 :::tip
 
@@ -77,7 +77,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesECSClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/ecs/dagster_code.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -92,7 +92,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 Next, add the `PipesECSClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/ecs/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 

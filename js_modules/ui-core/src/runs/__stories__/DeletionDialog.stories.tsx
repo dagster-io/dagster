@@ -1,6 +1,6 @@
+import {MockedProvider} from '@apollo/client/testing';
 import faker from 'faker';
 
-import {StorybookProvider} from '../../testing/StorybookProvider';
 import {DeletionDialog, Props as DeletionDialogProps} from '../DeletionDialog';
 
 // eslint-disable-next-line import/no-default-export
@@ -10,9 +10,9 @@ export default {
 };
 
 const Template = (props: DeletionDialogProps) => (
-  <StorybookProvider>
+  <MockedProvider>
     <DeletionDialog {...props} />
-  </StorybookProvider>
+  </MockedProvider>
 );
 
 const ids = [

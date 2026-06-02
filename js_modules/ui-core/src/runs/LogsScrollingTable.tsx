@@ -118,7 +118,7 @@ export const LogsScrollingTable = (props: Props) => {
             );
 
           return (
-            <Row $height={size} $start={start} key={key}>
+            <Row height={size} start={start} key={key}>
               <div
                 ref={virtualizer.measureElement}
                 data-index={index}

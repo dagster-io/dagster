@@ -5,12 +5,15 @@ build-backend = "hatchling.build"
 [project]
 name = "with_wandb"
 version = "1!0+dev"
+requires-python = ">=3.12,<3.15"
 dependencies = [
     "dagster",
     "dagster-wandb",
     "onnxruntime",
     "skl2onnx",
-    "onnx>=1.13.0,<1.18.0",  # Ensure a version is installed that is protobuf 4 compatible
+    # 1.21.0 is the first release that ships cp314 manylinux wheels; the 1.17.0
+    # sdist won't compile against gcc 14 / abseil headers on Python 3.14.
+    "onnx>=1.21.0",
     "joblib",
     "torch",
     "torchvision",
@@ -22,3 +25,21 @@ dev = ["dagster-webserver", "pytest"]
 [tool.dagster]
 module_name = "with_wandb.definitions"
 code_location_name = "with_wandb"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-wandb",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-wandb = { path = "../../python_modules/libraries/dagster-wandb", editable = true }

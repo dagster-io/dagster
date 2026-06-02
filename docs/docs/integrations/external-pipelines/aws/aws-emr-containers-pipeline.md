@@ -52,7 +52,7 @@ There are [a few options](https://aws.github.io/aws-emr-containers-best-practice
 
 Install `dagster-pipes`, `dagster-aws` and `boto3` Python packages in your image:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/Dockerfile" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-containers/Dockerfile" />
 
 :::note
 
@@ -66,7 +66,7 @@ We copy the EMR job script (`script.py`) to the image in the last step.
 
 Call `open_dagster_pipes` in the EMR script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-containers/script.py" />
 
 :::note
 
@@ -83,7 +83,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesEMRcontainersClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-containers/dagster_code.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -104,7 +104,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 Next, add the `PipesEMRContainersClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-containers/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 

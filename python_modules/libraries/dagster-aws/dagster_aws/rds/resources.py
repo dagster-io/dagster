@@ -3,12 +3,11 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 import boto3.session
-import botocore.client
 
 from dagster_aws.utils import ResourceWithBoto3Configuration, construct_boto_client_retry_config
 
 if TYPE_CHECKING:
-    import botocore
+    import botocore.client
 
 
 class RDSResource(ResourceWithBoto3Configuration):
@@ -70,9 +69,9 @@ class RDSResource(ResourceWithBoto3Configuration):
         )
 
     @contextmanager
-    def get_rds_client(self) -> Generator["botocore.client.rds", None, None]:  # pyright: ignore (reportAttributeAccessIssue)
+    def get_rds_client(self) -> Generator["botocore.client.rds", None, None]:  # ty: ignore[unresolved-attribute]
         yield self._create_rds_client("rds")
 
     @contextmanager
-    def get_data_client(self) -> Generator["botocore.client.rds_data", None, None]:  # pyright: ignore (reportAttributeAccessIssue)
+    def get_data_client(self) -> Generator["botocore.client.rds_data", None, None]:  # ty: ignore[unresolved-attribute]
         yield self._create_rds_client("rds-data")

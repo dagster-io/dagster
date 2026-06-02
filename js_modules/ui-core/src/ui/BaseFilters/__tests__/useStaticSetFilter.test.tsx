@@ -142,11 +142,11 @@ describe('useStaticSetFilter', () => {
 
     expect(selectAll).toBeVisible();
 
-    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as unknown as string);
 
     expect(filter.result.current.state).toEqual(new Set(['banana', 'apple']));
 
-    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as unknown as string);
 
     expect(filter.result.current.state).toEqual(new Set([]));
 
@@ -154,17 +154,17 @@ describe('useStaticSetFilter', () => {
 
     expect(filter.result.current.state).toEqual(new Set(['cherry']));
 
-    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as unknown as string);
 
     expect(filter.result.current.state).toEqual(new Set(['cherry', 'banana', 'apple']));
 
-    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as any);
+    select(filter, Symbol.for('useStaticSetFilter:SelectAll') as unknown as string);
 
     expect(filter.result.current.state).toEqual(new Set(['cherry']));
   });
 
   it('reflects initial state', async () => {
-    const props = {} as any;
+    const props: Partial<Parameters<typeof useStaticSetFilter<string>>[0]> = {};
     const filter = renderHook(() => useTestHook(props));
     select(filter, 'apple');
     expect(filter.result.current.state).toEqual(new Set(['banana', 'apple']));

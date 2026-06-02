@@ -54,9 +54,7 @@ def test_inherit_context_threadpool_properties() -> None:
         return True
 
     with InheritContextThreadPoolExecutor(max_workers=5) as executor:
-        futures = []
-        for i in range(10):
-            futures.append(executor.submit(sleepy_thread))
+        futures = [executor.submit(sleepy_thread) for i in range(10)]
 
         time.sleep(0.1)
         assert executor.max_workers == 5

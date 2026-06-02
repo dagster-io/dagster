@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
   MetadataTableWIP,
   Mono,
@@ -12,8 +13,6 @@ import {
   Page,
   PageHeader,
   SpinnerWithText,
-  Subheading,
-  Subtitle1,
   TextInput,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -120,7 +119,11 @@ export const InstanceConcurrencyPage = () => {
   return (
     <Page style={{padding: 0}}>
       <PageHeader
-        title={<Subtitle1>{pageTitle}</Subtitle1>}
+        title={
+          <Heading size={16} weight={600}>
+            {pageTitle}
+          </Heading>
+        }
         tabs={<InstanceTabs tab="concurrency" />}
       />
       <InstanceConcurrencyIndexContent />
@@ -148,7 +151,9 @@ export const RunConcurrencyContent = ({
           border="bottom"
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
         >
-          <Subheading>Run tag concurrency</Subheading>
+          <Heading size={14} weight={600}>
+            Run tag concurrency
+          </Heading>
         </Box>
         <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency

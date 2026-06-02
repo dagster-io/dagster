@@ -25,7 +25,7 @@ You can add dependencies by including the corresponding Python libraries in your
   <TabItem value="uv" label="uv">
    If you are using `uv` with a `pyproject.toml` file, you should follow the [pyproject.toml specification](https://packaging.python.org/en/latest/specifications/pyproject-toml/#pyproject-toml-spec).
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_pyproject.toml"
+      path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/example_pyproject.toml"
       language="TOML"
       title="Example pyproject.toml"
     />
@@ -34,7 +34,7 @@ You can add dependencies by including the corresponding Python libraries in your
     If you are using `pip` with a `setup.py` file, you should follow [PEP 508](https://peps.python.org/pep-0508).
 
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_setup.py"
+      path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/example_setup.py"
       language="Python"
       title="Example setup.py"
     />
@@ -53,14 +53,14 @@ You can add dependencies by including the corresponding Python libraries in your
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_pyproject.toml"
+      path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/example_tarball_pyproject.toml"
       language="TOML"
       title="Example pyproject.toml with tarball links"
     />
   </TabItem>
   <TabItem value="pip" label="pip">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_setup.py"
+      path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/example_tarball_setup.py"
       language="Python"
       title="Example setup.py with tarball links"
     />
@@ -80,21 +80,21 @@ Python versions 3.9 through 3.13 are all supported for Serverless deployments. Y
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
 In your `.github/workflows/dagster-plus-deploy.yml` file, update the `PYTHON_VERSION` environment variable with your desired Python version:
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_python_version.yaml" language="yaml" title="Updating the Python version in dagster-plus-deploy.yml" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/github_python_version.yaml" language="yaml" title="Updating the Python version in dagster-plus-deploy.yml" />
 
 <ServerlessDeployYml />
 
 </TabItem>
 <TabItem value="GitLab" label="GitLab">
 1. Open your `.gitlab-ci.yml` file. If your `.gitlab-ci.yml` contains an `include` with a link to a Dagster provided CI/CD template:
-    <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/gitlab_template.yaml" language="yaml" />
+    <CodeExample path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/gitlab_template.yaml" language="yaml" />
 
     Follow the link and replace the contents of your `.gitlab-ci.yml` with the YAML document at the link address. Otherwise, continue to the next step.
 
 3. Update the `PYTHON_VERSION` environment variable with your desired Python version
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/gitlab_python_version.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/gitlab_python_version.yaml"
   language="yaml"
   title="Updating the Python version in .gitlab-ci.yml"
 />
@@ -159,7 +159,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 In your `.github/workflows/dagster-plus-deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG` environment variable and set it to the tag printed out in the previous step:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_base_image.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/github_base_image.yaml"
   language="yaml"
   title="Setting a custom base image in dagster-plus-deploy.yml"
 />
@@ -228,7 +228,7 @@ dagster-cloud serverless deploy-python-executable \
     To include the data folder, modify your `setup.py` to add the `package_data` line:
 
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py"
+      path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/data_files_setup.py"
       language="Python"
       title="Loading data files in setup.py"
     />
@@ -243,21 +243,21 @@ You have the option to disable PEX-based deploys and deploy using a Docker image
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
 In your `.github/workflows/dagster-plus-deploy.yml` file, update the `ENABLE_FAST_DEPLOYS` environment variable to `false`:
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_disable_pex.yaml" language="yaml" title="Disable PEX deploys in dagster-plus-deploy.yml" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/github_disable_pex.yaml" language="yaml" title="Disable PEX deploys in dagster-plus-deploy.yml" />
 
 <ServerlessDeployYml />
 
 </TabItem>
 <TabItem value="GitLab" label="GitLab">
 1. Open your `.gitlab-ci.yml` file. If your `.gitlab-ci.yml` contains an `include` with a link to a Dagster provided CI/CD template:
-    <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/gitlab_template.yaml" language="yaml" />
+    <CodeExample path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/gitlab_template.yaml" language="yaml" />
 
     Follow the link and replace the contents of your `.gitlab-ci.yml` with the YAML document at the link address. Otherwise, continue to the next step.
 
 3. Update the `DISABLE_FAST_DEPLOYS` variable to `true`
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/gitlab_disable_pex.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/gitlab_disable_pex.yaml"
   language="yaml"
   title="Disable PEX deploys in .gitlab-ci.yml"
 />
@@ -302,7 +302,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 In your `.github/workflows/dagster-plus-deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG` environment variable and set it to the tag printed out in the previous step:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_no_pex_custom_base_image.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/github_no_pex_custom_base_image.yaml"
   language="yaml"
   title="Setting a custom base image in `dagster-plus-deploy.yml`"
 />
@@ -332,7 +332,7 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
 
     ```yaml
     - name: Checkout internal repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
       with:
         token: ${{ secrets.GH_PAT }}
         repository: my-org/private-repo
@@ -365,7 +365,7 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
       In your `pyproject.toml` file, add your package name to the `dependencies` section:
 
           <CodeExample
-            path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/private_packages_pyproject.toml"
+            path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/private_packages_pyproject.toml"
             language="toml"
             title="Adding private packages to pyproject.toml"
           />
@@ -375,7 +375,7 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
       In your `setup.py` file, add your package name to the `install_requires` section:
 
       <CodeExample
-        path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/private_packages_setup.py"
+        path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/private_packages_setup.py"
         language="python"
         title="Adding private packages to setup.py"
       />
@@ -390,3 +390,29 @@ Once the `dagster-plus-deploy.yml` is updated and changes pushed to your repo, t
 If you have separate `deploy.yml` and `branch_deployments.yml` files, you will need to repeat the above steps for your `branch_deployments.yml` as needed.
 
 :::
+
+## Suppress debug logs
+
+By default, `managed_python_loggers` only applies to standard Python loggers - it does not affect loggers created with `get_dagster_logger()`. If you configure `python_log_level: INFO` but debug logs from `get_dagster_logger()` continue to appear, switch to the standard Python logging module.
+
+1. Replace `get_dagster_logger()` with a standard Python logger:
+
+   <CodeExample
+     path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/suppress_debug_logs.py"
+     startAfter="start_suppress_debug_logs"
+     endBefore="end_suppress_debug_logs"
+     title="Standard Python logger replacement"
+   />
+
+2. Add the logger name to `managed_python_loggers` in your deployment settings:
+
+   ```yaml
+   python_logs:
+     managed_python_loggers:
+       - your_logger_name
+     python_log_level: INFO
+   ```
+
+3. Verify that debug messages are suppressed while `INFO`-level messages continue to appear.
+
+For more information, see the [Python logging documentation](https://docs.python.org/3/library/logging.html).

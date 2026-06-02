@@ -202,7 +202,7 @@ describe('AssetLiveDataProvider', () => {
     });
 
     act(() => {
-      (document as any).visibilityState = 'hidden';
+      Object.defineProperty(document, 'visibilityState', {value: 'hidden', writable: true});
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
@@ -213,7 +213,7 @@ describe('AssetLiveDataProvider', () => {
     expect(resultFn2).not.toHaveBeenCalled();
 
     act(() => {
-      (document as any).visibilityState = 'visible';
+      Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
       document.dispatchEvent(new Event('visibilitychange'));
     });
 

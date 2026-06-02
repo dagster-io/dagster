@@ -6,13 +6,13 @@ from dagster._utils.test import wrap_op_in_graph_and_execute
 def test_typed_python_dict():
     int_to_int = dg.Dict[int, int]
 
-    int_to_int.type_check(None, {1: 1})  # pyright: ignore[reportArgumentType]
+    int_to_int.type_check(None, {1: 1})
 
 
 def test_typed_python_dict_failure():
     int_to_int = dg.Dict[int, int]
 
-    res = int_to_int.type_check(None, {1: "1"})  # pyright: ignore[reportArgumentType]
+    res = int_to_int.type_check(None, {1: "1"})
     assert not res.success
 
 

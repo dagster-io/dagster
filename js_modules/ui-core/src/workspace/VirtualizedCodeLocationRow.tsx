@@ -1,7 +1,6 @@
-import {Box, Colors, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
@@ -16,9 +15,9 @@ import {
 import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
-import {AnchorButton} from '../ui/AnchorButton';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
+import styles from './css/VirtualizedCodeLocationRow.module.css';
 
 export type CodeLocationRowType =
   | {
@@ -35,24 +34,23 @@ export type CodeLocationRowType =
       status: CodeLocationRowStatusType;
     };
 
-const TEMPLATE_COLUMNS = '3fr 1fr 1fr 160px 160px';
+const TEMPLATE_COLUMNS = '3fr 1fr 1fr 160px';
 
 interface LocationRowProps {
   locationEntry: WorkspaceRepositoryLocationNode | null;
   locationStatus: LocationStatusEntryFragment;
-  hasDocs: boolean;
   index: number;
 }
 
 export const VirtualizedCodeLocationRow = React.forwardRef(
   (props: LocationRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
-    const {locationEntry, locationStatus, hasDocs, index} = props;
+    const {locationEntry, locationStatus, index} = props;
     const {name} = locationStatus;
     const repoAddress = buildRepoAddress(DUNDER_REPO_NAME, name);
 
     return (
       <div ref={ref} data-index={index}>
-        <RowGrid border="bottom">
+        <Box border="bottom" className={styles.rowGrid}>
           <RowCell>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
@@ -73,23 +71,12 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
             </div>
           </RowCell>
           <RowCell>
-            {hasDocs ? (
-              <div>
-                <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
-                  View docs
-                </AnchorButton>
-              </div>
-            ) : (
-              <span style={{color: Colors.textLighter()}}>None</span>
-            )}
-          </RowCell>
-          <RowCell>
             <JoinedButtons>
               <ReloadButton location={name} />
               {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
             </JoinedButtons>
           </RowCell>
-        </RowGrid>
+        </Box>
       </div>
     );
   },
@@ -99,21 +86,19 @@ interface RepoRowProps {
   locationEntry: WorkspaceRepositoryLocationNode;
   locationStatus: LocationStatusEntryFragment;
   repository: WorkspaceRepositoryFragment;
-  hasDocs: boolean;
   index: number;
-  // measure: (node: Element | null) => void;
 }
 
 export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
   (props: RepoRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
-    const {locationEntry, locationStatus, repository, hasDocs, index} = props;
+    const {locationEntry, locationStatus, repository, index} = props;
     const repoAddress = buildRepoAddress(repository.name, repository.location.name);
 
     const allMetadata = [...locationEntry.displayMetadata, ...repository.displayMetadata];
 
     return (
       <div ref={ref} data-index={index}>
-        <RowGrid border="bottom">
+        <Box border="bottom" className={styles.rowGrid}>
           <RowCell>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
@@ -136,24 +121,13 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell>
-            {hasDocs ? (
-              <div>
-                <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
-                  View docs
-                </AnchorButton>
-              </div>
-            ) : (
-              <span style={{color: Colors.textLighter()}}>None</span>
-            )}
-          </RowCell>
           <RowCell style={{alignItems: 'flex-end'}}>
             <JoinedButtons>
               <ReloadButton location={locationStatus.name} />
               <CodeLocationMenu locationNode={locationEntry} />
             </JoinedButtons>
           </RowCell>
-        </RowGrid>
+        </Box>
       </div>
     );
   },
@@ -165,13 +139,7 @@ export const VirtualizedCodeLocationHeader = () => {
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Updated</HeaderCell>
-      <HeaderCell>Docs</HeaderCell>
       <HeaderCell style={{textAlign: 'right'}}>Actions</HeaderCell>
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-`;

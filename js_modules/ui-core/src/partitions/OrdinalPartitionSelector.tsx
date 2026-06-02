@@ -199,6 +199,7 @@ export const OrdinalPartitionSelector = ({
         return tags;
       }}
       searchPlaceholder="Filter partitions"
+      usePortal={false}
       disabled={disabled}
     />
   );

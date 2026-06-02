@@ -23,7 +23,7 @@ import dagster as dg
     },
 )
 def iris_data_partitioned(context: dg.AssetExecutionContext) -> pd.DataFrame:
-    partition = context.partition_key.keys_by_dimension  # type: ignore
+    partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]
 
