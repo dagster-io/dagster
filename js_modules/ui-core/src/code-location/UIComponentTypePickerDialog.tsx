@@ -31,6 +31,7 @@ import {
   SetUiComponentMutation,
   SetUiComponentMutationVariables,
 } from './types/CodeLocationUIComponentsQuery.types';
+import {UIComponentMutationContext} from './uiComponentMutationContext';
 import {COMMON_COLLATOR} from '../app/Util';
 
 export interface UIComponentEditTarget {
@@ -42,13 +43,15 @@ export interface UIComponentEditTarget {
 interface CommonProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Fires when a mutation returned PythonError. Parent surfaces this as the revert banner. */
+  onFailed: (ctx: UIComponentMutationContext, errorMessage: string) => void;
   locationName: string;
 }
 
 interface AddProps extends CommonProps {
   mode?: 'add';
   editTarget?: undefined;
-  onCreated: () => void;
+  onCreated: (ctx: UIComponentMutationContext) => void;
   onSaved?: undefined;
 }
 
@@ -56,7 +59,7 @@ interface EditProps extends CommonProps {
   mode: 'edit';
   editTarget: UIComponentEditTarget;
   onCreated?: undefined;
-  onSaved: () => void;
+  onSaved: (ctx: UIComponentMutationContext) => void;
 }
 
 type Props = AddProps | EditProps;
@@ -95,7 +98,7 @@ export const UIComponentTypePickerDialog = (props: Props) => {
 };
 
 const UIComponentTypePickerDialogBody = (props: Props) => {
-  const {onClose, locationName} = props;
+  const {onClose, onFailed, locationName} = props;
   const isEdit = props.mode === 'edit';
 
   const typesQ = useQuery<
@@ -183,9 +186,18 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
         const verb = isEdit ? 'Saved' : 'Added';
         showToast({intent: 'success', message: `${verb} ${editorState.componentId}`});
         if (isEdit) {
-          props.onSaved();
+          props.onSaved({
+            kind: 'edit',
+            componentId: editorState.componentId,
+            componentType: selected.name,
+            prevAttributes: props.editTarget.attributes,
+          });
         } else {
-          props.onCreated();
+          props.onCreated({
+            kind: 'add',
+            componentId: editorState.componentId,
+            componentType: selected.name,
+          });
         }
         onClose();
         return;
@@ -199,7 +211,25 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
         );
         return;
       case 'PythonError':
-        setError(data.message);
+        // Storage was written but the in-process reload rejected the change.
+        // Hand off to the parent, which surfaces the failure modal with a
+        // revert option, and close this dialog so the modal can take over.
+        onFailed(
+          isEdit
+            ? {
+                kind: 'edit',
+                componentId: editorState.componentId,
+                componentType: selected.name,
+                prevAttributes: props.editTarget.attributes,
+              }
+            : {
+                kind: 'add',
+                componentId: editorState.componentId,
+                componentType: selected.name,
+              },
+          data.message,
+        );
+        onClose();
         return;
       default:
         setError('Unexpected response from server.');

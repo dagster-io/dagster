@@ -14,14 +14,16 @@ import {
   showToast,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useMutation, useQuery} from '../apollo-client';
 import {
   CODE_LOCATION_UI_COMPONENTS_QUERY,
   DELETE_UI_COMPONENT_MUTATION,
+  SET_UI_COMPONENT_MUTATION,
 } from './CodeLocationUIComponentsQuery';
+import {UIComponentMutationFailedDialog} from './UIComponentMutationFailedDialog';
 import {UIComponentEditTarget, UIComponentTypePickerDialog} from './UIComponentTypePickerDialog';
 import styles from './css/CodeLocationComponentInstancesSubtab.module.css';
 import {
@@ -29,7 +31,10 @@ import {
   CodeLocationUiComponentsQueryVariables,
   DeleteUiComponentMutation,
   DeleteUiComponentMutationVariables,
+  SetUiComponentMutation,
+  SetUiComponentMutationVariables,
 } from './types/CodeLocationUIComponentsQuery.types';
+import {UIComponentMutationContext} from './uiComponentMutationContext';
 import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
@@ -49,6 +54,11 @@ interface UIBackedRow {
   attributes: string;
 }
 
+interface FailedMutation {
+  ctx: UIComponentMutationContext;
+  errorMessage: string;
+}
+
 export const CodeLocationComponentInstancesSubtab = ({
   repoAddress,
   isAddOpen,
@@ -66,7 +76,11 @@ export const CodeLocationComponentInstancesSubtab = ({
     () => buildReloadFnForLocation(repoAddress.location),
     [repoAddress.location],
   );
-  const {reloading, tryReload} = useRepositoryLocationReload({
+  const {
+    reloading,
+    tryReload,
+    error: reloadError,
+  } = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,
   });
@@ -75,6 +89,38 @@ export const CodeLocationComponentInstancesSubtab = ({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [viewConfigTarget, setViewConfigTarget] = useState<UIBackedRow | null>(null);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<UIBackedRow | null>(null);
+
+  // Last mutation that returned a PythonError. The failure dialog renders
+  // while this is set; dismissing or successfully reverting clears it.
+  const [failedMutation, setFailedMutation] = useState<FailedMutation | null>(null);
+  const [isReverting, setIsReverting] = useState(false);
+
+  // ``useRepositoryLocationReload`` does its own reload + bounded poll (default
+  // 3-minute deadline). If the just-completed add/edit/delete drove the
+  // location into a failed state, the hook surfaces that error here — we
+  // attribute it to whichever mutation we just kicked off and pop the revert
+  // dialog. Tracked with a ref instead of state so handlers can publish a new
+  // pending context without waiting for a render.
+  const pendingMutationRef = useRef<UIComponentMutationContext | null>(null);
+  const wasReloadingRef = useRef(false);
+
+  useEffect(() => {
+    // Catch the transition from "reload in flight" → "reload settled". At
+    // that point ``reloadError`` reflects the final state of the poll loop;
+    // attribute it to whatever the user just did (if anything). On a clean
+    // reload we just clear the pending context — no dialog.
+    if (wasReloadingRef.current && !reloading) {
+      const ctx = pendingMutationRef.current;
+      pendingMutationRef.current = null;
+      if (ctx && reloadError) {
+        const message =
+          'message' in reloadError ? reloadError.message : 'Code location reload failed.';
+        setFailedMutation({ctx, errorMessage: message});
+      }
+    }
+    wasReloadingRef.current = reloading;
+  }, [reloading, reloadError]);
+
   const uiBackedRows: UIBackedRow[] = useMemo(() => {
     const payload = componentsQ.data?.uiComponentsForLocationOrError;
     if (payload?.__typename !== 'UIComponents') {
@@ -102,31 +148,130 @@ export const CodeLocationComponentInstancesSubtab = ({
     awaitRefetchQueries: true,
   });
 
-  const handleAddSucceeded = useCallback(() => {
-    refetchComponents();
-    tryReload();
-  }, [refetchComponents, tryReload]);
+  // Used to revert an edit (re-set previous attributes) or recreate a deleted
+  // component during the revert flow. Add-revert uses the delete mutation.
+  const [setUIComponentForRevert] = useMutation<
+    SetUiComponentMutation,
+    SetUiComponentMutationVariables
+  >(SET_UI_COMPONENT_MUTATION);
+  const [deleteUIComponentForRevert] = useMutation<
+    DeleteUiComponentMutation,
+    DeleteUiComponentMutationVariables
+  >(DELETE_UI_COMPONENT_MUTATION);
 
-  const handleSaved = useCallback(() => {
-    refetchComponents();
-    tryReload();
-  }, [refetchComponents, tryReload]);
+  const handleAddCreated = useCallback(
+    (ctx: UIComponentMutationContext) => {
+      refetchComponents();
+      pendingMutationRef.current = ctx;
+      tryReload();
+    },
+    [refetchComponents, tryReload],
+  );
 
-  const handleConfirmDelete = useCallback(async () => {
+  const handleSaved = useCallback(
+    (ctx: UIComponentMutationContext) => {
+      refetchComponents();
+      pendingMutationRef.current = ctx;
+      tryReload();
+    },
+    [refetchComponents, tryReload],
+  );
+
+  const handleMutationFailed = useCallback(
+    (ctx: UIComponentMutationContext, errorMessage: string) => {
+      setFailedMutation({ctx, errorMessage});
+    },
+    [],
+  );
+
+  const handleDismissFailure = useCallback(() => {
+    setFailedMutation(null);
+  }, []);
+
+  const handleRevert = async () => {
+    if (!failedMutation) {
+      return;
+    }
+    const {ctx} = failedMutation;
+    setIsReverting(true);
+    let errorMessage: string | null = null;
+    if (ctx.kind === 'add') {
+      const result = await deleteUIComponentForRevert({
+        variables: {
+          locationName: repoAddress.location,
+          componentId: ctx.componentId,
+        },
+      });
+      const data = result.data?.deleteUIComponent;
+      switch (data?.__typename) {
+        case 'DeleteUIComponentSuccess':
+          break;
+        case 'UnauthorizedError':
+          errorMessage = data.message ?? 'You do not have permission to revert this change.';
+          break;
+        case 'PythonError':
+          errorMessage = data.message;
+          break;
+        default:
+          errorMessage = 'Unexpected response from server.';
+      }
+    } else {
+      // Revert an edit or a delete by re-setting the prior attributes.
+      const result = await setUIComponentForRevert({
+        variables: {
+          locationName: repoAddress.location,
+          componentId: ctx.componentId,
+          componentType: ctx.componentType,
+          attributes: ctx.prevAttributes ?? '',
+        },
+      });
+      const data = result.data?.setUIComponent;
+      switch (data?.__typename) {
+        case 'SetUIComponentSuccess':
+          break;
+        case 'UnauthorizedError':
+          errorMessage = data.message ?? 'You do not have permission to revert this change.';
+          break;
+        case 'PythonError':
+          errorMessage = data.message;
+          break;
+        default:
+          errorMessage = 'Unexpected response from server.';
+      }
+    }
+    setIsReverting(false);
+    if (errorMessage !== null) {
+      showToast({intent: 'danger', message: errorMessage});
+      return;
+    }
+    showToast({intent: 'success', message: `Reverted change to ${ctx.componentId}`});
+    setFailedMutation(null);
+    tryReload();
+    refetchComponents();
+  };
+
+  const handleConfirmDelete = async () => {
     if (!confirmDeleteTarget) {
       return;
     }
+    const target = confirmDeleteTarget;
     const result = await deleteUIComponent({
       variables: {
         locationName: repoAddress.location,
-        componentId: confirmDeleteTarget.componentId,
+        componentId: target.componentId,
       },
     });
     const data = result.data?.deleteUIComponent;
     switch (data?.__typename) {
       case 'DeleteUIComponentSuccess':
-        showToast({intent: 'success', message: `Deleted ${confirmDeleteTarget.componentId}`});
+        showToast({intent: 'success', message: `Deleted ${target.componentId}`});
         setConfirmDeleteTarget(null);
+        pendingMutationRef.current = {
+          kind: 'delete',
+          componentId: target.componentId,
+          componentType: target.componentType,
+          prevAttributes: target.attributes,
+        };
         tryReload();
         return;
       case 'UnauthorizedError':
@@ -136,9 +281,21 @@ export const CodeLocationComponentInstancesSubtab = ({
         });
         return;
       case 'PythonError':
-        showToast({intent: 'danger', message: data.message});
+        // Storage was written but the in-process reload rejected the change.
+        // Close the confirm dialog so the failure dialog sits cleanly on top.
+        setConfirmDeleteTarget(null);
+        handleMutationFailed(
+          {
+            kind: 'delete',
+            componentId: target.componentId,
+            componentType: target.componentType,
+            prevAttributes: target.attributes,
+          },
+          data.message,
+        );
+        return;
     }
-  }, [confirmDeleteTarget, deleteUIComponent, repoAddress.location, tryReload]);
+  };
 
   const libraryPath = `/locations/${repoAddressAsURLString(repoAddress)}/components/library`;
 
@@ -174,7 +331,8 @@ export const CodeLocationComponentInstancesSubtab = ({
       <UIComponentTypePickerDialog
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        onCreated={handleAddSucceeded}
+        onCreated={handleAddCreated}
+        onFailed={handleMutationFailed}
         locationName={repoAddress.location}
       />
       {editTarget ? (
@@ -183,6 +341,7 @@ export const CodeLocationComponentInstancesSubtab = ({
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
           onSaved={handleSaved}
+          onFailed={handleMutationFailed}
           editTarget={editTarget}
           locationName={repoAddress.location}
         />
@@ -211,6 +370,14 @@ export const CodeLocationComponentInstancesSubtab = ({
           </Button>
         </DialogFooter>
       </Dialog>
+      <UIComponentMutationFailedDialog
+        isOpen={failedMutation !== null}
+        ctx={failedMutation?.ctx ?? null}
+        errorMessage={failedMutation?.errorMessage ?? ''}
+        isReverting={isReverting}
+        onRevert={handleRevert}
+        onDismiss={handleDismissFailure}
+      />
     </>
   );
 

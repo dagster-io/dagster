@@ -93,7 +93,7 @@ export const useRepositoryLocationReload = ({
 
   const invalidateConfigs = useInvalidateConfigsForRepo();
 
-  const {data, startPolling, stopPolling} = useQuery<
+  const {data, loading, startPolling, stopPolling} = useQuery<
     RepositoryLocationStatusQuery,
     RepositoryLocationStatusQueryVariables
   >(REPOSITORY_LOCATION_STATUS_QUERY, {
@@ -115,6 +115,15 @@ export const useRepositoryLocationReload = ({
   // results from a previous polling cycle when a new reload starts.
   const lastProcessedDataRef = useRef<RepositoryLocationStatusQuery | undefined>(undefined);
 
+  // False until the poll query has actually fetched within the *current* reload
+  // cycle (i.e. we've observed it go ``loading``). Until then we ignore any
+  // ``data`` Apollo surfaces: when ``skip`` toggles back to false at the start
+  // of a new cycle, Apollo re-emits the prior cycle's last result before its
+  // fresh fetch arrives, and acting on that stale emission would dispatch a
+  // misleading ``success``/``error`` and stop polling before fresh data is
+  // observed. Reset on each ``tryReload``.
+  const hasFetchedThisCycleRef = useRef(false);
+
   // Process poll results in a useEffect rather than in an `onCompleted` callback
   // wrapped in `setTimeout(0)`. Apollo's `onCompleted` does not fire reliably with
   // `fetchPolicy: 'no-cache'` + `notifyOnNetworkStatusChange: true`, which made this
@@ -123,7 +132,23 @@ export const useRepositoryLocationReload = ({
   // return on `pollStartTime === null` prevents the infinite-loop that originally
   // motivated the setTimeout.
   useEffect(() => {
-    if (state.pollStartTime === null || !data || data === lastProcessedDataRef.current) {
+    if (state.pollStartTime === null) {
+      return;
+    }
+    // Mark that a fetch is underway for this cycle. Once we've seen the query
+    // go ``loading``, any subsequent settled ``data`` is genuinely fresh.
+    if (loading) {
+      hasFetchedThisCycleRef.current = true;
+      return;
+    }
+    // Ignore data surfaced before this cycle's fetch has run — that's the
+    // prior cycle's result Apollo re-emits when ``skip`` toggles back to false.
+    // Acting on it would dispatch a misleading ``success``/``error`` and stop
+    // polling before fresh data is observed.
+    if (!hasFetchedThisCycleRef.current) {
+      return;
+    }
+    if (!data || data === lastProcessedDataRef.current) {
       return;
     }
     lastProcessedDataRef.current = data;
@@ -216,9 +241,12 @@ export const useRepositoryLocationReload = ({
 
     // Refetch all the queries bound to the UI.
     apollo.refetchQueries({include: 'active'});
-  }, [data, state.pollStartTime, state.pollLocationIds]);
+  }, [data, loading, state.pollStartTime, state.pollLocationIds]);
 
   const tryReload = useCallback(async () => {
+    // New cycle: ignore any pre-cycle ``data`` Apollo re-emits until this
+    // cycle's poll query has actually fetched (see ``hasFetchedThisCycleRef``).
+    hasFetchedThisCycleRef.current = false;
     dispatch({type: 'start-mutation'});
     const action = await reloadFn(apollo);
     dispatch(action);
