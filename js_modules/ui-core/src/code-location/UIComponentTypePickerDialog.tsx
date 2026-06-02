@@ -295,6 +295,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
         {isEdit ? (
           <UIComponentEditorBody
             key={`edit-${props.editTarget.componentId}`}
+            isActive={props.isOpen}
             mode="edit"
             locationName={locationName}
             componentType={selected.name}
@@ -306,6 +307,7 @@ const UIComponentTypePickerDialogBody = (props: Props) => {
         ) : (
           <UIComponentEditorBody
             key={`add-${selected.name}`}
+            isActive={props.isOpen}
             mode="add"
             locationName={locationName}
             componentType={selected.name}

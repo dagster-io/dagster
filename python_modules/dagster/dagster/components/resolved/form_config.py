@@ -25,6 +25,10 @@ UI_EDITABLE = "x-ui-editable"
 # source of truth; ``base.py`` imports it as ``_Unset``.
 UNSET_DEFAULT_SENTINEL = "__DAGSTER_UNSET_DEFAULT__"
 
+# Frontend marker: the field whose value drives the auto-generated component
+# id. Not an RJSF rendering hint, so it stays under the ``x-ui-*`` namespace.
+UI_ID_SOURCE = "x-ui-id-source"
+
 
 @record
 class ComponentFormConfig:
@@ -56,6 +60,10 @@ class ComponentFormConfig:
         placeholder: Field level only. Placeholder text for the form input.
         multiline: Field level only. If True, render a textarea instead of a
             single-line input.
+        id_source: Field level only. If True, the UI form uses this field's
+            value as the suffix in the auto-generated component id (e.g.
+            ``MyComponent[<field value>]``). Only one field per component may
+            be marked this way, and it must be a required field.
     """
 
     label: str | None = None
@@ -63,6 +71,7 @@ class ComponentFormConfig:
     hidden: bool | None = None
     placeholder: str | None = None
     multiline: bool | None = None
+    id_source: bool | None = None
 
     def to_component_json_schema_extra(self) -> dict[str, Any]:
         """Serialize component-level fields to JSON schema extension keys."""
@@ -90,4 +99,6 @@ class ComponentFormConfig:
             out["ui:widget"] = "textarea"
         if self.placeholder is not None:
             out["ui:placeholder"] = self.placeholder
+        if self.id_source:
+            out[UI_ID_SOURCE] = True
         return out
