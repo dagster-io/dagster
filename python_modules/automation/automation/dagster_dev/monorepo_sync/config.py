@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, field
 
+INTERNAL_REPO_URL = "https://github.com/dagster-io/internal.git"
+
 
 @dataclass
 class SyncConfig:
@@ -15,6 +17,8 @@ class SyncConfig:
     originated_label: str
     internal_path: str  # for outbound completeness (e.g. "dagster-oss/")
     internal_path_prefix: str  # for correctness normalization (e.g. "dagster-oss/")
+    copybara_workflow: str = ""  # workflow name in copy.bara.sky
+    dest_repo_url: str = ""  # URL copybara pushes to (rewritten to local path by `run`)
     file_renames: dict[str, str] = field(default_factory=dict)
     known_incorrect: list[str] = field(default_factory=list)
     source_repo_name: str = ""
@@ -165,6 +169,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Internal-RevId",
         internal_path="dagster-oss/",
         internal_path_prefix="dagster-oss/",
+        copybara_workflow="sync-internal",
+        dest_repo_url=INTERNAL_REPO_URL,
         file_renames=DAGSTER_FILE_RENAMES,
         known_incorrect=KNOWN_DAGSTER_INBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/dagster",
@@ -179,6 +185,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Dagster-RevId",
         internal_path="dagster-oss/",
         internal_path_prefix="dagster-oss/",
+        copybara_workflow="sync-dagster",
+        dest_repo_url="https://github.com/dagster-io/dagster.git",
         file_renames=DAGSTER_FILE_RENAMES,
         known_incorrect=KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/internal",
@@ -193,6 +201,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Internal-RevId",
         internal_path="public/skills/",
         internal_path_prefix="public/skills/",
+        copybara_workflow="sync-internal",
+        dest_repo_url=INTERNAL_REPO_URL,
         file_renames={},
         known_incorrect=KNOWN_SKILLS_INBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/skills",
@@ -207,6 +217,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Skills-RevId",
         internal_path="public/skills/",
         internal_path_prefix="public/skills/",
+        copybara_workflow="sync-skills",
+        dest_repo_url="https://github.com/dagster-io/skills.git",
         file_renames={},
         known_incorrect=KNOWN_SKILLS_OUTBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/internal",
