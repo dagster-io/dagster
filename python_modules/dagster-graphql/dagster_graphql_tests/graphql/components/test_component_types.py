@@ -33,7 +33,7 @@ query GetComponentTypes($locationName: String!) {
         description
         owners
         tags
-        isUiEditable
+        isAppManaged
       }
     }
     ... on RepositoryLocationNotFound {
@@ -140,8 +140,8 @@ def test_returns_component_types_with_schemas():
         assert simple["tags"] == ["a", "b", "c"]
         assert simple["description"]  # present
         # SimpleAssetComponent.get_form_config() returns ComponentFormConfig(editable=True),
-        # so its schema carries x-ui-editable: true and the field surfaces here.
-        assert simple["isUiEditable"] is True
+        # so its schema carries x-app-managed: true and the field surfaces here.
+        assert simple["isAppManaged"] is True
         # Namespace + example come from the same metadata blob the docs
         # tab used to read directly.
         assert simple["namespace"] == "dagster_test"

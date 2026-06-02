@@ -24,16 +24,17 @@ from dagster.components.component.component import Component
 from dagster.components.core.component_tree_state import ComponentTreeStateTracker
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.decl import (
+    AppManagedComponentDecl,
+    AppManagedDefinitionsDecl,
     ComponentDecl,
     ComponentLoaderDecl,
     ComponentRootDecl,
     PythonFileDecl,
-    UIComponentDecl,
-    UIDefinitionsDecl,
     YamlDecl,
     build_filesystem_component_decl_from_context,
 )
 from dagster.components.core.defs_module import (
+    AppManagedDefinitionsLoc,
     ComponentLoc,
     ComponentPath,
     ComponentRootLoc,
@@ -41,7 +42,6 @@ from dagster.components.core.defs_module import (
     PythonFileComponent,
     ResolvableToComponentLoc,
     ResolvableToComponentPath,
-    UIDefinitionsLoc,
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
@@ -218,15 +218,15 @@ class ComponentTree(IHaveNew):
 
         Constructs a fresh ComponentRootDecl whose flat ``decls`` list is
         the (cached) filesystem decl followed by an optional
-        ``UIDefinitionsDecl`` aggregating the UI-defined components
+        ``AppManagedDefinitionsDecl`` aggregating the app-managed components
         discovered in storage. The aggregate is rebuilt on every call so
         newly-added or removed UI components are picked up; the
-        individual ``UIComponentDecl`` children are cached per-id so
+        individual ``AppManagedComponentDecl`` children are cached per-id so
         unchanged components don't get rebuilt.
         """
         decls: list[ComponentDecl] = [self._get_filesystem_decl()]
         if self.code_location_name is not None:
-            decls.append(self._build_ui_definitions_decl(self.code_location_name))
+            decls.append(self._build_app_managed_definitions_decl(self.code_location_name))
         return ComponentRootDecl(
             context=self.decl_load_context,
             loc=ComponentRootLoc(),
@@ -242,8 +242,10 @@ class ComponentTree(IHaveNew):
 
         return check.not_none(self.state_tracker.get_cache_data(loc).component_decl)
 
-    def _build_ui_definitions_decl(self, code_location_name: str) -> UIDefinitionsDecl:
-        """Build the ``UIDefinitionsDecl`` wrapper for this code location.
+    def _build_app_managed_definitions_decl(
+        self, code_location_name: str
+    ) -> AppManagedDefinitionsDecl:
+        """Build the ``AppManagedDefinitionsDecl`` wrapper for this code location.
 
         Discovery is sourced from the pinned ``DefinitionsLoadContext`` rather
         than the live ``DefsStateStorage`` listing — that way a load pinned to
@@ -251,11 +253,11 @@ class ComponentTree(IHaveNew):
         ReloadCodeWithState pin) sees exactly the components captured in the
         snapshot, not whatever is currently latest in storage. The actual
         per-component entries are *not* fetched here — each
-        ``UIComponentDecl`` lazily downloads its entry on first access (see
-        ``UIComponentDecl.entry``), so building the tree is metadata-only.
+        ``AppManagedComponentDecl`` lazily downloads its entry on first access (see
+        ``AppManagedComponentDecl.entry``), so building the tree is metadata-only.
 
-        Each child ``UIComponentDecl`` is cached at its own
-        ``UIDefinitionsLoc(instance_key=id)`` and registered against its
+        Each child ``AppManagedComponentDecl`` is cached at its own
+        ``AppManagedDefinitionsLoc(instance_key=id)`` and registered against its
         own state key, so an edit to a single component invalidates only
         that child's decl and cascades up via existing dependency
         tracking. The wrapper itself is reconstructed fresh because
@@ -263,23 +265,23 @@ class ComponentTree(IHaveNew):
         rely on a fresh listing to observe those changes rather than
         caching the wrapper.
         """
-        from dagster.components.component.ui_definitions_state import (
-            get_ui_component_state_key,
-            get_ui_definitions_prefix,
+        from dagster.components.component.app_managed_state import (
+            get_app_managed_component_state_key,
+            get_app_managed_prefix,
         )
 
-        prefix = get_ui_definitions_prefix(code_location_name)
+        prefix = get_app_managed_prefix(code_location_name)
         component_ids = [
             k[len(prefix) :] for k in DefinitionsLoadContext.get().state_keys_with_prefix(prefix)
         ]
 
-        children: list[UIComponentDecl] = []
+        children: list[AppManagedComponentDecl] = []
         for component_id in component_ids:
-            child_loc = UIDefinitionsLoc(instance_key=component_id)
+            child_loc = AppManagedDefinitionsLoc(instance_key=component_id)
             cached = self.state_tracker.get_cache_data(child_loc).component_decl
             if cached is None:
                 child_ctx = self.decl_load_context.for_component_loc(child_loc)
-                cached = UIComponentDecl(
+                cached = AppManagedComponentDecl(
                     context=child_ctx,
                     loc=child_loc,
                     location_name=code_location_name,
@@ -287,14 +289,14 @@ class ComponentTree(IHaveNew):
                 )
                 self.state_tracker.set_cache_data(child_loc, component_decl=cached)
 
-                state_key = get_ui_component_state_key(code_location_name, component_id)
+                state_key = get_app_managed_component_state_key(code_location_name, component_id)
                 self.state_tracker.mark_component_defs_state_key(child_loc, state_key)
 
-            children.append(check.inst(cached, UIComponentDecl))
+            children.append(check.inst(cached, AppManagedComponentDecl))
 
-        ui_loc = UIDefinitionsLoc()
+        ui_loc = AppManagedDefinitionsLoc()
         ctx = self.decl_load_context.for_component_loc(ui_loc)
-        return UIDefinitionsDecl(
+        return AppManagedDefinitionsDecl(
             context=ctx,
             loc=ui_loc,
             location_name=code_location_name,

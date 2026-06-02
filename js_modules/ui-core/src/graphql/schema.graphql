@@ -3670,31 +3670,34 @@ type UsedSolid {
   invocations: [NodeInvocationSite!]!
 }
 
-type UIComponent {
+type AppManagedComponent {
   componentId: String!
   componentType: String!
   attributes: String!
 }
 
-type UIComponents {
+type AppManagedComponents {
   locationName: String!
-  components: [UIComponent!]!
+  components: [AppManagedComponent!]!
 }
 
-union UIComponentsOrError = UIComponents | PythonError
+union AppManagedComponentsOrError = AppManagedComponents | PythonError
 
-type SetUIComponentSuccess {
-  component: UIComponent!
+type SetAppManagedComponentSuccess {
+  component: AppManagedComponent!
 }
 
-union SetUIComponentResult = SetUIComponentSuccess | UnauthorizedError | PythonError
+union SetAppManagedComponentResult = SetAppManagedComponentSuccess | UnauthorizedError | PythonError
 
-type DeleteUIComponentSuccess {
+type DeleteAppManagedComponentSuccess {
   locationName: String!
   componentId: String!
 }
 
-union DeleteUIComponentResult = DeleteUIComponentSuccess | UnauthorizedError | PythonError
+union DeleteAppManagedComponentResult =
+  | DeleteAppManagedComponentSuccess
+  | UnauthorizedError
+  | PythonError
 
 scalar JsonSchema
 
@@ -3712,7 +3715,7 @@ type ComponentTypeInfo {
   description: String
   owners: [String!]
   tags: [String!]
-  isUiEditable: Boolean!
+  isAppManaged: Boolean!
 }
 
 type ComponentTypes {
@@ -3869,7 +3872,7 @@ type Query {
     cursor: String
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
-  uiComponentsForLocationOrError(locationName: String!): UIComponentsOrError!
+  appManagedComponentsForLocationOrError(locationName: String!): AppManagedComponentsOrError!
   componentTypesForLocationOrError(locationName: String!): ComponentTypesOrError!
 }
 
@@ -4242,13 +4245,16 @@ type Mutation {
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
   ): DeleteDynamicPartitionsResult!
-  setUIComponent(
+  setAppManagedComponent(
     attributes: String!
     componentId: String!
     componentType: String!
     locationName: String!
-  ): SetUIComponentResult!
-  deleteUIComponent(componentId: String!, locationName: String!): DeleteUIComponentResult!
+  ): SetAppManagedComponentResult!
+  deleteAppManagedComponent(
+    componentId: String!
+    locationName: String!
+  ): DeleteAppManagedComponentResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   deleteConcurrencyLimit(concurrencyKey: String!): Boolean!

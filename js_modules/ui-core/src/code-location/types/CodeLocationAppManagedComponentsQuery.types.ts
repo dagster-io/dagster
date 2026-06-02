@@ -2,20 +2,30 @@
 
 import * as Types from '../../graphql/types';
 
-export type UiComponentFragment = {
-  __typename: 'UIComponent';
+export type AppManagedComponentFragment = {
+  __typename: 'AppManagedComponent';
   componentId: string;
   componentType: string;
   attributes: string;
 };
 
-export type CodeLocationUiComponentsQueryVariables = Types.Exact<{
+export type CodeLocationAppManagedComponentsQueryVariables = Types.Exact<{
   locationName: Types.Scalars['String']['input'];
 }>;
 
-export type CodeLocationUiComponentsQuery = {
+export type CodeLocationAppManagedComponentsQuery = {
   __typename: 'Query';
-  uiComponentsForLocationOrError:
+  appManagedComponentsForLocationOrError:
+    | {
+        __typename: 'AppManagedComponents';
+        locationName: string;
+        components: Array<{
+          __typename: 'AppManagedComponent';
+          componentId: string;
+          componentType: string;
+          attributes: string;
+        }>;
+      }
     | {
         __typename: 'PythonError';
         message: string;
@@ -25,29 +35,19 @@ export type CodeLocationUiComponentsQuery = {
           isExplicitLink: boolean;
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
-      }
-    | {
-        __typename: 'UIComponents';
-        locationName: string;
-        components: Array<{
-          __typename: 'UIComponent';
-          componentId: string;
-          componentType: string;
-          attributes: string;
-        }>;
       };
 };
 
-export type SetUiComponentMutationVariables = Types.Exact<{
+export type SetAppManagedComponentMutationVariables = Types.Exact<{
   locationName: Types.Scalars['String']['input'];
   componentId: Types.Scalars['String']['input'];
   componentType: Types.Scalars['String']['input'];
   attributes: Types.Scalars['String']['input'];
 }>;
 
-export type SetUiComponentMutation = {
+export type SetAppManagedComponentMutation = {
   __typename: 'Mutation';
-  setUIComponent:
+  setAppManagedComponent:
     | {
         __typename: 'PythonError';
         message: string;
@@ -59,9 +59,9 @@ export type SetUiComponentMutation = {
         }>;
       }
     | {
-        __typename: 'SetUIComponentSuccess';
+        __typename: 'SetAppManagedComponentSuccess';
         component: {
-          __typename: 'UIComponent';
+          __typename: 'AppManagedComponent';
           componentId: string;
           componentType: string;
           attributes: string;
@@ -70,15 +70,15 @@ export type SetUiComponentMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type DeleteUiComponentMutationVariables = Types.Exact<{
+export type DeleteAppManagedComponentMutationVariables = Types.Exact<{
   locationName: Types.Scalars['String']['input'];
   componentId: Types.Scalars['String']['input'];
 }>;
 
-export type DeleteUiComponentMutation = {
+export type DeleteAppManagedComponentMutation = {
   __typename: 'Mutation';
-  deleteUIComponent:
-    | {__typename: 'DeleteUIComponentSuccess'; locationName: string; componentId: string}
+  deleteAppManagedComponent:
+    | {__typename: 'DeleteAppManagedComponentSuccess'; locationName: string; componentId: string}
     | {
         __typename: 'PythonError';
         message: string;
@@ -91,5 +91,11 @@ export type DeleteUiComponentMutation = {
       }
     | {__typename: 'UnauthorizedError'; message: string};
 };
+
+export const CodeLocationAppManagedComponentsQueryVersion = '590944ed746ac52a5ec6df0069d26319cc5ef1d070546f71f09b0223c4a35320';
+
+export const SetAppManagedComponentMutationVersion = '3b53d7939ec8dea1ddd1a81b58f1457316ae0a13cfd22f5e65cb2c051462e67d';
+
+export const DeleteAppManagedComponentMutationVersion = '3db9b7817d9c4742d00c9e70dd6e270853d5668d5640d41b05411659bbf61bd4';
 
 export const DeleteVersion = '3c61c79b99122910e754a8863e80dc5ed479a0c23cc1a9d9878d91e603fc0dfe';

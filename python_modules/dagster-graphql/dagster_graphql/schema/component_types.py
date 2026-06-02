@@ -68,14 +68,14 @@ class GrapheneComponentTypeInfo(graphene.ObjectType):
     description = graphene.String()
     owners = graphene.List(graphene.NonNull(graphene.String))
     tags = graphene.List(graphene.NonNull(graphene.String))
-    isUiEditable = graphene.NonNull(
+    isAppManaged = graphene.NonNull(
         graphene.Boolean,
         description=(
             "Whether instances of this component class may be created and edited"
-            " from the UI via the UI-defined components workflow. Today every"
+            " from the UI via the app-managed components workflow. Today every"
             " component class is editable; in the future this will be an opt-in"
             " hook on the Component class so library authors can mark their"
-            " components UI-editable explicitly."
+            " components app-managed explicitly."
         ),
     )
 

@@ -29,7 +29,7 @@ export const EXPECTED_PERMISSIONS = {
   edit_dynamic_partitions: true,
   toggle_auto_materialize: true,
   edit_concurrency_limit: true,
-  edit_ui_definitions: true,
+  edit_app_managed_components: true,
   edit_workspace: true,
 };
 
@@ -57,7 +57,7 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: PermissionResult;
   toggle_auto_materialize?: PermissionResult;
   edit_concurrency_limit?: PermissionResult;
-  edit_ui_definitions?: PermissionResult;
+  edit_app_managed_components?: PermissionResult;
   edit_workspace?: PermissionResult;
 };
 

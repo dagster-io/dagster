@@ -1,19 +1,22 @@
 import {Box, Button, Dialog, DialogBody, DialogFooter, Icon, Mono} from '@dagster-io/ui-components';
 import {ReactNode} from 'react';
 
-import styles from './css/UIComponentMutationFailedDialog.module.css';
-import {UIComponentMutationContext} from './uiComponentMutationContext';
+import {AppManagedComponentMutationContext} from './appManagedComponentMutationContext';
+import styles from './css/AppManagedComponentMutationFailedDialog.module.css';
 
 interface Props {
   isOpen: boolean;
-  ctx: UIComponentMutationContext | null;
+  ctx: AppManagedComponentMutationContext | null;
   errorMessage: string;
   isReverting: boolean;
   onRevert: () => void;
   onDismiss: () => void;
 }
 
-const SUMMARY: Record<UIComponentMutationContext['kind'], (componentId: string) => ReactNode> = {
+const SUMMARY: Record<
+  AppManagedComponentMutationContext['kind'],
+  (componentId: string) => ReactNode
+> = {
   add: (id) => (
     <>
       Adding <Mono>{id}</Mono> caused the code location to fail to load. You can revert the change
@@ -34,13 +37,13 @@ const SUMMARY: Record<UIComponentMutationContext['kind'], (componentId: string) 
   ),
 };
 
-const REVERT_LABEL: Record<UIComponentMutationContext['kind'], string> = {
+const REVERT_LABEL: Record<AppManagedComponentMutationContext['kind'], string> = {
   add: 'Delete added component',
   edit: 'Restore previous attributes',
   delete: 'Recreate deleted component',
 };
 
-export const UIComponentMutationFailedDialog = ({
+export const AppManagedComponentMutationFailedDialog = ({
   isOpen,
   ctx,
   errorMessage,

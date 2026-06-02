@@ -4,7 +4,7 @@
 // mutation: needed to restore an edit or recreate a delete, and absent for
 // adds (revert = delete the just-added component).
 
-export interface UIComponentMutationContext {
+export interface AppManagedComponentMutationContext {
   kind: 'add' | 'edit' | 'delete';
   componentId: string;
   componentType: string;

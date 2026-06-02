@@ -23,15 +23,16 @@ from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
 )
-from dagster.components.component.component import Component, EmptyAttributesModel
-from dagster.components.component.component_loader import is_component_loader
-from dagster.components.component.ui_definitions_state import (
-    UIComponentEntry,
+from dagster.components.component.app_managed_state import (
+    AppManagedComponentEntry,
     import_component_class,
 )
+from dagster.components.component.component import Component, EmptyAttributesModel
+from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.defs_module import (
     EXPLICITLY_IGNORED_GLOB_PATTERNS,
+    AppManagedDefinitionsComponent,
     ComponentFileModel,
     ComponentLoc,
     ComponentPath,
@@ -39,7 +40,6 @@ from dagster.components.core.defs_module import (
     CompositeYamlComponent,
     DefsFolderComponent,
     PythonFileComponent,
-    UIDefinitionsComponent,
     asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
     find_defs_or_component_yaml,
@@ -310,11 +310,11 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
 
 
 @record
-class UIComponentDecl(ComponentDecl[Component]):
-    """Declaration for a single UI-defined component.
+class AppManagedComponentDecl(ComponentDecl[Component]):
+    """Declaration for a single app-managed component.
 
-    Each UI-defined component has its own state key in storage. The
-    ``instance_key`` on the decl's loc (a ``UIDefinitionsLoc``) is the
+    Each app-managed component has its own state key in storage. The
+    ``instance_key`` on the decl's loc (a ``AppManagedDefinitionsLoc``) is the
     component id that addresses its storage entry, mirroring how
     ``YamlDecl`` uses an instance key to distinguish multiple components
     in a single yaml file.
@@ -333,29 +333,29 @@ class UIComponentDecl(ComponentDecl[Component]):
     component_id: str
 
     @cached_property
-    def entry(self) -> UIComponentEntry:
+    def entry(self) -> AppManagedComponentEntry:
         from dagster._core.storage.defs_state.base import DefsStateStorage
-        from dagster.components.component.ui_definitions_state import (
-            get_ui_component_state_key,
-            read_ui_component_entry_at_version,
+        from dagster.components.component.app_managed_state import (
+            get_app_managed_component_state_key,
+            read_app_managed_component_entry_at_version,
         )
 
         storage = check.not_none(
             DefsStateStorage.get(),
-            "DefsStateStorage must be available to load a UI-defined component.",
+            "DefsStateStorage must be available to load a app-managed component.",
         )
         # Resolve the version through the pinned DefinitionsLoadContext so that
         # entry bytes are consistent with the listing in
-        # ComponentTree._build_ui_definitions_decl, even when storage has moved
+        # ComponentTree._build_app_managed_definitions_decl, even when storage has moved
         # past the snapshot we're loading against (RECONSTRUCTION, or an
         # explicit ReloadCodeWithState pin).
-        key = get_ui_component_state_key(self.location_name, self.component_id)
+        key = get_app_managed_component_state_key(self.location_name, self.component_id)
         key_info = check.not_none(
             DefinitionsLoadContext.get().get_defs_key_state_info(key),
             f"No state version pinned for UI component {self.component_id} in location"
             f" {self.location_name} — it may have been deleted concurrently.",
         )
-        return read_ui_component_entry_at_version(
+        return read_app_managed_component_entry_at_version(
             storage, self.location_name, self.component_id, key_info.version
         )
 
@@ -376,10 +376,10 @@ class UIComponentDecl(ComponentDecl[Component]):
 
 
 @record
-class UIDefinitionsDecl(ComponentDecl[UIDefinitionsComponent]):
+class AppManagedDefinitionsDecl(ComponentDecl[AppManagedDefinitionsComponent]):
     """Declaration for the UI-definitions subtree at a code location.
 
-    Aggregates ``UIComponentDecl`` children, one per UI-defined entry
+    Aggregates ``AppManagedComponentDecl`` children, one per app-managed entry
     discovered in storage. Mirrors the structural role of
     ``YamlFileDecl`` for yaml-defined components: a single named node
     that bundles the components beneath it. The list of children is
@@ -388,14 +388,14 @@ class UIDefinitionsDecl(ComponentDecl[UIDefinitionsComponent]):
     """
 
     location_name: str
-    children: Sequence[UIComponentDecl]
+    children: Sequence[AppManagedComponentDecl]
 
-    def _load_component(self) -> UIDefinitionsComponent:
-        return UIDefinitionsComponent()
+    def _load_component(self) -> AppManagedDefinitionsComponent:
+        return AppManagedDefinitionsComponent()
 
     @property
-    def component_type(self) -> type[UIDefinitionsComponent]:
-        return UIDefinitionsComponent
+    def component_type(self) -> type[AppManagedDefinitionsComponent]:
+        return AppManagedDefinitionsComponent
 
     def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
         yield from self.children

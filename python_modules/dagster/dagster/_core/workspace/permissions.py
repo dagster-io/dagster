@@ -24,7 +24,7 @@ class Permissions(str, Enum):
     EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
     TOGGLE_AUTO_MATERIALIZE = "toggle_auto_materialize"
     EDIT_CONCURRENCY_LIMIT = "edit_concurrency_limit"
-    EDIT_UI_DEFINITIONS = "edit_ui_definitions"
+    EDIT_APP_MANAGED_COMPONENTS = "edit_app_managed_components"
 
     def __str__(self) -> str:
         return str.__str__(self)
@@ -50,7 +50,7 @@ VIEWER_PERMISSIONS: dict[str, bool] = {
     Permissions.EDIT_DYNAMIC_PARTITIONS: False,
     Permissions.TOGGLE_AUTO_MATERIALIZE: False,
     Permissions.EDIT_CONCURRENCY_LIMIT: False,
-    Permissions.EDIT_UI_DEFINITIONS: False,
+    Permissions.EDIT_APP_MANAGED_COMPONENTS: False,
 }
 
 EDITOR_PERMISSIONS: dict[str, bool] = {
@@ -73,7 +73,7 @@ EDITOR_PERMISSIONS: dict[str, bool] = {
     Permissions.EDIT_DYNAMIC_PARTITIONS: True,
     Permissions.TOGGLE_AUTO_MATERIALIZE: True,
     Permissions.EDIT_CONCURRENCY_LIMIT: True,
-    Permissions.EDIT_UI_DEFINITIONS: True,
+    Permissions.EDIT_APP_MANAGED_COMPONENTS: True,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {
@@ -93,7 +93,7 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.EDIT_DYNAMIC_PARTITIONS,
     Permissions.REPORT_RUNLESS_ASSET_EVENTS,
     Permissions.WIPE_ASSETS,
-    Permissions.EDIT_UI_DEFINITIONS,
+    Permissions.EDIT_APP_MANAGED_COMPONENTS,
 }
 
 

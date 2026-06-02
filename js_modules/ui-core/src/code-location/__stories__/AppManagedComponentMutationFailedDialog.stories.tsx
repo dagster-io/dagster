@@ -1,9 +1,9 @@
-import {UIComponentMutationFailedDialog} from '../UIComponentMutationFailedDialog';
+import {AppManagedComponentMutationFailedDialog} from '../AppManagedComponentMutationFailedDialog';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'CodeLocation/UIComponentMutationFailedDialog',
-  component: UIComponentMutationFailedDialog,
+  title: 'CodeLocation/AppManagedComponentMutationFailedDialog',
+  component: AppManagedComponentMutationFailedDialog,
 };
 
 const ERROR_MESSAGE =
@@ -13,7 +13,7 @@ const ERROR_MESSAGE =
   'ValueError: component value out of range: 9999';
 
 export const AddFailed = () => (
-  <UIComponentMutationFailedDialog
+  <AppManagedComponentMutationFailedDialog
     isOpen={true}
     ctx={{
       kind: 'add',
@@ -28,7 +28,7 @@ export const AddFailed = () => (
 );
 
 export const EditFailed = () => (
-  <UIComponentMutationFailedDialog
+  <AppManagedComponentMutationFailedDialog
     isOpen={true}
     ctx={{
       kind: 'edit',
@@ -44,7 +44,7 @@ export const EditFailed = () => (
 );
 
 export const DeleteFailed = () => (
-  <UIComponentMutationFailedDialog
+  <AppManagedComponentMutationFailedDialog
     isOpen={true}
     ctx={{
       kind: 'delete',
@@ -60,7 +60,7 @@ export const DeleteFailed = () => (
 );
 
 export const Reverting = () => (
-  <UIComponentMutationFailedDialog
+  <AppManagedComponentMutationFailedDialog
     isOpen={true}
     ctx={{
       kind: 'edit',
@@ -76,7 +76,7 @@ export const Reverting = () => (
 );
 
 export const NoContext = () => (
-  <UIComponentMutationFailedDialog
+  <AppManagedComponentMutationFailedDialog
     isOpen={true}
     ctx={null}
     errorMessage={ERROR_MESSAGE}
