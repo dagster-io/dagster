@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.13.8 (core) / 0.29.8 (libraries)
+
+### New
+
+- Special characters are now allowed in team `owners` for jobs, schedules, and sensors. (Thanks, [@dragos-pop](https://github.com/dragos-pop)!)
+- Added `kinds` tags and icons for Microsoft Fabric and OneLake. (Thanks, [@MartyP233](https://github.com/MartyP233)!)
+- The BigQuery, Snowflake, and DuckDB I/O managers now skip the table write when an asset returns an empty DataFrame, logging a warning instead. This prevents incorrect type inference and degenerate tables for empty partitions.
+- [ui] The per-code-location "Docs" tab is now "Components", with its content available under a "Library" subtab. Existing `/docs` links continue to work via redirect.
+- [dagster-aws] The EMR PySpark step launcher now honors a configured S3 job package path.
+- [dagster-cloud] `code_server.*` metrics now carry a `server_instance_id` tag identifying the underlying gRPC server process. For multi-replica code locations, the tag identifies whichever replica answered the most recent metrics ping.
+
+### Bugfixes
+
+- `InstigationLogger` now stringifies log record attributes that are not JSON-serializable instead of failing to emit the log. (Thanks, [@jonaslb](https://github.com/jonaslb)!)
+- Fixed a SQL injection vulnerability in `dagster-clickhouse`, `dagster-clickhouse-pandas`, and `dagster-clickhouse-polars` when using dynamic partition keys. ClickHouse partition queries now bind partition key values as driver parameters instead of interpolating them into SQL strings.
+- Fixed an issue where tag values in component YAML files were not coerced correctly.
+- [dg] `dg labs ai dispatch` no longer writes a `plan.md` artifact into version control.
+- [dg] Fixed an error that occurred when using `TypedDict`-typed fields in component configuration.
+- [ui] Fixed partition step status labels and squares that rendered incorrectly after the CSS Modules migration.
+- [ui] Fixed backfill progress not reaching 100% until all runs had completed.
+- [dagster-databricks] Fixed Databricks workspace job list pagination and added retries for rate-limit responses.
+- [dagster-dbt] Fixed `DbtProject.prepare()` to always run `dbt deps` when dependency files are present.
+- [dagster-dbt] Fixed YAML-based translation in `DbtProjectComponent` subclasses to also translate dependency keys.
+- [dagster-dbt] Fixed an issue where dbt unit tests could be ignored unexpectedly.
+- [dagster-dbt] Fixed incorrect asset key translation when generating column lineage with `DbtProjectComponent`.
+- [dagster-dbt] Fixed unbounded recursive copying of the `.local_defs_state()` directory when a dbt project was located at the repository root.
+- [dagster-cloud-cli] Fixed `dg plus deploy` failing with `No module named pip` in `uv`-managed environments.
+- [dagster-cloud-cli] Removed an overly strict dependency-file check from the Docker deploy path.
+
+### Documentation
+
+- Added an integration reference for `dagster-elasticsearch`.
+- Added documentation for the OpenLineage integration.
+- Added documentation for `dagster-hf-datasets`.
+- Added an example covering deployment strategies.
+
 ## 1.13.7 (core) / 0.29.7 (libraries)
 
 ### New
