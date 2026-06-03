@@ -22,6 +22,22 @@ class RequiredTypedDict(TypedDict):
     count: NotRequired[int]
 
 
+class _TotalTrueBase(TypedDict):
+    a: str
+
+
+class TotalFalseChild(_TotalTrueBase, total=False):
+    b: int
+
+
+class _TotalFalseBase(TypedDict, total=False):
+    a: str
+
+
+class TotalTrueChild(_TotalFalseBase):
+    b: int
+
+
 @pytest.mark.parametrize(
     "obj,type_,expected",
     [
@@ -82,6 +98,14 @@ class RequiredTypedDict(TypedDict):
         ({"name": "x"}, RequiredTypedDict, True),
         ({}, RequiredTypedDict, False),
         ({"name": "x", "count": "bad"}, RequiredTypedDict, False),
+        # TypedDict - inherited per-class `total` is preserved
+        ({"a": "x"}, TotalFalseChild, True),
+        ({"a": "x", "b": 1}, TotalFalseChild, True),
+        ({}, TotalFalseChild, False),  # `a` inherited from total=True base is still required
+        ({"b": 1}, TotalFalseChild, False),
+        ({"b": 1}, TotalTrueChild, True),  # `a` inherited from total=False base is still optional
+        ({"a": "x", "b": 1}, TotalTrueChild, True),
+        ({}, TotalTrueChild, False),  # `b` declared in total=True child is required
     ],
 )
 def test_match_type(obj, type_, expected):
