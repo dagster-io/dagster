@@ -10,10 +10,9 @@ from typing import (
     Union,
     get_args,
     get_origin,
-    is_typeddict,
 )
 
-from typing_extensions import NotRequired, Required
+from typing_extensions import NotRequired, Required, is_typeddict
 
 T = TypeVar("T", bound=Any)
 
@@ -40,12 +39,22 @@ def match_type(obj: object, type_: type[T] | tuple[type[T]]) -> TypeGuard[T]:
             if not isinstance(obj, dict):
                 return False
             annotations = type_.__annotations__
+            # Trust __required_keys__ as the baseline (handles per-class `total`
+            # for inherited keys correctly), but override for any field whose
+            # annotation is explicitly wrapped in Required/NotRequired: on
+            # Python 3.10, typing.TypedDict does not honor typing_extensions
+            # Required/NotRequired wrappers when populating __required_keys__.
             required_keys = getattr(type_, "__required_keys__", set())
-            # Check all required keys are present
-            for k in required_keys:
-                if k not in obj:
+            for k, ann in annotations.items():
+                ann_origin = get_origin(ann)
+                if ann_origin is Required:
+                    required = True
+                elif ann_origin is NotRequired:
+                    required = False
+                else:
+                    required = k in required_keys
+                if required and k not in obj:
                     return False
-            # Check all present keys have correct types
             for k, v in obj.items():
                 if k in annotations:
                     if not match_type(v, annotations[k]):
