@@ -1,8 +1,8 @@
 .PHONY: rerecord test clean
 
 rerecord:
-	dagster-dev dg-api-record asset
-	dagster-dev dg-api-record deployment
+	python ./_record.py asset
+	python ./_record.py deployment
 	pytest . --snapshot-update -v
 
 test:

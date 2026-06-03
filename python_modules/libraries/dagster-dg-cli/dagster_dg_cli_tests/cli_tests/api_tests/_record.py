@@ -1,7 +1,7 @@
-"""Unified API recording command that replaces separate GraphQL and CLI recording.
+"""Record GraphQL responses for dg api command tests.
 
-This command combines the functionality of the previous record_graphql and record_cli_output
-commands, with support for batch processing entire domains or individual fixtures.
+Invoke from a domain's Makefile, e.g. `python ../_record.py asset`.
+Requires an authenticated Dagster Plus session — see `dg auth login`.
 """
 
 import json
@@ -13,16 +13,21 @@ from typing import Any
 
 import click
 import yaml
+from click.testing import CliRunner
+from dagster_dg_cli.cli import cli as root_cli
+from dagster_dg_cli.cli.api.client import DgApiTestContext
+from dagster_dg_cli.cli.api.shared import get_config_or_error
 from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient, IGraphQLClient
+
+API_TESTS_DIR = Path(__file__).parent
 
 
 class RecordingClient(IGraphQLClient):
     """GraphQL client that records all execute() calls for later replay."""
 
     def __init__(self, real_client: DagsterPlusGraphQLClient):
-        """Wrap a real GraphQL client to record its responses."""
         self.real_client = real_client
-        self.recorded_responses = []
+        self.recorded_responses: list[dict[str, Any]] = []
 
     def execute_arbitrary(
         self,
@@ -30,38 +35,17 @@ class RecordingClient(IGraphQLClient):
         operation_name: str | None = None,
         variables: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Execute query on real client and record the response."""
         response = self.real_client.execute_arbitrary(query, operation_name, variables)
         self.recorded_responses.append(response)
         return response
 
     def get_recorded_responses(self) -> list[dict[str, Any]]:
-        """Return all recorded GraphQL responses."""
         return self.recorded_responses
-
-
-def find_repo_root() -> Path:
-    """Get repository root relative to this command file location."""
-    # This file is at: python_modules/automation/automation/dagster_dev/commands/dg_api_record.py
-    # Repo root is: ../../../../../ from this file (6 levels up)
-    command_file = Path(__file__).absolute()
-    repo_root = command_file.parent.parent.parent.parent.parent.parent
-    return repo_root
 
 
 def load_domain_commands(domain: str) -> dict[str, dict]:
     """Load command registry for a domain from scenarios.yaml."""
-    repo_root = find_repo_root()
-    api_tests_dir = (
-        repo_root
-        / "python_modules"
-        / "libraries"
-        / "dagster-dg-cli"
-        / "dagster_dg_cli_tests"
-        / "cli_tests"
-        / "api_tests"
-    )
-    domain_dir = api_tests_dir / f"{domain}_tests"
+    domain_dir = API_TESTS_DIR / f"{domain}_tests"
     recordings_dir = domain_dir / "recordings"
     scenarios_file = domain_dir / "scenarios.yaml"
 
@@ -75,7 +59,7 @@ def load_domain_commands(domain: str) -> dict[str, dict]:
         return {}
 
     try:
-        with open(scenarios_file) as f:
+        with open(scenarios_file, encoding="utf-8") as f:
             scenarios_data = yaml.safe_load(f) or {}
         return scenarios_data
     except Exception as e:
@@ -84,39 +68,13 @@ def load_domain_commands(domain: str) -> dict[str, dict]:
 
 
 def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> bool:
-    """Record GraphQL response for a single fixture. Returns True if successful.
-
-    Args:
-        domain: API domain (e.g., 'asset', 'deployment')
-        fixture_name: Name of the fixture scenario
-        command: Command to execute
-    """
-    repo_root = find_repo_root()
-    api_tests_dir = (
-        repo_root
-        / "python_modules"
-        / "libraries"
-        / "dagster-dg-cli"
-        / "dagster_dg_cli_tests"
-        / "cli_tests"
-        / "api_tests"
-    )
-    recording_dir = api_tests_dir / f"{domain}_tests" / "recordings" / fixture_name
-
+    """Record GraphQL response for a single fixture. Returns True if successful."""
+    recording_dir = API_TESTS_DIR / f"{domain}_tests" / "recordings" / fixture_name
     recording_dir.mkdir(parents=True, exist_ok=True)
     click.echo(f"🚀 Recording for {domain}.{fixture_name}: {command}")
 
     try:
-        # Import dependencies needed for command execution
-        from click.testing import CliRunner
-        from dagster_dg_cli.cli import cli as root_cli
-        from dagster_dg_cli.cli.api.client import DgApiTestContext
-
-        # Create a real GraphQL client for recording (assumes user is already authenticated)
         try:
-            # Use the default config resolution - same as normal CLI commands
-            from dagster_dg_cli.cli.api.shared import get_config_or_error
-
             config = get_config_or_error()
             real_client = DagsterPlusGraphQLClient(
                 url=config.organization_url,
@@ -130,30 +88,23 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
                 "Make sure you're authenticated with Dagster Plus (run 'dg auth login' first)."
             )
 
-        # Wrap in recording client
         recording_client = RecordingClient(real_client)
-
-        # Create test context with recording client
         recording_context = DgApiTestContext(client_factory=lambda config: recording_client)
 
-        # Execute command with recording context
         runner = CliRunner()
         args = command.split()[1:]  # Skip 'dg'
         result = runner.invoke(root_cli, args, obj=recording_context, catch_exceptions=False)
 
-        # For error scenarios, we still want to record the GraphQL responses even if command failed
-        # The GraphQL client will have recorded the error responses that we need for testing
         if result.exit_code != 0:
             click.echo(f"Command failed (exit code {result.exit_code}): {result.output}")
             click.echo("Recording GraphQL responses from failed command...")
 
-        # Save recorded GraphQL responses (including error responses)
         recorded_responses = recording_client.get_recorded_responses()
 
         if recorded_responses:
             for i, response in enumerate(recorded_responses, 1):
                 json_file = recording_dir / f"{i:02d}_response.json"
-                with open(json_file, "w") as f:
+                with open(json_file, "w", encoding="utf-8") as f:
                     json.dump(response, f, indent=2, sort_keys=True)
                 click.echo(f"📄 Saved GraphQL response {i} to {json_file}")
 
@@ -175,35 +126,27 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
         return False
 
 
-@click.command(name="dg-api-record")
+@click.command()
 @click.argument("domain", required=True)
 @click.option(
     "--recording",
     type=str,
     help="Specific recording to record (if omitted, runs all recordings in domain)",
 )
-def dg_api_record(domain: str, recording: str):
-    """Record GraphQL responses for API tests.
-
-    Records GraphQL responses for API tests. Can process a single fixture or all fixtures in a domain.
-
-    Args:
-        domain: API domain (e.g., 'deployment', 'run', 'asset')
+def main(domain: str, recording: str):
+    """Record GraphQL responses for dg api tests in DOMAIN.
 
     Examples:
         # Record entire domain
-        dagster-dev dg-api-record asset
+        python _record.py asset
 
         # Record single recording
-        dagster-dev dg-api-record asset --recording success_multiple_assets
-
+        python _record.py asset --recording success_multiple_assets
     """
-    # Load domain commands
     commands_data = load_domain_commands(domain)
     if not commands_data:
         sys.exit(1)
 
-    # Determine which recordings to process
     if recording:
         if recording not in commands_data:
             available = list(commands_data.keys())
@@ -216,9 +159,7 @@ def dg_api_record(domain: str, recording: str):
 
     click.echo(f"📁 Domain: {domain}")
     click.echo(f"🎯 Target recordings: {target_fixtures}")
-    click.echo("🔄 Steps: Recording")
 
-    # Process GraphQL recording
     click.echo(f"🚀 Recording GraphQL responses for {domain}...")
     graphql_success = True
     for fixture_name in target_fixtures:
@@ -237,12 +178,14 @@ def dg_api_record(domain: str, recording: str):
         else:
             click.echo(f"✅ GraphQL recorded for {fixture_name}")
 
-    # Final status
     if graphql_success:
         click.echo(f"🎉 Successfully recorded GraphQL for {domain}")
     else:
         click.echo(f"⚠️  GraphQL recording completed with some failures for {domain}")
 
-    # Exit with error code if any step failed
     if not graphql_success:
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

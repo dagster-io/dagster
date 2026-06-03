@@ -44,7 +44,6 @@ test = [
     "dagster-cloud-cli",
     "dagster-rest-resources",
     "create-dagster",
-    "automation",
     "dagster-dbt",
     "dagster-fivetran",
     "dagster-sling",
@@ -69,7 +68,6 @@ dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", ed
 dagster-cloud-cli = { path = "../../../python_modules/libraries/dagster-cloud-cli", editable = true }
 dagster-rest-resources = { path = "../../../python_modules/libraries/dagster-rest-resources", editable = true }
 create-dagster = { path = "../../../python_modules/libraries/create-dagster", editable = true }
-automation = { path = "../../../python_modules/automation", editable = true }
 dagster-dbt = { path = "../dagster-dbt", editable = true }
 dagster-fivetran = { path = "../dagster-fivetran", editable = true }
 dagster-sling = { path = "../dagster-sling", editable = true }
