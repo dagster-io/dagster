@@ -699,12 +699,14 @@ def run_sync(
     with tempfile.TemporaryDirectory() as tmpdir:
         dest_clone = Path(tmpdir) / "dest"
 
-        # Clone the destination repo (treeless for speed -- blobs fetched on demand)
+        # Clone the destination repo. Single-branch limits history to master; we used to also
+        # pass --filter=tree:0 for speed, but copybara serves git-fetches from this clone via a
+        # file:// remote and git's upload-pack does not lazy-fetch missing trees, so a treeless
+        # clone produces "fatal: bad tree object" partway through the copybara fetch.
         click.echo(f"Cloning {effective_dest_url} ...")
         git(
             [
                 "clone",
-                "--filter=tree:0",
                 "--single-branch",
                 "--branch",
                 "master",
