@@ -1,3 +1,4 @@
+import logging
 import os
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -18,7 +19,94 @@ def pushd(path: Path) -> Iterator[None]:
 
 def dump_pipeline_yaml(pipeline_dict: dict[str, object]) -> str:
     _assert_step_keys_present_and_unique(pipeline_dict)
+    pipeline_dict = _drop_skipped_steps(pipeline_dict)
     return yaml.dump(pipeline_dict, default_flow_style=False, Dumper=QuotedStrDumper)
+
+
+def _drop_skipped_steps(pipeline_dict: dict[str, object]) -> dict[str, object]:
+    """Remove any step with a truthy ``skip`` field from the pipeline.
+
+    Skipped steps still show up in the Buildkite UI / API as "broken" jobs even
+    though they never run; uploading them just makes the build noisier. We log
+    each drop to stderr so the reason is preserved.
+
+    Also drops ``depends_on`` references that point at dropped step keys, and
+    drops any group whose substeps were all skipped.
+    """
+    raw_steps = pipeline_dict.get("steps")
+    if not isinstance(raw_steps, list):
+        return pipeline_dict
+
+    dropped_keys: set[str] = set()
+
+    def _is_skipped(step: object) -> bool:
+        return isinstance(step, dict) and bool(step.get("skip"))
+
+    def _describe(step: dict) -> str:
+        return step.get("key") or step.get("label") or step.get("group") or "<unknown>"
+
+    kept_steps: list[object] = []
+    for step in raw_steps:
+        if not isinstance(step, dict):
+            kept_steps.append(step)
+            continue
+
+        if _is_skipped(step):
+            logging.info("Dropping skipped step %s: %s", _describe(step), step["skip"])
+            key = step.get("key")
+            if key:
+                dropped_keys.add(key)
+            continue
+
+        kept = step
+        substeps = step.get("steps")
+        if isinstance(substeps, list):
+            new_substeps = []
+            for sub in substeps:
+                if _is_skipped(sub):
+                    assert isinstance(sub, dict)
+                    logging.info("Dropping skipped step %s: %s", _describe(sub), sub["skip"])
+                    sub_key = sub.get("key")
+                    if sub_key:
+                        dropped_keys.add(sub_key)
+                else:
+                    new_substeps.append(sub)
+            if not new_substeps:
+                logging.info(
+                    "Dropping empty group %s (all substeps were skipped)",
+                    _describe(step),
+                )
+                group_key = step.get("key")
+                if group_key:
+                    dropped_keys.add(group_key)
+                continue
+            kept = {**step, "steps": new_substeps}
+
+        kept_steps.append(kept)
+
+    if dropped_keys:
+        kept_steps = [_scrub_depends_on(s, dropped_keys) for s in kept_steps]
+
+    return {**pipeline_dict, "steps": kept_steps}
+
+
+def _scrub_depends_on(step: object, dropped_keys: set[str]) -> object:
+    """Remove dropped-step keys from a step's ``depends_on`` list, recursing into groups."""
+    if not isinstance(step, dict):
+        return step
+    new_step = step
+    deps = step.get("depends_on")
+    if isinstance(deps, list):
+        filtered = [d for d in deps if d not in dropped_keys]
+        if filtered != deps:
+            new_step = {**new_step, "depends_on": filtered}
+    substeps = new_step.get("steps")
+    if isinstance(substeps, list):
+        new_step = {
+            **new_step,
+            "steps": [_scrub_depends_on(s, dropped_keys) for s in substeps],
+        }
+    return new_step
 
 
 def _assert_step_keys_present_and_unique(pipeline_dict: dict[str, object]) -> None:
