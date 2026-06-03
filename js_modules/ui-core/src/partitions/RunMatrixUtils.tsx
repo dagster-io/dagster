@@ -57,7 +57,7 @@ export const TopLabel = ({className, ...rest}: React.HTMLAttributes<HTMLDivEleme
 export const TopLabelTilted = ({label, $height}: {label: string; $height: number}) => {
   return (
     <div className={styles.topLabelTiltedInner} style={{height: $height - TITLE_MARGIN_BOTTOM}}>
-      <div className="tilted">{label}</div>
+      <div className={styles.tilted}>{label}</div>
     </div>
   );
 };
