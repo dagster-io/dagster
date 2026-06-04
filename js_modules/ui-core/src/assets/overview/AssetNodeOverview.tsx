@@ -30,7 +30,7 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LargeCollapsibleSection} from '../LargeCollapsibleSection';
 import {MaterializationTag} from '../MaterializationTag';
 import {OverdueTag} from '../OverdueTag';
-import {RecentUpdatesTimelineForAssetKey} from '../RecentUpdatesTimeline';
+import {RecentUpdatesTimeline} from '../RecentUpdatesTimeline';
 import {SimpleStakeholderAssetStatus} from '../SimpleStakeholderAssetStatus';
 import {AssetChecksStatusSummary} from '../asset-checks/AssetChecksStatusSummary';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
@@ -200,7 +200,7 @@ export const AssetNodeOverview = ({
         ) : undefined}
       </Box>
       {cachedOrLiveAssetNode.isPartitioned ? null : (
-        <RecentUpdatesTimelineForAssetKey assetKey={cachedOrLiveAssetNode.assetKey} />
+        <RecentUpdatesTimeline assetKey={cachedOrLiveAssetNode.assetKey} />
       )}
     </Box>
   );
@@ -373,7 +373,7 @@ export const AssetNodeOverviewNonSDA = ({
                 </Text>
               )}
             </div>
-            <RecentUpdatesTimelineForAssetKey assetKey={assetKey} />
+            <RecentUpdatesTimeline assetKey={assetKey} />
           </Box>
         </LargeCollapsibleSection>
       }
