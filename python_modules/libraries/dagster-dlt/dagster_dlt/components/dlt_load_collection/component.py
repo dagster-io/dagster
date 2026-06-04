@@ -81,14 +81,8 @@ class DltLoadSpecModel(Resolvable):
     translation: (
         Annotated[
             TranslationFn[DltResourceTranslatorData],
-            TranslationFnResolver[DltResourceTranslatorData](
-                lambda data: {"resource": data.resource, "pipeline": data.pipeline}
-            ),
-        ]
-        | None
-    ) = None
     partitions_def: Annotated[
-        PartitionsDefinition | None,
+        Optional[PartitionsDefinition],
         Resolver(
             resolve_partitions_def,
             model_field_type=HourlyPartitionsDefinitionModel
@@ -99,7 +93,7 @@ class DltLoadSpecModel(Resolvable):
         ),
     ] = None
     backfill_policy: Annotated[
-        BackfillPolicy | None,
+        Optional[BackfillPolicy],
         Resolver(
             resolve_backfill_policy,
             model_field_type=SingleRunBackfillPolicyModel | MultiRunBackfillPolicyModel,
