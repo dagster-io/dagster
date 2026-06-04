@@ -11,7 +11,17 @@ def _get_release_version(change_name: str) -> str:
 
 def _read_changes_from_branch_tip(branch: str) -> str:
     """Fetch the latest from the remote branch and read CHANGES.md from the tip."""
-    subprocess.check_call(["git", "fetch", "origin", branch])
+    # Force HTTPS so the fetch works on agents without an SSH deploy key configured.
+    subprocess.check_call(
+        [
+            "git",
+            "-c",
+            "url.https://github.com/.insteadOf=git@github.com:",
+            "fetch",
+            "origin",
+            branch,
+        ]
+    )
 
     # Compute the git-relative path to CHANGES.md
     repo_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
