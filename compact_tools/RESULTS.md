@@ -178,6 +178,24 @@ invasive/risky for ~5M.
 **Original 140M → 42.8M = 69% reduction**, validated against the 3-asset
 `materialize()` acceptance test at every step.
 
+## Course compatibility check (dagster_essentials)
+
+Verified the lightweight build runs the dagster_university `dagster_essentials`
+course orchestration (`compact_tools/course_verification.py`, run in
+`.venv-course`). DuckDB support restored via a tiny `dagster_duckdb` shim
+(`compact_tools/dagster_duckdb_shim/`) — a `ConfigurableResource` over the stdlib
+`duckdb` package providing `DuckDBResource.get_connection()`, since the original
+`dagster-duckdb` integration was deleted in Phase 1.
+
+- PART A — the REAL course modules (`resources`, `partitions`, `jobs`,
+  `schedules`, `sensors`, `assets.trips`) all import and resolve: DuckDBResource,
+  Monthly/Weekly partitions, 3 asset jobs, 2 schedules, the adhoc sensor.
+- PART B — the REAL course `taxi_zones` + `taxi_trips` DuckDB assets execute
+  end-to-end through a monthly-partitioned `define_asset_job` (sample local data;
+  network download + geopandas/matplotlib viz assets skipped — pure course deps).
+- Result: assets ✅, DuckDBResource ✅, partitions ✅, jobs ✅, schedule/sensor
+  definitions ✅. Only auto-firing of schedules/sensors is unavailable (no daemon).
+
 ## Running tally (site-packages, incl. 12M pip tooling)
 
 | Stage | site-packages | vs brief 140M baseline |

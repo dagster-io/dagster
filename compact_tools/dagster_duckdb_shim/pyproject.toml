@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-duckdb"
+version = "0.0.0+lightweight-shim"
+description = "Lightweight DuckDBResource shim for lightweight-dagster (course compatibility)."
+requires-python = ">=3.9"
+dependencies = ["duckdb"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dagster_duckdb*"]

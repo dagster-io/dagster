@@ -1,0 +1,3 @@
+LocationID,zone,borough,the_geom
+1,Midtown,Manhattan,"POLYGON((-73.99 40.74, -73.97 40.74, -73.97 40.76, -73.99 40.76, -73.99 40.74))"
+2,Harlem,Manhattan,"POLYGON((-73.96 40.77, -73.94 40.77, -73.94 40.79, -73.96 40.79, -73.96 40.77))"
