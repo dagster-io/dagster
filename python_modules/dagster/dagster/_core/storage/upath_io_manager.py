@@ -73,7 +73,7 @@ class UPathIOManager(IOManager):
         self,
         base_path: Optional["UPath"] = None,
     ):
-        from upath import UPath
+        from dagster._core.storage._upath_compat import UPath
 
         assert not self.extension or "." in self.extension
         self._base_path = base_path or UPath(".")
@@ -142,7 +142,8 @@ class UPathIOManager(IOManager):
         """
         # Deferred for import perf
         from fsspec.implementations.local import LocalFileSystem
-        from upath import UPath
+
+        from dagster._core.storage._upath_compat import UPath
 
         if isinstance(self._base_path, UPath):
             return self._base_path.fs
@@ -158,7 +159,7 @@ class UPathIOManager(IOManager):
         Returns:
             Dict[str, Any]: fsspec storage_options.
         """
-        from upath import UPath
+        from dagster._core.storage._upath_compat import UPath
 
         if isinstance(self._base_path, UPath):
             return self._base_path._kwargs.copy()  # noqa
@@ -213,13 +214,13 @@ class UPathIOManager(IOManager):
         return self._base_path.joinpath(*coerce_to_relative_parts(context_path))
 
     def get_asset_relative_path(self, context: InputContext | OutputContext) -> "UPath":
-        from upath import UPath
+        from dagster._core.storage._upath_compat import UPath
 
         # we are not using context.get_asset_identifier() because it already includes the partition_key
         return UPath(*context.asset_key.path)
 
     def get_op_output_relative_path(self, context: InputContext | OutputContext) -> "UPath":
-        from upath import UPath
+        from dagster._core.storage._upath_compat import UPath
 
         return UPath(*context.get_identifier())
 

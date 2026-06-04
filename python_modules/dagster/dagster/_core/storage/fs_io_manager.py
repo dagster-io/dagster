@@ -254,7 +254,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
     extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
 
     def __init__(self, base_dir=None, **kwargs):
-        from upath import UPath
+        from dagster._core.storage._upath_compat import UPath
 
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
 

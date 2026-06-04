@@ -49,10 +49,14 @@ dependencies = [
     "structlog",
     "toposort>=1.0",
     'psutil>=1.0; platform_system=="Windows"',
-    'pywin32!=226; platform_system=="Windows"',
+    # NOTE (lightweight merge): pywin32 moved to the optional `server` extra — it is
+    # not imported anywhere in the dagster source on the in-process `materialize()`
+    # path; it backed the removed process-management / daemon / gRPC-launcher layer.
     "docstring-parser",
-    "universal_pathlib; python_version<'3.12'",
-    "universal_pathlib>=0.2.0; python_version>='3.12'",
+    # NOTE (lightweight merge): universal_pathlib + fsspec moved to the optional
+    # `remote-io` extra. The default filesystem IO manager falls back to stdlib
+    # pathlib.Path for local storage via dagster/_core/storage/_upath_compat.py.
+    # Install dagster[remote-io] to target remote object stores (s3://, gs://, ...).
     # NOTE (lightweight dagster): `rich` removed. It was not imported anywhere in
     # the dagster source; it was only pulled in transitively by structlog's
     # optional rich-traceback support (guarded by try/except ImportError). Dropping
@@ -94,6 +98,15 @@ server = [
     "requests",
     "tqdm<5",
     "watchdog>=0.8.3,<7",
+    # Windows process management for the daemon / gRPC code server.
+    'pywin32!=226; platform_system=="Windows"',
+]
+# Optional remote-filesystem IO (lightweight merge). Restores UPath/fsspec so IO
+# managers can target object stores (s3://, gs://, az://, ...). Local-filesystem
+# IO works without this via the stdlib pathlib fallback.
+remote-io = [
+    "universal_pathlib; python_version<'3.12'",
+    "universal_pathlib>=0.2.0; python_version>='3.12'",
 ]
 # Optional SQLAlchemy/alembic storage stack (lightweight dagster). Restores the
 # SQL-backed run/event-log/schedule storages (sqlite file storage, postgres,

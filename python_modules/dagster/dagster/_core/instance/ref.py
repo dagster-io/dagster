@@ -600,8 +600,7 @@ class InstanceRef(
 
     @property
     def defs_state_storage(self) -> Optional["DefsStateStorage"]:
-        from upath import UPath
-
+        from dagster._core.storage._upath_compat import UPath
         from dagster._core.storage.defs_state.base import DefsStateStorage
         from dagster._core.storage.defs_state.blob_storage_state_storage import (
             UPathDefsStateStorage,

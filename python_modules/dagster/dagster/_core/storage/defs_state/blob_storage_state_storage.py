@@ -45,7 +45,7 @@ class UPathDefsStateStorage(DefsStateStorage, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        from upath import UPath
+        from dagster._core.storage._upath_compat import UPath
 
         return cls(
             inst_data=inst_data,

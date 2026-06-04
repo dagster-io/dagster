@@ -1,0 +1,10 @@
+phase,site_packages_kb,dagster_src_kb,total_kb,total_mb
+"phase0-baseline",82696,20175,102871,100.5
+"phase2a-drop-grpc-protobuf",69177,20175,89352,87.3
+"phase2a-grpc-dropped-stable",69177,20175,89352,87.3
+"phase2b-drop-pywin32",53067,20175,73242,71.5
+"phase2c-drop-rich-pygments-fsspec-upath-jinja2-tabulate",42025,20183,62208,60.8
+"phase3a-cleanroom-storage-drop-sqlalchemy-stack-tqdm-watchdog",22865,20269,43134,42.1
+"phase3b-drop-unused-transitive-deps",19193,20269,39462,38.5
+"phase3c-pycache-stripped (honest on-disk)",15797,10008,25805,25.2
+"phase6b-restore-antlr4",20320,19479,39799,38.9
