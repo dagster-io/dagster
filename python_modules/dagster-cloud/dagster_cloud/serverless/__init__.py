@@ -1,1 +1,0 @@
-from dagster_cloud.serverless.io_manager import serverless_io_manager as serverless_io_manager

@@ -1,8 +1,0 @@
-# AWS ECR - install AWS CLI v2 and log Docker into ECR.
-# The base job image is Debian-based (python:3.12), so `apt-get` is used instead of `apk`.
-# AWS credentials are read directly from the job environment (AWS_ACCESS_KEY_ID,
-# AWS_SECRET_ACCESS_KEY, AWS_REGION).
-- apt-get install -y --no-install-recommends unzip curl ca-certificates
-- curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
-- unzip -q /tmp/awscliv2.zip -d /tmp && /tmp/aws/install
-- aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin TEMPLATE_IMAGE_REGISTRY

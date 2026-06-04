@@ -1,1 +1,0 @@
-from dagster_tableau.components.tableau_component import TableauComponent as TableauComponent

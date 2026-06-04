@@ -1,4 +1,0 @@
-resources:
-  io_manager:
-    config:
-      base_dir: /tmp

@@ -1,8 +1,0 @@
-boto3
-dagster
-dagster-webserver
-dagster_aws
-dagster_pyspark
-dagster_spark
-moto
-pytest

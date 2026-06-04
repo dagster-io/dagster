@@ -1,2 +1,0 @@
-class DataprocError(Exception):
-    pass

@@ -1,6 +1,0 @@
-{
-  "deleteLocation": {
-    "__typename": "DeleteLocationSuccess",
-    "locationName": "my-location"
-  }
-}

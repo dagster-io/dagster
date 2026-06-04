@@ -1,5 +1,0 @@
-groups:
-  - name: customized_dbt_seed_group
-    owner:
-      name: Georg Bendemann
-      email: kafka@judgment.com

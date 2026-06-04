@@ -1,5 +1,0 @@
----
-type: dagster_test.components.simple_asset.SimpleAssetComponent
-attributes:
-  asset_key: solo_yaml
-  value: solo

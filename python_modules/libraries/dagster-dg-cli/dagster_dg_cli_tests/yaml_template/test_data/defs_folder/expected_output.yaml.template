@@ -1,8 +1,0 @@
-# SCHEMA TEMPLATE - Copy and modify the structure below
-type: dagster.DefsFolderComponent  # Required
-attributes:  # Optional: Component attributes
-
----
-# EXAMPLE VALUES - Valid YAML with sample data
-type: "dagster.DefsFolderComponent"
-attributes:

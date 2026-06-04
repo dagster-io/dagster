@@ -1,1 +1,0 @@
-from dagster_aws.cloudwatch.loggers import cloudwatch_logger as cloudwatch_logger

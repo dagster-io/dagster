@@ -1,8 +1,0 @@
-selectors:
-  - name: raw_customer_child_models
-    description: "Equivalent to raw_customers+,resource_type:model"
-    definition:
-      intersection:
-        - method: resource_type
-          value: model
-        - raw_customers+

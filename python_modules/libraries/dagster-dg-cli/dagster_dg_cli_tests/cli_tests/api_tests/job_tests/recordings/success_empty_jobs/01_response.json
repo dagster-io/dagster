@@ -1,6 +1,0 @@
-{
-  "repositoriesOrError": {
-    "__typename": "RepositoryConnection",
-    "nodes": []
-  }
-}

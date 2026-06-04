@@ -1,4 +1,0 @@
-resources:
-  io_manager:
-    config:
-      gcs_bucket: dagster-scratch-ccdfe1e

@@ -1,9 +1,0 @@
-{
-  "launchRun": {
-    "__typename": "LaunchRunSuccess",
-    "run": {
-      "runId": "2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a",
-      "status": "STARTED"
-    }
-  }
-}

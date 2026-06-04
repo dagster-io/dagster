@@ -523,12 +523,14 @@ class AssetSelection(ABC):
     @classmethod
     @beta_param(param="include_sources")
     def from_string(cls, string: str, include_sources=False) -> "AssetSelection":
-        from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
-            AntlrAssetSelectionParser,
+        # Lightweight, dependency-free parser (replaces antlr4). Behaviorally
+        # equivalent to the former AntlrAssetSelectionParser.
+        from dagster._core.definitions.antlr_asset_selection.lightweight_parser import (
+            LightweightAssetSelectionParser,
         )
 
         try:
-            return AntlrAssetSelectionParser(string, include_sources).asset_selection
+            return LightweightAssetSelectionParser(string, include_sources).asset_selection
         except:
             pass
         if string == "*":

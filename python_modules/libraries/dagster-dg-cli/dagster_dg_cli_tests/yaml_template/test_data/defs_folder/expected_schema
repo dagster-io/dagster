@@ -1,3 +1,0 @@
-# Template with instructions
-type: dagster.DefsFolderComponent  # Required
-attributes:  # Optional: Attributes details

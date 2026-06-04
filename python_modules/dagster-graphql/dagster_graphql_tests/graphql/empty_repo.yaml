@@ -1,4 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: repo.py
-      attribute: empty_repo

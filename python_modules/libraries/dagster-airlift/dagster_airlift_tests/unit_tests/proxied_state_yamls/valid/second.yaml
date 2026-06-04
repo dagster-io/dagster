@@ -1,5 +1,0 @@
-tasks:
-  - id: some_task
-    proxied: True
-  - id: other_task
-    proxied: False

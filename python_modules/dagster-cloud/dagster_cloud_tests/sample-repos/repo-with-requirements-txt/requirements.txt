@@ -1,9 +1,0 @@
-../local-package-a # trailing comment a/b
-# comment
-# comment with slash a/b
-
-# required for the flask install to work
-Werkzeug==2.2.2
-
-# a git+https url
-git+https://github.com/pallets/flask@2.2.2#egg=Flask

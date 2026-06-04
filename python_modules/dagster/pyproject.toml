@@ -26,12 +26,11 @@ dependencies = [
     "Jinja2",
     # core
     "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
-    "grpcio>=1.66.2; python_version>='3.13'",
-    "grpcio>=1.44.0; python_version<'3.13'",
-    "grpcio-health-checking>=1.66.2; python_version>='3.13'",
-    "grpcio-health-checking>=1.44.0; python_version<'3.13'",
-    "protobuf>=3.20.0,<7; python_version<'3.11'",
-    "protobuf>=4,<7; python_version>='3.11'",
+    # NOTE (lightweight dagster): grpcio / grpcio-health-checking / protobuf moved
+    # to the optional `grpc` extra. They are only needed for the multiprocess gRPC
+    # code server (remote code locations, the daemon, step-delegating execution).
+    # In-process execution and `materialize()` import them lazily, so the local
+    # workflow runs without them. Install `dagster[grpc]` to restore the gRPC server.
     "python-dotenv",
     "pytz",
     "requests",
@@ -53,7 +52,10 @@ dependencies = [
     "filelock",
     "dagster-pipes==1!0+dev",
     "dagster-shared==1!0+dev",
-    "antlr4-python3-runtime<4.14",
+    # NOTE (lightweight dagster): antlr4-python3-runtime removed. The asset
+    # selection grammar is now parsed by a hand-written recursive-descent parser
+    # in dagster/_core/definitions/antlr_asset_selection/lightweight_parser.py,
+    # validated to be behaviorally equivalent to the former generated parser.
 ]
 
 [project.urls]
@@ -77,6 +79,17 @@ dagster = "dagster"
 
 [project.optional-dependencies]
 docker = ["docker"]
+# Optional gRPC code-server stack (lightweight dagster). Restores the
+# multiprocess gRPC server used for remote code locations, the daemon, and
+# step-delegating execution. Not needed for in-process `materialize()`.
+grpc = [
+    "grpcio>=1.66.2; python_version>='3.13'",
+    "grpcio>=1.44.0; python_version<'3.13'",
+    "grpcio-health-checking>=1.66.2; python_version>='3.13'",
+    "grpcio-health-checking>=1.44.0; python_version<'3.13'",
+    "protobuf>=3.20.0,<7; python_version<'3.11'",
+    "protobuf>=4,<7; python_version>='3.11'",
+]
 # `test` is kept as a published extra (rather than a dependency-group) because
 # it is consumed cross-package by ~121 other tox.ini files via `dagster[test]`.
 # Other packages' test envs install this surface to pick up shared test
