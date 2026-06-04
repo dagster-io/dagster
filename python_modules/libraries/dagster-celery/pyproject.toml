@@ -1,16 +1,20 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-celery"
-version = "1!0+dev"
+version = "0.29.8"
 description = "Package for using Celery as Dagster's execution engine."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.8",
     "celery>=4.3.0",
     "click>=5.0,<9.0",
     "importlib_metadata<5.0.0; python_version<'3.8'",
@@ -50,16 +54,50 @@ test = [
     "docker",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
-dagster-graphql = { path = "../../dagster-graphql", editable = true }
-dagster-test = { path = "../../dagster-test", editable = true }
-dagster-postgres = { path = "../dagster-postgres", editable = true }
-dagster-k8s = { path = "../dagster-k8s", editable = true }
-dagster-aws = { path = "../dagster-aws", editable = true }
-dagster-pandas = { path = "../dagster-pandas", editable = true }
-dagster-gcp = { path = "../dagster-gcp", editable = true }
-dagster-celery-k8s = { path = "../dagster-celery-k8s", editable = true }
-dagster-celery-docker = { path = "../dagster-celery-docker", editable = true }
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-graphql]
+path = "../../dagster-graphql"
+editable = true
+
+[tool.uv.sources.dagster-test]
+path = "../../dagster-test"
+editable = true
+
+[tool.uv.sources.dagster-postgres]
+path = "../dagster-postgres"
+editable = true
+
+[tool.uv.sources.dagster-k8s]
+path = "../dagster-k8s"
+editable = true
+
+[tool.uv.sources.dagster-aws]
+path = "../dagster-aws"
+editable = true
+
+[tool.uv.sources.dagster-pandas]
+path = "../dagster-pandas"
+editable = true
+
+[tool.uv.sources.dagster-gcp]
+path = "../dagster-gcp"
+editable = true
+
+[tool.uv.sources.dagster-celery-k8s]
+path = "../dagster-celery-k8s"
+editable = true
+
+[tool.uv.sources.dagster-celery-docker]
+path = "../dagster-celery-docker"
+editable = true

@@ -1,17 +1,21 @@
 [build-system]
-requires = ["hatchling>=1.19.0"]
+requires = [
+    "hatchling>=1.19.0",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "dagster-snowflake-pyspark"
-version = "1!0+dev"
+version = "0.29.8"
 description = "Package for integrating Snowflake and PySpark with Dagster."
-authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+authors = [
+    { name = "Dagster Labs", email = "hello@dagsterlabs.com" },
+]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "dagster==1!0+dev",
-    "dagster-snowflake==1!0+dev",
+    "dagster==1.13.8",
+    "dagster-snowflake==0.29.8",
     "pyspark<4",
     "requests",
     "sqlalchemy!=1.4.42",
@@ -29,8 +33,18 @@ test = [
     "dagster-snowflake[pandas]",
 ]
 
-[tool.uv.sources]
-dagster = { path = "../../dagster", editable = true }
-dagster-pipes = { path = "../../dagster-pipes", editable = true }
-dagster-shared = { path = "../dagster-shared", editable = true }
-dagster-snowflake = { path = "../dagster-snowflake", editable = true }
+[tool.uv.sources.dagster]
+path = "../../dagster"
+editable = true
+
+[tool.uv.sources.dagster-pipes]
+path = "../../dagster-pipes"
+editable = true
+
+[tool.uv.sources.dagster-shared]
+path = "../dagster-shared"
+editable = true
+
+[tool.uv.sources.dagster-snowflake]
+path = "../dagster-snowflake"
+editable = true

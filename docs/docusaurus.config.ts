@@ -235,7 +235,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.12.8)',
+              label: 'Latest (1.13.8)',
               path: '/',
             },
           },
