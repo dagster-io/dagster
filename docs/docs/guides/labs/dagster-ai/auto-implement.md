@@ -16,7 +16,7 @@ From any [Issue](/guides/labs/issues), you can dispatch an AI coding agent to pl
 
 - A Dagster+ organization with [Dagster+ AI](/guides/labs/dagster-ai) enabled
 - A GitHub App installation connected to your organization
-- The `dg` CLI installed (`pip install dagster-dg`)
+- The `dg` CLI installed (`pip install dagster-dg-cli`)
 - An [Anthropic API key](https://console.anthropic.com/)
 
 ## Setup
