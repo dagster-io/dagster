@@ -33,7 +33,7 @@ export const FailedRunSinceMaterializationBanner = ({
         <>
           Run{' '}
           <Link to={`/runs/${run.id}`}>
-            <Text size={14} family="mono" weight={600}>
+            <Text size={14} weight={600} family="mono">
               {titleForRun(run)}
             </Text>
           </Link>{' '}
@@ -47,7 +47,7 @@ export const FailedRunSinceMaterializationBanner = ({
         <>
           Run{' '}
           <Link to={`/runs/${run.id}`}>
-            <Text size={14} family="mono" weight={600}>
+            <Text size={14} weight={600} family="mono">
               {titleForRun(run)}
             </Text>
           </Link>{' '}

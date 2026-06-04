@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Colors,
   CursorPaginationControls,
@@ -91,7 +90,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         <Box border="bottom" padding={{top: 8, bottom: 12, left: 12, right: 8}}>
           <Box flex={{alignItems: 'center', gap: 4}}>
             <Icon name="sensors" color={Colors.accentBlue()} />
-            <Body2>
+            <Text size={14}>
               {repoAddress && sensorName ? (
                 <Link
                   to={workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)}
@@ -102,7 +101,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
               ) : (
                 <Link to="/overview/automation">{sensorName ?? 'Automation'}</Link>
               )}
-            </Body2>
+            </Text>
           </Box>
         </Box>
         <Box flex={{direction: 'column', gap: 8}}>

@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Colors,
   Heading,
@@ -173,7 +172,7 @@ export const MergedAutomationRoot = () => {
             icon="search"
             title="No automations"
             description={
-              <Body2>
+              <Text size={14}>
                 There are no automations in this deployment.{' '}
                 <a
                   href="https://docs.dagster.io/concepts/automation"
@@ -185,7 +184,7 @@ export const MergedAutomationRoot = () => {
                     <Icon name="open_in_new" color={Colors.linkDefault()} />
                   </Box>
                 </a>
-              </Body2>
+              </Text>
             }
           />
         </Box>

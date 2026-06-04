@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Button,
   ButtonLink,
@@ -10,6 +9,7 @@ import {
   Select,
   Spinner,
   Table,
+  Text,
 } from '@dagster-io/ui-components';
 
 import styles from './css/AutomaterializationEvaluationHistoryTable.module.css';
@@ -98,9 +98,9 @@ export const AutomaterializationEvaluationHistoryTable = ({
                         setSelectedTick(tick);
                       }}
                     >
-                      <Body2>
+                      <Text size={14}>
                         {tick.requestedAssetMaterializationCount} materializations requested
-                      </Body2>
+                      </Text>
                     </ButtonLink>
                   ) : (
                     ' - '

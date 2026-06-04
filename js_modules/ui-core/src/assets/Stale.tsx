@@ -1,6 +1,5 @@
 import {
   BaseTag,
-  Body,
   Box,
   ButtonLink,
   Colors,
@@ -100,7 +99,7 @@ export const StaleReasonsLabel = ({
   }
 
   return (
-    <Body color={Colors.textYellow()}>
+    <Text size={14} color="textYellow">
       <Popover
         position="top"
         content={<StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} />}
@@ -109,7 +108,7 @@ export const StaleReasonsLabel = ({
       >
         {Object.keys(groupedCauses(assetKey, liveData)).join(', ')}
       </Popover>
-    </Body>
+    </Text>
   );
 };
 

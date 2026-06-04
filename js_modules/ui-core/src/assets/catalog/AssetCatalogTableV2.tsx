@@ -1,9 +1,7 @@
 import {
-  Body,
   Box,
   Button,
   Checkbox,
-  Colors,
   Icon,
   MenuItem,
   NonIdealState,
@@ -13,6 +11,7 @@ import {
   SplitPanelContainer,
   SplitPanelContainerHandle,
   Tag,
+  Text,
   Tooltip,
   UnstyledButton,
   getFirstPanelSizeFromStorage,
@@ -390,7 +389,7 @@ const Table = React.memo(
                 }}
               />
             </Tooltip>
-            <Body>
+            <Text size={14}>
               {loading ? (
                 <Skeleton $width={200} $height={21} />
               ) : (
@@ -399,7 +398,7 @@ const Table = React.memo(
                   {ifPlural(assets?.length ?? 0, '', 's')}
                 </>
               )}
-            </Body>
+            </Text>
             {checkedDisplayKeys.size > 0 ? (
               <Popover
                 interactionKind="hover"
@@ -427,9 +426,9 @@ const Table = React.memo(
               />
             ) : null}
             <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <Body color={Colors.textLight()} className={styles.noWrap}>
+              <Text size={14} color="textLight" className={styles.noWrap}>
                 Group by
-              </Body>
+              </Text>
               <Select<(typeof GROUP_BY_ITEMS)[number]>
                 popoverProps={{
                   position: 'bottom-right',
@@ -458,9 +457,9 @@ const Table = React.memo(
               </Select>
             </Box>
             <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <Body color={Colors.textLight()} className={styles.noWrap}>
+              <Text size={14} color="textLight" className={styles.noWrap}>
                 Sort by
-              </Body>
+              </Text>
               <Select<(typeof SORT_ITEMS)[number]>
                 popoverProps={{
                   position: 'bottom-right',

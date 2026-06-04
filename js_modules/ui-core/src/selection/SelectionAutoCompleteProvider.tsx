@@ -1,4 +1,4 @@
-import {Body, Box, Icon, IconName, MiddleTruncate, Text} from '@dagster-io/ui-components';
+import {Box, Icon, IconName, MiddleTruncate, Text} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './SelectionAutoComplete.module.css';
@@ -180,7 +180,9 @@ export const SuggestionJSXBase = ({
         }}
       >
         {icon ? <Icon name={icon} size={12} style={{margin: 0}} /> : null}
-        <Body style={{overflow: 'hidden'}}>{label}</Body>
+        <Text size={14} style={{overflow: 'hidden'}}>
+          {label}
+        </Text>
       </div>
       {rightLabel ? (
         <Text size={14} family="mono" style={{textAlign: 'right', overflow: 'hidden'}}>

@@ -1,5 +1,4 @@
 import {
-  Body,
   Box,
   Button,
   ButtonLink,
@@ -10,6 +9,7 @@ import {
   Icon,
   SplitPanelContainer,
   SplitPanelContainerHandle,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {
@@ -645,14 +645,14 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                 }
               />
               {includedChecks.length > 0 ? (
-                <Body color={Colors.textDefault()}>
+                <Text size={14} color="textDefault">
                   {`Including `}
                   <ButtonLink onClick={() => setShowChecks(includedChecks)}>
                     {`${includedChecks.length.toLocaleString()} ${
                       includedChecks.length > 1 ? 'checks' : 'check'
                     }`}
                   </ButtonLink>
-                </Body>
+                </Text>
               ) : undefined}
               {executableChecks.length > 0 ? (
                 <Checkbox

@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Button,
   Colors,
@@ -219,10 +218,10 @@ const ReportCheckEvaluationDialogBody = ({
         padding={{horizontal: 20, top: 16, bottom: 24}}
         border={check.isPartitioned ? {side: 'bottom'} : undefined}
       >
-        <Body2>
+        <Text size={14}>
           Record check evaluations to correct information or test alerts. Manually recorded check
           evaluations are not typically used for normal operations.
-        </Body2>
+        </Text>
       </Box>
 
       {check.isPartitioned ? (

@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Button,
   Dialog,
@@ -223,11 +222,11 @@ const ReportEventDialogBody = ({
         padding={{horizontal: 20, top: 16, bottom: 24}}
         border={asset.isPartitioned ? {side: 'bottom'} : undefined}
       >
-        <Body2>
+        <Text size={14}>
           Let Dagster know about a materialization that happened outside of Dagster. Typically used
           for testing or for manually fixing incorrect information in the asset catalog, not for
           normal operations.
-        </Body2>
+        </Text>
       </Box>
 
       {asset.isPartitioned ? (

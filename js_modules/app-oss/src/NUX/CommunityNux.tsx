@@ -1,5 +1,4 @@
 import {
-  Body,
   Box,
   Button,
   Checkbox,
@@ -9,6 +8,7 @@ import {
   Heading,
   Icon,
   Spinner,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {gql, useMutation, useSuspenseQuery} from '@dagster-io/ui-core/apollo-client';
@@ -107,10 +107,10 @@ const Form = ({dismiss, submit}: FormProps) => {
           <Heading size={20} weight={500}>
             Join the Dagster community
           </Heading>
-          <Body style={{color: Colors.textLight(), marginBottom: '4px'}}>
+          <Text size={14} color="textLight" style={{marginBottom: '4px'}}>
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
-          </Body>
+          </Text>
           <Box flex={{direction: 'row', gap: 8}}>
             <ExternalAnchorButton
               icon={<Icon name="slack" />}
