@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
-import {useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
@@ -118,17 +118,24 @@ export const AssetPartitions = ({
   };
 
   // Determine which axis we will show at the top of the page, if any.
-  const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
+  const timeDimensionIdx = useMemo(
+    () => selections.findIndex((s) => isTimeseriesDimension(s.dimension)),
+    [selections],
+  );
+
+  const dimensionKeysInSelectionRef = useRef<(idx: number) => string[]>();
+  const defaultKeyInDimension = useCallback((dimensionIdx: number) => {
+    if (!dimensionKeysInSelectionRef.current) {
+      return undefined;
+    }
+    return dimensionKeysInSelectionRef.current(dimensionIdx)[0];
+  }, []);
 
   const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
     params,
     setParams,
+    defaultKeyInDimension,
     dimensionCount: selections.length,
-    defaultKeyInDimension: (dimensionIdx) =>
-      assertExists(
-        dimensionKeysInSelection(dimensionIdx)[0],
-        'Expected at least one key in dimension selection',
-      ),
   });
 
   // Get asset health on all dimensions, with the non-time dimensions scoped
@@ -160,77 +167,102 @@ export const AssetPartitions = ({
   // There are pieces of this that could be moved to shared helpers, but we may discourage
   // loading the full key space and shift responsibility for this to GraphQL in the future.
   //
-  const dimensionKeysInSelection = (idx: number) => {
-    const selection = selections[idx];
-    if (!selection) {
-      return []; // loading
-    }
-    // Special case: If you have cleared the time selection in the top bar, we
-    // clear all dimension columns, (even though you still have a dimension 2 selection)
-    if (
-      timeDimensionIdx !== -1 &&
-      assertExists(selections[timeDimensionIdx], 'Expected time dimension selection').selectedRanges
-        .length === 0
-    ) {
-      return [];
-    }
+  const dimensionKeysInSelection = useCallback(
+    (idx: number) => {
+      const selection = selections[idx];
+      if (!selection) {
+        return []; // loading
+      }
+      // Special case: If you have cleared the time selection in the top bar, we
+      // clear all dimension columns, (even though you still have a dimension 2 selection)
+      if (
+        timeDimensionIdx !== -1 &&
+        assertExists(selections[timeDimensionIdx], 'Expected time dimension selection')
+          .selectedRanges.length === 0
+      ) {
+        return [];
+      }
 
-    const {dimension, selectedRanges} = selection;
-    const allKeys = dimension.partitionKeys;
-    const sortType = getSort(sortTypes, idx, selection.dimension.type);
+      const {dimension, selectedRanges} = selection;
+      const allKeys = dimension.partitionKeys;
+      const sortType = getSort(sortTypes, idx, selection.dimension.type);
 
-    const filterResultsBySearch = (keys: string[]) => {
-      const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
-      return keys.filter((key) => key.toLowerCase().includes(searchLower));
-    };
+      const filterResultsBySearch = (keys: string[]) => {
+        const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
+        return keys.filter((key) => key.toLowerCase().includes(searchLower));
+      };
 
-    const getSelectionKeys = () =>
-      uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
+      const getSelectionKeys = () =>
+        uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
 
-    // Early exit #1: If you have no status filters applied, just apply the
-    // text search filter, sort and return.
-    if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
-      return sortResults(filterResultsBySearch(getSelectionKeys()), sortType);
-    }
+      // Early exit #1: If you have no status filters applied, just apply the
+      // text search filter, sort and return.
+      if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
+        return sortResults(filterResultsBySearch(getSelectionKeys()), sortType);
+      }
 
-    // Get the health ranges, and then explode them into a `matching` set of keys
-    // that have the requested statuses.
-    const healthRangesInSelection = rangesClippedToSelection(
-      assertExists(rangesForEachDimension[idx], `Expected ranges for dimension ${idx}`),
-      selectedRanges,
-    );
-    const getKeysWithStates = (states: AssetPartitionStatus[]) =>
-      healthRangesInSelection.flatMap((r) =>
-        states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+      // Get the health ranges, and then explode them into a `matching` set of keys
+      // that have the requested statuses.
+      const healthRangesInSelection = rangesClippedToSelection(
+        assertExists(rangesForEachDimension[idx], `Expected ranges for dimension ${idx}`),
+        selectedRanges,
       );
-    const matching = uniq(
-      getKeysWithStates(statusFilters.filter((f) => f !== AssetPartitionStatus.MISSING)),
-    );
-
-    let result;
-
-    // We have to add in "missing" separately because it's the absence of a range.
-    if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
-      const selectionKeys = getSelectionKeys();
-      const isMissingForIndex = (idx: number) =>
-        !healthRangesInSelection.some(
-          (r) =>
-            r.start.idx <= idx &&
-            r.end.idx >= idx &&
-            !r.value.includes(AssetPartitionStatus.MISSING),
+      const getKeysWithStates = (states: AssetPartitionStatus[]) =>
+        healthRangesInSelection.flatMap((r) =>
+          states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
         );
-
-      const matchingSet = new Set(matching);
-      const selectionKeysSet = new Set(selectionKeys);
-      result = allKeys.filter(
-        (a, pidx) => selectionKeysSet.has(a) && (matchingSet.has(a) || isMissingForIndex(pidx)),
+      const matching = uniq(
+        getKeysWithStates(statusFilters.filter((f) => f !== AssetPartitionStatus.MISSING)),
       );
-    } else {
-      result = matching;
-    }
 
-    return sortResults(filterResultsBySearch(result), sortType);
-  };
+      let result;
+
+      // We have to add in "missing" separately because it's the absence of a range.
+      if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
+        const selectionKeys = getSelectionKeys();
+        const isMissingForIndex = (idx: number) =>
+          !healthRangesInSelection.some(
+            (r) =>
+              r.start.idx <= idx &&
+              r.end.idx >= idx &&
+              !r.value.includes(AssetPartitionStatus.MISSING),
+          );
+
+        const matchingSet = new Set(matching);
+        const selectionKeysSet = new Set(selectionKeys);
+        result = allKeys.filter(
+          (a, pidx) => selectionKeysSet.has(a) && (matchingSet.has(a) || isMissingForIndex(pidx)),
+        );
+      } else {
+        result = matching;
+      }
+
+      return sortResults(filterResultsBySearch(result), sortType);
+    },
+    [rangesForEachDimension, searchValues, selections, sortTypes, statusFilters, timeDimensionIdx],
+  );
+  dimensionKeysInSelectionRef.current = dimensionKeysInSelection;
+
+  // If the currently focused partition is no longer within the selected ranges
+  // (e.g. the user narrowed the range in the top bar), reset the focus to the
+  // first partition in the new selection.
+  useEffect(() => {
+    if (!assetHealth) {
+      return;
+    }
+    selections.forEach((selection, idx) => {
+      const focusedKey = focusedDimensionKeys[idx];
+      if (focusedKey !== undefined && !selection.selectedKeys.includes(focusedKey)) {
+        setFocusedDimensionKey(idx, defaultKeyInDimension(idx));
+      }
+    });
+  }, [
+    assetHealth,
+    selections,
+    focusedDimensionKeys,
+    setFocusedDimensionKey,
+    defaultKeyInDimension,
+  ]);
 
   if (!assetHealth) {
     return (
