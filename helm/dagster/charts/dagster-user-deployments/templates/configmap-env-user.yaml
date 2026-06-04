@@ -1,4 +1,6 @@
-{{ range $deployment := .Values.deployments }}
+{{- range $item := include "dagster-user-deployments.deployments" . | trim | split "\n" }}
+{{- if $item }}
+{{- $deployment := $item | fromJson }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -17,4 +19,5 @@ data:
   {{- end }}
   {{- end }}
 ---
-{{ end }}
+{{- end }}
+{{- end }}
