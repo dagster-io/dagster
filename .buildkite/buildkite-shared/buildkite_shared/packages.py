@@ -361,11 +361,14 @@ class PackageSpec:
         label_suffix = f" {factor.label_suffix}" if factor and factor.label_suffix else ""
         resolved_image = factor.image if factor and factor.image else self.image
 
+        # Splitting uses the pytest-split plugin. To use `splits > 1` with a
+        # package, `pytest-split` must be declared in that package's test
+        # dependencies (e.g. the `test`/`tests` extra in its pyproject.toml).
         for split_index in range(1, splits + 1):
             if splits > 1:
                 split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
                 pytest_args: list[str] | None = [
-                    f"--split {split_index}/{splits}",
+                    f"--splits {splits} --group {split_index}",
                     *factor_pytest_args,
                 ]
             else:
