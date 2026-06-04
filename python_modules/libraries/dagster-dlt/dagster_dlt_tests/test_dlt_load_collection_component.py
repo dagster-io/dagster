@@ -367,26 +367,41 @@ def test_subclass_override_get_asset_spec(dlt_pipeline: Pipeline):
     }
 
 
-def test_daily_partitioned_component(dlt_pipeline: Pipeline):
-    """Test that partitions_def and backfill_policy are correctly applied to assets."""
-    partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
-    backfill_policy = BackfillPolicy.single_run()
+def partitioned_load():
+    import dlt
 
-    context = ComponentTree.for_test().load_context
-    defs = DltLoadCollectionComponent(
-        loads=[
-            DltLoadSpecModel(
-                pipeline=dlt_pipeline,
-                source=dlt_source(),
-                partitions_def=partitions_def,
-                backfill_policy=backfill_policy,
-            )
-        ]
-    ).build_defs(context)
+    from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
 
-    assets_def = defs.resolve_assets_def(AssetKey(["example", "repos"]))
-    assert assets_def.partitions_def == partitions_def
-    assert assets_def.backfill_policy == backfill_policy
+    source = dlt_source()
+    pipeline = dlt.pipeline(
+        pipeline_name="pipeline",
+        destination="duckdb",
+        dataset_name="example",
+    )
+
+
+def test_daily_partitioned_component() -> None:
+    """Test that partitions_def and backfill_policy from YAML are applied to assets."""
+    with setup_dlt_component(
+        load_py_contents=partitioned_load,
+        defs_yaml_contents={
+            "type": "dagster_dlt.DltLoadCollectionComponent",
+            "attributes": {
+                "loads": [
+                    {
+                        "pipeline": ".load.pipeline",
+                        "source": ".load.source",
+                        "partitions_def": {"type": "daily", "start_date": "2024-01-01"},
+                        "backfill_policy": {"type": "single_run"},
+                    }
+                ]
+            },
+        },
+        setup_dlt_sources=lambda: None,
+    ) as (_component, defs):
+        assets_def = defs.resolve_assets_def(AssetKey(["example", "repos"]))
+        assert assets_def.partitions_def == DailyPartitionsDefinition(start_date="2024-01-01")
+        assert assets_def.backfill_policy == BackfillPolicy.single_run()
 
 
 def test_no_partitions_backwards_compatible(dlt_pipeline: Pipeline):
