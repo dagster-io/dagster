@@ -20,7 +20,10 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster._core.storage.sql import AlembicVersion
+# NOTE (lightweight dagster): AlembicVersion is a pure type alias; define it
+# locally rather than importing from dagster._core.storage.sql, which would pull
+# in sqlalchemy/alembic and break the stdlib-sqlite3-only execution path.
+AlembicVersion = tuple  # type: ignore  # (str | None, str | tuple[str, ...] | None)
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
 

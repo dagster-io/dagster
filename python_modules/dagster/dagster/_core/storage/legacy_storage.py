@@ -30,7 +30,9 @@ from dagster._core.storage.event_log.base import (
 )
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.schedules.base import ScheduleStorage
-from dagster._core.storage.sql import AlembicVersion
+# NOTE (lightweight dagster): AlembicVersion is a pure type alias; define it
+# locally rather than importing from dagster._core.storage.sql (sqlalchemy/alembic).
+AlembicVersion = tuple  # type: ignore  # (str | None, str | tuple[str, ...] | None)
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn

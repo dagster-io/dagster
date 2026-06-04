@@ -23,32 +23,40 @@ dependencies = [
     # cli
     "click>=5.0,<9.0",
     "coloredlogs>=6.1,<=14.0",
-    "Jinja2",
+    # NOTE (lightweight dagster): Jinja2, requests, tqdm, watchdog moved to the
+    # optional `server` extra. None are imported by `import dagster` or the
+    # in-process `materialize()` path — they back code scaffolding (jinja2),
+    # telemetry/HTTP (requests), progress bars (tqdm), and the code-server file
+    # watcher (watchdog). Install `dagster[server]` to restore them.
     # core
-    "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
+    # NOTE (lightweight dagster): sqlalchemy + alembic moved to the optional `sql`
+    # extra. The default ephemeral/local instance now uses a stdlib-sqlite3 run +
+    # event-log storage (dagster/_core/storage/lightweight/), so in-process
+    # `materialize()` needs neither. Install `dagster[sql]` to use the SQLAlchemy
+    # backed storages (SqliteRunStorage / SqlEventLogStorage / postgres / mysql).
     # NOTE (lightweight dagster): grpcio / grpcio-health-checking / protobuf moved
     # to the optional `grpc` extra. They are only needed for the multiprocess gRPC
     # code server (remote code locations, the daemon, step-delegating execution).
     # In-process execution and `materialize()` import them lazily, so the local
     # workflow runs without them. Install `dagster[grpc]` to restore the gRPC server.
     "python-dotenv",
-    "pytz",
-    "requests",
+    # NOTE (lightweight dagster): `pytz` removed — timezone handling now uses the
+    # stdlib `zoneinfo` module (croniter UTC + cron-schedule timezone validation).
     "six",
     "tabulate",
     "tomli<3",
-    "tqdm<5",
     "tzdata",
     "structlog",
-    "sqlalchemy>=1.0,<3",
     "toposort>=1.0",
-    "watchdog>=0.8.3,<7",
     'psutil>=1.0; platform_system=="Windows"',
     'pywin32!=226; platform_system=="Windows"',
     "docstring-parser",
     "universal_pathlib; python_version<'3.12'",
     "universal_pathlib>=0.2.0; python_version>='3.12'",
-    "rich",
+    # NOTE (lightweight dagster): `rich` removed. It was not imported anywhere in
+    # the dagster source; it was only pulled in transitively by structlog's
+    # optional rich-traceback support (guarded by try/except ImportError). Dropping
+    # it also drops pygments (9.2M), markdown-it-py, and mdurl.
     "filelock",
     "dagster-pipes==1!0+dev",
     "dagster-shared==1!0+dev",
@@ -79,6 +87,21 @@ dagster = "dagster"
 
 [project.optional-dependencies]
 docker = ["docker"]
+# Optional deps not needed for in-process execution (lightweight dagster):
+# code scaffolding, telemetry/HTTP, progress bars, and the code-server file watcher.
+server = [
+    "Jinja2",
+    "requests",
+    "tqdm<5",
+    "watchdog>=0.8.3,<7",
+]
+# Optional SQLAlchemy/alembic storage stack (lightweight dagster). Restores the
+# SQL-backed run/event-log/schedule storages (sqlite file storage, postgres,
+# mysql) and alembic migrations. Not needed for in-process `materialize()`.
+sql = [
+    "sqlalchemy>=1.0,<3",
+    "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
+]
 # Optional gRPC code-server stack (lightweight dagster). Restores the
 # multiprocess gRPC server used for remote code locations, the daemon, and
 # step-delegating execution. Not needed for in-process `materialize()`.

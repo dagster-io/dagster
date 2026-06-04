@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
-
-import pytz
+from zoneinfo import available_timezones
 
 import dagster._check as check
 from dagster._annotations import public
@@ -113,7 +112,7 @@ class AutoMaterializeRule(ABC):
             is_valid_cron_string(cron_schedule), "cron_schedule", "must be a valid cron string"
         )
         check.param_invariant(
-            timezone in pytz.all_timezones_set, "timezone", "must be a valid timezone"
+            timezone in available_timezones(), "timezone", "must be a valid timezone"
         )
         from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnCronRule
 

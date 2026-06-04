@@ -202,13 +202,15 @@ def _check_telemetry_instance_param(
 def _get_instance_telemetry_info(
     instance: DagsterInstance,
 ) -> TelemetrySettings:
-    from dagster._core.storage.runs import SqlRunStorage
-
     check.inst_param(instance, "instance", DagsterInstance)
     dagster_telemetry_enabled = _get_instance_telemetry_enabled(instance)
     instance_id = None
     run_storage_id = None
     if dagster_telemetry_enabled:
+        # NOTE (lightweight dagster): imported lazily here (telemetry-enabled path
+        # only) so the in-process sqlite3 execution path never requires sqlalchemy.
+        from dagster._core.storage.runs import SqlRunStorage
+
         instance_id = get_or_set_instance_id()
         if isinstance(instance.run_storage, SqlRunStorage):
             run_storage_id = instance.run_storage.get_run_storage_id()

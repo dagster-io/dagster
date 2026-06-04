@@ -58,13 +58,125 @@ functions, all attribute exprs) — **48/48 identical behavior**. Removed
 - **Total site-packages: 79M → 78M (−1.1M)**
 - Acceptance test: PASS; `AssetSelection.from_string()` still works.
 
-## Phase 3 (planned) — Approach 3: SQLAlchemy/alembic → stdlib sqlite3
+## Phase 3 — Approach 3: SQLAlchemy/alembic → stdlib sqlite3  ✅
 
-Remaining large target: `sqlalchemy` (18M) + `alembic` (2.4M) + `Mako` (~0.75M).
-These ARE imported during `materialize()` (ephemeral run/event-log storage).
-Requires reimplementing the `RunStorage` / `EventLogStorage` ABCs on stdlib
-`sqlite3` and replacing alembic migrations with a versioned schema bootstrap.
-Largest/riskiest remaining task.
+Reimplemented the `RunStorage` and `EventLogStorage` ABCs directly on stdlib
+`sqlite3` (`dagster/_core/storage/lightweight/sqlite3_run_storage.py`,
+`sqlite3_event_log_storage.py`) and routed the ephemeral instance to them
+(`_core/instance/factory.py`). Hot path (events, runs, snapshots, asset records,
+latest materializations, tags, dynamic partitions) is fully implemented;
+daemon/server-only features (concurrency, backfills, asset checks, heartbeats)
+are no-op/empty stubs.
+
+To uninstall sqlalchemy entirely, made several eager imports lazy so neither
+`import dagster` nor `materialize()` pulls it:
+- `storage/event_log/__init__.py`, `runs/__init__.py`, `schedules/__init__.py`:
+  SQLAlchemy-backed classes now load via module `__getattr__`.
+- `AlembicVersion` (a pure type alias) defined locally in the storage ABCs +
+  `legacy_storage.py` instead of importing from the sqlalchemy-heavy `storage/sql.py`.
+- `telemetry.py`: `SqlRunStorage` import moved into the telemetry-enabled branch.
+
+Moved `sqlalchemy` + `alembic` to an optional `sql` extra. Removed
+`sqlalchemy`/`alembic`/`Mako` from the venv.
+
+- **Total site-packages: 78M → 57M (−21M)**
+- Acceptance test: PASS; run/event/asset read paths verified; `sqlalchemy`
+  confirmed absent (`import sqlalchemy` → ModuleNotFoundError).
+- Restore SQL-backed storage with `pip install dagster[sql]`.
+
+## Updated tally (site-packages, incl. 12M pip tooling)
+
+| Stage | site-packages | vs brief 140M baseline |
+|---|---|---|
+| Brief baseline (with webserver) | 140M | — |
+| Phase 0 (core install, no webserver) | 120M | −14% |
+| Phase 2a (no grpc) | 79M | −44% |
+| Phase 2b (no antlr4) | 78M | −44% |
+| Phase 3 (no sqlalchemy) | **57M** | **−59%** |
+
+## Phase 5 — drop rich/pygments  ✅
+
+`rich` had ZERO imports anywhere in dagster source — it was pulled in only by
+structlog's optional rich-traceback support (`try: import rich except ImportError`).
+Removed `rich` from deps; that also dropped `pygments` (9.2M), `markdown-it-py`,
+`mdurl`. **57M → 44M (−13M)**, test PASS.
+
+## Phase 6 — make jinja2/requests/watchdog/tqdm optional  ✅
+
+None are loaded by `import dagster` or `materialize()` (verified). Moved to a new
+`server` extra; uninstalled them + transitive deps (urllib3, certifi,
+charset_normalizer, idna, MarkupSafe). **44M → 37M (−7M)**, test PASS.
+(`universal_pathlib`/`fsspec` kept — they ARE used via `upath` during materialize.)
+
+## Phase 4 — pytz → stdlib zoneinfo  ✅
+
+`pytz` used in only 2 spots: vendored croniter (`pytz.utc`, a py2-only fallback —
+py3 already uses `datetime.timezone.utc`) and `auto_materialize_rule.py`
+(timezone-name validation → `zoneinfo.available_timezones()`). Removed pytz.
+**37M → 35M (−2M)**, test PASS; cron scheduling + tz validation verified.
+
+## Current standing
+
+| Stage | site-packages | real-install equiv | vs 140M baseline |
+|---|---|---|---|
+| Brief baseline | — | 140M | — |
+| Phase 3 (no sqlalchemy) | 57M | 63M | −55% |
+| Phase 5 (no rich) | 44M | — | |
+| Phase 6 (no jinja2/requests/…) | 37M | — | |
+| Phase 4 (no pytz) | **35M** | **~41M** | **−71%** |
+
+Real-install equivalent = third-party deps (21.7M) + dagster core source (18M) +
+shared/pipes (1M) = ~41M = **29% of the original** (pip/ruff venv tooling excluded).
+
+## Authoritative measurement — clean non-editable install
+
+To measure exactly as the brief does (`du -sh site-packages/*`, which counts
+dagster's copied core source), did a fresh **non-editable** install of the
+slimmed packages into `.venv-measure`. Acceptance test PASSES on the clean install.
+
+| | Size |
+|---|---|
+| TOTAL site-packages | 55.1 M |
+| venv tooling (pip/setuptools — not dagster) | 12.4 M |
+| **DAGSTER FOOTPRINT** | **42.8 M** |
+| — dagster core pkgs (copied source) | 21.2 M |
+| — pydantic + pydantic_core | 8.3 M |
+| — tzdata | 2.6 M |
+| — fsspec + upath (universal_pathlib) | 2.5 M |
+
+**42.8M = 31% of the 140M baseline → 69% reduction**, with `materialize()`,
+asset selection, and run/event/asset storage all working.
+
+## Why ~70% is the practical floor (not 80%)
+
+The 28M / 80% target is blocked by genuinely load-bearing pieces:
+- **dagster core source ~20M** — `_core/definitions`, `execution`, `storage` are
+  all on the materialize path; the deletable subsystems (alembic tree 0.7M, `_grpc`
+  0.4M, `_daemon` 0.5M) are small AND back the optional `sql`/`grpc` extras, so
+  deleting them would break those extras for ~1.6M of savings.
+- **pydantic 8.3M** — the config/resource system; cannot be removed.
+- **tzdata 2.6M** — needed by `zoneinfo` on platforms without a system tz db (Windows).
+- **fsspec/upath 2.5M** — used via `UPath` during materialize for IO-manager paths.
+
+Reaching 28M would require gutting core functionality or dropping pydantic —
+neither compatible with "keep the public API working." The remaining levers
+(replace UPath with stdlib pathlib for local FS, conditional tzdata) are
+invasive/risky for ~5M.
+
+## Final tally
+
+| Approach | Lever | Saved |
+|---|---|---|
+| 1 | webserver/UI + graphql not installed | 42M |
+| 3 | grpc/protobuf → optional, lazy | 39M |
+| 3 | sqlalchemy/alembic/mako → stdlib sqlite3 | 21M |
+| 3 | rich/pygments removed (unused) | 13M |
+| 3 | jinja2/requests/watchdog/tqdm → optional | 7M |
+| 3 | pytz → stdlib zoneinfo | 2M |
+| 3 | antlr4 → hand-written parser | 1M |
+
+**Original 140M → 42.8M = 69% reduction**, validated against the 3-asset
+`materialize()` acceptance test at every step.
 
 ## Running tally (site-packages, incl. 12M pip tooling)
 

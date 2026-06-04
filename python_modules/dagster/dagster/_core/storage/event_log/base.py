@@ -40,7 +40,10 @@ from dagster._core.storage.asset_check_execution_record import (
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
-from dagster._core.storage.sql import AlembicVersion
+# NOTE (lightweight dagster): AlembicVersion is a pure type alias; define it
+# locally rather than importing from dagster._core.storage.sql, which would pull
+# in sqlalchemy/alembic and break the stdlib-sqlite3-only execution path.
+AlembicVersion = tuple  # type: ignore  # (str | None, str | tuple[str, ...] | None)
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils import PrintFn
