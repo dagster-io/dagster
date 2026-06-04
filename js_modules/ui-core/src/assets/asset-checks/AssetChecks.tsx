@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Heading,
   Icon,
@@ -164,10 +163,10 @@ export const AssetChecks = ({
           icon="asset_check"
           description={
             <Box flex={{direction: 'column', gap: 8}}>
-              <Body2>
+              <Text size={14}>
                 Asset checks can verify properties of a data asset, e.g. that there are no null
                 values in a particular column.
-              </Body2>
+              </Text>
               <a href="https://docs.dagster.io/concepts/assets/asset-checks">
                 Learn more about asset checks
               </a>
@@ -237,7 +236,7 @@ export const AssetChecks = ({
                             >
                               {getCheckIcon(check)}
                             </Box>
-                            <Body2 style={{overflow: 'hidden'}}>
+                            <Text size={14} style={{overflow: 'hidden'}}>
                               <MiddleTruncate text={check.name} />
                               <Text
                                 size={12}
@@ -246,7 +245,7 @@ export const AssetChecks = ({
                               >
                                 {assetCheckStatusDescription(check)}
                               </Text>
-                            </Body2>
+                            </Text>
                           </Box>
                         </Box>
                       </Row>

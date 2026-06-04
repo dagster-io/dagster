@@ -1,10 +1,10 @@
 import {
   Alert,
-  Body2,
   Box,
   CursorHistoryControls,
   CursorPaginationProps,
   SpinnerWithText,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -140,11 +140,11 @@ export const RunsFeedTable = ({
                   intent="warning"
                   title={
                     <Box flex={{direction: 'column'}}>
-                      <Body2>Bulk actions are currently only supported for runs.</Body2>
-                      <Body2>
+                      <Text size={14}>Bulk actions are currently only supported for runs.</Text>
+                      <Text size={14}>
                         {numberFormatter.format(backfillsExcluded)}&nbsp;
                         {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being excluded
-                      </Body2>
+                      </Text>
                     </Box>
                   }
                 />

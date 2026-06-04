@@ -1,4 +1,4 @@
-import {Body2, Box, Button, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, Button, NonIdealState, Spinner, Text} from '@dagster-io/ui-components';
 import React, {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
@@ -110,10 +110,10 @@ const AssetNodeLineageGraphInner = ({
           title="Lineage graph too large"
           description={
             <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
-              <Body2>
+              <Text size={14}>
                 This asset has too many upstream or downstream dependencies to render. Try reducing
                 the lineage depth or click below to render anyway.
-              </Body2>
+              </Text>
               <Button onClick={() => setForceLargeGraph(true)}>Show Lineage Graph</Button>
             </Box>
           }

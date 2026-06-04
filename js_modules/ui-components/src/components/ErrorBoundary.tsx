@@ -2,8 +2,7 @@ import * as React from 'react';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {Body} from './Text';
-import {Heading} from './Typography';
+import {Heading, Text} from './Typography';
 import styles from './css/ErrorBoundary.module.css';
 
 export type ErrorCollectionContextValue = {
@@ -74,7 +73,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <Heading size={14} weight={600}>
             Sorry, {this.props.region} can&apos;t be displayed.
           </Heading>
-          <Body color={Colors.textLight()}>{errorCollectionMessage}</Body>
+          <Text size={14} color="textLight">
+            {errorCollectionMessage}
+          </Text>
           {errorStackIncluded && (
             <div className={styles.trace}>{`${error.message}\n\n${error.stack}`}</div>
           )}

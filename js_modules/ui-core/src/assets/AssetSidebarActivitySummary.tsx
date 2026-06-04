@@ -1,4 +1,4 @@
-import {Body, Box, Colors, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate, Spinner, Text} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -72,7 +72,9 @@ export const AssetSidebarActivitySummary = ({
       {asset.freshnessPolicy && (
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
+            <Text size={14} style={{flex: 1}}>
+              {freshnessPolicyDescription(asset.freshnessPolicy)}
+            </Text>
             <OverdueTag policy={asset.freshnessPolicy} assetKey={asset.assetKey} />
           </Box>
         </SidebarSection>
@@ -81,7 +83,9 @@ export const AssetSidebarActivitySummary = ({
       {asset.backfillPolicy && (
         <SidebarSection title="Backfill policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>{asset.backfillPolicy.description}</Body>
+            <Text size={14} style={{flex: 1}}>
+              {asset.backfillPolicy.description}
+            </Text>
           </Box>
         </SidebarSection>
       )}

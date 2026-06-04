@@ -1,4 +1,4 @@
-import {Body2, Box, Colors, Heading, Skeleton} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Skeleton, Text} from '@dagster-io/ui-components';
 
 export const isEmptyChildren = (children: React.ReactNode) =>
   !children || (children instanceof Array && children.length === 0);
@@ -19,14 +19,18 @@ export const AttributeAndValue = ({
       <Heading size={14} weight={600}>
         {label}
       </Heading>
-      <Body2 style={{maxWidth: '100%'}}>
+      <Text size={14} style={{maxWidth: '100%'}}>
         <Box flex={{gap: 4, wrap: 'wrap'}}>{children}</Box>
-      </Body2>
+      </Text>
     </Box>
   );
 };
 
-export const NoValue = () => <Body2 color={Colors.textLighter()}>–</Body2>;
+export const NoValue = () => (
+  <Text size={14} color="textLighter">
+    –
+  </Text>
+);
 
 export const SectionSkeleton = () => (
   <Box flex={{direction: 'column', gap: 6}} style={{width: '100%'}}>
@@ -55,7 +59,7 @@ export const SectionEmptyState = ({
     <Heading size={14} weight={600}>
       {title}
     </Heading>
-    <Body2>{description}</Body2>
+    <Text size={14}>{description}</Text>
     {learnMoreLink ? (
       <a href={learnMoreLink} target="_blank" rel="noreferrer">
         Learn more

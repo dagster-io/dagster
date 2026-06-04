@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Button,
   Checkbox,
@@ -10,6 +9,7 @@ import {
   Icon,
   NonIdealState,
   Spinner,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -189,7 +189,9 @@ export const BackfillPartitionSelector = ({
                 {refreshing && (
                   <Box flex={{gap: 4, alignItems: 'center'}}>
                     <Spinner purpose="body-text" />
-                    <Body2 color={Colors.textLight()}>Refreshing...</Body2>
+                    <Text size={14} color="textLight">
+                      Refreshing...
+                    </Text>
                   </Box>
                 )}
               </Box>
