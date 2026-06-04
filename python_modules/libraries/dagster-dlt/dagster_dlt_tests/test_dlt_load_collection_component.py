@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
-from dagster import AssetKey
+from dagster import AssetKey, BackfillPolicy, DailyPartitionsDefinition
 from dagster._core.definitions import materialize
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -365,3 +365,57 @@ def test_subclass_override_get_asset_spec(dlt_pipeline: Pipeline):
         AssetKey(["example", "repo_issues"]),
         AssetKey(["pipeline_repos"]),
     }
+
+
+def partitioned_load():
+    import dlt
+
+    from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
+
+    source = dlt_source()
+    pipeline = dlt.pipeline(
+        pipeline_name="pipeline",
+        destination="duckdb",
+        dataset_name="example",
+    )
+
+
+def test_daily_partitioned_component() -> None:
+    """Test that partitions_def and backfill_policy from YAML are applied to assets."""
+    with setup_dlt_component(
+        load_py_contents=partitioned_load,
+        defs_yaml_contents={
+            "type": "dagster_dlt.DltLoadCollectionComponent",
+            "attributes": {
+                "loads": [
+                    {
+                        "pipeline": ".load.pipeline",
+                        "source": ".load.source",
+                        "partitions_def": {"type": "daily", "start_date": "2024-01-01"},
+                        "backfill_policy": {"type": "single_run"},
+                    }
+                ]
+            },
+        },
+        setup_dlt_sources=lambda: None,
+    ) as (_component, defs):
+        assets_def = defs.resolve_assets_def(AssetKey(["example", "repos"]))
+        assert assets_def.partitions_def == DailyPartitionsDefinition(start_date="2024-01-01")
+        assert assets_def.backfill_policy == BackfillPolicy.single_run()
+
+
+def test_no_partitions_backwards_compatible(dlt_pipeline: Pipeline):
+    """Test that omitting partitions_def and backfill_policy still works (backwards compatibility)."""
+    context = ComponentTree.for_test().load_context
+    defs = DltLoadCollectionComponent(
+        loads=[
+            DltLoadSpecModel(
+                pipeline=dlt_pipeline,
+                source=dlt_source(),
+            )
+        ]
+    ).build_defs(context)
+
+    assets_def = defs.resolve_assets_def(AssetKey(["example", "repos"]))
+    assert assets_def.partitions_def is None
+    assert assets_def.backfill_policy is None
