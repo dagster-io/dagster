@@ -857,6 +857,41 @@ def _assert_has_container_context(user_deployment):
     assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" in env_names
 
 
+def test_user_deployment_replica_count_default_is_one(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    user_deployments = template.render(helm_values)
+    assert len(user_deployments) == 1
+    assert user_deployments[0].spec.replicas == 1
+
+
+@pytest.mark.parametrize("replica_count", [1, 2])
+def test_user_deployment_replica_count(template: HelmTemplate, replica_count: int):
+    deployment = create_simple_user_deployment("foo")
+    deployment.replicaCount = replica_count
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    user_deployments = template.render(helm_values)
+    assert len(user_deployments) == 1
+    assert user_deployments[0].spec.replicas == replica_count
+
+
+def test_user_deployment_replica_count_rejects_zero():
+    with pytest.raises(Exception):
+        UserDeployment(
+            name="foo",
+            image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+            dagsterApiGrpcArgs=["-m", "foo"],
+            port=3030,
+            replicaCount=0,
+        )
+
+
 def test_user_deployment_image(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     helm_values = DagsterHelmValues.construct(
