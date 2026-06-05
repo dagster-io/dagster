@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from functools import cached_property, cache
+from functools import cache, cached_property
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
