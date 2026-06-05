@@ -404,6 +404,111 @@ def test_user_deployment_checksum_changes(template: HelmTemplate):
         assert pre_upgrade_checksum != post_upgrade_checksum
 
 
+def _fixed_server_id_arg(deployment: models.V1Deployment) -> str:
+    args = deployment.spec.template.spec.containers[0].args
+    assert "--fixed-server-id" in args
+    return args[args.index("--fixed-server-id") + 1]
+
+
+def test_grpc_fixed_server_id_matches_checksum(template: HelmTemplate):
+    # The gRPC server id is the deployment checksum, so every replica shares one
+    # id that changes only when the deployment is redeployed.
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[
+                create_simple_user_deployment("deployment-one"),
+                create_complex_user_deployment("deployment-two"),
+            ],
+        )
+    )
+    for deployment in template.render(helm_values):
+        assert (
+            _fixed_server_id_arg(deployment)
+            == deployment.spec.template.metadata.annotations["checksum/dagster-user-deployment"]
+        )
+
+
+def test_grpc_fixed_server_id_unchanged_across_identical_renders(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("deployment-one")],
+        )
+    )
+    pre_upgrade_templates = template.render(helm_values)
+    post_upgrade_templates = template.render(helm_values)
+
+    for pre_upgrade_deployment, post_upgrade_deployment in zip(
+        pre_upgrade_templates, post_upgrade_templates
+    ):
+        assert _fixed_server_id_arg(pre_upgrade_deployment) == _fixed_server_id_arg(
+            post_upgrade_deployment
+        )
+
+
+def test_grpc_fixed_server_id_changes_when_config_changes(template: HelmTemplate):
+    pre_upgrade_helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("deployment-one")],
+        )
+    )
+    post_upgrade_helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_complex_user_deployment("deployment-one")],
+        )
+    )
+
+    [pre_upgrade_deployment] = template.render(pre_upgrade_helm_values)
+    [post_upgrade_deployment] = template.render(post_upgrade_helm_values)
+
+    assert _fixed_server_id_arg(pre_upgrade_deployment) != _fixed_server_id_arg(
+        post_upgrade_deployment
+    )
+
+
+def test_code_server_has_no_fixed_server_id(template: HelmTemplate):
+    # Code servers reload in place by changing their own server id; pinning one
+    # would suppress that signal, so the flag is only injected for `api grpc`.
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert "--fixed-server-id" not in dagster_user_deployment.spec.template.spec.containers[0].args
+
+
+def test_code_server_rejects_multiple_replicas(template: HelmTemplate, capfd):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+        replicaCount=2,
+    )
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render(
+            DagsterHelmValues.construct(
+                dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+            )
+        )
+
+    _, err = capfd.readouterr()
+    assert "codeServerArgs cannot be used with replicaCount > 1" in err
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     deployment = create_simple_user_deployment("foo")

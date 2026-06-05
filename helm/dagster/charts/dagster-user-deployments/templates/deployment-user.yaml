@@ -1,5 +1,9 @@
 {{- $celeryConfigSecretName := .Values.global.celeryConfigSecretName | default .Values.celeryConfigSecretName }}
 {{ range $deployment := .Values.deployments }}
+{{- $userDeploymentChecksum := $deployment | toJson | sha256sum }}
+{{- if and $deployment.codeServerArgs (gt (int ($deployment.replicaCount | default 1)) 1) }}
+{{- fail (printf "deployment %q: codeServerArgs cannot be used with replicaCount > 1. A reloadable code server cannot be reloaded consistently across multiple replicas behind a round-robin service." $deployment.name) }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,7 +37,7 @@ spec:
         {{- . | toYaml | nindent 8 }}
         {{- end }}
       annotations:
-        checksum/dagster-user-deployment: {{ $deployment | toJson | sha256sum }}
+        checksum/dagster-user-deployment: {{ $userDeploymentChecksum }}
         {{- with $deployment.annotations }}
         {{- range $key, $value := . }}
         {{ $key }}: {{ $value | quote }}
@@ -56,7 +60,7 @@ spec:
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
           {{- if $deployment.dagsterApiGrpcArgs }}
-          args: ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
+          args: ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "--fixed-server-id", "{{ $userDeploymentChecksum }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
           {{- else if $deployment.codeServerArgs }}
           args: ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.codeServerArgs }}"]
           {{- end }}
