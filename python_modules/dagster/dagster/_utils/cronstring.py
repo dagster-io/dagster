@@ -29,7 +29,7 @@ def get_fixed_minute_interval(cron_schedule: str) -> int | None:
 
     # To match this criteria, every other field besides the first must end in *
     # since it must be an every-n-minutes cronstring like */15
-    if not is_wildcard[1:]:
+    if not all(is_wildcard[1:]):
         return None
 
     if not cron_parts[0].startswith("*/"):
