@@ -43,6 +43,11 @@ INVALID_NAME_CHARS = r"[^A-Za-z0-9_]"
 VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
 
+GROUP_NAME_SEGMENT_REGEX_STR = r"[A-Za-z0-9_]+"
+VALID_GROUP_NAME_REGEX_STR = rf"^{GROUP_NAME_SEGMENT_REGEX_STR}(/{GROUP_NAME_SEGMENT_REGEX_STR})*$"
+VALID_GROUP_NAME_REGEX = re.compile(VALID_GROUP_NAME_REGEX_STR)
+GROUP_NAME_SEPARATOR = "/"
+
 INVALID_TITLE_CHARACTERS_REGEX_STR = r"[\%\*\"]"
 INVALID_TITLE_CHARACTERS_REGEX = re.compile(INVALID_TITLE_CHARACTERS_REGEX_STR)
 MAX_TITLE_LENGTH = 100
@@ -195,9 +200,21 @@ def validate_definition_owner(owner: str, definition_type: str, definition_name:
 
 
 def validate_group_name(group_name: str | None) -> None:
-    """Ensures a string name is valid and returns a default if no name provided."""
+    """Ensures a string group name is valid.
+
+    Group names may use ``/`` as a separator to express hierarchy
+    (e.g. ``"marketing/foo/bar"``). Each path segment must match
+    ``[A-Za-z0-9_]+``; leading, trailing, and consecutive separators
+    are not permitted.
+    """
     if group_name:
-        check_valid_chars(group_name)
+        if not VALID_GROUP_NAME_REGEX.match(group_name):
+            raise DagsterInvalidDefinitionError(
+                f'"{group_name}" is not a valid asset group name. Group names must be '
+                "one or more segments matching "
+                f"{VALID_NAME_REGEX_STR} separated by '/' "
+                "(e.g. 'marketing' or 'marketing/foo/bar')."
+            )
     elif group_name == "":
         raise DagsterInvalidDefinitionError(
             "Empty asset group name was provided, which is not permitted. "
