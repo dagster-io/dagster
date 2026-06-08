@@ -28,7 +28,7 @@ import {
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {assetGroupPath} from '../workspace/workspacePath';
 
 interface AssetGroupRootParams {
   groupName: string;
@@ -51,7 +51,7 @@ export const AssetGroupRoot = ({
   useDocumentTitle(`Asset groups | ${groupName}`);
   const openInNewTab = useOpenInNewTab();
 
-  const groupPath = workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`);
+  const groupPath = assetGroupPath(repoAddress, groupName);
   const groupSelector = useMemo(
     () => ({
       groupName,
@@ -75,11 +75,10 @@ export const AssetGroupRoot = ({
     (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
       let path;
       if (node.groupName && node.repoAddress) {
-        path = workspacePathFromAddress(
+        path = assetGroupPath(
           node.repoAddress,
-          `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
-            .map(encodeURIComponent)
-            .join('/')}`,
+          node.groupName,
+          `/lineage/${node.assetKey.path.map(encodeURIComponent).join('/')}`,
         );
       } else {
         path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});

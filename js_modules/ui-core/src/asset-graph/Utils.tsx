@@ -330,6 +330,64 @@ export const groupIdForNode = (node: GraphNode) =>
       ].join('')
     : `global@global:${node.definition.groupName}`;
 
+// Group names support hierarchy via `/` separators. parseGroupId splits a
+// fully-qualified group id (`repo@location:a/b/c`) into its location prefix
+// (`repo@location:`) and the segmented group path (`['a','b','c']`). Memoized
+// because the same group ids are parsed many times per layout/render pass.
+export const parseGroupId = memoize(
+  (groupId: string): {locationPrefix: string; segments: string[]} | null => {
+    const colonIdx = groupId.indexOf(':');
+    if (colonIdx < 0) {
+      return null;
+    }
+    const locationPrefix = groupId.slice(0, colonIdx + 1);
+    const groupName = groupId.slice(colonIdx + 1);
+    const segments = groupName.split('/').filter(Boolean);
+    if (!segments.length) {
+      return null;
+    }
+    return {locationPrefix, segments};
+  },
+);
+
+// Returns the ancestor group ids for `groupId`, in order from outermost
+// (shortest) to immediate parent. Excludes `groupId` itself.
+export const ancestorGroupIds = memoize((groupId: string): string[] => {
+  const parsed = parseGroupId(groupId);
+  if (!parsed || parsed.segments.length <= 1) {
+    return [];
+  }
+  const result: string[] = [];
+  let acc = parsed.locationPrefix;
+  for (let i = 0; i < parsed.segments.length - 1; i++) {
+    acc += i === 0 ? parsed.segments[i] : `/${parsed.segments[i]}`;
+    result.push(acc);
+  }
+  return result;
+});
+
+// Just the trailing segment of the group id's path, used for display.
+export const groupIdLeafName = (groupId: string): string => {
+  const parsed = parseGroupId(groupId);
+  if (!parsed) {
+    return groupId;
+  }
+  return parsed.segments[parsed.segments.length - 1] ?? groupId;
+};
+
+// Rolls each asset up into its leaf group AND every synthetic ancestor, so a
+// collapsed "marketing" tile shows counts/statuses for all of marketing/*.
+export const groupedAssetsWithAncestors = (nodes: GraphNode[]): Record<string, GraphNode[]> => {
+  const grouped: Record<string, GraphNode[]> = {};
+  for (const node of nodes) {
+    const leafId = groupIdForNode(node);
+    for (const id of [leafId, ...ancestorGroupIds(leafId)]) {
+      (grouped[id] ??= []).push(node);
+    }
+  }
+  return grouped;
+};
+
 // Inclusive
 export const getUpstreamNodes = memoize(
   (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
