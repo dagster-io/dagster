@@ -136,6 +136,36 @@ def test_context_outside_project_or_workspace():
         assert context.config.cli.verbose is False
 
 
+def test_project_python_executable_env_file_formats():
+    # `dg dev` reads DG_PROJECT_PYTHON_EXECUTABLE from a project's .env to allow non-standard
+    # venv layouts (uv workspaces, Nix, etc.). Parsing goes through python-dotenv, so every
+    # format that dotenv accepts must be honored.
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        project_root = Path.cwd()
+        env_path = project_root / ".env"
+        expected = project_root / "../shared/.venv/bin/python"
+        cases = [
+            "DG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python",
+            "export DG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python",
+            'DG_PROJECT_PYTHON_EXECUTABLE="../shared/.venv/bin/python"',
+            "DG_PROJECT_PYTHON_EXECUTABLE='../shared/.venv/bin/python'",
+            "# leading comment\nDG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python  # trailing",
+            "OTHER=ignored\nDG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python",
+        ]
+        for content in cases:
+            env_path.write_text(content + "\n", encoding="utf-8")
+            context = DgContext.for_project_environment(project_root, {})
+            assert context.project_python_executable == expected, f"Failed for content: {content!r}"
+
+        # Unset / missing variable falls back to the default project .venv.
+        env_path.write_text("OTHER=ignored\n", encoding="utf-8")
+        context = DgContext.for_project_environment(project_root, {})
+        assert context.project_python_executable.is_relative_to(project_root / ".venv")
+
+
 @pytest.mark.parametrize("user_config_file", ["default", "xdg_config_home", "explicit_env_var"])
 def test_context_with_user_config(monkeypatch, user_config_file: str):
     if user_config_file == "xdg_config_home" and is_windows():
