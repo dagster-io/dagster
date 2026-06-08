@@ -222,6 +222,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     @public
     @cached_property
     def start(self) -> datetime:
+        """datetime: The start of the first partition's time window."""
         start_timestamp_with_timezone = self.start_ts
         return datetime_from_timestamp(
             start_timestamp_with_timezone.timestamp, start_timestamp_with_timezone.timezone
@@ -230,6 +231,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     @public
     @cached_property
     def end(self) -> datetime | None:
+        """Optional[datetime]: The end of the last partition's time window, or None if the partition set is unbounded."""
         end_timestamp_with_timezone = self.end_ts
 
         if not end_timestamp_with_timezone:
