@@ -1,7 +1,6 @@
 import datetime
 import logging
 import re
-import shlex
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -13,6 +12,7 @@ from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
 from dagster_shared.utils import find_uv_workspace_root
 from dagster_shared.utils.config import get_canonical_defs_module_name
+from dotenv import dotenv_values
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -348,20 +348,16 @@ class DgContext:
                 "`project_python_executable` is only available in a Dagster project context"
             )
 
-        # This is a temporary "backdoor" to satisfy users who want to auto-discover non-standard virtual
-        # environments for their dg projects. Here is how it works:
-        # - If a `.env` file is present in the project root, it looks for the following variables:
-        #   - `DG_PROJECT_PYTHON_EXECUTABLE`: if this variable is set, its value is used as the python
-        #     executable path
-        # - If no `.env` file is present or if the variable is not set, fall back to default
-        #   behavior (assume .venv in project root).
-        env_path = Path(self.root_path / ".env")
+        # Temporary "backdoor" for users with non-standard virtual environment layouts (uv
+        # workspaces, etc.). If a `.env` file in the project root sets
+        # `DG_PROJECT_PYTHON_EXECUTABLE`, that value is used as the python executable path
+        # (relative paths are resolved against the project root). Otherwise we fall back to
+        # the default `.venv` adjacent to the project root.
+        env_path = self.root_path / ".env"
         if env_path.exists():
-            content = env_path.read_text()
-            for line in content.splitlines():
-                stripped_line = line.strip()
-                if stripped_line.startswith(f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}="):
-                    return self.root_path / shlex.split(stripped_line)[0].split("=", 1)[1]
+            value = dotenv_values(env_path).get(DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR)
+            if value:
+                return self.root_path / value
 
         return self.root_path / get_venv_executable(Path(".venv"))
 
