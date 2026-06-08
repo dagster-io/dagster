@@ -10,7 +10,7 @@ description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
-    "dagster-shared",
+    "dagster-shared==1!0+dev",
     "packaging>=20.9",
     "questionary",
     "requests",

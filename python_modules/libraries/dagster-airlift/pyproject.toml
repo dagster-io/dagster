@@ -35,7 +35,7 @@ in-airflow = [
 # [tutorial] includes additional dependencies needed to run the tutorial.
 # Namely, the dagster-webserver and the constrained airflow packages.
 tutorial = [
-    "dagster-webserver",
+    "dagster-webserver==1!0+dev",
     # Requirements for python versions under 3.12 (airflow 2.x).
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
