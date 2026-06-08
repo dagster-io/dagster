@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from unittest import mock
 
 import dagster as dg
@@ -8,6 +8,9 @@ import pytest
 from dagster import AssetSelection, DagsterInstance, DagsterRunStatus, RunRequest, asset_sensor
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+
+if TYPE_CHECKING:
+    from dagster._core.events import JobFailureData
 
 
 def test_sensor_invocation_args():
@@ -696,10 +699,15 @@ def test_run_failure_sensor():
     @dg.run_failure_sensor
     def failure_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
+        error = cast("JobFailureData", context.failure_event.event_specific_data).error
+        assert error is not None
+        assert error.cause is not None
+        assert error.cause.cls_name == "ZeroDivisionError"
+        assert "division by zero" in error.cause.message
 
     @dg.op
     def will_fail():
-        raise Exception("failure")
+        return 1 / 0
 
     @dg.job
     def my_job():
