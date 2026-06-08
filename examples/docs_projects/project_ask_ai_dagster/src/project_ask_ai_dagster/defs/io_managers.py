@@ -21,7 +21,7 @@ class DocumentIOManager(dg.IOManager):
         ]
 
         # Save as JSON
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(serialized_docs, f)
 
     def load_input(self, context):
@@ -31,7 +31,7 @@ class DocumentIOManager(dg.IOManager):
             return []
 
         # Load and reconstruct Documents
-        with open(file_path) as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
 
         return [

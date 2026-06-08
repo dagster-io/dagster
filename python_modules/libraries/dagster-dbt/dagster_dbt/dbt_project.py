@@ -309,7 +309,7 @@ class DbtProject(IHaveNew):
                 f"Did not find dbt_project.yml at expected path {dbt_project_yml_path}. "
                 f"Ensure the specified project directory respects all dbt project requirements."
             )
-        with open(project_dir.joinpath("dbt_project.yml")) as file:
+        with open(project_dir.joinpath("dbt_project.yml"), encoding="utf-8") as file:
             dbt_project_yml = yaml.safe_load(file)
         packages_install_path = project_dir.joinpath(
             dbt_project_yml.get("packages-install-path", "dbt_packages")

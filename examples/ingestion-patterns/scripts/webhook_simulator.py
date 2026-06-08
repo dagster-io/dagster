@@ -34,14 +34,14 @@ def receive_webhook(source_id: str, payload: dict) -> None:
     source_file = WEBHOOK_STORAGE_DIR / f"{source_id}.json"
     existing: list = []
     if source_file.exists():
-        with open(source_file) as f:
+        with open(source_file, encoding="utf-8") as f:
             existing = json.load(f)
 
     # Append new payload
     existing.append(payload)
 
     # Save back
-    with open(source_file, "w") as f:
+    with open(source_file, "w", encoding="utf-8") as f:
         json.dump(existing, f, indent=2)
 
 
@@ -50,7 +50,7 @@ def get_pending_count(source_id: str) -> int:
     source_file = WEBHOOK_STORAGE_DIR / f"{source_id}.json"
     if not source_file.exists():
         return 0
-    with open(source_file) as f:
+    with open(source_file, encoding="utf-8") as f:
         return len(json.load(f))
 
 

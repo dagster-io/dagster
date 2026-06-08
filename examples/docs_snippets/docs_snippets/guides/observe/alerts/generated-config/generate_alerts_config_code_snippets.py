@@ -168,7 +168,7 @@ def _make_yaml_code_snippet(alert: AlertType, service: NotificationService) -> N
         ),
     )
     path = f"{alert_name}.yaml"
-    with open(Path(__file__).parent / path, "w") as f:
+    with open(Path(__file__).parent / path, "w", encoding="utf-8") as f:
         f.write(f"# alert_policies.yaml\n\n{yaml_block}")
 
 

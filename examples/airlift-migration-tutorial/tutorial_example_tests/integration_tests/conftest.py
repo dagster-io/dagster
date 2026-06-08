@@ -73,11 +73,11 @@ def mark_tasks_migrated_fixture(
     @contextlib.contextmanager
     def mark_tasks_migrated(migrated_tasks: AbstractSet[str]) -> Iterator[None]:
         """Updates the contents of the proxied state file to mark the specified tasks as proxied."""
-        with open(proxied_state_file) as f:
+        with open(proxied_state_file, encoding="utf-8") as f:
             contents = f.read()
 
         try:
-            with open(proxied_state_file, "w") as f:
+            with open(proxied_state_file, "w", encoding="utf-8") as f:
                 f.write(
                     yaml.dump(
                         {
@@ -93,7 +93,7 @@ def mark_tasks_migrated_fixture(
             yield
 
         finally:
-            with open(proxied_state_file, "w") as f:
+            with open(proxied_state_file, "w", encoding="utf-8") as f:
                 f.write(contents)
 
     return mark_tasks_migrated

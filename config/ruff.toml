@@ -131,6 +131,11 @@ select = [
   # (pyflakes) pyflakes rules
   "F",
 
+  # (unspecified-encoding) Flag `open()` and related calls in text mode without an explicit
+  # `encoding=`. Preview-status rule; must be listed by exact code under
+  # explicit-preview-rules=true. Locale-default text decoding is non-portable.
+  "PLW1514",
+
   # (isort) detect improperly sorted imports
   "I001",
 

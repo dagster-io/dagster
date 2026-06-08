@@ -613,7 +613,7 @@ def fix_commit(
 
 def _adapt_copybara_config(config_path: Path, url_map: dict[str, str]) -> str:
     """Read a copy.bara.sky config and substitute URLs."""
-    content = config_path.read_text()
+    content = config_path.read_text(encoding="utf-8")
     for old_url, new_url in url_map.items():
         if old_url not in content:
             raise click.ClickException(

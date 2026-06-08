@@ -225,9 +225,9 @@ def set_option_help_output_group(param: click.Parameter, group: str) -> None:
 def modify_toml(path: Path) -> Iterator["tomlkit.TOMLDocument"]:
     import tomlkit
 
-    toml = tomlkit.parse(path.read_text())
+    toml = tomlkit.parse(path.read_text(encoding="utf-8"))
     yield toml
-    path.write_text(tomlkit.dumps(toml))
+    path.write_text(tomlkit.dumps(toml), encoding="utf-8")
 
 
 @contextlib.contextmanager
@@ -244,7 +244,7 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
 
     toml_dict = load_toml_as_dict(path)
     yield toml_dict
-    path.write_text(tomlkit.dumps(toml_dict))
+    path.write_text(tomlkit.dumps(toml_dict), encoding="utf-8")
 
 
 def hash_directory_metadata(
@@ -515,7 +515,7 @@ TomlDoc: TypeAlias = Union["tomlkit.TOMLDocument", dict[str, Any]]
 def load_toml_as_dict(path: Path) -> dict[str, Any]:
     import tomlkit
 
-    return tomlkit.parse(path.read_text()).unwrap()
+    return tomlkit.parse(path.read_text(encoding="utf-8")).unwrap()
 
 
 def get_toml_node(

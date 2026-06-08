@@ -25,7 +25,7 @@ def test_json_decode_error():
 
 
 def test_json_dump():
-    with tempfile.TemporaryFile("w+") as fd:
+    with tempfile.TemporaryFile("w+", encoding="utf-8") as fd:
         seven.json.dump({"foo": "bar", "a": "b"}, fd)
         fd.seek(0)
         assert fd.read() == '{"a": "b", "foo": "bar"}'

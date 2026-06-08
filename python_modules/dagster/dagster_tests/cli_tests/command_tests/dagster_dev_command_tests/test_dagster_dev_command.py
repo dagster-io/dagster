@@ -89,7 +89,7 @@ def test_dagster_dev_command_no_dagster_home():
     }
 
     with tempfile.TemporaryDirectory() as tempdir, environ(environment_patch), pushd(tempdir):
-        with open(os.path.join(str(tempdir), "dagster.yaml"), "w") as config_file:
+        with open(os.path.join(str(tempdir), "dagster.yaml"), "w", encoding="utf-8") as config_file:
             yaml.dump(dagster_yaml, config_file)
 
         webserver_port = find_free_port()
@@ -398,7 +398,7 @@ def test_dagster_dev_command_verbose(verbose: bool) -> None:
 
         with pushd(INVALID_PROJECT_PATH_WITH_EXCEPTION):
             webserver_port = find_free_port()
-            stdout_file = open(stdout_filepath, "w")
+            stdout_file = open(stdout_filepath, "w", encoding="utf-8")
             with _launch_dev_command(
                 options=["--port", str(webserver_port)] + (["--verbose"] if verbose else []),
                 capture_output=True,
@@ -431,7 +431,7 @@ def test_proxy_server_crash() -> None:
             stdout_filepath = str(Path(tempdir) / "stdout.txt")
             with environ({"DAGSTER_HOME": ""}):
                 with pushd(tempdir):
-                    stdout_file = open(stdout_filepath, "w")
+                    stdout_file = open(stdout_filepath, "w", encoding="utf-8")
                     webserver_port = find_free_port()
                     with _launch_dev_command(
                         [

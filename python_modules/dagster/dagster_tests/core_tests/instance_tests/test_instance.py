@@ -403,7 +403,8 @@ def test_create_run_without_asset_execution_type_on_snapshot():
     # execution type on the execution plan snapshot
     with dg.instance_for_test() as instance:
         with open(
-            file_relative_path(__file__, "./execution_plan_snapshot_without_execution_type.json")
+            file_relative_path(__file__, "./execution_plan_snapshot_without_execution_type.json"),
+            encoding="utf-8",
         ) as f:
             ep_snapshot = deserialize_value(f.read())
 

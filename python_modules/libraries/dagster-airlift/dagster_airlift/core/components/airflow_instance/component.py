@@ -261,7 +261,7 @@ class AirflowInstanceComponent(StateBackedComponent, Resolvable):
             source_code_retrieval_enabled=self.source_code_retrieval_enabled,
             retrieval_filter=self.filter or AirflowFilter(),
         )
-        state_path.write_text(serialize_value(state))
+        state_path.write_text(serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Path | None

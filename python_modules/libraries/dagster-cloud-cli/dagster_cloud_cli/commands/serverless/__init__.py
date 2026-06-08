@@ -401,7 +401,7 @@ def build_python_dependencies(
     except pex_builder.deps.DepsBuildFailure as err:
         errors = [
             "Could not build dependencies for this project.",
-            f"Dependencies:\n {' '.join(open(requirements_path).readlines())}",
+            f"Dependencies:\n {' '.join(open(requirements_path, encoding='utf-8').readlines())}",
             err.format_error(),
         ]
         raise ui.error("\n".join(errors))

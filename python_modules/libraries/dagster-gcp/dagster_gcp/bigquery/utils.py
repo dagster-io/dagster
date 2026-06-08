@@ -14,7 +14,7 @@ def setup_gcp_creds(gcp_creds: str):
             "Resource config error: gcp_credentials config for BigQuery resource cannot"
             " be used if GOOGLE_APPLICATION_CREDENTIALS environment variable is set."
         )
-    with tempfile.NamedTemporaryFile("w+") as f:
+    with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as f:
         temp_file_name = f.name
         json.dump(
             json.loads(base64.b64decode(gcp_creds)),

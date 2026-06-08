@@ -39,7 +39,7 @@ DATABRICKS_UNKNOWN_TASK_TYPE = "__UNKNOWN__"
 def load_yaml(path: Path) -> Mapping[str, Any]:
     """Load YAML file with error handling."""
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
     except Exception as e:
         logger.warning(f"Warning: Could not load {path}: {e}")

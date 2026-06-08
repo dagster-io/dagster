@@ -412,7 +412,8 @@ def test_component_docs_using_env(
                 url = "{mock_graphql_server}"
                 user_token = "test"
                 default_deployment = "prod"
-                """
+                """,
+                encoding="utf-8",
             )
 
             mock_gql_for_list_env(

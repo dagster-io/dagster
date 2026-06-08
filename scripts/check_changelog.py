@@ -60,7 +60,7 @@ def _read_changes_from_branch_tip(branch: str) -> str:
 def _read_changes_from_local() -> str:
     """Read CHANGES.md from the local checkout."""
     changes_file = os.path.join(os.path.dirname(__file__), "../CHANGES.md")
-    with open(changes_file) as f:
+    with open(changes_file, encoding="utf-8") as f:
         return f.read()
 
 

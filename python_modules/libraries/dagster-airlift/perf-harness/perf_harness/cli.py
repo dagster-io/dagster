@@ -24,7 +24,7 @@ DAGSTER_HOME = MAKEFILE_DIR / ".dagster_home"
 @contextmanager
 def modify_constants(num_dags, num_tasks, num_assets) -> Generator[None, None, None]:
     # Read the original content
-    with open(CONSTANTS_FILE) as f:
+    with open(CONSTANTS_FILE, encoding="utf-8") as f:
         original_content = f.read()
 
     # Write new constants
@@ -33,7 +33,7 @@ def modify_constants(num_dags, num_tasks, num_assets) -> Generator[None, None, N
     )
 
     # Write the modified content
-    with open(CONSTANTS_FILE, "w") as f:
+    with open(CONSTANTS_FILE, "w", encoding="utf-8") as f:
         f.write(modified_content)
 
     try:
@@ -41,7 +41,7 @@ def modify_constants(num_dags, num_tasks, num_assets) -> Generator[None, None, N
         yield
     finally:
         # Restore the original content
-        with open(CONSTANTS_FILE, "w") as f:
+        with open(CONSTANTS_FILE, "w", encoding="utf-8") as f:
             f.write(original_content)
 
 
@@ -150,7 +150,7 @@ def main() -> None:
                 )
             )
 
-        with open(get_perf_output_file(), "w") as f:
+        with open(get_perf_output_file(), "w", encoding="utf-8") as f:
             f.writelines(lines)
     print("Performance harness completed.")
 

@@ -61,7 +61,8 @@ def setup_dlt_component(
             setup_dlt_sources()
 
         Path(defs_path / "load.py").write_text(
-            textwrap.dedent("\n".join(inspect.getsource(load_py_contents).split("\n")[1:]))
+            textwrap.dedent("\n".join(inspect.getsource(load_py_contents).split("\n")[1:])),
+            encoding="utf-8",
         )
 
         with defs_sandbox.load_component_and_build_defs(defs_path=defs_path) as (

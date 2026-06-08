@@ -89,7 +89,7 @@ def set_settings_command(
     """
     import yaml
 
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         settings_dict = yaml.safe_load(f)
 
     if not isinstance(settings_dict, dict):

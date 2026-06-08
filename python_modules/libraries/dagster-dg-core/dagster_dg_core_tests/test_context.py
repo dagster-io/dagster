@@ -249,7 +249,7 @@ def test_setup_cfg_entry_point():
         with modify_toml_as_dict(Path("pyproject.toml")) as toml:
             delete_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.registry_modules"))
         # Create a setup.cfg file with the entry point
-        with open("setup.cfg", "w") as f:
+        with open("setup.cfg", "w", encoding="utf-8") as f:
             f.write(
                 textwrap.dedent("""
                 [options.entry_points]
@@ -523,9 +523,9 @@ def test_virtual_env_mismatch_warning():
 
 @contextmanager
 def _reset_config_file(config_file: ConfigFileType):
-    original = Path(config_file).read_text()
+    original = Path(config_file).read_text(encoding="utf-8")
     yield
-    Path(config_file).write_text(original)
+    Path(config_file).write_text(original, encoding="utf-8")
 
 
 def _get_full_str_path(config_file: ConfigFileType, str_path: str) -> str:
