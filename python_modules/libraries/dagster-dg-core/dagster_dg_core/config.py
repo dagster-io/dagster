@@ -610,7 +610,7 @@ def validate_dg_file_config(
     import tomlkit
     import tomlkit.items
 
-    toml = tomlkit.parse(path.read_text())
+    toml = tomlkit.parse(path.read_text(encoding="utf-8"))
     config_format = config_format or detect_dg_config_file_format(path)
     if config_format == "root":
         raw_dict = toml.unwrap()

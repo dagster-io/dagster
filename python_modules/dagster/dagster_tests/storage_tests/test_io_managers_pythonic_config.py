@@ -452,7 +452,7 @@ def test_observable_source_asset_io_manager_def() -> None:
                 ff.write(str(obj))
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with open(os.path.join(tmpdir_path, "my_observable_asset"), "w") as f:
+        with open(os.path.join(tmpdir_path, "my_observable_asset"), "w", encoding="utf-8") as f:
             f.write("foo")
 
         # we never actually observe this asset, we just attach the io manager to it

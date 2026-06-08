@@ -65,7 +65,7 @@ def load_config(eval_dir: Path) -> EvalConfig:
     if not config_path.exists():
         raise click.UsageError(f"Configuration file {config_path} not found")
 
-    with open(config_path) as f:
+    with open(config_path, encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
 
     return EvalConfig(metrics=[Metric(**metric) for metric in config_data["metrics"]])
@@ -81,7 +81,7 @@ def load_sessions(eval_dir: Path) -> dict[str, dict[str, Any]]:
 
     for session_file in session_files:
         session_id = session_file.stem
-        with open(session_file) as f:
+        with open(session_file, encoding="utf-8") as f:
             session_data = json.load(f)
 
         # Validate required fields
@@ -114,7 +114,7 @@ def load_results(eval_dir: Path, metric: Metric) -> dict[str, dict[str, Any]]:
     if not cache_file.exists():
         return {}
 
-    with open(cache_file) as f:
+    with open(cache_file, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -124,7 +124,7 @@ def save_results(eval_dir: Path, metric: Metric, cache: dict[str, dict[str, Any]
 
     # Write to temp file first for atomic update
     temp_file = cache_file.with_suffix(".tmp")
-    with open(temp_file, "w") as f:
+    with open(temp_file, "w", encoding="utf-8") as f:
         json.dump(cache, f, indent=2)
 
     # Atomic rename

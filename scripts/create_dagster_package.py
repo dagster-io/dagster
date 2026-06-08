@@ -86,7 +86,7 @@ def _make_dagster_package(package_name: str):
         template = jinja_env.get_template(f"{to_create}.tmpl")
         path = variables["path"]
         assert isinstance(path, str)
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             template.stream(**variables["kwargs"]).dump(f)  # type: ignore
 
         if variables["has_todos"]:
@@ -95,7 +95,7 @@ def _make_dagster_package(package_name: str):
     # test __init__.py
     path = os.path.join(tests_path, "__init__.py")
     print(f"Writing {path}")
-    with open(path, "w"):
+    with open(path, "w", encoding="utf-8"):
         pass
 
     # API docs
@@ -107,7 +107,7 @@ def _make_dagster_package(package_name: str):
     )
     template = jinja_env.get_template("api-docs.rst.tmpl")
     print(f"Writing {docs_path}")
-    with open(docs_path, "w") as f:
+    with open(docs_path, "w", encoding="utf-8") as f:
         template.stream(
             hyphen_name=package_name,
             underscore_name=package_name_underscore,

@@ -55,7 +55,9 @@ code_source:
   module_name: file_module
 working_directory: /opt/dagster
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            encoding="utf-8", mode="w", suffix=".yaml", delete=False
+        ) as f:
             f.write(yaml_content)
             f.flush()
             try:
@@ -78,7 +80,9 @@ image: file-image:v1
 code_source:
   module_name: file_module
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            encoding="utf-8", mode="w", suffix=".yaml", delete=False
+        ) as f:
             f.write(yaml_content)
             f.flush()
             try:

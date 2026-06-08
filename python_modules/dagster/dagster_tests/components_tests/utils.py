@@ -117,7 +117,7 @@ def temp_code_location_bar() -> Iterator[None]:
         Path("bar/bar/lib").mkdir(parents=True)
         Path("bar/bar/components").mkdir(parents=True)
         Path("bar/bar/defs").mkdir(parents=True)
-        with open("bar/pyproject.toml", "w") as f:
+        with open("bar/pyproject.toml", "w", encoding="utf-8") as f:
             f.write(generate_component_lib_pyproject_toml("bar", is_project=True))
         Path("bar/bar/__init__.py").touch()
         Path("bar/bar/definitions.py").touch()
@@ -169,7 +169,7 @@ def create_project_from_components(
         (defs_dir / "__init__.py").touch()
 
         with alter_sys_path(to_add=[str(project_root)], to_remove=[]):
-            with open(project_root / "pyproject.toml", "w") as f:
+            with open(project_root / "pyproject.toml", "w", encoding="utf-8") as f:
                 f.write(generate_component_lib_pyproject_toml(location_name, is_project=True))
 
             for src_path in src_paths:
@@ -226,10 +226,10 @@ def print_exception_info(
 
 @contextmanager
 def modify_toml(path: Path) -> Iterator[tomlkit.TOMLDocument]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         toml = tomlkit.parse(f.read())
     yield toml
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write(tomlkit.dumps(toml))
 
 

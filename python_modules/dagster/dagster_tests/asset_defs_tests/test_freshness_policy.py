@@ -189,13 +189,16 @@ def test_legacy_freshness_backcompat():
     )
     new_snap = RepositorySnap.from_def(defs.get_repository_def())
     with open(
-        os.path.join(this_dir, "snapshots", "repo_with_asset_with_legacy_freshness.json")
+        os.path.join(this_dir, "snapshots", "repo_with_asset_with_legacy_freshness.json"),
+        encoding="utf-8",
     ) as f:
         old_snap_serialized = f.read()
 
     # First, check that both serialized snapshots are the same
     with open(
-        os.path.join(this_dir, "snapshots", "repo_with_asset_with_legacy_freshness_new.json"), "w"
+        os.path.join(this_dir, "snapshots", "repo_with_asset_with_legacy_freshness_new.json"),
+        "w",
+        encoding="utf-8",
     ) as f:
         f.write(serialize_value(new_snap))
 
@@ -238,7 +241,8 @@ def test_freshness_policy_metadata_backcompat():
     with open(
         os.path.join(
             this_dir, "snapshots", "repo_with_asset_with_internal_freshness_in_metadata.json"
-        )
+        ),
+        encoding="utf-8",
     ) as f:
         snap_with_metadata_policy = deserialize_value(f.read(), RepositorySnap)
 

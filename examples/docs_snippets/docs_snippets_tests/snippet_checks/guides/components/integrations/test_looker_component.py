@@ -33,10 +33,11 @@ SNIPPETS_DIR = (
 
 def _swap_to_mock_looker_component(path: Path) -> None:
     path.write_text(
-        path.read_text().replace(
+        path.read_text(encoding="utf-8").replace(
             "dagster_looker.LookerComponent",
             "my_project.defs.looker_ingest.test_looker_utils.MockLookerComponent",
-        )
+        ),
+        encoding="utf-8",
     )
 
 

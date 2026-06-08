@@ -147,7 +147,7 @@ def test_scaffold_airlift_yaml():
     with temp_code_location_bar():
         _scaffold_airlift("yaml")
         assert Path("bar/defs/qux/defs.yaml").exists()
-        with open("bar/defs/qux/defs.yaml") as f:
+        with open("bar/defs/qux/defs.yaml", encoding="utf-8") as f:
             assert yaml.safe_load(f) == {
                 "type": "dagster_airlift.core.components.AirflowInstanceComponent",
                 "attributes": {
@@ -166,7 +166,7 @@ def test_scaffold_airlift_python():
     with temp_code_location_bar():
         _scaffold_airlift("python")
         assert Path("bar/defs/qux/component.py").exists()
-        with open("bar/defs/qux/component.py") as f:
+        with open("bar/defs/qux/component.py", encoding="utf-8") as f:
             file_contents = f.read()
             assert file_contents == (
                 """import dagster as dg
@@ -182,7 +182,7 @@ def load(context: dg.ComponentLoadContext) -> AirflowInstanceComponent: ...
 def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_cwd: Path):
     # Add a sub-dir with an asset that will be task mapped.
     (temp_cwd / "my_asset").mkdir()
-    with open(temp_cwd / "my_asset" / "defs.yaml", "w") as f:
+    with open(temp_cwd / "my_asset" / "defs.yaml", "w", encoding="utf-8") as f:
         f.write(
             yaml.dump(
                 {
@@ -196,7 +196,7 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
 
     # Add a sub-dir with an asset that will be dag mapped.
     (temp_cwd / "my_asset_2").mkdir()
-    with open(temp_cwd / "my_asset_2" / "defs.yaml", "w") as f:
+    with open(temp_cwd / "my_asset_2" / "defs.yaml", "w", encoding="utf-8") as f:
         f.write(
             yaml.dump(
                 {

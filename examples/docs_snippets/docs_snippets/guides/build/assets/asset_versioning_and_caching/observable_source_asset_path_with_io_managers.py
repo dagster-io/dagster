@@ -22,7 +22,7 @@ class NumberTextFileIOManager(dg.IOManager):
         asset_key_str = context.asset_key.to_user_string()
 
         full_path = os.path.join(self.root_dir, f"{asset_key_str}.txt")
-        with open(full_path) as ff:
+        with open(full_path, encoding="utf-8") as ff:
             return int(ff.read())
 
     def handle_output(self, context: "dg.OutputContext", obj: int) -> None:
@@ -41,7 +41,7 @@ class NumberTextFileIOManager(dg.IOManager):
         asset_key_str = context.asset_key.to_user_string()
 
         full_path = os.path.join(self.root_dir, f"{asset_key_str}.txt")
-        with open(full_path, "w") as ff:
+        with open(full_path, "w", encoding="utf-8") as ff:
             ff.write(str(obj))
 
 
@@ -57,7 +57,7 @@ FILE_PATH = dg.file_relative_path(__file__, "input_number.txt")
 # knows how to load file that is dropped somewhere by an external process
 class ExternalFileInputManager(dg.IOManager):
     def load_input(self, context: "dg.InputContext") -> object:
-        with open(FILE_PATH) as ff:
+        with open(FILE_PATH, encoding="utf-8") as ff:
             return int(ff.read())
 
     def handle_output(self, context: "dg.OutputContext", obj: Any) -> None:
@@ -69,7 +69,7 @@ class ExternalFileInputManager(dg.IOManager):
 # coming at this fresh
 @dg.observable_source_asset(io_manager_key="external_file_input_manager")
 def input_number():
-    with open(FILE_PATH) as ff:
+    with open(FILE_PATH, encoding="utf-8") as ff:
         return dg.DataVersion(sha256_digest_from_str(ff.read()))
 
 

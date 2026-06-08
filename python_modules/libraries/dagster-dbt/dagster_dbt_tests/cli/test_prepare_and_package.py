@@ -90,7 +90,7 @@ def test_prepare_and_package_with_dependencies(
     manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 
     # Scaffold doesn't include a dependencies.yml file, let's create one
-    with open(dependencies_path, "w") as file:
+    with open(dependencies_path, "w", encoding="utf-8") as file:
         dependencies_yml = {
             "packages": [{"package": "dbt-labs/dbt_utils", "version": [">=1.1.1", "<2.0.0"]}]
         }
@@ -147,7 +147,7 @@ def test_prepare_and_package_with_packages(
     manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 
     # Scaffold doesn't include a packages.yml file, let's create one
-    with open(packages_path, "w") as file:
+    with open(packages_path, "w", encoding="utf-8") as file:
         packages_yml = {
             "packages": [{"package": "dbt-labs/dbt_utils", "version": [">=1.1.1", "<2.0.0"]}]
         }

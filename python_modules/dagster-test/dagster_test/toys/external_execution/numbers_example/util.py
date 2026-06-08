@@ -4,13 +4,13 @@ import os
 
 
 def load_asset_value(asset_key: str, storage_path: str):
-    with open(os.path.join(storage_path, asset_key)) as f:
+    with open(os.path.join(storage_path, asset_key), encoding="utf-8") as f:
         content = f.read()
         return json.loads(content)
 
 
 def store_asset_value(asset_key: str, storage_path: str, value: int):
-    with open(os.path.join(storage_path, asset_key), "w") as f:
+    with open(os.path.join(storage_path, asset_key), "w", encoding="utf-8") as f:
         return f.write(json.dumps(value))
 
 

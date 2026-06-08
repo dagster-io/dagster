@@ -195,15 +195,15 @@ def isolated_venv_with_component_lib_dagster_foo(
                 r"<ENTRY_POINT_GROUP>", entry_point_group, DAGSTER_FOO_PYPROJECT_TOML
             )
 
-            with open("dagster-foo/pyproject.toml", "w") as f:
+            with open("dagster-foo/pyproject.toml", "w", encoding="utf-8") as f:
                 f.write(pyproject_toml_content)
 
             os.makedirs("dagster-foo/dagster_foo/lib/sub")
 
-            with open("dagster-foo/dagster_foo/lib/__init__.py", "w") as f:
+            with open("dagster-foo/dagster_foo/lib/__init__.py", "w", encoding="utf-8") as f:
                 f.write(DAGSTER_FOO_LIB_ROOT)
 
-            with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w") as f:
+            with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w", encoding="utf-8") as f:
                 f.write(_generate_test_component_source(2))
 
             if pre_install_hook:

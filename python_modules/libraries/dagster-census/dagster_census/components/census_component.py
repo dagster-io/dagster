@@ -126,7 +126,7 @@ class CensusComponent(StateBackedComponent, dg.Resolvable):
 
     def write_state_to_path(self, state_path: Path) -> None:
         state = self.workspace.fetch_census_workspace_data()
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     @public
     def get_asset_spec(self, sync: CensusSync) -> dg.AssetSpec:

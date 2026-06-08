@@ -21,7 +21,7 @@ def process_sftp_file(
         sftp.get_file(config.path, tmp_file.name)
 
         # Process the file (example: read contents)
-        with open(tmp_file.name) as f:
+        with open(tmp_file.name, encoding="utf-8") as f:
             lines = f.readlines()
             context.log.info(f"Processed file with {len(lines)} lines")
 

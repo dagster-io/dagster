@@ -84,7 +84,7 @@ def test_dagster_cloud_yaml_check() -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.mkdir(os.path.join(tmpdir, "subdir"))
             yaml_path = os.path.join(tmpdir, "dagster_cloud.yaml")
-            with open(yaml_path, "w") as f:
+            with open(yaml_path, "w", encoding="utf-8") as f:
                 f.write(text)
             runner = CliRunner()
             return runner.invoke(

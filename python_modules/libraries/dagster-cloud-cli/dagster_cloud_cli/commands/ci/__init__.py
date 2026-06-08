@@ -362,7 +362,7 @@ def _create_context_from_values(values_list: list[str], values_file: str | None)
     values_file_path = pathlib.Path(values_file) if values_file else None
     if values_file_path:
         try:
-            with open(values_file_path) as f:
+            with open(values_file_path, encoding="utf-8") as f:
                 if values_file_path.suffix == ".json":
                     context.update(json.load(f))
                 elif values_file_path.suffix in [".yaml", ".yml"]:

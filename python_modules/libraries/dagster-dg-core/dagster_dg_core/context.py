@@ -374,7 +374,7 @@ class DgContext:
         if not build_yaml_path.resolve().exists():
             return None
 
-        with open(build_yaml_path) as f:
+        with open(build_yaml_path, encoding="utf-8") as f:
             build_config_dict = yaml.safe_load(f)
             build_directory = build_config_dict.get("directory")
             if build_directory:
@@ -398,7 +398,7 @@ class DgContext:
         if not container_context_yaml_path.resolve().exists():
             return None
 
-        with open(container_context_yaml_path) as f:
+        with open(container_context_yaml_path, encoding="utf-8") as f:
             return yaml.safe_load(f)
 
     @cached_property

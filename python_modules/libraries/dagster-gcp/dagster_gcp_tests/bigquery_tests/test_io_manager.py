@@ -261,7 +261,7 @@ def test_authenticate_via_config():
         passed = False
 
         try:
-            with open(old_gcp_creds_file) as f:
+            with open(old_gcp_creds_file, encoding="utf-8") as f:
                 gcp_creds = f.read()
 
             bq_io_manager = build_bigquery_io_manager([FakeHandler()]).configured(

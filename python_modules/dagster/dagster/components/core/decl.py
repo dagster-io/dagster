@@ -521,7 +521,7 @@ def build_component_decl_from_yaml_file(
     context: ComponentDeclLoadContext, component_def_path: Path
 ) -> ComponentDecl:
     source_trees = parse_yamls_with_source_position(
-        component_def_path.read_text(), str(component_def_path)
+        component_def_path.read_text(encoding="utf-8"), str(component_def_path)
     )
     component_nodes = []
     for i, source_tree in enumerate(source_trees):

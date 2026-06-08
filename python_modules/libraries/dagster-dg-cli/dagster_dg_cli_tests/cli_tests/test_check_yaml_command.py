@@ -179,7 +179,7 @@ def test_actionable_error_message_no_defs_check_yaml():
         # cannot resolve it and the missing-defs-folder error fires.
         (Path("src") / "foo_bar" / "definitions.py").unlink()
 
-        Path(".env").write_text("FOO=bar")
+        Path(".env").write_text("FOO=bar", encoding="utf-8")
         result = runner.invoke("check", "yaml")
         assert_runner_result(result, exit_0=False)
         assert "Ensure folder `src/foo_bar/defs` exists in the project root." in str(

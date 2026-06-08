@@ -255,7 +255,7 @@ class DefsFolderSandbox:
         try:
             shutil.copy2(defs_path, temp_path)
 
-            defs_path.write_text(yaml.safe_dump(defs_yaml_contents))
+            defs_path.write_text(yaml.safe_dump(defs_yaml_contents), encoding="utf-8")
 
             yield
 
@@ -387,4 +387,4 @@ def copy_code_to_file(fn: Callable, file_path: Path) -> None:
     source_code_text = inspect.getsource(fn)
     source_code_text = "\n".join(source_code_text.split("\n")[1:])
     dedented_source_code_text = textwrap.dedent(source_code_text)
-    file_path.write_text(dedented_source_code_text)
+    file_path.write_text(dedented_source_code_text, encoding="utf-8")

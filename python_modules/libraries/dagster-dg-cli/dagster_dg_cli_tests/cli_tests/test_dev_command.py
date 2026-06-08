@@ -88,7 +88,7 @@ def test_dev_workspace_context_set_python_executable_from_env_file():
             # Now we move the venv to a different location to test
             # DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR is used.
             Path("project-1/.env").write_text(
-                f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}=../._venv/bin/python\n"
+                f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}=../._venv/bin/python\n", encoding="utf-8"
             )
             shutil.move("project-1/.venv", "._venv")
 
@@ -102,14 +102,14 @@ def test_dev_workspace_context_set_python_executable_from_env_file():
 
             # test with quoted value
             Path("project-2/.env").write_text(
-                f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}=._venv/bin/python\n"
+                f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}=._venv/bin/python\n", encoding="utf-8"
             )
             shutil.move("project-2/.venv", "project-2/._venv")
 
             port = find_free_port()
             with (
                 tempfile.NamedTemporaryFile() as stdout_file,
-                open(stdout_file.name, "w") as stdout,
+                open(stdout_file.name, "w", encoding="utf-8") as stdout,
             ):
                 dev_process = launch_dev_command(["--port", str(port)], stdout=stdout)
                 projects = {"project-1", "project-2"}
@@ -117,7 +117,7 @@ def test_dev_workspace_context_set_python_executable_from_env_file():
 
                 assert ("Environment variables will not be injected") not in Path(
                     stdout_file.name
-                ).read_text()
+                ).read_text(encoding="utf-8")
 
 
 @pytest.mark.serial
@@ -131,7 +131,7 @@ def test_dev_workspace_load_env_files(monkeypatch):
         environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
     ):
         with activate_venv(workspace_path / ".venv"):
-            Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
+            Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3", encoding="utf-8")
             result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
@@ -161,7 +161,7 @@ def test_dev_workspace_load_env_files(monkeypatch):
             port = find_free_port()
             with (
                 tempfile.NamedTemporaryFile() as stdout_file,
-                open(stdout_file.name, "w") as stdout,
+                open(stdout_file.name, "w", encoding="utf-8") as stdout,
             ):
                 dev_process = launch_dev_command(["--port", str(port)], stdout=stdout)
                 projects = {"project-1", "project-2"}
@@ -169,7 +169,7 @@ def test_dev_workspace_load_env_files(monkeypatch):
 
                 assert ("Environment variables will not be injected") not in Path(
                     stdout_file.name
-                ).read_text()
+                ).read_text(encoding="utf-8")
 
 
 @pytest.mark.serial

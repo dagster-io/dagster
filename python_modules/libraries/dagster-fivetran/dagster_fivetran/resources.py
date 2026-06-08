@@ -1047,7 +1047,9 @@ class FivetranWorkspace(ConfigurableResource):
     def snapshot(self) -> RepositoryLoadData | None:
         snapshot = None
         if self.snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
-            snapshot = deserialize_value(Path(self.snapshot_path).read_text(), RepositoryLoadData)
+            snapshot = deserialize_value(
+                Path(self.snapshot_path).read_text(encoding="utf-8"), RepositoryLoadData
+            )
         return snapshot
 
     @cached_method

@@ -74,7 +74,7 @@ def load_recorded_graphql_responses(domain: str, scenario_name: str) -> list[dic
 
     responses = []
     for json_file in json_files:
-        with open(json_file) as f:
+        with open(json_file, encoding="utf-8") as f:
             responses.append(json.load(f))
 
     return responses

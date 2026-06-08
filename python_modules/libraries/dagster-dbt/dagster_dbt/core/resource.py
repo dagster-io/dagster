@@ -55,7 +55,8 @@ DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
     packages = cast(
-        "list[dict[str, Any]]", yaml.safe_load(packages_file.read_text()).get("packages", [])
+        "list[dict[str, Any]]",
+        yaml.safe_load(packages_file.read_text(encoding="utf-8")).get("packages", []),
     )
     for package in packages:
         if package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE:

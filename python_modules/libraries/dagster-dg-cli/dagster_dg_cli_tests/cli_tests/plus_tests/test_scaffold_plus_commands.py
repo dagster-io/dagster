@@ -36,7 +36,7 @@ def _get_error_message(file: Path, details: dict[str, Any]):
     line = position["line"]
     column = position["column"]
 
-    file_contents = file.read_text().splitlines()
+    file_contents = file.read_text(encoding="utf-8").splitlines()
     contents_snippet = (
         "\n".join(file_contents[max(0, line - 3) : line])
         + "\n"
@@ -52,10 +52,10 @@ def validate_github_actions_workflow(workflow_path: Path, *, expected_version: s
     """Runs action-validator on the given file, and asserts that it returns a zero exit code.
     Prints a nicely formatted error message if it does not.
     """
-    assert f"@{expected_version}" in workflow_path.read_text(), (
+    assert f"@{expected_version}" in workflow_path.read_text(encoding="utf-8"), (
         f"TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION should be replaced with @{expected_version} in the workflow"
     )
-    assert "TEMPLATE_" not in workflow_path.read_text(), (
+    assert "TEMPLATE_" not in workflow_path.read_text(encoding="utf-8"), (
         "TEMPLATE_ placeholders should be replaced in the workflow"
     )
     result = subprocess.run(
@@ -130,7 +130,7 @@ def test_scaffold_build_artifacts_container_context_platforms(
 
     assert (Path.cwd() / "container_context.yaml").exists()
 
-    container_context_contents = Path("container_context.yaml").read_text()
+    container_context_contents = Path("container_context.yaml").read_text(encoding="utf-8")
 
     # replace the '# ' at the start of each line with ' '
     container_context_contents = "\n".join(
@@ -221,12 +221,12 @@ def test_scaffold_build_artifacts_command_project(
         assert Path("Dockerfile").exists()
 
         modified_build_yaml = yaml.dump({"registry": "junk", "directory": "."}, sort_keys=True)
-        Path("build.yaml").write_text(modified_build_yaml)
+        Path("build.yaml").write_text(modified_build_yaml, encoding="utf-8")
 
         modified_container_context_yaml = yaml.dump({"k8s": "junk"})
-        Path("container_context.yaml").write_text(modified_container_context_yaml)
+        Path("container_context.yaml").write_text(modified_container_context_yaml, encoding="utf-8")
 
-        Path("Dockerfile").write_text("junk")
+        Path("Dockerfile").write_text("junk", encoding="utf-8")
 
         result = runner.invoke(
             "scaffold",
@@ -237,9 +237,12 @@ def test_scaffold_build_artifacts_command_project(
         assert "Build config already exists" in result.output
         assert "Dockerfile already exists" in result.output
         assert "Container config already exists" in result.output
-        assert Path("build.yaml").read_text() == modified_build_yaml
-        assert Path("container_context.yaml").read_text() == modified_container_context_yaml
-        assert Path("Dockerfile").read_text() == "junk"
+        assert Path("build.yaml").read_text(encoding="utf-8") == modified_build_yaml
+        assert (
+            Path("container_context.yaml").read_text(encoding="utf-8")
+            == modified_container_context_yaml
+        )
+        assert Path("Dockerfile").read_text(encoding="utf-8") == "junk"
 
         result = runner.invoke(
             "scaffold",
@@ -251,11 +254,12 @@ def test_scaffold_build_artifacts_command_project(
         assert "Dockerfile already exists" in result.output
         assert "Container config already exists" in result.output
 
-        assert Path("build.yaml").read_text() != modified_build_yaml, result.output
-        assert Path("container_context.yaml").read_text() != modified_container_context_yaml, (
-            result.output
-        )
-        assert Path("Dockerfile").read_text() != "junk", result.output
+        assert Path("build.yaml").read_text(encoding="utf-8") != modified_build_yaml, result.output
+        assert (
+            Path("container_context.yaml").read_text(encoding="utf-8")
+            != modified_container_context_yaml
+        ), result.output
+        assert Path("Dockerfile").read_text(encoding="utf-8") != "junk", result.output
 
 
 @pytest.fixture
@@ -301,7 +305,9 @@ def test_deploy_configure_serverless_github_default_pex_sets_python_executable_s
             "--yes",
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
-        workflow_text = Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_text = Path(".github/workflows/dagster-plus-deploy.yml").read_text(
+            encoding="utf-8"
+        )
         assert 'ENABLE_FAST_DEPLOYS: "true"' in workflow_text
         assert _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR in workflow_text
 
@@ -334,7 +340,7 @@ def test_scaffold_github_actions_command_success_serverless(
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
-        workflow_text = workflow_path.read_text()
+        workflow_text = workflow_path.read_text(encoding="utf-8")
         assert workflow_path.exists()
         assert "hooli" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
@@ -367,7 +373,7 @@ def test_scaffold_github_actions_command_success_project_serverless(
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
-        workflow_text = workflow_path.read_text()
+        workflow_text = workflow_path.read_text(encoding="utf-8")
         assert workflow_path.exists()
         assert "hooli" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
@@ -395,7 +401,7 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
 
         assert "Dagster Plus organization name: " in result.output
         workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
-        workflow_text = workflow_path.read_text()
+        workflow_text = workflow_path.read_text(encoding="utf-8")
         assert workflow_path.exists()
         assert "my-org" in workflow_text
         assert not Path("dagster_cloud.yaml").exists()
@@ -434,7 +440,7 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
             assert result.exit_code == 0, result.output + " " + str(result.exception)
 
             workflow_path = Path(".github/workflows/dagster-plus-deploy.yml")
-            workflow_text = workflow_path.read_text()
+            workflow_text = workflow_path.read_text(encoding="utf-8")
             assert workflow_path.exists()
             assert "hooli" in workflow_text
             assert not Path("dagster_cloud.yaml").exists()
@@ -473,25 +479,22 @@ def test_scaffold_github_actions_command_success_hybrid(
     runner = setup_populated_git_workspace
     result = runner.invoke("scaffold", "build-artifacts", input=f"6\n{registry_url}\n")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
-    assert f"registry: '{registry_url}'" in Path("build.yaml").read_text()
+    assert f"registry: '{registry_url}'" in Path("build.yaml").read_text(encoding="utf-8")
 
     result = runner.invoke("scaffold", "github-actions")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
     assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-    assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-    assert (
-        'Build and upload Docker image for "foo"'
-        in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-    )
-    assert (
-        'Build and upload Docker image for "bar"'
-        in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-    )
-    assert (
-        'Build and upload Docker image for "baz"'
-        in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-    )
+    assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text(encoding="utf-8")
+    assert 'Build and upload Docker image for "foo"' in Path(
+        ".github/workflows/dagster-plus-deploy.yml"
+    ).read_text(encoding="utf-8")
+    assert 'Build and upload Docker image for "bar"' in Path(
+        ".github/workflows/dagster-plus-deploy.yml"
+    ).read_text(encoding="utf-8")
+    assert 'Build and upload Docker image for "baz"' in Path(
+        ".github/workflows/dagster-plus-deploy.yml"
+    ).read_text(encoding="utf-8")
     assert not Path("dagster_cloud.yaml").exists()
 
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
@@ -517,7 +520,9 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 1, result.output + " " + str(result.exception)
         assert "No registry URL found" in result.output
-        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL, "build": "."}))
+        Path("build.yaml").write_text(
+            yaml.dump({"registry": FAKE_ECR_URL, "build": "."}), encoding="utf-8"
+        )
 
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 1, result.output + " " + str(result.exception)
@@ -532,11 +537,15 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text(
+            encoding="utf-8"
+        )
         assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
-        assert f"python:{PYTHON_VERSION}-slim-bookworm" in Path("Dockerfile").read_text()
+        assert f"python:{PYTHON_VERSION}-slim-bookworm" in Path("Dockerfile").read_text(
+            encoding="utf-8"
+        )
 
 
 def test_scaffold_github_actions_command_no_plus_config_hybrid(
@@ -562,7 +571,9 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
 
         assert "Dagster Plus organization name: " in result.output
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text(
+            encoding="utf-8"
+        )
         assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))

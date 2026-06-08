@@ -466,7 +466,7 @@ class SlingResource(ConfigurableResource):
         temp_dir = tempfile.gettempdir()
         temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
 
-        with open(temp_file, "w") as file:
+        with open(temp_file, "w", encoding="utf-8") as file:
             json.dump(replication_config, file, cls=sling.JsonEncoder)
 
         logger.debug(f"Replication config: {replication_config}")
@@ -543,7 +543,7 @@ class SlingResource(ConfigurableResource):
         temp_dir = tempfile.gettempdir()
         temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
 
-        with open(temp_file, "w") as file:
+        with open(temp_file, "w", encoding="utf-8") as file:
             json.dump(replication_config, file, cls=sling.JsonEncoder)
 
         logger.debug(f"Replication config: {replication_config}")

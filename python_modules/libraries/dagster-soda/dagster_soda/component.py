@@ -56,7 +56,7 @@ def _add_sodacl_file(scan: Any, checks_path: str) -> None:
 
 def _parse_check_identifiers_from_yaml(yaml_path: Path, dataset: str) -> list[str]:
     """Extract individual check identifiers for a dataset from a SodaCL YAML file."""
-    content = yaml_path.read_text()
+    content = yaml_path.read_text(encoding="utf-8")
     parsed = yaml.safe_load(content) or {}
     key = f"{SODACL_CHECKS_FOR_PREFIX}{dataset}"
     if key not in parsed:
@@ -221,7 +221,7 @@ class SodaScanComponent(Component, Model, Resolvable):
     def _parse_datasets_from_yaml(self, yaml_path: Path) -> list[str]:
         """Extract dataset names from a SodaCL YAML file."""
         datasets: list[str] = []
-        content = yaml_path.read_text()
+        content = yaml_path.read_text(encoding="utf-8")
         parsed = yaml.safe_load(content) or {}
 
         for key in parsed.keys():

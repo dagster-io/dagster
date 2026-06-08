@@ -144,7 +144,7 @@ class _Database:
         for k, v in _SOURCE_ASSETS.items():
             path = self.asset_path(k)
             if not os.path.exists(path):
-                with open(self.asset_path(k), "w") as fd:  # source asset
+                with open(self.asset_path(k), "w", encoding="utf-8") as fd:  # source asset
                     record = _DatabaseRecord(v, _get_hash(v))
                     fd.write(json.dumps(asdict(record)))
 
@@ -152,12 +152,12 @@ class _Database:
         return f"{self.storage_path}/{key}.json"
 
     def get(self, key: str) -> _DatabaseRecord:
-        with open(self.asset_path(key)) as fd:
+        with open(self.asset_path(key), encoding="utf-8") as fd:
             return _DatabaseRecord(**json.load(fd))
 
     def has(self, key: str) -> bool:
         return os.path.exists(self.asset_path(key))
 
     def set(self, key: str, record: _DatabaseRecord) -> None:
-        with open(self.asset_path(key), "w") as fd:
+        with open(self.asset_path(key), "w", encoding="utf-8") as fd:
             fd.write(json.dumps(asdict(record)))

@@ -58,11 +58,11 @@ def mock_databricks_cli_resolved_config():
     This simulates the Databricks CLI resolving all template variables like ${workspace.current_user.userName}.
     """
     # Load the raw YAML configs
-    with open(DATABRICKS_CONFIG_LOCATION_PATH) as f:
+    with open(DATABRICKS_CONFIG_LOCATION_PATH, encoding="utf-8") as f:
         databricks_config = yaml.safe_load(f)
 
     jobs_yml_path = DATABRICKS_CONFIG_LOCATION_PATH.parent / "resources" / "jobs.yml"
-    with open(jobs_yml_path) as f:
+    with open(jobs_yml_path, encoding="utf-8") as f:
         jobs_config = yaml.safe_load(f)
 
     # Simulate resolved configuration with template variables expanded

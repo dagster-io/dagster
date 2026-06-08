@@ -54,7 +54,7 @@ def git_ls_files(pattern: str) -> list[str]:
 
 def _pyproject_toml_is_package(path: str) -> bool:
     """Check if a pyproject.toml file defines a Python package (has a [project] section)."""
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         content = f.read()
     return "\n[project]" in content or content.startswith("[project]")
 

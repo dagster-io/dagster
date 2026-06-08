@@ -401,7 +401,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
         )
 
         # Serialize and write to path
-        state_path.write_text(dg.serialize_value(workspace_data))
+        state_path.write_text(dg.serialize_value(workspace_data), encoding="utf-8")
 
     def execute_embedded_data_sources(
         self, context: dg.AssetExecutionContext, workspace: BaseTableauWorkspace, workbook_id: str

@@ -311,7 +311,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
 
     def write_state_to_path(self, state_path: Path) -> None:
         workspace_data = self.workspace.fetch_workspace_data()
-        state_path.write_text(serialize_value(workspace_data))
+        state_path.write_text(serialize_value(workspace_data), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Path | None

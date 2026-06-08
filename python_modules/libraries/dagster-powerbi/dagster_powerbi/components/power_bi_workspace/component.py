@@ -301,7 +301,7 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
         state = self.workspace_resource.fetch_powerbi_workspace_data(
             use_workspace_scan=self.use_workspace_scan
         )
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Path | None

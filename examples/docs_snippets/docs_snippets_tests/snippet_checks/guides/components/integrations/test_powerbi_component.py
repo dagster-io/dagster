@@ -35,10 +35,11 @@ SNIPPETS_DIR = (
 
 def _swap_to_mock_powerbi_component(path: Path) -> None:
     path.write_text(
-        path.read_text().replace(
+        path.read_text(encoding="utf-8").replace(
             "dagster_powerbi.PowerBIWorkspaceComponent",
             "my_project.defs.powerbi_ingest.test_powerbi_utils.MockPowerBIComponent",
-        )
+        ),
+        encoding="utf-8",
     )
 
 

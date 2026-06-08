@@ -73,7 +73,7 @@ def empty_dg_cli_config(monkeypatch):
 def build_yaml_file(project):
     build_yaml_path = "build.yaml"
     try:
-        with open(build_yaml_path, "w") as f:
+        with open(build_yaml_path, "w", encoding="utf-8") as f:
             f.write("registry: my-repo\ndirectory: .")
         yield build_yaml_path
     finally:
@@ -84,7 +84,7 @@ def build_yaml_file(project):
 def container_context_yaml_file(project):
     yaml_path = "container_context.yaml"
     try:
-        with open(yaml_path, "w") as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write("""k8s:
   env_secrets:
     - project-secret
@@ -98,7 +98,7 @@ def container_context_yaml_file(project):
 def workspace_build_yaml_file(workspace):
     build_yaml_path = workspace / "build.yaml"
     try:
-        with open(build_yaml_path, "w") as f:
+        with open(build_yaml_path, "w", encoding="utf-8") as f:
             f.write("registry: my-workspace-repo\ndirectory: .")
         yield build_yaml_path
     finally:
@@ -109,7 +109,7 @@ def workspace_build_yaml_file(workspace):
 def workspace_container_context_yaml_file(workspace):
     yaml_path = workspace / "container_context.yaml"
     try:
-        with open(yaml_path, "w") as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write("""k8s:
   env_secrets:
     - workspace-secret
@@ -124,7 +124,7 @@ def workspace_container_context_yaml_file(workspace):
 def workspace_project_build_yaml_file(workspace):
     build_yaml_path = workspace / "foo-bar" / "build.yaml"
     try:
-        with open(build_yaml_path, "w") as f:
+        with open(build_yaml_path, "w", encoding="utf-8") as f:
             f.write("registry: my-project-repo\ndirectory: .")
         yield build_yaml_path
     finally:
@@ -135,7 +135,7 @@ def workspace_project_build_yaml_file(workspace):
 def workspace_project_container_context_yaml_file(workspace):
     yaml_path = workspace / "foo-bar" / "container_context.yaml"
     try:
-        with open(yaml_path, "w") as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write("""k8s:
   env_secrets:
     - project-secret
@@ -669,7 +669,7 @@ def test_plus_deploy_hybrid_with_yaml_files(
 
             dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
-            with open(dagster_cloud_yaml_path) as f:
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
                 file = yaml.safe_load(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str(project.resolve()),
@@ -729,7 +729,7 @@ def test_plus_deploy_hybrid_with_workspace_yaml_files(
                 location_load_timeout=mock.ANY,
             )
 
-            with open(dagster_cloud_yaml_path) as f:
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
                 file = yaml.safe_load(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str(workspace.resolve()),  # from build.yaml
@@ -790,7 +790,7 @@ def test_plus_deploy_hybrid_with_merged_yaml_files(
                 location_load_timeout=mock.ANY,
             )
 
-            with open(dagster_cloud_yaml_path) as f:
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
                 file = yaml.safe_load(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str((workspace / "foo-bar").resolve()),  # from build.yaml
@@ -1091,7 +1091,7 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
                 location_load_timeout=mock.ANY,
             )
 
-            with open(dagster_cloud_yaml_path) as f:
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
                 assert yaml.safe_load(f)["locations"][0]["build"] == {
                     "directory": str(workspace.resolve() / "foo-bar"),  # from build.yaml
                     "registry": "...",
@@ -1136,7 +1136,7 @@ def test_plus_deploy_hybrid_with_agent_queue_in_pyproject(
 
                 dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
-                with open(dagster_cloud_yaml_path) as f:
+                with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
                     file = yaml.safe_load(f)
                     assert file["locations"][0]["agent_queue"] == "my-queue"
     finally:
@@ -1164,7 +1164,7 @@ def test_plus_deploy_hybrid_with_image_in_pyproject(
 
                 dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
-                with open(dagster_cloud_yaml_path) as f:
+                with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
                     file = yaml.safe_load(f)
                     assert file["locations"][0]["image"] == "my-repo/my-image:latest"
                     assert "build" not in file["locations"][0]

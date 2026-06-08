@@ -43,10 +43,10 @@ REPLICATION_PATH = STUB_LOCATION_PATH / COMPONENT_RELPATH / "replication.yaml"
 
 @contextmanager
 def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     yield data  # modify data here
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f)
 
 

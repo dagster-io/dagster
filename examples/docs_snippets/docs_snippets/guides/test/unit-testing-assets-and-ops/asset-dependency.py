@@ -4,7 +4,7 @@ import dagster as dg
 
 @dg.asset
 def loaded_file() -> str:
-    with open("path.txt") as file:
+    with open("path.txt", encoding="utf-8") as file:
         return file.read()
 
 

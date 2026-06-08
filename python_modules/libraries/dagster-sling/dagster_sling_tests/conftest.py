@@ -82,7 +82,8 @@ def replication_config():
 @pytest.fixture
 def csv_to_sqlite_replication_config(path_to_test_csv):
     with open(
-        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml")
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml"),
+        encoding="utf-8",
     ) as f:
         conf = yaml.safe_load(f)
 
@@ -93,7 +94,8 @@ def csv_to_sqlite_replication_config(path_to_test_csv):
 @pytest.fixture
 def csv_to_sqlite_dataworks_replication(path_to_dataworks_folder):
     with open(
-        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml")
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml"),
+        encoding="utf-8",
     ) as f:
         conf = yaml.safe_load(f)
     conf_streams = {}

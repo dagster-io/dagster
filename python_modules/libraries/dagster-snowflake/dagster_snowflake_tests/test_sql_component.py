@@ -115,7 +115,9 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
     """Test that the TemplatedSqlComponent correctly handles SQL templates from strings and files."""
     # If sql_template is None, create a temporary file with the template
     if sql_template is None:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".sql", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            encoding="utf-8", mode="w", suffix=".sql", delete=False
+        ) as f:
             f.write(
                 "SELECT * FROM TESTDB.TESTSCHEMA.TEST_TABLE WHERE date = '{{ date }}' LIMIT {{ limit }}"
             )
