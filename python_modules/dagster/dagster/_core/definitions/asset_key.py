@@ -67,6 +67,7 @@ class AssetKey(IHaveNew):
     @public
     @cached_property
     def path(self) -> Sequence[str]:
+        """Sequence[str]: The components of the asset key as a list of strings."""
         return list(self.parts)
 
     def __str__(self):

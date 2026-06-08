@@ -130,6 +130,7 @@ class CensusComponent(StateBackedComponent, dg.Resolvable):
 
     @public
     def get_asset_spec(self, sync: CensusSync) -> dg.AssetSpec:
+        """Returns the :py:class:`AssetSpec` representing a given Census sync."""
         metadata = {
             **TableMetadataSet(
                 column_schema=generate_table_schema(sync.mappings),

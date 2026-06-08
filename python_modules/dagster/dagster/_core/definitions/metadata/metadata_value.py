@@ -594,6 +594,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
     @public
     @property
     def path(self) -> str:
+        """str: The wrapped path."""
         return self.fspath
 
 
@@ -625,6 +626,7 @@ class NotebookMetadataValue(MetadataValue[str], IHaveNew):
     @public
     @property
     def path(self) -> str:
+        """str: The wrapped path to the notebook as a string."""
         return self.fspath
 
 
@@ -965,6 +967,7 @@ class TableColumnLineageMetadataValue(
     @public
     @property
     def column_lineage(self) -> TableColumnLineage:
+        """TableColumnLineage: The wrapped column lineage."""
         return self.lineage
 
 
