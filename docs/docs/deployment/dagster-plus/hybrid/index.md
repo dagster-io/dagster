@@ -37,7 +37,7 @@ If you are migrating from from Dagster+ Serverless, see the [Dagster+ Serverless
 
 ## Run isolation
 
-Dagster+ Hybrid deployments support both isolated and non-isolated runs. Isolated runs execute in their own container with dedicated resources, while non-isolated runs use a shared container for faster iteration during development. For details, see [Run isolation](/deployment/dagster-plus/run-isolation).
+Dagster+ Hybrid deployments support both isolated and non-isolated runs. Isolated runs execute in their own container with dedicated resources, while non-isolated runs use the persistent code location server for faster iteration during development or for time-sensitive jobs that don't require extensive compute. Because you control the code location server's resources in Hybrid, you can size them for the non-isolated runs you expect; running these jobs from a dedicated code location is recommended so they don't impact other processes. For details, see [Run isolation](/deployment/dagster-plus/run-isolation).
 
 ## Best practices
 

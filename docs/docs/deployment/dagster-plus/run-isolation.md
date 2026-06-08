@@ -29,9 +29,20 @@ If non-isolated runs are disabled (see the section below), the toggle won't appe
 
 ## Non-isolated runs
 
-Non-isolated runs provide a faster start time by using a standing, shared container for each code location.
+Non-isolated runs provide a faster start time by using a standing, shared container for each code location. Instead of provisioning a new container, the run executes in a new process within the code location server, which is already running.
 
-They have fewer compute resources than isolated runs. For Serverless deployments, non-isolated runs receive 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes running within a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
+Because non-isolated runs share the code location server, they have fewer compute resources than isolated runs, and those resources are shared with other processes running within the code location, such as sensors and schedules. The available resources depend on your deployment type:
+
+- **Serverless:** Non-isolated runs receive 0.25 vCPUs and 1GB of RAM.
+- **Hybrid:** Non-isolated runs use the compute resources you've configured for the code location server. Because you control the code location server's resources, Hybrid is well-suited to non-isolated runs for time-sensitive jobs that don't require extensive compute.
+
+We recommend using isolated runs for compute-intensive jobs and asset materializations. A non-isolated run that exhausts the code location server's resources can crash the server and disrupt other processes running within the code location.
+
+:::tip
+
+For Hybrid deployments, run non-isolated jobs from a dedicated code location. Isolating these jobs in their own code location server ensures that an intensive (time, memory, or CPU) run can't impact the sensors, schedules, and other code locations that share an agent.
+
+:::
 
 To be able to use non-isolated runs, the `non_isolated_runs` setting must first be enabled in [Full deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference#non-isolated-runs):
 
