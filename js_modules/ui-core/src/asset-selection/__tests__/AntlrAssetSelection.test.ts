@@ -176,6 +176,46 @@ describe('parseAssetSelectionQuery', () => {
       assertQueryResult('group:my_group', ['C']);
     });
 
+    it('should parse hierarchical group wildcards', () => {
+      const HIERARCHICAL_GRAPH: AssetGraphQueryItem[] = [
+        {
+          name: 'top',
+          node: buildAssetNode({groupName: 'marketing'}),
+          inputs: [{dependsOn: []}],
+          outputs: [{dependedBy: []}],
+        },
+        {
+          name: 'mid',
+          node: buildAssetNode({groupName: 'marketing/email'}),
+          inputs: [{dependsOn: []}],
+          outputs: [{dependedBy: []}],
+        },
+        {
+          name: 'deep',
+          node: buildAssetNode({groupName: 'marketing/email/campaign'}),
+          inputs: [{dependsOn: []}],
+          outputs: [{dependedBy: []}],
+        },
+        {
+          name: 'sibling',
+          node: buildAssetNode({groupName: 'sales'}),
+          inputs: [{dependsOn: []}],
+          outputs: [{dependedBy: []}],
+        },
+      ];
+      const run = (query: string) => {
+        const result = parseAssetSelectionQuery(HIERARCHICAL_GRAPH, query);
+        if (result instanceof Error) {
+          throw result;
+        }
+        return new Set(result.all.map((a) => a.name));
+      };
+      expect(run('group:marketing')).toEqual(new Set(['top']));
+      expect(run('group:"marketing/*"')).toEqual(new Set(['mid', 'deep']));
+      expect(run('group:"marketing*"')).toEqual(new Set(['top', 'mid', 'deep']));
+      expect(run('group:"*email*"')).toEqual(new Set(['mid', 'deep']));
+    });
+
     it('should parse kind query', () => {
       assertQueryResult('kind:python', ['B']);
       assertQueryResult('kind:snowflake', ['B']);

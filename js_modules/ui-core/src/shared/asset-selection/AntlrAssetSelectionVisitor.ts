@@ -231,10 +231,14 @@ export class AntlrAssetSelectionVisitor
     const valueCtx = ctx.value();
     const value = valueCtx ? getValue(valueCtx) : '';
     const isNull = valueCtx ? isNullValue(valueCtx) : false;
+    const isWildcard = value.includes('*');
+    const regex = isWildcard
+      ? new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`)
+      : null;
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.groupName) {
-          return i.node.groupName === value;
+          return regex ? regex.test(i.node.groupName) : i.node.groupName === value;
         }
         return isNull;
       }),
