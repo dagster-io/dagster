@@ -14,6 +14,7 @@ from dagster._core.definitions.asset_selection import (
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    GroupWildCardAssetSelection,
     JobAssetSelection,
     PartitionsAssetSelection,
     ScheduleNameAssetSelection,
@@ -194,6 +195,20 @@ def test_antlr_tree_invalid(selection_str):
         ("tag:foo=bar", AssetSelection.tag("foo", "bar", include_sources=True)),
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
         ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
+        (
+            "group:marketing/foo/bar",
+            AssetSelection.groups("marketing/foo/bar", include_sources=True),
+        ),
+        (
+            'group:"marketing/*"',
+            GroupWildCardAssetSelection(
+                selected_group_wildcard="marketing/*", include_sources=True
+            ),
+        ),
+        (
+            'group:"*"',
+            GroupWildCardAssetSelection(selected_group_wildcard="*", include_sources=True),
+        ),
         (
             "kind:my_kind",
             AssetSelection.kind("my_kind", include_sources=True),

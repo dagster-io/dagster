@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_selection import (
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    GroupWildCardAssetSelection,
     JobAssetSelection,
     KeyWildCardAssetSelection,
     PartitionsAssetSelection,
@@ -133,9 +134,13 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         group = self.visit(ctx.value())
-        return AssetSelection.groups(
-            *([] if not group else [group]), include_sources=self.include_sources
-        )
+        if not group:
+            return AssetSelection.groups(include_sources=self.include_sources)
+        if "*" in group:
+            return GroupWildCardAssetSelection(
+                selected_group_wildcard=group, include_sources=self.include_sources
+            )
+        return AssetSelection.groups(group, include_sources=self.include_sources)
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
