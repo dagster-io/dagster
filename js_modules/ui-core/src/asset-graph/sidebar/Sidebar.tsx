@@ -13,7 +13,15 @@ import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {invariant} from '../../util/invariant';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
-import {AssetGraphViewType, GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
+import {
+  AssetGraphViewType,
+  GraphData,
+  GraphNode,
+  ancestorGroupIds,
+  groupIdForNode,
+  parseGroupId,
+  tokenForAssetKey,
+} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
@@ -168,9 +176,15 @@ export const AssetGraphExplorerSidebar = React.memo(
               assetNode.definition.repository.name,
               assetNode.definition.repository.location.name,
             );
-            const groupName = assetNode.definition.groupName || 'default';
             nextOpenNodes.add(locationName);
-            nextOpenNodes.add(locationName + ':' + groupName);
+            // Use groupIdForNode (not locationName+:+groupName) so the keys match
+            // the tree node ids that flattenGroupTree consults. Add every ancestor
+            // too — flattenGroupTree won't descend past a closed parent.
+            const leafGroupId = groupIdForNode(assetNode);
+            nextOpenNodes.add(leafGroupId);
+            for (const ancId of ancestorGroupIds(leafGroupId)) {
+              nextOpenNodes.add(ancId);
+            }
           }
           if (selectedNode?.id !== lastSelectedNode.id) {
             setSelectedNode({id: lastSelectedNode.id});
@@ -344,47 +358,147 @@ export const AssetGraphExplorerSidebar = React.memo(
   },
 );
 
-function buildRenderedNodes(nodes: {[assetId: string]: GraphNode}, openNodes: Set<string>) {
-  // Map of Groups -> Assets
-  const groupNodes: Record<string, {groupName: string; assets: GraphNode[]}> = {};
+// A node in the hierarchical group tree. `directAssets` holds assets whose
+// group_name matches this node exactly, used to emit asset rows when the
+// folder is open. `rolledUpAssets` includes all descendant assets, used for
+// folder-row counts/statuses so a synthetic ancestor mirrors the graph view's
+// collapsed-cluster rollup.
+type GroupTreeNode = {
+  id: string;
+  segment: string;
+  // Full hierarchical group name (e.g. `marketing/sales`), used for filter
+  // strings so callers match the layout's GroupLayout.groupName convention.
+  fullPath: string;
+  repositoryName?: string;
+  repositoryLocationName?: string;
+  directAssets: GraphNode[];
+  rolledUpAssets: GraphNode[];
+  children: Map<string, GroupTreeNode>;
+};
 
-  let groupsCount = 0;
+// Walks/creates a path from the root map to the leaf node for `groupId` and
+// pushes `leafAssets` onto every visited node's `rolledUpAssets`, plus the
+// leaf's `directAssets`. Returns the leaf node.
+function addAssetsToGroupTree(
+  rootMap: Map<string, GroupTreeNode>,
+  groupId: string,
+  fallback: {repositoryName?: string; repositoryLocationName?: string},
+  leafAssets: GraphNode[],
+): GroupTreeNode {
+  const parsed = parseGroupId(groupId);
+  const locationPrefix = parsed?.locationPrefix ?? '';
+  const segments = parsed?.segments ?? [groupId];
+
+  let cursor: Map<string, GroupTreeNode> = rootMap;
+  let current: GroupTreeNode | undefined;
+  let pathSoFar = '';
+  for (const segment of segments) {
+    pathSoFar = pathSoFar ? `${pathSoFar}/${segment}` : segment;
+    // Key children by full id (locationPrefix + pathSoFar) so two code
+    // locations both containing a top-level group named `marketing` don't
+    // collide in the root map.
+    const childId = `${locationPrefix}${pathSoFar}`;
+    let child = cursor.get(childId);
+    if (!child) {
+      child = {
+        id: childId,
+        segment,
+        fullPath: pathSoFar,
+        ...fallback,
+        directAssets: [],
+        rolledUpAssets: [],
+        children: new Map(),
+      };
+      cursor.set(childId, child);
+    }
+    child.rolledUpAssets.push(...leafAssets);
+    current = child;
+    cursor = child.children;
+  }
+  invariant(current, 'segments was empty — unreachable');
+  current.directAssets.push(...leafAssets);
+  return current;
+}
+
+function flattenGroupTree(
+  roots: Map<string, GroupTreeNode>,
+  openNodes: Set<string>,
+  baseLevel: number,
+  pathPrefix: string[],
+  out: FolderNodeType[],
+) {
+  const sorted = Array.from(roots.values()).sort((a, b) => COLLATOR.compare(a.segment, b.segment));
+  for (const node of sorted) {
+    out.push({
+      groupNode: {
+        // Full path so onFilterToGroup builds a filter string matching the
+        // layout's GroupLayout.groupName convention. Display strips this back
+        // to the leaf segment via groupIdLeafName in AssetSidebarNode.
+        groupName: node.fullPath,
+        assets: node.rolledUpAssets,
+        repositoryName: node.repositoryName,
+        repositoryLocationName: node.repositoryLocationName,
+      },
+      id: node.id,
+      level: baseLevel,
+    });
+    if (!openNodes.has(node.id)) {
+      continue;
+    }
+    const assetLevel = baseLevel + 1;
+    // Only emit direct asset rows so each asset appears exactly once in the
+    // tree (otherwise an ancestor with rolled-up assets would duplicate every
+    // descendant asset at its own level).
+    [...node.directAssets]
+      .sort((a, b) => COLLATOR.compare(a.id, b.id))
+      .forEach((assetNode) => {
+        out.push({
+          id: assetNode.id,
+          path: [...pathPrefix, node.segment, tokenForAssetKey(assetNode.assetKey)].join(':'),
+          level: assetLevel,
+        });
+      });
+    flattenGroupTree(node.children, openNodes, assetLevel, [...pathPrefix, node.segment], out);
+  }
+}
+
+function buildRenderedNodes(nodes: {[assetId: string]: GraphNode}, openNodes: Set<string>) {
+  const leafGroups: Record<string, {groupName: string; assets: GraphNode[]}> = {};
+
   Object.values(nodes).forEach((node) => {
     const groupName = node.definition.groupName || 'default';
     const groupId = groupIdForNode(node);
-
-    if (!groupNodes[groupId]) {
-      groupsCount += 1;
-    }
-    groupNodes[groupId] = groupNodes[groupId] || {
-      groupName,
-      assets: [],
-    };
-    groupNodes[groupId].assets.push(node);
+    leafGroups[groupId] = leafGroups[groupId] || {groupName, assets: []};
+    leafGroups[groupId].assets.push(node);
   });
 
-  const renderGroupsLayer = groupsCount > 1;
-  const folderNodes: FolderNodeType[] = [];
+  const leafIds = Object.keys(leafGroups);
+  const hasHierarchy = leafIds.some((id) => ancestorGroupIds(id).length > 0);
+  const renderGroupsLayer = leafIds.length > 1 || hasHierarchy;
 
-  Object.entries(groupNodes)
-    .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
-    .forEach(([id, groupNode]) => {
-      if (renderGroupsLayer) {
-        folderNodes.push({groupNode, id, level: 1});
-      }
-      if (openNodes.has(id) || !renderGroupsLayer) {
-        groupNode.assets
-          .sort((a, b) => COLLATOR.compare(a.id, b.id))
-          .forEach((assetNode) => {
-            folderNodes.push({
-              id: assetNode.id,
-              path: [groupNode.groupName, tokenForAssetKey(assetNode.assetKey)].join(':'),
-              level: renderGroupsLayer ? 2 : 1,
-            });
+  if (!renderGroupsLayer) {
+    const out: FolderNodeType[] = [];
+    Object.entries(leafGroups).forEach(([_id, group]) => {
+      [...group.assets]
+        .sort((a, b) => COLLATOR.compare(a.id, b.id))
+        .forEach((assetNode) => {
+          out.push({
+            id: assetNode.id,
+            path: [group.groupName, tokenForAssetKey(assetNode.assetKey)].join(':'),
+            level: 1,
           });
-      }
+        });
     });
+    return out;
+  }
 
+  const tree = new Map<string, GroupTreeNode>();
+  Object.entries(leafGroups).forEach(([groupId, leaf]) => {
+    addAssetsToGroupTree(tree, groupId, {}, leaf.assets);
+  });
+
+  const folderNodes: FolderNodeType[] = [];
+  flattenGroupTree(tree, openNodes, 1, [], folderNodes);
   return folderNodes;
 }
 
@@ -449,40 +563,30 @@ function buildRenderedNodesWithCodeLocations(
         openAlways: codeLocationsCount === 1,
       });
       if (openNodes.has(locationName) || codeLocationsCount === 1) {
-        Object.entries(locationNode.groups)
-          .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
-          .forEach(([id, groupNode]) => {
-            folderNodes.push({
-              groupNode,
-              id,
-              level: 2,
-            });
-            if (openNodes.has(id) || groupsCount === 1) {
-              groupNode.assets
-                .sort((a, b) => COLLATOR.compare(a.id, b.id))
-                .forEach((assetNode) => {
-                  folderNodes.push({
-                    id: assetNode.id,
-                    path: [
-                      locationName,
-                      groupNode.groupName,
-                      tokenForAssetKey(assetNode.assetKey),
-                    ].join(':'),
-                    level: 3,
-                  });
-                });
-            }
-          });
+        const tree = new Map<string, GroupTreeNode>();
+        Object.entries(locationNode.groups).forEach(([groupId, groupNode]) => {
+          addAssetsToGroupTree(
+            tree,
+            groupId,
+            {
+              repositoryName: groupNode.repositoryName,
+              repositoryLocationName: groupNode.repositoryLocationName,
+            },
+            groupNode.assets,
+          );
+        });
+        flattenGroupTree(tree, openNodes, 2, [locationName], folderNodes);
       }
     });
 
   if (groupsCount === 1) {
+    // Flatten away the wrapping location/group/folder layers and just show
+    // the asset rows. Identify asset rows by the `path` field rather than a
+    // fixed level (hierarchical group names push leaf assets to varying
+    // depths, so the previous `level === 3` check missed them entirely).
     return folderNodes
-      .filter((node) => node.level === 3)
-      .map((node) => ({
-        ...node,
-        level: 1,
-      }));
+      .filter((node): node is FolderNodeType & {path: string} => 'path' in node)
+      .map((node) => ({...node, level: 1}));
   }
 
   return folderNodes;

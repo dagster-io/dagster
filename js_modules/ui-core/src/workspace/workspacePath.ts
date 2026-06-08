@@ -44,6 +44,15 @@ export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') =>
   return workspacePath(name, location, path);
 };
 
+export const assetGroupPath = (repoAddress: RepoAddress, groupName: string, suffix = '') => {
+  const trimmed = suffix.startsWith('/') ? suffix.slice(1) : suffix;
+  const tail = trimmed ? `/${trimmed}` : '';
+  return workspacePathFromAddress(
+    repoAddress,
+    `/asset-groups/${encodeURIComponent(groupName)}${tail}`,
+  );
+};
+
 type RunDetails = {
   run: {
     id: string;

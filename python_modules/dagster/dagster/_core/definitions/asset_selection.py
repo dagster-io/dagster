@@ -53,6 +53,10 @@ def is_coercible_to_asset_selection(
     )
 
 
+def _wildcard_to_regex(pattern: str) -> re.Pattern[str]:
+    return re.compile("^" + re.escape(pattern).replace("\\*", ".*") + "$")
+
+
 class DagsterInvalidAssetSelectionError(DagsterError):
     """An error raised when an invalid asset selection is provided."""
 
@@ -978,7 +982,7 @@ class GroupWildCardAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        regex = re.compile("^" + re.escape(self.selected_group_wildcard).replace("\\*", ".*") + "$")
+        regex = _wildcard_to_regex(self.selected_group_wildcard)
         return {
             node.key
             for node in asset_graph.asset_nodes
@@ -1518,7 +1522,7 @@ class KeyWildCardAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        regex = re.compile("^" + re.escape(self.selected_key_wildcard).replace("\\*", ".*") + "$")
+        regex = _wildcard_to_regex(self.selected_key_wildcard)
         return {
             key for key in asset_graph.get_all_asset_keys() if regex.match(key.to_user_string())
         }
