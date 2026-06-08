@@ -394,6 +394,15 @@ def test_dbt_engine_target_path_env_var_takes_precedence(
     assert _get_dbt_target_path() == Path("engine-target")
 
 
+def test_dbt_engine_env_var_empty_string_takes_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DBT_TARGET_PATH", "legacy-target")
+    monkeypatch.setenv("DBT_ENGINE_TARGET_PATH", "")
+
+    assert _get_dbt_env_var("DBT_TARGET_PATH", "default-target") == ""
+
+
 def test_dbt_env_var_uses_legacy_value_and_default(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("DBT_TARGET_PATH", raising=False)
     monkeypatch.delenv("DBT_ENGINE_TARGET_PATH", raising=False)
