@@ -27,7 +27,7 @@ redshift = [
     "psycopg2-binary",
 ]
 pyspark = [
-    "dagster-pyspark",
+    "dagster-pyspark==1!0+dev",
 ]
 stubs = [
     "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr,emr-containers]",
