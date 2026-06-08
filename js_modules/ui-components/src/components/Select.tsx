@@ -27,6 +27,8 @@ interface Props<T> extends React.PropsWithChildren<SelectProps<T>> {
 export const Select = <T,>(props: Props<T>) => {
   const {menuWidth = MENU_WIDTH, noResults, itemListRenderer, ...rest} = props;
 
+  const matchTargetWidth = props.popoverProps?.matchTargetWidth ?? false;
+
   const popoverProps: Partial<PopoverProps> = {
     ...props.popoverProps,
     minimal: true,
@@ -50,14 +52,14 @@ export const Select = <T,>(props: Props<T>) => {
               <Box
                 className={styles.noResults}
                 padding={{vertical: 4, horizontal: 8}}
-                style={{width: menuWidth}}
+                style={{width: matchTargetWidth ? '100%' : menuWidth}}
               >
                 {noResults}
               </Box>
             );
           }
 
-          return <SelectList {...listProps} menuWidth={menuWidth} />;
+          return <SelectList {...listProps} menuWidth={matchTargetWidth ? '100%' : menuWidth} />;
         })
       }
     />
@@ -65,7 +67,7 @@ export const Select = <T,>(props: Props<T>) => {
 };
 
 interface SelectListProps<T> extends ItemListRendererProps<T> {
-  menuWidth?: number;
+  menuWidth?: number | string;
 }
 
 const SelectList = <T,>(props: SelectListProps<T>) => {
