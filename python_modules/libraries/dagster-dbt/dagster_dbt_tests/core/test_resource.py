@@ -18,9 +18,13 @@ from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
-from dagster_dbt.asset_utils import build_dbt_asset_selection
+from dagster_dbt.asset_utils import (
+    build_dbt_asset_selection,
+    get_updated_cli_invocation_params_for_context,
+)
 from dagster_dbt.compat import DBT_PYTHON_VERSION
-from dagster_dbt.core.dbt_cli_invocation import PARTIAL_PARSE_FILE_NAME
+from dagster_dbt.core.dbt_cli_invocation import PARTIAL_PARSE_FILE_NAME, _get_dbt_target_path
+from dagster_dbt.core.dbt_env import _get_dbt_env_var
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_project import DbtProject
@@ -331,6 +335,96 @@ def test_dbt_project_dir_conflicting_env_var(monkeypatch: pytest.MonkeyPatch) ->
         )
         .cli(["parse"])
         .is_successful()
+    )
+
+
+def test_dbt_engine_env_vars_override_conflicting_legacy_env_vars(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+) -> None:
+    monkeypatch.setenv("DBT_TARGET_PATH", "legacy-target")
+    monkeypatch.setenv("DBT_ENGINE_TARGET_PATH", "engine-target")
+    monkeypatch.setenv("DBT_ENGINE_PROJECT_DIR", "wrong-project")
+    monkeypatch.setenv("DBT_ENGINE_PROFILES_DIR", "wrong-profiles")
+    monkeypatch.setenv("DBT_ENGINE_PROFILE", "wrong-profile")
+    monkeypatch.setenv("DBT_ENGINE_TARGET", "wrong-target")
+    monkeypatch.setenv("DBT_CLOUD_ACCOUNT_ID", "123")
+    monkeypatch.delenv("DBT_PROFILE", raising=False)
+    monkeypatch.delenv("DBT_TARGET", raising=False)
+
+    mocker.patch("dagster_dbt.core.resource.check_output", return_value=b"2.0.0")
+    run_mock = mocker.patch("dagster_dbt.core.resource.DbtCliInvocation.run")
+
+    DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        profiles_dir=os.fspath(test_jaffle_shop_path),
+        profile="jaffle_shop",
+        target="dev",
+    ).cli(["parse"])
+
+    env = run_mock.call_args.kwargs["env"]
+    assert env["DBT_TARGET_PATH"].startswith("engine-target/")
+    assert env["DBT_ENGINE_TARGET_PATH"] == env["DBT_TARGET_PATH"]
+    assert env["DBT_PROJECT_DIR"] == os.fspath(test_jaffle_shop_path)
+    assert env["DBT_ENGINE_PROJECT_DIR"] == env["DBT_PROJECT_DIR"]
+    assert env["DBT_PROFILES_DIR"] == os.fspath(test_jaffle_shop_path)
+    assert env["DBT_ENGINE_PROFILES_DIR"] == env["DBT_PROFILES_DIR"]
+    assert "DBT_PROFILE" not in env
+    assert env["DBT_ENGINE_PROFILE"] == "wrong-profile"
+    assert "DBT_TARGET" not in env
+    assert env["DBT_ENGINE_TARGET"] == "wrong-target"
+    assert env["DBT_CLOUD_ACCOUNT_ID"] == "123"
+    assert "DBT_ENGINE_CLOUD_ACCOUNT_ID" not in env
+    assert run_mock.call_args.kwargs["args"] == [
+        "dbt",
+        "parse",
+        "--profile",
+        "jaffle_shop",
+        "--target",
+        "dev",
+    ]
+
+
+def test_dbt_engine_target_path_env_var_takes_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DBT_TARGET_PATH", "legacy-target")
+    monkeypatch.setenv("DBT_ENGINE_TARGET_PATH", "engine-target")
+
+    assert _get_dbt_env_var("DBT_TARGET_PATH", "default-target") == "engine-target"
+    assert _get_dbt_target_path() == Path("engine-target")
+
+
+def test_dbt_env_var_uses_legacy_value_and_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DBT_TARGET_PATH", raising=False)
+    monkeypatch.delenv("DBT_ENGINE_TARGET_PATH", raising=False)
+    assert _get_dbt_env_var("DBT_TARGET_PATH", "default-target") == "default-target"
+
+    monkeypatch.setenv("DBT_TARGET_PATH", "legacy-target")
+    assert _get_dbt_env_var("DBT_TARGET_PATH", "default-target") == "legacy-target"
+
+
+def test_dbt_env_var_does_not_transform_dbt_cloud_env_vars(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DBT_CLOUD_ACCOUNT_ID", "123")
+    monkeypatch.setenv("DBT_ENGINE_CLOUD_ACCOUNT_ID", "456")
+
+    assert _get_dbt_env_var("DBT_CLOUD_ACCOUNT_ID") == "123"
+
+
+def test_dbt_engine_indirect_selection_env_var_takes_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DBT_INDIRECT_SELECTION", "eager")
+    monkeypatch.setenv("DBT_ENGINE_INDIRECT_SELECTION", "empty")
+
+    assert (
+        get_updated_cli_invocation_params_for_context(
+            context=None,
+            manifest={},
+            dagster_dbt_translator=DagsterDbtTranslator(),
+        ).indirect_selection
+        == "empty"
     )
 
 
