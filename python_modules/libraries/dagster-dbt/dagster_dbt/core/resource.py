@@ -651,16 +651,7 @@ class DbtCliResource(ConfigurableResource):
             if updated_params.dbt_project
             else self.project_dir
         )
-        env = {
-            # Allow IO streaming when running in Windows.
-            # Also, allow it to be overriden by the current environment.
-            "PYTHONLEGACYWINDOWSSTDIO": "1",
-            # Pass the current environment variables to the dbt CLI invocation.
-            **os.environ.copy(),
-            # An environment variable to indicate that the dbt CLI is being invoked from Dagster.
-            "DAGSTER_DBT_CLI": "true",
-            # Run dbt with unbuffered output.
-            "PYTHONUNBUFFERED": "1",
+        dbt_global_config_env = {
             # Disable anonymous usage statistics for performance.
             "DBT_SEND_ANONYMOUS_USAGE_STATS": "false",
             # The DBT_LOG_FORMAT environment variable must be set to `json`. We use this
@@ -674,20 +665,33 @@ class DbtCliResource(ConfigurableResource):
             # The DBT_LOG_PATH environment variable is set to the same value as DBT_TARGET_PATH
             # so that logs for each dbt invocation has separate log files.
             "DBT_LOG_PATH": os.fspath(target_path),
-            # The DBT_PROFILES_DIR environment variable is set to the path containing the dbt
-            # profiles.yml file.
-            # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
-            # for more information.
-            **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
             # The DBT_PROJECT_DIR environment variable is set to the path containing the dbt project
             # See https://docs.getdbt.com/reference/dbt_project.yml for more information.
             "DBT_PROJECT_DIR": str(project_dir),
+            **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
         }
 
-        # set dbt indirect selection if needed to execute specific dbt tests due to asset check
-        # selection
         if indirect_selection:
-            env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
+            dbt_global_config_env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
+
+        env = {
+            # Allow IO streaming when running in Windows.
+            # Also, allow it to be overriden by the current environment.
+            "PYTHONLEGACYWINDOWSSTDIO": "1",
+            # Pass the current environment variables to the dbt CLI invocation.
+            **os.environ.copy(),
+            # An environment variable to indicate that the dbt CLI is being invoked from Dagster.
+            "DAGSTER_DBT_CLI": "true",
+            # Run dbt with unbuffered output.
+            "PYTHONUNBUFFERED": "1",
+            # Set both DBT_ and DBT_ENGINE_ prefixed variables to account for changes in
+            # dbt since version 1.11. Otherwise a set DBT_ENGINE_ variable takes precedence.
+            **dbt_global_config_env,
+            **{
+                f"DBT_ENGINE_{key.removeprefix('DBT_')}": value
+                for key, value in dbt_global_config_env.items()
+            },
+        }
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
