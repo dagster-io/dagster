@@ -77,7 +77,6 @@ class ResourceRequests:
 
 class BuildkiteQueue(StrEnum):
     KUBERNETES_EKS = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
-    DOCKER = os.getenv("BUILDKITE_DOCKER_QUEUE", "buildkite-docker-october22")
 
     @classmethod
     def contains(cls, value: str) -> bool:
