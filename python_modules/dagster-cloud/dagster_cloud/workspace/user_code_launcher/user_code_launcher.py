@@ -643,7 +643,7 @@ class DagsterCloudUserCodeLauncher(
                 "upload_data expected when stored_snapshot is None",
             )
             file = _file_for_format(object_bytes, upload_data.format)
-            response = self._instance.requests_managed_retries_session.put(
+            response = self._instance.requests_managed_retries_session_for_presigned_url_puts.put(
                 url=upload_data.presigned_put_url,
                 data=file,
                 timeout=self._instance.dagster_cloud_api_timeout,

@@ -19,10 +19,16 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster_cloud_cli.core.errors import raise_http_error
+from dagster_cloud_cli.core.graphql_client import (
+    DEFAULT_BACKOFF_FACTOR,
+    DEFAULT_RETRIES,
+    PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+)
 from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
 from dagster_shared import seven
 from requests.adapters import HTTPAdapter
 from typing_extensions import Self
+from urllib3.util.retry import Retry
 
 if TYPE_CHECKING:
     from dagster_cloud.instance import DagsterCloudAgentInstance  # noqa: F401
@@ -42,7 +48,14 @@ class CloudComputeLogManager(
             local_dir = seven.get_system_temp_directory()
 
         self._upload_session = requests.Session()
-        adapter = HTTPAdapter(max_retries=3)
+        adapter = HTTPAdapter(
+            max_retries=Retry(
+                total=DEFAULT_RETRIES,
+                backoff_factor=DEFAULT_BACKOFF_FACTOR,
+                status_forcelist=PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+                allowed_methods=["PUT"],
+            )
+        )
         self._upload_session.mount("http://", adapter)
         self._upload_session.mount("https://", adapter)
 
