@@ -10,9 +10,16 @@ import requests
 from dagster import InputContext, OutputContext, UPathIOManager, io_manager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._vendored.dateutil import parser
+from dagster_cloud_cli.core.graphql_client import (
+    DEFAULT_BACKOFF_FACTOR,
+    DEFAULT_RETRIES,
+    PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+)
 from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
 from dagster_cloud_cli.core.headers.impl import get_dagster_cloud_api_headers
+from requests.adapters import HTTPAdapter
 from upath import UPath
+from urllib3.util.retry import Retry
 
 ECS_AGENT_IP = "169.254.170.2"
 
@@ -100,6 +107,16 @@ class ServerlessPresignedURLIOManager(UPathIOManager):
         self._api_token = api_token
         self._timeout = timeout
         self._session = requests.Session()
+        put_retry_adapter = HTTPAdapter(
+            max_retries=Retry(
+                total=DEFAULT_RETRIES,
+                backoff_factor=DEFAULT_BACKOFF_FACTOR,
+                status_forcelist=PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+                allowed_methods=["PUT"],
+            )
+        )
+        self._session.mount("https://", put_retry_adapter)
+        self._session.mount("http://", put_retry_adapter)
         super().__init__(base_path=UPath("."))
 
     def _get_presigned_url(self, key: str, method: str) -> str:
