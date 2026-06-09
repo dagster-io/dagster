@@ -45,4 +45,4 @@ test = [
 ]
 
 [tool.uv.sources]
-dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
