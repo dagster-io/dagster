@@ -34,6 +34,9 @@ pandas = [
     "pandas<3.0.0",
     "snowflake-connector-python[pandas]>=3.4.0",
 ]
+dbt = [
+    "dagster-dbt",
+]
 
 [dependency-groups]
 test = [
@@ -41,6 +44,7 @@ test = [
     "dagster-pipes",
     "dagster-shared",
     "dagster-pandas",
+    "dagster-dbt",
 ]
 
 [tool.uv.sources]
@@ -48,3 +52,4 @@ dagster = { path = "../../dagster", editable = true }
 dagster-pipes = { path = "../../dagster-pipes", editable = true }
 dagster-shared = { path = "../dagster-shared", editable = true }
 dagster-pandas = { path = "../dagster-pandas", editable = true }
+dagster-dbt = { path = "../dagster-dbt", editable = true }
