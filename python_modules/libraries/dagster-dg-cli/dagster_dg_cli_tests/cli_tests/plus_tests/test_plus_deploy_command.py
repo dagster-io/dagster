@@ -7,13 +7,13 @@ from unittest import mock
 from unittest.mock import patch
 
 import pytest
-import yaml
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg_cli.cli.plus.deploy import DEFAULT_STATEDIR_PATH
 from dagster_dg_core.utils import pushd
 from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -670,7 +670,7 @@ def test_plus_deploy_hybrid_with_yaml_files(
             dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
             with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
-                file = yaml.safe_load(f)
+                file = safe_load_yaml(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str(project.resolve()),
                     "registry": "my-repo",
@@ -730,7 +730,7 @@ def test_plus_deploy_hybrid_with_workspace_yaml_files(
             )
 
             with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
-                file = yaml.safe_load(f)
+                file = safe_load_yaml(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str(workspace.resolve()),  # from build.yaml
                     "registry": "my-workspace-repo",
@@ -791,7 +791,7 @@ def test_plus_deploy_hybrid_with_merged_yaml_files(
             )
 
             with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
-                file = yaml.safe_load(f)
+                file = safe_load_yaml(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str((workspace / "foo-bar").resolve()),  # from build.yaml
                     "registry": "my-project-repo",
@@ -1092,7 +1092,7 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
             )
 
             with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
-                assert yaml.safe_load(f)["locations"][0]["build"] == {
+                assert safe_load_yaml(f)["locations"][0]["build"] == {
                     "directory": str(workspace.resolve() / "foo-bar"),  # from build.yaml
                     "registry": "...",
                 }
@@ -1137,7 +1137,7 @@ def test_plus_deploy_hybrid_with_agent_queue_in_pyproject(
                 dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
                 with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
-                    file = yaml.safe_load(f)
+                    file = safe_load_yaml(f)
                     assert file["locations"][0]["agent_queue"] == "my-queue"
     finally:
         _remove_project_toml_field(project, "agent_queue")
@@ -1165,7 +1165,7 @@ def test_plus_deploy_hybrid_with_image_in_pyproject(
                 dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
                 with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
-                    file = yaml.safe_load(f)
+                    file = safe_load_yaml(f)
                     assert file["locations"][0]["image"] == "my-repo/my-image:latest"
                     assert "build" not in file["locations"][0]
     finally:

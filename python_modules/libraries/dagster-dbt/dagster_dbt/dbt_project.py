@@ -3,10 +3,10 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
-import yaml
 from dagster._annotations import public
 from dagster._record import IHaveNew, record_custom
 from dagster._utils import run_with_concurrent_update_guard
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dbt.errors import (
     DagsterDbtManifestNotFoundError,
@@ -310,7 +310,7 @@ class DbtProject(IHaveNew):
                 f"Ensure the specified project directory respects all dbt project requirements."
             )
         with open(project_dir.joinpath("dbt_project.yml"), encoding="utf-8") as file:
-            dbt_project_yml = yaml.safe_load(file)
+            dbt_project_yml = safe_load_yaml(file)
         packages_install_path = project_dir.joinpath(
             dbt_project_yml.get("packages-install-path", "dbt_packages")
         )

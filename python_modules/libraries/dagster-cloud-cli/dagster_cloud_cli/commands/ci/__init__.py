@@ -14,6 +14,7 @@ import typer
 import yaml
 from dagster_shared import check
 from dagster_shared.utils import remove_none_recursively
+from dagster_shared.yaml_utils import safe_load_yaml
 from jinja2 import TemplateSyntaxError
 from typer import Typer
 
@@ -366,7 +367,7 @@ def _create_context_from_values(values_list: list[str], values_file: str | None)
                 if values_file_path.suffix == ".json":
                     context.update(json.load(f))
                 elif values_file_path.suffix in [".yaml", ".yml"]:
-                    context.update(yaml.safe_load(f))
+                    context.update(safe_load_yaml(f))
                 else:
                     raise ui.error(f"Unsupported values file extension {values_file_path.suffix}")
         except Exception as err:

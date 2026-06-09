@@ -5,6 +5,7 @@ from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_organization_settings, format_saml_result
@@ -87,10 +88,8 @@ def set_settings_command(
         domain_allowlist:
         - example.com
     """
-    import yaml
-
     with open(file_path, encoding="utf-8") as f:
-        settings_dict = yaml.safe_load(f)
+        settings_dict = safe_load_yaml(f)
 
     if not isinstance(settings_dict, dict):
         raise click.ClickException(

@@ -5,6 +5,7 @@ from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_alert_policies, format_alert_policy_sync_result
@@ -103,10 +104,8 @@ def sync_alert_policies_command(
         $ dg api alert-policy sync alert_policies.yaml
         Synced alert policies: failed_run_alert, long_running_alert
     """
-    import yaml
-
     with open(file_path, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        config = safe_load_yaml(f)
 
     if not isinstance(config, (list, dict)):
         raise click.ClickException(

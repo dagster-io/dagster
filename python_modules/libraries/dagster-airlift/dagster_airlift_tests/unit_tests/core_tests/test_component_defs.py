@@ -28,6 +28,7 @@ from dagster_airlift.test.test_utils import asset_spec, get_job_from_defs
 from dagster_dg_cli.cli import cli
 
 ensure_dagster_tests_import()
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_tests.components_tests.utils import (
     build_component_defs_for_test,
     temp_code_location_bar,
@@ -148,7 +149,7 @@ def test_scaffold_airlift_yaml():
         _scaffold_airlift("yaml")
         assert Path("bar/defs/qux/defs.yaml").exists()
         with open("bar/defs/qux/defs.yaml", encoding="utf-8") as f:
-            assert yaml.safe_load(f) == {
+            assert safe_load_yaml(f) == {
                 "type": "dagster_airlift.core.components.AirflowInstanceComponent",
                 "attributes": {
                     "name": "qux",

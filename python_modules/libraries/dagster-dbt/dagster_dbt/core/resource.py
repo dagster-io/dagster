@@ -9,7 +9,6 @@ from pathlib import Path
 from subprocess import check_output
 from typing import Any, cast
 
-import yaml
 from dagster import (
     AssetExecutionContext,
     ConfigurableResource,
@@ -19,6 +18,7 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import pushd
+from dagster_shared.yaml_utils import safe_load_yaml
 from packaging import version
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
@@ -56,7 +56,7 @@ def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
     packages = cast(
         "list[dict[str, Any]]",
-        yaml.safe_load(packages_file.read_text(encoding="utf-8")).get("packages", []),
+        safe_load_yaml(packages_file.read_text(encoding="utf-8")).get("packages", []),
     )
     for package in packages:
         if package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE:

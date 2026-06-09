@@ -12,12 +12,12 @@ from pathlib import Path
 from typing import Any
 
 import click
-import yaml
 from click.testing import CliRunner
 from dagster_dg_cli.cli import cli as root_cli
 from dagster_dg_cli.cli.api.client import DgApiTestContext
 from dagster_dg_cli.cli.api.shared import get_config_or_error
 from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient, IGraphQLClient
+from dagster_shared.yaml_utils import safe_load_yaml
 
 API_TESTS_DIR = Path(__file__).parent
 
@@ -60,7 +60,7 @@ def load_domain_commands(domain: str) -> dict[str, dict]:
 
     try:
         with open(scenarios_file, encoding="utf-8") as f:
-            scenarios_data = yaml.safe_load(f) or {}
+            scenarios_data = safe_load_yaml(f) or {}
         return scenarios_data
     except Exception as e:
         click.echo(f"Error loading scenarios.yaml: {e}", err=True)

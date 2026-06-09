@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 
 import pytest
-import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_test.fixtures.utils import BUILDKITE
 
@@ -457,7 +457,7 @@ def default_docker_compose_yml(default_directory) -> str:
 
 def network_names_from_yml(docker_compose_yml) -> list[str]:
     with open(docker_compose_yml, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        config = safe_load_yaml(f)
     if "name" in config:
         project_name = config["name"]
     else:

@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any, cast
 
 import click
-import yaml
 from dagster_shared.record import record
+from dagster_shared.yaml_utils import safe_load_yaml
 from deepeval import evaluate
 from deepeval.metrics import GEval
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
@@ -66,7 +66,7 @@ def load_config(eval_dir: Path) -> EvalConfig:
         raise click.UsageError(f"Configuration file {config_path} not found")
 
     with open(config_path, encoding="utf-8") as f:
-        config_data = yaml.safe_load(f)
+        config_data = safe_load_yaml(f)
 
     return EvalConfig(metrics=[Metric(**metric) for metric in config_data["metrics"]])
 
