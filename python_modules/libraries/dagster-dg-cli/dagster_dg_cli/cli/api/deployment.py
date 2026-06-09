@@ -6,6 +6,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_rest_resources.schemas.enums import DgApiPullRequestStatus
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
+from dagster_shared.yaml_utils import safe_load_yaml
 
 # Lazy import to avoid loading pydantic at CLI startup
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
@@ -221,10 +222,8 @@ def set_settings_command(
           max_retries: 3
         sso_default_role: VIEWER
     """
-    import yaml
-
     with open(file_path, encoding="utf-8") as f:
-        settings_dict = yaml.safe_load(f)
+        settings_dict = safe_load_yaml(f)
 
     if not isinstance(settings_dict, dict):
         raise click.ClickException(

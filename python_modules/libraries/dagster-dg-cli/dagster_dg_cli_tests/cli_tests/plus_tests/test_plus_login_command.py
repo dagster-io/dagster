@@ -10,10 +10,10 @@ import pytest
 import requests
 import responses
 import tomlkit
-import yaml
 from click.testing import CliRunner
 from dagster_dg_cli.cli.plus import plus_group
 from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 @pytest.fixture()
@@ -149,7 +149,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
         assert DagsterPlusCliConfig.get().default_deployment == "hooli-dev"
 
         if fixture_name == "setup_cloud_cli_config":
-            assert yaml.safe_load(filepath.read_text()) == {
+            assert safe_load_yaml(filepath.read_text()) == {
                 "organization": "hooli",
                 "user_token": "abc123",
                 "default_deployment": "hooli-dev",

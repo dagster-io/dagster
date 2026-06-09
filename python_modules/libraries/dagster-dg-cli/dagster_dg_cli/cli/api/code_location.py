@@ -28,18 +28,18 @@ def build_code_location_document(
     **kwargs: Any,
 ) -> "DgApiCodeLocationDocument":
     """Build a code location document from CLI args, optionally merging with a YAML file."""
-    import yaml
     from dagster_rest_resources.schemas.code_location import (
         DgApiCodeLocationDocument,
         DgApiCodeSource,
         DgApiGitMetadata,
     )
+    from dagster_shared.yaml_utils import safe_load_yaml
 
     location_doc_from_file: dict[str, Any] = {}
 
     if location_file:
         with open(location_file, encoding="utf8") as f:
-            location_doc_from_file = yaml.safe_load(f.read()) or {}
+            location_doc_from_file = safe_load_yaml(f.read()) or {}
 
         if "locations" in location_doc_from_file:
             locations_by_name = {

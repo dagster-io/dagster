@@ -7,7 +7,6 @@ from functools import partial
 from itertools import chain
 from typing import Any, NamedTuple, cast
 
-import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -32,6 +31,7 @@ from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_airbyte.asset_decorator import airbyte_assets
 from dagster_airbyte.legacy_resources import (
@@ -858,7 +858,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         for connection_name in connection_directories:
             connection_dir = os.path.join(connections_dir, connection_name)
             with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
-                connection_data = yaml.safe_load(f.read())
+                connection_data = safe_load_yaml(f.read())
 
             destination_configuration_path = cast(
                 "str", connection_data.get("destination_configuration_path")
@@ -866,7 +866,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
             with open(
                 os.path.join(self._project_dir, destination_configuration_path), encoding="utf-8"
             ) as f:
-                destination_data = yaml.safe_load(f.read())
+                destination_data = safe_load_yaml(f.read())
 
             connection = AirbyteConnectionMetadata.from_config(connection_data, destination_data)
 
@@ -898,7 +898,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 state_file = state_files[0]
 
             with open(os.path.join(connection_dir, state_file), encoding="utf-8") as f:
-                state = yaml.safe_load(f.read())
+                state = safe_load_yaml(f.read())
                 connection_id = state.get("resource_id")
 
             output_connections.append((connection_id, connection))

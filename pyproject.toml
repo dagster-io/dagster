@@ -94,6 +94,10 @@ exclude = ["*.ipynb"]
 # Project-scaffold templates; the PROJECT_NAME_PLACEHOLDER is substituted at generation time.
 "**/templates/PROJECT_NAME_PLACEHOLDER/**/__init__.py" = ["INP001"]
 
+# yaml_utils implements the wrapped loader; test_yaml asserts the bare yaml.safe_load behavior for comparison.
+"python_modules/libraries/dagster-shared/dagster_shared/yaml_utils/__init__.py" = ["TID251"]
+"python_modules/libraries/dagster-shared/dagster_shared_tests/test_yaml.py" = ["TID251"]
+
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
 

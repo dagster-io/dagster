@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 from typing import Any
 
-import yaml
 from buildkite_shared.step_builders.step_builder import StepConfiguration, is_group_step
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def _step_skip(step: StepConfiguration) -> str | None:
@@ -50,7 +50,7 @@ def get_step_skip(steps: Sequence[StepConfiguration], name: str) -> str | None:
 
 def assert_valid_pipeline_yaml(captured_out: str) -> dict[str, Any]:
     """Parse captured stdout as YAML and verify basic pipeline structure."""
-    pipeline = yaml.safe_load(captured_out)
+    pipeline = safe_load_yaml(captured_out)
     assert isinstance(pipeline, dict), "output should be a YAML dict"
     assert "steps" in pipeline, "pipeline should have 'steps' key"
     assert isinstance(pipeline["steps"], list), "'steps' should be a list"

@@ -192,7 +192,7 @@ def load_proxied_state_from_yaml(proxied_yaml_path: Path) -> AirflowProxiedState
             if dag_file.suffix not in [".yaml", ".yml"]:
                 continue
             dag_id = dag_file.stem
-            yaml_dict = yaml.safe_load(dag_file.read_text())
+            yaml_dict = yaml.safe_load(dag_file.read_text())  # noqa: TID251 — dagster_airlift.in_airflow must not depend on dagster_shared (asserted by test_in_airflow_does_not_require_dagster).
             if not isinstance(yaml_dict, dict):
                 raise Exception("Expected a dictionary")
             dag_proxied_states[dag_id] = DagProxiedState.from_dict(yaml_dict)

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dg_cli_tests.cli_tests.api_tests.shared.fixture_config import FixtureScenario
 
@@ -24,7 +25,7 @@ def load_fixture_scenarios_from_yaml(yaml_file: Path) -> dict[str, FixtureScenar
 
     try:
         with open(yaml_file, encoding="utf-8") as f:
-            yaml_data = yaml.safe_load(f) or {}
+            yaml_data = safe_load_yaml(f) or {}
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in {yaml_file}: {e}")
 

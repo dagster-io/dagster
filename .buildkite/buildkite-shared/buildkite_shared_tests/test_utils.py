@@ -3,8 +3,8 @@
 import logging
 
 import pytest
-import yaml
 from buildkite_shared.utils import dump_pipeline_yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def test_dump_pipeline_yaml_drops_skipped_steps(caplog: pytest.LogCaptureFixture) -> None:
@@ -21,7 +21,7 @@ def test_dump_pipeline_yaml_drops_skipped_steps(caplog: pytest.LogCaptureFixture
         ]
     }
     with caplog.at_level(logging.INFO):
-        out = yaml.safe_load(dump_pipeline_yaml(pipeline))
+        out = safe_load_yaml(dump_pipeline_yaml(pipeline))
 
     keys = [s["key"] for s in out["steps"]]
     assert keys == ["a", "c"]
@@ -74,7 +74,7 @@ def test_dump_pipeline_yaml_drops_skipped_substeps_and_empty_groups(
         ]
     }
     with caplog.at_level(logging.INFO):
-        out = yaml.safe_load(dump_pipeline_yaml(pipeline))
+        out = safe_load_yaml(dump_pipeline_yaml(pipeline))
 
     # g2 had only a skipped substep -> drop the whole group.
     top_keys = [s["key"] for s in out["steps"]]
@@ -102,6 +102,6 @@ def test_dump_pipeline_yaml_passes_through_when_nothing_skipped() -> None:
             {"key": "b", "label": "b", "commands": ["echo b"], "depends_on": ["a"]},
         ]
     }
-    out = yaml.safe_load(dump_pipeline_yaml(pipeline))
+    out = safe_load_yaml(dump_pipeline_yaml(pipeline))
     assert [s["key"] for s in out["steps"]] == ["a", "b"]
     assert out["steps"][1]["depends_on"] == ["a"]

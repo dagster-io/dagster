@@ -25,6 +25,7 @@ from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     mock_gql_response,
     mock_hybrid_response,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 _SERVERLESS_BUILD_STRATEGY_GITHUB_EXPR = (
     "--build-strategy=${{ env.ENABLE_FAST_DEPLOYS == 'true' && 'python-executable' || 'docker' }}"
@@ -139,7 +140,7 @@ def test_scaffold_build_artifacts_container_context_platforms(
 
     assert container_context_class is not None
     # validate that the example config can be parsed as a valid container context dict
-    assert container_context_class.create_from_config(yaml.safe_load(container_context_contents))
+    assert container_context_class.create_from_config(safe_load_yaml(container_context_contents))
 
 
 def test_scaffold_build_artifacts_command_workspace(

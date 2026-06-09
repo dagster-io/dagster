@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 @contextmanager
@@ -164,7 +165,7 @@ _IMAGES_ROOT = _OSS_ROOT / "python_modules" / "automation" / "automation" / "doc
 def get_image_version(image_name: str) -> str:
     """Returns the image timestamp version. All Python versions must use the same timestamp."""
     with open(_IMAGES_ROOT / image_name / "last_updated.yaml", encoding="utf8") as f:
-        versions = set(yaml.safe_load(f).values())
+        versions = set(safe_load_yaml(f).values())
         assert len(versions) == 1
         return versions.pop()
 

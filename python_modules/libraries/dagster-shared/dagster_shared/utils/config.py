@@ -19,12 +19,13 @@ def get_default_dg_user_config_path() -> Path:
 
 def load_config(config_path: Path) -> dict[str, Any]:
     import tomlkit
-    import yaml
+
+    from dagster_shared.yaml_utils import safe_load_yaml
 
     if config_path.suffix == ".toml":
         return tomlkit.parse(config_path.read_text(encoding="utf-8")).unwrap()
     else:
-        return yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+        return safe_load_yaml(config_path.read_text(encoding="utf-8")) or {}
 
 
 def write_config(config_path: Path, config: dict[str, Any]):

@@ -15,6 +15,7 @@ from typing import Any
 import dagster._check as check
 import yaml
 from dagster._utils import discover_oss_root
+from dagster_shared.yaml_utils import safe_load_yaml
 from kubernetes.client.api_client import ApiClient
 
 from schema.charts.dagster.values import DagsterHelmValues
@@ -137,7 +138,7 @@ class HelmTemplate:
                 chart_copy_paths.append(chart_copy_path)
 
                 with open(chart_path, encoding="utf8") as chart_file:
-                    old_chart_yaml = yaml.safe_load(chart_file)
+                    old_chart_yaml = safe_load_yaml(chart_file)
 
                 with open(chart_path, "w", encoding="utf8") as chart_file:
                     new_chart_yaml = old_chart_yaml.copy()

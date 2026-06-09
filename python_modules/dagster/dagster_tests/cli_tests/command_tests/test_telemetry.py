@@ -38,6 +38,7 @@ from dagster_shared.telemetry import (
     get_or_create_dir_from_dagster_home,
     get_telemetry_logger,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_test.utils.data_factory import remote_repository
 
 EXPECTED_KEYS = set(
@@ -725,8 +726,6 @@ def test_set_instance_id_from_empty_file():
 
 def test_user_id_ignores_dagster_home():
     """Test that user_id is always stored in the user telemetry dir regardless of $DAGSTER_HOME."""
-    import yaml
-
     with tempfile.TemporaryDirectory() as fake_user_telemetry_dir:
         user_id_path = os.path.join(fake_user_telemetry_dir, "user_id.yaml")
 
@@ -751,7 +750,7 @@ def test_user_id_ignores_dagster_home():
                     # Verify the user_id WAS stored in the user telemetry dir
                     assert os.path.exists(user_id_path)
                     with open(user_id_path, encoding="utf8") as f:
-                        data = yaml.safe_load(f)
+                        data = safe_load_yaml(f)
                         assert data["user_id"] == user_id
 
 

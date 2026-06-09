@@ -12,6 +12,7 @@ from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
 from dagster_shared.utils import find_uv_workspace_root
 from dagster_shared.utils.config import get_canonical_defs_module_name
+from dagster_shared.yaml_utils import safe_load_yaml
 from dotenv import dotenv_values
 from packaging.version import Version
 from typing_extensions import Self
@@ -367,7 +368,6 @@ class DgContext:
 
     @cached_property
     def build_config(self) -> DgRawBuildConfig | None:
-        import yaml
 
         build_yaml_path = self.build_config_path
 
@@ -375,7 +375,7 @@ class DgContext:
             return None
 
         with open(build_yaml_path, encoding="utf-8") as f:
-            build_config_dict = yaml.safe_load(f)
+            build_config_dict = safe_load_yaml(f)
             build_directory = build_config_dict.get("directory")
             if build_directory:
                 build_directory_path = Path(build_directory)
@@ -391,7 +391,6 @@ class DgContext:
 
     @cached_property
     def container_context_config(self) -> Mapping[str, Any] | None:
-        import yaml
 
         container_context_yaml_path = self.container_context_config_path
 
@@ -399,7 +398,7 @@ class DgContext:
             return None
 
         with open(container_context_yaml_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
+            return safe_load_yaml(f)
 
     @cached_property
     def defs_module_name(self) -> str:

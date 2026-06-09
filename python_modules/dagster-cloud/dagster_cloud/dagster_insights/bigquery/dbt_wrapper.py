@@ -3,7 +3,6 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import yaml
 from dagster import (
     AssetCheckEvaluation,
     AssetCheckResult,
@@ -16,6 +15,7 @@ from dagster import (
 )
 from dagster_dbt import DbtCliInvocation
 from dagster_dbt.version import __version__ as dagster_dbt_version
+from dagster_shared.yaml_utils import safe_load_yaml
 from packaging import version
 
 from dagster_cloud.dagster_insights.bigquery.bigquery_utils import (
@@ -103,7 +103,7 @@ def dbt_with_bigquery_insights(
             raise RuntimeError(
                 f"The 'bigquery' adapter must be used but instead found '{adapter_type}'"
             )
-        dbt_project_config = yaml.safe_load(
+        dbt_project_config = safe_load_yaml(
             (dbt_cli_invocation.project_dir / "dbt_project.yml").open("r")
         )
         # sanity check that the sigil is present somewhere in the query comment

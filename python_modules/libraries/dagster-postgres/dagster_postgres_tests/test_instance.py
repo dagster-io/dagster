@@ -6,11 +6,11 @@ import psycopg2.extensions
 import pytest
 import sqlalchemy as db
 import sqlalchemy.exc  # ensure db.exc submodule is statically resolvable
-import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
 from dagster_postgres.utils import get_conn_string
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def full_pg_config(hostname):
@@ -161,10 +161,10 @@ def schema_specified_pg_config(hostname):
 
 
 def test_load_instance(hostname):
-    with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))):
+    with instance_for_test(overrides=safe_load_yaml(full_pg_config(hostname))):
         pass
 
-    with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))):
+    with instance_for_test(overrides=safe_load_yaml(unified_pg_config(hostname))):
         pass
 
 
@@ -174,7 +174,7 @@ def test_connection_leak(hostname, conn_string):
     tempdir = tempfile.TemporaryDirectory()
     copies = [
         DagsterInstance.from_ref(
-            InstanceRef.from_dir(tempdir.name, overrides=yaml.safe_load(full_pg_config(hostname)))
+            InstanceRef.from_dir(tempdir.name, overrides=safe_load_yaml(full_pg_config(hostname)))
         )
         for _ in range(num_instances)
     ]
@@ -197,7 +197,7 @@ def test_connection_leak(hostname, conn_string):
 
 
 def test_statement_timeouts(hostname):
-    with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
+    with instance_for_test(overrides=safe_load_yaml(full_pg_config(hostname))) as instance:
         instance.optimize_for_webserver(
             statement_timeout=500, pool_recycle=-1, max_overflow=20
         )  # 500ms
@@ -219,13 +219,13 @@ def test_statement_timeouts(hostname):
 
 
 def test_skip_autocreate(hostname, conn_string):
-    with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))) as instance:
+    with instance_for_test(overrides=safe_load_yaml(unified_pg_config(hostname))) as instance:
         instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # ty: ignore[unresolved-attribute]
         instance.event_log_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # ty: ignore[unresolved-attribute]
         instance.schedule_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # ty: ignore[unresolved-attribute]
 
     with instance_for_test(
-        overrides=yaml.safe_load(skip_autocreate_pg_config(hostname))
+        overrides=safe_load_yaml(skip_autocreate_pg_config(hostname))
     ) as instance:
         with pytest.raises(db.exc.ProgrammingError):
             instance.get_runs()
@@ -236,7 +236,7 @@ def test_skip_autocreate(hostname, conn_string):
         with pytest.raises(db.exc.ProgrammingError):
             instance.all_instigator_state()
 
-    with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
+    with instance_for_test(overrides=safe_load_yaml(full_pg_config(hostname))) as instance:
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
@@ -244,7 +244,7 @@ def test_skip_autocreate(hostname, conn_string):
 
 def test_specify_pg_params(hostname):
     with instance_for_test(
-        overrides=yaml.safe_load(params_specified_pg_config(hostname))
+        overrides=safe_load_yaml(params_specified_pg_config(hostname))
     ) as instance:
         postgres_url = f"postgresql://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
 
@@ -304,7 +304,7 @@ def test_configured_other_schema(hostname):
             conn.execute(db.text("create schema other_schema;"))
 
     with instance_for_test(
-        overrides=yaml.safe_load(schema_specified_pg_config(hostname))
+        overrides=safe_load_yaml(schema_specified_pg_config(hostname))
     ) as instance:
         instance.get_runs()
         instance.all_asset_keys()

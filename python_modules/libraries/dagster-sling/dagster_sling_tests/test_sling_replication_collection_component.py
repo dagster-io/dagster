@@ -31,6 +31,7 @@ from dagster_sling.components.sling_replication_collection.component import (
 
 ensure_dagster_tests_import()
 
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_tests.components_tests.utils import build_component_defs_for_test
 
 if TYPE_CHECKING:
@@ -44,7 +45,7 @@ REPLICATION_PATH = STUB_LOCATION_PATH / COMPONENT_RELPATH / "replication.yaml"
 @contextmanager
 def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
     with open(path, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+        data = safe_load_yaml(f)
     yield data  # modify data here
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f)

@@ -3,8 +3,8 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-import yaml
 from dagster import file_relative_path
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_sling import SlingConnectionResource, SlingResource
 
 base_replication_config_path = (
@@ -61,7 +61,7 @@ def path_to_dataworks_folder():
 
 def base_replication_config():
     with base_replication_config_path.open("r") as f:
-        return yaml.safe_load(f)
+        return safe_load_yaml(f)
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def csv_to_sqlite_replication_config(path_to_test_csv):
         file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml"),
         encoding="utf-8",
     ) as f:
-        conf = yaml.safe_load(f)
+        conf = safe_load_yaml(f)
 
     conf["streams"][f"file://{path_to_test_csv}"] = {"object": "main.tbl"}
     return conf
@@ -97,7 +97,7 @@ def csv_to_sqlite_dataworks_replication(path_to_dataworks_folder):
         file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml"),
         encoding="utf-8",
     ) as f:
-        conf = yaml.safe_load(f)
+        conf = safe_load_yaml(f)
     conf_streams = {}
     for file_name in os.listdir(path_to_dataworks_folder):
         file_path = os.path.join(path_to_dataworks_folder, file_name)

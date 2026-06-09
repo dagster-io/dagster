@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import AbstractSet, Any, NamedTuple  # noqa: UP035
 
 import lkml
-import yaml
 from dagster import AssetSpec
 from dagster._core.utils import toposort_flatten
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_looker.lkml.dagster_looker_lkml_translator import (
     DagsterLookerLkmlTranslator,
@@ -127,7 +127,7 @@ def build_looker_dashboard_specs(
 
     # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard
     for lookml_dashboard_path in project_dir.rglob("*.dashboard.lookml"):
-        for lookml_dashboard_props in yaml.safe_load(lookml_dashboard_path.read_bytes()):
+        for lookml_dashboard_props in safe_load_yaml(lookml_dashboard_path.read_bytes()):
             lookml_dashboard = LookMLStructure(
                 path=lookml_dashboard_path, structure_type="dashboard", props=lookml_dashboard_props
             )

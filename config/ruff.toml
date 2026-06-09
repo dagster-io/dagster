@@ -193,6 +193,8 @@ builtins-ignorelist = ["id"]
 [lint.flake8-tidy-imports.banned-api]
 
 "__future__.annotations".msg = "Directly quote annotations instead."
+"yaml.safe_load".msg = "Use dagster_shared.yaml_utils.safe_load_yaml — preserves date-like strings as strings (GH-6465)."
+"yaml.load".msg = "Use dagster_shared.yaml_utils.safe_load_yaml — yaml.load parses date-like strings as datetime objects (GH-6465)."
 
 [lint.pydocstyle]
 

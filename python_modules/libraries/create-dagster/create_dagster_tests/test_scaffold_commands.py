@@ -9,7 +9,6 @@ import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
-import yaml
 from create_dagster.scaffold import _get_editable_dagster_from_env
 from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg_core.utils import (
@@ -21,6 +20,7 @@ from dagster_dg_core.utils import (
 )
 from dagster_shared.libraries import get_published_pypi_versions
 from dagster_shared.utils import environ
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -173,7 +173,7 @@ def test_scaffold_project_success(
         assert Path("foo-bar/.gitignore").exists()
         # Verify .dg/telemetry.yaml exists and contains a valid UUID
         assert Path("foo-bar/.dg/telemetry.yaml").exists()
-        telemetry_content = yaml.safe_load(
+        telemetry_content = safe_load_yaml(
             Path("foo-bar/.dg/telemetry.yaml").read_text(encoding="utf-8")
         )
         assert "project_id" in telemetry_content
@@ -220,7 +220,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert not Path("projects/foo-bar/.gitignore").exists()
         # Verify .dg/telemetry.yaml exists and contains a valid UUID
         assert Path("projects/foo-bar/.dg/telemetry.yaml").exists()
-        telemetry_content = yaml.safe_load(
+        telemetry_content = safe_load_yaml(
             Path("projects/foo-bar/.dg/telemetry.yaml").read_text(encoding="utf-8")
         )
         assert "project_id" in telemetry_content

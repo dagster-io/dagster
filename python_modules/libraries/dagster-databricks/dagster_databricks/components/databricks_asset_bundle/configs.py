@@ -6,7 +6,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Generic, Union
 
-import yaml
 from dagster import (
     Model,
     Resolvable,
@@ -16,6 +15,7 @@ from dagster import (
 from dagster._annotations import preview
 from dagster._serdes import whitelist_for_serdes
 from dagster_shared.record import IHaveNew, record, record_custom
+from dagster_shared.yaml_utils import safe_load_yaml
 from databricks.sdk.service import jobs
 from typing_extensions import Self, TypeVar
 
@@ -40,7 +40,7 @@ def load_yaml(path: Path) -> Mapping[str, Any]:
     """Load YAML file with error handling."""
     try:
         with open(path, encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
+            return safe_load_yaml(f) or {}
     except Exception as e:
         logger.warning(f"Warning: Could not load {path}: {e}")
         return {}

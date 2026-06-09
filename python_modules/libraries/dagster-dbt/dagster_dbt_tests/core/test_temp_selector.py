@@ -8,6 +8,7 @@ from unittest import mock
 import pytest
 from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_utils import _parse_selection_args, extract_runtime_selection_from_args
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 class TestParseSelectionArgs:
@@ -189,7 +190,6 @@ def test_temp_selector_file_includes_exclude(large_dbt_project: tuple[Path, dict
     the threshold, the exclude is properly included in the selectors.yml definition,
     and that the excluded model is not actually materialized.
     """
-    import yaml
     from dagster import AssetExecutionContext, AssetKey, materialize
     from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
@@ -204,7 +204,7 @@ def test_temp_selector_file_includes_exclude(large_dbt_project: tuple[Path, dict
 
     def intercepting_write_text(self, content, *args, **kwargs):
         if self.name == "selectors.yml":
-            captured_selectors.append(yaml.safe_load(content))
+            captured_selectors.append(safe_load_yaml(content))
         return original_write_text(self, content, *args, **kwargs)
 
     # Create a large select expression that exceeds the threshold when combined with exclude
@@ -347,7 +347,6 @@ def test_runtime_exclude_folded_into_generated_selector(
     """Runtime --exclude on dbt.cli() is merged into the generated selector yaml's exclude
     list and stripped from the dbt CLI args, so dbt does not silently ignore it.
     """
-    import yaml
     from dagster import AssetExecutionContext, AssetKey, materialize
     from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
@@ -360,7 +359,7 @@ def test_runtime_exclude_folded_into_generated_selector(
 
     def intercepting_write_text(self, content, *args, **kwargs):
         if self.name == "selectors.yml":
-            captured_selectors.append(yaml.safe_load(content))
+            captured_selectors.append(safe_load_yaml(content))
         return original_write_text(self, content, *args, **kwargs)
 
     @dbt_assets(manifest=manifest, project=dbt_project)
@@ -421,7 +420,6 @@ def test_runtime_select_folded_into_generated_selector(
     """Runtime --select on dbt.cli() is merged into the generated selector yaml's union
     list and stripped from the dbt CLI args, so dbt does not silently ignore it.
     """
-    import yaml
     from dagster import AssetExecutionContext, materialize
     from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
@@ -434,7 +432,7 @@ def test_runtime_select_folded_into_generated_selector(
 
     def intercepting_write_text(self, content, *args, **kwargs):
         if self.name == "selectors.yml":
-            captured_selectors.append(yaml.safe_load(content))
+            captured_selectors.append(safe_load_yaml(content))
         return original_write_text(self, content, *args, **kwargs)
 
     @dbt_assets(manifest=manifest, project=dbt_project)

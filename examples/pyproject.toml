@@ -6,6 +6,12 @@
 extend = "../pyproject.toml"
 
 [tool.ruff.lint]
+# Examples are illustrative reference code, not production codebase — the
+# standards applied here are intentionally looser than in the wider repo.
+# TID251 (banned-api): examples may use bare yaml.safe_load / yaml.load
+# directly rather than routing through dagster_shared.yaml_utils helpers,
+# since example readers shouldn't need to know about internal helpers.
 extend-ignore = [
-    "TID252"
+    "TID251",
+    "TID252",
 ]
