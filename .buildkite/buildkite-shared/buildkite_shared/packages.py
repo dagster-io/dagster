@@ -361,6 +361,57 @@ class PackageSpec:
         label_suffix = f" {factor.label_suffix}" if factor and factor.label_suffix else ""
         resolved_image = factor.image if factor and factor.image else self.image
 
+        # Per-factor durations file under a single `.test_durations/` directory
+        # at the package root. pytest-split reads the file in normal mode and
+        # writes it via --store-durations in refresh mode. The nested layout
+        # keeps multi-factor packages from cluttering their root with one
+        # `.test_durations-<factor>` file per tox factor. The unfactored case
+        # uses the literal name `default` so the layout is uniform (directory
+        # everywhere, no mix of file-or-directory). The id includes
+        # label_suffix so two ToxFactors sharing a tox env but selecting
+        # different test subsets (e.g. OSS dagster-dbt's `<deps>-core-main` x
+        # [rest, test_resource, test_asset_checks, cli]) don't clobber each
+        # other in refresh mode.
+        if factor:
+            durations_id = factor.factor
+            if factor.label_suffix:
+                durations_id = f"{durations_id}-{factor.label_suffix}"
+        else:
+            durations_id = "default"
+        durations_file = f".test_durations/{durations_id}"
+
+        # Refresh mode: for factors that fan out, collapse to a single
+        # un-sharded run that writes a fresh durations file and uploads it
+        # as an artifact. Non-split factors fall through to the normal
+        # emit path — the caller's downstream filter
+        # (`steps/refresh_durations.py:keep_refresh_steps_only`) drops them
+        # by absence of `--store-durations` in the command. We don't return
+        # an empty list here because some callers (e.g. OSS
+        # `build_helm_steps`) assert on `len(pkg_steps) == 1`.
+        if ctx.config.refresh_durations and splits > 1:
+            # Refresh mode runs the full set of split tox suites unconditionally —
+            # change-detection isn't meaningful when collecting timing data
+            # against the current source tree, not validating a diff. Force the
+            # step to emit by suppressing skip_reason locally; we don't change
+            # `get_python_package_step_skip_reason` itself so external callers
+            # (release-pipeline gating, app-cloud gating) keep their semantics.
+            self._append_refresh_step(
+                tox_env=tox_env,
+                base_name=base_name,
+                label_suffix=label_suffix,
+                durations_file=durations_file,
+                factor_pytest_args=factor_pytest_args,
+                resolved_image=resolved_image,
+                py_version=py_version,
+                extra_pre=extra_pre,
+                extra_post_cd=extra_post_cd,
+                dependencies=dependencies,
+                skip_reason=None,
+                factor=factor,
+                out=out,
+            )
+            return
+
         # Splitting uses the pytest-split plugin. To use `splits > 1` with a
         # package, `pytest-split` must be declared in that package's test
         # dependencies (e.g. the `test`/`tests` extra in its pyproject.toml).
@@ -368,7 +419,7 @@ class PackageSpec:
             if splits > 1:
                 split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
                 pytest_args: list[str] | None = [
-                    f"--splits {splits} --group {split_index}",
+                    f"--splits {splits} --group {split_index} --durations-path {durations_file}",
                     *factor_pytest_args,
                 ]
             else:
@@ -408,6 +459,91 @@ class PackageSpec:
                     mutator=self.mutator,
                 )
             )
+
+    def _append_refresh_step(
+        self,
+        *,
+        tox_env: str,
+        base_name: str,
+        label_suffix: str,
+        durations_file: str,
+        factor_pytest_args: list[str],
+        resolved_image: ToxImage,
+        py_version: AvailablePythonVersion,
+        extra_pre: list[str],
+        extra_post_cd: list[str] | None,
+        dependencies: list[str] | None,
+        skip_reason: str | None,
+        factor: ToxFactor | None,
+        out: list[GroupLeafStepConfiguration],
+    ) -> None:
+        split_label = f"{base_name}{label_suffix}"
+        key = slugify_label(f"{split_label} {_tox_env_to_label_suffix(tox_env)}")
+        pytest_args = [
+            f"--store-durations --durations-path {durations_file}",
+            *factor_pytest_args,
+        ]
+        # The tox command runs after `cd {directory}` so cwd is the package
+        # directory. We `cd` back to the build checkout root before the upload
+        # so the artifact is stored with its full repo-relative path —
+        # otherwise multiple packages sharing a factor name (e.g. `-default`)
+        # would all upload to the same basename and overwrite each other in
+        # BK's artifact store. pytest-split's --store-durations is a
+        # `pytest_sessionfinish` hook, so only a clean tox exit produces the
+        # file; the upload runs unconditionally (see _refresh_wrapper) and
+        # `buildkite-agent` exits non-zero when the file is missing, which is
+        # the signal we want — the create-test-durations-pr step then sees no
+        # artifact for that suite.
+        artifact_path = f"{self.directory}/{durations_file}"
+        upload_cmd = f'buildkite-agent artifact upload "{artifact_path}"'
+        original_wrapper = self.command_wrapper
+
+        def _refresh_wrapper(cmd: str) -> str:
+            # Disable `set -e` around the block so a failing tox doesn't abort
+            # before the upload runs (BK's `bash -e -c` would otherwise exit
+            # at the failing subshell). Preserve the inner exit code via
+            # $status so `soft_fail` still surfaces real test failures in BK
+            # UI; the upload's own exit code is intentionally ignored.
+            # `mkdir -p .test_durations` ensures the parent of `durations_file`
+            # exists before pytest-split's --store-durations writes — pytest-
+            # split uses a plain `open(path, "w")` and won't create parents.
+            inner = original_wrapper(cmd) if original_wrapper else cmd
+            return (
+                f"mkdir -p .test_durations; set +e; {inner}; status=$?;"
+                f' cd "$BUILDKITE_BUILD_CHECKOUT_PATH"; {upload_cmd}; exit $status'
+            )
+
+        out.append(
+            build_tox_step(
+                self.directory,
+                tox_env,
+                key=key,
+                label_emojis=self.label_emojis or [self._resolve_emoji()],
+                timeout_in_minutes=self.timeout_in_minutes,
+                tox_file=self.tox_file,
+                extra_commands_pre=extra_pre,
+                extra_commands_post_cd=extra_post_cd,
+                env=self.env_vars,
+                image=resolved_image,
+                python_version=py_version if resolved_image == "test" else None,
+                ecr_account_ids=self.ecr_account_ids,
+                queue=(factor.queue if factor and factor.queue else self.queue),
+                depends_on=dependencies,
+                skip_reason=skip_reason,
+                pytest_args=pytest_args,
+                section_header=self._section_header(tox_env),
+                concurrency=factor.concurrency if factor else None,
+                concurrency_group=(factor.concurrency_group if factor else None),
+                resources=(
+                    factor.resources if factor and factor.resources is not None else self.resources
+                ),
+                soft_fail=True,
+                with_docker=self.with_docker,
+                ecr_passthru=self.ecr_passthru,
+                command_wrapper=_refresh_wrapper,
+                mutator=self.mutator,
+            )
+        )
 
 
 def build_steps_from_package_specs(
