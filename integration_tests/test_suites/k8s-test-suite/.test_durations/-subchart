@@ -1,0 +1,19 @@
+{
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_execute_on_k8s_retry_job[with_subchart]": 0.00031207299980451353,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_executor_combine_configs[with_subchart]": 0.0004203970001981361,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_executor_get_config_from_run_launcher[with_subchart]": 0.0003964120005548466,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_executor_owner_references_disabled[with_subchart]": 0.00012132900155847892,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_executor_owner_references_garbage_collection[with_subchart]": 0.00015198300025076605,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_executor_resource_requirements[with_subchart]": 0.00032440400173072703,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_run_launcher_default[with_subchart]": 0.000360266001734999,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_run_launcher_image_from_origin[with_subchart]": 0.00034496399894123897,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_run_launcher_no_celery_pods[with_subchart]": 38.298292880999725,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_run_launcher_terminate[with_subchart]": 0.0003187479996995535,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_executor.py::test_k8s_run_launcher_volume_mounts[with_subchart]": 0.0003361449980729958,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_integration.py::test_execute_k8s_job_terminate[with_subchart]": 0.00035492000097292475,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_integration.py::test_failing_k8s_run_launcher[with_subchart]": 0.00028377000126056373,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_integration.py::test_k8s_run_launcher_default[with_subchart]": 0.00030592400071327575,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_integration.py::test_k8s_run_launcher_secret_from_deployment[with_subchart]": 0.0002552679998188978,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_integration.py::test_k8s_run_launcher_terminate[with_subchart]": 0.00027171299916517455,
+    "integration_tests/test_suites/k8s-test-suite/tests/test_integration.py::test_k8s_run_launcher_with_celery_executor_fails[with_subchart]": 0.00028099299925088417
+}
