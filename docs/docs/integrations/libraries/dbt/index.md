@@ -33,6 +33,14 @@ This feature is still in preview pending dbt Fusion GA.
 
 :::
 
+:::tip Running dbt natively on Snowflake?
+
+If your dbt project is deployed to Snowflake as a `DBT PROJECT` object, the `dagster-snowflake`
+library provides a [`SnowflakeDbtProjectComponent`](/integrations/libraries/snowflake/snowflake-dbt-project-component)
+that runs it natively via `EXECUTE DBT PROJECT` — no local dbt project or dbt Cloud account required.
+
+:::
+
 ## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
