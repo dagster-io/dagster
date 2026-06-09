@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Callable, Mapping
 from types import UnionType
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from dagster_shared.error import DagsterError
 from dagster_shared.record import IHaveNew, record, record_custom
@@ -184,7 +184,7 @@ class InputDefinition:
                 in
         """
         if callable(self._asset_key):
-            return self._asset_key(context)  # ty: ignore[call-top-callable]
+            return cast("Callable[[InputContext], AssetKey]", self._asset_key)(context)
         else:
             return self.hardcoded_asset_key
 
