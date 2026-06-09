@@ -331,6 +331,13 @@ class BuildConfig:
     # when combined with the STEP_FILTER directive to run a subset of steps
     # multiple times, for example to surface flaky tests.
     repeat: int
+    # Collect pytest-split timing data instead of running tests normally. When
+    # set, split tox suites are emitted as a single un-sharded step with
+    # `--store-durations`, the resulting `.test_durations*` file is uploaded as
+    # a Buildkite artifact, and all other pipeline steps are pruned. The
+    # internal pipeline appends a final aggregation step that opens a PR with
+    # the collected files.
+    refresh_durations: bool
 
     @classmethod
     def from_raw(cls, raw: Mapping[str, str]) -> Self:
@@ -338,6 +345,7 @@ class BuildConfig:
             no_skip=bool(raw.get("no_skip")),
             step_filter=raw.get("step_filter"),
             repeat=int(raw.get("repeat", "1")),
+            refresh_durations=bool(raw.get("refresh_durations")),
         )
 
     @classmethod
