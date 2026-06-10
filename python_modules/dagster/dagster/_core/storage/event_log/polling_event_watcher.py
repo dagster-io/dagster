@@ -89,12 +89,16 @@ class SqlPollingEventWatcher:
         if not self._disposed:
             self._disposed = True
             with self._dict_lock:
-                for watcher_thread in self._run_id_to_watcher_dict.values():
+                watcher_threads = list(self._run_id_to_watcher_dict.values())
+                for watcher_thread in watcher_threads:
                     if not watcher_thread.should_thread_exit.is_set():
                         watcher_thread.should_thread_exit.set()
-                for run_id in self._run_id_to_watcher_dict:
-                    self._run_id_to_watcher_dict[run_id].join()
                 self._run_id_to_watcher_dict = {}
+            # Join outside _dict_lock — a watcher thread may be running a callback that
+            # re-enters unwatch_run() and tries to acquire _dict_lock; joining under the
+            # lock would deadlock.
+            for watcher_thread in watcher_threads:
+                watcher_thread.join()
 
 
 class SqlPollingRunIdEventWatcherThread(threading.Thread):
