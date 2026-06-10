@@ -13,6 +13,7 @@ import {
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
   GroupAttributeExprContext,
+  IsAttributeExprContext,
   JobAttributeExprContext,
   KeyExprContext,
   KindAttributeExprContext,
@@ -257,6 +258,23 @@ export class AntlrAssetSelectionVisitor
         return isNull;
       }),
     );
+  }
+
+  // `is:` filters by a structural boolean flag on the asset node.
+  // Only "external" and "materializable" are valid values — these are logical
+  // inverses (both derive from `execution_type == MATERIALIZATION` on the
+  // server). Unknown values resolve to an empty set rather than throwing,
+  // matching the silent-filter behavior of the other attribute visitors.
+  visitIsAttributeExpr(ctx: IsAttributeExprContext) {
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    if (value === 'materializable') {
+      return new Set([...this.all_assets].filter((i) => i.node.isMaterializable));
+    }
+    if (value === 'external') {
+      return new Set([...this.all_assets].filter((i) => !i.node.isMaterializable));
+    }
+    return new Set<AssetGraphQueryItem>();
   }
 
   visitCodeLocationAttributeExpr(ctx: CodeLocationAttributeExprContext) {

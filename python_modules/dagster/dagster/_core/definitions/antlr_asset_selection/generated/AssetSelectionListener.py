@@ -1,4 +1,5 @@
 # flake8: noqa
+# type: ignore
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 from antlr4 import *
 from .AssetSelectionParser import AssetSelectionParser
@@ -176,6 +177,14 @@ class AssetSelectionListener(ParseTreeListener):
 
     # Exit a parse tree produced by AssetSelectionParser#KindAttributeExpr.
     def exitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#IsAttributeExpr.
+    def enterIsAttributeExpr(self, ctx: AssetSelectionParser.IsAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#IsAttributeExpr.
+    def exitIsAttributeExpr(self, ctx: AssetSelectionParser.IsAttributeExprContext):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#StatusAttributeExpr.

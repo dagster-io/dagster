@@ -66,6 +66,7 @@ describe('getAttributesMap', () => {
       group: [''],
       kind: [''],
       code_location: ['repo1@location1', 'repo2@location2'],
+      is: ['external', 'materializable'],
       partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
       automation_type: [
         'any',
@@ -106,6 +107,7 @@ describe('getAttributesMap', () => {
       group: [],
       kind: [],
       code_location: [],
+      is: ['external', 'materializable'],
       partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
       automation_type: [
         'any',
