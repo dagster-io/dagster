@@ -4,6 +4,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "dagster.webserver.migrate" . | quote }}
+  namespace: {{ .Release.Namespace }}
   annotations:
     {{- range $key, $value := $_.Values.dagsterWebserver.annotations }}
     {{ $key }}: {{ $value | squote }}
