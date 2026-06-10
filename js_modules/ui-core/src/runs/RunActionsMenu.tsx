@@ -130,7 +130,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
               {canCreateIssue && (
                 <MenuItem
                   icon="issue"
-                  text="Create issue"
+                  text="Create or link issue"
                   onClick={() => setVisibleDialog('create-issue')}
                 />
               )}
