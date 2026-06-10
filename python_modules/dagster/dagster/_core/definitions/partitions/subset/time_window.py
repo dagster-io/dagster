@@ -451,6 +451,28 @@ class TimeWindowPartitionsSubset(
     def __repr__(self) -> str:
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def, respect_bounds=False)})"
 
+    def _without_empty_windows(
+        self, time_windows: Sequence["PersistedTimeWindow"]
+    ) -> Sequence["PersistedTimeWindow"]:
+        """Drops any time windows that contain no partitions. Operations like __sub__ and __and__
+        compute results purely from timestamps, so they can produce windows that span only
+        excluded timestamps and therefore contain no partitions (for example, a window covering
+        only a holiday in a partitions definition that excludes holidays). Retaining such windows
+        would make a subset non-empty (len(included_time_windows) > 0) while having a partition
+        count of zero.
+
+        Without exclusions every non-degenerate window contains at least one partition, so this is
+        a no-op and we skip the per-window partition check entirely to avoid the overhead.
+        """
+        if not self.partitions_def.exclusions:
+            return time_windows
+
+        return [
+            time_window
+            for time_window in time_windows
+            if self.partitions_def.has_any_partitions_in_window(time_window.to_public_time_window())
+        ]
+
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
@@ -489,7 +511,7 @@ class TimeWindowPartitionsSubset(
         return TimeWindowPartitionsSubset(
             partitions_def=self.partitions_def,
             num_partitions=None,  # lazily calculated
-            included_time_windows=result_windows,
+            included_time_windows=self._without_empty_windows(result_windows),
         )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
@@ -578,7 +600,7 @@ class TimeWindowPartitionsSubset(
         return TimeWindowPartitionsSubset(
             partitions_def=self.partitions_def,
             num_partitions=None,
-            included_time_windows=time_windows,
+            included_time_windows=self._without_empty_windows(time_windows),
         )
 
     def __contains__(self, partition_key: str | None) -> bool:  # ty: ignore[invalid-method-override]
