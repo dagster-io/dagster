@@ -128,6 +128,8 @@ Use filtering to control which databases, schemas, and tables are synced. Patter
 
 ## Connection freshness
 
+import ConnectionFreshnessCadence from '@site/docs/partials/\_ConnectionFreshnessCadence.md';
+
 Once a Snowflake Connection is created, Dagster automatically tracks changes to your Snowflake tables and emits a materialization on the corresponding Connection asset each time the underlying table is updated in Snowflake. As a result, your Connection assets reflect the most recent state of the Snowflake tables without needing to define a sensor or schedule.
 
 ### Prerequisites
@@ -135,6 +137,10 @@ Once a Snowflake Connection is created, Dagster automatically tracks changes to 
 Connection freshness for Snowflake reuses the warehouse, role, and credentials already configured on the Connection — no additional setup is required. Under the hood, Dagster polls `INFORMATION_SCHEMA.TABLES.LAST_ALTERED` for the synced databases via the Snowflake SQL API.
 
 The privileges granted in [Step 1.1: Create role and user to use with Dagster Connections](#step-11-create-role-and-user-to-use-with-dagster-connections) (`USAGE` on databases and schemas, `REFERENCES` on tables and views) are sufficient for the role to see rows in `INFORMATION_SCHEMA.TABLES` for the objects it has access to.
+
+### Configuring the cadence
+
+<ConnectionFreshnessCadence />
 
 ### Triggering downstream assets
 

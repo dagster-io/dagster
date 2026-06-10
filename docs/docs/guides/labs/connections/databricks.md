@@ -145,6 +145,8 @@ Use filtering to control which catalogs, schemas, tables, views, and notebooks a
 
 ## Connection freshness
 
+import ConnectionFreshnessCadence from '@site/docs/partials/\_ConnectionFreshnessCadence.md';
+
 When the Databricks Connection has a SQL warehouse configured, Dagster automatically tracks changes to your Unity Catalog tables and emits a materialization on the corresponding Connection asset each time the underlying table is updated in Databricks. As a result, your Connection assets reflect the most recent state of the Databricks tables without needing to define a sensor or schedule.
 
 ### Prerequisites
@@ -155,6 +157,10 @@ Connection freshness for Databricks shares the same configuration as lineage tra
 - The connection identity has access to the Unity Catalog metastore ([Enable lineage tracking](#optional-enable-lineage-tracking)).
 
 If no warehouse is configured, freshness signals are not emitted.
+
+### Configuring the cadence
+
+<ConnectionFreshnessCadence />
 
 ### Triggering downstream assets
 
