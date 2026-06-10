@@ -55,6 +55,7 @@ class AutomationTickEvaluationContext:
         emit_backfills: bool,
         default_condition: AutomationCondition | None = None,
         evaluation_time: datetime.datetime | None = None,
+        max_entities_per_run: int | None = None,
     ):
         resolved_entity_keys = {
             entity_key
@@ -78,6 +79,7 @@ class AutomationTickEvaluationContext:
         )
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags
+        self._max_entities_per_run = max_entities_per_run
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
         self._partition_loading_context = self._evaluator.asset_graph_view.partition_loading_context
         self._logger = logger
@@ -137,6 +139,7 @@ class AutomationTickEvaluationContext:
             asset_graph=self.asset_graph,
             run_tags=self._materialize_run_tags,
             emit_backfills=self._evaluator.emit_backfills,
+            max_entities_per_run=self._max_entities_per_run,
         )
 
     def _get_updated_cursor(
@@ -315,9 +318,12 @@ def build_run_requests(
     asset_graph: BaseAssetGraph,
     run_tags: Mapping[str, str] | None,
     emit_backfills: bool,
+    max_entities_per_run: int | None = None,
 ) -> Sequence[RunRequest]:
     """For a single asset in a given tick, the asset will only be part of a run or a backfill, not both.
     If the asset is targetd by a backfill, there will only be one backfill that targets the asset.
+    If max_entities_per_run is provided, runs (but not backfills) will target at most that many
+    assets or checks each.
     """
     if emit_backfills:
         backfill_run_request, entity_subsets = _build_backfill_request(
@@ -330,6 +336,7 @@ def build_run_requests(
         _get_mapping_from_entity_subsets(entity_subsets, asset_graph),
         asset_graph,
         run_tags,
+        max_entities_per_run=max_entities_per_run,
     )
     if backfill_run_request:
         run_requests = [backfill_run_request, *run_requests]
@@ -337,10 +344,66 @@ def build_run_requests(
     return run_requests
 
 
+def _chunked_entity_keys_for_runs(
+    entity_keys: Iterable[EntityKey], max_entities_per_run: int | None
+) -> Sequence[Sequence[EntityKey]]:
+    """Splits a collection of entity keys into deterministically-ordered chunks containing at
+    most max_entities_per_run keys each. AssetCheckKeys are always placed in the same chunk as
+    the asset they target (when that asset is also present), even if this causes a chunk to
+    slightly exceed the maximum size.
+    """
+    entity_keys = list(entity_keys)
+    if max_entities_per_run is None:
+        return [entity_keys]
+
+    asset_keys = sorted(
+        (key for key in entity_keys if isinstance(key, AssetKey)),
+        key=lambda key: key.to_user_string(),
+    )
+    asset_key_set = set(asset_keys)
+
+    def _check_key_sort_key(key: AssetCheckKey) -> tuple[str, str]:
+        return (key.asset_key.to_user_string(), key.name)
+
+    check_keys_by_asset_key: dict[AssetKey, list[AssetCheckKey]] = defaultdict(list)
+    standalone_check_keys: list[AssetCheckKey] = []
+    for key in entity_keys:
+        if isinstance(key, AssetCheckKey):
+            if key.asset_key in asset_key_set:
+                check_keys_by_asset_key[key.asset_key].append(key)
+            else:
+                standalone_check_keys.append(key)
+
+    # a unit is a set of keys that must be executed in the same run: an asset along with any
+    # of its asset checks that were requested on the same tick
+    units: list[list[EntityKey]] = [
+        [asset_key, *sorted(check_keys_by_asset_key[asset_key], key=_check_key_sort_key)]
+        for asset_key in asset_keys
+    ]
+    units.extend([key] for key in sorted(standalone_check_keys, key=_check_key_sort_key))
+
+    # When the selection fits in a single run, still emit the keys in the same deterministic
+    # order used for the split case, so ordering does not depend on whether splitting occurred.
+    if len(entity_keys) <= max_entities_per_run:
+        return [[key for unit in units for key in unit]]
+
+    chunks: list[list[EntityKey]] = []
+    current_chunk: list[EntityKey] = []
+    for unit in units:
+        if current_chunk and len(current_chunk) + len(unit) > max_entities_per_run:
+            chunks.append(current_chunk)
+            current_chunk = []
+        current_chunk.extend(unit)
+    if current_chunk:
+        chunks.append(current_chunk)
+    return chunks
+
+
 def _build_run_requests_from_partitions_def_mapping(
     mapping: _PartitionsDefKeyMapping,
     asset_graph: BaseAssetGraph,
     run_tags: Mapping[str, str] | None,
+    max_entities_per_run: int | None = None,
 ) -> Sequence[RunRequest]:
     run_requests = []
 
@@ -352,21 +415,24 @@ def _build_run_requests_from_partitions_def_mapping(
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
         for entity_keys_for_repo in asset_graph.split_entity_keys_by_repository(entity_keys):
-            asset_check_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)]
-            run_requests.append(
-                # Do not call run_request.with_resolved_tags_and_config as the partition key is
-                # valid and there is no config.
-                # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
-                # checks for valid partition keys.
-                RunRequest(
-                    asset_selection=[k for k in entity_keys_for_repo if isinstance(k, AssetKey)],
-                    partition_key=partition_key,
-                    tags=tags,
-                    # if selecting no asset_check_keys, just pass in `None` to allow required
-                    # checks to be included
-                    asset_check_keys=asset_check_keys or None,
+            for chunked_entity_keys in _chunked_entity_keys_for_runs(
+                entity_keys_for_repo, max_entities_per_run
+            ):
+                asset_check_keys = [k for k in chunked_entity_keys if isinstance(k, AssetCheckKey)]
+                run_requests.append(
+                    # Do not call run_request.with_resolved_tags_and_config as the partition key is
+                    # valid and there is no config.
+                    # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
+                    # checks for valid partition keys.
+                    RunRequest(
+                        asset_selection=[k for k in chunked_entity_keys if isinstance(k, AssetKey)],
+                        partition_key=partition_key,
+                        tags=tags,
+                        # if selecting no asset_check_keys, just pass in `None` to allow required
+                        # checks to be included
+                        asset_check_keys=asset_check_keys or None,
+                    )
                 )
-            )
 
     # We don't make public guarantees about sort order, but make an effort to provide a consistent
     # ordering that puts earlier time partitions before later time partitions. Note that, with dates
