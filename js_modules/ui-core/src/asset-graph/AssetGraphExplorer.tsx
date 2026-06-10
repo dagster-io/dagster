@@ -831,7 +831,11 @@ const AssetGraphExplorerWithData = ({
                           }}
                         />
                       </div>
-                      <CreateCatalogViewButton />
+                      <CreateCatalogViewButton
+                        assetSelection={
+                          viewType === AssetGraphViewType.GLOBAL ? explorerPath.opsQuery : undefined
+                        }
+                      />
                       <AssetLiveDataRefreshButton />
                     </>
                   )}
