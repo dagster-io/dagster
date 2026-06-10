@@ -32,6 +32,7 @@ attributeExpr:
 	| OWNER COLON value						# OwnerAttributeExpr
 	| GROUP COLON value						# GroupAttributeExpr
 	| KIND COLON value						# KindAttributeExpr
+	| IS COLON value						# IsAttributeExpr
 	| STATUS COLON value					# StatusAttributeExpr
 	| COLUMN COLON value					# ColumnAttributeExpr
 	| TABLE_NAME COLON value				# TableNameAttributeExpr
@@ -77,6 +78,7 @@ OWNER: 'owner';
 GROUP: 'group';
 TAG: 'tag';
 KIND: 'kind';
+IS: 'is';
 CODE_LOCATION: 'code_location';
 STATUS: 'status';
 COLUMN: 'column';

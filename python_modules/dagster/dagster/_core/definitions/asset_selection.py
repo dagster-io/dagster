@@ -1034,6 +1034,39 @@ class KindAssetSelection(AssetSelection):
         return f'kind:"{self.kind_str}"'
 
 
+IS_ATTRIBUTE_VALUES = frozenset({"external", "materializable"})
+
+
+@whitelist_for_serdes
+@record
+class IsAttributeAssetSelection(AssetSelection):
+    """Selects assets by a boolean structural attribute on the asset node.
+
+    Supported values: ``"external"`` (asset nodes where ``is_external`` is True)
+    and ``"materializable"`` (asset nodes where ``is_materializable`` is True).
+    These are logical inverses today — both derive from the asset's execution
+    type — but are kept as separate values so the surface syntax reads
+    naturally in both directions (``is:external`` vs. ``is:materializable``).
+    """
+
+    attribute: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        if self.attribute == "external":
+            return {node.key for node in asset_graph.asset_nodes if node.is_external}
+        if self.attribute == "materializable":
+            return {node.key for node in asset_graph.asset_nodes if node.is_materializable}
+        raise DagsterInvalidSubsetError(
+            f"Unsupported 'is:' attribute value {self.attribute!r}. "
+            f"Supported values are: {sorted(IS_ATTRIBUTE_VALUES)}."
+        )
+
+    def to_selection_str(self) -> str:
+        return f"is:{self.attribute}"
+
+
 @whitelist_for_serdes
 @record
 class TagAssetSelection(AssetSelection):
