@@ -371,13 +371,24 @@ class StepDelegatingExecutor(Executor):
                                         # _pop_events call will pick up STEP_SUCCESS and remove
                                         # the step from running_steps, so we can safely skip
                                         # the failure here.
+                                        #
+                                        # Only events not yet consumed by _pop_events (storage_id
+                                        # not in seen_storage_ids) count: a consumed
+                                        # STEP_UP_FOR_RETRY belongs to a prior attempt of this
+                                        # step and must not suppress a genuine failure of the
+                                        # current attempt, which would otherwise leave the step
+                                        # in running_steps forever and hang the run.
                                         step_already_handled = any(
-                                            record.event_log_entry.dagster_event is not None
+                                            record.storage_id not in seen_storage_ids
+                                            and record.event_log_entry.dagster_event is not None
                                             and record.event_log_entry.dagster_event.step_key
                                             == step.key
                                             for record in plan_context.instance.get_records_for_run(
                                                 plan_context.run_id,
-                                                of_type={DagsterEventType.STEP_SUCCESS, DagsterEventType.STEP_UP_FOR_RETRY},
+                                                of_type={
+                                                    DagsterEventType.STEP_SUCCESS,
+                                                    DagsterEventType.STEP_UP_FOR_RETRY,
+                                                },
                                             ).records
                                         )
                                         if step_already_handled:
