@@ -262,3 +262,50 @@ def test_io_manager_snowflake_additional_snowflake_connection_args():
         materialize([return_one], resources={"io_manager": io_mgr})
         assert snowflake_conn_mock.call_count == 1
         assert snowflake_conn_mock.call_args[1]["foo"] == "bar"
+
+
+def test_ensure_schema_exists_creates_missing_schema():
+    """Tests that ensure_schema_exists queries information_schema.schemata and creates the
+    schema when it does not exist.
+    """
+    mock_cursor = mock.MagicMock()
+    mock_cursor.fetchall.return_value = []
+    mock_cursor.__enter__ = mock.MagicMock(return_value=mock_cursor)
+    mock_cursor.__exit__ = mock.MagicMock(return_value=False)
+
+    mock_connection = mock.MagicMock()
+    mock_connection.cursor.return_value = mock_cursor
+
+    table_slice = TableSlice(database="test_db", schema="test_schema", table="test_table")
+
+    SnowflakeDbClient.ensure_schema_exists(
+        context=mock.MagicMock(), table_slice=table_slice, connection=mock_connection
+    )
+
+    assert mock_connection.cursor.call_count == 2
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert "information_schema.schemata" in calls[0]
+    assert "LOWER(schema_name) = LOWER('test_schema')" in calls[0]
+    assert "create schema test_schema" in calls[1]
+
+
+def test_ensure_schema_exists_skips_create_when_schema_exists():
+    """Tests that ensure_schema_exists does not create the schema when it already exists."""
+    mock_cursor = mock.MagicMock()
+    mock_cursor.fetchall.return_value = [(1,)]
+    mock_cursor.__enter__ = mock.MagicMock(return_value=mock_cursor)
+    mock_cursor.__exit__ = mock.MagicMock(return_value=False)
+
+    mock_connection = mock.MagicMock()
+    mock_connection.cursor.return_value = mock_cursor
+
+    table_slice = TableSlice(database="test_db", schema="test_schema", table="test_table")
+
+    SnowflakeDbClient.ensure_schema_exists(
+        context=mock.MagicMock(), table_slice=table_slice, connection=mock_connection
+    )
+
+    assert mock_connection.cursor.call_count == 1
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert len(calls) == 1
+    assert "information_schema.schemata" in calls[0]
