@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.13.9 (core) / 0.29.9 (libraries)
+
+### New
+
+- Asset group names may now contain `/` separators to define hierarchical groups (e.g. `marketing/ads`). Hierarchical groups can be selected with wildcards in asset selections (e.g. `group:"marketing/*"`) and are rendered as nested groups in the asset graph.
+- Added an `is:` filter to the asset selection syntax and search filters to select assets by type (e.g. `is:external`, `is:materializable`).
+- [dg] `DG_PROJECT_PYTHON_EXECUTABLE` in a project's `.env` is now parsed via `python-dotenv`, so `export KEY=value`, quoted values, and trailing comments are honored.
+- [ui] When filtering assets in the lineage view with the selection input, a "Save selection" button now allows creating a saved selection directly from the input value.
+- [ui] Redesigned the recent updates timeline on asset pages.
+- [dagster-cloud] Uploads through S3 presigned URLs (code location snapshots, serverless I/O manager objects, compute logs, and PEX files) now retry on transient HTTP 500 errors from S3.
+- [dagster-dlt] `DltLoadCollectionComponent` now supports `partitions_def` and `backfill_policy`. (Thanks, [@Benjamin0313](https://github.com/Benjamin0313)!)
+- [helm] User code deployments now support running multiple replicas via `replicaCount`. All replicas of a deployment share a consistent gRPC server ID, so multi-replica deployments do not trigger spurious code location reloads. (Thanks, [@HynekBlaha](https://github.com/HynekBlaha)!)
+
+### Bugfixes
+
+- Fixed an issue where date-like strings (e.g. `"2021-10-30"`) in YAML config files were converted to datetime objects instead of being passed through as strings.
+- Fixed an issue where run failure sensors did not receive error information when a run failed due to a step failure. The originating step error is now available on the sensor context.
+- Fixed an issue where schedules using cron strings constrained to specific hours or days (e.g. `*/15 9-16 * * 1-5`) were incorrectly treated as ticking uniformly throughout the day, which could produce overcounted partition counts and oversized backfills.
+- Fixed a deadlock that could occur when shutting down event log watchers on Postgres or MySQL storage while a watch callback was concurrently unsubscribing.
+- `TemplatedSqlComponent` now generates a unique default op name based on its template, preventing op name collisions when multiple components omit an explicit execution name.
+- [ui] Fixed an issue where clicking "View runs" in the backfill step status dialog did not open the runs dialog.
+- [ui] On the asset partitions page, the focused partition now resets when it falls outside the selected partition range, instead of continuing to display a partition that is no longer in the range.
+
+### Documentation
+
+- [dagster-dbt] Added a "Blue/green deployments" section to the dbt patterns and best practices guide, covering the clone-then-swap pattern.
+
 ## 1.13.8 (core) / 0.29.8 (libraries)
 
 ### New
