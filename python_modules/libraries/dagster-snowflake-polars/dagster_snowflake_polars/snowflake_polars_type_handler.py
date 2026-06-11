@@ -20,8 +20,10 @@ def _table_exists(table_slice: TableSlice, connection):
     with connection.cursor() as cursor:
         cursor.execute(
             f"SELECT 1 FROM {table_slice.database}.information_schema.tables"
-            f" WHERE LOWER(table_schema) = LOWER('{table_slice.schema}')"
-            f" AND LOWER(table_name) = LOWER('{table_slice.table}')"
+            " WHERE LOWER(table_schema) = LOWER(%s)"
+            " AND LOWER(table_name) = LOWER(%s)"
+            " AND TABLE_TYPE = 'BASE TABLE'",
+            (table_slice.schema, table_slice.table),
         )
         tables = cursor.fetchall()
 
