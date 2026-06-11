@@ -336,7 +336,7 @@ def build_check_call_str(
         elif origin is collections.abc.Mapping:
             return f'{INJECTED_CHECK_VAR}.mapping_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
         elif origin is collections.abc.Set:
-            return f'{INJECTED_CHECK_VAR}.set_param({name}, "{name}", {_name(single)})'
+            return f'{INJECTED_CHECK_VAR}.abstract_set_param({name}, "{name}", {_name(single)})'
         elif origin in (UnionType, Union):
             # optional
             if pair_right is type(None):
@@ -378,7 +378,7 @@ def build_check_call_str(
                     elif inner_origin is collections.abc.Mapping:
                         return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
                     elif inner_origin is collections.abc.Set:
-                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_abstract_set_param({name}, "{name}", {_name(inner_single)})'
                     elif is_record(inner_origin):
                         it = _name(inner_origin)
                         return f'{name} if {name} is None or isinstance({name}, {it}) else {INJECTED_CHECK_VAR}.opt_inst_param({name}, "{name}", {it})'

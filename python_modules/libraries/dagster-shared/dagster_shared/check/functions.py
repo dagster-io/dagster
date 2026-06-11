@@ -1313,6 +1313,32 @@ def set_param(
     return _check_iterable_items(obj, of_type, "set")
 
 
+def abstract_set_param(
+    obj: T_Set,
+    param_name: str,
+    of_type: TypeOrTupleOfTypes | None = None,
+    additional_message: str | None = None,
+) -> T_Set:
+    """Ensures argument obj is any collections.abc.Set (e.g. a set, frozenset, or a
+    dict_keys/KeysView view), as opposed to set_param which requires a concrete set or
+    frozenset. Mirrors the relationship between mapping_param and dict_param.
+
+    If the of_type argument is provided, also ensures that set items conform to the type
+    specified by of_type.
+    """
+    ttype = type(obj)
+    # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
+    if not (ttype is set or ttype is frozenset or isinstance(obj, collections.abc.Set)):
+        raise _param_type_mismatch_exception(
+            obj, collections.abc.Set, param_name, additional_message
+        )
+
+    if not of_type:
+        return obj
+
+    return _check_iterable_items(obj, of_type, "set")
+
+
 def opt_set_param(
     obj: T_Set | None,
     param_name: str,
@@ -1369,6 +1395,47 @@ def opt_nullable_set_param(
         return None
     elif not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name, additional_message)
+    elif not of_type:
+        return obj
+
+    return _check_iterable_items(obj, of_type, "set")
+
+
+@overload
+def opt_nullable_abstract_set_param(
+    obj: None,
+    param_name: str,
+    of_type: TypeOrTupleOfTypes | None = ...,
+    additional_message: str | None = ...,
+) -> None: ...
+
+
+@overload
+def opt_nullable_abstract_set_param(
+    obj: T_Set,
+    param_name: str,
+    of_type: TypeOrTupleOfTypes | None = ...,
+    additional_message: str | None = ...,
+) -> T_Set: ...
+
+
+def opt_nullable_abstract_set_param(
+    obj: T_Set | None,
+    param_name: str,
+    of_type: TypeOrTupleOfTypes | None = None,
+    additional_message: str | None = None,
+) -> T_Set | None:
+    """Like opt_nullable_set_param, but accepts any collections.abc.Set (e.g. a
+    dict_keys/KeysView view) rather than requiring a concrete set or frozenset. Returns
+    None if input is None.
+    """
+    if obj is None:
+        return None
+    ttype = type(obj)
+    if not (ttype is set or ttype is frozenset or isinstance(obj, collections.abc.Set)):
+        raise _param_type_mismatch_exception(
+            obj, collections.abc.Set, param_name, additional_message
+        )
     elif not of_type:
         return obj
 

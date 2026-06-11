@@ -1105,6 +1105,41 @@ def test_set_param():
         check.set_param({"foo"}, "set_param", of_type=int)
 
 
+def test_abstract_set_param():
+    assert check.abstract_set_param(set(), "set_param") == set()
+    assert check.abstract_set_param(frozenset(), "set_param") == frozenset()
+
+    # unlike set_param, accepts any collections.abc.Set (e.g. a dict_keys view)
+    keys = {"a": 1, "b": 2}.keys()
+    assert check.abstract_set_param(keys, "set_param") is keys
+    assert set(check.abstract_set_param(keys, "set_param", of_type=str)) == {"a", "b"}
+
+    with pytest.raises(ParameterCheckError):
+        check.abstract_set_param(None, "set_param")  # ty: ignore[invalid-argument-type]
+
+    with pytest.raises(ParameterCheckError):
+        check.abstract_set_param("3u4", "set_param")  # ty: ignore[invalid-argument-type]
+
+    # a list is not a Set
+    with pytest.raises(ParameterCheckError):
+        check.abstract_set_param([1, 2], "set_param")  # ty: ignore[invalid-argument-type]
+
+    # element type checking still enforced
+    with pytest.raises(CheckError, match="Member of set mismatches type"):
+        check.abstract_set_param({1: 0}.keys(), "set_param", of_type=str)
+
+
+def test_opt_nullable_abstract_set_param():
+    assert check.opt_nullable_abstract_set_param(None, "set_param") is None
+    assert check.opt_nullable_abstract_set_param(set(), "set_param") == set()
+
+    keys = {"a": 1, "b": 2}.keys()
+    assert check.opt_nullable_abstract_set_param(keys, "set_param") is keys
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nullable_abstract_set_param("3u4", "set_param")  # ty: ignore[no-matching-overload]
+
+
 def test_opt_set_param():
     assert check.opt_set_param(None, "set_param") == set()
     assert check.opt_set_param(set(), "set_param") == set()
@@ -1676,9 +1711,16 @@ BUILD_CASES = [
     (List[str], [["a", "b"]], [[1, 2]]),
     (Sequence[str], [["a", "b"]], [[1, 2], "just_a_string"]),
     (Iterable[str], [["a", "b"]], [[1, 2]]),
-    (Set[str], [{"a", "b"}], [{1, 2}]),
-    (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
-    (AbstractSet[str] | None, [{"a", "b"}, None], [{1, 2}]),
+    # concrete set rejects non-set Set instances (e.g. dict_keys views)
+    (Set[str], [{"a", "b"}], [{1, 2}, {"a": 1}.keys()]),
+    # AbstractSet accepts any collections.abc.Set, including dict_keys views, but still
+    # enforces the inner element type
+    (AbstractSet[str], [{"a", "b"}, {"a": 1, "b": 2}.keys()], [{1, 2}, {1: 0}.keys()]),
+    (
+        AbstractSet[str] | None,
+        [{"a", "b"}, {"a": 1, "b": 2}.keys(), None],
+        [{1, 2}, {1: 0}.keys()],
+    ),
     (
         Mapping[str, AbstractSet[str]],
         [
