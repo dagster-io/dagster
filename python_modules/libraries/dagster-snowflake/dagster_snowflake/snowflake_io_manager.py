@@ -11,7 +11,7 @@ from dagster._core.storage.db_io_manager import (
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
-    TableSlice,h
+    TableSlice,
     static_where_clause,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
