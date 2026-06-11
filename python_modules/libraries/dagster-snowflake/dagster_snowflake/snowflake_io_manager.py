@@ -371,7 +371,8 @@ class SnowflakeDbClient(DbClient):
         with connection.cursor() as cursor:
             cursor.execute(
                 f"SELECT 1 FROM {table_slice.database}.information_schema.schemata"
-                f" WHERE LOWER(schema_name) = LOWER('{table_slice.schema}')"
+                " WHERE LOWER(schema_name) = LOWER(%s)",
+                (table_slice.schema,),
             )
             schemas = cursor.fetchall()
 
