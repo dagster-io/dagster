@@ -13,10 +13,15 @@ from dagster_snowflake.snowflake_io_manager import (
 
 
 def _table_exists(table_slice: TableSlice, connection):
+    # Query information_schema.tables instead of using SHOW TABLES to avoid
+    # UnknownTimeZoneError with ADBC connections. SHOW TABLES returns TIMESTAMP_LTZ
+    # columns that cause pytz.timezone('Local') to fail when no session timezone is set.
+    # SELECT 1 ensures no timestamp columns appear in the result set.
     with connection.cursor() as cursor:
         cursor.execute(
-            f"SHOW TABLES LIKE '{table_slice.table}' IN SCHEMA"
-            f" {table_slice.database}.{table_slice.schema}"
+            f"SELECT 1 FROM {table_slice.database}.information_schema.tables"
+            f" WHERE LOWER(table_schema) = LOWER('{table_slice.schema}')"
+            f" AND LOWER(table_name) = LOWER('{table_slice.table}')"
         )
         tables = cursor.fetchall()
 
