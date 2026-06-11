@@ -11,7 +11,7 @@ from dagster._core.storage.db_io_manager import (
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
-    TableSlice,
+    TableSlice,h
     static_where_clause,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
@@ -364,9 +364,14 @@ class SnowflakeDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        # Query information_schema.schemata instead of using SHOW SCHEMAS to avoid
+        # UnknownTimeZoneError with ADBC connections. SHOW SCHEMAS returns TIMESTAMP_LTZ
+        # columns that cause pytz.timezone('Local') to fail when no session timezone is set.
+        # SELECT 1 ensures no timestamp columns appear in the result set.
         with connection.cursor() as cursor:
             cursor.execute(
-                f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
+                f"SELECT 1 FROM {table_slice.database}.information_schema.schemata"
+                f" WHERE LOWER(schema_name) = LOWER('{table_slice.schema}')"
             )
             schemas = cursor.fetchall()
 
