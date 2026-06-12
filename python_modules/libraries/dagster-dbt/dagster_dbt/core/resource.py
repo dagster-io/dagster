@@ -361,15 +361,7 @@ class DbtCliResource(ConfigurableResource):
         return current_target_path.joinpath(path)
 
     def _initialize_dbt_core_adapter(self, args: Sequence[str]) -> BaseAdapter:
-        try:
-            from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                "A dbt adapter package could not be found.\n\n"
-                "Please install the appropriate dbt adapter for your data platform "
-                "(for example: dbt-postgres, dbt-bigquery, or dbt-snowflake).\n\n"
-                f"Original error:\n{e}"
-            ) from e
+        from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
         from dbt.config import RuntimeConfig
         from dbt.config.runtime import load_profile, load_project
         from dbt.config.utils import parse_cli_vars
@@ -732,7 +724,7 @@ class DbtCliResource(ConfigurableResource):
                 try:
                     adapter = self._initialize_dbt_core_adapter(args)
                 except ModuleNotFoundError as e:
-                    if "dbt.adapters" in str(e) or "dbt-" in str(e):
+                    if "dbt.adapters" in str(e):
                         logger.warning(
                             "A dbt adapter package could not be loaded. Please install the"
                             " appropriate dbt adapter for your data platform (for example:"
