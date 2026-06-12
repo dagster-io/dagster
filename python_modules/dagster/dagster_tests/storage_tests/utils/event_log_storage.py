@@ -2923,6 +2923,61 @@ class TestEventLogStorage:
         assert len(asset_keys) == 1
         assert storage.has_asset_key(dg.AssetKey("asset_1"))
 
+        # Regression test for https://github.com/dagster-io/dagster/issues/15806 - a planned or
+        # observation event stored after a wipe makes the asset row visible again, but must not
+        # resurface the stale pre-wipe materialization.
+        asset_key = dg.AssetKey("asset_1")
+        assert storage.get_latest_materialization_events([asset_key])[asset_key] is not None
+
+        storage.wipe_asset(asset_key)
+        assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
+
+        planned_run_id = make_new_run_id()
+        observation_run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [planned_run_id, observation_run_id]):
+            storage.store_event(
+                dg.EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=planned_run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(asset_key),
+                    ),
+                )
+            )
+            assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
+            asset_records = storage.get_asset_records([asset_key])
+            assert len(asset_records) == 1
+            assert asset_records[0].asset_entry.last_materialization_record is None
+
+            storage.store_event(
+                dg.EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=observation_run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_OBSERVATION.value,
+                        "nonce",
+                        event_specific_data=AssetObservationData(
+                            dg.AssetObservation(asset_key=asset_key)
+                        ),
+                    ),
+                )
+            )
+            assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
+
+        rematerialization_run_id = make_new_run_id()
+        _synthesize_events(one_asset_op, run_id=rematerialization_run_id, instance=instance)
+        latest = storage.get_latest_materialization_events([asset_key]).get(asset_key)
+        assert latest is not None
+        assert latest.run_id == rematerialization_run_id
+
     def test_asset_wiped_event(self, instance):
         @dg.asset
         def asset_to_wipe():
@@ -2968,6 +3023,28 @@ class TestEventLogStorage:
         )
         assert wipe_events[0].event_log_entry.dagster_event_type == DagsterEventType.ASSET_WIPED
         assert wipe_events[0].event_log_entry.dagster_event.asset_wiped_data.partition_keys == ["a"]
+
+        # the latest materialization pointed at the wiped partition and must not be returned
+        assert instance.get_latest_materialization_event(asset_to_wipe.key) is None
+
+        materialize([asset_to_wipe], instance=instance, partition_key="b")
+        materialize([asset_to_wipe], instance=instance, partition_key="c")
+
+        # wiping the latest-materialized partition falls back to the latest remaining one
+        instance.wipe_asset_partitions(asset_to_wipe.key, ["c"])
+        latest = instance.get_latest_materialization_event(asset_to_wipe.key)
+        assert latest is not None
+        assert latest.dagster_event.partition == "b"
+
+        # wiping a partition that does not hold the latest materialization leaves it untouched
+        instance.wipe_asset_partitions(asset_to_wipe.key, ["a"])
+        latest = instance.get_latest_materialization_event(asset_to_wipe.key)
+        assert latest is not None
+        assert latest.dagster_event.partition == "b"
+
+        # wiping the only remaining materialized partition clears it
+        instance.wipe_asset_partitions(asset_to_wipe.key, ["b"])
+        assert instance.get_latest_materialization_event(asset_to_wipe.key) is None
 
     def test_asset_secondary_index(self, storage, instance):
         _synthesize_events(one_asset_op, instance=instance)

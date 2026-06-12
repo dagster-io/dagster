@@ -1164,39 +1164,54 @@ class SqlEventLogStorage(EventLogStorage):
         # Given a list of raw asset rows, returns a mapping of asset key to latest asset materialization
         # event log entry. Fetches backcompat EventLogEntry records when the last_materialization
         # in the raw asset row is an AssetMaterialization.
-        to_backcompat_fetch = set()
+        to_backcompat_fetch: list[AssetKey] = []
+        asset_details_by_key: dict[AssetKey, AssetDetails | None] = {}
         results: dict[AssetKey, EventLogRecord | None] = {}
         for row in raw_asset_rows:
             asset_key = AssetKey.from_db_string(row["asset_key"])
             if not asset_key:
                 continue
+            asset_details = AssetDetails.from_db_string(row["asset_details"])
+            last_wipe_timestamp = asset_details.last_wipe_timestamp if asset_details else None
             event_or_materialization = (
                 deserialize_value(row["last_materialization"], NamedTuple)  # ty: ignore[no-matching-overload]
                 if row["last_materialization"]
                 else None
             )
-            if isinstance(event_or_materialization, EventLogRecord):
+            if isinstance(event_or_materialization, EventLogRecord) and (
+                last_wipe_timestamp is None
+                or event_or_materialization.event_log_entry.timestamp > last_wipe_timestamp
+            ):
                 results[asset_key] = event_or_materialization
             else:
-                to_backcompat_fetch.add(asset_key)
+                # No stored record, an old-format record, or a record predating the latest wipe
+                # (a planned or observation event after a wipe makes the asset row visible while
+                # the stale pre-wipe materialization is still stored on it). Fall back to querying
+                # the event log table, filtering out pre-wipe events.
+                to_backcompat_fetch.append(asset_key)
+                asset_details_by_key[asset_key] = asset_details
 
+        backcompat_subquery = db_select(
+            [
+                SqlEventLogStorageTable.c.asset_key,
+                db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+            ]
+        ).where(
+            db.and_(
+                SqlEventLogStorageTable.c.asset_key.in_(
+                    [asset_key.to_string() for asset_key in to_backcompat_fetch]
+                ),
+                SqlEventLogStorageTable.c.dagster_event_type
+                == DagsterEventType.ASSET_MATERIALIZATION.value,
+            )
+        )
+        backcompat_subquery = self._add_assets_wipe_filter_to_query(
+            backcompat_subquery,
+            [asset_details_by_key[asset_key] for asset_key in to_backcompat_fetch],
+            to_backcompat_fetch,
+        )
         latest_event_subquery = db_subquery(
-            db_select(
-                [
-                    SqlEventLogStorageTable.c.asset_key,
-                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
-                ]
-            )
-            .where(
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [asset_key.to_string() for asset_key in to_backcompat_fetch]
-                    ),
-                    SqlEventLogStorageTable.c.dagster_event_type
-                    == DagsterEventType.ASSET_MATERIALIZATION.value,
-                )
-            )
-            .group_by(SqlEventLogStorageTable.c.asset_key),
+            backcompat_subquery.group_by(SqlEventLogStorageTable.c.asset_key),
             "latest_event_subquery",
         )
         backcompat_query = db_select(
@@ -1527,7 +1542,9 @@ class SqlEventLogStorage(EventLogStorage):
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, datetime]:
         # fetches the latest materialization timestamp for the given asset_keys.  Uses the (slower)
-        # raw event log table.
+        # raw event log table.  Restricted to the event types that update
+        # last_materialization_timestamp in `_get_asset_entry_values`, so that events like
+        # ASSET_WIPED (stored immediately after a wipe) do not make a wiped asset appear live.
         backcompat_query = (
             db_select(
                 [
@@ -1536,8 +1553,17 @@ class SqlEventLogStorage(EventLogStorage):
                 ]
             )
             .where(
-                SqlEventLogStorageTable.c.asset_key.in_(
-                    [asset_key.to_string() for asset_key in asset_keys]
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in asset_keys]
+                    ),
+                    SqlEventLogStorageTable.c.dagster_event_type.in_(
+                        [
+                            DagsterEventType.ASSET_MATERIALIZATION.value,
+                            DagsterEventType.ASSET_OBSERVATION.value,
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        ]
+                    ),
                 )
             )
             .group_by(SqlEventLogStorageTable.c.asset_key)
@@ -1758,6 +1784,7 @@ class SqlEventLogStorage(EventLogStorage):
         wipe_timestamp = get_current_timestamp()
         values: dict[str, Any] = {
             "asset_details": serialize_value(AssetDetails(last_wipe_timestamp=wipe_timestamp)),
+            "last_materialization": None,
             "last_run_id": None,
         }
         if self.has_asset_key_index_cols():

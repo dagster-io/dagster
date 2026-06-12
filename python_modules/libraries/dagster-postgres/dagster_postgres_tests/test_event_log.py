@@ -4,7 +4,17 @@ from contextlib import contextmanager
 
 import objgraph
 import pytest
+from dagster import AssetKey, AssetMaterialization, EventLogEntry
+from dagster._core.events import (
+    AssetWipedData,
+    DagsterEvent,
+    DagsterEventType,
+    StepMaterializationData,
+)
+from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.schema import SecondaryIndexMigrationTable
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
@@ -140,3 +150,55 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
                 assert from_url.postgres_url == from_explicit.postgres_url  # ty: ignore[unresolved-attribute]
+
+
+def test_all_asset_keys_excludes_wiped_asset_on_legacy_index_path(conn_string):
+    # Regression test for the legacy (pre-ASSET_KEY_INDEX_COLS-migration) read path, where wiped
+    # assets are filtered by comparing the wipe timestamp against the latest event log timestamp.
+    # The ASSET_WIPED event stored immediately after a wipe (and any other event type that does
+    # not update last_materialization_timestamp on the migrated path) must not make the wiped
+    # asset appear live.
+    asset_key = AssetKey(["asset_one"])
+    with _clean_storage(conn_string) as storage:
+        # simulate a storage that has not run the ASSET_KEY_INDEX_COLS data migration
+        with storage.index_connection() as conn:
+            conn.execute(SecondaryIndexMigrationTable.delete())
+        storage._secondary_index_cache.clear()  # noqa: SLF001
+        assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=make_new_run_id(),
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION.value,
+                    "nonce",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key=asset_key)
+                    ),
+                ),
+            )
+        )
+        assert asset_key in storage.all_asset_keys()
+
+        storage.wipe_asset(asset_key)
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=RUNLESS_RUN_ID,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_WIPED.value,
+                    job_name=RUNLESS_JOB_NAME,
+                    event_specific_data=AssetWipedData(asset_key=asset_key, partition_keys=None),
+                ),
+            )
+        )
+
+        assert asset_key not in storage.all_asset_keys()
+        assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
