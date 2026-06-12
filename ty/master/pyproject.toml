@@ -200,6 +200,9 @@ dependencies = [
 # Aikido blocks PyPI packages newer than 48h. Pin globally so `uv lock` works
 # from dev machines without setting UV_EXCLUDE_NEWER ad-hoc.
 [tool.uv]
+# Virtual project: this package exists only to declare the env's dependency
+# set — uv installs the deps and never builds `ty-master` itself.
+package = false
 exclude-newer = "48h"
 
 [tool.uv.sources]

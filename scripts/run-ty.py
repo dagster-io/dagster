@@ -55,10 +55,8 @@ parser.add_argument(
     help=(
         "Declare a ty environment by its directory (relative to cwd or absolute)."
         " The directory must contain `pyproject.toml` (with `[tool.ty.*]` config) and"
-        " `uv.lock`. Kind is auto-detected: `[tool.uv.workspace]` present → workspace"
-        " (ty installed via the workspace's `ty` extra), absent → project (ty pulled"
-        " via `uv tool run --from ty==<pin>`). Repeatable. If omitted, falls back to"
-        " scanning `<cwd>/ty/<env>/`."
+        " `uv.lock`; ty itself is pulled via `uv tool run --from ty==<pin>`."
+        " Repeatable. If omitted, falls back to scanning `<cwd>/ty/<env>/`."
     ),
 )
 
@@ -193,7 +191,6 @@ class RunResult(TypedDict):
 
 class EnvSpec(TypedDict):
     name: str
-    kind: Literal["project", "workspace"]
     path: Path  # absolute — directory with pyproject.toml + uv.lock + .venv
     project_root: Path  # absolute — dir ty treats as project root when checking this env
 
@@ -232,12 +229,8 @@ def _project_root_for_env(env_path: Path, workspace_root: Path) -> Path:
 def _build_env_spec(env_dir: str | Path) -> EnvSpec:
     """Build an EnvSpec from a directory containing `pyproject.toml` + `uv.lock`.
 
-    Kind is auto-detected: presence of `[tool.uv.workspace]` ⟹ workspace,
-    absence ⟹ project. Project root (where ty considers paths anchored)
-    comes from `_project_root_for_env`. Name = resolved dir's basename,
-    with the special case `cwd / "."` ⟹ "internal" so the typical
-    repo-root workspace env keeps a stable label even though its dir's
-    basename is whatever the worktree happens to be called.
+    Project root (where ty considers paths anchored) comes from
+    `_project_root_for_env`. Name = resolved dir's basename.
     """
     cwd = Path(os.getcwd()).resolve()
     raw = Path(env_dir)
@@ -254,11 +247,8 @@ def _build_env_spec(env_dir: str | Path) -> EnvSpec:
             f"`--env-dir {env_dir}`: pyproject.toml at {pyproject} has no `[tool.ty]`"
             f" section. The env's ty config must live in its own pyproject.toml."
         )
-    is_workspace = "workspace" in toml_data.get("tool", {}).get("uv", {})
-    kind: Literal["project", "workspace"] = "workspace" if is_workspace else "project"
-    name = "internal" if is_workspace and abs_path == cwd else abs_path.name
     project_root = _project_root_for_env(abs_path, cwd)
-    return EnvSpec(name=name, kind=kind, path=abs_path, project_root=project_root)
+    return EnvSpec(name=abs_path.name, path=abs_path, project_root=project_root)
 
 
 def initialize_envs(env_dirs: Sequence[str]) -> None:
@@ -266,9 +256,9 @@ def initialize_envs(env_dirs: Sequence[str]) -> None:
 
     If `env_dirs` is provided, each entry must be a directory containing
     `pyproject.toml` + `uv.lock`. Otherwise we fall back to scanning
-    `<cwd>/ty/<name>/` and treating each matching dir as a project-kind
-    env. The fallback exists so the script also works post-OSS-sync,
-    where `just ty` (and its `--env-dir` args) doesn't exist.
+    `<cwd>/ty/<name>/` and treating each matching dir as an env. The
+    fallback exists so the script also works post-OSS-sync, where
+    `just ty` (and its `--env-dir` args) doesn't exist.
     """
     _ENVS.clear()
     if env_dirs:
@@ -307,11 +297,28 @@ def get_env_path(name: str) -> Path:
 
 @cache
 def get_dagster_ty_version() -> str:
-    """Read the pinned ty version from `python_modules/dagster/pyproject.toml`.
+    """Read the pinned ty version used to invoke the envs.
 
-    The version lives in dagster's `[project.optional-dependencies].ty` so it
-    sits alongside the stub packages and is bumped via the same lockfile workflow.
+    Resolution order:
+    1. A `ty==<version>` entry in `[dependency-groups].dev` of the invoking
+       repo root's pyproject.toml (`<cwd>/pyproject.toml`). The internal repo
+       declares its dev-only ty pin there, so the version that checks the
+       internal envs is the same one `uv sync` installs into the workspace
+       venv for editors.
+    2. Fallback: dagster's `[project.optional-dependencies].ty` in
+       `python_modules/dagster/pyproject.toml`, where the OSS pin lives
+       alongside the stub packages. Used when the invoking root has no dev
+       ty pin (e.g. running in the OSS repo post-sync).
+
+    A conventions lint in the internal repo asserts the two pins agree.
     """
+    root_pyproject = Path(os.getcwd()).resolve() / "pyproject.toml"
+    if root_pyproject.exists():
+        with open(root_pyproject, "rb") as f:
+            pyproject = tomllib.load(f)
+        for dep in pyproject.get("dependency-groups", {}).get("dev", []):
+            if isinstance(dep, str) and dep.startswith("ty=="):
+                return dep.split("==")[1]
     dagster_pyproject = os.path.abspath(
         os.path.join(__file__, "../../python_modules/dagster/pyproject.toml")
     )
@@ -322,8 +329,9 @@ def get_dagster_ty_version() -> str:
         if dep.startswith("ty=="):
             return dep.split("==")[1]
     raise RuntimeError(
-        "Could not find a `ty==` entry in"
-        " python_modules/dagster/pyproject.toml's [project.optional-dependencies].ty"
+        "Could not find a ty pin: no `ty==` entry in the invoking root's"
+        " `[dependency-groups].dev` or in python_modules/dagster/pyproject.toml's"
+        " [project.optional-dependencies].ty"
     )
 
 
@@ -436,7 +444,6 @@ def normalize_env(
 ) -> None:
     """Ensure the env's venv matches its lockfile.
 
-    For `project`-kind envs:
     - `--update-pins`: refresh `uv.lock` to newest matching versions, then sync.
     - `--rebuild`: blow away the venv and re-create from `uv.lock`.
     - default: `uv sync --frozen` (no resolution, just install the locked set).
@@ -444,21 +451,8 @@ def normalize_env(
     `editable-mode=compat` is set via `--config-setting` so editable in-repo
     installs land as legacy `.pth` files that ty can read. Tracking uv bug:
         https://github.com/astral-sh/uv/issues/7028
-
-    For `workspace`-kind envs:
-    The venv is user-managed (`just sync` from the workspace root), so this
-    is a near-no-op — we just warn that `--rebuild` and `--update-pins` don't
-    apply.
     """
     spec = get_env(env)
-
-    if spec["kind"] == "workspace":
-        if rebuild or update_pins:
-            print(
-                f"Warning: --rebuild / --update-pins do not apply to workspace env `{env}`; skipping."
-            )
-        return
-
     env_root = spec["path"]
     venv_path = env_root / ".venv"
 
@@ -500,13 +494,8 @@ def normalize_env(
 # Ensures all editable installs are "legacy" style (`__editable__*.pth` with an
 # absolute path on the first line). Modern-style uv editables use a custom
 # `MetaPathFinder` that ty cannot follow.
-#
-# Skipped for `workspace`-kind envs whose venv is owned by the user's normal
-# `just sync` workflow and may legitimately contain modern-style entries.
 def validate_editable_installs(env: str) -> None:
     spec = get_env(env)
-    if spec["kind"] == "workspace":
-        return
     venv_path = spec["path"] / ".venv"
     for pth_file in glob.glob(f"{venv_path}/lib/python*/site-packages/__editable__*.pth"):
         with open(pth_file, encoding="utf-8") as f:
@@ -616,73 +605,8 @@ def convert_ty_diagnostic_to_pyright_format(ty_diag: TyDiagnostic) -> Diagnostic
     )
 
 
-def _run_ty_workspace(env: str, paths: Sequence[str] | None) -> RunResult:
-    """Run ty against a workspace-kind env via `uv run --extra ty`.
-
-    The env's `[tool.ty.*]` (in its own pyproject.toml) is translated to
-    a temp ty.toml at the project root and passed via `--config-file`;
-    cwd is set to the project root so include paths anchor there. The
-    workspace's own pinned `ty` from the `ty` extra is used, so no
-    `--from ty==...`.
-    """
-    start_time = time.time()
-
-    spec = get_env(env)
-    env_root = spec["path"]
-    project_root = spec["project_root"]
-    invoking_cwd = Path(os.getcwd()).resolve()
-
-    with _temp_ty_config(env) as config_path:
-        base_ty_cmd_parts = [
-            "uv",
-            "run",
-            "--frozen",
-            "--isolated",
-            "--extra",
-            "ty",
-            "ty",
-            "check",
-            f"--config-file={config_path}",
-            "--error-on-warning",
-            "-v",
-            "--output-format=gitlab",
-        ]
-        check_paths = [str((invoking_cwd / p).resolve()) for p in (paths or [])]
-        shell_cmd = " \\\n".join([" ".join(base_ty_cmd_parts), *[f"    {p}" for p in check_paths]])
-        print(f"Running ty for environment `{env}`...")
-        print(f"  {shell_cmd}")
-        result = subprocess.run(
-            shell_cmd,
-            capture_output=True,
-            shell=True,
-            text=True,
-            check=False,
-            cwd=project_root,
-        )
-
-    elapsed_time = time.time() - start_time
-
-    return _build_run_result(
-        env=env,
-        result=result,
-        elapsed_time=elapsed_time,
-        check_paths=check_paths,
-        version_cmd=[
-            "uv",
-            "run",
-            "--frozen",
-            "--isolated",
-            "--extra",
-            "ty",
-            "ty",
-            "version",
-        ],
-        version_cwd=env_root,
-    )
-
-
-def _run_ty_project(env: str, paths: Sequence[str] | None) -> RunResult:
-    """Run ty against a project-kind env via `uv tool run --from ty==<version>`.
+def run_ty(env: str, paths: Sequence[str] | None) -> RunResult:
+    """Run ty against an env via `uv tool run --from ty==<version>`.
 
     The env's `[tool.ty.*]` (in its own pyproject.toml) is translated to
     a temp ty.toml at the project root and passed via `--config-file`;
@@ -711,6 +635,10 @@ def _run_ty_project(env: str, paths: Sequence[str] | None) -> RunResult:
             "check",
             f"--config-file={config_path}",
             f"--python={python_path}",
+            # Diff-routed paths are passed explicitly; without this, explicit
+            # paths bypass the env's `src.exclude` (e.g. editing an excluded
+            # file like scripts/run-ty.py would spuriously fail `--diff` runs).
+            "--force-exclude",
             "--output-format=gitlab",
             "--error-on-warning",
             # `-v` makes ty emit "INFO Indexed N file(s) in ...s" to stderr,
@@ -821,16 +749,6 @@ def _build_run_result(
             },
         },
     }
-
-
-def run_ty(
-    env: str,
-    paths: Sequence[str] | None,
-) -> RunResult:
-    spec = get_env(env)
-    if spec["kind"] == "workspace":
-        return _run_ty_workspace(env, paths)
-    return _run_ty_project(env, paths)
 
 
 def merge_ty_results(result_1: RunResult, result_2: RunResult) -> RunResult:
