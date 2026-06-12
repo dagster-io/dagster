@@ -415,13 +415,18 @@ class PackageSpec:
         # Splitting uses the pytest-split plugin. To use `splits > 1` with a
         # package, `pytest-split` must be declared in that package's test
         # dependencies (e.g. the `test`/`tests` extra in its pyproject.toml).
+        # Factors can opt out of duration-based balancing via `use_durations=False`
+        # — pytest-split then falls back to count-based grouping. Useful when the
+        # recorded `.test_durations` data is known to mislead (heavy fixtures,
+        # near-zero recorded times for many tests, etc).
+        use_durations = factor.use_durations if factor else True
         for split_index in range(1, splits + 1):
             if splits > 1:
                 split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
-                pytest_args: list[str] | None = [
-                    f"--splits {splits} --group {split_index} --durations-path {durations_file}",
-                    *factor_pytest_args,
-                ]
+                split_arg = f"--splits {splits} --group {split_index}"
+                if use_durations:
+                    split_arg = f"{split_arg} --durations-path {durations_file}"
+                pytest_args: list[str] | None = [split_arg, *factor_pytest_args]
             else:
                 split_label = f"{base_name}{label_suffix}"
                 pytest_args = factor_pytest_args or None
