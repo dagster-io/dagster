@@ -806,7 +806,15 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
         context.log.info(f"Executing dbt project on Snowflake:\n{sql}")
         with self.snowflake.get_connection() as conn:
             cursor = conn.cursor()
-            query_id = self._execute_and_wait(context, conn, cursor, sql)
+            try:
+                query_id = self._execute_and_wait(context, conn, cursor, sql)
+            except DagsterExecutionInterruptedError:
+                raise
+            except Exception:
+                # dbt run failed -- fetch the log first so the failure reason is visible before
+                # the exception propagates. cursor.sfqid is set by execute_async even on failure.
+                self._log_dbt_output(context, cursor, cursor.sfqid)
+                raise
             # The dbt stdout isn't in the result set, so fetch it separately and surface it.
             self._log_dbt_output(context, cursor, query_id)
 

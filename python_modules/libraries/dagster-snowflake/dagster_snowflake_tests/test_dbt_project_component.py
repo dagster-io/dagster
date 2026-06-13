@@ -367,6 +367,35 @@ def test_execute_cancels_snowflake_query_on_interruption():
     cancel_cursor.execute.assert_called_once_with("SELECT SYSTEM$CANCEL_QUERY('build-q1')")
 
 
+def test_execute_fetches_dbt_log_on_run_failure():
+    """The dbt log is surfaced even when the dbt run fails, so the user can see the failure reason."""
+    component = _make_component()
+    setattr(component, "get_cli_args", lambda context: ["build"])
+
+    cursor = mock.MagicMock()
+    cursor.sfqid = "build-q1"
+    conn = _connection_returning(cursor, component)
+    # Simulate a dbt run failure during polling.
+    conn.get_query_status_throw_if_error.side_effect = RuntimeError("dbt model failed")
+    # The dbt log returns a failure message.
+    cursor.fetchone.return_value = ("ERROR: compilation failed on customers\n",)
+
+    context = _ctx(log=mock.MagicMock(), run_id="run-xyz")
+
+    with (
+        mock.patch.object(comp_mod, "get_subset_selection_for_context", return_value=([], None)),
+        mock.patch("sys.stdout") as mock_stdout,
+        pytest.raises(RuntimeError, match="dbt model failed"),
+    ):
+        list(component.execute(context, _MANIFEST))
+
+    # The dbt log must be fetched (and written to stdout) before the exception propagates.
+    assert any(
+        "SYSTEM$GET_DBT_LOG('build-q1'" in str(c) for c in cursor.execute.call_args_list
+    )
+    mock_stdout.write.assert_called()
+
+
 def test_execute_emits_run_results_metadata_at_parity():
     component = _make_component()
     setattr(component, "get_cli_args", lambda context: ["build"])
