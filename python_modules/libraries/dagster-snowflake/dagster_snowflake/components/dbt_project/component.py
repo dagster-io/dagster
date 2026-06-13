@@ -1180,6 +1180,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                 manifest=manifest,
                 dagster_dbt_translator=translator,
                 target_path=target_path,
+                project=None,
             )
         except Exception as e:
             logger.warning(
@@ -1284,7 +1285,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                 if context.cursor
                 else get_current_timestamp() - _SENSOR_LOOKBACK_SECONDS
             )
-            events, new_timestamp = component._poll_external_runs(manifest, since_timestamp)  # noqa: SLF001
+            events, new_timestamp = component._poll_external_runs(manifest, since_timestamp)
             if new_timestamp is not None:
                 context.update_cursor(str(new_timestamp))
             context.log.info(f"Reporting {len(events)} materialization(s) from external dbt runs.")
