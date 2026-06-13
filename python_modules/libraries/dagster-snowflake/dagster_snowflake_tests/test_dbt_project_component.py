@@ -390,9 +390,7 @@ def test_execute_fetches_dbt_log_on_run_failure():
         list(component.execute(context, _MANIFEST))
 
     # The dbt log must be fetched (and written to stdout) before the exception propagates.
-    assert any(
-        "SYSTEM$GET_DBT_LOG('build-q1'" in str(c) for c in cursor.execute.call_args_list
-    )
+    assert any("SYSTEM$GET_DBT_LOG('build-q1'" in str(c) for c in cursor.execute.call_args_list)
     mock_stdout.write.assert_called()
 
 
