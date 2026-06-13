@@ -87,6 +87,13 @@ def test_build_dbt_project_execution_history_sql():
     assert "OBJECT_NAME => 'JAFFLE'" in sql
 
 
+def test_build_dbt_project_execution_history_sql_escapes_single_quotes():
+    sql = build_dbt_project_execution_history_sql("MY'DB", "O'REILLY", "PROJ'ECT")
+    assert "DATABASE => 'MY''DB'" in sql
+    assert "SCHEMA => 'O''REILLY'" in sql
+    assert "OBJECT_NAME => 'PROJ''ECT'" in sql
+
+
 def test_build_set_query_tag_sql():
     sql = build_set_query_tag_sql('{"app":"x","dagster_run_id":"r1"}')
     assert sql == 'ALTER SESSION SET QUERY_TAG = \'{"app":"x","dagster_run_id":"r1"}\''
@@ -805,8 +812,13 @@ def test_poll_external_runs_reports_new_runs_then_advances_cursor():
         events, new_ts = component._poll_external_runs(_META_MANIFEST, None)  # noqa: SLF001
 
     # External runs are reported as ad-hoc AssetMaterializations (not MaterializeResult).
-    assert events and all(isinstance(e, AssetMaterialization) for e in events)
-    assert {e.asset_key for e in events} == {AssetKey(["customers"]), AssetKey(["stg_customers"])}
+    # AssetCheckEvaluation events are also included (not dropped).
+    from dagster import AssetCheckEvaluation
+
+    assert events
+    assert all(isinstance(e, (AssetMaterialization, AssetCheckEvaluation)) for e in events)
+    mat_keys = {e.asset_key for e in events if isinstance(e, AssetMaterialization)}
+    assert mat_keys == {AssetKey(["customers"]), AssetKey(["stg_customers"])}
     assert new_ts == end_time.timestamp()
 
     # Re-polling with the high-water-mark cursor yields nothing new (no double reporting).

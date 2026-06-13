@@ -193,10 +193,13 @@ def build_dbt_project_execution_history_sql(database: str, schema: str, object_n
     Returns recent runs (query id + completion time) for the project, most-recent last, used by
     the observation sensor to discover dbt runs executed in Snowflake outside of Dagster.
     """
+    db = database.replace("'", "''")
+    sch = schema.replace("'", "''")
+    obj = object_name.replace("'", "''")
     return (
         "SELECT query_id, query_end_time FROM "
         "TABLE(SNOWFLAKE.INFORMATION_SCHEMA.DBT_PROJECT_EXECUTION_HISTORY("
-        f"DATABASE => '{database}', SCHEMA => '{schema}', OBJECT_NAME => '{object_name}')) "
+        f"DATABASE => '{db}', SCHEMA => '{sch}', OBJECT_NAME => '{obj}')) "
         "ORDER BY query_end_time"
     )
 
@@ -1250,7 +1253,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                 events.extend(
                     event
                     for event in self._run_results_to_events(run_results, manifest)
-                    if isinstance(event, dg.AssetMaterialization)
+                    if isinstance(event, (dg.AssetMaterialization, dg.AssetCheckEvaluation))
                 )
                 max_timestamp = ts if max_timestamp is None else max(max_timestamp, ts)
         return events, max_timestamp
