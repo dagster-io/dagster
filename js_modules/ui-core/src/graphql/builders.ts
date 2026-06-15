@@ -990,6 +990,7 @@ export {BulkActionStatus};
 type BulkActionsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  selectorId?: InputMaybe<Scalars['String']['input']>;
   statuses?: InputMaybe<Array<BulkActionStatus>>;
 };
 
@@ -8134,6 +8135,8 @@ export const buildBulkActionsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 6.09,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 1.5,
+    selectorId:
+      overrides && overrides.hasOwnProperty('selectorId') ? overrides.selectorId! : 'numquam',
     statuses: overrides && overrides.hasOwnProperty('statuses') ? overrides.statuses! : [],
   };
 };

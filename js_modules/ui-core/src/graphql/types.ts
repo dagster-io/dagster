@@ -135,6 +135,7 @@ export enum BulkActionStatus {
 export type BulkActionsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  selectorId?: InputMaybe<Scalars['String']['input']>;
   statuses?: InputMaybe<Array<BulkActionStatus>>;
 };
 

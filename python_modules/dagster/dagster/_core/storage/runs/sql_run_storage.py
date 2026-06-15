@@ -972,6 +972,8 @@ class SqlRunStorage(RunStorage):
             query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
         if filters and filters.backfill_ids:
             query = query.where(BulkActionsTable.c.key.in_(filters.backfill_ids))
+        if filters and filters.selector_id:
+            query = query.where(BulkActionsTable.c.selector_id == filters.selector_id)
         return query
 
     def _add_cursor_limit_to_backfills_query(

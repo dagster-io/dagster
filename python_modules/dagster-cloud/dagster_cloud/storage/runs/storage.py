@@ -120,6 +120,7 @@ def _get_bulk_actions_filters_input(
         "statuses": [status.value for status in filters.statuses] if filters.statuses else None,
         "createdAfter": filters.created_after.timestamp() if filters.created_after else None,
         "createdBefore": filters.created_before.timestamp() if filters.created_before else None,
+        "selectorId": filters.selector_id,
     }
 
 
