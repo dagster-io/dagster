@@ -380,6 +380,12 @@ class PackageSpec:
             durations_id = "default"
         durations_file = f".test_durations/{durations_id}"
 
+        # Factors can opt out of duration-based balancing via `use_durations=False`
+        # — pytest-split then falls back to count-based grouping. Useful when the
+        # recorded `.test_durations` data is known to mislead (heavy fixtures,
+        # near-zero recorded times for many tests, etc).
+        use_durations = factor.use_durations if factor else True
+
         # Refresh mode: for factors that fan out, collapse to a single
         # un-sharded run that writes a fresh durations file and uploads it
         # as an artifact. Non-split factors fall through to the normal
@@ -388,7 +394,14 @@ class PackageSpec:
         # by absence of `--store-durations` in the command. We don't return
         # an empty list here because some callers (e.g. OSS
         # `build_helm_steps`) assert on `len(pkg_steps) == 1`.
-        if ctx.config.refresh_durations and splits > 1:
+        #
+        # `use_durations=False` factors are excluded too: normal runs omit
+        # `--durations-path` for them, so storing a durations file would commit
+        # data nothing ever reads. Worse, the stored `.test_durations/` directory
+        # then collides with pytest-split's default `--durations-path` and the
+        # un-pathed normal run dies with IsADirectoryError. Letting these fall
+        # through to the normal emit path keeps the directory from being created.
+        if ctx.config.refresh_durations and splits > 1 and use_durations:
             # Refresh mode runs the full set of split tox suites unconditionally —
             # change-detection isn't meaningful when collecting timing data
             # against the current source tree, not validating a diff. Force the
@@ -415,11 +428,6 @@ class PackageSpec:
         # Splitting uses the pytest-split plugin. To use `splits > 1` with a
         # package, `pytest-split` must be declared in that package's test
         # dependencies (e.g. the `test`/`tests` extra in its pyproject.toml).
-        # Factors can opt out of duration-based balancing via `use_durations=False`
-        # — pytest-split then falls back to count-based grouping. Useful when the
-        # recorded `.test_durations` data is known to mislead (heavy fixtures,
-        # near-zero recorded times for many tests, etc).
-        use_durations = factor.use_durations if factor else True
         for split_index in range(1, splits + 1):
             if splits > 1:
                 split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
