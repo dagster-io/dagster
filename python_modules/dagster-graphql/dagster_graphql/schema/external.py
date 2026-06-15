@@ -16,7 +16,7 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceProcessContext
 from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
@@ -102,8 +102,14 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     class Meta:
         name = "RepositoryLocation"
 
-    def __init__(self, name: str, location: CodeLocation | None = None):
+    def __init__(
+        self,
+        name: str,
+        location: CodeLocation | None = None,
+        workspace_context: BaseWorkspaceRequestContext | None = None,
+    ):
         self._location = location
+        self._workspace_context = workspace_context
         super().__init__(
             name=name,
         )
@@ -113,12 +119,13 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
 
     def get_location(self, graphene_info: ResolveInfo) -> CodeLocation:
         if self._location is None:
-            self._location = graphene_info.context.get_code_location(self.name)
+            context = self._workspace_context or graphene_info.context
+            self._location = context.get_code_location(self.name)
         return self._location
 
     def resolve_repositories(self, graphene_info: ResolveInfo):
         return [
-            GrapheneRepository(repository.handle)
+            GrapheneRepository(repository.handle, workspace_context=self._workspace_context)
             for repository in self.get_location(graphene_info).get_repositories().values()
         ]
 
@@ -226,8 +233,13 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     class Meta:
         name = "WorkspaceLocationEntry"
 
-    def __init__(self, location_entry: CodeLocationEntry):
+    def __init__(
+        self,
+        location_entry: CodeLocationEntry,
+        workspace_context: BaseWorkspaceRequestContext | None = None,
+    ):
         self._location_entry = check.inst_param(location_entry, "location_entry", CodeLocationEntry)
+        self._workspace_context = workspace_context
         super().__init__(
             name=self._location_entry.origin.location_name,
             definitionsSource=self._location_entry.definitions_source,
@@ -241,6 +253,7 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
             return GrapheneRepositoryLocation(
                 self._location_entry.code_location.name,
                 self._location_entry.code_location,
+                workspace_context=self._workspace_context,
             )
 
         error = self._location_entry.load_error
@@ -276,7 +289,8 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
         return self._location_entry.version_key
 
     def resolve_permissions(self, graphene_info):
-        permissions = graphene_info.context.permissions_for_location(location_name=self.name)
+        context = self._workspace_context or graphene_info.context
+        permissions = context.permissions_for_location(location_name=self.name)
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
     def resolve_featureFlags(self, graphene_info):
@@ -319,23 +333,29 @@ class GrapheneRepository(graphene.ObjectType):
     def __init__(
         self,
         handle: RepositoryHandle,
+        workspace_context: BaseWorkspaceRequestContext | None = None,
     ):
         # Warning! GrapheneAssetNode contains a GrapheneRepository. Any computation in this
         # __init__ will be done **once per asset**. Ensure that any expensive work is done
         # elsewhere or cached.
         self._handle = handle
+        self._workspace_context = workspace_context
 
         self._batch_loader = None
 
         super().__init__(name=handle.repository_name)
 
+    def get_context(self, graphene_info: ResolveInfo) -> BaseWorkspaceRequestContext:
+        return self._workspace_context or graphene_info.context
+
     def get_repository(self, graphene_info: ResolveInfo) -> RemoteRepository:
-        return graphene_info.context.get_repository(self._handle.to_selector())
+        return self.get_context(graphene_info).get_repository(self._handle.to_selector())
 
     def get_batch_loader(self, graphene_info: ResolveInfo):
         if self._batch_loader is None:
+            context = self.get_context(graphene_info)
             self._batch_loader = RepositoryScopedBatchLoader(
-                graphene_info.context.instance, self.get_repository(graphene_info)
+                context.instance, self.get_repository(graphene_info)
             )
         return self._batch_loader
 
@@ -347,7 +367,10 @@ class GrapheneRepository(graphene.ObjectType):
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_location(self, graphene_info: ResolveInfo):
-        return GrapheneRepositoryLocation(self._handle.location_name)
+        return GrapheneRepositoryLocation(
+            self._handle.location_name,
+            workspace_context=self._workspace_context,
+        )
 
     def resolve_schedules(self, graphene_info: ResolveInfo):
         batch_loader = self.get_batch_loader(graphene_info)
@@ -407,7 +430,9 @@ class GrapheneRepository(graphene.ObjectType):
         return get_solids(self.get_repository(graphene_info))
 
     def resolve_partitionSets(self, graphene_info: ResolveInfo):
-        partition_sets = graphene_info.context.get_partition_sets(self._handle.to_selector())
+        partition_sets = self.get_context(graphene_info).get_partition_sets(
+            self._handle.to_selector()
+        )
         return (GraphenePartitionSet(partition_set) for partition_set in partition_sets)
 
     def resolve_displayMetadata(self, graphene_info: ResolveInfo):
@@ -462,9 +487,9 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_assetManifest(self, graphene_info: ResolveInfo) -> list:
         repository = self.get_repository(graphene_info)
-        base_deployment_asset_graph = graphene_info.context.get_base_deployment_asset_graph(
-            self._handle.to_selector()
-        )
+        base_deployment_asset_graph = self.get_context(
+            graphene_info
+        ).get_base_deployment_asset_graph(self._handle.to_selector())
         asset_graph_differ = (
             AssetGraphDiffer(
                 branch_asset_graph=repository.asset_graph,
@@ -537,6 +562,14 @@ class GrapheneWorkspace(graphene.ObjectType):
 
     class Meta:
         name = "Workspace"
+
+    def __init__(
+        self,
+        locationEntries,
+        workspace_context: BaseWorkspaceRequestContext | None = None,
+    ):
+        self._workspace_context = workspace_context
+        super().__init__(locationEntries=locationEntries)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return "Workspace"

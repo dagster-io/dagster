@@ -64,6 +64,9 @@ mutation {
                 name
                 repositories {
                     name
+                    pipelines {
+                        name
+                    }
                 }
                 isReloadSupported
             }
