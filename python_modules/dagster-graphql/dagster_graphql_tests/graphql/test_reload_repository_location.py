@@ -31,6 +31,9 @@ mutation ($repositoryLocationName: String!) {
                 name
                 repositories {
                     name
+                    pipelines {
+                        name
+                    }
                     displayMetadata {
                         key
                         value

@@ -568,7 +568,6 @@ class GrapheneWorkspace(graphene.ObjectType):
         locationEntries,
         workspace_context: BaseWorkspaceRequestContext | None = None,
     ):
-        self._workspace_context = workspace_context
         super().__init__(locationEntries=locationEntries)
 
     def resolve_id(self, _graphene_info: ResolveInfo):

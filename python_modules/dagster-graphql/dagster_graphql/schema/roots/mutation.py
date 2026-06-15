@@ -763,7 +763,8 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         # an updated WorkspaceRequestContext for us to use.
         new_context = graphene_info.context.reload_code_location(repositoryLocationName)
         return GrapheneWorkspaceLocationEntry(
-            check.not_none(new_context.get_location_entry(repositoryLocationName))
+            check.not_none(new_context.get_location_entry(repositoryLocationName)),
+            workspace_context=new_context,
         )
 
 
