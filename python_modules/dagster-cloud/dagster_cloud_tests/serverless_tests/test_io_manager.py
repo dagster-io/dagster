@@ -1,5 +1,7 @@
 # ruff: noqa: SLF001
+import importlib
 import pickle
+import sys
 from unittest import mock
 
 import pytest
@@ -301,3 +303,44 @@ def test_serverless_io_manager_usable_in_job():
         resources={"io_manager": serverless_io_manager},
     )
     assert defs
+
+
+def test_module_imports_without_boto3_installed():
+    # Simulates a v2 user pod whose image only depends on dagster-cloud (no
+    # [serverless] extra) and therefore has no boto3 installed. The module must
+    # still load cleanly so the presigned-URL IO manager path can be selected
+    # at runtime via SERVERLESS_IO_MANAGER_USE_PRESIGNED_URL.
+    cached = {
+        name: sys.modules.pop(name)
+        for name in (
+            "boto3",
+            "boto3.s3",
+            "boto3.s3.transfer",
+            "boto3.session",
+            "botocore",
+            "dagster_cloud.serverless",
+            "dagster_cloud.serverless.io_manager",
+        )
+        if name in sys.modules
+    }
+    try:
+        # `None` in sys.modules is the standard poison-pill that forces
+        # `import boto3` to raise ImportError.
+        with mock.patch.dict(sys.modules, {"boto3": None}):
+            reloaded = importlib.import_module("dagster_cloud.serverless.io_manager")
+            assert reloaded.ServerlessPresignedURLIOManager is not None
+            # Instantiating the presigned-URL manager must not touch boto3.
+            manager = reloaded.ServerlessPresignedURLIOManager(
+                api_url=API_URL, api_token=API_TOKEN, timeout=30
+            )
+            assert manager is not None
+    finally:
+        # Drop anything we re-imported under the poison-pill and restore the
+        # originals so other tests see a clean module state.
+        for name in (
+            "dagster_cloud.serverless",
+            "dagster_cloud.serverless.io_manager",
+        ):
+            sys.modules.pop(name, None)
+        sys.modules.update(cached)
+        importlib.import_module("dagster_cloud.serverless.io_manager")

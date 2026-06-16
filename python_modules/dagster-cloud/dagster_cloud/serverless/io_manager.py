@@ -2,9 +2,8 @@ import datetime
 import io
 import os
 import pickle
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import boto3
 import dagster._check as check
 import requests
 from dagster import InputContext, OutputContext, UPathIOManager, io_manager
@@ -21,6 +20,9 @@ from requests.adapters import HTTPAdapter
 from upath import UPath
 from urllib3.util.retry import Retry
 
+if TYPE_CHECKING:
+    import boto3
+
 ECS_AGENT_IP = "169.254.170.2"
 
 
@@ -36,7 +38,11 @@ class PickledObjectServerlessIOManager(UPathIOManager):
         base_path = UPath(s3_prefix) if s3_prefix else None
         super().__init__(base_path=base_path)
 
-    def _refresh_boto_session(self) -> tuple[boto3.Session, datetime.datetime]:
+    def _refresh_boto_session(self) -> tuple["boto3.Session", datetime.datetime]:
+        # boto3 is lazy-imported so this module can load in environments where
+        # only the presigned-URL IO manager path is used and boto3 is not installed.
+        import boto3
+
         # We have to do this whacky way to get credentials to ensure that we get iam role
         # we assigned to the task. If we used the default boto behavior, it could get overriden
         # when users set AWS env vars.
