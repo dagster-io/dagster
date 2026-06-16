@@ -88,6 +88,11 @@ type MeasurementConfig = {
   textString: string;
 };
 
+const parsePixels = (value: string) => {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 /**
  * Given a font style and a container width, use a canvas to determine the longest possible
  * middle-truncated string that will fit within the container.
@@ -108,8 +113,14 @@ const calculateMiddleTruncatedText = ({styles, width, textString}: MeasurementCo
 
   const targetWidth = width;
 
-  const {font, letterSpacing, wordSpacing, fontKerning, fontStretch, textRendering} = styles;
-  Object.assign(ctx, {font, letterSpacing, wordSpacing, fontKerning, fontStretch, textRendering});
+  // Only assign `font` (which carries font-stretch via the shorthand) to the
+  // context. Assigning text-shaping properties such as `letterSpacing` or
+  // `textRendering` forces the browser off its fast text-measurement path,
+  // making each `measureText` call dramatically slower — a cost multiplied by
+  // the binary search below and by every rendered row. `letterSpacing` still
+  // affects layout width, so we account for it arithmetically instead.
+  ctx.font = styles.font;
+  const letterSpacing = parsePixels(styles.letterSpacing);
   body.appendChild(canvas);
 
   // Search for the largest possible middle-truncated string that will fit within
@@ -117,7 +128,8 @@ const calculateMiddleTruncatedText = ({styles, width, textString}: MeasurementCo
   const truncated = calculateMiddleTruncation(
     textString,
     targetWidth,
-    (value: string) => ctx.measureText(value).width,
+    (value: string) =>
+      ctx.measureText(value).width + (letterSpacing ? letterSpacing * value.length : 0),
   );
 
   body.removeChild(canvas);
