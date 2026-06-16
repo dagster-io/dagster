@@ -1,20 +1,30 @@
+import subprocess
 import threading
 import time
+from collections import Counter
 from collections.abc import Callable
+from typing import NoReturn
+from unittest.mock import create_autospec
 
 import dagster as dg
 import pytest
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.workspace.workspace import CodeLocationEntry
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.server import open_server_process
-from dagster._grpc.server_watcher import create_grpc_watch_thread
+from dagster._grpc.server_watcher import MAX_RECONNECT_ATTEMPTS, create_grpc_watch_thread
 from dagster._utils import find_free_port
+from dagster._utils.error import SerializableErrorInfo
 from dagster_shared.ipc import interrupt_ipc_subprocess_pid
+
+TEST_WATCH_INTERVAL = 0.2
 
 
 def wait_for_condition(
-    fn: Callable[[], object], interval: int | float, timeout: int | float = 60
+    fn: Callable[[], object], interval: int | float, timeout: int | float | None = None
 ) -> None:
+    timeout = timeout if timeout is not None else min(5, interval * 60)
     start_time = time.time()
     while not fn():
         if time.time() - start_time > timeout:
@@ -23,38 +33,93 @@ def wait_for_condition(
         time.sleep(interval)
 
 
-_noop: Callable = lambda *a: None
-_no_recovery_needed: Callable[[str, str], bool] = lambda *a: False
+def should_not_be_called(name: str) -> Callable[..., NoReturn]:
+    def _should_not_be_called(*args, **kwargs) -> NoReturn:
+        raise Exception(f"This method {name} should not be called")
+
+    return _should_not_be_called
 
 
-def _create_watch_thread(
-    location_name: str,
-    client: DagsterGrpcClient,
-    on_disconnect: Callable[[str], None] = _noop,
-    on_reconnected: Callable[[str], None] = _noop,
-    on_updated: Callable[[str, str], None] = _noop,
-    on_error: Callable[[str], None] = _noop,
-    needs_location_refresh: Callable[[str, str], bool] = _no_recovery_needed,
-    **kwargs: object,
-) -> tuple[threading.Event, threading.Thread]:
-    """Test helper that provides noop defaults for all callbacks."""
-    return create_grpc_watch_thread(
-        location_name,
-        client,
-        on_disconnect=on_disconnect,
-        on_reconnected=on_reconnected,
-        on_updated=on_updated,
-        on_error=on_error,
-        needs_location_refresh=needs_location_refresh,
-        **kwargs,
-    )
+@pytest.fixture
+def create_server_process_and_watch_thread(
+    get_location_entry: Callable[[str], CodeLocationEntry | None],
+    called_event: Counter[str],
+    called_callback: Counter[str],
+    on_disconnect: Callable[[str], None],
+    on_reconnected: Callable[[str], None],
+    instance,
+    process_cleanup,
+) -> Callable[..., tuple[threading.Event, threading.Thread, subprocess.Popen]]:
+    def _create_server_process_and_watch_thread(
+        *,
+        get_location_entry: Callable[[str], CodeLocationEntry | None] = get_location_entry,
+        refresh_code_location: Callable[[str], None] = should_not_be_called(
+            "refresh_code_location"
+        ),
+        on_disconnect: Callable[[str], None] = on_disconnect,
+        on_reconnected: Callable[[str], None] = on_reconnected,
+        on_updated: Callable[[str, str], None] = should_not_be_called("on_updated"),
+        on_error: Callable[[str], None] = should_not_be_called("on_error"),
+        watch_interval: float | None = None,
+        max_reconnect_attempts: int | None = None,
+        fixed_server_id: str | None = None,
+        port: int | None = None,
+    ) -> tuple[threading.Event, threading.Thread, subprocess.Popen]:
+        """Test helper: creates a gRPC server + watch thread.
+
+        on_error/on_updated callback defaults raise if unexpectedly invoked; pass explicit callbacks
+        for events you expect.
+        """
+        port = port or find_free_port()
+
+        # Create initial server
+        server_process = open_server_process(
+            instance.get_ref(),
+            port=port,
+            socket=None,
+            server_command=GrpcServerCommand.API_GRPC,
+            fixed_server_id=fixed_server_id,
+        )
+        process_cleanup.append(server_process)
+
+        client = DagsterGrpcClient(port=port)
+
+        event, watch_thread = create_grpc_watch_thread(
+            LOCATION_NAME,
+            client,
+            get_location_entry=get_location_entry,
+            refresh_code_location=refresh_code_location,
+            on_disconnect=on_disconnect,
+            on_reconnected=on_reconnected,
+            on_updated=on_updated,
+            on_error=on_error,
+            watch_interval=watch_interval,
+            max_reconnect_attempts=max_reconnect_attempts,
+        )
+        watch_thread.start()
+        # Let the watch thread establish the server ID
+        wait_for_condition(
+            lambda: called_callback["get_location_entry_count"] >= 2,
+            interval=watch_interval or TEST_WATCH_INTERVAL,
+            timeout=5,
+        )
+        assert called_event["on_reconnected_count"] == called_event["on_disconnect_count"] <= 1
+        called_event.update(
+            {
+                "on_disconnect_count": 0,
+                "on_reconnected_count": 0,
+                "on_updated_count": 0,
+                "on_error_count": 0,
+            }
+        )
+        return event, watch_thread, server_process
+
+    return _create_server_process_and_watch_thread
 
 
-def test_run_grpc_watch_thread():
-    client = DagsterGrpcClient(port=8080)
-    shutdown_event, watch_thread = _create_watch_thread("test_location", client)
+def test_run_grpc_watch_thread(create_server_process_and_watch_thread):
+    shutdown_event, watch_thread, _ = create_server_process_and_watch_thread()
 
-    watch_thread.start()
     shutdown_event.set()
     watch_thread.join()
 
@@ -78,38 +143,113 @@ def instance():
         yield instance
 
 
-def test_grpc_watch_thread_server_update(instance, process_cleanup):
+@pytest.fixture
+def code_location_entry() -> CodeLocationEntry:
+    return create_autospec(CodeLocationEntry, spec_set=True, instance=True)
+
+
+@pytest.fixture
+def called_event() -> Counter[str]:
+    return Counter(
+        {
+            "on_disconnect_count": 0,
+            "on_reconnected_count": 0,
+            "on_updated_count": 0,
+            "on_error_count": 0,
+        }
+    )
+
+
+LOCATION_NAME = "test_location"
+
+
+@pytest.fixture
+def on_error(called_event: Counter[str]) -> Callable[[str], None]:
+    def _on_error(location_name: str) -> None:
+        assert location_name == LOCATION_NAME
+        called_event["on_error_count"] += 1
+
+    return _on_error
+
+
+@pytest.fixture
+def on_updated(called_event: Counter[str]) -> Callable[[str, str], None]:
+    def _on_updated(location_name: str, new_server_id: str) -> None:
+        assert location_name == LOCATION_NAME
+        called_event["on_updated_count"] += 1
+
+    return _on_updated
+
+
+@pytest.fixture
+def on_disconnect(called_event: Counter[str]) -> Callable[[str], None]:
+    def _on_disconnect(location_name: str) -> None:
+        assert location_name == LOCATION_NAME
+        called_event["on_disconnect_count"] += 1
+
+    return _on_disconnect
+
+
+@pytest.fixture
+def on_reconnected(called_event: Counter[str]) -> Callable[[str], None]:
+    def _on_reconnected(location_name: str) -> None:
+        assert location_name == LOCATION_NAME
+        called_event["on_reconnected_count"] += 1
+
+    return _on_reconnected
+
+
+@pytest.fixture
+def called_callback() -> Counter[str]:
+    return Counter(
+        {
+            "get_location_entry_count": 0,
+            "refresh_code_location_count": 0,
+        }
+    )
+
+
+@pytest.fixture
+def get_location_entry(
+    called_callback: Counter[str], code_location_entry: CodeLocationEntry
+) -> Callable[[str], CodeLocationEntry | None]:
+    def _get_location_entry(location_name: str) -> CodeLocationEntry | None:
+        assert location_name == LOCATION_NAME
+        called_callback["get_location_entry_count"] += 1
+        return code_location_entry
+
+    return _get_location_entry
+
+
+@pytest.fixture
+def refresh_code_location(called_callback: Counter[str]) -> Callable[[str], None]:
+    def _refresh_code_location(location_name) -> None:
+        assert location_name == LOCATION_NAME
+        called_callback["refresh_code_location_count"] += 1
+
+    return _refresh_code_location
+
+
+def test_grpc_watch_thread_server_update(
+    instance, process_cleanup, create_server_process_and_watch_thread
+):
     port = find_free_port()
+    watch_interval = 0.2
 
     called = {}
 
     def on_updated(location_name, _):
-        assert location_name == "test_location"
+        assert location_name == LOCATION_NAME
         called["yup"] = True
 
-    # Create initial server
-    server_process = open_server_process(
-        instance.get_ref(),
+    # Start watch thread
+    shutdown_event, watch_thread, server_process = create_server_process_and_watch_thread(
+        on_updated=on_updated,
+        watch_interval=watch_interval,
         port=port,
-        socket=None,
-        server_command=GrpcServerCommand.API_GRPC,
     )
-    process_cleanup.append(server_process)
-
-    try:
-        # Start watch thread
-        client = DagsterGrpcClient(port=port)
-        watch_interval = 1
-        shutdown_event, watch_thread = _create_watch_thread(
-            "test_location",
-            client,
-            on_updated=on_updated,
-            watch_interval=watch_interval,
-        )
-        watch_thread.start()
-        time.sleep(watch_interval * 3)
-    finally:
-        interrupt_ipc_subprocess_pid(server_process.pid)
+    time.sleep(watch_interval * 3)
+    interrupt_ipc_subprocess_pid(server_process.pid)
 
     assert not called
 
@@ -132,51 +272,27 @@ def test_grpc_watch_thread_server_update(instance, process_cleanup):
     assert called
 
 
-def test_grpc_watch_thread_server_reconnect(process_cleanup, instance):
+def test_grpc_watch_thread_server_reconnect(
+    process_cleanup,
+    instance,
+    called_event,
+    create_server_process_and_watch_thread,
+):
     port = find_free_port()
     fixed_server_id = "fixed_id"
 
-    called = {}
-
-    def on_disconnect(location_name):
-        assert location_name == "test_location"
-        called["on_disconnect"] = True
-
-    def on_reconnected(location_name):
-        assert location_name == "test_location"
-        called["on_reconnected"] = True
-
-    def should_not_be_called(*args, **kwargs):
-        raise Exception("This method should not be called")
-
-    # Create initial server
-    server_process = open_server_process(
-        instance.get_ref(),
-        port=port,
-        socket=None,
-        fixed_server_id=fixed_server_id,
-        server_command=GrpcServerCommand.API_GRPC,
-    )
-    process_cleanup.append(server_process)
-
-    # Start watch thread
-    client = DagsterGrpcClient(port=port)
-    watch_interval = 1
-    shutdown_event, watch_thread = _create_watch_thread(
-        "test_location",
-        client,
-        on_disconnect=on_disconnect,
-        on_reconnected=on_reconnected,
-        on_updated=should_not_be_called,
-        on_error=should_not_be_called,
+    # Create initial server and start watch thread
+    watch_interval = 0.2
+    shutdown_event, watch_thread, server_process = create_server_process_and_watch_thread(
         watch_interval=watch_interval,
+        port=port,
+        fixed_server_id=fixed_server_id,
     )
-    watch_thread.start()
     time.sleep(watch_interval * 3)
 
     # Wait three seconds, simulate restart server, wait three seconds
     interrupt_ipc_subprocess_pid(server_process.pid)
-    wait_for_condition(lambda: called.get("on_disconnect"), watch_interval)
+    wait_for_condition(lambda: called_event.get("on_disconnect_count"), watch_interval)
 
     server_process = open_server_process(
         instance.get_ref(),
@@ -186,68 +302,49 @@ def test_grpc_watch_thread_server_reconnect(process_cleanup, instance):
         server_command=GrpcServerCommand.API_GRPC,
     )
     process_cleanup.append(server_process)
-    wait_for_condition(lambda: called.get("on_reconnected"), watch_interval)
+    wait_for_condition(lambda: called_event.get("on_reconnected_count"), watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
 
 
-def test_grpc_watch_thread_server_error(process_cleanup, instance):
+def test_grpc_watch_thread_server_error(
+    process_cleanup,
+    instance,
+    called_event,
+    on_error,
+    create_server_process_and_watch_thread,
+):
     port = find_free_port()
     fixed_server_id = "fixed_id"
 
     called = {}
 
-    def on_disconnect(location_name):
-        assert location_name == "test_location"
-        called["on_disconnect"] = True
-
-    def on_error(location_name):
-        assert location_name == "test_location"
-
-        called["on_error"] = True
-
     def on_updated(location_name, new_server_id):
-        assert location_name == "test_location"
+        assert location_name == LOCATION_NAME
+        called_event["on_updated_count"] += 1
         called["on_updated"] = new_server_id
 
-    def should_not_be_called(*args, **kwargs):
-        raise Exception("This method should not be called")
-
-    # Create initial server
-    server_process = open_server_process(
-        instance.get_ref(),
-        port=port,
-        socket=None,
-        fixed_server_id=fixed_server_id,
-        server_command=GrpcServerCommand.API_GRPC,
-    )
-    process_cleanup.append(server_process)
-
-    # Start watch thread
-    client = DagsterGrpcClient(port=port)
-    watch_interval = 1
+    # Create initial server and start watch thread
+    watch_interval = 0.2
     max_reconnect_attempts = 3
-    shutdown_event, watch_thread = _create_watch_thread(
-        "test_location",
-        client,
-        on_disconnect=on_disconnect,
-        on_reconnected=should_not_be_called,
+    shutdown_event, watch_thread, server_process = create_server_process_and_watch_thread(
         on_updated=on_updated,
         on_error=on_error,
         watch_interval=watch_interval,
         max_reconnect_attempts=max_reconnect_attempts,
+        port=port,
+        fixed_server_id=fixed_server_id,
     )
-    watch_thread.start()
     time.sleep(watch_interval * 3)
 
     # Simulate restart failure
     # Wait for reconnect attempts to exhaust and on_error callback to be called
     interrupt_ipc_subprocess_pid(server_process.pid)
-    wait_for_condition(lambda: called.get("on_error"), watch_interval)
+    wait_for_condition(lambda: called_event.get("on_error_count"), watch_interval)
 
-    assert called["on_disconnect"]
-    assert called["on_error"]
+    assert called_event["on_disconnect_count"]
+    assert called_event["on_error_count"]
     assert not called.get("on_updated")
 
     new_server_id = "new_server_id"
@@ -268,50 +365,45 @@ def test_grpc_watch_thread_server_error(process_cleanup, instance):
     assert called["on_updated"] == new_server_id
 
 
-def test_run_grpc_watch_without_server():
+def test_run_grpc_watch_without_server(
+    called_event, on_error, create_server_process_and_watch_thread
+):
     # Starting a thread for a server that never existed should immediately error out
 
-    client = DagsterGrpcClient(port=8080)
-    watch_interval = 1
+    watch_interval = 0.2
     max_reconnect_attempts = 1
 
-    called = {}
-
-    def on_disconnect(location_name):
-        assert location_name == "test_location"
-        called["on_disconnect"] = True
-
-    def on_error(location_name):
-        assert location_name == "test_location"
-        called["on_error"] = True
-
-    def should_not_be_called(*args, **kwargs):
-        raise Exception("This method should not be called")
-
-    shutdown_event, watch_thread = _create_watch_thread(
-        "test_location",
-        client,
-        on_disconnect=on_disconnect,
-        on_reconnected=should_not_be_called,
-        on_updated=should_not_be_called,
+    shutdown_event, watch_thread, server_process = create_server_process_and_watch_thread(
         on_error=on_error,
         watch_interval=watch_interval,
         max_reconnect_attempts=max_reconnect_attempts,
     )
+    interrupt_ipc_subprocess_pid(server_process.pid)
 
-    watch_thread.start()
     time.sleep(watch_interval * 3)
 
     # Wait for reconnect attempts to exhaust and on_error callback to be called
-    wait_for_condition(lambda: called.get("on_error"), watch_interval)
+    wait_for_condition(lambda: called_event.get("on_error_count"), watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
 
-    assert called["on_disconnect"]
+    assert called_event["on_disconnect_count"]
 
 
-def test_grpc_watch_thread_recovery_when_errored(process_cleanup, instance):
+@pytest.mark.parametrize("cycles_to_recover", [3, 20])
+def test_grpc_watch_thread_recovery_when_errored(
+    process_cleanup,
+    instance,
+    code_location_entry,
+    called_event,
+    called_callback,
+    on_error,
+    on_updated,
+    refresh_code_location,
+    create_server_process_and_watch_thread,
+    cycles_to_recover,
+):
     """Test that the watch thread fires on_disconnect + on_reconnected when the workspace entry
     is in an error state but the server is reachable.
 
@@ -320,99 +412,100 @@ def test_grpc_watch_thread_recovery_when_errored(process_cleanup, instance):
     dying pod). The watch thread should detect that the location is errored and fire disconnect +
     reconnect callbacks on the next poll cycle to trigger a recovery refresh.
     """
-    port = find_free_port()
     fixed_server_id = "fixed_id"
 
-    called = {
+    # Start watch thread with a short interval for faster test execution
+    watch_interval = 0.1
+    hooks = {}
+    if cycles_to_recover > MAX_RECONNECT_ATTEMPTS:
+        hooks["on_updated"] = on_updated
+        hooks["on_error"] = on_error
+    shutdown_event, watch_thread, _ = create_server_process_and_watch_thread(
+        refresh_code_location=refresh_code_location,
+        watch_interval=watch_interval,
+        fixed_server_id=fixed_server_id,
+        **hooks,
+    )
+
+    # Let the watch thread establish the server ID
+    wait_for_condition(
+        lambda: called_callback["get_location_entry_count"] >= 2,
+        interval=watch_interval,
+        timeout=5,
+    )
+    assert called_event == {
         "on_disconnect_count": 0,
         "on_reconnected_count": 0,
         "on_updated_count": 0,
         "on_error_count": 0,
-        "simulate_error": False,
     }
-
-    def on_disconnect(location_name):
-        assert location_name == "test_location"
-        called["on_disconnect_count"] += 1
-
-    def on_reconnected(location_name):
-        assert location_name == "test_location"
-        called["on_reconnected_count"] += 1
-
-    def on_updated(location_name, new_server_id):
-        assert location_name == "test_location"
-        called["on_updated_count"] += 1
-
-    def on_error(location_name):
-        assert location_name == "test_location"
-        called["on_error_count"] += 1
-
-    def has_error(location_name, version_key):
-        return called["simulate_error"]
-
-    # Create server
-    server_process = open_server_process(
-        instance.get_ref(),
-        port=port,
-        socket=None,
-        fixed_server_id=fixed_server_id,
-        server_command=GrpcServerCommand.API_GRPC,
-    )
-    process_cleanup.append(server_process)
-
-    # Start watch thread with a short interval for faster test execution
-    client = DagsterGrpcClient(port=port)
-    watch_interval = 0.1
-    shutdown_event, watch_thread = _create_watch_thread(
-        "test_location",
-        client,
-        on_disconnect=on_disconnect,
-        on_reconnected=on_reconnected,
-        on_updated=on_updated,
-        on_error=on_error,
-        needs_location_refresh=has_error,
-        watch_interval=watch_interval,
-    )
-    watch_thread.start()
-
-    # Let the watch thread establish the server ID
-    time.sleep(watch_interval * 5)
-    assert called["on_disconnect_count"] == 0
-    assert called["on_reconnected_count"] == 0
+    assert called_callback["refresh_code_location_count"] == 0
+    called_callback_snapshot = Counter(called_callback)
 
     # Simulate that the workspace entry is in an error state
-    called["simulate_error"] = True
+    code_location_entry.load_error = SerializableErrorInfo(
+        "Simulated failure", [], DagsterUserCodeUnreachableError.__name__
+    )
 
     # The watch thread should detect the error and fire on_disconnect + on_reconnected even
     # though the server ID hasn't changed
     wait_for_condition(
-        lambda: called["on_reconnected_count"] > 0,
+        lambda: called_callback["refresh_code_location_count"] >= 1,
         interval=watch_interval,
         timeout=5,
     )
-    assert called["on_disconnect_count"] > 0
-
-    # Callbacks should keep firing on each poll cycle while the error persists
-    reconnect_count_after_first = called["on_reconnected_count"]
-    disconnect_count_after_first = called["on_disconnect_count"]
-    wait_for_condition(
-        lambda: called["on_reconnected_count"] > reconnect_count_after_first,
-        interval=watch_interval,
-        timeout=5,
+    assert (
+        called_callback["get_location_entry_count"]
+        > called_callback_snapshot["get_location_entry_count"]
     )
-    assert called["on_disconnect_count"] > disconnect_count_after_first
+    called_event_expected = Counter(
+        {
+            "on_disconnect_count": 1,
+            "on_reconnected_count": 0,
+            "on_updated_count": 0,
+            "on_error_count": 0,
+        }
+    )
+    assert called_event == called_event_expected
+    called_callback_snapshot = Counter(called_callback)
+    time.sleep(watch_interval * cycles_to_recover)
+    if cycles_to_recover > MAX_RECONNECT_ATTEMPTS:
+        called_event_expected["on_error_count"] = 1
+    assert called_event == called_event_expected
 
-    # Clear the error — callbacks should stop firing. Sleep one interval to let any
+    # Clear the error — on_updated callback should fire. Sleep one interval to let any
     # in-flight poll cycle finish, then capture the count and verify it stays stable.
-    called["simulate_error"] = False
-    time.sleep(watch_interval)
-    disconnect_count_after_clear = called["on_disconnect_count"]
-    reconnect_count_after_clear = called["on_reconnected_count"]
+    code_location_entry.load_error = None
+    called_event_expected[
+        "on_reconnected_count" if cycles_to_recover < MAX_RECONNECT_ATTEMPTS else "on_updated_count"
+    ] = 1
+    wait_for_condition(
+        lambda: called_event == called_event_expected,
+        interval=watch_interval,
+        timeout=5,
+    )
+    assert (
+        called_callback["get_location_entry_count"]
+        >= called_callback_snapshot["get_location_entry_count"] + cycles_to_recover
+    )
+    assert called_callback["refresh_code_location_count"] >= min(
+        MAX_RECONNECT_ATTEMPTS - 1, cycles_to_recover
+    )
+    called_callback_snapshot = Counter(called_callback)
     time.sleep(watch_interval * 2)
-    assert called["on_disconnect_count"] == disconnect_count_after_clear
-    assert called["on_reconnected_count"] == reconnect_count_after_clear
-    # Once stable, disconnect and reconnect counts should be equal (they fire in pairs)
-    assert called["on_disconnect_count"] == called["on_reconnected_count"]
+    wait_for_condition(
+        lambda: called_event == called_event_expected,
+        interval=watch_interval,
+        timeout=5,
+    )
+    assert (
+        called_callback["get_location_entry_count"]
+        >= called_callback_snapshot["get_location_entry_count"] + 2
+    )
+    assert (
+        called_callback["refresh_code_location_count"]
+        == called_callback_snapshot["refresh_code_location_count"]
+    )
 
     shutdown_event.set()
     watch_thread.join()

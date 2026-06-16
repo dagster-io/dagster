@@ -1052,6 +1052,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
         shutdown_event, watch_thread = create_grpc_watch_thread(
             location_name,
             client,
+            get_location_entry=self._get_location_entry_without_locking,
+            refresh_code_location=self.refresh_code_location,
             on_updated=lambda location_name, new_server_id: self._send_state_event_to_subscribers(
                 LocationStateChangeEvent(
                     LocationStateChangeEventType.LOCATION_UPDATED,
@@ -1084,7 +1086,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                     message="Reconnected to the server.",
                 )
             ),
-            needs_location_refresh=self._should_recover_location,
         )
         self._watch_thread_shutdown_events[location_name] = shutdown_event
         self._watch_threads[location_name] = watch_thread
@@ -1181,21 +1182,15 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                 is not None
             )
 
-    def _should_recover_location(self, location_name: str, version_key: str) -> bool:
-        """Check without locking whether a code location needs a recovery refresh.
+    def _get_location_entry_without_locking(self, location_name: str) -> CodeLocationEntry | None:
+        """Get the current location entry record (if it exists) without locking.
 
-        Returns True if the location is in an error state or has a stale version key.
         Called from the watch thread without holding self._lock. This is safe because
-        _current_workspace is replaced atomically (single reference assignment) and we only
-        need a consistent-enough snapshot — correctness doesn't depend on reading the latest
-        value.
+        _current_workspace is replaced atomically (single reference assignment) and we only need a
+        consistent-enough snapshot — correctness doesn't depend on reading the latest value.
         """
         check.str_param(location_name, "location_name")
-        check.str_param(version_key, "version_key")
-        entry = self._current_workspace.code_location_entries.get(location_name, None)
-        if entry is None:
-            return False
-        return entry.load_error is not None or entry.version_key != version_key
+        return self._current_workspace.code_location_entries.get(location_name)
 
     def reload_code_location(self, name: str) -> None:
         new_entry = self._load_location(
@@ -1274,15 +1269,16 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
         )
 
         location_is_errored = self.has_code_location_error(event.location_name)
-        # Refresh on update/error events, or on any non-disconnect event when the location is
-        # errored (to attempt recovery). Skip disconnect events for errored locations since the
-        # server is unreachable and retries would fail.
-        should_refresh = event.event_type in refresh_event_types or (
-            location_is_errored
-            and event.event_type != LocationStateChangeEventType.LOCATION_DISCONNECTED
-        )
+        # Refresh on update/error events, or on any event when the location is errored (to attempt
+        # recovery).
+        should_refresh = location_is_errored or event.event_type in refresh_event_types
 
         if should_refresh:
+            # In case of an updated location, reload the handle to get updated repository data and
+            # re-attach a subscriber
+            # In case of a location error, reload the handle in order to update the workspace
+            # with the correct error messages and/or to attempt to resolve the error (in the case of
+            # a transient, recoverable error)
             logger.info(
                 f"Received {event.event_type} event for location {event.location_name}, refreshing"
             )
