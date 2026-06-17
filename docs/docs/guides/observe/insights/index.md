@@ -100,6 +100,7 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 | Materializations | The number of asset materializations associated with computing this object.                                                                                                                                                                 |
 | Observations     | The number of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) associated with computing this object.                                                                                                        |
 | Step failures    | The number of times steps failed when computing this object. Steps that retry and succeed aren't included in this metric.                                                                                                                   |
+| Run concurrency  | Number of runs executing concurrently in this deployment. Each chart bucket shows the peak (maximum) concurrent count within that time window.                                                                                              |
 
 ## Track cost metrics for external services \{#track-cost-metrics}
 
