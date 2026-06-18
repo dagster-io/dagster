@@ -1909,7 +1909,11 @@ type ReloadWorkspaceMutation {
   Output: ReloadWorkspaceMutationResult!
 }
 
-union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
+union ReloadWorkspaceMutationResult = ReloadWorkspaceSuccess | UnauthorizedError | PythonError
+
+type ReloadWorkspaceSuccess {
+  success: Boolean!
+}
 
 type Workspace {
   id: String!

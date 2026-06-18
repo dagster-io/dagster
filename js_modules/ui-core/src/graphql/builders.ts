@@ -4566,7 +4566,12 @@ type ReloadWorkspaceMutation = {
   Output: ReloadWorkspaceMutationResult;
 };
 
-type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Workspace;
+type ReloadWorkspaceMutationResult = PythonError | ReloadWorkspaceSuccess | UnauthorizedError;
+
+type ReloadWorkspaceSuccess = {
+  __typename: 'ReloadWorkspaceSuccess';
+  success: Scalars['Boolean']['output'];
+};
 
 type ReportAssetCheckEvaluationResult =
   | PythonError
@@ -14019,6 +14024,18 @@ export const buildReloadWorkspaceMutation = (
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
+  };
+};
+
+export const buildReloadWorkspaceSuccess = (
+  overrides?: Partial<ReloadWorkspaceSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ReloadWorkspaceSuccess'} & ReloadWorkspaceSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReloadWorkspaceSuccess');
+  return {
+    __typename: 'ReloadWorkspaceSuccess',
+    success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
   };
 };
 

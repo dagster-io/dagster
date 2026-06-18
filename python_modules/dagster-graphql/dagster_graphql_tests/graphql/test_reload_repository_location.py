@@ -31,6 +31,9 @@ mutation ($repositoryLocationName: String!) {
                 name
                 repositories {
                     name
+                    pipelines {
+                        name
+                    }
                     displayMetadata {
                         key
                         value
@@ -51,6 +54,17 @@ RELOAD_WORKSPACE_QUERY = """
 mutation {
    reloadWorkspace {
       __typename
+      ... on ReloadWorkspaceSuccess {
+        success
+      }
+  }
+}
+"""
+
+WORKSPACE_QUERY = """
+query {
+   workspaceOrError {
+      __typename
       ... on Workspace {
         locationEntries {
           __typename
@@ -64,6 +78,9 @@ mutation {
                 name
                 repositories {
                     name
+                    pipelines {
+                        name
+                    }
                 }
                 isReloadSupported
             }
@@ -76,6 +93,26 @@ mutation {
   }
 }
 """
+
+
+def reload_workspace(graphql_context):
+    result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
+
+    assert result
+    assert result.data
+    assert result.data["reloadWorkspace"]
+    assert result.data["reloadWorkspace"]["__typename"] == "ReloadWorkspaceSuccess"
+    assert result.data["reloadWorkspace"]["success"] is True
+
+    result = execute_dagster_graphql(
+        graphql_context.process_context.create_request_context(), WORKSPACE_QUERY
+    )
+
+    assert result
+    assert result.data
+    assert result.data["workspaceOrError"]
+    assert result.data["workspaceOrError"]["__typename"] == "Workspace"
+    return result.data["workspaceOrError"]["locationEntries"]
 
 
 MultiLocationTestSuite: Any = make_graphql_context_test_suite(
@@ -108,14 +145,7 @@ class TestReloadWorkspaceReadOnly(ReadonlyGraphQLContextTestMatrix):
 
 class TestReloadWorkspace(MultiLocationTestSuite):
     def test_reload_workspace(self, graphql_context):
-        result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
-
-        assert result
-        assert result.data
-        assert result.data["reloadWorkspace"]
-        assert result.data["reloadWorkspace"]["__typename"] == "Workspace"
-
-        nodes = result.data["reloadWorkspace"]["locationEntries"]
+        nodes = reload_workspace(graphql_context)
 
         assert len(nodes) == 2
 
@@ -134,14 +164,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
             # simulate removing an origin, reload
 
             origins_mock.return_value = original_origins[0:1]
-            result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
-
-            assert result
-            assert result.data
-            assert result.data["reloadWorkspace"]
-            assert result.data["reloadWorkspace"]["__typename"] == "Workspace"
-
-            nodes = result.data["reloadWorkspace"]["locationEntries"]
+            nodes = reload_workspace(graphql_context)
 
             assert len(nodes) == 1
 
@@ -166,14 +189,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
 
             origins_mock.return_value = original_origins
 
-            result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
-
-            assert result
-            assert result.data
-            assert result.data["reloadWorkspace"]
-            assert result.data["reloadWorkspace"]["__typename"] == "Workspace"
-
-            nodes = result.data["reloadWorkspace"]["locationEntries"]
+            nodes = reload_workspace(graphql_context)
             assert len(nodes) == 3
 
             assert (
@@ -199,9 +215,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
             original_origins.append(original_origins[0]._replace(location_name="location_copy"))  # ty: ignore[unresolved-attribute]
             origins_mock.return_value = original_origins
 
-            result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
-
-            nodes = result.data["reloadWorkspace"]["locationEntries"]
+            nodes = reload_workspace(graphql_context)
             assert len(nodes) == 4
 
             assert (
@@ -226,9 +240,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
 
             original_origins[0] = original_origins[0]._replace(location_name="new_location_name")  # ty: ignore[invalid-assignment]
 
-            result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
-
-            nodes = result.data["reloadWorkspace"]["locationEntries"]
+            nodes = reload_workspace(graphql_context)
             assert len(nodes) == 4
 
             assert (

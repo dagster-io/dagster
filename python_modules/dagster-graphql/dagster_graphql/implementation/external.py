@@ -165,11 +165,11 @@ def fetch_workspace(
     )
 
     nodes = [
-        GrapheneWorkspaceLocationEntry(entry)
+        GrapheneWorkspaceLocationEntry(entry, workspace_request_context)
         for entry in workspace_request_context.get_code_location_entries().values()
     ]
 
-    return GrapheneWorkspace(locationEntries=nodes)
+    return GrapheneWorkspace(locationEntries=nodes, workspace_context=workspace_request_context)
 
 
 def fetch_location_statuses(
