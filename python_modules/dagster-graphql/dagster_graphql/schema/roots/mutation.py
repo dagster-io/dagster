@@ -35,7 +35,7 @@ from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_reexecution,
     launch_reexecution_from_parent_run,
 )
-from dagster_graphql.implementation.external import fetch_workspace, get_full_remote_job_or_raise
+from dagster_graphql.implementation.external import get_full_remote_job_or_raise
 from dagster_graphql.implementation.fetch_app_managed_components import (
     delete_app_managed_component,
     set_app_managed_component,
@@ -76,7 +76,7 @@ from dagster_graphql.schema.errors import (
     GrapheneUnauthorizedError,
     GrapheneUnsupportedOperationError,
 )
-from dagster_graphql.schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
+from dagster_graphql.schema.external import GrapheneWorkspaceLocationEntry
 from dagster_graphql.schema.inputs import (
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
@@ -801,12 +801,21 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
         )
 
 
+class GrapheneReloadWorkspaceSuccess(graphene.ObjectType):
+    """Output indicating that the workspace was reloaded."""
+
+    success = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "ReloadWorkspaceSuccess"
+
+
 class GrapheneReloadWorkspaceMutationResult(graphene.Union):
     """The output from reloading the workspace."""
 
     class Meta:
         types = (
-            GrapheneWorkspace,
+            GrapheneReloadWorkspaceSuccess,
             GrapheneUnauthorizedError,
             GraphenePythonError,
         )
@@ -824,8 +833,8 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
     @capture_error
     @check_permission(Permissions.RELOAD_WORKSPACE)
     def mutate(self, graphene_info: ResolveInfo):
-        new_context = graphene_info.context.reload_workspace()
-        return fetch_workspace(new_context)
+        graphene_info.context.reload_workspace()
+        return GrapheneReloadWorkspaceSuccess(success=True)
 
 
 class GrapheneAssetWipeSuccess(graphene.ObjectType):

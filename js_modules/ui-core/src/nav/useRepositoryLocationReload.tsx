@@ -310,36 +310,40 @@ export const reloadFnForWorkspace = async (client: ApolloClient<any>): Promise<A
   ) {
     return {type: 'error', error: data?.reloadWorkspace, errorLocationId: null};
   }
+  let result;
+  try {
+    result = await client.query<
+      RepositoryLocationStatusQuery,
+      RepositoryLocationStatusQueryVariables
+    >({
+      query: REPOSITORY_LOCATION_STATUS_QUERY,
+      fetchPolicy: 'no-cache',
+    });
+  } catch (e) {
+    return {
+      type: 'error',
+      error: {message: e instanceof ApolloError ? e.message : 'An unexpected error occurred'},
+      errorLocationId: null,
+    };
+  }
+  const workspaceOrError = result.data?.workspaceOrError;
+  if (!workspaceOrError) {
+    return {type: 'error', error: {message: 'Unable to load definitions'}, errorLocationId: null};
+  }
+  if (workspaceOrError.__typename === 'PythonError') {
+    return {type: 'error', error: workspaceOrError, errorLocationId: null};
+  }
   return {
     type: 'finish-mutation-and-start-polling',
-    locationIds: data.reloadWorkspace.locationEntries.map((l) => l.id),
+    locationIds: workspaceOrError.locationEntries.map((l) => l.id),
   };
 };
 
 const RELOAD_WORKSPACE_MUTATION = gql`
   mutation ReloadWorkspaceMutation {
     reloadWorkspace {
-      ... on Workspace {
-        id
-        locationEntries {
-          name
-          id
-          loadStatus
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              repositories {
-                id
-                name
-                pipelines {
-                  id
-                  name
-                }
-              }
-            }
-            ...PythonErrorFragment
-          }
-        }
+      ... on ReloadWorkspaceSuccess {
+        success
       }
       ...UnauthorizedErrorFragment
       ...PythonErrorFragment
