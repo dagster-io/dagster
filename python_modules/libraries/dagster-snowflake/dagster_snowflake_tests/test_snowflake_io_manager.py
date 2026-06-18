@@ -283,10 +283,12 @@ def test_ensure_schema_exists_creates_missing_schema():
     )
 
     assert mock_connection.cursor.call_count == 2
-    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
-    assert "information_schema.schemata" in calls[0]
-    assert "LOWER(schema_name) = LOWER('test_schema')" in calls[0]
-    assert "create schema test_schema" in calls[1]
+    schema_query, schema_params = mock_cursor.execute.call_args_list[0][0]
+    create_query = mock_cursor.execute.call_args_list[1][0][0]
+    assert "information_schema.schemata" in schema_query
+    assert "LOWER(schema_name) = LOWER(%s)" in schema_query
+    assert schema_params == ("test_schema",)
+    assert "create schema test_schema" in create_query
 
 
 def test_ensure_schema_exists_skips_create_when_schema_exists():
@@ -306,6 +308,7 @@ def test_ensure_schema_exists_skips_create_when_schema_exists():
     )
 
     assert mock_connection.cursor.call_count == 1
-    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
-    assert len(calls) == 1
-    assert "information_schema.schemata" in calls[0]
+    schema_query, schema_params = mock_cursor.execute.call_args_list[0][0]
+    assert "information_schema.schemata" in schema_query
+    assert "LOWER(schema_name) = LOWER(%s)" in schema_query
+    assert schema_params == ("test_schema",)
