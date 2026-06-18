@@ -326,7 +326,9 @@ class DbtEventIterator(Iterator[T]):
         record_observation_usage: bool = True,
     ) -> "DbtEventIterator[DbtDagsterEventType]":
         """Associate each warehouse query with the produced asset materializations for use in Dagster
-        Plus Insights. Currently supports Snowflake and BigQuery.
+        Plus Insights. Currently supports Snowflake and BigQuery. For any other adapter (e.g.
+        DuckDB), this is a no-op: a warning is logged and the dbt events pass through unchanged,
+        so the same pipeline can run locally against an unsupported warehouse without failing.
 
         For more information, see the documentation for
         `dagster_cloud.dagster_insights.dbt_with_snowflake_insights` and
@@ -393,6 +395,12 @@ class DbtEventIterator(Iterator[T]):
                 dbt_cli_invocation=self._dbt_cli_invocation,
             )
         else:
-            check.failed(
-                f"The `with_insights` method is only supported for Snowflake and BigQuery and is not supported for adapter type `{adapter_type}`"
+            logger.warning(
+                "Dagster+ Insights is only supported for the Snowflake and BigQuery dbt"
+                f" adapters, but the dbt project uses the `{adapter_type}` adapter. Skipping"
+                " insights; dbt events will pass through unchanged."
+            )
+            return DbtEventIterator(
+                events=self,
+                dbt_cli_invocation=self._dbt_cli_invocation,
             )
