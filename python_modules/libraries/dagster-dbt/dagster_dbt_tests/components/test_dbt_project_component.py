@@ -931,3 +931,45 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
     assert len(deps) == 1
     assert deps[0].asset_key == AssetKey("foo_upstream_defined")
     assert deps[0].metadata["dagster/table_name"] == table_name
+
+
+def test_include_metadata_insights_calls_with_insights(dbt_path: Path) -> None:
+    """Test that include_metadata: ['insights'] causes .with_insights() to be called on the event iterator."""
+    comp = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), "include_metadata": ["insights"]},
+    )
+    assert "insights" in comp.include_metadata
+
+    # Mock the DbtEventIterator to verify .with_insights() is called
+    mock_iterator = MagicMock()
+    mock_iterator.with_insights.return_value = iter([])
+
+    context = dg.build_asset_context()
+    mock_dbt = MagicMock(spec=DbtCliResource)
+    mock_dbt.cli.return_value.stream.return_value = mock_iterator
+
+    # Call _get_dbt_event_iterator and verify with_insights was chained
+    with _set_resolution_context(ResolutionContext.default()):
+        comp._get_dbt_event_iterator(context, mock_dbt)  # noqa: SLF001
+    mock_iterator.with_insights.assert_called_once()
+
+
+def test_include_metadata_without_insights_does_not_call_with_insights(dbt_path: Path) -> None:
+    """Test that without 'insights' in include_metadata, .with_insights() is NOT called."""
+    comp = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), "include_metadata": ["column_metadata"]},
+    )
+
+    mock_iterator = MagicMock()
+    mock_iterator.fetch_column_metadata.return_value = mock_iterator
+
+    context = dg.build_asset_context()
+    mock_dbt = MagicMock(spec=DbtCliResource)
+    mock_dbt.cli.return_value.stream.return_value = mock_iterator
+
+    with _set_resolution_context(ResolutionContext.default()):
+        comp._get_dbt_event_iterator(context, mock_dbt)  # noqa: SLF001
+    mock_iterator.with_insights.assert_not_called()
+    mock_iterator.fetch_column_metadata.assert_called_once()

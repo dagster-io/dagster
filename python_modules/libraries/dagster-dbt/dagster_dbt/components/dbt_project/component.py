@@ -79,7 +79,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
     return DbtProjectArgsManager(args)
 
 
-DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
+DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count", "insights"]
 
 
 @public
@@ -391,6 +391,8 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             iterator = iterator.fetch_column_metadata()
         if "row_count" in self.include_metadata:
             iterator = iterator.fetch_row_counts()
+        if "insights" in self.include_metadata:
+            iterator = iterator.with_insights()
         return iterator
 
     @public
