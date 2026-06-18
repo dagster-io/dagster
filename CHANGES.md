@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.10 (core) / 0.29.10 (libraries)
+
+### Bugfixes
+
+- Fixed a bug where `DagsterInstance.get_latest_materialization_event` (and `get_asset_records`) could return a stale pre-wipe materialization for a wiped asset once a new run targeting the asset started or an observation was reported. In Dagster+, fixed the analogous bug where wiping partitions could leave the wiped partition's materialization as the asset's latest materialization.
+- Fixed an issue where an asset backfill could get stuck — emitting no further runs but never completing — when an asset whose partitions definition includes certain dates depended on an asset whose partitions definition excludes them.
+- Fixed a performance issue where assets partitioned by a cron schedule using an explicit minute list (e.g. `0,30 * * * *`) computed partition counts much more slowly than the equivalent `*/30` schedule.
+- Improved the performance of loading the backfills for a partition set on deployments with a large number of backfills, which previously fetched and deserialized every backfill in the deployment on each request.
+- [ui] Fixed a performance regression that caused views with truncated text, such as the asset catalog, to render slowly.
+- [dagster-cloud] Fixed an issue where importing `dagster_cloud.serverless` could fail with a missing `boto3` dependency on serverless deployments that did not install the `[serverless]` extra.
+
 ## 1.13.9 (core) / 0.29.9 (libraries)
 
 ### New
