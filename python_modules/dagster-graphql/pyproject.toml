@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-graphql"
-version = "1!0+dev"
+version = "1.13.10"
 description = "The GraphQL API for Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.10",
     "graphene>=3,<4",
     "gql[requests]>=3,<5",
     "requests",

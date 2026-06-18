@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-shared"
-version = "1!0+dev"
+version = "1.13.10"
 description = "Shared code between dagster and dagster-dg-core."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
