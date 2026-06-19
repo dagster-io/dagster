@@ -306,6 +306,7 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
     # We need type-ignores here because type checkers don't understand the `*_PRESENT` kwargs.
     clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
+    # FIXME add an output to this
     tutorial_lr = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
 
     tutorial_rf = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})  # pyright: ignore[reportPossiblyUnboundVariable]
