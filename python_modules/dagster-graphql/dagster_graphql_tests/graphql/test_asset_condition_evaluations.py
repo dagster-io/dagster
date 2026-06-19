@@ -17,11 +17,16 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.snap import PartitionsSnap
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
@@ -527,6 +532,34 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             subsets_with_metadata=[],
         )
 
+    def _get_key_range_condition_evaluation(
+        self,
+        asset_key: AssetKey,
+        description: str,
+        partition_key_ranges: Sequence[PartitionKeyRange],
+    ) -> AutomationConditionEvaluation:
+        partitions_snap = PartitionsSnap.from_def(DynamicPartitionsDefinition(name="dynamic"))
+        subset = SerializableEntitySubset(
+            key=asset_key,
+            value=KeyRangesPartitionsSubset(
+                partitions_snap=partitions_snap,
+                key_ranges=partition_key_ranges,
+            ),
+        )
+        return AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionNodeSnapshot(
+                class_name="...",
+                description=description,
+                unique_id=str(random.randint(0, 100000000)),
+            ),
+            true_subset=subset,
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel(),
+            start_timestamp=123,
+            end_timestamp=456,
+            child_evaluations=[],
+            subsets_with_metadata=[],
+        )
+
     def test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
         asset_key = AssetKey("upstream_static_partitioned_asset")
         partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
@@ -821,6 +854,86 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "c",
             "d",
         }
+
+    def test_get_evaluations_tolerates_deleted_historical_partition_size(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        asset_key = AssetKey("dynamic_partitioned_asset")
+        graphql_context.instance.add_dynamic_partitions("dynamic", ["a"])
+        evaluation = self._get_key_range_condition_evaluation(
+            asset_key,
+            "stale historical subset",
+            [PartitionKeyRange("a", "a")],
+        )
+
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=201,
+            asset_evaluations=[
+                AutomationConditionEvaluationWithRunIds(evaluation=evaluation, run_ids=frozenset())
+            ],
+        )
+
+        with patch.object(
+            KeyRangesPartitionsSubset,
+            "__len__",
+            side_effect=DagsterInvalidInvocationError("Partition key was deleted."),
+        ):
+            results = execute_dagster_graphql(
+                graphql_context,
+                QUERY,
+                variables={
+                    "assetKey": {"path": ["dynamic_partitioned_asset"]},
+                    "limit": 10,
+                    "cursor": None,
+                },
+            )
+
+        assert not results.errors
+        records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
+        assert len(records) == 1
+        assert records[0]["numRequested"] == 0
+        assert records[0]["evaluationNodes"][0]["numTrue"] == 0
+
+    def test_get_partition_evaluation_tolerates_deleted_historical_partition_membership(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        asset_key = AssetKey("dynamic_partitioned_asset")
+        graphql_context.instance.add_dynamic_partitions("dynamic", ["a"])
+        evaluation = self._get_key_range_condition_evaluation(
+            asset_key,
+            "stale historical subset",
+            [PartitionKeyRange("a", "a")],
+        )
+
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=202,
+            asset_evaluations=[
+                AutomationConditionEvaluationWithRunIds(evaluation=evaluation, run_ids=frozenset())
+            ],
+        )
+
+        with patch.object(
+            KeyRangesPartitionsSubset,
+            "__contains__",
+            side_effect=DagsterInvalidInvocationError("Partition key was deleted."),
+        ):
+            results = execute_dagster_graphql(
+                graphql_context,
+                LEGACY_QUERY_FOR_SPECIFIC_PARTITION,
+                variables={
+                    "assetKey": {"path": ["dynamic_partitioned_asset"]},
+                    "partition": "a",
+                    "evaluationId": 202,
+                },
+            )
+
+        assert not results.errors
+        evaluation = results.data["assetConditionEvaluationForPartition"]
+        assert evaluation["evaluationNodes"][0]["status"] == "FALSE"
 
     def test_since_metadata_field(self, graphql_context: WorkspaceRequestContext):
         """Test that the sinceMetadata field is correctly populated for SinceCondition evaluations."""
