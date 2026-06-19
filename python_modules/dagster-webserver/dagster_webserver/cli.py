@@ -136,9 +136,10 @@ DEFAULT_POOL_SIZE = 1
 @click.option(
     "--db-pool-size",
     help=(
-        "The number of connections to keep open in the sqlalchemy pool. Set to 0 to disable "
-        "persistent connections, which is required for pgBouncer transaction-mode pooling. "
-        "Not respected in all configurations."
+        "The number of connections to keep open in the sqlalchemy QueuePool. Note that 0 means "
+        "*no limit* (unlimited persistent connections), not disabled. To drop persistent "
+        "connections for pgBouncer transaction-mode pooling, set pool_mode: transaction in the "
+        "postgres storage config instead (uses a NullPool). Not respected in all configurations."
     ),
     default=DEFAULT_POOL_SIZE,
     type=click.INT,
