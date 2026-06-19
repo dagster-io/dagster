@@ -43,6 +43,10 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
         token_provider: "PgTokenProvider | None" = None,
+        pool_size: int | None = None,
+        max_overflow: int | None = None,
+        pool_recycle: int | None = None,
+        pool_mode: str | None = None,
     ):
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
@@ -50,13 +54,31 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         )
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._run_storage = PostgresRunStorage(
-            postgres_url, should_autocreate_tables, token_provider=token_provider
+            postgres_url,
+            should_autocreate_tables,
+            token_provider=token_provider,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_recycle=pool_recycle,
+            pool_mode=pool_mode,
         )
         self._event_log_storage = PostgresEventLogStorage(
-            postgres_url, should_autocreate_tables, token_provider=token_provider
+            postgres_url,
+            should_autocreate_tables,
+            token_provider=token_provider,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_recycle=pool_recycle,
+            pool_mode=pool_mode,
         )
         self._schedule_storage = PostgresScheduleStorage(
-            postgres_url, should_autocreate_tables, token_provider=token_provider
+            postgres_url,
+            should_autocreate_tables,
+            token_provider=token_provider,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_recycle=pool_recycle,
+            pool_mode=pool_mode,
         )
         super().__init__()
 
@@ -77,6 +99,10 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
             token_provider=get_token_provider_from_config(config_value),
+            pool_size=config_value.get("pool_size"),
+            max_overflow=config_value.get("max_overflow"),
+            pool_recycle=config_value.get("pool_recycle"),
+            pool_mode=config_value.get("pool_mode"),
         )
 
     @property
