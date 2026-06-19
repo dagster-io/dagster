@@ -432,3 +432,60 @@ def test_dbt_asset_selection_selector_invalid(
             selector="fake_selector_does_not_exist",
         )
         def selected_dbt_assets(): ...
+
+
+def _model_node(unique_id: str, name: str) -> dict[str, Any]:
+    return {
+        "unique_id": unique_id,
+        "resource_type": "model",
+        "name": name,
+        "package_name": "test",
+        "fqn": ["test", name],
+        "path": f"{name}.sql",
+        "original_file_path": f"models/{name}.sql",
+        "tags": [],
+        "config": {"enabled": True, "tags": [], "materialized": "table"},
+        "depends_on": {"nodes": [], "macros": []},
+    }
+
+
+def test_select_unique_ids_includes_isolated_fusion_models() -> None:
+    """A dbt model with no ``source()``/``ref()`` calls (and nothing referencing it)
+    is omitted from ``child_map`` by dbt-fusion manifests, unlike dbt-core which keys
+    ``child_map`` by every node. Selection must still surface such isolated nodes
+    rather than silently dropping them.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/33801.
+    """
+    from dagster_dbt.utils import _select_unique_ids_from_manifest
+
+    manifest_json: dict[str, Any] = {
+        "nodes": {
+            "model.test.parent": _model_node("model.test.parent", "parent"),
+            "model.test.child": _model_node("model.test.child", "child"),
+            "model.test.isolated": _model_node("model.test.isolated", "isolated"),
+        },
+        "sources": {},
+        "metrics": {},
+        "exposures": {},
+        # dbt-fusion-style child_map: the isolated model appears neither as a key
+        # nor as a value, because it has no parents and no children.
+        "child_map": {
+            "model.test.parent": ["model.test.child"],
+            "model.test.child": [],
+        },
+        "parent_map": {
+            "model.test.parent": [],
+            "model.test.child": ["model.test.parent"],
+        },
+    }
+
+    selected = _select_unique_ids_from_manifest(
+        select="fqn:*", exclude="", selector="", manifest_json=manifest_json
+    )
+
+    assert selected == {
+        "model.test.parent",
+        "model.test.child",
+        "model.test.isolated",
+    }
