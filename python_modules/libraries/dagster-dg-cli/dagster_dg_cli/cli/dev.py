@@ -87,6 +87,15 @@ T = TypeVar("T")
     type=click.INT,
 )
 @click.option(
+    "--db-pool-size",
+    help=(
+        "The number of connections to keep open in the sqlalchemy pool. Set to 0 to disable "
+        "persistent connections, which is required for pgBouncer transaction-mode pooling."
+    ),
+    default=None,
+    type=click.INT,
+)
+@click.option(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
     help="Whether to schema-check defs.yaml files for the project before starting the dev server.",
@@ -107,6 +116,7 @@ def dev_command(
     db_statement_timeout: int | None,
     db_pool_recycle: int | None,
     db_pool_max_overflow: int | None,
+    db_pool_size: int | None,
     check_yaml: bool | None,
     target_path: Path,
     verbose: bool,  # from dg_global_options
@@ -140,6 +150,7 @@ def dev_command(
             db_statement_timeout=db_statement_timeout,
             db_pool_recycle=db_pool_recycle,
             db_pool_max_overflow=db_pool_max_overflow,
+            db_pool_size=db_pool_size,
         )
 
     # If not, use dg config to construct a workspace file and do a yaml check before
@@ -204,4 +215,5 @@ def dev_command(
             db_statement_timeout=db_statement_timeout,
             db_pool_recycle=db_pool_recycle,
             db_pool_max_overflow=db_pool_max_overflow,
+            db_pool_size=db_pool_size,
         )
