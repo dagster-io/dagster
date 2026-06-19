@@ -1868,6 +1868,60 @@
             "title": "PodSecurityContext",
             "type": "object"
         },
+        "Pool": {
+            "properties": {
+                "size": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Size"
+                },
+                "maxOverflow": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Maxoverflow"
+                },
+                "recycle": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Recycle"
+                },
+                "mode": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Mode"
+                }
+            },
+            "title": "Pool",
+            "type": "object"
+        },
         "PostgreSQL": {
             "properties": {
                 "image": {
@@ -1912,6 +1966,17 @@
                 },
                 "service": {
                     "$ref": "#/$defs/schema__charts__dagster__subschema__postgresql__Service"
+                },
+                "pool": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Pool"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 }
             },
             "required": [
@@ -3677,6 +3742,18 @@
                     ],
                     "default": null,
                     "title": "Dbpoolmaxoverflow"
+                },
+                "dbPoolSize": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Dbpoolsize"
                 },
                 "logLevel": {
                     "anyOf": [

@@ -95,6 +95,14 @@ dagsterWebserver:
   # The maximum overflow size of the sqlalchemy pool. Set to -1 to disable.
   dbPoolMaxOverflow: ~
 
+  # The number of connections to keep open in the sqlalchemy connection pool.
+  # Defaults to 1 if not set.
+  # Note: this maps to SQLAlchemy QueuePool's pool_size, where 0 means *no limit*
+  # (unlimited persistent connections), not "disabled". To disable persistent
+  # connections for pgBouncer transaction-mode pooling, use postgresql.pool.mode
+  # ("transaction") below instead, which switches to a NullPool.
+  dbPoolSize: ~
+
   # The log level of the uvicorn web server, defaults to warning if not set
   logLevel: ~
 
@@ -852,6 +860,21 @@ postgresql:
     azureScope: "https://ossrdbms-aad.database.windows.net/.default"
     # AWS-specific: the RDS region
     awsRegion: ""
+
+  # Connection pool settings written into dagster.yaml.
+  # These take precedence over the --db-pool-* CLI flags on the webserver.
+  pool:
+    # Number of persistent connections (SQLAlchemy QueuePool pool_size). Note that 0 means
+    # *no limit*, not "disabled" — to disable persistent connections for pgBouncer
+    # transaction-mode pooling, set mode: "transaction" below instead.
+    size: ~
+    # Max overflow connections beyond pool size.
+    maxOverflow: ~
+    # Max connection age in seconds before recycling. Set to -1 to disable.
+    recycle: ~
+    # Set to "transaction" to use NullPool (no persistent connections), required for pgBouncer
+    # in transaction-mode pooling. Set to "session" or leave unset for QueuePool (default).
+    mode: ~
 
 # Whether to generate a secret resource for the PostgreSQL password. Useful if
 # global.postgresqlSecretName is managed outside of this helm chart.
