@@ -449,7 +449,39 @@ def _model_node(unique_id: str, name: str) -> dict[str, Any]:
     }
 
 
-def test_select_unique_ids_includes_isolated_fusion_models() -> None:
+def _source_node(unique_id: str, source_name: str, name: str) -> dict[str, Any]:
+    return {
+        "unique_id": unique_id,
+        "resource_type": "source",
+        "source_name": source_name,
+        "name": name,
+        "package_name": "test",
+        "fqn": ["test", source_name, name],
+        "path": "sources.yml",
+        "original_file_path": "models/sources.yml",
+        "tags": [],
+        "config": {"enabled": True, "tags": []},
+    }
+
+
+@pytest.mark.parametrize(
+    "select, expected_unique_ids",
+    [
+        pytest.param("isolated", {"model.test.isolated"}, id="isolated-model-alone"),
+        pytest.param(
+            "fqn:*",
+            {
+                "model.test.parent",
+                "model.test.child",
+                "model.test.isolated",
+            },
+            id="broader-selector",
+        ),
+    ],
+)
+def test_select_unique_ids_includes_isolated_fusion_models(
+    select: str, expected_unique_ids: set[str]
+) -> None:
     """A dbt model with no ``source()``/``ref()`` calls (and nothing referencing it)
     is omitted from ``child_map`` by dbt-fusion manifests, unlike dbt-core which keys
     ``child_map`` by every node. Selection must still surface such isolated nodes
@@ -481,11 +513,47 @@ def test_select_unique_ids_includes_isolated_fusion_models() -> None:
     }
 
     selected = _select_unique_ids_from_manifest(
+        select=select, exclude="", selector="", manifest_json=manifest_json
+    )
+
+    assert selected == expected_unique_ids
+
+
+def test_select_unique_ids_includes_isolated_fusion_models_with_ref_source_graph() -> None:
+    from dagster_dbt.utils import _select_unique_ids_from_manifest
+
+    manifest_json: dict[str, Any] = {
+        "nodes": {
+            "model.test.uses_source": {
+                **_model_node("model.test.uses_source", "uses_source"),
+                "depends_on": {"nodes": ["source.test.raw.customers"], "macros": []},
+            },
+            "model.test.isolated": _model_node("model.test.isolated", "isolated"),
+        },
+        "sources": {
+            "source.test.raw.customers": _source_node(
+                "source.test.raw.customers", "raw", "customers"
+            ),
+        },
+        "metrics": {},
+        "exposures": {},
+        # Mixed dbt-fusion-style graph: one model is connected to a source, while the
+        # isolated model is absent from child_map because it has no parents or children.
+        "child_map": {
+            "source.test.raw.customers": ["model.test.uses_source"],
+            "model.test.uses_source": [],
+        },
+        "parent_map": {
+            "source.test.raw.customers": [],
+            "model.test.uses_source": ["source.test.raw.customers"],
+        },
+    }
+
+    selected = _select_unique_ids_from_manifest(
         select="fqn:*", exclude="", selector="", manifest_json=manifest_json
     )
 
     assert selected == {
-        "model.test.parent",
-        "model.test.child",
+        "model.test.uses_source",
         "model.test.isolated",
     }
