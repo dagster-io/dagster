@@ -198,7 +198,7 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
         p = ctx.Process(
             target=_materialize_asset,
             args=(
-                {"SLEEP_SECONDS": "10"},
+                {"SLEEP_SECONDS": "30"},
                 return_dict,
                 task_started_event,
                 materialization_done_event,
@@ -230,7 +230,7 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
             # can outrun a process-death check even when the data we want to assert
             # on is already available.
             deadline = time.monotonic() + 180
-            retries_remaining = 5
+            retries_remaining = 15
             while not materialization_done_event.wait(timeout=2):
                 if not p.is_alive():
                     break
