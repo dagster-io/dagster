@@ -48,34 +48,25 @@ def watch_grpc_server_thread(
         changes.
 
     If we are unable to reconnect to the server within the specified max_reconnect_attempts, we
-    call on_error. After on_error, the reconnect loop continues indefinitely — the thread does
-    not shut down, so that if the server eventually comes back, it will be detected via
-    on_updated (not on_reconnected). This is intentional: on_error already notified subscribers
-    of the failure, so recovery must go through on_updated to trigger a refresh that clears the
-    error state. The stored server ID is cleared on error to ensure the on_updated path is
-    taken regardless of whether the actual server ID changed.
+    call on_error. After on_error fires, the reconnect loop continues indefinitely — if the
+    server eventually comes back, recovery is signaled via on_updated rather than on_reconnected,
+    so that subscribers receive a state transition that triggers a workspace refresh and clears
+    the error. The stored server ID is cleared on error so the on_updated branch is taken
+    regardless of whether the actual server ID changed.
 
     Additionally, if `get_location_entry(location_name).load_error` is a
     `DagsterUserCodeUnreachableError`, this is treated the same as "2. The server is unreachable":
-    `on_disconnect` is fired, and the reconnect loop is executed. This enables recovery when a prior
+    `on_disconnect` is fired and the reconnect loop runs. This enables recovery when a prior
     refresh failed (e.g. during a Kubernetes rolling deployment where the gRPC call routed to a
-    dying pod). To avoid flapping, the reconnect loop continues until both GetServerId and the
-    refresh succeed without any `DagsterUserCodeUnreachableError`.
+    dying pod). Within the reconnect loop, if `GetServerId` succeeds but the workspace entry is
+    still errored, `refresh_code_location` is called directly — we don't route this through any
+    `on_*` event, because subscribers should only be notified on actual state transitions, not
+    every poll. Once the error clears, the next loop iteration fires on_updated and exits the
+    reconnect loop.
 
-    Within the reconnect loop, we call `GetServerId` to test basic connectivity and to observe
-    changes to the server_id. If basic connectivity is successful but a
-    `DagsterUserCodeUnreachableError` `load_error` is still present, we call `refresh_code_location`
-    directly to attempt to clear the error. We don't do this via any `on_*()` event handles, because
-    we only want to signal event subscribers on actual changes to the state, not on every loop. If
-    the error is cleared, then the next run through the loop will likely end up calling `on_updated`
-    and exiting the reconnect loop.
-
-    `on_updated` is called each time a server ID change is detected and does not cause the
-    thread to exit. `on_error` is called at most once per `reconnect_loop` invocation (i.e. once
-    per transition from connected to disconnected) and does not cause the thread to exit.
-    `on_disconnect` and `on_reconnected` may be called multiple times to properly handle
-    intermittent network failures or workspace error recovery. The thread only exits when
-    shutdown_event is set.
+    The thread only exits when shutdown_event is set. on_updated, on_disconnect, and
+    on_reconnected may fire multiple times over the thread's lifetime; on_error fires at most
+    once per disconnect → reconnect-exhausted transition.
     """
     check.str_param(location_name, "location_name")
     check.inst_param(client, "client", DagsterGrpcClient)
@@ -153,12 +144,9 @@ def watch_grpc_server_thread(
                 new_server_id = client.get_server_id(timeout=REQUEST_TIMEOUT)
                 curr = current_server_id()
                 if curr != new_server_id and not has_error():
-                    # NOTE: We deliberately do not gate this branch through
-                    # get_location_entry_or_raise_unreachable_error() — a new server ID is by
-                    # itself sufficient signal that the upstream changed, and the resulting
-                    # on_updated event will trigger a workspace refresh in the event handler
-                    # which will clear any stale load_error. If that refresh itself fails, the
-                    # next watch_for_changes() poll will re-raise and put us back in this loop.
+                    # A new server ID is sufficient signal to recover: the on_updated event
+                    # triggers a workspace refresh that clears any stale load_error. If that
+                    # refresh fails, the next watch_for_changes() poll puts us back here.
                     update_server_id(new_server_id)
                     return
                 try:
@@ -172,12 +160,10 @@ def watch_grpc_server_thread(
                     on_reconnected(location_name)
                     return
                 else:
-                    # Either the server ID changed, or we're recovering after on_error was
-                    # already fired. Fire on_updated (via update_server_id) to trigger a
-                    # workspace refresh and exit the reconnect loop. Flapping is prevented by
-                    # the get_location_entry_or_raise_unreachable_error() call above, which
-                    # would have raised and skipped this branch if the workspace entry were
-                    # still stuck on a DagsterUserCodeUnreachableError.
+                    # Recovering after on_error already fired (has_error() is True so curr is
+                    # None). Fire on_updated to trigger a workspace refresh. The
+                    # unreachable-error check above has already verified the workspace entry
+                    # is healthy, so we won't flap.
                     update_server_id(new_server_id)
                     return
             except DagsterUserCodeUnreachableError:
@@ -186,17 +172,16 @@ def watch_grpc_server_thread(
             if attempts >= max_reconnect_attempts and not has_error():
                 on_error(location_name)
                 set_error()
-                # Intentionally does not return — the loop continues so that if the
-                # server eventually comes back, it will be detected via on_updated.
+                # Do not return: keep looping so that an eventual recovery is detected
+                # via on_updated (see module docstring).
             elif location_unreachable_error is not None and (
                 attempts % max_reconnect_attempts == 0 or not has_error()
             ):
-                # get_server_id() keeps succeeding but the workspace entry is errored/stale.
-                #
-                # Before on_error has fired (`not has_error()`), retry recovery on every poll
-                # to attempt quick recovery. After on_error has fired, retry every
-                # max_reconnect_attempts poll cycles — spacing out retries avoids log spam and
-                # unnecessary gRPC calls when a location is persistently stuck.
+                # GetServerId succeeds but the workspace entry stays errored. Retry every poll
+                # before on_error fires (fast recovery), then back off to one retry per
+                # max_reconnect_attempts cycles — spacing out retries on persistently-stuck
+                # locations avoids log spam, excess gRPC traffic, and repeated wasted refresh
+                # work that we already know is likely to fail again.
                 refresh_code_location(location_name)
 
     while True:
