@@ -93,25 +93,30 @@ const parsePixels = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+// A single offscreen canvas reused for all measurements. Previously a canvas
+// was created and appended to / removed from `document.body` on every
+// measurement, which invalidated layout on each call and fed a forced-reflow
+// storm when many MiddleTruncate instances measured in one commit. An
+// unattached canvas measures text identically, so there is no need to touch
+// the DOM at all.
+let sharedMeasurementContext: CanvasRenderingContext2D | null | undefined;
+const getMeasurementContext = () => {
+  if (sharedMeasurementContext === undefined) {
+    sharedMeasurementContext = document.createElement('canvas').getContext('2d');
+  }
+  return sharedMeasurementContext;
+};
+
 /**
  * Given a font style and a container width, use a canvas to determine the longest possible
  * middle-truncated string that will fit within the container.
  */
 const calculateMiddleTruncatedText = ({styles, width, textString}: MeasurementConfig) => {
-  const body = document.body;
-  const canvas = document.createElement('canvas');
-  canvas.style.position = 'fixed';
-  canvas.style.left = '-10000px';
-  canvas.style.whiteSpace = 'nowrap';
-  canvas.style.visibility = 'hidden';
-
-  const ctx = canvas.getContext('2d');
+  const ctx = getMeasurementContext();
 
   if (!ctx) {
     return null;
   }
-
-  const targetWidth = width;
 
   // Only assign `font` (which carries font-stretch via the shorthand) to the
   // context. Assigning text-shaping properties such as `letterSpacing` or
@@ -121,18 +126,13 @@ const calculateMiddleTruncatedText = ({styles, width, textString}: MeasurementCo
   // affects layout width, so we account for it arithmetically instead.
   ctx.font = styles.font;
   const letterSpacing = parsePixels(styles.letterSpacing);
-  body.appendChild(canvas);
 
   // Search for the largest possible middle-truncated string that will fit within
   // the allotted width.
-  const truncated = calculateMiddleTruncation(
+  return calculateMiddleTruncation(
     textString,
-    targetWidth,
+    width,
     (value: string) =>
       ctx.measureText(value).width + (letterSpacing ? letterSpacing * value.length : 0),
   );
-
-  body.removeChild(canvas);
-
-  return truncated;
 };
