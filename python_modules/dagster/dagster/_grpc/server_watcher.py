@@ -7,6 +7,8 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.workspace.workspace import CodeLocationEntry
 from dagster._grpc.client import DagsterGrpcClient
 
+logger = logging.getLogger("dagster")
+
 WATCH_INTERVAL = 1
 REQUEST_TIMEOUT = 2
 MAX_RECONNECT_ATTEMPTS = 10
@@ -88,8 +90,6 @@ def watch_grpc_server_thread(
         max_reconnect_attempts, "max_reconnect_attempts", MAX_RECONNECT_ATTEMPTS
     )
 
-    logger = logging.getLogger("dagster")
-
     class ServerId:
         current: str | None = None
         error: bool = False
@@ -102,7 +102,7 @@ def watch_grpc_server_thread(
     def has_error() -> bool:
         return server_id.error
 
-    def set_server_id(new_id: str, send_on_updated_event: bool = True) -> None:
+    def update_server_id(new_id: str, send_on_updated_event: bool = True) -> None:
         server_id.current = new_id
         server_id.error = False
         if send_on_updated_event:
@@ -134,7 +134,7 @@ def watch_grpc_server_thread(
 
             new_server_id: str = client.get_server_id(timeout=REQUEST_TIMEOUT)
             if curr != new_server_id:
-                set_server_id(new_server_id, send_on_updated_event=(curr is not None))
+                update_server_id(new_server_id, send_on_updated_event=(curr is not None))
             else:
                 _ = get_location_entry_or_raise_unreachable_error()
 
@@ -153,7 +153,13 @@ def watch_grpc_server_thread(
                 new_server_id = client.get_server_id(timeout=REQUEST_TIMEOUT)
                 curr = current_server_id()
                 if curr != new_server_id and not has_error():
-                    set_server_id(new_server_id)
+                    # NOTE: We deliberately do not gate this branch through
+                    # get_location_entry_or_raise_unreachable_error() — a new server ID is by
+                    # itself sufficient signal that the upstream changed, and the resulting
+                    # on_updated event will trigger a workspace refresh in the event handler
+                    # which will clear any stale load_error. If that refresh itself fails, the
+                    # next watch_for_changes() poll will re-raise and put us back in this loop.
+                    update_server_id(new_server_id)
                     return
                 try:
                     _ = get_location_entry_or_raise_unreachable_error()
@@ -167,12 +173,12 @@ def watch_grpc_server_thread(
                     return
                 else:
                     # Either the server ID changed, or we're recovering after on_error was
-                    # already fired. Fire on_updated (via set_server_id) to trigger a workspace
-                    # refresh and exit the reconnect loop. Flapping is prevented by the
-                    # get_location_entry_or_raise_unreachable_error() call above, which would
-                    # have raised and skipped this branch if the workspace entry were still
-                    # stuck on a DagsterUserCodeUnreachableError.
-                    set_server_id(new_server_id)
+                    # already fired. Fire on_updated (via update_server_id) to trigger a
+                    # workspace refresh and exit the reconnect loop. Flapping is prevented by
+                    # the get_location_entry_or_raise_unreachable_error() call above, which
+                    # would have raised and skipped this branch if the workspace entry were
+                    # still stuck on a DagsterUserCodeUnreachableError.
+                    update_server_id(new_server_id)
                     return
             except DagsterUserCodeUnreachableError:
                 attempts += 1
@@ -206,11 +212,11 @@ def watch_grpc_server_thread(
             try:
                 on_disconnect(location_name)
             except Exception as exc:
-                logger.warning(
+                logger.exception(
                     f"In gRPC watch server thread for location {location_name}, on_disconnect raised {exc.__class__.__name__}: {exc}"
                 )
         except Exception as exc:
-            logger.warning(
+            logger.exception(
                 f"In gRPC watch server thread for location {location_name}, watch_for_changes raised {exc.__class__.__name__}: {exc}"
             )
             shutdown_event.wait(watch_interval * max_reconnect_attempts)

@@ -2,8 +2,7 @@ import subprocess
 import threading
 import time
 from collections import Counter
-from collections.abc import Callable
-from typing import NoReturn
+from collections.abc import Callable, Generator
 from unittest.mock import create_autospec
 
 import dagster as dg
@@ -18,6 +17,7 @@ from dagster._utils import find_free_port
 from dagster._utils.error import SerializableErrorInfo
 from dagster_shared.ipc import interrupt_ipc_subprocess_pid
 
+LOCATION_NAME = "test_location"
 TEST_WATCH_INTERVAL = 0.2
 
 
@@ -40,11 +40,28 @@ def wait_for_condition(
         time.sleep(interval)
 
 
-def should_not_be_called(name: str) -> Callable[..., NoReturn]:
-    def _should_not_be_called(*args, **kwargs) -> NoReturn:
-        raise Exception(f"This method {name} should not be called")
+@pytest.fixture
+def unexpected_calls() -> Generator[list[str]]:
+    """Shared list used by ``should_not_be_called`` callbacks to record violations.
 
-    return _should_not_be_called
+    Autouse teardown that fails the test if any ``should_not_be_called`` callback fired.
+    """
+    list_of_unexpected_calls = []
+    yield list_of_unexpected_calls
+    assert not list_of_unexpected_calls, (
+        f"Unexpected callback invocations: {list_of_unexpected_calls}"
+    )
+
+
+@pytest.fixture
+def should_not_be_called(unexpected_calls: list[str]) -> Callable[[str], Callable[..., None]]:
+    def _factory(name: str) -> Callable[..., None]:
+        def _should_not_be_called(*args, **kwargs) -> None:
+            unexpected_calls.append(f"{name}(args={args!r}, kwargs={kwargs!r})")
+
+        return _should_not_be_called
+
+    return _factory
 
 
 @pytest.fixture
@@ -54,6 +71,7 @@ def create_server_process_and_watch_thread(
     called_callback: Counter[str],
     on_disconnect: Callable[[str], None],
     on_reconnected: Callable[[str], None],
+    should_not_be_called: Callable[[str], Callable[..., None]],
     instance,
     process_cleanup,
 ) -> Callable[..., tuple[threading.Event, threading.Thread, subprocess.Popen]]:
@@ -170,9 +188,6 @@ def called_event() -> Counter[str]:
             "on_error_count": 0,
         }
     )
-
-
-LOCATION_NAME = "test_location"
 
 
 @pytest.fixture
