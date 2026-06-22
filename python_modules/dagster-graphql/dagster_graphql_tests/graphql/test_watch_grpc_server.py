@@ -46,7 +46,9 @@ class TestSubscribeToGrpcServerEvents(BaseTestSuite):
         assert len(error_events) == 1
         assert error_events[0].location_name == location.name
 
-        # LOCATION_DISCONNECTED should have arrived before LOCATION_ERROR
+        # The watch thread fires LOCATION_DISCONNECTED on the first failed poll, then
+        # LOCATION_ERROR once reconnect attempts are exhausted. Both events should be present
+        # by the time we observe LOCATION_ERROR.
         disconnect_events = _events_of_type(
             events, LocationStateChangeEventType.LOCATION_DISCONNECTED
         )

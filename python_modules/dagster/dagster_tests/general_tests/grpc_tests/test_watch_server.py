@@ -24,6 +24,13 @@ TEST_WATCH_INTERVAL = 0.2
 def wait_for_condition(
     fn: Callable[[], object], interval: int | float, timeout: int | float | None = None
 ) -> None:
+    """Poll ``fn`` every ``interval`` seconds until it returns truthy or ``timeout`` elapses.
+
+    If ``timeout`` is not provided, it defaults to ``min(5, interval * 60)``: capped at
+    5 seconds for the long-interval case, but capped at ``interval * 60`` when ``interval``
+    is small so we don't wait 5 full seconds when 60 poll cycles is already more than enough
+    chances for the condition to become true.
+    """
     timeout = timeout if timeout is not None else min(5, interval * 60)
     start_time = time.time()
     while not fn():
@@ -97,13 +104,18 @@ def create_server_process_and_watch_thread(
             max_reconnect_attempts=max_reconnect_attempts,
         )
         watch_thread.start()
-        # Let the watch thread establish the server ID
+        # Let the watch thread establish the server ID (at least 2 polls: one to discover the
+        # server ID, one to confirm it is stable).
         wait_for_condition(
             lambda: called_callback["get_location_entry_count"] >= 2,
             interval=watch_interval or TEST_WATCH_INTERVAL,
             timeout=5,
         )
+        # During startup the watch thread may briefly disconnect and reconnect (at most once),
+        # but the two counts must match — we should never observe an unpaired disconnect.
         assert called_event["on_reconnected_count"] == called_event["on_disconnect_count"] <= 1
+        # Reset counts so each test starts from a clean baseline regardless of any startup
+        # disconnect/reconnect cycle observed above.
         called_event.update(
             {
                 "on_disconnect_count": 0,
