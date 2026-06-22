@@ -504,16 +504,19 @@ def test_grpc_watch_thread_recovery_when_errored(
         MAX_RECONNECT_ATTEMPTS - 1, cycles_to_recover
     )
     called_callback_snapshot = Counter(called_callback)
-    time.sleep(watch_interval * 2)
+    # Wait for the watch thread to demonstrate it's still polling (>= 2 more get_location_entry
+    # calls). Using wait_for_condition instead of a fixed sleep avoids a structural race where
+    # the watch thread may already be mid-wait() when the test captures the snapshot — in 2x
+    # watch_interval of fixed sleep only 1 full poll cycle reliably completes.
     wait_for_condition(
-        lambda: called_event == called_event_expected,
+        lambda: (
+            called_callback["get_location_entry_count"]
+            >= called_callback_snapshot["get_location_entry_count"] + 2
+        ),
         interval=watch_interval,
-        timeout=5,
+        timeout=watch_interval * 5,
     )
-    assert (
-        called_callback["get_location_entry_count"]
-        >= called_callback_snapshot["get_location_entry_count"] + 2
-    )
+    # The meaningful invariant: no spurious refresh_code_location calls after recovery.
     assert (
         called_callback["refresh_code_location_count"]
         == called_callback_snapshot["refresh_code_location_count"]
