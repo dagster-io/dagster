@@ -69,7 +69,22 @@ To enable this behavior, replace usage of `BigQueryResource` with `InsightsBigQu
 
 If you use `dagster-dbt` to manage a dbt project that targets Google BigQuery, you can emit usage metrics to the Dagster+ API with the `DbtCliResource`.
 
-First, add a `.with_insights()` call to your `dbt.cli()` command(s).
+### Using DbtProjectComponent
+
+If you use `DbtProjectComponent`, add `insights` to the `include_metadata` list in your `defs.yaml`:
+
+```yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: path/to/dbt_project
+  include_metadata:
+    - insights
+```
+
+### Using @dbt_assets
+
+If you use the `@dbt_assets` decorator, add a `.with_insights()` call to your `dbt.cli()` command(s):
 
 <Tabs>
   <TabItem value="before" label="Before">
@@ -86,7 +101,9 @@ First, add a `.with_insights()` call to your `dbt.cli()` command(s).
   </TabItem>
 </Tabs>
 
-Then, add the following to your `dbt_project.yml`:
+### Configuring dbt_project.yml
+
+Add the following to your `dbt_project.yml`:
 
 <Tabs>
   <TabItem value="before" label="Before">
