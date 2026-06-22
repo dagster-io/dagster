@@ -199,19 +199,6 @@ wheels = [
 ]
 
 [[package]]
-name = "aiohttp-jinja2"
-version = "1.6"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aiohttp", marker = "python_full_version >= '3.12'" },
-    { name = "jinja2", marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/39/da5a94dd89b1af7241fb7fc99ae4e73505b5f898b540b6aba6dc7afe600e/aiohttp-jinja2-1.6.tar.gz", hash = "sha256:a3a7ff5264e5bca52e8ae547bbfd0761b72495230d438d05b6c0915be619b0e2", size = 53057, upload-time = "2023-11-18T15:30:52.559Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/90/65238d4246307195411b87a07d03539049819b022c01bcc773826f600138/aiohttp_jinja2-1.6-py3-none-any.whl", hash = "sha256:0df405ee6ad1b58e5a068a105407dc7dcc1704544c559f1938babde954f945c7", size = 11736, upload-time = "2023-11-18T15:30:50.743Z" },
-]
-
-[[package]]
 name = "aiosignal"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -379,13 +366,13 @@ dependencies = [
     { name = "blinker", marker = "python_full_version < '3.12'" },
     { name = "colorlog", version = "4.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "configupdater", marker = "python_full_version < '3.12'" },
-    { name = "connexion", version = "2.14.2", source = { registry = "https://pypi.org/simple" }, extra = ["flask"], marker = "python_full_version < '3.12'" },
+    { name = "connexion", extra = ["flask"], marker = "python_full_version < '3.12'" },
     { name = "cron-descriptor", marker = "python_full_version < '3.12'" },
     { name = "croniter", marker = "python_full_version < '3.12'" },
     { name = "cryptography", marker = "python_full_version < '3.12'" },
     { name = "deprecated", marker = "python_full_version < '3.12'" },
     { name = "dill", marker = "python_full_version < '3.12'" },
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "flask-caching", marker = "python_full_version < '3.12'" },
     { name = "flask-session", marker = "python_full_version < '3.12'" },
     { name = "flask-wtf", marker = "python_full_version < '3.12'" },
@@ -430,7 +417,7 @@ dependencies = [
     { name = "termcolor", marker = "python_full_version < '3.12'" },
     { name = "unicodecsv", marker = "python_full_version < '3.12'" },
     { name = "universal-pathlib", version = "0.3.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "werkzeug", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "werkzeug", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/45/14/969cb58e5646c7a8456dce14262e4212896d5f7a8e0ef846ca70442cc3f8/apache_airflow-2.9.3.tar.gz", hash = "sha256:f9a523a57e0e0faa9afabb8e17b58cfca32119ff6889612b54edbdd987ada17b", size = 12385126, upload-time = "2024-07-16T07:05:24.844Z" }
 wheels = [
@@ -746,7 +733,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "apache-airflow", version = "2.9.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "apache-airflow-providers-common-compat", version = "1.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "flask-appbuilder", marker = "python_full_version < '3.12'" },
     { name = "flask-login", marker = "python_full_version < '3.12'" },
     { name = "google-re2", marker = "python_full_version < '3.12'" },
@@ -1654,8 +1641,8 @@ name = "clickclick"
 version = "20.10.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "click" },
-    { name = "pyyaml" },
+    { name = "click", marker = "python_full_version < '3.12'" },
+    { name = "pyyaml", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c6/19/f91d85941b79964d569a3729bf9f8b7f85ab47240248e77b7c0c8ed6ecc3/clickclick-20.10.2.tar.gz", hash = "sha256:4efb13e62353e34c5eef7ed6582c4920b418d7dedc86d819e22ee089ba01802c", size = 9914, upload-time = "2020-10-03T13:36:47.966Z" }
 wheels = [
@@ -1785,19 +1772,16 @@ schemaregistry = [
 name = "connexion"
 version = "2.14.2"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.12'",
-]
 dependencies = [
     { name = "clickclick", marker = "python_full_version < '3.12'" },
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "inflection", marker = "python_full_version < '3.12'" },
     { name = "itsdangerous", marker = "python_full_version < '3.12'" },
     { name = "jsonschema", marker = "python_full_version < '3.12'" },
     { name = "packaging", marker = "python_full_version < '3.12'" },
     { name = "pyyaml", marker = "python_full_version < '3.12'" },
     { name = "requests", marker = "python_full_version < '3.12'" },
-    { name = "werkzeug", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "werkzeug", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8f/8b/c1d8a2e9327787354e936184f424b1ae96e526a0dad031bbc218c9dcaf35/connexion-2.14.2.tar.gz", hash = "sha256:dbc06f52ebeebcf045c9904d570f24377e8bbd5a6521caef15a06f634cf85646", size = 82819, upload-time = "2023-01-25T10:05:14.261Z" }
 wheels = [
@@ -1806,38 +1790,8 @@ wheels = [
 
 [package.optional-dependencies]
 flask = [
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "itsdangerous", marker = "python_full_version < '3.12'" },
-]
-
-[[package]]
-name = "connexion"
-version = "2.15.1"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
-    "(python_full_version >= '3.14' and platform_python_implementation == 'PyPy') or (python_full_version >= '3.14' and sys_platform == 'emscripten')",
-    "python_full_version == '3.13.*'",
-    "python_full_version == '3.12.*'",
-]
-dependencies = [
-    { name = "aiohttp", marker = "python_full_version >= '3.12'" },
-    { name = "aiohttp-jinja2", marker = "python_full_version >= '3.12'" },
-    { name = "clickclick", marker = "python_full_version >= '3.12'" },
-    { name = "flask", version = "3.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "inflection", marker = "python_full_version >= '3.12'" },
-    { name = "jinja2", marker = "python_full_version >= '3.12'" },
-    { name = "jsonschema", marker = "python_full_version >= '3.12'" },
-    { name = "markupsafe", marker = "python_full_version >= '3.12'" },
-    { name = "packaging", marker = "python_full_version >= '3.12'" },
-    { name = "python-multipart", marker = "python_full_version >= '3.12'" },
-    { name = "pyyaml", marker = "python_full_version >= '3.12'" },
-    { name = "requests", marker = "python_full_version >= '3.12'" },
-    { name = "werkzeug", version = "3.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fd/29/9beb85c193c0bfe38ffdeafc89a2171135e15d24340419f0081ba496859f/connexion-2.15.1.tar.gz", hash = "sha256:ff489f9dcd384aa53c53149e88d0a777f07660b98cf6488003cdcd270928c93b", size = 78967, upload-time = "2025-10-13T12:32:19.823Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/aa/7041e38b1b93584c826c91c0dc28adb33a6673158ec258b9befc9f3a7fad/connexion-2.15.1-py3-none-any.whl", hash = "sha256:01b7b5afa27b3e7007fdf4eb6eb3f82a46f7656a4416110b13c08f54efbd9c98", size = 95205, upload-time = "2025-10-13T12:32:17.892Z" },
 ]
 
 [[package]]
@@ -2012,7 +1966,6 @@ requires-dist = [
     { name = "docstring-parser" },
     { name = "duckdb", marker = "extra == 'test-components'" },
     { name = "filelock" },
-    { name = "fsspec", marker = "extra == 'test'", specifier = "<2024.5.0" },
     { name = "grpcio", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
     { name = "grpcio", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2" },
     { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
@@ -2038,6 +1991,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'", specifier = "==5.0.0" },
     { name = "pytest-mock", marker = "extra == 'test'", specifier = "==3.14.0" },
     { name = "pytest-rerunfailures", marker = "extra == 'test'" },
+    { name = "pytest-split", marker = "extra == 'test'" },
     { name = "pytest-timeout", marker = "extra == 'test'" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = "==3.6.1" },
     { name = "python-dotenv" },
@@ -2047,8 +2001,8 @@ requires-dist = [
     { name = "requests" },
     { name = "responses", marker = "extra == 'test'", specifier = "<=0.23.1" },
     { name = "rich" },
-    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.15.13" },
-    { name = "ruff", marker = "extra == 'test'", specifier = "==0.15.13" },
+    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.15.15" },
+    { name = "ruff", marker = "extra == 'test'", specifier = "==0.15.15" },
     { name = "six" },
     { name = "sqlalchemy", specifier = ">=1.0,<3" },
     { name = "structlog" },
@@ -2060,7 +2014,7 @@ requires-dist = [
     { name = "tox", marker = "extra == 'test'", specifier = ">=4.22" },
     { name = "tox-uv", marker = "extra == 'test'", specifier = ">=1.16" },
     { name = "tqdm", specifier = "<5" },
-    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.37" },
+    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.44" },
     { name = "types-backports", marker = "extra == 'pyright'" },
     { name = "types-backports", marker = "extra == 'ty'" },
     { name = "types-certifi", marker = "extra == 'pyright'" },
@@ -2145,11 +2099,10 @@ tutorial = [
     { name = "apache-airflow", version = "3.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and python_full_version < '3.14' and platform_python_implementation != 'PyPy') or (python_full_version >= '3.12' and platform_python_implementation == 'PyPy') or (python_full_version >= '3.12' and sys_platform == 'emscripten')" },
     { name = "apache-airflow", version = "3.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'" },
     { name = "click" },
-    { name = "connexion", version = "2.14.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "connexion", version = "2.15.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "connexion", marker = "python_full_version < '3.12'" },
     { name = "dagster-webserver" },
-    { name = "fastapi" },
-    { name = "flask-session" },
+    { name = "fastapi", marker = "python_full_version < '3.12'" },
+    { name = "flask-session", marker = "python_full_version < '3.12'" },
     { name = "marshmallow", version = "3.20.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "marshmallow", version = "3.23.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pendulum" },
@@ -2158,8 +2111,8 @@ tutorial = [
 
 [package.metadata]
 requires-dist = [
-    { name = "apache-airflow", marker = "python_full_version >= '3.12' and extra == 'test'", specifier = ">=2.9.0" },
-    { name = "apache-airflow", marker = "python_full_version >= '3.12' and extra == 'tutorial'", specifier = ">=2.9.0" },
+    { name = "apache-airflow", marker = "python_full_version >= '3.12' and extra == 'test'", specifier = ">=3.0.0" },
+    { name = "apache-airflow", marker = "python_full_version >= '3.12' and extra == 'tutorial'", specifier = ">=3.0.0" },
     { name = "apache-airflow", marker = "python_full_version < '3.12' and extra == 'test'", specifier = "==2.9.3" },
     { name = "apache-airflow", marker = "python_full_version < '3.12' and extra == 'tutorial'", specifier = "==2.9.3" },
     { name = "boto3", marker = "extra == 'mwaa'", specifier = ">=1.18.0" },
@@ -2168,16 +2121,16 @@ requires-dist = [
     { name = "click", marker = "extra == 'in-airflow'" },
     { name = "click", marker = "extra == 'test'" },
     { name = "click", marker = "extra == 'tutorial'" },
-    { name = "connexion", marker = "extra == 'test'", specifier = "<3.0.0" },
-    { name = "connexion", marker = "extra == 'tutorial'", specifier = "<3.0.0" },
+    { name = "connexion", marker = "python_full_version < '3.12' and extra == 'test'", specifier = "<3.0.0" },
+    { name = "connexion", marker = "python_full_version < '3.12' and extra == 'tutorial'", specifier = "<3.0.0" },
     { name = "dagster", marker = "extra == 'core'", editable = "../python_modules/dagster" },
-    { name = "dagster-dbt", marker = "extra == 'test'", editable = "../python_modules/libraries/dagster-dbt" },
+    { name = "dagster-dbt", marker = "python_full_version < '3.14' and extra == 'test'", editable = "../python_modules/libraries/dagster-dbt" },
     { name = "dagster-webserver", marker = "extra == 'test'", editable = "../python_modules/dagster-webserver" },
     { name = "dagster-webserver", marker = "extra == 'tutorial'", editable = "../python_modules/dagster-webserver" },
-    { name = "dbt-duckdb", marker = "extra == 'test'" },
-    { name = "fastapi", marker = "extra == 'tutorial'", specifier = "<0.118" },
-    { name = "flask-session", marker = "extra == 'test'", specifier = "<0.6.0" },
-    { name = "flask-session", marker = "extra == 'tutorial'", specifier = "<0.6.0" },
+    { name = "dbt-duckdb", marker = "python_full_version < '3.14' and extra == 'test'" },
+    { name = "fastapi", marker = "python_full_version < '3.12' and extra == 'tutorial'", specifier = "<0.118" },
+    { name = "flask-session", marker = "python_full_version < '3.12' and extra == 'test'", specifier = "<0.6.0" },
+    { name = "flask-session", marker = "python_full_version < '3.12' and extra == 'tutorial'", specifier = "<0.6.0" },
     { name = "marshmallow", marker = "python_full_version >= '3.12' and extra == 'test'", specifier = "==3.23.1" },
     { name = "marshmallow", marker = "python_full_version >= '3.12' and extra == 'tutorial'", specifier = "==3.23.1" },
     { name = "marshmallow", marker = "python_full_version < '3.12' and extra == 'test'", specifier = "==3.20.1" },
@@ -2198,7 +2151,7 @@ provides-extras = ["core", "in-airflow", "tutorial", "mwaa", "test"]
 test = [
     { name = "dagster", extras = ["test", "test-components"], editable = "../python_modules/dagster" },
     { name = "dagster-cloud-cli", editable = "../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-dbt", editable = "../python_modules/libraries/dagster-dbt" },
+    { name = "dagster-dbt", marker = "python_full_version < '3.14'", editable = "../python_modules/libraries/dagster-dbt" },
     { name = "dagster-dg-cli", editable = "../python_modules/libraries/dagster-dg-cli" },
     { name = "dagster-dg-core", editable = "../python_modules/libraries/dagster-dg-core" },
     { name = "dagster-graphql", editable = "../python_modules/dagster-graphql" },
@@ -2208,7 +2161,7 @@ test = [
     { name = "dagster-shared", editable = "../python_modules/libraries/dagster-shared" },
     { name = "dagster-test", editable = "../python_modules/dagster-test" },
     { name = "dagster-webserver", editable = "../python_modules/dagster-webserver" },
-    { name = "dbt-duckdb" },
+    { name = "dbt-duckdb", marker = "python_full_version < '3.14'" },
 ]
 
 [[package]]
@@ -3811,41 +3764,15 @@ wheels = [
 name = "flask"
 version = "2.2.5"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.12'",
-]
 dependencies = [
     { name = "click", marker = "python_full_version < '3.12'" },
     { name = "itsdangerous", marker = "python_full_version < '3.12'" },
     { name = "jinja2", marker = "python_full_version < '3.12'" },
-    { name = "werkzeug", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "werkzeug", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5f/76/a4d2c4436dda4b0a12c71e075c508ea7988a1066b06a575f6afe4fecc023/Flask-2.2.5.tar.gz", hash = "sha256:edee9b0a7ff26621bd5a8c10ff484ae28737a2410d99b0bb9a6850c7fb977aa0", size = 697814, upload-time = "2023-05-02T14:42:36.742Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9f/1a/8b6d48162861009d1e017a9740431c78d860809773b66cac220a11aa3310/Flask-2.2.5-py3-none-any.whl", hash = "sha256:58107ed83443e86067e41eff4631b058178191a355886f8e479e347fa1285fdf", size = 101817, upload-time = "2023-05-02T14:42:34.858Z" },
-]
-
-[[package]]
-name = "flask"
-version = "3.1.3"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
-    "(python_full_version >= '3.14' and platform_python_implementation == 'PyPy') or (python_full_version >= '3.14' and sys_platform == 'emscripten')",
-    "python_full_version == '3.13.*'",
-    "python_full_version == '3.12.*'",
-]
-dependencies = [
-    { name = "blinker", marker = "python_full_version >= '3.12'" },
-    { name = "click", marker = "python_full_version >= '3.12'" },
-    { name = "itsdangerous", marker = "python_full_version >= '3.12'" },
-    { name = "jinja2", marker = "python_full_version >= '3.12'" },
-    { name = "markupsafe", marker = "python_full_version >= '3.12'" },
-    { name = "werkzeug", version = "3.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/26/00/35d85dcce6c57fdc871f3867d465d780f302a175ea360f62533f12b27e2b/flask-3.1.3.tar.gz", hash = "sha256:0ef0e52b8a9cd932855379197dd8f94047b359ca0a78695144304cb45f87c9eb", size = 759004, upload-time = "2026-02-19T05:00:57.678Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/9c/34f6962f9b9e9c71f6e5ed806e0d0ff03c9d1b0b2340088a0cf4bce09b18/flask-3.1.3-py3-none-any.whl", hash = "sha256:f4bcbefc124291925f1a26446da31a5178f9483862233b23c0c96a20701f670c", size = 103424, upload-time = "2026-02-19T05:00:56.027Z" },
 ]
 
 [[package]]
@@ -3857,7 +3784,7 @@ dependencies = [
     { name = "click", marker = "python_full_version < '3.12'" },
     { name = "colorama", marker = "python_full_version < '3.12'" },
     { name = "email-validator", marker = "python_full_version < '3.12'" },
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "flask-babel", marker = "python_full_version < '3.12'" },
     { name = "flask-jwt-extended", marker = "python_full_version < '3.12'" },
     { name = "flask-limiter", marker = "python_full_version < '3.12'" },
@@ -3872,7 +3799,7 @@ dependencies = [
     { name = "python-dateutil", marker = "python_full_version < '3.12'" },
     { name = "sqlalchemy", version = "1.4.54", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "sqlalchemy-utils", marker = "python_full_version < '3.12'" },
-    { name = "werkzeug", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "werkzeug", marker = "python_full_version < '3.12'" },
     { name = "wtforms", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d6/9c/b6920650c21879f1e27afafba57af2985120d6e7896b625e7f671abd1834/Flask-AppBuilder-4.5.3.tar.gz", hash = "sha256:2f3f953b8134bed02ed0236ab7e85e6c354b1b3680069d76dfadc017eb05c561", size = 7355555, upload-time = "2025-01-21T16:14:58.318Z" }
@@ -3886,7 +3813,7 @@ version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "babel", marker = "python_full_version < '3.12'" },
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "jinja2", marker = "python_full_version < '3.12'" },
     { name = "pytz", marker = "python_full_version < '3.12'" },
 ]
@@ -3901,7 +3828,7 @@ version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cachelib", marker = "python_full_version < '3.12'" },
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/53/5c46b6a80adc13ed9179879a93cfc2c1f190c64c48ba732b4f5819df520e/flask_caching-2.4.0.tar.gz", hash = "sha256:a7f14e43617cd0612a57bec2f80516d6d2ec888bfc50a807b1e4e41ca345a3b5", size = 153673, upload-time = "2026-04-17T20:27:24.318Z" }
 wheels = [
@@ -3913,9 +3840,9 @@ name = "flask-jwt-extended"
 version = "4.7.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "pyjwt", marker = "python_full_version < '3.12'" },
-    { name = "werkzeug", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "werkzeug", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3b/91/3684749c4b4eeb129769c7276a294be4713360d9c8ded9740a379f8b57c1/flask_jwt_extended-4.7.3.tar.gz", hash = "sha256:a8318a3d983d1f360724b901889f1947ffee418e2a3950b48e99c70923b6615e", size = 34564, upload-time = "2026-05-08T16:41:44.09Z" }
 wheels = [
@@ -3927,7 +3854,7 @@ name = "flask-limiter"
 version = "3.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "limits", marker = "python_full_version < '3.12'" },
     { name = "ordered-set", marker = "python_full_version < '3.12'" },
     { name = "rich", version = "13.9.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -3942,8 +3869,8 @@ name = "flask-login"
 version = "0.6.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "werkzeug", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
+    { name = "werkzeug", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c3/6e/2f4e13e373bb49e68c02c51ceadd22d172715a06716f9299d9df01b6ddb2/Flask-Login-0.6.3.tar.gz", hash = "sha256:5e23d14a607ef12806c699590b89d0f0e0d67baeec599d75947bf9c147330333", size = 48834, upload-time = "2023-10-30T14:53:21.151Z" }
 wheels = [
@@ -3955,9 +3882,8 @@ name = "flask-session"
 version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cachelib" },
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "flask", version = "3.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "cachelib", marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/19/bf/b8b3e20cf03d3938ef7e94970e43491a49386c65e07aca7e6a4e583be28f/Flask-Session-0.5.0.tar.gz", hash = "sha256:190875e6aebf2953c6803d42379ef3b934bc209ef8ef006f97aecb08f5aaeb86", size = 11319, upload-time = "2023-05-11T18:43:16.041Z" }
 wheels = [
@@ -3969,7 +3895,7 @@ name = "flask-sqlalchemy"
 version = "2.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "sqlalchemy", version = "1.4.54", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/35/f0/39dd2d8e7e5223f78a5206d7020dc0e16718a964acfb3564d89e9798ab9b/Flask-SQLAlchemy-2.5.1.tar.gz", hash = "sha256:2bda44b43e7cacb15d4e05ff3cc1f8bc97936cc464623424102bfc2c35e95912", size = 132750, upload-time = "2021-03-18T19:03:02.733Z" }
@@ -3982,7 +3908,7 @@ name = "flask-wtf"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "flask", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "flask", marker = "python_full_version < '3.12'" },
     { name = "itsdangerous", marker = "python_full_version < '3.12'" },
     { name = "wtforms", marker = "python_full_version < '3.12'" },
 ]
@@ -7207,11 +7133,11 @@ wheels = [
 
 [[package]]
 name = "pyjwt"
-version = "2.12.1"
+version = "2.13.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c2/27/a3b6e5bf6ff856d2509292e95c8f57f0df7017cf5394921fc4e4ef40308a/pyjwt-2.12.1.tar.gz", hash = "sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b", size = 102564, upload-time = "2026-03-13T19:27:37.25Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/81/58d0ac84e1ef3a3843791d6954d94c0b33d526c75eeb1efbce9d0a4c4077/pyjwt-2.13.0.tar.gz", hash = "sha256:41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423", size = 107515, upload-time = "2026-05-21T19:54:36.618Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/7a/8dd906bd22e79e47397a61742927f6747fe93242ef86645ee9092e610244/pyjwt-2.12.1-py3-none-any.whl", hash = "sha256:28ca37c070cad8ba8cd9790cd940535d40274d22f80ab87f3ac6a713e6e8454c", size = 29726, upload-time = "2026-03-13T19:27:35.677Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/5e/ecf12fdb62546d64385c158514e9b2b671f7832108ef2ecd2020ce0af2d1/pyjwt-2.13.0-py3-none-any.whl", hash = "sha256:66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728", size = 31274, upload-time = "2026-05-21T19:54:35.362Z" },
 ]
 
 [package.optional-dependencies]
@@ -9427,33 +9353,12 @@ wheels = [
 name = "werkzeug"
 version = "2.2.3"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.12'",
-]
 dependencies = [
     { name = "markupsafe", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/02/3c/baaebf3235c87d61d6593467056d5a8fba7c75ac838b8d100a5e64eba7a0/Werkzeug-2.2.3.tar.gz", hash = "sha256:2e1ccc9417d4da358b9de6f174e3ac094391ea1d4fbef2d667865d819dfd0afe", size = 845884, upload-time = "2023-02-14T17:18:44.177Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f6/f8/9da63c1617ae2a1dec2fbf6412f3a0cfe9d4ce029eccbda6e1e4258ca45f/Werkzeug-2.2.3-py3-none-any.whl", hash = "sha256:56433961bc1f12533306c624f3be5e744389ac61d722175d543e1751285da612", size = 233551, upload-time = "2023-02-14T17:18:42.614Z" },
-]
-
-[[package]]
-name = "werkzeug"
-version = "3.1.8"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
-    "(python_full_version >= '3.14' and platform_python_implementation == 'PyPy') or (python_full_version >= '3.14' and sys_platform == 'emscripten')",
-    "python_full_version == '3.13.*'",
-    "python_full_version == '3.12.*'",
-]
-dependencies = [
-    { name = "markupsafe", marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/b2/381be8cfdee792dd117872481b6e378f85c957dd7c5bca38897b08f765fd/werkzeug-3.1.8.tar.gz", hash = "sha256:9bad61a4268dac112f1c5cd4630a56ede601b6ed420300677a869083d70a4c44", size = 875852, upload-time = "2026-04-02T18:49:14.268Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/8c/2e650f2afeb7ee576912636c23ddb621c91ac6a98e66dc8d29c3c69446e1/werkzeug-3.1.8-py3-none-any.whl", hash = "sha256:63a77fb8892bf28ebc3178683445222aa500e48ebad5ec77b0ad80f8726b1f50", size = 226459, upload-time = "2026-04-02T18:49:12.72Z" },
 ]
 
 [[package]]
