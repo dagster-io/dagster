@@ -516,7 +516,9 @@ def test_grpc_watch_thread_recovery_when_errored(
         interval=watch_interval,
         timeout=watch_interval * 5,
     )
-    # The meaningful invariant: no spurious refresh_code_location calls after recovery.
+    # No additional events should have fired after recovery — the system should be settled.
+    assert called_event == called_event_expected
+    # No spurious refresh_code_location calls after recovery.
     assert (
         called_callback["refresh_code_location_count"]
         == called_callback_snapshot["refresh_code_location_count"]
