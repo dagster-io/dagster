@@ -46,18 +46,26 @@ export const Inner = ({
   <div className={clsx(styles.inner, className)} style={{height: `${totalHeight}px`}} {...props} />
 );
 
-export type RowProps = {height: number; start: number; children?: React.ReactNode};
+export type RowProps = {
+  // Omit to let the row take its natural height (e.g. dynamic measurement via a
+  // virtualizer's `measureElement`); pass it for fixed-height virtualization.
+  height?: number;
+  start: number;
+  children?: React.ReactNode;
+};
 
-export const Row = ({
-  height,
-  start,
-  className,
-  style,
-  ...props
-}: RowProps & React.HTMLAttributes<HTMLDivElement>) => (
+export const Row = React.forwardRef<
+  HTMLDivElement,
+  RowProps & React.HTMLAttributes<HTMLDivElement>
+>(({height, start, className, style, ...props}, ref) => (
   <div
+    ref={ref}
     className={clsx(styles.row, className)}
-    style={{height: `${height}px`, transform: `translateY(${start}px)`, ...style}}
+    style={{
+      ...(height === undefined ? {} : {height: `${height}px`}),
+      transform: `translateY(${start}px)`,
+      ...style,
+    }}
     {...props}
   />
-);
+));
