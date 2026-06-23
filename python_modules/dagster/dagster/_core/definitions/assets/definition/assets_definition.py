@@ -344,7 +344,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         unique_partitions_defs = {
             spec.partitions_def for spec in normalized_specs if spec.partitions_def is not None
         }
-        if len(unique_partitions_defs) > 1 and not can_subset:
+        # node_def is None means the asset is unexecutable (external). Subsetting is an execution
+        # concept, so the can_subset requirement for heterogeneous partitions_defs only applies when
+        # the asset has a node_def (i.e. is executable).
+        if len(unique_partitions_defs) > 1 and not can_subset and node_def is not None:
             raise DagsterInvalidDefinitionError(
                 "If different AssetSpecs have different partitions_defs, can_subset must be True"
             )
