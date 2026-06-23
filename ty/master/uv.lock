@@ -2334,6 +2334,7 @@ dependencies = [
     { name = "antlr4-python3-runtime" },
     { name = "click" },
     { name = "coloredlogs" },
+    { name = "dagster-cron-native" },
     { name = "dagster-pipes" },
     { name = "dagster-shared" },
     { name = "docstring-parser" },
@@ -2411,6 +2412,7 @@ requires-dist = [
     { name = "boto3-stubs", extras = ["essential"], marker = "extra == 'ty'" },
     { name = "click", specifier = ">=5.0,<9.0" },
     { name = "coloredlogs", specifier = ">=6.1,<=14.0" },
+    { name = "dagster-cron-native", editable = "../../python_modules/libraries/dagster-cron-native" },
     { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
     { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
     { name = "docker", marker = "extra == 'docker'" },
@@ -2893,6 +2895,11 @@ test = [
     { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
     { name = "dagster-test", editable = "../../python_modules/dagster-test" },
 ]
+
+[[package]]
+name = "dagster-cron-native"
+version = "1!0+dev"
+source = { editable = "../../python_modules/libraries/dagster-cron-native" }
 
 [[package]]
 name = "dagster-census"

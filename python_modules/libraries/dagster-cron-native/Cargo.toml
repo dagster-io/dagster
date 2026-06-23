@@ -1,0 +1,19 @@
+[package]
+name = "dagster-cron-native"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+[dependencies]
+chrono = { version = "~0.4", default-features = false, features = ["clock"] }
+chrono-tz = "0.10"
+cron = { git = "https://github.com/sbquinlan/cron.git", branch = "codex/ci-supply-chain-hygiene" }
+pyo3 = { version = "0.27", features = ["abi3-py310", "chrono", "chrono-tz"] }
