@@ -7,8 +7,8 @@
 1. **[CONDITIONAL] Regenerate GraphQL types if schema changed**:
 
    ```bash
-   cd $DAGSTER_GIT_REPO_DIR/js_modules
-   make generate-graphql
+   cd $DAGSTER_GIT_REPO_DIR
+   just generate-graphql
    ```
 
    **IMPORTANT**: This MUST complete BEFORE running `yarn tsgo` or `yarn lint`, as it updates TypeScript type definitions.
@@ -84,7 +84,7 @@ This ensures changes to shared UI packages don't break the Cloud application.
 - **Location**: Must run from `js_modules/`
 - **Command**: `yarn jest` (not `make jest`)
 
-### GraphQL Generation (`make generate-graphql`)
+### GraphQL Generation (`just generate-graphql`)
 
 - **Purpose**: Regenerate GraphQL types from schema
 - **When**: After GraphQL schema changes in the backend
@@ -156,7 +156,7 @@ cd $DAGSTER_GIT_REPO_DIR/js_modules
 # CRITICAL ORDER: generate-graphql MUST complete BEFORE yarn tsgo/yarn lint
 
 # 1. Regenerate types (MUST complete first)
-make generate-graphql
+just generate-graphql
 
 # 2. Type checking (needs updated GraphQL types)
 yarn tsgo
@@ -168,7 +168,7 @@ yarn lint
 yarn jest
 ```
 
-**Why this order matters**: `make generate-graphql` updates TypeScript type definitions based on the backend schema. Running `yarn tsgo` or `yarn lint` before these types are updated will result in false type errors.
+**Why this order matters**: `just generate-graphql` updates TypeScript type definitions based on the backend schema. Running `yarn tsgo` or `yarn lint` before these types are updated will result in false type errors.
 
 ### UI Components Package Changes
 

@@ -15,8 +15,6 @@
     "tsgo": "tsgo -p .",
     "ts:workers": "tsc -p ./tsconfig.workers.json",
     "tsgo:workers": "tsgo -p ./tsconfig.workers.json",
-    "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
-    "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
     "generate-asset-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAssetSelection.ts",
     "generate-selection-autocomplete": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateSelection.ts",
     "generate-run-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateRunSelection.ts",

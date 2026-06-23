@@ -58,15 +58,6 @@ install_dev_python_modules_verbose:
 install_dev_python_modules_verbose_m1:
 	python scripts/install_dev_python_modules.py --include-prebuilt-grpcio-wheel
 
-graphql_codegen_js:
-	cd js_modules; make generate-graphql; make generate-perms
-
-graphql_codegen_py:
-	cd python_modules/libraries/dagster-rest-resources; uv run --active --no-project ariadne-codegen
-
-graphql_codegen:
-	make graphql_codegen_js;
-	make graphql_codegen_py;
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
