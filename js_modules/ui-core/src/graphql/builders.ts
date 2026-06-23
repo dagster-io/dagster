@@ -4906,9 +4906,11 @@ type Run = PipelineRun &
     __typename: 'Run';
     allPools: Maybe<Array<Scalars['String']['output']>>;
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+    assetCheckSelectionCount: Scalars['Int']['output'];
     assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
     assetSelection: Maybe<Array<AssetKey>>;
+    assetSelectionCount: Scalars['Int']['output'];
     assets: Array<Asset>;
     canTerminate: Scalars['Boolean']['output'];
     capturedLogs: CapturedLogs;
@@ -4948,6 +4950,14 @@ type Run = PipelineRun &
     tags: Array<PipelineTag>;
     updateTime: Maybe<Scalars['Float']['output']>;
   };
+
+type RunAssetCheckSelectionArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+type RunAssetSelectionArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
 
 type RunCapturedLogsArgs = {
   fileKey: Scalars['String']['input'];
@@ -14598,6 +14608,10 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!
         : [],
+    assetCheckSelectionCount:
+      overrides && overrides.hasOwnProperty('assetCheckSelectionCount')
+        ? overrides.assetCheckSelectionCount!
+        : 566,
     assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
@@ -14605,6 +14619,10 @@ export const buildRun = (
         : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    assetSelectionCount:
+      overrides && overrides.hasOwnProperty('assetSelectionCount')
+        ? overrides.assetSelectionCount!
+        : 5600,
     assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
     canTerminate:
       overrides && overrides.hasOwnProperty('canTerminate') ? overrides.canTerminate! : false,

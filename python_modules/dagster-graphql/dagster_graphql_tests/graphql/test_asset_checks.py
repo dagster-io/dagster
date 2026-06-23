@@ -221,6 +221,27 @@ query RunQuery($runId: ID!) {
   }
 """
 
+RUN_SELECTION_LIMIT_QUERY = """
+query RunSelectionLimitQuery($runId: ID!, $limit: Int) {
+  runOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        assetSelection(limit: $limit) {
+            path
+        }
+        assetSelectionCount
+        assetCheckSelection(limit: $limit) {
+            assetKey {
+                path
+            }
+            name
+        }
+        assetCheckSelectionCount
+      }
+    }
+  }
+"""
+
 RUN_ASSET_CHECKS_QUERY = """
 query RunAssetChecksQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
@@ -970,6 +991,84 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         for log in logs:
             if log.dagster_event:
                 assert log.dagster_event.event_type != DagsterEventType.ASSET_MATERIALIZATION.value
+
+    def test_run_asset_selection_limit_and_count(self, graphql_context: WorkspaceRequestContext):
+        # Launch a run that selects two assets and two checks so we can exercise the optional
+        # `limit` argument (including truncation) and the *Count fields used by the runs feed.
+        selector = infer_job_selector(
+            graphql_context,
+            "asset_check_job",
+            asset_selection=[{"path": ["asset_1"]}, {"path": ["check_in_op_asset"]}],
+            asset_check_selection=[
+                {"assetKey": {"path": ["asset_1"]}, "name": "my_check"},
+                {"assetKey": {"path": ["check_in_op_asset"]}, "name": "my_check"},
+            ],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess", (
+            result.data
+        )
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        # A non-zero limit truncates to a stable prefix (the resolver sorts the unordered selection
+        # before truncating) while the *Count fields still report the untruncated totals.
+        result = execute_dagster_graphql(
+            graphql_context, RUN_SELECTION_LIMIT_QUERY, variables={"runId": run_id, "limit": 1}
+        )
+        assert result.data == {
+            "runOrError": {
+                "__typename": "Run",
+                "assetSelection": [{"path": ["asset_1"]}],
+                "assetSelectionCount": 2,
+                "assetCheckSelection": [{"assetKey": {"path": ["asset_1"]}, "name": "my_check"}],
+                "assetCheckSelectionCount": 2,
+            }
+        }
+
+        # limit=0 truncates the returned lists to empty while the *Count fields are unchanged.
+        result = execute_dagster_graphql(
+            graphql_context, RUN_SELECTION_LIMIT_QUERY, variables={"runId": run_id, "limit": 0}
+        )
+        assert result.data == {
+            "runOrError": {
+                "__typename": "Run",
+                "assetSelection": [],
+                "assetSelectionCount": 2,
+                "assetCheckSelection": [],
+                "assetCheckSelectionCount": 2,
+            }
+        }
+
+        # A null limit (the default) returns the full lists, preserving back-compat. The unlimited
+        # selection is an unordered set, so compare without assuming an order.
+        result = execute_dagster_graphql(
+            graphql_context, RUN_SELECTION_LIMIT_QUERY, variables={"runId": run_id, "limit": None}
+        )
+        run_data = result.data["runOrError"]
+        assert run_data["__typename"] == "Run"
+        assert run_data["assetSelectionCount"] == 2
+        assert run_data["assetCheckSelectionCount"] == 2
+        assert sorted(run_data["assetSelection"], key=lambda key: key["path"]) == [
+            {"path": ["asset_1"]},
+            {"path": ["check_in_op_asset"]},
+        ]
+        assert sorted(
+            run_data["assetCheckSelection"],
+            key=lambda handle: (handle["assetKey"]["path"], handle["name"]),
+        ) == [
+            {"assetKey": {"path": ["asset_1"]}, "name": "my_check"},
+            {"assetKey": {"path": ["check_in_op_asset"]}, "name": "my_check"},
+        ]
 
     def test_launch_subset_asset_and_included_check(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(

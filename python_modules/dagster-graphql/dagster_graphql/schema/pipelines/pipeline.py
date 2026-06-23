@@ -617,8 +617,24 @@ class GrapheneRun(graphene.ObjectType):
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
-    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandle))
+    assetSelection = graphene.Field(
+        graphene.List(graphene.NonNull(GrapheneAssetKey)),
+        limit=graphene.Argument(
+            graphene.Int,
+            description="Truncate the returned selection to at most this many asset keys. "
+            "Use assetSelectionCount for the untruncated total.",
+        ),
+    )
+    assetSelectionCount = graphene.NonNull(graphene.Int)
+    assetCheckSelection = graphene.Field(
+        graphene.List(graphene.NonNull(GrapheneAssetCheckHandle)),
+        limit=graphene.Argument(
+            graphene.Int,
+            description="Truncate the returned selection to at most this many asset checks. "
+            "Use assetCheckSelectionCount for the untruncated total.",
+        ),
+    )
+    assetCheckSelectionCount = graphene.NonNull(graphene.Int)
     resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
@@ -711,15 +727,32 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.op_selection
 
-    def resolve_assetSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.asset_selection
+    def resolve_assetSelection(self, _graphene_info: ResolveInfo, limit=None):
+        asset_selection = self.dagster_run.asset_selection
+        if asset_selection is None or limit is None:
+            return asset_selection
+        # asset_selection is an unordered set; sort before truncating so the preview is stable
+        # across refreshes and matches the head of the full (client-sorted) list.
+        return sorted(asset_selection, key=lambda asset_key: asset_key.path)[:limit]
 
-    def resolve_assetCheckSelection(self, _graphene_info: ResolveInfo):
-        return (
-            [GrapheneAssetCheckHandle(handle) for handle in self.dagster_run.asset_check_selection]
-            if self.dagster_run.asset_check_selection is not None
-            else None
-        )
+    def resolve_assetSelectionCount(self, _graphene_info: ResolveInfo):
+        return len(self.dagster_run.asset_selection or [])
+
+    def resolve_assetCheckSelection(self, _graphene_info: ResolveInfo, limit=None):
+        asset_check_selection = self.dagster_run.asset_check_selection
+        if asset_check_selection is None:
+            return None
+        if limit is not None:
+            # asset_check_selection is an unordered set; sort before truncating so the preview is
+            # stable across refreshes and matches the head of the full (client-sorted) list.
+            asset_check_selection = sorted(
+                asset_check_selection,
+                key=lambda handle: (handle.asset_key.path, handle.name),
+            )[:limit]
+        return [GrapheneAssetCheckHandle(handle) for handle in asset_check_selection]
+
+    def resolve_assetCheckSelectionCount(self, _graphene_info: ResolveInfo):
+        return len(self.dagster_run.asset_check_selection or [])
 
     def resolve_resolvedOpSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.resolved_op_selection

@@ -1759,9 +1759,11 @@ type Run implements PipelineRun & RunsFeedEntry {
   creationTime: Float!
   startTime: Float
   endTime: Float
-  assetSelection: [AssetKey!]
-  assetCheckSelection: [AssetCheckhandle!]
+  assetSelection(limit: Int): [AssetKey!]
+  assetCheckSelection(limit: Int): [AssetCheckhandle!]
   parentPipelineSnapshotId: String
+  assetSelectionCount: Int!
+  assetCheckSelectionCount: Int!
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
   assetChecks: [AssetCheckhandle!]
