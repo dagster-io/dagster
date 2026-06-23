@@ -192,7 +192,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         ):
             state: JobRunStateType = response["jobRun"]["state"]
 
-            # get dashboard url when it's ready, and refresh it every 15 minutes
+            # get dashboard url when it's ready, and refresh it according to dashboard_refresh_interval (default 55 minutes)
             if state == "RUNNING" and (
                 running_dashboard_url is None
                 or (
