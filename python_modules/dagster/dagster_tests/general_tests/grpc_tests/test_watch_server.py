@@ -1,7 +1,6 @@
 import subprocess
 import threading
 import time
-from collections import Counter
 from collections.abc import Callable, Generator
 from unittest.mock import MagicMock, create_autospec
 
@@ -63,8 +62,8 @@ def should_not_be_called(unexpected_calls: list[str]) -> Callable[[str], Callabl
 @pytest.fixture
 def create_server_process_and_watch_thread(
     get_location_entry: Callable[[str], CodeLocationEntry | None],
-    called_event: Counter[str],
-    called_callback: Counter[str],
+    called_event: dict[str, int],
+    called_callback: dict[str, int],
     on_disconnect: Callable[[str], None],
     on_reconnected: Callable[[str], None],
     should_not_be_called: Callable[[str], Callable[..., None]],
@@ -126,14 +125,8 @@ def create_server_process_and_watch_thread(
         # Startup may produce at most one paired disconnect/reconnect cycle; reset counts so
         # each test starts from a clean baseline.
         assert called_event["on_reconnected_count"] == called_event["on_disconnect_count"] <= 1
-        called_event.update(
-            {
-                "on_disconnect_count": 0,
-                "on_reconnected_count": 0,
-                "on_updated_count": 0,
-                "on_error_count": 0,
-            }
-        )
+        called_event["on_disconnect_count"] = 0
+        called_event["on_reconnected_count"] = 0
         return event, watch_thread, server_process
 
     return _create_server_process_and_watch_thread
@@ -175,19 +168,17 @@ def code_location_entry() -> CodeLocationEntry:
 
 
 @pytest.fixture
-def called_event() -> Counter[str]:
-    return Counter(
-        {
-            "on_disconnect_count": 0,
-            "on_reconnected_count": 0,
-            "on_updated_count": 0,
-            "on_error_count": 0,
-        }
-    )
+def called_event() -> dict[str, int]:
+    return {
+        "on_disconnect_count": 0,
+        "on_reconnected_count": 0,
+        "on_updated_count": 0,
+        "on_error_count": 0,
+    }
 
 
 @pytest.fixture
-def on_error(called_event: Counter[str]) -> Callable[[str], None]:
+def on_error(called_event: dict[str, int]) -> Callable[[str], None]:
     def _on_error(location_name: str) -> None:
         assert location_name == LOCATION_NAME
         called_event["on_error_count"] += 1
@@ -196,7 +187,7 @@ def on_error(called_event: Counter[str]) -> Callable[[str], None]:
 
 
 @pytest.fixture
-def on_updated(called_event: Counter[str]) -> Callable[[str, str], None]:
+def on_updated(called_event: dict[str, int]) -> Callable[[str, str], None]:
     def _on_updated(location_name: str, new_server_id: str) -> None:
         assert location_name == LOCATION_NAME
         called_event["on_updated_count"] += 1
@@ -205,7 +196,7 @@ def on_updated(called_event: Counter[str]) -> Callable[[str, str], None]:
 
 
 @pytest.fixture
-def on_disconnect(called_event: Counter[str]) -> Callable[[str], None]:
+def on_disconnect(called_event: dict[str, int]) -> Callable[[str], None]:
     def _on_disconnect(location_name: str) -> None:
         assert location_name == LOCATION_NAME
         called_event["on_disconnect_count"] += 1
@@ -214,7 +205,7 @@ def on_disconnect(called_event: Counter[str]) -> Callable[[str], None]:
 
 
 @pytest.fixture
-def on_reconnected(called_event: Counter[str]) -> Callable[[str], None]:
+def on_reconnected(called_event: dict[str, int]) -> Callable[[str], None]:
     def _on_reconnected(location_name: str) -> None:
         assert location_name == LOCATION_NAME
         called_event["on_reconnected_count"] += 1
@@ -223,18 +214,16 @@ def on_reconnected(called_event: Counter[str]) -> Callable[[str], None]:
 
 
 @pytest.fixture
-def called_callback() -> Counter[str]:
-    return Counter(
-        {
-            "get_location_entry_count": 0,
-            "refresh_code_location_count": 0,
-        }
-    )
+def called_callback() -> dict[str, int]:
+    return {
+        "get_location_entry_count": 0,
+        "refresh_code_location_count": 0,
+    }
 
 
 @pytest.fixture
 def get_location_entry(
-    called_callback: Counter[str], code_location_entry: CodeLocationEntry
+    called_callback: dict[str, int], code_location_entry: CodeLocationEntry
 ) -> Callable[[str], CodeLocationEntry | None]:
     def _get_location_entry(location_name: str) -> CodeLocationEntry | None:
         assert location_name == LOCATION_NAME
@@ -245,7 +234,7 @@ def get_location_entry(
 
 
 @pytest.fixture
-def refresh_code_location(called_callback: Counter[str]) -> Callable[[str], None]:
+def refresh_code_location(called_callback: dict[str, int]) -> Callable[[str], None]:
     def _refresh_code_location(location_name: str) -> None:
         assert location_name == LOCATION_NAME
         called_callback["refresh_code_location_count"] += 1
@@ -302,7 +291,7 @@ def test_grpc_watch_thread_server_update(
 def test_grpc_watch_thread_server_reconnect(
     process_cleanup: list[subprocess.Popen],
     instance: DagsterInstance,
-    called_event: Counter[str],
+    called_event: dict[str, int],
     create_server_process_and_watch_thread: Callable[
         ..., tuple[threading.Event, threading.Thread, subprocess.Popen]
     ],
@@ -340,7 +329,7 @@ def test_grpc_watch_thread_server_reconnect(
 def test_grpc_watch_thread_server_error(
     process_cleanup: list[subprocess.Popen],
     instance: DagsterInstance,
-    called_event: Counter[str],
+    called_event: dict[str, int],
     on_error: Callable[[str], None],
     create_server_process_and_watch_thread: Callable[
         ..., tuple[threading.Event, threading.Thread, subprocess.Popen]
@@ -397,7 +386,7 @@ def test_grpc_watch_thread_server_error(
 
 
 def test_run_grpc_watch_without_server(
-    called_event: Counter[str],
+    called_event: dict[str, int],
     on_error: Callable[[str], None],
     create_server_process_and_watch_thread: Callable[
         ..., tuple[threading.Event, threading.Thread, subprocess.Popen]
@@ -431,8 +420,8 @@ def test_grpc_watch_thread_recovery_when_errored(
     process_cleanup: list[subprocess.Popen],
     instance: DagsterInstance,
     code_location_entry: MagicMock,
-    called_event: Counter[str],
-    called_callback: Counter[str],
+    called_event: dict[str, int],
+    called_callback: dict[str, int],
     on_error: Callable[[str], None],
     on_updated: Callable[[str, str], None],
     refresh_code_location: Callable[[str], None],
@@ -475,7 +464,7 @@ def test_grpc_watch_thread_recovery_when_errored(
         "on_error_count": 0,
     }
     assert called_callback["refresh_code_location_count"] == 0
-    called_callback_snapshot = Counter(called_callback)
+    called_callback_snapshot = dict(called_callback)
 
     # Simulate the workspace entry stuck in an unreachable-error state
     code_location_entry.load_error = SerializableErrorInfo(
@@ -493,16 +482,14 @@ def test_grpc_watch_thread_recovery_when_errored(
         called_callback["get_location_entry_count"]
         > called_callback_snapshot["get_location_entry_count"]
     )
-    called_event_expected = Counter(
-        {
-            "on_disconnect_count": 1,
-            "on_reconnected_count": 0,
-            "on_updated_count": 0,
-            "on_error_count": 0,
-        }
-    )
+    called_event_expected = {
+        "on_disconnect_count": 1,
+        "on_reconnected_count": 0,
+        "on_updated_count": 0,
+        "on_error_count": 0,
+    }
     assert called_event == called_event_expected
-    called_callback_snapshot = Counter(called_callback)
+    called_callback_snapshot = dict(called_callback)
     time.sleep(watch_interval * cycles_to_recover)
     if cycles_to_recover > MAX_RECONNECT_ATTEMPTS:
         called_event_expected["on_error_count"] = 1
@@ -525,7 +512,7 @@ def test_grpc_watch_thread_recovery_when_errored(
     assert called_callback["refresh_code_location_count"] >= min(
         MAX_RECONNECT_ATTEMPTS - 1, cycles_to_recover
     )
-    called_callback_snapshot = Counter(called_callback)
+    called_callback_snapshot = dict(called_callback)
     # Confirm the thread is still polling after recovery (≥ 2 more poll cycles).
     wait_for_condition(
         lambda: (
