@@ -46,7 +46,9 @@ def test_supported_dagster_cron_strings(cron_string: str):
         "* * * * * *",
         "* * * * * * *",
         "0 0 31 2 *",
-        "0 0 30 2 3",
+        # Unlike croniter iteration, cron considers this valid because the OR-ed day-of-week
+        # field still matches Wednesdays in February even though February 30 is impossible.
+        # "0 0 30 2 3",
         "H * * * *",
     ],
 )

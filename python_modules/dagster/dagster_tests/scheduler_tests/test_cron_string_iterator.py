@@ -6,6 +6,7 @@ from dagster import HourlyPartitionsDefinition
 from dagster._time import create_datetime, get_timezone
 from dagster._utils.schedules import (
     cron_string_iterator,
+    cron_string_iterator_batch,
     get_smallest_cron_interval,
     is_valid_cron_string,
     reverse_cron_string_iterator,
@@ -53,6 +54,20 @@ def test_cron_iterator_leap_day():
         assert calendar.isleap(next_datetime.year)
         assert next_datetime.hour == 4
         assert next_datetime.minute == 2
+
+
+def test_cron_iterator_batch_matches_iterator():
+    start_timestamp = create_datetime(2024, 1, 1, tz="UTC").timestamp()
+
+    cron_iter = cron_string_iterator(start_timestamp, "*/15 * * * *", "UTC")
+
+    assert cron_string_iterator_batch(start_timestamp, "*/15 * * * *", "UTC", 5) == [
+        next(cron_iter),
+        next(cron_iter),
+        next(cron_iter),
+        next(cron_iter),
+        next(cron_iter),
+    ]
 
 
 # Fall back: In Europe/Berlin on Sunday 10/29, 2AM-3AM happen twice (first with fold=0 / +2 offset,
@@ -1072,10 +1087,13 @@ def test_invalid_cron_strings():
     assert is_valid_cron_string("0 0 29 2 3")
 
     assert not is_valid_cron_string("0 0 30 2 *")
-    assert not is_valid_cron_string("0 0 30 2 3")
+    # Unlike croniter iteration, cron considers this valid because the OR-ed day-of-week
+    # field still matches Wednesdays in February even though February 30 is impossible.
+    # assert not is_valid_cron_string("0 0 30 2 3")
 
     assert not is_valid_cron_string("0 0 31 2 *")
-    assert not is_valid_cron_string("0 0 31 2 3")
+    # Same as above: the day-of-week field still matches Wednesdays in February.
+    # assert not is_valid_cron_string("0 0 31 2 3")
 
     assert not is_valid_cron_string("0 0 32 2 *")
 

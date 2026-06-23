@@ -3,6 +3,7 @@ import re
 from collections.abc import Iterator, Sequence
 
 from dagster_cron import (
+    cron_string_includes as _native_cron_string_includes,
     cron_string_iterator as _native_cron_string_iterator,
     is_valid_cron_string as _native_is_valid_cron_string,
     repeats_every_hour as _native_cron_string_repeats_every_hour,
@@ -14,6 +15,8 @@ from dagster._time import get_current_datetime
 CRON_RANGES = ((0, 59), (0, 23), (1, 31), (1, 12), (0, 7), (0, 59))
 CRON_STEP_SEARCH_REGEX = re.compile(r"^([^-]+)-([^-/]+)(/(\d+))?$")
 INT_REGEX = re.compile(r"^\d+$")
+CRON_ITERATOR_BATCH_SIZE = 128
+CRON_INTERVAL_SAMPLE_SIZE = 1000
 
 
 def is_valid_cron_string(cron_string: str) -> bool:
@@ -89,9 +92,53 @@ def cron_string_iterator(
     ascending: bool = True,
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
-    yield from _native_cron_string_iterator(
+    for batch in batched_cron_string_iterator(
+        start_timestamp, cron_string, execution_timezone, ascending, start_offset
+    ):
+        yield from batch
+
+
+def batched_cron_string_iterator(
+    start_timestamp: float,
+    cron_string: str,
+    execution_timezone: str | None,
+    ascending: bool = True,
+    start_offset: int = 0,
+    batch_size: int = CRON_ITERATOR_BATCH_SIZE,
+) -> Iterator[Sequence[datetime.datetime]]:
+    iterator = _native_cron_string_iterator(
         start_timestamp, cron_string, execution_timezone, ascending, start_offset
     )
+    if batch_size <= 0:
+        return
+
+    while True:
+        batch = iterator.next_batch(batch_size)
+        if not batch:
+            return
+        yield batch
+
+
+def cron_string_iterator_batch(
+    start_timestamp: float,
+    cron_string: str,
+    execution_timezone: str | None,
+    count: int,
+    ascending: bool = True,
+    start_offset: int = 0,
+) -> Sequence[datetime.datetime]:
+    iterator = _native_cron_string_iterator(
+        start_timestamp, cron_string, execution_timezone, ascending, start_offset
+    )
+    return [] if count <= 0 else iterator.next_batch(count)
+
+
+def cron_string_includes(
+    timestamp: float,
+    cron_string: str,
+    execution_timezone: str | None,
+) -> bool:
+    return _native_cron_string_includes(timestamp, cron_string, execution_timezone)
 
 
 def reverse_cron_string_iterator(
@@ -203,57 +250,51 @@ def get_smallest_cron_interval(
     # Start sampling from a year ago to capture seasonal variations (DST, leap years)
     sampling_start = start_time - datetime.timedelta(days=365)
 
-    # Generate consecutive cron ticks
-    cron_iter = schedule_execution_time_iterator(
+    ticks = cron_string_iterator_batch(
         start_timestamp=sampling_start.timestamp(),
-        cron_schedule=cron_string,
+        cron_string=cron_string,
         execution_timezone=execution_timezone,
-        ascending=True,
+        count=CRON_INTERVAL_SAMPLE_SIZE,
     )
 
-    # Collect the first tick
-    prev_tick = next(cron_iter)
+    if len(ticks) < 2:
+        raise ValueError("Could not determine minimum interval from cron schedule")
+
+    prev_tick = ticks[0]
     min_interval = None
 
-    # Sample up to 1000 ticks.
-    for _ in range(999):
-        try:
-            current_tick = next(cron_iter)
-            interval = current_tick - prev_tick
+    for current_tick in ticks[1:]:
+        interval = current_tick - prev_tick
 
-            # Handle DST transitions where two ticks can have the same wall clock time
-            # but different fold values (indicating they're actually different points in time)
-            if interval == datetime.timedelta(seconds=0):
-                # Check if this is a DST ambiguous time scenario where both ticks
-                # represent the same local time but different actual moments
-                if (
-                    current_tick.hour == prev_tick.hour
-                    and current_tick.minute == prev_tick.minute
-                    and current_tick.second == prev_tick.second
-                    and current_tick.fold != prev_tick.fold
-                ):
-                    # This is a DST fall-back transition - skip this zero interval
-                    # as it's not representative of the true minimum cron interval
-                    prev_tick = current_tick
-                    continue
-                # We've encountered a genuine zero interval (which shouldn't happen)
-                raise Exception("Encountered a genuine zero interval")
-
-            if interval < datetime.timedelta(seconds=0):
-                # This happens when the sampling encounters a daylight savings transition where the clocks roll back
-                # Just skip this interval and continue sampling
+        # Handle DST transitions where two ticks can have the same wall clock time
+        # but different fold values (indicating they're actually different points in time)
+        if interval == datetime.timedelta(seconds=0):
+            # Check if this is a DST ambiguous time scenario where both ticks
+            # represent the same local time but different actual moments
+            if (
+                current_tick.hour == prev_tick.hour
+                and current_tick.minute == prev_tick.minute
+                and current_tick.second == prev_tick.second
+                and current_tick.fold != prev_tick.fold
+            ):
+                # This is a DST fall-back transition - skip this zero interval
+                # as it's not representative of the true minimum cron interval
                 prev_tick = current_tick
                 continue
+            # We've encountered a genuine zero interval (which shouldn't happen)
+            raise Exception("Encountered a genuine zero interval")
 
-            # Update minimum interval
-            if min_interval is None or interval < min_interval:
-                min_interval = interval
-
+        if interval < datetime.timedelta(seconds=0):
+            # This happens when the sampling encounters a daylight savings transition where the clocks roll back
+            # Just skip this interval and continue sampling
             prev_tick = current_tick
+            continue
 
-        except StopIteration:
-            # This shouldn't happen with cron iterators, but handle gracefully
-            break
+        # Update minimum interval
+        if min_interval is None or interval < min_interval:
+            min_interval = interval
+
+        prev_tick = current_tick
 
     if min_interval is None:
         # Fallback - should not happen with valid cron schedules

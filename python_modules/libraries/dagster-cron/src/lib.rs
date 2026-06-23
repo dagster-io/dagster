@@ -206,6 +206,28 @@ impl PyScheduleIterator {
         self.inner.current_to_py(py)
     }
 
+    fn next_batch(&mut self, py: Python<'_>, count: usize) -> PyResult<Vec<Py<PyAny>>> {
+        let mut result = Vec::with_capacity(count);
+        for _ in 0..count {
+            if !self.inner.next() {
+                break;
+            }
+            result.push(self.inner.current_to_py(py)?);
+        }
+        Ok(result)
+    }
+
+    fn previous_batch(&mut self, py: Python<'_>, count: usize) -> PyResult<Vec<Py<PyAny>>> {
+        let mut result = Vec::with_capacity(count);
+        for _ in 0..count {
+            if !self.inner.previous() {
+                break;
+            }
+            result.push(self.inner.current_to_py(py)?);
+        }
+        Ok(result)
+    }
+
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }
@@ -231,7 +253,28 @@ impl PyCronStringIterator {
         slf
     }
 
+    fn next_batch(&mut self, py: Python<'_>, count: usize) -> PyResult<Vec<Py<PyAny>>> {
+        let mut result = Vec::with_capacity(count);
+        for _ in 0..count {
+            let Some(next) = self.next_datetime() else {
+                break;
+            };
+            result.push(datetime_to_py(py, &next, DateTimeKind::Aware)?);
+        }
+        Ok(result)
+    }
+
     fn __next__(&mut self, py: Python<'_>) -> PyResult<Option<Py<PyAny>>> {
+        let Some(next) = self.next_datetime() else {
+            return Ok(None);
+        };
+
+        Ok(Some(datetime_to_py(py, &next, DateTimeKind::Aware)?))
+    }
+}
+
+impl PyCronStringIterator {
+    fn next_datetime(&mut self) -> Option<DateTime<Tz>> {
         loop {
             let next = if self.ascending {
                 self.iter.next()
@@ -240,14 +283,14 @@ impl PyCronStringIterator {
             };
 
             let Some(next) = next else {
-                return Ok(None);
+                return None;
             };
 
             if !self.repeats_every_hour && is_pre_transition_ambiguous(&next) {
                 continue;
             }
 
-            return Ok(Some(datetime_to_py(py, &next, DateTimeKind::Aware)?));
+            return Some(next);
         }
     }
 }
@@ -261,6 +304,22 @@ fn is_valid_cron_string(cron_string: &str) -> bool {
 fn repeats_every_hour(cron_string: &str) -> PyResult<bool> {
     new_dagster_schedule(cron_string)?;
     dagster_repeats_every_hour(cron_string)
+}
+
+#[pyfunction]
+fn cron_string_includes(
+    timestamp: f64,
+    cron_string: &str,
+    execution_timezone: Option<&str>,
+) -> PyResult<bool> {
+    let schedule = new_dagster_schedule(cron_string)?;
+    let timezone_name = execution_timezone.unwrap_or("UTC");
+    let timezone = timezone_name
+        .parse::<Tz>()
+        .map_err(|_| PyValueError::new_err(format!("Unknown timezone: {timezone_name}")))?;
+    let datetime = datetime_from_timestamp(timestamp)?.with_timezone(&timezone);
+
+    Ok(schedule.includes(datetime))
 }
 
 #[pyfunction]
@@ -339,10 +398,6 @@ fn new_dagster_schedule(expression: &str) -> PyResult<Schedule> {
         ));
     }
 
-    dagster_schedule_builder(DowDomOperand::And)
-        .parse(&expression)
-        .map_err(|err| PyValueError::new_err(err.to_string()))?;
-
     dagster_schedule_builder(DowDomOperand::Or)
         .parse(&expression)
         .map_err(|err| PyValueError::new_err(err.to_string()))
@@ -377,7 +432,6 @@ fn normalize_dagster_expression(expression: &str) -> PyResult<String> {
             "weekly" => "@weekly",
             "monthly" => "@monthly",
             "yearly" => "@yearly",
-            "reboot" => return Err(PyValueError::new_err("@reboot is not supported")),
             _ => trimmed,
         };
         return Ok(normalized.to_string());
@@ -583,6 +637,7 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<PyDayMatching>()?;
     module.add_class::<PyDayOfWeekNumbering>()?;
     module.add_class::<PyNonexistentTimeBehavior>()?;
+    module.add_function(wrap_pyfunction!(cron_string_includes, module)?)?;
     module.add_function(wrap_pyfunction!(cron_string_iterator, module)?)?;
     module.add_function(wrap_pyfunction!(is_valid_cron_string, module)?)?;
     module.add_function(wrap_pyfunction!(repeats_every_hour, module)?)?;

@@ -15,6 +15,7 @@ from dagster_cron import (
     Schedule,
     ScheduleIterator,
     ScheduleParts,
+    cron_string_includes,
     cron_string_iterator,
     is_valid_cron_string,
     repeats_every_hour,
@@ -40,6 +41,7 @@ def test_import_exports_native_schedule_api_only():
         "Schedule",
         "ScheduleIterator",
         "ScheduleParts",
+        "cron_string_includes",
         "cron_string_iterator",
         "is_valid_cron_string",
         "repeats_every_hour",
@@ -75,7 +77,24 @@ def test_backward_iterator_returns_datetimes():
     assert result == dt.datetime(2024, 1, 1, 0, 5, tzinfo=UTC)
 
 
-def test_iterator_exposes_only_forward_next_and_previous():
+def test_schedule_iterator_batches_forward_and_backward():
+    schedule = Schedule("*/5 * * * *")
+    forward_iterator = schedule.iter(dt.datetime(2024, 1, 1, tzinfo=UTC))
+    backward_iterator = schedule.iter(dt.datetime(2024, 1, 1, 0, 15, tzinfo=UTC))
+
+    assert forward_iterator.next_batch(3) == [
+        dt.datetime(2024, 1, 1, 0, 5, tzinfo=UTC),
+        dt.datetime(2024, 1, 1, 0, 10, tzinfo=UTC),
+        dt.datetime(2024, 1, 1, 0, 15, tzinfo=UTC),
+    ]
+    assert backward_iterator.previous_batch(3) == [
+        dt.datetime(2024, 1, 1, 0, 10, tzinfo=UTC),
+        dt.datetime(2024, 1, 1, 0, 5, tzinfo=UTC),
+        dt.datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+    ]
+
+
+def test_iterator_exposes_only_minimal_navigation_api():
     iterator = Schedule("*/5 * * * *").iter(dt.datetime(2024, 1, 1, tzinfo=UTC))
 
     assert hasattr(iterator, "next")
@@ -163,6 +182,34 @@ def test_dagster_cron_string_iterator_is_inclusive():
 
     assert next(iterator) == dt.datetime(2024, 1, 1, tzinfo=UTC)
     assert next(iterator) == dt.datetime(2024, 1, 2, tzinfo=UTC)
+
+
+def test_dagster_cron_string_iterator_batches_are_inclusive():
+    iterator = cron_string_iterator(
+        dt.datetime(2024, 1, 1, tzinfo=UTC).timestamp(),
+        "0 0 * * *",
+        "UTC",
+    )
+
+    assert iterator.next_batch(3) == [
+        dt.datetime(2024, 1, 1, tzinfo=UTC),
+        dt.datetime(2024, 1, 2, tzinfo=UTC),
+        dt.datetime(2024, 1, 3, tzinfo=UTC),
+    ]
+    assert next(iterator) == dt.datetime(2024, 1, 4, tzinfo=UTC)
+
+
+def test_dagster_cron_string_includes_uses_dagster_compatibility():
+    assert cron_string_includes(
+        dt.datetime(2024, 1, 7, tzinfo=UTC).timestamp(),
+        "0 0 * * 7",
+        "UTC",
+    )
+    assert not cron_string_includes(
+        dt.datetime(2024, 1, 8, tzinfo=UTC).timestamp(),
+        "0 0 * * 7",
+        "UTC",
+    )
 
 
 def test_dagster_aliases_and_validation():
