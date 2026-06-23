@@ -1,5 +1,6 @@
 import time
 
+import dagster as dg
 from dagster import AssetKey, DagsterEvent, DagsterEventType
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
@@ -13,6 +14,8 @@ from dagster._core.definitions.partitions.subset.default import DefaultPartition
 from dagster._core.event_api import EventLogRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -1451,6 +1454,66 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert res.data["pipelineRunOrError"]["assetChecks"] == [
             {"name": "my_check", "assetKey": {"path": ["one"]}},
             {"name": "my_other_check", "assetKey": {"path": ["one"]}},
+        ]
+
+    def test_run_asset_checks_planned_and_unplanned(self, graphql_context: WorkspaceRequestContext):
+        # A run that targets every check on its assets stores asset_check_selection=None, so the
+        # planned checks must be read from the run's execution plan snapshot rather than the event
+        # log. A run can also emit evaluations for checks that were not planned, which must come
+        # from the event log. The resolver unions both sources.
+        @dg.asset
+        def my_asset():
+            return 1
+
+        @dg.asset_check(asset=my_asset)
+        def my_check():
+            return dg.AssetCheckResult(passed=True)
+
+        defs = dg.Definitions(assets=[my_asset], asset_checks=[my_check])
+        job_def = defs.get_implicit_global_asset_job_def()
+        job_snapshot = job_def.get_job_snapshot()
+        execution_plan_snapshot = snapshot_from_execution_plan(
+            create_execution_plan(job_def), job_snapshot.snapshot_id
+        )
+
+        run = create_run_for_test(
+            graphql_context.instance,
+            job_name=job_def.name,
+            job_snapshot=job_snapshot,
+            execution_plan_snapshot=execution_plan_snapshot,
+            asset_check_selection=None,
+        )
+
+        # With no events stored, the planned check comes solely from the execution plan snapshot.
+        res = execute_dagster_graphql(
+            graphql_context,
+            RUN_ASSET_CHECKS_QUERY,
+            variables={"runId": run.run_id},
+        )
+        assert res.data["pipelineRunOrError"]["assetChecks"] == [
+            {"name": "my_check", "assetKey": {"path": ["my_asset"]}},
+        ]
+
+        # An evaluation for a check that was never planned must still be surfaced from the event log.
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run.run_id,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["my_asset"]),
+                    check_name="my_unplanned_check",
+                    passed=True,
+                ),
+            )
+        )
+
+        res = execute_dagster_graphql(
+            graphql_context,
+            RUN_ASSET_CHECKS_QUERY,
+            variables={"runId": run.run_id},
+        )
+        assert res.data["pipelineRunOrError"]["assetChecks"] == [
+            {"name": "my_check", "assetKey": {"path": ["my_asset"]}},
+            {"name": "my_unplanned_check", "assetKey": {"path": ["my_asset"]}},
         ]
 
     def test_partitioned_asset_check_executions(self, graphql_context: WorkspaceRequestContext):

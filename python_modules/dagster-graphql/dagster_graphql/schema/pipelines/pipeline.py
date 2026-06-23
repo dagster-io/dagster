@@ -43,7 +43,7 @@ from dagster_graphql.implementation.events import (
     get_graphene_events_from_records_connection,
     iterate_metadata_entries,
 )
-from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id
+from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
@@ -812,7 +812,7 @@ class GrapheneRun(graphene.ObjectType):
         return get_assets_for_run(graphene_info, self.dagster_run)
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo):
-        return get_asset_checks_for_run_id(graphene_info, self.run_id)
+        return get_asset_checks_for_run(graphene_info, self.dagster_run)
 
     def resolve_assetMaterializations(self, graphene_info: ResolveInfo):
         # convenience field added for users querying directly via GraphQL
