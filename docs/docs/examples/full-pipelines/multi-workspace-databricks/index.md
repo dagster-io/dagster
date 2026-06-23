@@ -10,9 +10,6 @@ canonicalUrl: '/examples/full-pipelines/multi-workspace-databricks'
 slug: '/examples/full-pipelines/multi-workspace-databricks'
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 In this example, you'll explore a Dagster project that demonstrates an enterprise data mesh architecture. The project shows how a single Dagster deployment can orchestrate data pipelines across multiple Databricks workspaces while integrating Kafka for real-time event ingestion and Fivetran for SaaS data syncs.
 
 The core challenge this project addresses is common in large organizations: data is distributed across many systems — event streams, SaaS tools, legacy databases, and business-unit-specific Databricks workspaces — but the organization needs unified lineage tracking, consistent scheduling, and cross-domain analytics. Dagster acts as the control plane, maintaining a single asset graph that spans all of these systems.

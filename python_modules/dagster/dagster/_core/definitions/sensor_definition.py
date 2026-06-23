@@ -329,7 +329,7 @@ class SensorEvaluationContext:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
             )
-        return cast("DagsterInstance", self._instance)
+        return self._instance
 
     @property
     def instance_ref(self) -> InstanceRef | None:
@@ -619,6 +619,9 @@ class SensorDefinition(IHasInternalInit):
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This is a parameter that will replace `job`, `jobs`, and `asset_selection`.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the sensor.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
 
     def with_attributes(
@@ -651,8 +654,7 @@ class SensorDefinition(IHasInternalInit):
         """Returns a copy of this sensor with the job replaced.
 
         Args:
-            job (ExecutableDefinition): The job that should execute when this
-                schedule runs.
+            new_job (ExecutableDefinition): The job to be added to this sensor.
         """
         return self.with_updated_jobs([new_job])
 
@@ -660,8 +662,7 @@ class SensorDefinition(IHasInternalInit):
         """Returns a copy of this sensor with the jobs replaced.
 
         Args:
-            jobs (Sequence[ExecutableDefinition]): The jobs that should execute when this
-                schedule runs.
+            new_jobs (Sequence[ExecutableDefinition]): The jobs to be added to this sensor.
         """
         return self.with_attributes(jobs=new_jobs)
 
@@ -734,7 +735,7 @@ class SensorDefinition(IHasInternalInit):
         if name:
             self._name = check_valid_name(name)
         else:
-            self._name = evaluation_fn.__name__
+            self._name = evaluation_fn.__name__  # ty: ignore[unresolved-attribute]
 
         self._raw_fn: RawSensorEvaluationFunction = check.callable_param(
             evaluation_fn, "evaluation_fn"
@@ -1144,7 +1145,7 @@ class SensorDefinition(IHasInternalInit):
                     "RunRequest must have an asset_graph_subset to launch a backfill.",
                 )
 
-            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(  # pyright: ignore[reportPossiblyUnboundVariable]
+            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
                 check.not_none(context.repository_def).asset_graph
             )
             if unexpected_asset_keys:
@@ -1411,9 +1412,9 @@ def get_or_create_sensor_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    context = (
-        get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
-        or build_sensor_context()
+    maybe_context = get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
+    context: SensorEvaluationContext = (  # ty: ignore[invalid-assignment]
+        maybe_context if maybe_context is not None else build_sensor_context()
     )
     resource_args_from_kwargs = {}
 

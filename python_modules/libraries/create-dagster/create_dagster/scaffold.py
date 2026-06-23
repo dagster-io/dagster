@@ -180,23 +180,24 @@ def scaffold_project(
 # so any 2+-order Dagster dependency of our package needs to be listed as a direct dependency in the
 # editable case. See: https://github.com/astral-sh/uv/issues/9446
 EDITABLE_DAGSTER_DEPENDENCIES = [
-    "dagster",
     "dagster-pipes",
     "dagster-shared",
     "dagster-test",  # we include dagster-test for testing purposes
+    "dagster",
 ]
 EDITABLE_DAGSTER_DEV_DEPENDENCIES = [
-    "dagster-webserver",
-    "dagster-graphql",
-    "dagster-dg-core",
-    "dagster-dg-cli",
     "dagster-cloud-cli",
+    "dagster-dg-cli",
+    "dagster-dg-core",
+    "dagster-graphql",
+    "dagster-webserver",
+    "dagster-rest-resources",
 ]
 
 
 PYPI_DAGSTER_DEV_DEPENDENCIES = [
-    "dagster-webserver",
     "dagster-dg-cli",
+    "dagster-webserver",
 ]
 
 

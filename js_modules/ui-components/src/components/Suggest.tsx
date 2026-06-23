@@ -10,11 +10,11 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import deepmerge from 'deepmerge';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Icon, IconName} from './Icon';
 import {Container, Inner, Row} from './VirtualizedTable';
+import styles from './css/Suggest.module.css';
 
 export const MENU_ITEM_HEIGHT = 32;
 
@@ -34,7 +34,10 @@ export const Suggest = <T,>(props: Props<T>) => {
   const allPopoverProps: Partial<PopoverProps> = {
     ...popoverProps,
     minimal: true,
-    modifiers: deepmerge({offset: {enabled: true, offset: '0, 8px'}}, popoverProps.modifiers || {}),
+    modifiers: deepmerge(
+      {offset: {enabled: true, options: {offset: [0, 4]}}},
+      popoverProps.modifiers || {},
+    ),
     popoverClassName: `dagster-popover ${props.popoverProps?.className || ''}`,
   };
 
@@ -68,12 +71,12 @@ export const Suggest = <T,>(props: Props<T>) => {
 
   if (icon) {
     return (
-      <SuggestWithIconWrapper>
+      <div className={styles.suggestWithIconWrapper}>
         <div>
           <Icon name={icon} />
         </div>
         {suggest}
-      </SuggestWithIconWrapper>
+      </div>
     );
   }
   return suggest;
@@ -108,7 +111,7 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef} style={{maxHeight: MAX_MENU_HEIGHT, width: menuWidth}}>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             const item = filteredItems[index];
             if (!item) {
@@ -116,7 +119,7 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
             }
 
             return (
-              <Row key={key} $height={size} $start={start}>
+              <Row key={key} height={size} start={start}>
                 {props.renderItem(item, index)}
               </Row>
             );
@@ -126,20 +129,3 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
     </div>
   );
 };
-
-const SuggestWithIconWrapper = styled.div`
-  position: relative;
-  > :first-child {
-    position: absolute;
-    left: 8px;
-    z-index: 1;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-  }
-
-  &&& input {
-    padding-left: 28px;
-  }
-`;

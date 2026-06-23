@@ -1,0 +1,7 @@
+locations:
+  - location_name: dagster_deploy_demo
+    code_source:
+      package_name: project_dagster_plus_deployment
+    build:
+      directory: .
+      registry: ${DAGSTER_CONTAINER_REGISTRY}

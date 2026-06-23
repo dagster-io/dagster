@@ -71,6 +71,7 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron from '../icon-svgs/chevron.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
+import claude from '../icon-svgs/claude.svg';
 import close from '../icon-svgs/close.svg';
 import cloud from '../icon-svgs/cloud.svg';
 import code_block from '../icon-svgs/code_block.svg';
@@ -106,6 +107,7 @@ import create_view from '../icon-svgs/create_view.svg';
 import credit_card from '../icon-svgs/credit_card.svg';
 import credits from '../icon-svgs/credits.svg';
 import curly_braces from '../icon-svgs/curly_braces.svg';
+import cursor from '../icon-svgs/cursor.svg';
 import daemon from '../icon-svgs/daemon.svg';
 import dagster_primary from '../icon-svgs/dagster_primary.svg';
 import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
@@ -165,6 +167,7 @@ import filter from '../icon-svgs/filter.svg';
 import filter_alt from '../icon-svgs/filter_alt.svg';
 import flag from '../icon-svgs/flag.svg';
 import folder from '../icon-svgs/folder.svg';
+import folder_match from '../icon-svgs/folder_match.svg';
 import folder_open from '../icon-svgs/folder_open.svg';
 import forum from '../icon-svgs/forum.svg';
 import freshness from '../icon-svgs/freshness.svg';
@@ -258,6 +261,7 @@ import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
 import not from '../icon-svgs/not.svg';
 import notifications from '../icon-svgs/notifications.svg';
+import notifications_off from '../icon-svgs/notifications_off.svg';
 import observation from '../icon-svgs/observation.svg';
 import observation_planned from '../icon-svgs/observation_planned.svg';
 import observation_started from '../icon-svgs/observation_started.svg';
@@ -265,6 +269,7 @@ import offline from '../icon-svgs/offline.svg';
 import op from '../icon-svgs/op.svg';
 import op_dynamic from '../icon-svgs/op_dynamic.svg';
 import op_selector from '../icon-svgs/op_selector.svg';
+import open_ai from '../icon-svgs/open_ai.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import or from '../icon-svgs/or.svg';
 import organization from '../icon-svgs/organization.svg';
@@ -501,6 +506,7 @@ export const Icons = {
   chevron,
   chevron_left,
   chevron_right,
+  claude,
   close,
   cloud,
   code_block,
@@ -536,6 +542,7 @@ export const Icons = {
   credit_card,
   credits,
   curly_braces,
+  cursor,
   daemon,
   dagster_primary,
   dagster_reversed,
@@ -595,6 +602,7 @@ export const Icons = {
   filter_alt,
   flag,
   folder,
+  folder_match,
   folder_open,
   forum,
   freshness,
@@ -687,12 +695,14 @@ export const Icons = {
   no_access,
   not,
   notifications,
+  notifications_off,
   observation,
   observation_planned,
   observation_started,
   offline,
   op,
   op_selector,
+  open_ai,
   open_in_new,
   or,
   organization,
@@ -882,7 +892,7 @@ export const Icon = React.memo((props: IconProps) => {
 
   // Storybook imports SVGs are string but nextjs imports them as object.
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
-  const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
+  const img = typeof Icons[name] === 'string' ? (Icons[name] as string) : Icons[name].src;
 
   return <BaseIcon {...rest} img={img} name={name} color={color} />;
 });

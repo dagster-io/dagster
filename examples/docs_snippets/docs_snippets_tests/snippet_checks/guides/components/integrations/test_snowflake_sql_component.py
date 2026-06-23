@@ -153,7 +153,7 @@ def test_components_docs_snowflake_sql(
                     amount_column: SALE_AMOUNT
                     start_date: "2024-01-01"
 
-                  connection: "{{ load_component_at_path('snowflake_connection') }}"
+                  connection: "{{ context.load_component('snowflake_connection') }}"
 
                   assets:
                     - key: ANALYTICS/DAILY_REVENUE
@@ -234,7 +234,7 @@ def test_components_docs_snowflake_sql(
                     amount_column: SALE_AMOUNT
                     start_date: "2024-01-01"
 
-                  connection: "{{ load_component_at_path('snowflake_connection') }}"
+                  connection: "{{ context.load_component('snowflake_connection') }}"
 
                   assets:
                     - key: ANALYTICS/DAILY_REVENUE

@@ -6,6 +6,7 @@ from dagster import AutomationCondition
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetPostProcessorModel,
+    SharedAssetKwargs,
     apply_post_processor_to_defs,
 )
 from dagster.components.utils import TranslatorResolvingInfo
@@ -16,13 +17,17 @@ class M(BaseModel):
     asset_attributes: Sequence[AssetPostProcessorModel] = []
 
 
-defs = dg.Definitions(
-    assets=[
+@dg.multi_asset(
+    specs=[
         dg.AssetSpec("a", group_name="g1"),
         dg.AssetSpec("b", group_name="g2"),
         dg.AssetSpec("c", group_name="g2", tags={"tag": "val"}),
-    ],
+    ]
 )
+def my_assets(): ...
+
+
+defs = dg.Definitions(assets=[my_assets])
 
 
 def test_replace_attributes() -> None:
@@ -134,7 +139,7 @@ def test_render_attributes_custom_context() -> None:
     ],
 )
 def test_load_attributes(python, expected) -> None:
-    loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])
+    loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])  # ty: ignore[invalid-type-form]
     assert len(loaded) == 1
     assert loaded[0] == expected
 
@@ -176,3 +181,164 @@ def test_key_and_prefix():
 
     assert translated.key.to_user_string().endswith("_key")
     assert translated.key.has_prefix(prefix)
+
+
+def test_source_asset_with_wildcard_post_processing() -> None:
+    """SourceAssets in Definitions should not cause errors during post-processing."""
+
+    @dg.asset
+    def my_asset() -> None:
+        pass
+
+    source = dg.SourceAsset(key="my_source")
+    mixed_defs = dg.Definitions(assets=[my_asset, source])
+
+    op = AssetPostProcessorModel.model()(
+        target="*",
+        attributes={"tags": {"processed": "true"}},
+    )
+
+    # This should NOT raise DagsterInvariantViolationError
+    newdefs = apply_post_processor_to_defs(
+        model=op, defs=mixed_defs, context=ResolutionContext.default()
+    )
+
+    # Verify the @asset got post-processed
+    found_regular = False
+    found_source = False
+    for asset_def in newdefs.assets or []:
+        if isinstance(asset_def, dg.AssetsDefinition):
+            for spec in asset_def.specs:
+                if spec.key == dg.AssetKey("my_asset"):
+                    assert spec.tags.get("processed") == "true"
+                    found_regular = True
+        elif isinstance(asset_def, dg.SourceAsset):
+            assert asset_def.key == dg.AssetKey("my_source")
+            found_source = True
+
+    assert found_regular, "regular asset should be post-processed"
+    assert found_source, "SourceAsset should be preserved"
+
+
+def test_source_asset_with_targeted_post_processing() -> None:
+    """SourceAssets should be preserved when post-processing targets specific assets."""
+
+    @dg.asset(group_name="target_group")
+    def targeted_asset() -> None:
+        pass
+
+    @dg.asset(group_name="other_group")
+    def other_asset() -> None:
+        pass
+
+    source = dg.SourceAsset(key="my_source")
+    mixed_defs = dg.Definitions(assets=[targeted_asset, other_asset, source])
+
+    op = AssetPostProcessorModel.model()(
+        target="group:target_group",
+        attributes={"tags": {"processed": "true"}},
+    )
+
+    newdefs = apply_post_processor_to_defs(
+        model=op, defs=mixed_defs, context=ResolutionContext.default()
+    )
+
+    found_targeted = False
+    found_other = False
+    found_source = False
+    for asset_def in newdefs.assets or []:
+        if isinstance(asset_def, dg.AssetsDefinition):
+            for spec in asset_def.specs:
+                if spec.key == dg.AssetKey("targeted_asset"):
+                    assert spec.tags.get("processed") == "true"
+                    found_targeted = True
+                elif spec.key == dg.AssetKey("other_asset"):
+                    assert spec.tags.get("processed") is None
+                    found_other = True
+        elif isinstance(asset_def, dg.SourceAsset):
+            found_source = True
+
+    assert found_targeted, "targeted asset should be post-processed"
+    assert found_other, "non-targeted asset should be unchanged"
+    assert found_source, "SourceAsset should be preserved"
+
+
+def test_cacheable_assets_with_post_processing() -> None:
+    """CacheableAssetsDefinitions should not cause errors during post-processing."""
+    from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+        AssetsDefinitionCacheableData,
+        CacheableAssetsDefinition,
+    )
+
+    class MyCacheableAssets(CacheableAssetsDefinition):
+        def compute_cacheable_data(self):
+            return [
+                AssetsDefinitionCacheableData(
+                    keys_by_output_name={"result": dg.AssetKey("cacheable_asset")},
+                )
+            ]
+
+        def build_definitions(self, data):
+            @dg.op(name="cacheable_op")
+            def _op():
+                return 1
+
+            return [
+                dg.AssetsDefinition.from_op(
+                    _op,
+                    keys_by_output_name=cd.keys_by_output_name,
+                )
+                for cd in data
+            ]
+
+    @dg.asset
+    def regular_asset() -> None:
+        pass
+
+    mixed_defs = dg.Definitions(assets=[regular_asset, MyCacheableAssets("test")])
+
+    op = AssetPostProcessorModel.model()(
+        target="*",
+        attributes={"tags": {"processed": "true"}},
+    )
+
+    # This should NOT raise DagsterInvariantViolationError
+    newdefs = apply_post_processor_to_defs(
+        model=op, defs=mixed_defs, context=ResolutionContext.default()
+    )
+
+    found_regular = False
+    found_cacheable = False
+    for asset_def in newdefs.assets or []:
+        if isinstance(asset_def, dg.AssetsDefinition):
+            for spec in asset_def.specs:
+                if spec.key == dg.AssetKey("regular_asset"):
+                    assert spec.tags.get("processed") == "true"
+                    found_regular = True
+        elif isinstance(asset_def, CacheableAssetsDefinition):
+            found_cacheable = True
+
+    assert found_regular, "regular asset should be post-processed"
+    assert found_cacheable, "CacheableAssetsDefinition should be preserved"
+
+
+def test_integer_tag_values_coerced_to_strings() -> None:
+    """Test that non-string scalar tag values in YAML are coerced to strings (issue #30954)."""
+    op = AssetPostProcessorModel.model()(
+        attributes={"tags": {"priority": 1, "enabled": True, "score": 3.5}},
+    )
+    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
+    asset_graph = newdefs.resolve_asset_graph()
+    assert asset_graph.get(dg.AssetKey("a")).tags == {
+        "priority": "1",
+        "enabled": "True",
+        "score": "3.5",
+    }
+
+
+def test_shared_asset_kwargs_integer_tags() -> None:
+    """Test that SharedAssetKwargs resolves integer tag values to strings."""
+    model_cls = SharedAssetKwargs.model()
+    model = model_cls(tags={"priority": 1, "version": 2})
+    resolved = SharedAssetKwargs.resolve_from_model(ResolutionContext.default(), model)
+    assert resolved.tags == {"priority": "1", "version": "2"}

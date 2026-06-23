@@ -78,7 +78,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
     ] = None
 
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.local_filesystem
     )
 
     @property
@@ -91,7 +91,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         jobs = await self.workspace.fetch_jobs(self.databricks_filter)
 
         data = DatabricksWorkspaceData(jobs=jobs)
-        state_path.write_text(serialize_value(data))
+        state_path.write_text(serialize_value(data), encoding="utf-8")
 
     def build_defs_from_state(self, context: Any, state_path: Path | None) -> Definitions:
         """Build Dagster Definitions from the cached state."""

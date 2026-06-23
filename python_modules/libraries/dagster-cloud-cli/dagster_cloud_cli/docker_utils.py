@@ -34,6 +34,26 @@ def _template_dockerfile(env_vars, custom_base_image=None) -> Generator[bytes, N
         yield bytes(dockerfile_content, "utf-8")
 
 
+def full_image_ref(
+    registry_url: str,
+    location_name: str | None,
+    image_tag: str,
+) -> str:
+    """Build the full Docker image reference.
+
+    For Harbor-backed registries the registry URL already contains a
+    deployment-scoped prefix (``host/project/depl-prefix``).  Each code
+    location gets its own repository nested under that prefix, so the
+    reference becomes ``host/project/depl-prefix/location:tag``.
+
+    For legacy ECR registries (or when *location_name* is ``None``) the
+    reference falls back to the previous ``registry:tag`` format.
+    """
+    if location_name:
+        return f"{registry_url}/{location_name}:{image_tag}"
+    return f"{registry_url}:{image_tag}"
+
+
 def build_image(
     source_directory,
     image: str,
@@ -42,8 +62,9 @@ def build_image(
     base_image: str | None,
     use_editable_dagster: bool,
     dockerfile_path: str | None = None,
+    location_name: str | None = None,
 ) -> int:
-    registry = registry_info["registry_url"]
+    full_ref = full_image_ref(registry_info["registry_url"], location_name, image)
 
     with ExitStack() as stack:
         if dockerfile_path:
@@ -58,7 +79,7 @@ def build_image(
             "build",
             source_directory,
             "-t",
-            f"{registry}:{image}",
+            full_ref,
             "-f",
             file_path,
             "--platform",
@@ -74,7 +95,7 @@ def build_image(
         return subprocess.run(cmd, input=build_input, check=True).returncode
 
 
-def upload_image(image, registry_info) -> int:
+def upload_image(image, registry_info, location_name: str | None = None) -> int:
     registry = registry_info["registry_url"]
     aws_token = registry_info["aws_auth_token"]
     if not registry or not aws_token:
@@ -84,13 +105,13 @@ def upload_image(image, registry_info) -> int:
         )
 
     username, password = base64.b64decode(aws_token).decode("utf-8").split(":")
-    subprocess.check_output(
-        f"echo {password} | docker login --username {username} --password-stdin {registry}",
-        shell=True,
+    subprocess.run(
+        ["docker", "login", "--username", username, "--password-stdin", registry],
+        input=password.encode(),
+        check=True,
     )
-    return subprocess.call(
-        ["docker", "push", f"{registry}:{image}"], stderr=sys.stderr, stdout=sys.stdout
-    )
+    full_ref = full_image_ref(registry, location_name, image)
+    return subprocess.call(["docker", "push", full_ref], stderr=sys.stderr, stdout=sys.stdout)
 
 
 def default_image_tag(deployment: str, location_name: str, commit_hash: str | None) -> str:

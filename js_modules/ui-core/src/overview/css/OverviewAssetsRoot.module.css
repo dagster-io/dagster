@@ -1,0 +1,31 @@
+.rowGrid {
+  display: grid;
+  grid-template-columns: 5fr 1fr 1fr 1fr 1fr;
+  height: 100%;
+}
+
+.rowGrid > * {
+  vertical-align: middle;
+}
+
+.repositoryLinkWrapper {
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.repositoryLinkWrapper a {
+  color: var(--color-text-light);
+  pointer-events: none;
+}
+
+.selectWrapper {
+  cursor: pointer;
+}
+
+.selectWrapper:hover {
+  font-weight: 600;
+}
+
+.linkWithNoUnderline:hover {
+  text-decoration: none;
+}

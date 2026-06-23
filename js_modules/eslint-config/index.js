@@ -1,5 +1,5 @@
 const prettierConfig = require('eslint-config-prettier');
-const dagsterRulesPlugin = require('eslint-plugin-dagster-rules');
+const dagsterRulesPlugin = require('./rules');
 const importPlugin = require('eslint-plugin-import');
 const jestPlugin = require('eslint-plugin-jest');
 const jsxA11yPlugin = require('eslint-plugin-jsx-a11y');
@@ -138,11 +138,6 @@ module.exports = [
             },
             {
               name: 'graphql-tag',
-              message: 'Please import from `@apollo/client`.',
-            },
-            {
-              name: 'graphql.macro',
-              importNames: ['gql'],
               message: 'Please import from `@apollo/client`.',
             },
             {

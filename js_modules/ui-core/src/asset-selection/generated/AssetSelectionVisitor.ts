@@ -1,4 +1,4 @@
-// Generated from dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/maximearmstrong/Documents/Repositories/dagster-io/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import {AbstractParseTreeVisitor} from 'antlr4ng';
 
@@ -22,12 +22,18 @@ import {TagAttributeExprContext} from './AssetSelectionParser.js';
 import {OwnerAttributeExprContext} from './AssetSelectionParser.js';
 import {GroupAttributeExprContext} from './AssetSelectionParser.js';
 import {KindAttributeExprContext} from './AssetSelectionParser.js';
+import {IsAttributeExprContext} from './AssetSelectionParser.js';
 import {StatusAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnAttributeExprContext} from './AssetSelectionParser.js';
 import {TableNameAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnTagAttributeExprContext} from './AssetSelectionParser.js';
 import {CodeLocationAttributeExprContext} from './AssetSelectionParser.js';
 import {ChangedInBranchAttributeExprContext} from './AssetSelectionParser.js';
+import {PartitionsAttributeExprContext} from './AssetSelectionParser.js';
+import {AutomationTypeAttributeExprContext} from './AssetSelectionParser.js';
+import {SensorAttributeExprContext} from './AssetSelectionParser.js';
+import {ScheduleAttributeExprContext} from './AssetSelectionParser.js';
+import {JobAttributeExprContext} from './AssetSelectionParser.js';
 import {ValueContext} from './AssetSelectionParser.js';
 import {KeyValueContext} from './AssetSelectionParser.js';
 
@@ -176,6 +182,13 @@ export class AssetSelectionVisitor<Result> extends AbstractParseTreeVisitor<Resu
    */
   visitKindAttributeExpr?: (ctx: KindAttributeExprContext) => Result;
   /**
+   * Visit a parse tree produced by the `IsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIsAttributeExpr?: (ctx: IsAttributeExprContext) => Result;
+  /**
    * Visit a parse tree produced by the `StatusAttributeExpr`
    * labeled alternative in `AssetSelectionParser.attributeExpr`.
    * @param ctx the parse tree
@@ -217,6 +230,41 @@ export class AssetSelectionVisitor<Result> extends AbstractParseTreeVisitor<Resu
    * @return the visitor result
    */
   visitChangedInBranchAttributeExpr?: (ctx: ChangedInBranchAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `PartitionsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPartitionsAttributeExpr?: (ctx: PartitionsAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `AutomationTypeAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitAutomationTypeAttributeExpr?: (ctx: AutomationTypeAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `SensorAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitSensorAttributeExpr?: (ctx: SensorAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `ScheduleAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitScheduleAttributeExpr?: (ctx: ScheduleAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `JobAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitJobAttributeExpr?: (ctx: JobAttributeExprContext) => Result;
   /**
    * Visit a parse tree produced by `AssetSelectionParser.value`.
    * @param ctx the parse tree

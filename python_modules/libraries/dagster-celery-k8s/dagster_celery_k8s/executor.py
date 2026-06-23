@@ -4,6 +4,7 @@ import sys
 import time
 
 import kubernetes
+import kubernetes.client.rest
 from dagster import (
     DagsterEvent,
     DagsterEventType,
@@ -223,7 +224,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         raise Exception("No image included in either executor config or the dagster job")
 
     task = create_k8s_job_task(app)
-    task_signature = task.si(  # pyright: ignore[reportFunctionMemberAccess]
+    task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
         job_config_dict=job_config.to_dict(),
         job_namespace=plan_context.executor.job_namespace,
@@ -287,7 +288,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         )
         check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
         check.invariant(
-            len(execute_step_args.step_keys_to_execute) == 1,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            len(execute_step_args.step_keys_to_execute) == 1,  # ty: ignore[unresolved-attribute]
             "Celery K8s task executor can only execute 1 step at a time",
         )
 
@@ -315,13 +316,13 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             kubernetes.config.load_kube_config(kubeconfig_file)
 
         api_client = DagsterKubernetesClient.production_client()
-        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)  # ty: ignore[unresolved-attribute]
         dagster_run = check.not_none(
-            instance.get_run_by_id(execute_step_args.run_id),  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-            f"Could not load run {execute_step_args.run_id}",  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            instance.get_run_by_id(execute_step_args.run_id),  # ty: ignore[unresolved-attribute]
+            f"Could not load run {execute_step_args.run_id}",  # ty: ignore[unresolved-attribute]
         )
 
-        step_key = execute_step_args.step_keys_to_execute[0]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        step_key = execute_step_args.step_keys_to_execute[0]  # ty: ignore[unresolved-attribute]
 
         celery_worker_name = self.request.hostname
         celery_pod_name = os.environ.get("HOSTNAME")
@@ -353,9 +354,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             return []
 
         # Ensure we stay below k8s name length limits
-        k8s_name_key = get_k8s_job_name(execute_step_args.run_id, step_key)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        k8s_name_key = get_k8s_job_name(execute_step_args.run_id, step_key)  # ty: ignore[unresolved-attribute]
 
-        retry_state = execute_step_args.known_state.get_retry_state()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        retry_state = execute_step_args.known_state.get_retry_state()  # ty: ignore[unresolved-attribute]
 
         if retry_state.get_attempt_count(step_key):
             attempt_number = retry_state.get_attempt_count(step_key)
@@ -365,18 +366,18 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             job_name = f"dagster-step-{k8s_name_key}"
             pod_name = f"dagster-step-{k8s_name_key}"
 
-        args = execute_step_args.get_command_args()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        args = execute_step_args.get_command_args()  # ty: ignore[unresolved-attribute]
 
         labels = {
             "dagster/job": dagster_run.job_name,
             "dagster/op": step_key,
-            "dagster/run-id": execute_step_args.run_id,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            "dagster/run-id": execute_step_args.run_id,  # ty: ignore[unresolved-attribute]
         }
         if dagster_run.remote_job_origin:
             labels["dagster/code-location"] = (
                 dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
-        per_op_override = per_step_k8s_config.get(step_key, {})  # pyright: ignore[reportOptionalMemberAccess]
+        per_op_override = per_step_k8s_config.get(step_key, {})  # ty: ignore[unresolved-attribute]
 
         tag_container_context = K8sContainerContext(run_k8s_config=user_defined_k8s_config)
         executor_config_container_context = K8sContainerContext(
@@ -469,7 +470,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 job_name=job_name,
                 namespace=job_namespace,
                 instance=instance,
-                run_id=execute_step_args.run_id,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                run_id=execute_step_args.run_id,  # ty: ignore[unresolved-attribute]
                 wait_timeout=job_wait_timeout,
             )
         except (DagsterK8sError, DagsterK8sTimeoutError) as err:

@@ -108,12 +108,13 @@ def _get_editable_package_root(pkg_name: str) -> str:
 def test_components_from_dagster():
     common_deps: list[str] = []
     for pkg_name in [
-        "dagster-shared",
         "dagster-cloud-cli",
+        "dagster-dg-cli",
         "dagster-dg-core",
         "dagster-pipes",
+        "dagster-rest-resources",
+        "dagster-shared",
         "dagster",
-        "dagster-dg-cli",
     ]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
@@ -194,15 +195,15 @@ def isolated_venv_with_component_lib_dagster_foo(
                 r"<ENTRY_POINT_GROUP>", entry_point_group, DAGSTER_FOO_PYPROJECT_TOML
             )
 
-            with open("dagster-foo/pyproject.toml", "w") as f:
+            with open("dagster-foo/pyproject.toml", "w", encoding="utf-8") as f:
                 f.write(pyproject_toml_content)
 
             os.makedirs("dagster-foo/dagster_foo/lib/sub")
 
-            with open("dagster-foo/dagster_foo/lib/__init__.py", "w") as f:
+            with open("dagster-foo/dagster_foo/lib/__init__.py", "w", encoding="utf-8") as f:
                 f.write(DAGSTER_FOO_LIB_ROOT)
 
-            with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w") as f:
+            with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w", encoding="utf-8") as f:
                 f.write(_generate_test_component_source(2))
 
             if pre_install_hook:
@@ -217,11 +218,13 @@ def isolated_venv_with_component_lib_dagster_foo(
                 "-e",
                 _get_editable_package_root("dagster-shared"),
                 "-e",
-                _get_editable_package_root("dagster-cloud-cli"),
+                _get_editable_package_root("dagster-dg-cli"),
                 "-e",
                 _get_editable_package_root("dagster-dg-core"),
                 "-e",
-                _get_editable_package_root("dagster-dg-cli"),
+                _get_editable_package_root("dagster-cloud-cli"),
+                "-e",
+                _get_editable_package_root("dagster-rest-resources"),
                 "-e",
                 "dagster-foo",
             ]

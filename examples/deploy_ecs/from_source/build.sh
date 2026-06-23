@@ -58,4 +58,4 @@ copy_py $ROOT/python_modules/libraries/dagster-postgres \
         python_modules/libraries/
 
 echo -e "--- \033[32m:docker: Building Docker images\033[0m"
-docker-compose build
+docker compose build

@@ -1,6 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type React from 'react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {buildAssetKey} from '../../graphql/builders';
@@ -24,7 +25,10 @@ jest.mock('../../app/analytics', () => ({
 }));
 
 describe('AssetHealthSummary integration tests', () => {
-  let AssetHealthSummaryPopover: any;
+  let AssetHealthSummaryPopover: React.ComponentType<{
+    assetKey: ReturnType<typeof buildAssetKey>;
+    children: React.ReactNode;
+  }>;
 
   beforeAll(() => {
     // Import this after mocks are setup

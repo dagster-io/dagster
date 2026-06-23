@@ -20,7 +20,7 @@ from dagster.components.scaffold.scaffold import (
 
 
 class ComponentDumper(yaml.Dumper):
-    def write_line_break(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def write_line_break(self) -> None:  # ty: ignore[invalid-method-override]
         # add an extra line break between top-level keys
         if self.indent == 0:
             super().write_line_break()
@@ -47,7 +47,7 @@ def scaffold_component(
             )
             f.writelines([""])
     elif request.scaffold_format == "python":
-        with open(request.target_path / "component.py", "w") as f:
+        with open(request.target_path / "component.py", "w", encoding="utf-8") as f:
             fqtn = request.type_name
             check.invariant("." in fqtn, "Component must be a fully qualified type name")
             module_path, class_name = (

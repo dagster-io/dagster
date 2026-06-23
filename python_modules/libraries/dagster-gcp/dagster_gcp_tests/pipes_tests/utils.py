@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any
 
-_PYTHON_EXECUTABLE = shutil.which("python")
+_PYTHON_EXECUTABLE = shutil.which("python") or "python"
 
 
 @contextmanager

@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
-name = "sling_decorator_example"
+name = "sling_decorator"
 version = "0.1.0"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster-webserver","sling>=1.1.7"
 ]

@@ -27,7 +27,7 @@ Every job has an executor. The default executor is the <PyObject section="execut
 An executor can be specified directly on a job by supplying an <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" />:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/deploying/executors/executors.py"
+  path="docs_snippets/docs_snippets/guides/operate/executors/executors.py"
   title="src/<project_name>/defs/jobs.py"
   startAfter="start_executor_on_job"
   endBefore="end_executor_on_job"
@@ -40,7 +40,7 @@ To specify a default executor for all jobs and assets provided to a code locatio
 If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the code location:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/deploying/executors/code_location_executor.py"
+  path="docs_snippets/docs_snippets/guides/operate/executors/code_location_executor.py"
   title="src/<project_name>/defs/executor.py"
 />
 
@@ -61,6 +61,7 @@ Executing a job via <PyObject section="jobs" module="dagster" object="JobDefinit
 | <PyObject section="libraries" integration="docker" module="dagster_docker" object="docker_executor" />               | Executes each step within an ephemeral Kubernetes pod.                                                                 |
 | <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="k8s_job_executor" />                    | Executes each step within an ephemeral Kubernetes pod.                                                                 |
 | <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="celery_k8s_job_executor" />   | Executes each step within an ephemeral Kubernetes pod, using Celery as a control plane for prioritization and queuing. |
+| <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.ecs_executor" />                    | Executes each step within an ephemeral ECS task.                                                                       |
 | <PyObject section="libraries" integration="celery" module="dagster_celery_docker" object="celery_docker_executor" /> | Executes each step within a Docker container, using Celery as a control plane for prioritization and queueing.         |
 
 ## Custom executors

@@ -52,8 +52,8 @@ export const MiddleTruncate = memo(({text, showTitle = true}: Props) => {
 
   useLayoutEffect(() => {
     if (measure.current) {
-      const font = getComputedStyle(measure.current).font;
-      const result = calculateMiddleTruncatedText({font, width, text: textString});
+      const styles = getComputedStyle(measure.current);
+      const result = calculateMiddleTruncatedText({width, textString, styles});
       setTruncatedText(result ?? textString);
     }
   }, [textString, width]);
@@ -83,43 +83,56 @@ export const MiddleTruncate = memo(({text, showTitle = true}: Props) => {
 });
 
 type MeasurementConfig = {
-  font: string;
   width: number;
-  text: string;
+  styles: CSSStyleDeclaration;
+  textString: string;
+};
+
+const parsePixels = (value: string) => {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+// A single offscreen canvas reused for all measurements. Previously a canvas
+// was created and appended to / removed from `document.body` on every
+// measurement, which invalidated layout on each call and fed a forced-reflow
+// storm when many MiddleTruncate instances measured in one commit. An
+// unattached canvas measures text identically, so there is no need to touch
+// the DOM at all.
+let sharedMeasurementContext: CanvasRenderingContext2D | null | undefined;
+const getMeasurementContext = () => {
+  if (sharedMeasurementContext === undefined) {
+    sharedMeasurementContext = document.createElement('canvas').getContext('2d');
+  }
+  return sharedMeasurementContext;
 };
 
 /**
  * Given a font style and a container width, use a canvas to determine the longest possible
  * middle-truncated string that will fit within the container.
  */
-const calculateMiddleTruncatedText = ({font, width, text}: MeasurementConfig) => {
-  const body = document.body;
-
-  const canvas = document.createElement('canvas');
-  canvas.style.position = 'fixed';
-  canvas.style.left = '-10000px';
-  canvas.style.whiteSpace = 'nowrap';
-  canvas.style.visibility = 'hidden';
-
-  const ctx = canvas.getContext('2d');
+const calculateMiddleTruncatedText = ({styles, width, textString}: MeasurementConfig) => {
+  const ctx = getMeasurementContext();
 
   if (!ctx) {
     return null;
   }
 
-  const targetWidth = width;
-  ctx.font = font;
-  body.appendChild(canvas);
+  // Only assign `font` (which carries font-stretch via the shorthand) to the
+  // context. Assigning text-shaping properties such as `letterSpacing` or
+  // `textRendering` forces the browser off its fast text-measurement path,
+  // making each `measureText` call dramatically slower — a cost multiplied by
+  // the binary search below and by every rendered row. `letterSpacing` still
+  // affects layout width, so we account for it arithmetically instead.
+  ctx.font = styles.font;
+  const letterSpacing = parsePixels(styles.letterSpacing);
 
   // Search for the largest possible middle-truncated string that will fit within
   // the allotted width.
-  const truncated = calculateMiddleTruncation(
-    text,
-    targetWidth,
-    (value: string) => ctx.measureText(value).width,
+  return calculateMiddleTruncation(
+    textString,
+    width,
+    (value: string) =>
+      ctx.measureText(value).width + (letterSpacing ? letterSpacing * value.length : 0),
   );
-
-  body.removeChild(canvas);
-
-  return truncated;
 };

@@ -1,7 +1,7 @@
 import functools
 import glob
 from collections.abc import Mapping, Sequence
-from typing import Any, cast
+from typing import IO, Any, cast
 
 import yaml
 
@@ -47,29 +47,29 @@ def _octal_string_representer(dumper, value):
     return dumper.represent_scalar(YAML_STR_TAG, value)
 
 
-class DagsterRunConfigYamlLoader(yaml.SafeLoader, _CanRemoveImplicitResolver):
+class DagsterYamlLoader(yaml.SafeLoader, _CanRemoveImplicitResolver):
     pass
 
 
-DagsterRunConfigYamlLoader.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
+DagsterYamlLoader.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
 
 
-class DagsterRunConfigYamlDumper(yaml.SafeDumper, _CanRemoveImplicitResolver):
+class DagsterYamlDumper(yaml.SafeDumper, _CanRemoveImplicitResolver):
     pass
 
 
-DagsterRunConfigYamlDumper.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
-DagsterRunConfigYamlDumper.add_representer(str, _octal_string_representer)
+DagsterYamlDumper.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
+DagsterYamlDumper.add_representer(str, _octal_string_representer)
 
 
 def load_yaml_from_globs(
-    *globs: str, loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+    *globs: str, loader: type[yaml.SafeLoader] = DagsterYamlLoader
 ) -> Mapping[object, object]:
     return load_yaml_from_glob_list(list(globs), loader=loader)
 
 
 def load_yaml_from_glob_list(
-    glob_list: Sequence[str], loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+    glob_list: Sequence[str], loader: type[yaml.SafeLoader] = DagsterYamlLoader
 ) -> Mapping[object, object]:
     check.sequence_param(glob_list, "glob_list", of_type=str)
 
@@ -82,7 +82,7 @@ def load_yaml_from_glob_list(
 
 
 def merge_yamls(
-    file_list: Sequence[str], loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+    file_list: Sequence[str], loader: type[yaml.SafeLoader] = DagsterYamlLoader
 ) -> dict[object, object]:
     """Combine a list of YAML files into a dictionary.
 
@@ -103,7 +103,7 @@ def merge_yamls(
         yaml_dict = load_yaml_from_path(yaml_file, loader=loader) or {}
 
         if isinstance(yaml_dict, dict):
-            merged = deep_merge_dicts(merged, yaml_dict)
+            merged = deep_merge_dicts(merged, yaml_dict)  # ty: ignore[invalid-argument-type]
         else:
             check.failed(
                 f"Expected YAML from file {yaml_file} to parse to dictionary, "
@@ -113,7 +113,7 @@ def merge_yamls(
 
 
 def merge_yaml_strings(
-    yaml_strs: Sequence[str], loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+    yaml_strs: Sequence[str], loader: type[yaml.SafeLoader] = DagsterYamlLoader
 ) -> dict[object, object]:
     """Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
@@ -140,22 +140,28 @@ def merge_yaml_strings(
     return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
-def load_yaml_from_path(
-    path: str, loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
-) -> object:
+def load_yaml_from_path(path: str, loader: type[yaml.SafeLoader] = DagsterYamlLoader) -> object:
     check.str_param(path, "path")
     with open(path, encoding="utf8") as ff:
         return yaml.load(ff, Loader=loader)
 
 
+def safe_load_yaml(stream: "str | bytes | IO") -> Any:
+    """Load YAML without converting date-like strings to datetime objects.
+
+    Drop-in replacement for yaml.safe_load() that preserves date strings as strings.
+    """
+    return yaml.load(stream, Loader=DagsterYamlLoader)
+
+
 def load_run_config_yaml(yaml_str: str) -> Mapping[str, object]:
-    return yaml.load(yaml_str, Loader=DagsterRunConfigYamlLoader)
+    return yaml.load(yaml_str, Loader=DagsterYamlLoader)
 
 
 def dump_run_config_yaml(run_config: Mapping[str, Any], sort_keys: bool = True) -> str:
     return yaml.dump(
         run_config,
-        Dumper=DagsterRunConfigYamlDumper,
+        Dumper=DagsterYamlDumper,
         default_flow_style=False,
         allow_unicode=True,
         sort_keys=sort_keys,

@@ -46,6 +46,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {useJobPermissions} from '../app/useJobPermissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
@@ -53,6 +54,7 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {PipelineSelector} from '../graphql/types';
+import {isNewTabClick} from '../hooks/useOpenInNewTab';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
@@ -100,6 +102,7 @@ type Asset =
   | {
       assetKey: AssetKey;
       hasMaterializePermission?: boolean;
+      hasWipePermission?: boolean;
       partitionDefinition?: {__typename: string} | null;
       isExecutable?: boolean;
       isObservable?: boolean;
@@ -107,6 +110,7 @@ type Asset =
   | {
       assetKey: AssetKey;
       hasMaterializePermission?: boolean;
+      hasWipePermission?: boolean;
       isPartitioned?: boolean;
       isExecutable?: boolean;
       isObservable?: boolean;
@@ -136,14 +140,27 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-function materializationDisabledReason(all: Asset[], materializable: Asset[], isSingle?: boolean) {
+// When `hasJobLaunchPermission` is supplied by the caller, it overrides the
+// per-asset materialize permission. The asset-job launch mutation gates on the
+// job-level grant for non-implicit jobs, which can be more permissive than the
+// per-asset owner-based check (e.g. a job-scoped launcher who is not an owner
+// of every asset in the job).
+function materializationDisabledReason(
+  all: Asset[],
+  materializable: Asset[],
+  {isSingle, hasJobLaunchPermission}: {isSingle?: boolean; hasJobLaunchPermission?: boolean},
+) {
   if (!all.length) {
     if (isSingle) {
       return 'Asset does not have a definition';
     }
     return 'Select one or more assets to materialize';
   }
-  if (all.some((a) => 'hasMaterializePermission' in a && !a.hasMaterializePermission)) {
+  if (hasJobLaunchPermission !== undefined) {
+    if (!hasJobLaunchPermission) {
+      return 'You do not have permission to materialize assets for this job';
+    }
+  } else if (all.some((a) => 'hasMaterializePermission' in a && !a.hasMaterializePermission)) {
     return 'You do not have permission to materialize assets';
   }
   if (all.every((a) => !a.isExecutable)) {
@@ -158,14 +175,22 @@ function materializationDisabledReason(all: Asset[], materializable: Asset[], is
   return null;
 }
 
-function observationDisabledReason(all: Asset[], observable: Asset[], isSingle?: boolean) {
+function observationDisabledReason(
+  all: Asset[],
+  observable: Asset[],
+  {isSingle, hasJobLaunchPermission}: {isSingle?: boolean; hasJobLaunchPermission?: boolean},
+) {
   if (!all.length) {
     if (isSingle) {
       return 'Asset does not have a definition';
     }
     return 'Select one or more assets to observe';
   }
-  if (all.some((a) => !a.hasMaterializePermission)) {
+  if (hasJobLaunchPermission !== undefined) {
+    if (!hasJobLaunchPermission) {
+      return 'You do not have permission to observe assets for this job';
+    }
+  } else if (all.some((a) => !a.hasMaterializePermission)) {
     return 'You do not have permission to observe assets';
   }
   if (observable.length === 0) {
@@ -180,7 +205,13 @@ export function optionsForExecuteButton(
     skipAllTerm,
     isSelection,
     isSingle,
-  }: {skipAllTerm?: boolean; isSelection?: boolean; isSingle?: boolean},
+    hasJobLaunchPermission,
+  }: {
+    skipAllTerm?: boolean;
+    isSelection?: boolean;
+    isSingle?: boolean;
+    hasJobLaunchPermission?: boolean;
+  },
 ): {materializeOption: LaunchOption; observeOption: LaunchOption} {
   const materializable = assets.filter(
     (a) => 'isExecutable' in a && !a.isObservable && a.isExecutable,
@@ -191,7 +222,10 @@ export function optionsForExecuteButton(
   return {
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
-      disabledReason: materializationDisabledReason(assets, materializable, isSingle),
+      disabledReason: materializationDisabledReason(assets, materializable, {
+        isSingle,
+        hasJobLaunchPermission,
+      }),
       icon: <Icon name={observeEnabled() ? 'execute' : 'materialization'} />,
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
@@ -201,7 +235,10 @@ export function optionsForExecuteButton(
     },
     observeOption: {
       assetKeys: observable.map((a) => a.assetKey),
-      disabledReason: observationDisabledReason(assets, observable, isSingle),
+      disabledReason: observationDisabledReason(assets, observable, {
+        isSingle,
+        hasJobLaunchPermission,
+      }),
       icon: <Icon name="observation" />,
       label: isSelection
         ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`
@@ -212,18 +249,16 @@ export function optionsForExecuteButton(
   };
 }
 
-export const LaunchAssetExecutionButton = ({
-  scope,
-  preferredJobName,
-  additionalDropdownOptions,
-  primary = true,
-  showChangedAndMissingOption = true,
-  iconOnly = false,
-}: {
+type LaunchAssetExecutionButtonProps = {
   scope: AssetsInScope;
   showChangedAndMissingOption?: boolean;
   primary?: boolean;
   preferredJobName?: string;
+  // When provided, the button reads the job-level launch permission for the
+  // selector and uses it (instead of the per-asset materialize permission) to
+  // gate the materialize and observe actions. Required for non-implicit asset
+  // jobs, whose launch mutation enforces the job-level grant.
+  pipelineSelector?: PipelineSelector;
   additionalDropdownOptions?: (
     | JSX.Element
     | {
@@ -234,7 +269,45 @@ export const LaunchAssetExecutionButton = ({
       }
   )[];
   iconOnly?: boolean;
-}) => {
+};
+
+export const LaunchAssetExecutionButton = (props: LaunchAssetExecutionButtonProps) => {
+  if (props.pipelineSelector) {
+    return (
+      <LaunchAssetExecutionButtonWithJobPermissions
+        {...props}
+        pipelineSelector={props.pipelineSelector}
+      />
+    );
+  }
+  return <LaunchAssetExecutionButtonImpl {...props} />;
+};
+
+const LaunchAssetExecutionButtonWithJobPermissions = ({
+  pipelineSelector,
+  ...rest
+}: LaunchAssetExecutionButtonProps & {pipelineSelector: PipelineSelector}) => {
+  const {hasLaunchExecutionPermission} = useJobPermissions(
+    pipelineSelector,
+    pipelineSelector.repositoryLocationName,
+  );
+  return (
+    <LaunchAssetExecutionButtonImpl
+      {...rest}
+      hasJobLaunchPermission={hasLaunchExecutionPermission}
+    />
+  );
+};
+
+const LaunchAssetExecutionButtonImpl = ({
+  scope,
+  preferredJobName,
+  additionalDropdownOptions,
+  primary = true,
+  showChangedAndMissingOption = true,
+  iconOnly = false,
+  hasJobLaunchPermission,
+}: LaunchAssetExecutionButtonProps & {hasJobLaunchPermission?: boolean}) => {
   const materialize = useMaterializationAction(preferredJobName);
   const observe = useObserveAction(preferredJobName);
   const loading = materialize.loading || observe.loading;
@@ -248,16 +321,35 @@ export const LaunchAssetExecutionButton = ({
 
   const [assets, {materializeOption, observeOption}] =
     'selected' in scope
-      ? [scope.selected, optionsForExecuteButton(scope.selected, {isSelection: true})]
+      ? [
+          scope.selected,
+          optionsForExecuteButton(scope.selected, {isSelection: true, hasJobLaunchPermission}),
+        ]
       : 'single' in scope
         ? [
             scope.single ? [scope.single] : [],
-            optionsForExecuteButton(scope.single ? [scope.single] : [], {isSingle: true}),
+            optionsForExecuteButton(scope.single ? [scope.single] : [], {
+              isSingle: true,
+              hasJobLaunchPermission,
+            }),
           ]
-        : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
+        : [
+            scope.all,
+            optionsForExecuteButton(scope.all, {
+              skipAllTerm: scope.skipAllTerm,
+              hasJobLaunchPermission,
+            }),
+          ];
 
   const {menuItem: wipeMenuItem, dialog: wipeDialog} = useWipeMaterializations({
-    selected: useMemo(() => assets.map((asset) => ({key: asset.assetKey})), [assets]),
+    selected: useMemo(
+      () =>
+        assets.map((asset) => ({
+          key: asset.assetKey,
+          definitionHasWipePermission: !!asset.hasWipePermission,
+        })),
+      [assets],
+    ),
   });
 
   if (!canSeeMaterializeAction) {
@@ -497,7 +589,14 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
 
     if (next.type === 'single-run') {
-      await launchWithTelemetry({executionParams: next.executionParams}, 'toast');
+      const openInNewTab = isNewTabClick(e);
+      await launchWithTelemetry(
+        {executionParams: next.executionParams},
+        {
+          behavior: 'toast',
+          openInNewTab,
+        },
+      );
       setState({type: 'none'});
     } else {
       setState(next);

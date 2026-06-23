@@ -304,7 +304,7 @@ def test_load_with_resources() -> None:
 
 def test_load_with_logger_defs() -> None:
     @dg.logger(config_schema={})
-    def my_logger(init_context) -> logging.Logger: ...
+    def my_logger(init_context) -> logging.Logger: ...  # ty: ignore[empty-body]
 
     module_fake = build_module_fake("foo", {"my_logger": my_logger})
     defs = dg.load_definitions_from_module(module_fake)
@@ -316,7 +316,7 @@ def test_load_with_logger_defs() -> None:
 
 def test_load_with_executor() -> None:
     @dg.executor(name="my_executor")
-    def my_executor(init_context) -> dg.Executor: ...
+    def my_executor(init_context) -> dg.Executor: ...  # ty: ignore[empty-body]
 
     module_fake = build_module_fake("foo", {"my_executor": my_executor})
     defs = dg.load_definitions_from_module(module_fake)
@@ -396,20 +396,12 @@ def test_asset_loader_optional_spec_loading() -> None:
 def test_spec_collision():
     foo_module = build_module_fake(
         "foo",
-        {
-            "spec": dg.AssetSpec(
-                "a",
-                automation_condition=dg.AutomationCondition.newly_missing(),
-            )
-        },
+        {"spec": dg.AssetSpec("a")},
     )
     bar_module = build_module_fake(
         "bar",
         {
-            "spec": dg.AssetSpec(  # intentionally recreate a separate instance of same obj
-                "a",
-                automation_condition=dg.AutomationCondition.newly_missing(),
-            )
+            "spec": dg.AssetSpec("a")  # intentionally recreate a separate instance of same obj
         },
     )
 
@@ -418,7 +410,6 @@ def test_spec_collision():
         dg.AssetSpec(
             "a",
             group_name="default",  # added during construction
-            automation_condition=dg.AutomationCondition.newly_missing(),
         )
     ]
 
@@ -428,7 +419,6 @@ def test_spec_collision():
             "spec": dg.AssetSpec(
                 "a",
                 group_name="bad",
-                automation_condition=dg.AutomationCondition.newly_missing(),
             )
         },
     )

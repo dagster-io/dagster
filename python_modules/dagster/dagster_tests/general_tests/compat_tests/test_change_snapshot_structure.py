@@ -41,7 +41,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
 # from dagster import solid, DagsterInstance, execute_pipeline
 # from dagster._core.snap.utils import create_snapshot_id
 #
-# from dagster.serdes import serialize_pp
+# from dagster._serdes import serialize_pp
 #
 # @solid
 # def noop_solid(_):

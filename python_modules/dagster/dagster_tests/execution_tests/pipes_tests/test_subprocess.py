@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from collections.abc import Iterator
@@ -26,7 +27,7 @@ from dagster_pipes import DagsterPipesError
 
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
 
-_PYTHON_EXECUTABLE = shutil.which("python")
+_PYTHON_EXECUTABLE = shutil.which("python") or sys.executable
 
 
 @pytest.fixture
@@ -369,9 +370,9 @@ def retry_script_fn_success():
 
 @dg.op(retry_policy=dg.RetryPolicy(max_retries=3))
 def retry_foo(context: OpExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
-    should_fail = Path(os.environ["SHOULD_FAIL_FILE"]).read_text() == "true"
+    should_fail = Path(os.environ["SHOULD_FAIL_FILE"]).read_text(encoding="utf-8") == "true"
     with temp_script(retry_script_fn if should_fail else retry_script_fn_success) as script_path:
-        Path(os.environ["SHOULD_FAIL_FILE"]).write_text("false")
+        Path(os.environ["SHOULD_FAIL_FILE"]).write_text("false", encoding="utf-8")
         cmd = [_PYTHON_EXECUTABLE, script_path]
         return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
@@ -775,7 +776,7 @@ def _execute_job(spin_timeout, subproc_log_path):
         with open_dagster_pipes() as pipes:
             timeout = pipes.get_extra("timeout")
             log_path = pipes.get_extra("log_path")
-            with open(log_path, "w") as f:
+            with open(log_path, "w", encoding="utf-8") as f:
                 f.write(f"{os.getpid()}")
                 f.flush()
                 start = time.time()
@@ -822,9 +823,13 @@ def test_cancellation():
                 p.terminate()
                 break
 
-        p.join(timeout=1)
+        deadline = time.monotonic() + 30
+        while p.is_alive() and time.monotonic() < deadline:
+            p.join(timeout=0.1)
         assert not p.is_alive()
         assert pid
+        while process_is_alive(pid) and time.monotonic() < deadline:
+            time.sleep(0.1)
         assert not process_is_alive(pid)
 
 

@@ -33,7 +33,7 @@ dg scaffold defs dagster.assets dagster_code.py
 Next, you’ll define the asset. Copy and paste the following into the file `src/external_pipeline/defs/dagster_code.py`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/dagster_code.py"
   startAfter="start_asset_marker"
   endBefore="end_asset_marker"
   title="src/external_pipeline/defs/dagster_code.py"
@@ -44,7 +44,7 @@ Next, you’ll define the asset. Copy and paste the following into the file `src
 Before we define our asset code, we will add a standalone Python script named `external_code.py` within the directory we just scaffolded (`src/external_pipeline/defs/`). Later, we will invoke a subprocess that executes this external code from the asset using the `pipes_subprocess_client resource`. The external code looks like the following:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/external_code.py"
   startAfter="start_external_code"
   endBefore="end_external_code"
   title="src/external_pipeline/defs/external_code.py"
@@ -64,7 +64,7 @@ Here’s what we did in this code:
 Next, invoke a subprocess that executes the external code from the asset using the `pipes_subprocess_client` resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/dagster_code.py"
   startAfter="start_asset_marker"
   endBefore="end_asset_marker"
   title="src/external_pipeline/defs/dagster_code.py"
@@ -77,7 +77,7 @@ Let’s take a look at what this code does:
 - This object contains a `get_materialize_result` method, which you can use to access the <PyObject section="assets" module="dagster" object="MaterializeResult" /> event reported by the subprocess. We'll talk about how to report events from the subprocess in the next section.
 - Lastly, return the result of the subprocess.
 
-## Step 5: Define a Definitions object
+## Step 5: Define a `Definitions` object
 
 import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
@@ -88,14 +88,14 @@ To make the subprocess resource loadable and accessible, such as the CLI, UI, an
 Copy and paste the following to the bottom of `src/external_pipeline/defs/resources.py`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/resources.py"
   title="src/external_pipeline/defs/resources.py"
 />
 
 At this point, `dagster_code.py` should look like the following:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code_finished.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_1/dagster_code_finished.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 
@@ -125,6 +125,6 @@ In this step, you’ll execute the subprocess asset you created in earlier steps
 
    ![Raw compute logs in the run details page](/images/guides/build/external-pipelines/subprocess/part-1-step-3-5-stdout.png)
 
-## What's next?
+## Next steps
 
 At this point, you've created a Dagster asset that invokes an external Python script, launched the code in a subprocess, and viewed the result in Dagster UI. Next, you'll learn how to [modify your external code to work with Dagster Pipes](/integrations/external-pipelines/using-dagster-pipes/modify-external-code) to send information back to Dagster.

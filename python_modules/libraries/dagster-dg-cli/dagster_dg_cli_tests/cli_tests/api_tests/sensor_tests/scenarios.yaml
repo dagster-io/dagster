@@ -11,17 +11,11 @@ success_filtered_sensors_running:
 success_filtered_sensors_stopped:
   command: "dg api sensor list --status STOPPED --json"
 
-success_filtered_sensors_paused:
-  command: "dg api sensor list --status PAUSED --json"
-
 success_filtered_sensors_running_text:
   command: "dg api sensor list --status RUNNING"
 
 success_filtered_sensors_stopped_text:
   command: "dg api sensor list --status STOPPED"
-
-success_filtered_sensors_paused_text:
-  command: "dg api sensor list --status PAUSED"
 
 empty_sensors:
   command: "dg api sensor list --json"

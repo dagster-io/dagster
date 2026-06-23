@@ -97,7 +97,7 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
           const type = row!.type;
           if (type === 'header') {
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <DynamicRepoRow
                   repoAddress={row.repoAddress}
                   ref={rowVirtualizer.measureElement}
@@ -115,7 +115,7 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
           if (type === 'sensor') {
             const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <ObserveAutomationSensorRow
                   key={key}
                   index={index}
@@ -133,7 +133,7 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
             const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
 
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <ObserveAutomationScheduleRow
                   key={key}
                   index={index}

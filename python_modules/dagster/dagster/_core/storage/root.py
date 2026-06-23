@@ -43,7 +43,7 @@ class LocalArtifactStorage(ConfigurableClass):
         return os.path.join(self.base_dir, "schedules")
 
     @classmethod
-    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_config_value(  # ty: ignore[invalid-method-override]
         cls, inst_data: ConfigurableClassData | None, config_value: LocalArtifactStorageConfig
     ) -> "LocalArtifactStorage":
         return LocalArtifactStorage(inst_data=inst_data, **config_value)

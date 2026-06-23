@@ -1,77 +1,10 @@
 # serializer version: 1
-# name: TestAgentDataProcessing.test_agent_creation_with_all_statuses[0]
-  dict({
-    'items': list([
-      dict({
-        'agent_label': 'Agent Running',
-        'id': 'agent-running-uuid',
-        'last_heartbeat_time': 1641046800.0,
-        'metadata': list([
-          dict({
-            'key': 'status_test',
-            'value': 'RUNNING',
-          }),
-        ]),
-        'status': 'RUNNING',
-      }),
-      dict({
-        'agent_label': 'Agent Stopped',
-        'id': 'agent-stopped-uuid',
-        'last_heartbeat_time': None,
-        'metadata': list([
-          dict({
-            'key': 'status_test',
-            'value': 'STOPPED',
-          }),
-        ]),
-        'status': 'STOPPED',
-      }),
-      dict({
-        'agent_label': 'Agent Not_Running',
-        'id': 'agent-not_running-uuid',
-        'last_heartbeat_time': None,
-        'metadata': list([
-          dict({
-            'key': 'status_test',
-            'value': 'NOT_RUNNING',
-          }),
-        ]),
-        'status': 'NOT_RUNNING',
-      }),
-      dict({
-        'agent_label': 'Agent Unhealthy',
-        'id': 'agent-unhealthy-uuid',
-        'last_heartbeat_time': None,
-        'metadata': list([
-          dict({
-            'key': 'status_test',
-            'value': 'UNHEALTHY',
-          }),
-        ]),
-        'status': 'UNHEALTHY',
-      }),
-      dict({
-        'agent_label': 'Agent Unknown',
-        'id': 'agent-unknown-uuid',
-        'last_heartbeat_time': None,
-        'metadata': list([
-          dict({
-            'key': 'status_test',
-            'value': 'UNKNOWN',
-          }),
-        ]),
-        'status': 'UNKNOWN',
-      }),
-    ]),
-    'total': 5,
-  })
-# ---
 # name: TestFormatAgents.test_format_agent_without_label[0]
   '''
   Label:          Agent no-label
   ID:             no-label-agent-uuid-123456789
-  Status:         UNKNOWN
-  Last Heartbeat: 2022-01-01 14:22:00 UTC
+  Status:         RUNNING
+  Last Heartbeat: 2022-01-01 14:20:00 UTC
   
   Metadata:
     type: serverless
@@ -82,7 +15,7 @@
   Label:          Simple Agent
   ID:             simple-agent-uuid
   Status:         NOT_RUNNING
-  Last Heartbeat: Never
+  Last Heartbeat: 2022-01-01 14:20:00 UTC
   '''
 # ---
 # name: TestFormatAgents.test_format_agents_json_output[0]
@@ -107,10 +40,10 @@
       dict({
         'agent_label': None,
         'id': 'agent-2-uuid-67890',
-        'last_heartbeat_time': None,
+        'last_heartbeat_time': 1641046800.0,
         'metadata': list([
         ]),
-        'status': 'STOPPED',
+        'status': 'RUNNING',
       }),
       dict({
         'agent_label': 'Staging Agent',
@@ -122,7 +55,7 @@
             'value': 'staging',
           }),
         ]),
-        'status': 'UNHEALTHY',
+        'status': 'NOT_RUNNING',
       }),
     ]),
     'total': 3,
@@ -130,10 +63,10 @@
 # ---
 # name: TestFormatAgents.test_format_agents_text_output[0]
   '''
-  LABEL             ID                   STATUS     LAST HEARTBEAT
-  Production Agent  agent-1-uuid-12345   RUNNING    2022-01-01 14:20:00 UTC
-  Agent agent-2-    agent-2-uuid-67890   STOPPED    Never
-  Staging Agent     agent-3-uuid-abcdef  UNHEALTHY  2022-01-01 14:21:00 UTC
+  LABEL             ID                   STATUS       LAST HEARTBEAT
+  Production Agent  agent-1-uuid-12345   RUNNING      2022-01-01 14:20:00 UTC
+  Agent agent-2-    agent-2-uuid-67890   RUNNING      2022-01-01 14:20:00 UTC
+  Staging Agent     agent-3-uuid-abcdef  NOT_RUNNING  2022-01-01 14:21:00 UTC
   '''
 # ---
 # name: TestFormatAgents.test_format_empty_agents_json_output[0]

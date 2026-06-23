@@ -36,7 +36,7 @@ def test_nested_resources() -> None:
         base_writer: Writer
         indent: int
 
-        def output(self, obj: Any) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def output(self, obj: Any) -> None:  # ty: ignore[invalid-method-override]
             self.base_writer.output(json.dumps(obj, indent=self.indent))
 
     @dg.asset

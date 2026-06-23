@@ -4,9 +4,9 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
   CursorHistoryControls,
   FontFamily,
+  Heading,
   Icon,
   Menu,
   MenuItem,
@@ -14,19 +14,18 @@ import {
   NonIdealState,
   Select,
   Spinner,
-  Subheading,
   Table,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import {useState} from 'react';
-import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
-import {LiveTickTimeline} from './LiveTickTimeline2';
+import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
@@ -51,6 +50,7 @@ import {TickResultType, TickStatusTag} from '../ticks/TickStatusTag';
 import {CopyIconButton} from '../ui/CopyButton';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/TickHistory.module.css';
 
 Chart.register(zoomPlugin);
 
@@ -205,7 +205,7 @@ export const TicksTable = ({
         </Box>
       </Box>
       {ticks.length ? (
-        <TableWrapper>
+        <Table className={styles.tableWrapper}>
           <thead>
             <tr>
               <th style={{width: 120}}>Timestamp</th>
@@ -231,7 +231,7 @@ export const TicksTable = ({
               />
             ))}
           </tbody>
-        </TableWrapper>
+        </Table>
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />
@@ -331,13 +331,22 @@ export const TickHistoryTimeline = ({
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
+
+  // On the newest page (no pagination), floor the lookback window to roughly
+  // 5 minutes ago. Snapshotted at mount so the useQuery variables stay
+  // referentially stable across renders; polling keeps the data fresh.
+  const defaultAfterTimestamp = React.useMemo(
+    () => (beforeTimestamp ? undefined : Date.now() / 1000 - 5 * 60),
+    [beforeTimestamp],
+  );
+
   const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(TICK_HISTORY_QUERY, {
     variables: {
       instigationSelector,
       beforeTimestamp,
-      afterTimestamp,
+      afterTimestamp: afterTimestamp ?? defaultAfterTimestamp,
       statuses,
-      limit: beforeTimestamp ? undefined : 15,
+      limit: beforeTimestamp ? undefined : PAGE_SIZE,
     },
     notifyOnNetworkStatusChange: true,
   });
@@ -353,7 +362,9 @@ export const TickHistoryTimeline = ({
     return (
       <>
         <Box padding={{top: 16, horizontal: 24}} border="bottom">
-          <Subheading>Recent ticks</Subheading>
+          <Heading size={14} weight={600}>
+            Recent ticks
+          </Heading>
         </Box>
         <Box padding={{vertical: 64}}>
           <Spinner purpose="section" />
@@ -399,7 +410,9 @@ export const TickHistoryTimeline = ({
         onClose={() => onTickClick(undefined)}
       />
       <Box padding={{vertical: 16, horizontal: 24}}>
-        <Subheading>Recent ticks</Subheading>
+        <Heading size={14} weight={600}>
+          Recent ticks
+        </Heading>
       </Box>
       <Box border="top">
         <LiveTickTimeline
@@ -518,7 +531,7 @@ function TickRow({
             </Box>
           )}
           {addedPartitions || deletedPartitions ? (
-            <Caption>
+            <Text size={12}>
               (
               {addedPartitions ? (
                 <span>
@@ -532,7 +545,7 @@ function TickRow({
                 </span>
               ) : null}
               )
-            </Caption>
+            </Text>
           ) : null}
         </Box>
       </td>
@@ -577,11 +590,4 @@ const TICK_HISTORY_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${HISTORY_TICK_FRAGMENT}
-`;
-
-const TableWrapper = styled(Table)`
-  th,
-  td {
-    vertical-align: middle !important;
-  }
 `;

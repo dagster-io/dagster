@@ -1,4 +1,4 @@
-.PHONY: pyright
+.PHONY: ty
 
 export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
 
@@ -8,52 +8,38 @@ export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
 #   exit status. Prefix the command with "-" to instruct make to continue to the next command
 #   regardless of the preceding command's exit status.
 
-pyright:
-	ulimit -Sn 4096 # pyright build uses a lot of open files
-	python scripts/run-pyright.py --all
+# Targets with a justfile equivalent delegate to just. CI uses just directly
+# (the buildkite-test image no longer ships make). These wrappers exist for
+# local developer convenience.
 
 install_prettier:
-	npm install -g prettier
+	just install_prettier
 
-install_pyright:
-	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'
+ty:
+	just ty
 
-rebuild_pyright:
-	ulimit -Sn 4096 # pyright build uses a lot of open files
-	python scripts/run-pyright.py --all --rebuild
+rebuild_ty:
+	python scripts/run-ty.py --all --rebuild
 
-# Skip typecheck so that this can be used to test if all requirements can successfully be resolved
-# in CI independently of typechecking.
-rebuild_pyright_pins:
-	ulimit -Sn 4096 # pyright build uses a lot of open files
-	python scripts/run-pyright.py --update-pins --skip-typecheck
+rebuild_ty_pins:
+	just rebuild_ty_pins
 
-quick_pyright:
-	python scripts/run-pyright.py --diff
-
-unannotated_pyright:
-	python scripts/run-pyright.py --unannotated
+quick_ty:
+	python scripts/run-ty.py --diff
 
 ruff:
 	ruff check --fix .
 	ruff format .
 
 check_ruff:
-	ruff check .
-	ruff format --check .
+	just check_ruff
 
 unsafe_ruff:
 	ruff check --fix --unsafe-fixes .
 	ruff format .
 
 check_prettier:
-#NOTE: excludes symlinked md files
-	prettier `git ls-files \
-	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	'*.md' '.claude/*.md' \
-	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
-	':!:README.md' ':!:GEMINI.md'` \
-	--check
+	just check_prettier
 
 prettier:
 	prettier `git ls-files \
@@ -72,8 +58,6 @@ install_dev_python_modules_verbose:
 install_dev_python_modules_verbose_m1:
 	python scripts/install_dev_python_modules.py --include-prebuilt-grpcio-wheel
 
-graphql:
-	cd js_modules; make generate-graphql; make generate-perms
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
@@ -82,8 +66,7 @@ sanity_check:
 	@! (uv pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
 
 rebuild_ui: sanity_check
-	corepack enable
-	cd js_modules && yarn install && yarn workspace @dagster-io/app-oss build
+	just rebuild_ui
 
 rebuild_ui_with_profiling: sanity_check
 	cd js_modules; yarn install && yarn build-with-profiling

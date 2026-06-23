@@ -19,4 +19,4 @@ class SmokeIOManager(InMemoryIOManager):
 def test_smoke_all():
     assets = load_assets_from_modules([pure_python_assets])
 
-    materialize(assets, resources={"io_manager": SmokeIOManager()})
+    materialize(assets, resources={"io_manager": SmokeIOManager()})  # ty: ignore[invalid-argument-type]

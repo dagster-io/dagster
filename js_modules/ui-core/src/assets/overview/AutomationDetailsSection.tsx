@@ -1,4 +1,4 @@
-import {Body, Box, Popover, Tag} from '@dagster-io/ui-components';
+import {Box, Popover, Tag, Text} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {insitigatorsByType} from '../AssetNodeInstigatorTag';
@@ -9,8 +9,8 @@ import {PipelineTag} from '../../pipelines/PipelineReference';
 import {RepoAddress} from '../../workspace/types';
 import {EvaluationUserLabel} from '../AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {freshnessPolicyDescription} from '../OverdueTag';
-import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+import {WorkspaceAssetNode} from '../useAllAssets';
 
 export const AutomationDetailsSection = ({
   repoAddress,
@@ -19,7 +19,7 @@ export const AutomationDetailsSection = ({
 }: {
   repoAddress: RepoAddress | null;
   assetNode: AssetViewDefinitionNodeFragment | null | undefined;
-  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment;
+  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | WorkspaceAssetNode;
 }) => {
   const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
   const visibleJobNames =
@@ -74,7 +74,7 @@ export const AutomationDetailsSection = ({
               placement="top"
               interactionKind="hover"
               content={
-                <Body>
+                <Text size={14}>
                   <Box padding={{vertical: 12, horizontal: 16}} style={{maxWidth: '300px'}}>
                     This is a legacy freshness policy, and will not appear in observability
                     features.{' '}
@@ -87,7 +87,7 @@ export const AutomationDetailsSection = ({
                     </a>{' '}
                     to use the new freshness policy API.
                   </Box>
-                </Body>
+                </Text>
               }
             >
               <Tag intent="warning" icon="freshness">
@@ -95,7 +95,7 @@ export const AutomationDetailsSection = ({
               </Tag>
             </Popover>
             <div>
-              <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+              <Text size={14}>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Text>
             </div>
           </Box>
         )

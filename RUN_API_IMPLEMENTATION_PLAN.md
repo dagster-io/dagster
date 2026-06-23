@@ -689,8 +689,8 @@ events_run_not_found:
 
 ### Test Execution
 
-1. **Record GraphQL responses**: `dagster-dev dg-api-record run --recording success_get_run`
-2. **Record event responses**: `dagster-dev dg-api-record run-events --recording success_get_events`
+1. **Record GraphQL responses**: `python dagster_dg_cli_tests/cli_tests/api_tests/_record.py run --recording success_get_run`
+2. **Record event responses**: `python dagster_dg_cli_tests/cli_tests/api_tests/_record.py run-events --recording success_get_events`
 3. **Generate snapshots**: `pytest api_tests/run_tests/ --snapshot-update`
 4. **Update compliance tests**: Add new API classes to `test_rest_compliance.py`
 

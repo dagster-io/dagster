@@ -4,6 +4,7 @@ sidebar_label: Webhooks
 description: Configure generic HTTP requests triggered by Dagster alerts to integrate with any third-party service.
 canonicalUrl: '/guides/labs/webhook-alerts'
 slug: '/guides/labs/webhook-alerts'
+sidebar_position: 40
 ---
 
 import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
@@ -22,11 +23,11 @@ Navigate to **Deployment Settings > Alert Policies** to configure a webhook.
 
 We suggest storing secrets, such as API keys, as [environment variables](/deployment/dagster-plus/management/environment-variables) and including them in the webhook using [template tokens](#environment-variable-tokens).
 
-## Domain Whitelist (Early Access Limitation)
+## Domain whitelist (Early Access limitation)
 
 During the Early Access period, we are limiting outgoing webhooks to a whitelisted set of domains. Please let us know which domains you'd like to send webhooks to.
 
-## Example Webhook Configurations
+## Example webhook configurations
 
 Use these guides to get started using webhooks with these common services:
 
@@ -34,13 +35,11 @@ Use these guides to get started using webhooks with these common services:
 - [Discord](/guides/labs/webhook-alerts/webhooks-discord)
 - [incident.io](/guides/labs/webhook-alerts/webhooks-incidentio)
 
----
-
-## Token Reference
+## Token reference
 
 Dagster provides dynamic tokens that are replaced with actual event data at runtime. Token availability depends on the **Event Type**.
 
-### Globally Available Tokens
+### Globally available tokens
 
 These tokens are available for **every** notification type.
 
@@ -53,14 +52,15 @@ These tokens are available for **every** notification type.
 | `{{alert_policy_name}}`        | Name of the alert policy that triggered.             | `Critical Alerts`                |
 | `{{alert_policy_id}}`          | Unique ID of the alert policy.                       | `abc123-def456`                  |
 | `{{alert_policy_description}}` | Description of the alert policy.                     | `Alerts when production jobs...` |
+| `{{alert_id}}`                 | Unique ID of the alert.                              | `abc123-def456`                  |
 | `{{notification_type}}`        | Type of notification event (e.g., `JOB`, `TICK`).    | `JOB`                            |
 | `{{is_sample}}`                | `true` if this is a test/sample notification.        | `false`                          |
 
-### Environment Variable Tokens
+### Environment variable tokens
 
 You can access environment variables, such as `{{env.WEBHOOK_API_KEY}}`, to avoid hardcoding secrets. See [Environment Variables](/deployment/dagster-plus/management/environment-variables) for setup instructions.
 
-### Job & Run Tokens
+### Job and run tokens
 
 Available for **Job** events (Success, Failure, Long-running).
 
@@ -80,31 +80,38 @@ Available for **Job** events (Success, Failure, Long-running).
 | `{{start_time}}`      | Start time of the run.                       | `Jan 8, 2026 10:00 AM`       |
 | `{{end_time}}`        | End time of the run.                         | `Jan 8, 2026 10:05 AM`       |
 
-### Asset Materialization Tokens
+### Asset event tokens
 
-Available for **Asset Materialization** events (Success/Failure/Check Failure).
+Available for **Asset Materialization**, **Asset Check**, and **Asset Freshness Policy** events. A single alert can span multiple assets and multiple event types, so the asset and event-type tokens expose collections.
 
-| Token                 | Description                             |
-| :-------------------- | :-------------------------------------- |
-| `{{run_id}}`          | Unique ID of the run.                   |
-| `{{run_link}}`        | URL to view the run in Dagster.         |
-| `{{failure_message}}` | Error message describing the failure.   |
-| `{{user_name}}`       | Name of the user who launched the run.  |
-| `{{user_email}}`      | Email of the user who launched the run. |
+| Token                        | Description                                                                                     | Available for          | Example                                                        |
+| :--------------------------- | :---------------------------------------------------------------------------------------------- | :--------------------- | :------------------------------------------------------------- |
+| `{{asset_keys}}`             | Comma-separated list of asset keys affected by this alert.                                      | All                    | `orders, customers`                                            |
+| `{{asset_keys_json}}`        | JSON array of asset keys affected by this alert.                                                | All                    | `["orders", "customers"]`                                      |
+| `{{event_types}}`            | Comma-separated human-readable labels of the asset event types in this alert.                   | All                    | `Asset materializations failed, Asset check executions failed` |
+| `{{event_type_counts_json}}` | JSON object mapping raw asset event type names to counts in this alert.                         | All                    | `{"ASSET_MATERIALIZATION_FAILURE": 3}`                         |
+| `{{run_id}}`                 | Unique ID of the run that produced the event.                                                   | Materialization, Check | `abc123`                                                       |
+| `{{run_link}}`               | URL to view the run in Dagster.                                                                 | Materialization, Check | `https://dagster.cloud/acme/prod/runs/abc123`                  |
+| `{{failure_message}}`        | Error message describing the failure.                                                           | Materialization, Check | `Asset materialization failed`                                 |
+| `{{user_name}}`              | Name of the user who launched the run.                                                          | Materialization, Check | `John Doe`                                                     |
+| `{{user_email}}`             | Email of the user who launched the run.                                                         | Materialization, Check | `john@example.com`                                             |
+| `{{freshness_status}}`       | Freshness policy health status (`HEALTHY`, `WARNING`, `DEGRADED`, `UNKNOWN`, `NOT_APPLICABLE`). | Freshness policy       | `DEGRADED`                                                     |
 
-### Asset Health & Freshness Tokens
+### Asset health tokens
 
-Available for **Asset Health** and **Freshness** events.
+Available for **Asset Health** events.
 
-| Token                        | Description                                        | Context            |
-| :--------------------------- | :------------------------------------------------- | :----------------- |
-| `{{asset_key}}`              | Full asset key.                                    | All Asset Events   |
-| `{{health_status}}`          | Overall health status (`OK`, `DEGRADED`).          | Asset Health       |
-| `{{materialization_status}}` | Materialization status.                            | Asset Health       |
-| `{{checks_status}}`          | Asset checks status.                               | Asset Health       |
-| `{{freshness_status}}`       | Freshness state (`PASS`, `FAIL`, `UNKNOWN`, `OK`). | Freshness / Health |
+All status tokens can be one of: `HEALTHY`, `WARNING`, `DEGRADED`, `UNKNOWN`, or `NOT_APPLICABLE`.
 
-### Table Schema Tokens
+| Token                        | Description                    | Example    |
+| :--------------------------- | :----------------------------- | :--------- |
+| `{{asset_key}}`              | Full asset key.                | `orders`   |
+| `{{health_status}}`          | Overall health status.         | `DEGRADED` |
+| `{{materialization_status}}` | Materialization health status. | `HEALTHY`  |
+| `{{checks_status}}`          | Asset checks health status.    | `WARNING`  |
+| `{{freshness_status}}`       | Freshness health status.       | `UNKNOWN`  |
+
+### Table schema tokens
 
 | Token                             | Description                                                             |
 | :-------------------------------- | :---------------------------------------------------------------------- |
@@ -116,7 +123,7 @@ Available for **Asset Health** and **Freshness** events.
 | `{{columns_uniqueness_changed}}`  | List of `[column, old_unique, new_unique]` for uniqueness changes.      |
 | `{{columns_tags_changed}}`        | List of `[column, old_tags, new_tags]` for tag changes.                 |
 
-### Code Location Tokens
+### Code location tokens
 
 | Token                 | Description                                |
 | :-------------------- | :----------------------------------------- |
@@ -124,7 +131,7 @@ Available for **Asset Health** and **Freshness** events.
 | `{{location_link}}`   | URL to the code location.                  |
 | `{{failure_message}}` | Error message describing the load failure. |
 
-### Tick (Schedules & Sensors) Tokens
+### Tick (schedules and sensors) tokens
 
 | Token                 | Description                                               |
 | :-------------------- | :-------------------------------------------------------- |
@@ -133,8 +140,15 @@ Available for **Asset Health** and **Freshness** events.
 | `{{schedule_name}}`   | Name of the schedule (empty if this is a sensor failure). |
 | `{{sensor_name}}`     | Name of the sensor (empty if this is a schedule failure). |
 
-### Agent Downtime Tokens
+### Agent downtime tokens
 
 | Token           | Description                        |
 | :-------------- | :--------------------------------- |
 | `{{agent_url}}` | URL to the agents page in Dagster. |
+
+### Metric monitor tokens
+
+| Token             | Description                          |
+| :---------------- | :----------------------------------- |
+| `{{metric_name}}` | Name of the monitored metric.        |
+| `{{target_desc}}` | Description of the monitored target. |

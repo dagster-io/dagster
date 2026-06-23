@@ -1,4 +1,4 @@
-import {Box, Checkbox, Subheading} from '@dagster-io/ui-components';
+import {Box, Checkbox, Heading} from '@dagster-io/ui-components';
 import {Dispatch, SetStateAction} from 'react';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
@@ -47,7 +47,9 @@ export const ReportEventsPartitionSection = ({
       isInitiallyOpen={true}
       title={
         <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-          <Subheading>Partition selection</Subheading>
+          <Heading size={14} weight={600}>
+            Partition selection
+          </Heading>
           <span>{partitionCountString(keyCountInSelections(selections))}</span>
         </Box>
       }

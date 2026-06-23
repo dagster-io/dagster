@@ -166,10 +166,10 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         return RunRequest(tags=tags, asset_graph_subset=asset_graph_subset)
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
-        fields = self._asdict()
+        fields = dict(self._asdict())
         for k in fields.keys():
             if k in kwargs:
-                fields[k] = kwargs[k]  # pyright: ignore[reportIndexIssue]
+                fields[k] = kwargs[k]
         return RunRequest(**fields)
 
     def with_resolved_tags_and_config(

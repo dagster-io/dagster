@@ -263,9 +263,12 @@ export function SetFilterActiveState<T>({
   filterBarTagLabel?: JSX.Element;
   icon: IconName;
   state: Set<T>;
+
   getStringValue: (value: any) => string;
+
   getTooltipText?: ((value: any) => string) | undefined;
   onRemove?: () => void;
+
   renderLabel: (value: any) => JSX.Element;
   matchType?: 'any-of' | 'all-of';
   tagColor?: string;
@@ -370,7 +373,9 @@ export function capitalizeFirstLetter(string: string) {
 type SetFilterLabelProps = {
   value: any;
   isForcedActive?: boolean;
+
   filter: StaticSetFilter<any>;
+
   renderLabel: (value: any) => JSX.Element;
   allowMultipleSelections: boolean;
 };

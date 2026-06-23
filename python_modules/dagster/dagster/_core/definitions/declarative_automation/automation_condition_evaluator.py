@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import logging
+import os
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
@@ -25,6 +26,17 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
+# Number of seconds the automation daemon sleeps between capturing `max_record_id` and starting
+# evaluation, to let in-flight transactions and asset_records replication settle. Also gates the
+# AssetGraphView's `enforce_event_id_upper_bound` flag, so the queryer's slow-path fallback is
+# only exercised on deployments that have opted into the fix.
+AUTOMATION_TICK_SETTLE_SECONDS_ENV_VAR = "DAGSTER_AUTOMATION_TICK_SETTLE_SECONDS"
+
+
+def get_automation_tick_settle_delay_seconds() -> float:
+    return float(os.environ.get(AUTOMATION_TICK_SETTLE_SECONDS_ENV_VAR, "0.0"))
+
+
 class AutomationConditionEvaluator:
     def __init__(
         self,
@@ -47,6 +59,7 @@ class AutomationConditionEvaluator:
             ),
             instance=instance,
             asset_graph=asset_graph,
+            enforce_event_id_upper_bound=get_automation_tick_settle_delay_seconds() > 0,
         )
         self.logger = logger
         self.cursor = cursor

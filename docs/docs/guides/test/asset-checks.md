@@ -40,7 +40,7 @@ A asset check is defined using the `@asset_check` decorator.
 The following example defines an asset check on an asset that fails if the `order_id` column of the asset contains a null value. The asset check will run after the asset has been materialized.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/single-asset-check.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/asset-checks/single-asset-check.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -57,7 +57,7 @@ The following example defines two asset checks using the `@multi_asset_check` de
 In this example, both asset checks will run in a single operation after the asset has been materialized.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/multiple-asset-checks.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/asset-checks/multiple-asset-checks.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -67,7 +67,7 @@ In this example, both asset checks will run in a single operation after the asse
 Defining multiple checks can also be done using a factory pattern. The example below defines the same two asset checks as in the previous example, but this time using a factory pattern and the `@multi_asset_check` decorator.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-factory.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/asset-checks/asset-checks-factory.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -79,7 +79,23 @@ By default, if a parent's asset check fails during a run, the run will continue 
 In the example below, if the `orders_id_has_no_nulls` check fails, the downstream `augmented_orders` asset won't be materialized.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+## Partitioned asset checks \{#partitioned-checks}
+
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
+Asset checks can be partitioned to match the partitions of the asset they check. When a `partitions_def` is provided to the `@asset_check` decorator or `AssetCheckSpec`, each execution of the check targets a single partition of the asset. This allows you to validate data quality on a per-partition basis and view the check status for each individual partition in the UI.
+
+The check's `partitions_def` must be the same as the `partitions_def` of the associated asset.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/asset-checks/partitioned-asset-check.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -91,12 +107,7 @@ In some cases, running asset checks separately from the job materializing the as
 In the example below, two jobs are defined: one for the asset and another for the asset check. Schedules are defined to materialize the asset and execute the asset check independently. A sensor is defined to send an email alert when the asset check job fails.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
-
-## Next steps
-
-- Learn more about [assets](/guides/build/assets)
-- Learn how to use [Great Expectations with Dagster](https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations)

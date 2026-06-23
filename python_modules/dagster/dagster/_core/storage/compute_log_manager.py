@@ -400,7 +400,9 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             log_key_to_fetch_idx += 1
             line_cursor = 0
 
-        log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx], io_type=io_type)
+        log_lines = self._get_log_lines_for_log_key(
+            list(log_keys[log_key_to_fetch_idx]), io_type=io_type
+        )
         records = []
         has_more = True
 
@@ -425,11 +427,11 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
                 if len(records) < num_lines:
                     # we still need more records, so fetch the next file
                     log_lines = self._get_log_lines_for_log_key(
-                        log_keys[log_key_to_fetch_idx], io_type=io_type
+                        list(log_keys[log_key_to_fetch_idx]), io_type=io_type
                     )
 
         new_cursor = LogLineCursor(
-            log_key=log_keys[log_key_to_fetch_idx],
+            log_key=list(log_keys[log_key_to_fetch_idx]),
             line=line_cursor,
             has_more_now=has_more,
         )

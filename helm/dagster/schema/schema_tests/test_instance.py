@@ -576,7 +576,7 @@ def test_queued_run_coordinator_config_default(template: HelmTemplate):
 
     _check_valid_run_coordinator_yaml(instance)
 
-    assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+    assert instance["run_coordinator"]["module"] == "dagster._core.run_coordinator"
     assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
 
     assert instance["run_coordinator"]["config"]["max_concurrent_runs"] == -1
@@ -621,7 +621,7 @@ def test_queued_run_coordinator_config(
     _check_valid_run_coordinator_yaml(instance)
 
     if enabled:
-        assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+        assert instance["run_coordinator"]["module"] == "dagster._core.run_coordinator"
         assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
         assert instance["run_coordinator"]["config"]
 
@@ -693,7 +693,7 @@ def test_noop_compute_log_manager(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     compute_logs_config = instance["compute_logs"]
 
-    assert compute_logs_config["module"] == "dagster.core.storage.noop_compute_log_manager"
+    assert compute_logs_config["module"] == "dagster._core.storage.noop_compute_log_manager"
     assert compute_logs_config["class"] == "NoOpComputeLogManager"
 
 
@@ -706,6 +706,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
     local_dir = "/dir"
     prefix = "prefix"
     upload_interval = 30
+    endpoint_suffix = "core.windows.net"
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.AZURE,
@@ -720,6 +721,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                     prefix=prefix,
                     uploadInterval=upload_interval,
                     showUrlOnly=True,
+                    endpointSuffix=endpoint_suffix,
                 )
             ),
         )
@@ -742,6 +744,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
         "upload_interval": upload_interval,
         "access_key_or_sas_token": access_key_or_sas_token,
         "show_url_only": True,
+        "endpoint_suffix": endpoint_suffix,
     }
 
     # Test all config fields in configurable class
@@ -911,7 +914,7 @@ def test_local_compute_log_manager(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     compute_logs_config = instance["compute_logs"]
 
-    assert compute_logs_config["module"] == "dagster.core.storage.local_compute_log_manager"
+    assert compute_logs_config["module"] == "dagster._core.storage.local_compute_log_manager"
     assert compute_logs_config["class"] == "LocalComputeLogManager"
     assert compute_logs_config["config"] == {
         "base_dir": base_dir,

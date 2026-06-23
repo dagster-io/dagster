@@ -141,7 +141,7 @@ export const HierarchicalSidebar = React.memo(
               }
             }}
           >
-            <Inner $totalHeight={totalHeight}>
+            <Inner totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
                 const node = renderedNodes[index];
                 invariant(node, 'Sidebar node is required');
@@ -152,7 +152,7 @@ export const HierarchicalSidebar = React.memo(
                 const isRootNode = node.level === 1;
 
                 return (
-                  <Row $height={size} $start={start} key={key}>
+                  <Row height={size} start={start} key={key}>
                     <div data-index={index} ref={rowVirtualizer.measureElement}>
                       <HierarchicalNode
                         node={node}

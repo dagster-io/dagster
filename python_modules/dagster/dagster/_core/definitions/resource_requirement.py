@@ -88,7 +88,7 @@ class ResourceAddable(ABC):
 
 @record
 class OpDefinitionResourceRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     node_description: str
 
     def describe_requirement(self) -> str:
@@ -97,7 +97,7 @@ class OpDefinitionResourceRequirement(ResourceKeyRequirement):
 
 @record
 class InputManagerRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     node_description: str
     input_name: str
     root_input: bool
@@ -119,7 +119,7 @@ class InputManagerRequirement(ResourceKeyRequirement):
 # `SourceAssetIOManagerRequirement`.
 @record
 class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     asset_key: str | None
 
     @property
@@ -137,7 +137,7 @@ class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
 
 @record
 class SourceAssetIOManagerRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     asset_key: str | None
 
     @property
@@ -155,7 +155,7 @@ class SourceAssetIOManagerRequirement(ResourceKeyRequirement):
 
 @record
 class OutputManagerRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     node_description: str
     output_name: str
 
@@ -174,7 +174,7 @@ class OutputManagerRequirement(ResourceKeyRequirement):
 
 @record
 class HookResourceRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     attached_to: str | None
     hook_name: str
 
@@ -187,7 +187,7 @@ class HookResourceRequirement(ResourceKeyRequirement):
 
 @record
 class TypeResourceRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     type_display_name: str
 
     def describe_requirement(self) -> str:
@@ -196,7 +196,7 @@ class TypeResourceRequirement(ResourceKeyRequirement):
 
 @record
 class TypeLoaderResourceRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     type_display_name: str
 
     def describe_requirement(self) -> str:
@@ -208,7 +208,7 @@ class TypeLoaderResourceRequirement(ResourceKeyRequirement):
 
 @record
 class ResourceDependencyRequirement(ResourceKeyRequirement):
-    key: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    key: str
     source_key: str | None
 
     def describe_requirement(self) -> str:

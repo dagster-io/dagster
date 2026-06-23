@@ -1,6 +1,6 @@
+import {MockedProvider} from '@apollo/client/testing';
 import faker from 'faker';
 
-import {StorybookProvider} from '../../testing/StorybookProvider';
 import {TerminationDialog, Props as TerminationDialogProps} from '../TerminationDialog';
 
 // eslint-disable-next-line import/no-default-export
@@ -10,9 +10,9 @@ export default {
 };
 
 const Template = (props: TerminationDialogProps) => (
-  <StorybookProvider>
+  <MockedProvider>
     <TerminationDialog {...props} />
-  </StorybookProvider>
+  </MockedProvider>
 );
 
 const runIDs = [

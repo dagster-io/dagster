@@ -170,12 +170,10 @@ class AssetGraphComputation(IHaveNew):
         op_selection: list[str] = []
         for asset_key in selected_asset_keys:
             dep_node_handles = dep_op_handles_by_entity_key[asset_key]
-            for dep_op_handle in dep_node_handles:
-                op_selection.append(".".join(dep_op_handle.path))
+            op_selection.extend(".".join(dep_op_handle.path) for dep_op_handle in dep_node_handles)
         for asset_check_key in selected_asset_check_keys:
             dep_op_handles = dep_op_handles_by_entity_key[asset_check_key]
-            for dep_op_handle in dep_op_handles:
-                op_selection.append(".".join(dep_op_handle.path))
+            op_selection.extend(".".join(dep_op_handle.path) for dep_op_handle in dep_op_handles)
 
         selected_outputs_by_op_handle: dict[NodeHandle, set[str]] = defaultdict(set)
         for (

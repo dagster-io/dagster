@@ -124,19 +124,19 @@ export default {
   component: GanttChart,
 };
 
-export const SimpleCase = (argValues: any) => {
+export const SimpleCase = (argValues: {focusedTime: number}) => {
   return (
     <GanttTestCase graph={Simple.GRAPH} logs={Simple.LOGS} focusedTime={argValues.focusedTime} />
   );
 };
 
-export const RetryCase = (argValues: any) => {
+export const RetryCase = (argValues: {focusedTime: number}) => {
   return (
     <GanttTestCase graph={Retry.GRAPH} logs={Retry.LOGS} focusedTime={argValues.focusedTime} />
   );
 };
 
-export const DynamicCase = (argValues: any) => {
+export const DynamicCase = (argValues: {focusedTime: number}) => {
   return (
     <GanttTestCase graph={Dynamic.GRAPH} logs={Dynamic.LOGS} focusedTime={argValues.focusedTime} />
   );

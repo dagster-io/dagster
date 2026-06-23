@@ -1,9 +1,9 @@
 import os
 import uuid
 
-import yaml
 from dagster._utils import file_relative_path
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_spark import spark_resource
 from dagster_spark.ops import create_spark_op
 
@@ -28,7 +28,7 @@ RESOURCE_DEFS = {"spark": spark_resource}
 def test_jar_not_found():
     spark_op = create_spark_op("spark_op", main_class="something")
     # guid guaranteed to not exist
-    run_config = yaml.safe_load(CONFIG_FILE.format(path=str(uuid.uuid4())))
+    run_config = safe_load_yaml(CONFIG_FILE.format(path=str(uuid.uuid4())))
 
     result = wrap_op_in_graph_and_execute(
         spark_op, run_config=run_config, raise_on_error=False, resources=RESOURCE_DEFS
@@ -36,7 +36,7 @@ def test_jar_not_found():
     assert result.is_node_failed("spark_op")
     assert (
         "does not exist. A valid jar must be built before running this op."
-        in result.failure_data_for_node("spark_op").error.cause.message  # pyright: ignore[reportOptionalMemberAccess]
+        in result.failure_data_for_node("spark_op").error.cause.message  # ty: ignore[unresolved-attribute]
     )
 
 
@@ -60,7 +60,7 @@ def test_no_spark_home():
         del os.environ["SPARK_HOME"]
 
     spark_op = create_spark_op("spark_op", main_class="something")
-    run_config = yaml.safe_load(
+    run_config = safe_load_yaml(
         NO_SPARK_HOME_CONFIG_FILE.format(path=file_relative_path(__file__, "."))
     )
 
@@ -71,5 +71,5 @@ def test_no_spark_home():
     assert (
         "No spark home set. You must either pass spark_home in config or set "
         "$SPARK_HOME in your environment (got None)."
-        in result.failure_data_for_node("spark_op").error.cause.message  # pyright: ignore[reportOptionalMemberAccess]
+        in result.failure_data_for_node("spark_op").error.cause.message  # ty: ignore[unresolved-attribute]
     )

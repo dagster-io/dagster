@@ -1,12 +1,4 @@
-import {
-  BodySmall,
-  Box,
-  Colors,
-  Icon,
-  IconName,
-  MiddleTruncate,
-  MonoSmall,
-} from '@dagster-io/ui-components';
+import {Box, Icon, IconName, MiddleTruncate, Text} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './SelectionAutoComplete.module.css';
@@ -103,6 +95,7 @@ export type Suggestion =
   | {
       text: string;
       jsx: React.ReactNode;
+      trailingSpace?: boolean;
     }
   | {
       text: string;
@@ -187,18 +180,23 @@ export const SuggestionJSXBase = ({
         }}
       >
         {icon ? <Icon name={icon} size={12} style={{margin: 0}} /> : null}
-        <BodySmall style={{overflow: 'hidden'}}>{label}</BodySmall>
+        <Text size={14} style={{overflow: 'hidden'}}>
+          {label}
+        </Text>
       </div>
       {rightLabel ? (
-        <MonoSmall style={{textAlign: 'right', overflow: 'hidden'}}>{rightLabel}</MonoSmall>
+        <Text size={14} family="mono" style={{textAlign: 'right', overflow: 'hidden'}}>
+          {rightLabel}
+        </Text>
       ) : null}
     </div>
   );
 };
 
 type Functions = Array<'sinks' | 'roots'>;
+type AttributeItems = string[] | {key: string; value?: string}[];
 export const createProvider = <
-  TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
+  TAttributeMap extends {[key: string]: AttributeItems},
   TPrimaryAttributeKey extends keyof TAttributeMap,
 >({
   attributeToIcon,
@@ -257,6 +255,7 @@ export const createProvider = <
     return {
       text: textCallback ? textCallback('<null>') : '<null>',
       jsx: <SuggestionJSXBase label={<span className={styles.nullString}>No value</span>} />,
+      trailingSpace: true,
     };
   }
 
@@ -275,6 +274,7 @@ export const createProvider = <
       return {
         text: textCallback ? textCallback(valueText) : valueText,
         jsx: <AttributeValueTagSuggestion tag={value} />,
+        trailingSpace: true,
       };
     }
     if (value === '') {
@@ -283,6 +283,7 @@ export const createProvider = <
     return {
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
       jsx: <SuggestionJSXBase label={<MiddleTruncate text={value} />} />,
+      trailingSpace: true,
     };
   }
 
@@ -335,6 +336,7 @@ export const createProvider = <
     return {
       text: textCallback ? textCallback(text) : text,
       jsx: <SuggestionJSXBase label={displayText} rightLabel={<MiddleTruncate text={text} />} />,
+      trailingSpace: true,
     };
   }
 
@@ -367,14 +369,17 @@ export const createProvider = <
         <SuggestionJSXBase
           label={
             <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-              <MonoSmall color={Colors.textLight()}>{attribute as string}:</MonoSmall>
-              <MonoSmall style={{overflow: 'hidden'}}>
+              <Text size={12} family="mono" color="textLight">
+                {attribute as string}:
+              </Text>
+              <Text size={12} family="mono" style={{overflow: 'hidden'}}>
                 <MiddleTruncate text={valueText} />
-              </MonoSmall>
+              </Text>
             </Box>
           }
         />
       ),
+      trailingSpace: true,
     };
   }
 
@@ -400,34 +405,33 @@ export const createProvider = <
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
 
       const regex = createRegex(query, shouldTreatAsteriskAsWildcard);
-      const results =
-        values
-          ?.filter((value) => {
-            if (shouldTreatAsteriskAsWildcard) {
-              if (typeof value === 'string') {
-                return regex.test(value);
+      const results = values
+        ? filterMap<AttributeItems[0], Suggestion>(
+            values,
+            (value) => {
+              if (shouldTreatAsteriskAsWildcard) {
+                if (typeof value === 'string') {
+                  return regex.test(value);
+                }
+                return regex.test(value.key) || (value.value ? regex.test(value.value) : false);
               }
-              return regex.test(value.key) || (value.value && regex.test(value.value));
-            }
-            return doesValueIncludeQuery({value, query});
-          })
-          .map((value) =>
-            createAttributeValueSuggestion({
-              value,
-              textCallback,
-            }),
-          ) ?? [];
+              return doesValueIncludeQuery({value, query});
+            },
+            (value) => createAttributeValueSuggestion({value, textCallback}),
+            MAX_RESULTS_PER_ATTRIBUTE,
+          )
+        : [];
       if (results.length === 0) {
         return [
           {
             text: '',
             jsx: (
-              <BodySmall color={Colors.textLight()}>
+              <Text size={12} color="textLight">
                 No match found for{' '}
-                <MonoSmall color={Colors.textDefault()}>
+                <Text size={12} family="mono" color="textDefault">
                   {attribute}:&quot;{query}&quot;
-                </MonoSmall>
-              </BodySmall>
+                </Text>
+              </Text>
             ),
             type: 'no-match',
           },
@@ -452,21 +456,42 @@ export const createProvider = <
     },
     getAllResults: ({query, textCallback}) => {
       return Object.keys(attributesMap).flatMap((attribute) => {
-        return (
-          attributesMap[attribute]
-            ?.filter((value) => doesValueIncludeQuery({value, query}))
-            .map((value) =>
-              createAttributeAndValueSuggestion({
-                attribute,
-                value,
-                textCallback,
-              }),
-            ) ?? []
-        );
+        return attributesMap[attribute]
+          ? filterMap<AttributeItems[0], Suggestion>(
+              attributesMap[attribute],
+              (value) => doesValueIncludeQuery({value, query}),
+              (value) => createAttributeAndValueSuggestion({attribute, value, textCallback}),
+              MAX_RESULTS_PER_ATTRIBUTE,
+            )
+          : [];
       });
     },
   };
 };
+
+const MAX_RESULTS_PER_ATTRIBUTE = 50;
+
+/**
+ * Like Array.filter().map(), but exits early once `limit` results have been collected.
+ * This avoids running the predicate and mapper on the remaining elements.
+ */
+function filterMap<T, R>(
+  items: T[],
+  predicate: (item: T) => boolean,
+  mapper: (item: T) => R,
+  limit: number,
+): R[] {
+  const results: R[] = [];
+  for (const item of items) {
+    if (predicate(item)) {
+      results.push(mapper(item));
+      if (results.length >= limit) {
+        break;
+      }
+    }
+  }
+  return results;
+}
 
 function createRegex(pattern: string, interpretWildcards: boolean): RegExp {
   if (!interpretWildcards) {

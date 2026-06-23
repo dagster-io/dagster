@@ -176,7 +176,7 @@ def success_hook(
         _validate_hook_fn_params(fn, expected_positionals)
 
         if name is None or callable(name):
-            _name = fn.__name__
+            _name = fn.__name__  # ty: ignore[unresolved-attribute]
         else:
             _name = name
 
@@ -247,7 +247,7 @@ def failure_hook(
         _validate_hook_fn_params(fn, expected_positionals)
 
         if name is None or callable(name):
-            _name = fn.__name__
+            _name = fn.__name__  # ty: ignore[unresolved-attribute]
         else:
             _name = name
 
@@ -268,6 +268,6 @@ def failure_hook(
     # This case is for when decorator is used bare, without arguments, i.e. @failure_hook
     if callable(name):
         check.invariant(required_resource_keys is None)
-        return wrapper(name)
+        return wrapper(name)  # ty: ignore[invalid-argument-type]
 
     return wrapper

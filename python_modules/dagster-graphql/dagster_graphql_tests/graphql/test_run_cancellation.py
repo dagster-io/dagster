@@ -434,7 +434,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
 
-            graphql_context.instance.run_launcher.terminate = old_terminate
+            graphql_context.instance.run_launcher.terminate = old_terminate  # ty: ignore[invalid-assignment]
 
             # Clean up the run process on the gRPC server
             code_location = graphql_context.code_locations[0]

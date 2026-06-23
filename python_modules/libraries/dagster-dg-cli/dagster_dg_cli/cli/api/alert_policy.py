@@ -5,6 +5,7 @@ from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_alert_policies, format_alert_policy_sync_result
@@ -20,7 +21,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.alert_policy", cls="AlertPolicyDocument"
+    module="dagster_rest_resources.schemas.alert_policy", cls="DgApiAlertPolicyDocument"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -33,14 +34,37 @@ def list_alert_policies_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List alert policies for a deployment."""
+    """List alert policies for a deployment.
+
+    Example::
+
+        $ dg api alert-policy list
+        alert_policies:
+        - name: failed_run_alert
+          description: Alert on failed runs
+          enabled: true
+          alert_targets:
+          - email_target:
+              email_addresses:
+              - oncall@example.com
+          event_types:
+          - JOB_FAILURE
+        - name: long_running_alert
+          description: Alert when runs exceed 1 hour
+          enabled: true
+          alert_targets:
+          - slack_target:
+              channel: '#data-alerts'
+          event_types:
+          - JOB_LONG_RUNNING
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.alert_policies import DgApiAlertPolicyApi
+    from dagster_rest_resources.api.alert_policy import DgApiAlertPolicyApi
 
     api = DgApiAlertPolicyApi(client)
 
@@ -59,7 +83,7 @@ def list_alert_policies_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.alert_policy", cls="AlertPolicySyncResult"
+    module="dagster_rest_resources.schemas.alert_policy", cls="DgApiAlertPolicySyncResult"
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
@@ -73,11 +97,15 @@ def sync_alert_policies_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Sync alert policies from a YAML file."""
-    import yaml
+    """Sync alert policies from a YAML file.
 
-    with open(file_path) as f:
-        config = yaml.safe_load(f)
+    Example::
+
+        $ dg api alert-policy sync alert_policies.yaml
+        Synced alert policies: failed_run_alert, long_running_alert
+    """
+    with open(file_path, encoding="utf-8") as f:
+        config = safe_load_yaml(f)
 
     if not isinstance(config, (list, dict)):
         raise click.ClickException(
@@ -96,12 +124,12 @@ def sync_alert_policies_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, cli_config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.alert_policies import DgApiAlertPolicyApi
+    from dagster_rest_resources.api.alert_policy import DgApiAlertPolicyApi
 
     api = DgApiAlertPolicyApi(client)
 
     with handle_api_errors(ctx, output_json):
-        result = api.sync_alert_policies(alert_policies)
+        result = api.action_sync_alert_policies(alert_policies)
         output = format_alert_policy_sync_result(result, as_json=output_json)
         click.echo(output)
 

@@ -13,9 +13,9 @@ from typing import Any
 
 import click
 import dagster._check as check
-import yaml
 from dagster._utils import file_relative_path, mkdir_p
 from dagster._utils.merger import deep_merge_dicts
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def _remove_invalid_chars(name: str) -> str:
@@ -408,7 +408,7 @@ def load_from_spec_file(
         if filepath.endswith(".json"):
             schema = json.loads(f.read())
         else:
-            schema = yaml.safe_load(f.read())
+            schema = safe_load_yaml(f.read())
 
     schema["connectionSpecification"]["properties"] = deep_merge_dicts(
         schema["connectionSpecification"]["properties"], injected_props
@@ -561,9 +561,9 @@ from dagster._annotations import public
                                 spec = importlib.util.spec_from_file_location(
                                     "module.name", out_file
                                 )
-                                foo = importlib.util.module_from_spec(spec)  # pyright: ignore[reportArgumentType]
+                                foo = importlib.util.module_from_spec(spec)  # ty: ignore[invalid-argument-type]
                                 sys.modules["module.name"] = foo
-                                spec.loader.exec_module(foo)  # pyright: ignore[reportOptionalMemberAccess]
+                                spec.loader.exec_module(foo)  # ty: ignore[unresolved-attribute]
 
                                 out = new_out
                                 successes += 1
@@ -572,7 +572,7 @@ from dagster._annotations import public
                                 failures.append((connector_name_human_readable, e))
                                 continue
 
-                print("\033[1A\033[K\033[1A\033[K\033[1A\033[K")  # noqa: T201
+                print("\033[1A\033[K\033[1A\033[K\033[1A\033[K")
                 click.secho(f"{successes} successes", fg="green")
                 click.secho(f"{len(failures)} failures", fg="red")
 

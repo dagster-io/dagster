@@ -64,6 +64,6 @@ The UDF approach allows you to start with simple declarative YAML, then incremen
 
 While you *could* do this by implementing custom schema and then writing the equivalent code within the `build_defs` function of a custom component, the UDF provides a much more more incremental and less disruptive approach:
 
-* You do not have to create a custom component.
-* You can use UDFs in definitions where they are needed, but still use the simple YAML declarations where they are not, while keeping the component types the same.
-* You do not have to teach your users about new schema formats.
+- You do not have to create a custom component.
+- You can use UDFs in definitions where they are needed, but still use the simple YAML declarations where they are not, while keeping the component types the same.
+- You do not have to teach your users about new schema formats.

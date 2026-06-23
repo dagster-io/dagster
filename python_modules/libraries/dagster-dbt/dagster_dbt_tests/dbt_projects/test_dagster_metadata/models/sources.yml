@@ -4,7 +4,7 @@ sources:
   - name: jaffle_shop
     schema: "{% if target.name == 'dev' %}main{% else %}{{ target.schema }}{% endif %}"
     tables:
-      - name: raw_customers
+      - name: source_raw_customers
         meta:
           dagster:
             asset_key: ["raw_source_customers"]

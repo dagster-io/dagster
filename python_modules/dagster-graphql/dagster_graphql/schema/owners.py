@@ -38,12 +38,12 @@ def definition_owner_from_owner_str(
 
 # legacy classes for backcompatibility
 class GrapheneUserAssetOwner(GrapheneUserDefinitionOwner):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "UserAssetOwner"
 
 
 class GrapheneTeamAssetOwner(GrapheneTeamDefinitionOwner):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "TeamAssetOwner"
 
 
@@ -54,3 +54,9 @@ class GrapheneAssetOwner(graphene.Union):
             GrapheneTeamAssetOwner,
         )
         name = "AssetOwner"
+
+    @staticmethod
+    def to_manifest_dict(owner_str: str) -> dict:
+        if is_valid_email(owner_str):
+            return {"__typename": "UserAssetOwner", "email": owner_str}
+        return {"__typename": "TeamAssetOwner", "team": owner_str[5:]}

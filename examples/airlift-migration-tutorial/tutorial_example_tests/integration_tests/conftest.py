@@ -32,7 +32,13 @@ def local_env_fixture(makefile_dir: Path) -> Generator[None, None, None]:
         }
     ):
         yield
-    subprocess.run(["make", "wipe"], cwd=makefile_dir, check=True)
+    # Don't use `make wipe` (`rm -rf` with a non-zero exit on failure) here. `airflow standalone`
+    # spawns webserver/scheduler/triggerer children that can still be flushing writes into
+    # AIRFLOW_HOME when this session teardown runs, so `rm` intermittently fails with
+    # `Directory not empty` and fails the build even though the tests passed. Mirror the
+    # dagster-airlift shared `airflow_home` fixture and tolerate the race with `ignore_errors=True`.
+    for scratch_dir in (makefile_dir / ".airflow_home", makefile_dir / ".dagster_home"):
+        shutil.rmtree(scratch_dir, ignore_errors=True)
 
 
 @pytest.fixture(name="dags_dir", scope="session")
@@ -67,11 +73,11 @@ def mark_tasks_migrated_fixture(
     @contextlib.contextmanager
     def mark_tasks_migrated(migrated_tasks: AbstractSet[str]) -> Iterator[None]:
         """Updates the contents of the proxied state file to mark the specified tasks as proxied."""
-        with open(proxied_state_file) as f:
+        with open(proxied_state_file, encoding="utf-8") as f:
             contents = f.read()
 
         try:
-            with open(proxied_state_file, "w") as f:
+            with open(proxied_state_file, "w", encoding="utf-8") as f:
                 f.write(
                     yaml.dump(
                         {
@@ -87,7 +93,7 @@ def mark_tasks_migrated_fixture(
             yield
 
         finally:
-            with open(proxied_state_file, "w") as f:
+            with open(proxied_state_file, "w", encoding="utf-8") as f:
                 f.write(contents)
 
     return mark_tasks_migrated

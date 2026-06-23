@@ -5,13 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "development_to_production"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 description = "Dagster example of local development and production deployment."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-classifiers = [
-    "Programming Language :: Python :: 3.2",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster",
     "dagster-snowflake",
@@ -29,3 +26,23 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/examples/developme
 [tool.dagster]
 module_name = "development_to_production.definitions"
 code_location_name = "development_to_production"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-snowflake",
+    "dagster-snowflake-pandas",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-snowflake = { path = "../../python_modules/libraries/dagster-snowflake/", editable = true }
+dagster-snowflake-pandas = { path = "../../python_modules/libraries/dagster-snowflake-pandas/", editable = true }

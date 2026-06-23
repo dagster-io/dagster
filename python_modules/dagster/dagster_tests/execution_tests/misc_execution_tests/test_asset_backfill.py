@@ -31,6 +31,7 @@ from dagster._core.definitions.selector import (
     PartitionsByAssetSelector,
     PartitionsSelector,
 )
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.event_api import PartitionKeyFilter
 from dagster._core.execution.asset_backfill import (
@@ -40,6 +41,7 @@ from dagster._core.execution.asset_backfill import (
     _check_asset_backfill_data_validity,
     backfill_is_complete,
     execute_asset_backfill_iteration_inner,
+    get_asset_backfill_iteration_materialized_subset,
     get_canceling_asset_backfill_iteration_data,
 )
 from dagster._core.instance.types import DynamicPartitionsStore
@@ -1346,7 +1348,7 @@ def test_materializations_outside_of_backfill():
         instance=instance,
         asset_graph=asset_graph,
         assets_by_repo_name=assets_by_repo_name,
-        backfill_data=make_backfill_data("all", asset_graph, instance, None),  # pyright: ignore[reportArgumentType]
+        backfill_data=make_backfill_data("all", asset_graph, instance, None),  # ty: ignore[invalid-argument-type]
         fail_asset_partitions=set(),
     )
 
@@ -2002,19 +2004,19 @@ def test_asset_backfill_status_counts():
     counts = completed_backfill_data.get_backfill_status_per_asset_key(asset_graph)
 
     assert counts[0].asset_key == unpartitioned_upstream_of_partitioned.key
-    assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED  # ty: ignore[unresolved-attribute]
 
     assert counts[1].asset_key == upstream_daily_partitioned_asset.key
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[1].num_targeted_partitions == 1  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0  # ty: ignore[unresolved-attribute]
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1  # ty: ignore[unresolved-attribute]
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # ty: ignore[unresolved-attribute]
+    assert counts[1].num_targeted_partitions == 1  # ty: ignore[unresolved-attribute]
 
     assert counts[2].asset_key == downstream_weekly_partitioned_asset.key
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[2].num_targeted_partitions == 1  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0  # ty: ignore[unresolved-attribute]
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1  # ty: ignore[unresolved-attribute]
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # ty: ignore[unresolved-attribute]
+    assert counts[2].num_targeted_partitions == 1  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_backfill_status_counts_with_reexecution():
@@ -2054,9 +2056,9 @@ def test_asset_backfill_status_counts_with_reexecution():
 
     counts = backfill_data.get_backfill_status_per_asset_key(asset_graph)
     assert counts[0].asset_key == upstream_fail.key
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0  # ty: ignore[unresolved-attribute]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1  # ty: ignore[unresolved-attribute]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # ty: ignore[unresolved-attribute]
 
     dg.materialize(
         [upstream_success],
@@ -2070,9 +2072,9 @@ def test_asset_backfill_status_counts_with_reexecution():
     )
     counts = backfill_data.get_backfill_status_per_asset_key(asset_graph)
     assert counts[0].asset_key == upstream_fail.key
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 1  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # pyright: ignore[reportAttributeAccessIssue]
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 1  # ty: ignore[unresolved-attribute]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # ty: ignore[unresolved-attribute]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_backfill_selects_only_existent_partitions():
@@ -2150,6 +2152,129 @@ def test_asset_backfill_throw_error_on_invalid_upstreams():
         run_backfill_to_completion(asset_graph, assets_by_repo_name, backfill_data, [], instance)
 
 
+def test_asset_backfill_does_not_stall_when_parent_materialized_subset_skips_holiday():
+    """Regression test for a stuck backfill involving partitions that exclude holidays.
+
+    Three assets form a chain (a -> b -> c), all partitioned by a daily definition that excludes a
+    holiday, and the backfill targets a range that spans the holiday.
+
+    The target subset is stored as a single window that bridges the (excluded) holiday timestamp.
+    The materialized and requested subsets, however, are accumulated across iterations via union,
+    which does not bridge an exclusion-only gap, so they keep a real timestamp gap where the
+    holiday is. This reproduces the state where a and b are fully materialized but represented with
+    a holiday gap, and c has not yet been requested.
+
+    Subtracting the gapped requested subset of b from b's contiguous target leaves a leftover
+    window that spans only the excluded holiday and contains no partitions. Before the fix that
+    window made the subset report is_empty == False while having a partition count of zero, so b
+    appeared in the candidate set as a phantom "being requested this tick" subset. That in turn
+    made the daemon believe c's parent was being requested with a different set of partitions, so
+    it filtered out c's entire subset every iteration -> the backfill emitted no runs for c but
+    never completed.
+
+    This drives a single daemon iteration from that state and asserts that every targeted c
+    partition is requested.
+    """
+    partitions_def = dg.TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[create_datetime(2025, 1, 20)],  # holiday (Mon) in the middle of the range
+    )
+
+    @dg.asset(partitions_def=partitions_def)
+    def a():
+        return 1
+
+    @dg.asset(partitions_def=partitions_def)
+    def b(a):
+        return a + 1
+
+    @dg.asset(partitions_def=partitions_def)
+    def c(b):
+        return b + 1
+
+    assets_by_repo_name = {"repo": [a, b, c]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    instance = DagsterInstance.ephemeral()
+    backfill_start_datetime = create_datetime(2025, 2, 1)
+    backfill_start_timestamp = backfill_start_datetime.timestamp()
+
+    with partition_loading_context(backfill_start_datetime, instance):
+        targeted_partitions = [
+            key
+            for key in partitions_def.get_partition_keys()
+            if "2025-01-15" <= key <= "2025-01-23"
+        ]
+    # the excluded holiday must fall inside the targeted range, with real partitions on both sides
+    assert "2025-01-20" not in targeted_partitions
+    assert "2025-01-17" in targeted_partitions and "2025-01-21" in targeted_partitions
+
+    target_subset = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=targeted_partitions,
+        asset_selection=[a.key, b.key, c.key],
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+        backfill_start_timestamp=backfill_start_timestamp,
+    ).target_subset
+
+    before_holiday = [key for key in targeted_partitions if key < "2025-01-20"]
+    after_holiday = [key for key in targeted_partitions if key > "2025-01-20"]
+
+    def contiguous_subset(asset_key):
+        # All keys at once: with_partition_keys bridges the exclusion-only gap into one window.
+        return AssetGraphSubset.from_asset_partition_set(
+            {AssetKeyPartitionKey(asset_key, key) for key in targeted_partitions}, asset_graph
+        )
+
+    def gapped_subset(asset_key):
+        # The way the daemon accumulates a subset across iterations: unioning the partitions on
+        # either side of the holiday separately preserves the holiday-only gap rather than bridging
+        # it.
+        return AssetGraphSubset.from_asset_partition_set(
+            {AssetKeyPartitionKey(asset_key, key) for key in before_holiday}, asset_graph
+        ) | AssetGraphSubset.from_asset_partition_set(
+            {AssetKeyPartitionKey(asset_key, key) for key in after_holiday}, asset_graph
+        )
+
+    # a and b are both fully materialized (and requested). a is represented contiguously (its
+    # partitions materialized in a single batch), while b carries a holiday gap (accumulated across
+    # batches). The asymmetry is what lets b's holiday-only phantom survive its own parent-wait
+    # check and land in the "being requested this tick" set, which is what triggered filtering out
+    # all of c.
+    materialized_and_requested = contiguous_subset(a.key) | gapped_subset(b.key)
+
+    backfill_data = AssetBackfillData(
+        target_subset=target_subset,
+        requested_runs_for_target_roots=True,
+        # latest_storage_id is None so the daemon uses materialized_subset as-is without reading
+        # (and re-merging) materializations from the instance.
+        latest_storage_id=None,
+        materialized_subset=materialized_and_requested,
+        requested_subset=materialized_and_requested,
+        failed_and_downstream_subset=AssetGraphSubset(),
+        backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="backfillid_x",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+
+    requested_c_partitions = {
+        asset_partition.partition_key
+        for run_request in result.run_requests
+        for asset_partition in _requested_asset_partitions_in_run_request(run_request, asset_graph)
+        if asset_partition.asset_key == c.key
+    }
+    assert requested_c_partitions == set(targeted_partitions)
+
+
 def test_asset_backfill_cancellation():
     instance = DagsterInstance.ephemeral()
 
@@ -2188,7 +2313,7 @@ def test_asset_backfill_cancellation():
         backfill_start_timestamp=backfill_start_datetime.timestamp(),
     )
 
-    _single_backfill_iteration(
+    asset_backfill_data = _single_backfill_iteration(
         backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
     )
 
@@ -2221,6 +2346,80 @@ def test_asset_backfill_cancellation():
         downstream_daily_partitioned_asset.key
         not in canceling_backfill_data.materialized_subset.asset_keys
     )
+
+
+def test_asset_backfill_cancellation_before_any_runs():
+    """When a backfill is canceled before any runs execute (latest_storage_id is None),
+    get_asset_backfill_iteration_materialized_subset should return early without
+    calling fetch_materializations.
+    """
+    instance = DagsterInstance.ephemeral()
+
+    @dg.asset(partitions_def=dg.HourlyPartitionsDefinition("2023-01-01-00:00"))
+    def upstream_hourly_partitioned_asset():
+        return 1
+
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2023-01-01"))
+    def downstream_daily_partitioned_asset(
+        upstream_hourly_partitioned_asset,
+    ):
+        return upstream_hourly_partitioned_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            upstream_hourly_partitioned_asset,
+            downstream_daily_partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_id = "dummy_backfill_id"
+    backfill_start_datetime = create_datetime(2023, 1, 9, 1, 0, 0)
+    asset_selection = [
+        upstream_hourly_partitioned_asset.key,
+        downstream_daily_partitioned_asset.key,
+    ]
+    targeted_partitions = ["2023-01-09-00:00"]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=targeted_partitions,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=backfill_start_datetime.timestamp(),
+    )
+
+    # Confirm latest_storage_id is None (no runs have executed)
+    assert asset_backfill_data.latest_storage_id is None
+
+    # Cancel without running any backfill iterations
+    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(
+        backfill_id,
+        asset_backfill_data,
+        _get_asset_graph_view(
+            instance,
+            asset_graph,
+            backfill_start_datetime,
+        ),
+        backfill_start_datetime.timestamp(),
+    )
+
+    assert isinstance(canceling_backfill_data, AssetBackfillData)
+    assert canceling_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
+
+    # No materializations should exist since no runs executed
+    assert canceling_backfill_data.materialized_subset == AssetGraphSubset()
+
+    # Verify the early return: fetch_materializations should not be called
+    asset_graph_view = _get_asset_graph_view(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
+    with patch.object(instance_queryer.instance, "fetch_materializations") as mock_fetch:
+        result = get_asset_backfill_iteration_materialized_subset(
+            backfill_id, asset_backfill_data, asset_graph, instance_queryer
+        )
+        mock_fetch.assert_not_called()
+        assert result == asset_backfill_data.materialized_subset
 
 
 def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partitions():
@@ -2690,7 +2889,7 @@ def test_asset_backfill_unpartitioned_root_turned_to_partitioned():
     repo_with_partitioned_root = {"repo": [first_partitioned, second]}
     assert asset_backfill_data.get_target_root_partitions_subset(
         get_asset_graph(repo_with_partitioned_root)
-    ).get_partition_keys() == ["2024-01-01"]  # pyright: ignore[reportOptionalMemberAccess]
+    ).get_partition_keys() == ["2024-01-01"]  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_backfill_start_date_changed():
@@ -3034,8 +3233,8 @@ def test_backfill_fails_on_partitioned_asset_with_unpartitioned_materialization(
     assert partitioned_asset.key in backfill_data.target_subset.partitions_subsets_by_asset_key
     assert partitioned_asset.key not in backfill_data.target_subset.non_partitioned_asset_keys
 
-    # Update backfill data with the latest storage ID to pick up the new materialization
-    backfill_data = backfill_data.with_latest_storage_id(None)
+    # Update backfill data with storage ID 0 to pick up the new materialization
+    backfill_data = backfill_data.with_latest_storage_id(0)
 
     # Try to execute another iteration - this should raise an error
     with pytest.raises(DagsterBackfillFailedError) as exc_info:
@@ -3100,8 +3299,8 @@ def test_backfill_fails_on_unpartitioned_asset_with_partitioned_materialization(
     # Execute the job with the backfill tag
     report_mat_job.execute_in_process(instance=instance, tags={BACKFILL_ID_TAG: "test_backfill_2"})
 
-    # Update backfill data with the latest storage ID to pick up the new materialization
-    backfill_data = backfill_data.with_latest_storage_id(None)
+    # Update backfill data with storage ID 0 to pick up the new materialization
+    backfill_data = backfill_data.with_latest_storage_id(0)
 
     # Try to execute another iteration - this should raise an error
     with pytest.raises(DagsterBackfillFailedError) as exc_info:

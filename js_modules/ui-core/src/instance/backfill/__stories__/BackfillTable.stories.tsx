@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 
-import {StorybookProvider} from '../../../testing/StorybookProvider';
 import {BackfillTable} from '../BackfillTable';
 import {
   BackfillTableFragmentCompletedAssetJobStatus,
@@ -17,16 +16,14 @@ export default {
 
 export const GeneralStates = () => {
   return (
-    <StorybookProvider>
-      <MockedProvider
-        mocks={[
-          BackfillTableFragmentCompletedOpJobStatus,
-          BackfillTableFragmentCompletedAssetJobStatus,
-          BackfillTableFragmentFailedErrorStatus,
-        ]}
-      >
-        <BackfillTable backfills={BackfillTableFragments} refetch={() => {}} />
-      </MockedProvider>
-    </StorybookProvider>
+    <MockedProvider
+      mocks={[
+        BackfillTableFragmentCompletedOpJobStatus,
+        BackfillTableFragmentCompletedAssetJobStatus,
+        BackfillTableFragmentFailedErrorStatus,
+      ]}
+    >
+      <BackfillTable backfills={BackfillTableFragments} refetch={() => {}} />
+    </MockedProvider>
   );
 };

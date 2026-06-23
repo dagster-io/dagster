@@ -10,8 +10,7 @@ import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 In this guide, you'll configure Microsoft Entra ID (formerly Azure Active Directory) to use single sign-on (SSO) with your Dagster+ organization.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To complete the steps in this guide, you'll need:
 
@@ -21,9 +20,7 @@ To complete the steps in this guide, you'll need:
   - A Pro plan
   - [Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in your organization
 
-</details>
-
-## Step 1: add the Dagster Cloud app in Azure AD \{#dagster-app}
+## Step 1: Add the Dagster Cloud app in Azure AD \{#dagster-app}
 
 In this step, you'll add the Dagster Cloud app to your list of managed SaaS apps in Azure AD.
 
@@ -34,7 +31,7 @@ In this step, you'll add the Dagster Cloud app to your list of managed SaaS apps
 5. In the **Add from the gallery** section, type **Dagster Cloud** in the search box.
 6. Select **Dagster Cloud** from the results panel and then add the app. Wait a few seconds while the app is added to your tenant.
 
-## Step 2: configure SSO in Azure AD \{#configure-sso}
+## Step 2: Configure SSO in Azure AD \{#configure-sso}
 
 In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
@@ -77,7 +74,7 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
     When prompted, save the SAML metadata file to your computer.
 
-## Step 3: upload the SAML metadata to Dagster+ \{#upload-saml}
+## Step 3: Upload the SAML metadata to Dagster+ \{#upload-saml}
 
 After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dg` CLI:
 
@@ -91,7 +88,7 @@ Before running this command, you must first log in by running `dg plus login`.
 dg api organization saml upload <path/to/metadata>
 ```
 
-## Step 4: create a test user \{#test-user}
+## Step 4: Create a test user \{#test-user}
 
 In this section, you'll create a test user in the Azure portal.
 

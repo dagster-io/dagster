@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=BaseModel)
 
 ResolvableToComponentPath = Union[Path, "ComponentPath", str]
+ResolvableToComponentLoc = Union[Path, "ComponentLoc", str]
 
 
 class ComponentRequirementsModel(BaseModel):
@@ -134,7 +135,7 @@ class CompositeYamlComponent(Component):
         ):
             defs_list.append(
                 post_process_defs(
-                    context.build_defs_at_path(component_decl.path).with_definition_metadata_update(
+                    context.build_defs(component_decl.loc).with_definition_metadata_update(
                         lambda metadata: _add_defs_yaml_metadata(
                             component_yaml_path=component_yaml,
                             load_context=context,
@@ -151,7 +152,39 @@ class CompositeYamlComponent(Component):
 
 
 @record
-class ComponentPath:
+class ComponentLoc:
+    """Base class for component location identifiers.
+
+    All component locations -- whether filesystem-based or synthetic root --
+    inherit from this class so they can be used uniformly as cache and
+    dependency-graph keys in the ComponentTreeStateTracker.
+    """
+
+    def without_instance_key(self) -> "ComponentLoc":
+        """Return a version of this loc without any instance-level qualifier.
+        Subclasses that support instance keys should override.
+        """
+        return self
+
+    def get_display_key(self, root_path: Path) -> str:
+        """Return a human-readable key for error messages and tree display."""
+        return repr(self)
+
+
+@record
+class ComponentRootLoc(ComponentLoc):
+    """Synthetic location for the canonical root of the component tree.
+
+    This loc serves as the cache and dependency-graph key for the merged
+    definitions produced by the tree.
+    """
+
+    def get_display_key(self, root_path: Path) -> str:
+        return "<root>"
+
+
+@record
+class ComponentPath(ComponentLoc):
     """Identifier for where a Component instance was defined:
     file_path_posix: The absolute path to the file or directory.
     instance_key: The optional identifier to distinguish instances originating from the same file.
@@ -188,17 +221,82 @@ class ComponentPath:
 
         return key
 
+    def get_display_key(self, root_path: Path) -> str:
+        return self.get_relative_key(root_path)
+
+
+@record
+class AppManagedDefinitionsLoc(ComponentLoc):
+    """Location for the UI-definitions subtree.
+
+    With ``instance_key=None`` this identifies the aggregate container
+    (``AppManagedDefinitionsDecl``) — analogous to ``YamlFileDecl``'s loc for a
+    yaml file containing several components. With an ``instance_key``
+    set it identifies a single app-managed component, analogous to a
+    yaml document's loc.
+    """
+
+    instance_key: str | None = None
+
+    def without_instance_key(self) -> "AppManagedDefinitionsLoc":
+        return AppManagedDefinitionsLoc()
+
+    def get_display_key(self, root_path: Path) -> str:
+        if self.instance_key is not None:
+            return f"<ui>/{self.instance_key}"
+        return "<ui>"
+
+
+class AppManagedDefinitionsComponent(Component):
+    """Aggregate component for app-managed components at a code location.
+
+    Functionally minimal — its ``build_defs`` just merges children's defs,
+    same as ``ComponentRootComponent`` does at the next level up. The
+    point of this layer is structural: it gives the UI subtree a single
+    named node under the root, parallel to the filesystem subtree, so
+    additions to the "things hanging off the root" are easy to reason
+    about by analogy.
+    """
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        child_defs = [
+            context.build_defs(child_decl.loc)
+            for child_decl in context.component_decl.iterate_child_component_decls()
+        ]
+        return Definitions.merge(*child_defs)
+
+
+@dataclass
+class ComponentRootComponent(Component):
+    """The root component of the unified component tree.
+
+    Merges definitions from all child decls together with library-enriched
+    definitions.
+    """
+
+    components: Sequence[Component]
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        from dagster.components.core.load_defs import get_library_json_enriched_defs
+
+        child_defs = [
+            context.build_defs(child_decl.loc)
+            for child_decl in context.component_decl.iterate_child_component_decls()
+        ]
+        library_defs = get_library_json_enriched_defs(context.component_tree)
+        return Definitions.merge(*child_defs, library_defs)
+
 
 def get_component(context: ComponentLoadContext) -> Component | None:
     """Attempts to load a component from the given context. Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
     """
-    from dagster.components.core.decl import build_component_decl_from_context
+    from dagster.components.core.decl import build_filesystem_component_decl_from_context
 
-    component_decl = build_component_decl_from_context(context)
+    component_decl = build_filesystem_component_decl_from_context(context)
     if component_decl:
-        return context.load_structural_component_at_path(component_decl.path)
+        return context.load_structural_component_at_loc(component_decl.loc)
     return None
 
 
@@ -206,7 +304,6 @@ def get_component(context: ComponentLoadContext) -> Component | None:
 class DefsFolderComponentYamlSchema(Resolvable): ...
 
 
-@public
 @public
 @dataclass
 class DefsFolderComponent(Component):
@@ -323,7 +420,7 @@ class DefsFolderComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         child_defs = [
-            context.build_defs_at_path(child_decl.path)
+            context.build_defs(child_decl.loc)
             for child_decl in context.component_decl.iterate_child_component_decls()
         ]
         return Definitions.merge(*child_defs)
@@ -370,7 +467,7 @@ def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path,
         if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
             continue
         component = get_component(
-            context.for_component_path(ComponentPath(file_path_posix=subpath.absolute().as_posix()))
+            context.for_component_loc(ComponentPath(file_path_posix=subpath.absolute().as_posix()))
         )
         if component:
             found[subpath] = component
@@ -424,7 +521,7 @@ class PythonFileComponent(Component):
         decl = check.inst(context.component_decl, PythonFileDecl)
         return Definitions.merge(
             *[
-                context.build_defs_at_path(child_decl.path).with_definition_metadata_update(
+                context.build_defs(child_decl.loc).with_definition_metadata_update(
                     lambda metadata: _add_defs_py_metadata(
                         component=self.components[attr],
                         metadata=metadata,
@@ -450,7 +547,7 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
     from dagster.components.core.decl import build_component_decl_from_yaml_file
 
     decl = build_component_decl_from_yaml_file(context, component_def_path)
-    return context.load_structural_component_at_path(decl.path)
+    return context.load_structural_component_at_loc(decl.loc)
 
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check

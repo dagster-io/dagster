@@ -8,33 +8,39 @@ In Dagster, assets are the building blocks of your data pipeline and it's common
 
 There are three ways of passing data between assets:
 
-- Explicitly managing data, by using external storage
-- Implicitly managing data, using I/O managers
-- Avoiding passing data between assets altogether by combining several tasks into a single asset
+- [Explicitly managing data, by using external storage](#external-storage)
+- [Implicitly managing data, using I/O managers](#io-managers)
+- [Avoiding passing data between assets altogether by combining several tasks into a single asset](#combine-assets)
 
-This guide walks through all three methods.
+## Prerequisites
 
-:::note
+To run the code in this guide, you'll need to [create a Dagster project](/guides/build/projects/creating-projects) and install the following dependencies:
 
-This article assumes familiarity with [assets](/guides/build/assets/defining-assets) and[resources](/guides/build/external-resources)
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
 
-:::
+         ```shell
+         uv add dagster-duckdb-pandas
+         ```
 
-<details>
-  <summary>Prerequisites</summary>
+   </TabItem>
 
-To run the code in this article, you'll need to create and activate a Python virtual environment and install the following dependencies:
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
 
-   ```bash
-   pip install dagster dagster-duckdb-pandas
-   ```
-</details>
+         ```shell
+         pip install dagster-duckdb-pandas
+         ```
 
-## Move data assets explicitly using external storage
+   </TabItem>
+</Tabs>
+
+## Move data assets explicitly using external storage \{#external-storage}
 
 A common and recommended approach to passing data between assets is explicitly managing data using external storage. This example pipeline uses a SQLite database as external storage:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-explicit.py" language="python" title="Using External Storage" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/data-assets/passing-data-assets/passing-data-explicit.py" language="python" title="Using External Storage" />
 
 In this example, the first asset opens a connection to the SQLite database and writes data to it. The second asset opens a connection to the same database and reads data from it. The dependency between the first asset and the second asset is made explicit through the asset's `deps` argument.
 
@@ -48,7 +54,7 @@ The downsides of this approach are:
 - You need to manage connections and transactions manually
 - You need to handle errors and edge cases, for example, if the database is down or if a connection is closed
 
-## Move data between assets implicitly using I/O managers
+## Move data between assets implicitly using I/O managers \{#io-managers}
 
 Dagster's I/O managers are a powerful feature that manages data between assets by defining how data is read from and written to external storage. They help separate business logic from I/O operations, reducing boilerplate code and making it easier to change where data is stored.
 
@@ -59,7 +65,7 @@ I/O managers handle:
 
 For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/build/io-managers) guide.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
 
 In this example, a `DuckDBPandasIOManager` is instantiated to run using a local file. The I/O manager handles both reading and writing to the database.
 
@@ -71,7 +77,7 @@ each step would execute in a separate environment and would not have access to t
 :::
 
 The `people()` and `birds()` assets both write their dataframes to DuckDB
-for persistent storage. The `combined_data()` asset requests data from both assets by adding them as parameters to the function, and the I/O manager handles the reading them from DuckDB and making them available to the `combined_data` function as dataframes. **Note**: When you use I/O managers you don't need to manually add the asset's dependencies through the `deps` argument.
+for persistent storage. The `combined_data()` asset requests data from both assets by adding them as parameters to the function, and the I/O manager handles the reading them from DuckDB and making them available to the `combined_data` function as dataframes. When you use I/O managers you don't need to manually add the asset's dependencies through the `deps` argument.
 
 The benefits of this approach are:
 
@@ -83,14 +89,14 @@ The downsides of this approach are:
 - The I/O manager approach is less flexible should you need to customize how data is read or written to storage
 - Some decisions may be made by the I/O manager for you, such as naming conventions that can be hard to override.
 
-## Avoid passing data between assets by combining assets
+## Avoid passing data between assets by combining assets \{#combine-assets}
 
 In some cases, you may find that you can avoid passing data between assets by
 carefully considering how you have modeled your pipeline:
 
 Consider this example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-avoid.py" language="python" title="Avoid Passing Data Between Assets" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/data-assets/passing-data-assets/passing-data-avoid.py" language="python" title="Avoid Passing Data Between Assets" />
 
 This example downloads a zip file from Google Drive, unzips it, and loads the data into a Pandas DataFrame. It relies on each asset running on the same file system to perform these operations.
 
@@ -98,7 +104,7 @@ The assets are modeled as tasks, rather than as data assets. For more informatio
 
 In this refactor, the `download_files`, `unzip_files`, and `load_data` assets are combined into a single asset, `my_dataset`. This asset downloads the files, unzips them, and loads the data into a data warehouse.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-rewrite-assets.py" language="python" title="Avoid Passing Data Between Assets" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/data-assets/passing-data-assets/passing-data-rewrite-assets.py" language="python" title="Avoid Passing Data Between Assets" />
 
 This approach still handles passing data explicitly, but no longer does it across assets,
 instead within a single asset. This pipeline still assumes enough disk and
@@ -114,7 +120,3 @@ The downsides of this approach are:
 - It makes certain assumptions about how much data is being processed
 - It can be difficult to reuse functions across assets, since they're tightly coupled to the data they produce
 - It may not always be possible to swap functionality based on the environment you are running in. For example, if you are running in a cloud environment, you may not have access to the local file system.
-
-## Related resources
-
-{/* TODO: add links to relevant API documentation here. */}

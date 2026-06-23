@@ -24,6 +24,8 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     subgraph DagsterObjects[Dagster Objects]
       Asset
       AssetCheck[Asset Check]
+      AutomationCondition[Automation Condition]
+      Executor
       Graph
       IOManager[IO Manager]
       Job
@@ -167,6 +169,39 @@ Specs are standalone objects that describe the identity and metadata of Dagster 
 | Concept         | Relationship                                                      |
 | --------------- | ----------------------------------------------------------------- |
 | [asset](#asset) | `asset spec` may describe the identity and metadata of an `asset` |
+
+## Automation condition
+
+```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+  graph LR
+    style Asset fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style AssetCheck fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+
+    AutomationCondition(Automation Condition)
+
+    AutomationCondition -.-> Asset
+    AutomationCondition -.-> AssetCheck[Asset Check]
+```
+
+An <PyObject section="assets" module="dagster" object="AutomationCondition" /> describes when an asset or asset check should be executed, based on the status of the asset and its upstream dependencies. Automation conditions are evaluated by an automation condition sensor and can be composed to express complex scheduling logic without writing custom sensor code.
+
+| Concept                     | Relationship                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| [asset](#asset)             | `automation condition` may be attached to an `asset` to control when it is materialized       |
+| [asset check](#asset-check) | `automation condition` may be attached to an `asset check` to control when it is materialized |
 
 ## Code location
 
@@ -347,6 +382,39 @@ In Dagster, "definitions" means two things:
 | [sensor](#sensor)               | Top-level `Definitions` object may contain one or more `sensor` definitions      |
 | [component](#component)         | `definition` may be the output of a `component`                                  |
 | [code location](#code-location) | `definitions` must be deployed in a `code location`                              |
+
+## Executor
+
+```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+  graph LR
+    style Job fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style CodeLocation fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+
+    Executor(Executor)
+
+    Executor ==> CodeLocation[Code Location]
+    Executor -.-> Job
+```
+
+An <PyObject section="internals" module="dagster" object="ExecutorDefinition" displayText="executor" /> defines how the steps within a job run are executed. Every job has a default executor (single process), and custom executors can be specified per job or for an entire code location.
+
+| Concept                         | Relationship                                                             |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| [code location](#code-location) | `executor` is set for each `code location`                               |
+| [job](#job)                     | `executor` may be added to a `job` to control how its steps are executed |
 
 ## Graph
 

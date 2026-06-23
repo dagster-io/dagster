@@ -1,5 +1,5 @@
 import dagster as dg
-from ops import example_one_op  # type: ignore
+from ops import example_one_op
 
 
 @dg.job

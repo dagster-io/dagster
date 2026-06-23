@@ -8,10 +8,11 @@ import {
   Dialog,
   DialogFooter,
   DialogHeader,
+  Heading,
   Icon,
   Radio,
   RadioContainer,
-  Subheading,
+  RadioGroup,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -319,7 +320,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
           runConfigData,
         },
       },
-      'toast',
+      {behavior: 'toast'},
     );
 
     if (result?.__typename === 'LaunchRunSuccess') {
@@ -450,7 +451,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             isInitiallyOpen={true}
             title={
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Subheading>Partition selection</Subheading>
+                <Heading size={14} weight={600}>
+                  Partition selection
+                </Heading>
                 <span>All partitions</span>
               </Box>
             }
@@ -471,7 +474,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             isInitiallyOpen={true}
             title={
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Subheading>Partition selection</Subheading>
+                <Heading size={14} weight={600}>
+                  Partition selection
+                </Heading>
                 {target.type === 'pureWithAnchorAsset' ? (
                   <span /> // we won't know until runtime
                 ) : (
@@ -487,7 +492,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 data-testid={testId('anchor-asset-label')}
               >
                 <Icon name="asset" />
-                <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
+                <Heading size={14} weight={600}>
+                  {displayNameForAssetKey(target.anchorAssetKey)}
+                </Heading>
               </Box>
             )}
             <DimensionRangeWizards
@@ -503,7 +510,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         <ToggleableSection
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Tags</Subheading>
+              <Heading size={14} weight={600}>
+                Tags
+              </Heading>
               <span>{tags.length} tags</span>
             </Box>
           }
@@ -541,7 +550,9 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         <ToggleableSection
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-              <Subheading>Config</Subheading>
+              <Heading size={14} weight={600}>
+                Config
+              </Heading>
               {savedConfig && <span>Config saved</span>}
             </Box>
           }
@@ -569,7 +580,11 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         {target.type === 'job' && (
           <ToggleableSection
             isInitiallyOpen={true}
-            title={<Subheading data-testid={testId('backfill-options')}>Options</Subheading>}
+            title={
+              <Heading size={14} weight={600} data-testid={testId('backfill-options')}>
+                Options
+              </Heading>
+            }
           >
             <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
               <Checkbox
@@ -581,37 +596,37 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               />
               {showSingleRunBackfillToggle ? (
                 <RadioContainer>
-                  <Subheading>Launch as...</Subheading>
-                  <Radio
-                    data-testid={testId('ranges-as-tags-true-radio')}
-                    checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
+                  <Heading size={14} weight={600}>
+                    Launch as…
+                  </Heading>
+                  <RadioGroup
+                    value={
+                      canLaunchWithRangesAsTags && launchWithRangesAsTags ? 'single' : 'multiple'
+                    }
+                    onValueChange={(v) => setLaunchWithRangesAsTags(v === 'single')}
                     disabled={!canLaunchWithRangesAsTags}
-                    onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
                   >
-                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                      <span>Single run</span>
-                      <Tooltip
-                        placement="top-start"
-                        content={
-                          <div style={{maxWidth: 300}}>
-                            This option requires that your assets are written to operate on a
-                            partition key range via context.asset_partition_key_range_for_output or
-                            context.asset_partitions_time_window_for_output.
-                          </div>
-                        }
-                      >
-                        <Icon name="info" color={Colors.accentGray()} />
-                      </Tooltip>
-                    </Box>
-                  </Radio>
-                  <Radio
-                    data-testid={testId('ranges-as-tags-false-radio')}
-                    checked={!canLaunchWithRangesAsTags || !launchWithRangesAsTags}
-                    disabled={!canLaunchWithRangesAsTags}
-                    onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
-                  >
-                    Multiple runs (One per selected partition)
-                  </Radio>
+                    <Radio value="single" data-testid={testId('ranges-as-tags-true-radio')}>
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                        <span>Single run</span>
+                        <Tooltip
+                          placement="top-start"
+                          content={
+                            <div style={{maxWidth: 300}}>
+                              This option requires that your assets are written to operate on a
+                              partition key range via context.asset_partition_key_range_for_output
+                              or context.asset_partitions_time_window_for_output.
+                            </div>
+                          }
+                        >
+                          <Icon name="info" color={Colors.accentGray()} />
+                        </Tooltip>
+                      </Box>
+                    </Radio>
+                    <Radio value="multiple" data-testid={testId('ranges-as-tags-false-radio')}>
+                      Multiple runs (One per selected partition)
+                    </Radio>
+                  </RadioGroup>
                 </RadioContainer>
               ) : null}
             </Box>
@@ -824,7 +839,9 @@ const Warnings = ({
         >
           <Box flex={{alignItems: 'center', gap: 12}}>
             <Icon name="warning" color={Colors.textYellow()} />
-            <Subheading>Warnings</Subheading>
+            <Heading size={14} weight={600}>
+              Warnings
+            </Heading>
           </Box>
           <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>
         </Box>

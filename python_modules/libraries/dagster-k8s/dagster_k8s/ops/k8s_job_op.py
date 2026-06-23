@@ -383,9 +383,9 @@ def execute_k8s_job(
 
             api_client.wait_for_pod(
                 pod_to_watch,
-                namespace,  # pyright: ignore[reportArgumentType]
+                namespace,
                 wait_timeout=timeout,
-                start_time=start_time,  # pyright: ignore[reportArgumentType]
+                start_time=start_time,
             )
 
             log_stream = watch.stream(
@@ -483,7 +483,7 @@ def k8s_job_op(context):
 
     The service account that is used to run this job should have the following RBAC permissions:
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/kubernetes/k8s_job_op_rbac.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deployment/oss/deployment_options/kubernetes/k8s_job_op_rbac.yaml
        :language: YAML
     """
     if "merge_behavior" in context.op_config:

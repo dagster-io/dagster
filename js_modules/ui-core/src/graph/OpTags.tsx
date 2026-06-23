@@ -1,7 +1,7 @@
-import {BaseIcon, Box, Colors, FontFamily} from '@dagster-io/ui-components';
+import {BaseIcon, Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/OpTags.module.css';
 import csv from './kindtag-images/csv.svg';
 import dag from './kindtag-images/dag.svg';
 import dashboard from './kindtag-images/dashboard.svg';
@@ -21,14 +21,17 @@ import toml from './kindtag-images/toml.svg';
 import airbyte from './kindtag-images/tool-airbyte-color.svg';
 import airflow from './kindtag-images/tool-airflow-color.svg';
 import airtable from './kindtag-images/tool-airtable-color.svg';
+import alteryx from './kindtag-images/tool-alteryx-color.svg';
 import arrow from './kindtag-images/tool-arrow-color.svg';
 import atlan from './kindtag-images/tool-atlan-color.svg';
 import aws from './kindtag-images/tool-aws-color.svg';
 import ax from './kindtag-images/tool-ax-color.svg';
 import axioma from './kindtag-images/tool-axioma-color.svg';
 import azure from './kindtag-images/tool-azure-color.svg';
+import azuredevops from './kindtag-images/tool-azuredevops-color.svg';
 import azureml from './kindtag-images/tool-azureml-color.svg';
 import bigquery from './kindtag-images/tool-bigquery-color.svg';
+import boomi from './kindtag-images/tool-boomi-color.svg';
 import botorch from './kindtag-images/tool-botorch-color.svg';
 import braze from './kindtag-images/tool-braze.svg';
 import cassandra from './kindtag-images/tool-cassandra-color.svg';
@@ -69,6 +72,7 @@ import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import evidence from './kindtag-images/tool-evidence.svg';
 import exasol from './kindtag-images/tool-exasol-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
+import fabric from './kindtag-images/tool-fabric-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
 import flink from './kindtag-images/tool-flink-color.svg';
@@ -129,6 +133,7 @@ import noteable from './kindtag-images/tool-noteable-color.svg';
 import notion from './kindtag-images/tool-notion-color.svg';
 import numpy from './kindtag-images/tool-numpy-color.svg';
 import omni from './kindtag-images/tool-omni-color.svg';
+import onelake from './kindtag-images/tool-onelake-color.svg';
 import openai from './kindtag-images/tool-openai-color.svg';
 import openmetadata from './kindtag-images/tool-openmetadata-color.svg';
 import optuna from './kindtag-images/tool-optuna-color.svg';
@@ -169,6 +174,7 @@ import rust from './kindtag-images/tool-rust-color.svg';
 import s3 from './kindtag-images/tool-s3-color.svg';
 import sagemaker from './kindtag-images/tool-sagemaker-color.svg';
 import salesforce from './kindtag-images/tool-salesforce-color.svg';
+import sap from './kindtag-images/tool-sap-color.svg';
 import scala from './kindtag-images/tool-scala-color.svg';
 import scikitlearn from './kindtag-images/tool-scikitlearn-color.svg';
 import scipy from './kindtag-images/tool-scipy-color.svg';
@@ -244,6 +250,7 @@ export type KnownTagType =
   | 'airflow'
   | 'airliftmapped'
   | 'airtable'
+  | 'alteryx'
   | 'arrow'
   | 'athena'
   | 'atlan'
@@ -253,8 +260,10 @@ export type KnownTagType =
   | 'ax'
   | 'axioma'
   | 'azure'
+  | 'azuredevops'
   | 'azureml'
   | 'bigquery'
+  | 'boomi'
   | 'botorch'
   | 'braze'
   | 'bronze'
@@ -304,6 +313,7 @@ export type KnownTagType =
   | 'exasol'
   | 'excel'
   | 'expand'
+  | 'fabric'
   | 'facebook'
   | 'file'
   | 'fivetran'
@@ -374,6 +384,7 @@ export type KnownTagType =
   | 'notion'
   | 'numpy'
   | 'omni'
+  | 'onelake'
   | 'openai'
   | 'openmetadata'
   | 'optuna'
@@ -418,6 +429,7 @@ export type KnownTagType =
   | 's3'
   | 'sagemaker'
   | 'salesforce'
+  | 'sap'
   | 'scala'
   | 'scikitlearn'
   | 'scipy'
@@ -609,9 +621,17 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: airtable,
     content: 'Airtable',
   },
+  alteryx: {
+    icon: alteryx,
+    content: 'Alteryx',
+  },
   omni: {
     icon: omni,
     content: 'Omni',
+  },
+  onelake: {
+    icon: onelake,
+    content: 'OneLake',
   },
   datadog: {
     icon: datadog,
@@ -651,6 +671,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: azure,
     content: 'Azure',
   },
+  azuredevops: {
+    icon: azuredevops,
+    content: 'Azure DevOps',
+  },
   azureml: {
     icon: azureml,
     content: 'Azure ML',
@@ -662,6 +686,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   bigquery: {
     icon: bigquery,
     content: 'BigQuery',
+  },
+  boomi: {
+    icon: boomi,
+    content: 'Boomi',
   },
   teams: {
     icon: teams,
@@ -844,6 +872,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   excel: {
     icon: excel,
     content: 'Excel',
+  },
+  fabric: {
+    icon: fabric,
+    content: 'Fabric',
   },
   ray: {
     icon: ray,
@@ -1099,6 +1131,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   salesforce: {
     icon: salesforce,
     content: 'Salesforce',
+  },
+  sap: {
+    icon: sap,
+    content: 'SAP',
   },
   sdf: {
     icon: sdf,
@@ -1478,14 +1514,14 @@ export const extractIconSrc = (knownTag: KnownTag | undefined) => {
   // Storybook imports SVGs are string but nextjs imports them as object.
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
   if (typeof knownTag?.icon !== 'undefined') {
-    return typeof knownTag.icon === 'string' ? (knownTag.icon as any) : knownTag.icon?.src;
+    return typeof knownTag.icon === 'string' ? (knownTag.icon as string) : knownTag.icon?.src;
   }
   return '';
 };
 
 export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTagsProps) => {
   return (
-    <OpTagsContainer style={style}>
+    <div className={styles.opTagsContainer} style={style}>
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as KnownTagType];
         const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
@@ -1515,7 +1551,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
           </Box>
         );
       })}
-    </OpTagsContainer>
+    </div>
   );
 });
 
@@ -1535,20 +1571,3 @@ export const TagIcon = React.memo(({label}: {label: string}) => {
     />
   );
 });
-
-const OpTagsContainer = styled.div`
-  gap: 6px;
-  position: absolute;
-  display: flex;
-  margin-right: 14px;
-
-  & > div {
-    padding: 0 8px;
-    min-height: 24px;
-    display: flex;
-    align-items: center;
-    font-family: ${FontFamily.default};
-    font-size: 12px;
-    border-radius: 8px;
-  }
-`;

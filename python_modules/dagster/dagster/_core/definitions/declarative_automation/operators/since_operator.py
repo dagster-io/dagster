@@ -16,7 +16,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     T_AutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
+from dagster._core.definitions.declarative_automation.operators.utils import (
+    has_allow_ignore,
+    has_resolve_through_virtual,
+)
 from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue, IntMetadataValue
 from dagster._record import copy, record
@@ -105,7 +108,7 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         # subset
         return self._get_stable_unique_id(target_key)
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # must evaluate child condition over the entire subset to avoid missing state transitions
@@ -226,5 +229,20 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
             else self.trigger_condition,
             reset_condition=self.reset_condition.ignore(selection)
             if has_allow_ignore(self.reset_condition)
+            else self.reset_condition,
+        )
+
+    def resolve_through_virtual(self, value: bool = True) -> "SinceCondition":
+        """Applies the ``.resolve_through_virtual()`` method across all sub-conditions.
+
+        This impacts any dep-related sub-conditions.
+        """
+        return copy(
+            self,
+            trigger_condition=self.trigger_condition.resolve_through_virtual(value)
+            if has_resolve_through_virtual(self.trigger_condition)
+            else self.trigger_condition,
+            reset_condition=self.reset_condition.resolve_through_virtual(value)
+            if has_resolve_through_virtual(self.reset_condition)
             else self.reset_condition,
         )

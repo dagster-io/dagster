@@ -94,7 +94,7 @@ EnableBranchDeployments: true
 For example:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dagster.yaml"
   language="yaml"
   title="dagster.yaml"
 />
@@ -104,7 +104,7 @@ For example:
 Modify your production agent's `dagster.yaml` file to set the `dagster_cloud_api.branch_deployments` field to `true`. For example:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster-single-agent.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/dagster-single-agent.yaml"
   language="yaml"
   title="dagster.yaml"
 />
@@ -122,7 +122,10 @@ Modify your production agent's `dagster.yaml` file to set the `dagster_cloud_api
 
 2. After the agent is set up, modify your Helm values file to include the following:
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/helm.yaml"
+  language="yaml"
+/>
 
 </TabItem>
 <TabItem value="existing-agent" label="Existing production agent">
@@ -130,7 +133,7 @@ Modify your production agent's `dagster.yaml` file to set the `dagster_cloud_api
 Modify your production agent's Helm values file to enable branch deployments:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm-single-agent.yaml"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/deploying_code/branch_deployments/helm-single-agent.yaml"
   language="yaml"
 />
 

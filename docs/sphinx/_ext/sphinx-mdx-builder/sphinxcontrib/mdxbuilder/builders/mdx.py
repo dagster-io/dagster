@@ -1,15 +1,35 @@
 from collections.abc import Iterator
 from os import path
+from pathlib import Path
 
 from docutils import nodes
 from docutils.io import StringOutput
 from sphinx.builders import Builder
 from sphinx.util import logging
+from sphinx.util.inventory import InventoryFile
 from sphinx.util.osutil import ensuredir
 
 from ..writers.mdx import MdxWriter  # noqa
 
 logger = logging.getLogger(__name__)
+
+
+class _PublishedInventoryUriBuilder:
+    """Expose published doc URLs when generating ``objects.inv``.
+
+    The MDX builder writes ``.mdx`` files to disk for Docusaurus ingestion, but the
+    published site is served at clean, extensionless routes. Inventory entries must
+    point at those published routes so intersphinx links resolve correctly.
+    """
+
+    @staticmethod
+    def get_target_uri(docname: str, typ: str | None = None) -> str:
+        del typ
+        if docname == "index":
+            return ""
+        if docname.endswith("/index"):
+            return docname[: -len("index")]
+        return f"{docname}/"
 
 
 class MdxBuilder(Builder):
@@ -61,11 +81,12 @@ class MdxBuilder(Builder):
                 pass
 
     def get_target_uri(self, docname: str, typ: str | None = None) -> str:
-        # Transform the docname to match the actual documentation URL structure
-        # Remove 'sections/api/apidocs/' prefix if present
+        # Transform the docname to match the actual documentation URL structure.
+        # Sphinx source files live under a sections/ directory, but the built
+        # documentation is served without that prefix.
         transformed = docname
-        if transformed.startswith("sections/api/apidocs/"):
-            transformed = transformed.replace("sections/api/apidocs/", "api/", 1)
+        if transformed.startswith("sections/"):
+            transformed = transformed[len("sections/") :]
         return self.link_transform(transformed)
 
     def prepare_writing(self, docnames: set[str]) -> None:
@@ -83,5 +104,9 @@ class MdxBuilder(Builder):
             logger.warning(f"error writing file {outfilename}: {err}")
             raise err
 
-    def finish(self):
-        pass
+    def finish(self) -> None:
+        InventoryFile.dump(
+            Path(self.outdir) / "objects.inv",
+            self.env,
+            _PublishedInventoryUriBuilder(),
+        )

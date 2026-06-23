@@ -1,3 +1,4 @@
+##########################
 dagster-databricks library
 ##########################
 
@@ -37,7 +38,6 @@ DatabricksWorkspaceComponent
 APIs
 ****
 
-
 Resources
 =========
 
@@ -59,6 +59,7 @@ Step Launcher
 =============
 .. autoconfigurable:: dagster_databricks.databricks_pyspark_step_launcher
   :annotation: ResourceDefinition
+
 
 Pipes
 =====

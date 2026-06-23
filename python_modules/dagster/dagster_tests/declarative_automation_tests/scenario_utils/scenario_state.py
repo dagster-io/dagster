@@ -7,7 +7,7 @@ import sys
 from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import AbstractSet, NamedTuple, cast  # noqa: UP035
+from typing import AbstractSet, NamedTuple  # noqa: UP035
 from unittest import mock
 
 import dagster as dg
@@ -68,9 +68,7 @@ def get_code_location_origin(
         sensors=scenario_spec.sensors,
     )
 
-    return _get_code_location_origin_from_repository(
-        cast("dg.RepositoryDefinition", repository), location_name=location_name
-    )
+    return _get_code_location_origin_from_repository(repository, location_name=location_name)
 
 
 def _get_code_location_origin_from_repository(repository: RepositoryDefinition, location_name: str):
@@ -173,7 +171,7 @@ class ScenarioSpec:
                     )
         for check_spec in self.check_specs:
 
-            @dg.asset_check(  # pyright: ignore[reportArgumentType]
+            @dg.asset_check(
                 asset=check_spec.asset_key,
                 name=check_spec.key.name,
                 blocking=check_spec.blocking,

@@ -161,10 +161,6 @@ def test_retain_freshness_policy():
 
 
 def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
-    fpa = dg.LegacyFreshnessPolicy(maximum_lag_minutes=24.5)
-    fpb = dg.LegacyFreshnessPolicy(
-        maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
-    )
     ampa = AutoMaterializePolicy.eager()
     ampb = AutoMaterializePolicy.lazy()
 
@@ -183,7 +179,6 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
 
     my_graph_asset = AssetsDefinition.from_graph(
         my_graph,
-        legacy_freshness_policies_by_output_name={"a": fpa, "b": fpb},
         auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
     )
 
@@ -195,9 +190,6 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
         }
     )
     specs_by_key = replaced.specs_by_key
-    assert specs_by_key[dg.AssetKey("aa")].legacy_freshness_policy == fpa
-    assert specs_by_key[dg.AssetKey("bb")].legacy_freshness_policy == fpb
-    assert specs_by_key[dg.AssetKey("cc")].legacy_freshness_policy is None
 
     assert specs_by_key[dg.AssetKey("aa")].auto_materialize_policy == ampa
     assert specs_by_key[dg.AssetKey("bb")].auto_materialize_policy == ampb
@@ -470,10 +462,10 @@ def test_asset_with_io_manager_def():
     events = []
 
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     @dg.io_manager
@@ -493,10 +485,10 @@ def test_asset_with_io_manager_def_plain_old_python_object_iomanager() -> None:
     events = []
 
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     @dg.asset(io_manager_def=MyIOManager())
@@ -555,7 +547,7 @@ def test_asset_with_io_manager_key_only():
 
 
 def test_asset_both_io_manager_args_provided():
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def the_io_manager():
         pass
 
@@ -646,10 +638,10 @@ def test_multi_asset_resources_execution():
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _context, obj):  # ty: ignore[invalid-method-override]
             self._the_list.append(obj)
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     foo_list = []
@@ -695,11 +687,11 @@ def test_multi_asset_io_manager_execution_specs() -> None:
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _context, obj):  # ty: ignore[invalid-method-override]
             assert isinstance(obj, int)
             self._the_list.append(obj)
 
-        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _context):  # ty: ignore[invalid-method-override]
             pass
 
     foo_list = []
@@ -810,11 +802,11 @@ def test_graph_backed_asset_io_manager():
     events = []
 
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             events.append(f"entered handle_output for {context.step_key}")
 
         def load_input(self, context):
-            events.append(f"entered handle_input for {context.upstream_output.step_key}")  # pyright: ignore[reportOptionalMemberAccess]
+            events.append(f"entered handle_input for {context.upstream_output.step_key}")
 
     asset_provided_resources = AssetsDefinition.from_graph(
         graph_def=basic,
@@ -873,7 +865,7 @@ def test_group_name_requirements():
     def good_name():
         return 1
 
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="not a valid name in Dagster"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="is not a valid asset group name"):
 
         @dg.asset(group_name="bad*name")  # regex mismatch
         def bad_name():
@@ -923,7 +915,6 @@ def test_from_graph_w_key_prefix():
     def silly_graph():
         return bar(foo())
 
-    freshness_policy = dg.LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -932,7 +923,6 @@ def test_from_graph_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": dg.AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        legacy_freshness_policies_by_output_name={"result": freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -951,7 +941,6 @@ def test_from_graph_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 
@@ -974,7 +963,6 @@ def test_from_op_w_key_prefix():
     def foo():
         return 1
 
-    legacy_freshness_policy = dg.LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -983,7 +971,6 @@ def test_from_op_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": dg.AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        legacy_freshness_policies_by_output_name={"result": legacy_freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -1003,7 +990,6 @@ def test_from_op_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == legacy_freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 
@@ -1323,7 +1309,7 @@ def test_graph_backed_asset_subset_two_routes():
     result = dg.materialize([assets], selection=["asset2"])
     assert result.success
     materialized_assets = [
-        event.event_specific_data.materialization.asset_key  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        event.event_specific_data.materialization.asset_key  # ty: ignore[unresolved-attribute]
         for event in result.get_asset_materialization_events()
     ]
     assert materialized_assets == [dg.AssetKey("asset2")]
@@ -1352,7 +1338,7 @@ def test_graph_backed_asset_subset_two_routes_yield_only_selected():
     result = dg.materialize([assets], selection=["asset2"])
     assert result.success
     materialized_assets = [
-        event.event_specific_data.materialization.asset_key  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        event.event_specific_data.materialization.asset_key  # ty: ignore[unresolved-attribute]
         for event in result.get_asset_materialization_events()
     ]
     assert materialized_assets == [dg.AssetKey("asset2")]
@@ -1491,8 +1477,8 @@ def test_nested_graph_subset_context(
 
     @dg.graph(out={"a": dg.GraphOut(), "b": dg.GraphOut(), "c": dg.GraphOut(), "d": dg.GraphOut()})
     def nested_graph():
-        a, b = two_outputs_graph()  # pyright: ignore[reportGeneralTypeIssues]
-        c, d = downstream_graph(b)  # pyright: ignore[reportGeneralTypeIssues]
+        a, b = two_outputs_graph()  # ty: ignore[not-iterable]
+        c, d = downstream_graph(b)  # ty: ignore[not-iterable]
         return {"a": a, "b": b, "c": c, "d": d}
 
     with dg.instance_for_test() as instance:
@@ -1693,7 +1679,7 @@ def test_asset_key_with_prefix():
     )
 
     with pytest.raises(CheckError):
-        dg.AssetKey("foo").with_prefix(1)  # pyright: ignore[reportArgumentType]
+        dg.AssetKey("foo").with_prefix(1)  # ty: ignore[invalid-argument-type]
 
 
 def _exec_asset(asset_def, selection=None):
@@ -2455,13 +2441,6 @@ def test_index_in_to_key() -> None:
         match="Index access is not allowed",
     ):
         key[0][0]  # type: ignore # good job type checker
-
-
-def test_asset_dep_backcompat() -> None:
-    # AssetKey used to be an iterable tuple, which unintentionally made this work so continue supporting it
-
-    @dg.asset(deps=dg.AssetKey("oops"))  # type: ignore # good job type checker
-    def _(): ...
 
 
 def test_unpartitioned_asset_metadata():

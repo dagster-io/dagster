@@ -132,6 +132,21 @@
                     ],
                     "default": null,
                     "title": "Showurlonly"
+                },
+                "endpointSuffix": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Endpointsuffix"
                 }
             },
             "required": [
@@ -3148,6 +3163,12 @@
                 },
                 "port": {
                     "title": "Port",
+                    "type": "integer"
+                },
+                "replicaCount": {
+                    "default": 1,
+                    "exclusiveMinimum": 0,
+                    "title": "Replicacount",
                     "type": "integer"
                 },
                 "env": {

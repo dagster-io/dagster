@@ -1,4 +1,4 @@
-import {Box, Colors, Subheading} from '@dagster-io/ui-components';
+import {Box, Colors, Heading} from '@dagster-io/ui-components';
 import {ComponentProps, ReactNode} from 'react';
 
 export const CodeLocationOverviewSectionHeader = ({
@@ -13,6 +13,8 @@ export const CodeLocationOverviewSectionHeader = ({
     border={border}
     padding={{horizontal: 24, vertical: 8}}
   >
-    <Subheading>{label}</Subheading>
+    <Heading size={14} weight={600}>
+      {label}
+    </Heading>
   </Box>
 );

@@ -1,0 +1,14 @@
+.selectListWrapper {
+  overflow: hidden;
+}
+
+.selectListContainer {
+  overscroll-behavior: none;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.noResults {
+  outline: none;
+  cursor: default;
+}

@@ -76,14 +76,14 @@ def add_emr_configuration(
             )
 
             for inner_configuration in cast("list[C]", configuration.get(configurations_key, [])):
-                add_emr_configuration(
-                    inner_configurations,  # type: ignore
-                    inner_configuration,  # type: ignore
-                    emr_flavor=emr_flavor,  # type: ignore
+                add_emr_configuration(  # ty: ignore[no-matching-overload]
+                    inner_configurations,
+                    inner_configuration,
+                    emr_flavor=emr_flavor,
                 )
 
-            existing_configuration[properties_key] = properties  # type: ignore
-            existing_configuration[classification_key] = inner_configurations  # type: ignore
+            existing_configuration[properties_key] = properties  # ty: ignore[invalid-assignment]
+            existing_configuration[classification_key] = inner_configurations  # ty: ignore[invalid-assignment]
 
             break
     else:
@@ -116,22 +116,22 @@ def emr_inject_pipes_env_vars(
 
     pipes_env_vars = session.get_bootstrap_env_vars()
 
-    configurations = add_emr_configuration(  # type: ignore
-        configurations,  # type: ignore
-        {  # type: ignore
+    configurations = add_emr_configuration(  # ty: ignore[no-matching-overload]
+        configurations,
+        {
             classification_key: "spark-defaults",
             properties_key: {
                 f"spark.yarn.appMasterEnv.{var}": value for var, value in pipes_env_vars.items()
             },
         },
-        emr_flavor=emr_flavor,  # type: ignore
+        emr_flavor=emr_flavor,
     )
 
     for classification in classifications:
-        configurations = add_emr_configuration(  # type: ignore
-            configurations,  # type: ignore
+        configurations = add_emr_configuration(  # ty: ignore[no-matching-overload]
+            configurations,
             {
-                classification_key: classification,  # type: ignore
+                classification_key: classification,
                 configurations_key: [
                     {
                         classification_key: "export",
@@ -139,10 +139,10 @@ def emr_inject_pipes_env_vars(
                     }
                 ],
             },
-            emr_flavor=emr_flavor,  # type: ignore
+            emr_flavor=emr_flavor,
         )
 
-    return configurations  # type: ignore
+    return configurations
 
 
 class WaiterConfig(TypedDict):

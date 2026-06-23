@@ -60,7 +60,7 @@ class AllPartitionsSubset(PartitionsSubset):
             isinstance(other, AllPartitionsSubset) and other.partitions_def == self.partitions_def
         )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         return other

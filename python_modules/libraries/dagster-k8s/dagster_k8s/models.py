@@ -4,7 +4,6 @@ from collections.abc import Mapping
 from typing import Any, TypeVar
 
 import dagster._check as check
-import kubernetes
 import kubernetes.client.models
 from dagster._vendored.dateutil.parser import parse
 from kubernetes.client.api_client import ApiClient
@@ -39,12 +38,16 @@ def _get_openapi_list_element_type(attr_type: str) -> str:
 
 
 def _is_openapi_dict_type(attr_type: str) -> bool:
-    return attr_type.startswith("dict(")
+    return attr_type.startswith("dict(") or attr_type.startswith("dict[")
 
 
 def _get_openapi_dict_value_type(attr_type: str) -> str:
     # group(2) because value, not key
-    match = check.not_none(re.match(r"dict\(([^,]*), (.*)\)", attr_type))
+    match = check.not_none(
+        re.match(r"dict\(([^,]*), (.*)\)", attr_type)
+        or re.match(r"dict\[([^,]*),\s*(.*)\]", attr_type)
+    )
+
     return match.group(2)
 
 
@@ -70,7 +73,7 @@ def _k8s_parse_value(data: Any, classname: str, attr_name: str) -> Any:
     elif klass == object:
         return data
     elif klass == datetime.date:
-        return parse(data).date()  # pyright: ignore[reportAttributeAccessIssue]
+        return parse(data).date()
     elif klass == datetime.datetime:
         return parse(data)
     else:

@@ -7,7 +7,6 @@ from functools import partial
 from itertools import chain
 from typing import Any, NamedTuple, cast
 
-import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -20,7 +19,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, superseded
+from dagster._annotations import beta, superseded
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -32,6 +31,7 @@ from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_airbyte.asset_decorator import airbyte_assets
 from dagster_airbyte.legacy_resources import (
@@ -74,6 +74,7 @@ def _build_airbyte_asset_defn_metadata(
     schema_by_table_name: Mapping[str, TableSchema] | None = None,
     legacy_freshness_policy: LegacyFreshnessPolicy | None = None,
     auto_materialize_policy: AutoMaterializePolicy | None = None,
+    destination_type: str | None = None,
 ) -> AssetsDefinitionCacheableData:
     asset_key_prefix = (
         check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
@@ -156,6 +157,7 @@ def _build_airbyte_asset_defn_metadata(
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
                         table_name=table_names.get(table),
+                        storage_kind=destination_type,
                     ),
                 }
                 for table in tables
@@ -251,14 +253,6 @@ def _build_airbyte_assets_from_metadata(
     return _assets
 
 
-@hidden_param(
-    param="legacy_freshness_policy",
-    breaking_version="1.13.0",
-)
-@hidden_param(
-    param="auto_materialize_policy",
-    breaking_version="1.10.0",
-)
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: Sequence[str],
@@ -271,7 +265,7 @@ def build_airbyte_assets(
     upstream_assets: set[AssetKey] | None = None,
     schema_by_table_name: Mapping[str, TableSchema] | None = None,
     stream_to_asset_map: Mapping[str, str] | None = None,
-    **kwargs,
+    destination_type: str | None = None,
 ) -> Sequence[AssetsDefinition]:
     """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
@@ -294,10 +288,6 @@ def build_airbyte_assets(
         stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
             This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
     """
-    only_allow_hidden_params_in_kwargs(build_airbyte_assets, kwargs)
-    legacy_freshness_policy = kwargs.get("legacy_freshness_policy")
-    auto_materialize_policy = kwargs.get("auto_materialize_policy")
-
     if upstream_assets is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
             "Cannot specify both deps and upstream_assets to build_airbyte_assets. Use only deps"
@@ -337,11 +327,10 @@ def build_airbyte_assets(
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
                         table_name=table_names.get(table),
+                        storage_kind=destination_type,
                     ),
                 }
             ),
-            legacy_freshness_policy=legacy_freshness_policy,
-            auto_materialize_policy=auto_materialize_policy,
         )
         for table in tables
     }
@@ -367,7 +356,7 @@ def build_airbyte_assets(
         name=f"airbyte_sync_{connection_id.replace('-', '_')}",
         deps=upstream_deps,
         outs=outputs,
-        internal_asset_deps=internal_deps,
+        internal_asset_deps=internal_deps,  # ty: ignore[invalid-argument-type]
         compute_kind="airbyte",
         group_name=group_name,
     )
@@ -690,6 +679,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 table_to_asset_key_fn=table_to_asset_key,
                 legacy_freshness_policy=self._connection_to_freshness_policy_fn(connection),
                 auto_materialize_policy=self._connection_to_auto_materialize_policy_fn(connection),
+                destination_type=connection.destination.get("destinationName"),
             )
 
             asset_defn_data.append(asset_data_for_conn)
@@ -868,7 +858,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         for connection_name in connection_directories:
             connection_dir = os.path.join(connections_dir, connection_name)
             with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
-                connection_data = yaml.safe_load(f.read())
+                connection_data = safe_load_yaml(f.read())
 
             destination_configuration_path = cast(
                 "str", connection_data.get("destination_configuration_path")
@@ -876,7 +866,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
             with open(
                 os.path.join(self._project_dir, destination_configuration_path), encoding="utf-8"
             ) as f:
-                destination_data = yaml.safe_load(f.read())
+                destination_data = safe_load_yaml(f.read())
 
             connection = AirbyteConnectionMetadata.from_config(connection_data, destination_data)
 
@@ -907,8 +897,8 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 state_file = state_files[0]
 
-            with open(os.path.join(connection_dir, cast("str", state_file)), encoding="utf-8") as f:
-                state = yaml.safe_load(f.read())
+            with open(os.path.join(connection_dir, state_file), encoding="utf-8") as f:
+                state = safe_load_yaml(f.read())
                 connection_id = state.get("resource_id")
 
             output_connections.append((connection_id, connection))

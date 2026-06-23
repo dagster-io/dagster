@@ -5,11 +5,11 @@ from urllib.parse import urlparse
 
 import objgraph
 import pytest
-import yaml
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster_mysql.event_log import MySQLEventLogStorage
+from dagster_shared.yaml_utils import safe_load_yaml
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.event_log_storage import (
@@ -140,10 +140,10 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
                     db_name: test
         """
 
-        with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
+        with instance_for_test(overrides=safe_load_yaml(url_cfg)) as from_url_instance:
             from_url = from_url_instance._event_storage  # noqa: SLF001
 
-            with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
+            with instance_for_test(overrides=safe_load_yaml(explicit_cfg)) as explicit_instance:
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
-                assert from_url.mysql_url == from_explicit.mysql_url  # pyright: ignore[reportAttributeAccessIssue]
+                assert from_url.mysql_url == from_explicit.mysql_url  # ty: ignore[unresolved-attribute]

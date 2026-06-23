@@ -1,12 +1,13 @@
 import json
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 from click.testing import CliRunner
 from dagster_dg_cli.cli.api.client import DgApiTestContext
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
 
 from dagster_dg_cli_tests.cli_tests.api_tests.shared.yaml_loader import (
     load_fixture_scenarios_from_yaml,
@@ -14,20 +15,31 @@ from dagster_dg_cli_tests.cli_tests.api_tests.shared.yaml_loader import (
 
 
 class ReplayClient(DagsterPlusGraphQLClient):
-    """GraphQL client that replays recorded responses."""
+    """GraphQL client that replays recorded responses.
+
+    Overrides execute() to return a real httpx.Response wrapping the recorded data,
+    so both execute_arbitrary() and generated methods (which call execute() then get_data())
+    work without needing a real HTTP client.
+    """
 
     def __init__(self, responses: list[dict[str, Any]]):
         # Don't call super().__init__ as we don't need the real GraphQL client
         self.responses = responses
         self.call_index = 0
 
-    def execute(self, query: str, variables: Mapping[str, Any] | None = None) -> dict:
-        """Return next recorded response."""
+    def execute(
+        self,
+        query: str,
+        operation_name: str | None = None,
+        variables: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """Return next recorded response wrapped as an httpx.Response."""
         if self.call_index >= len(self.responses):
             raise ValueError(f"Exhausted {len(self.responses)} responses")
         response = self.responses[self.call_index]
         self.call_index += 1
-        return response
+        return httpx.Response(200, json={"data": response})
 
 
 def discover_scenario_recordings() -> Iterator[tuple[str, str, str, bool]]:
@@ -62,7 +74,7 @@ def load_recorded_graphql_responses(domain: str, scenario_name: str) -> list[dic
 
     responses = []
     for json_file in json_files:
-        with open(json_file) as f:
+        with open(json_file, encoding="utf-8") as f:
             responses.append(json.load(f))
 
     return responses

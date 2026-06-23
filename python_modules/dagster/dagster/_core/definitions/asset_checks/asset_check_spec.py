@@ -72,7 +72,9 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         blocking (bool): When enabled, if the check fails with severity `AssetCheckSeverity.ERROR`,
             then downstream assets won't execute. If this AssetCheckSpec is used in a multi-asset,
             that multi-asset is responsible for enforcing that downstream assets within the
-            same step do not execute after a blocking asset check fails.
+            same step do not execute after a blocking asset check fails. Note that gating
+            applies only to *failed* check results; if no result is emitted for the check,
+            downstream execution proceeds and a warning is logged.
         metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
         automation_condition (Optional[AutomationCondition[AssetCheckKey]]): The AutomationCondition for this asset check.
         partitions_def (Optional[PartitionsDefinition]): The PartitionsDefinition for this asset check. Must be either None

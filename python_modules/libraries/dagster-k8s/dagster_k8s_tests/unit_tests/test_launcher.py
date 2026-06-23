@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import mock
 
-import kubernetes
+import kubernetes.client.rest
 import pytest
 from dagster import DagsterRunStatus, job, reconstructable
 from dagster._core.launcher import LaunchRunContext
@@ -194,7 +194,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"  # pyright: ignore[reportOptionalMemberAccess]
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"  # ty: ignore[unresolved-attribute]
 
             # Check that user defined k8s config was passed down to the k8s job.
             mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -224,7 +224,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             assert (
                 args
                 == ExecuteRunArgs(
-                    job_origin=run.job_code_origin,  # pyright: ignore[reportArgumentType]
+                    job_origin=run.job_code_origin,
                     run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                     set_exit_code_on_failure=None,
@@ -364,7 +364,7 @@ def test_launcher_with_k8s_config(kubeconfig_file, deployment_name: str):
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"  # pyright: ignore[reportOptionalMemberAccess]
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"  # ty: ignore[unresolved-attribute]
 
         # Check that user defined k8s config was passed down to the k8s job.
         mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -460,7 +460,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == expected_image  # pyright: ignore[reportOptionalMemberAccess]
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == expected_image  # ty: ignore[unresolved-attribute]
 
         # Check that user defined k8s config was passed down to the k8s job.
         mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -487,7 +487,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         assert (
             args
             == ExecuteRunArgs(
-                job_origin=run.job_code_origin,  # pyright: ignore[reportArgumentType]
+                job_origin=run.job_code_origin,
                 run_id=run.run_id,
                 instance_ref=instance.get_ref(),
                 set_exit_code_on_failure=None,
@@ -549,7 +549,7 @@ def test_raise_on_error(kubeconfig_file):
         assert (
             args
             == ExecuteRunArgs(
-                job_origin=run.job_code_origin,  # pyright: ignore[reportArgumentType]
+                job_origin=run.job_code_origin,
                 run_id=run.run_id,
                 instance_ref=instance.get_ref(),
                 set_exit_code_on_failure=True,
@@ -601,7 +601,7 @@ def test_no_postgres(kubeconfig_file):
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"  # pyright: ignore[reportOptionalMemberAccess]
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"  # ty: ignore[unresolved-attribute]
 
         # Check that user defined k8s config was passed down to the k8s job.
         mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -822,6 +822,6 @@ def test_get_run_worker_debug_info(kubeconfig_file):
 
             debug_info = k8s_run_launcher.get_run_worker_debug_info(started_run)
             running_job_name = get_job_name_from_run_id(started_run.run_id)
-            assert f"Debug information for job {running_job_name}" in debug_info  # pyright: ignore[reportOperatorIssue]
-            assert "Job status:" in debug_info  # pyright: ignore[reportOperatorIssue]
-            assert "Testing: test message" in debug_info  # pyright: ignore[reportOperatorIssue]
+            assert f"Debug information for job {running_job_name}" in debug_info  # ty: ignore[unsupported-operator]
+            assert "Job status:" in debug_info  # ty: ignore[unsupported-operator]
+            assert "Testing: test message" in debug_info  # ty: ignore[unsupported-operator]

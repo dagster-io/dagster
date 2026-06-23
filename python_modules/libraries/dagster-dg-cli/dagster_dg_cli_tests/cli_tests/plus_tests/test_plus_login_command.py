@@ -10,13 +10,10 @@ import pytest
 import requests
 import responses
 import tomlkit
-import yaml
 from click.testing import CliRunner
 from dagster_dg_cli.cli.plus import plus_group
-from dagster_dg_cli.utils.plus import gql
 from dagster_shared.plus.config import DagsterPlusCliConfig
-
-from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 @pytest.fixture()
@@ -96,27 +93,6 @@ def setup_dg_cli_config_custom_url(monkeypatch):
 @responses.activate
 def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
     """Test the dg plus login command with web auth."""
-    responses.add(
-        responses.POST,
-        "https://custom_subdomain.dagster.cloud/hooli/graphql"
-        if fixture_name == "setup_dg_cli_config_custom_url"
-        else "https://dagster.cloud/hooli/graphql",
-        json={
-            "data": {
-                "fullDeployments": [
-                    {"deploymentName": "hooli-dev"},
-                    {"deploymentName": "hooli-prod"},
-                ]
-            }
-        },
-    )
-    mock_gql_response(
-        query=gql.FULL_DEPLOYMENTS_QUERY,
-        json_data={"data": {"fullDeployments": [{"deploymentName": "hooli-dev"}]}},
-        url="https://custom_subdomain.dagster.cloud/hooli/graphql"
-        if fixture_name == "setup_dg_cli_config_custom_url"
-        else "https://dagster.cloud/hooli/graphql",
-    )
     responses.add_passthru("http://localhost:4000/callback")
     runner = CliRunner()
 
@@ -132,6 +108,15 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
             mock.Mock(return_value="ABCDEFGH"),
         ),
         mock.patch("dagster_dg_cli.cli.plus.login.webbrowser.open", mock.Mock(return_value=True)),
+        mock.patch(
+            "dagster_rest_resources.gql_client.DagsterPlusGraphQLClient.execute_arbitrary",
+            return_value={
+                "fullDeployments": [
+                    {"deploymentName": "hooli-dev"},
+                    {"deploymentName": "hooli-prod"},
+                ]
+            },
+        ),
     ):
         # Send configuration response to CLI endpoint, HTTP response passed back in queue
         q = queue.Queue()
@@ -164,7 +149,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
         assert DagsterPlusCliConfig.get().default_deployment == "hooli-dev"
 
         if fixture_name == "setup_cloud_cli_config":
-            assert yaml.safe_load(filepath.read_text()) == {
+            assert safe_load_yaml(filepath.read_text()) == {
                 "organization": "hooli",
                 "user_token": "abc123",
                 "default_deployment": "hooli-dev",

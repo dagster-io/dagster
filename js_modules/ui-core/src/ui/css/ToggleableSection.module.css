@@ -1,0 +1,7 @@
+.rotateable {
+  display: inline-flex;
+}
+
+.rotated {
+  transform: rotate(-90deg);
+}

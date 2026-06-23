@@ -1,4 +1,4 @@
-import {BodySmall, Box, Colors, Icon, Popover, Spinner, ifPlural} from '@dagster-io/ui-components';
+import {Box, Icon, Popover, Spinner, Text, ifPlural} from '@dagster-io/ui-components';
 import {useCatalogViews} from '@shared/assets/catalog/useCatalogViews';
 import {useMemo} from 'react';
 
@@ -174,18 +174,18 @@ export function getHealthStatuses({
     <Popover
       content={
         <div>
-          <BodySmall color={degradedMeta.textColor}>
+          <Text size={12} style={{color: degradedMeta.textColor}}>
             {compactNumberFormatter.format(degradedCount)}{' '}
             {ifPlural(degradedCount, 'asset', 'assets')} degraded
-          </BodySmall>
+          </Text>
         </div>
       }
     >
       <Box className={styles.statusCountItem}>
         <Icon name={degradedMeta.iconName} color={degradedMeta.iconColor} />
-        <BodySmall color={Colors.textLight()}>
+        <Text size={12} color="textLight">
           {compactNumberFormatter.format(statusCounts[AssetHealthStatus.DEGRADED])}
-        </BodySmall>
+        </Text>
       </Box>
     </Popover>
   );
@@ -193,27 +193,27 @@ export function getHealthStatuses({
   const warningJsx = statusCounts[AssetHealthStatus.WARNING] && (
     <Box className={styles.statusCountItem}>
       <Icon name={warningMeta.iconName} color={warningMeta.iconColor} />
-      <BodySmall color={Colors.textLight()}>
+      <Text size={12} color="textLight">
         {compactNumberFormatter.format(statusCounts[AssetHealthStatus.WARNING])}
-      </BodySmall>
+      </Text>
     </Box>
   );
 
   const unknownJsx = statusCounts[AssetHealthStatus.UNKNOWN] && (
     <Box className={styles.statusCountItem}>
       <Icon name={unknownMeta.iconName} color={unknownMeta.iconColor} />
-      <BodySmall color={Colors.textLight()}>
+      <Text size={12} color="textLight">
         {compactNumberFormatter.format(statusCounts[AssetHealthStatus.UNKNOWN])}
-      </BodySmall>
+      </Text>
     </Box>
   );
 
   const healthyJsx = statusCounts[AssetHealthStatus.HEALTHY] && (
     <Box className={styles.statusCountItem}>
       <Icon name={healthyMeta.iconName} color={healthyMeta.iconColor} />
-      <BodySmall color={Colors.textLight()}>
+      <Text size={12} color="textLight">
         {compactNumberFormatter.format(statusCounts[AssetHealthStatus.HEALTHY])}
-      </BodySmall>
+      </Text>
     </Box>
   );
 
@@ -224,7 +224,9 @@ export function getHealthStatuses({
         {loading ? (
           <Spinner purpose="caption-text" />
         ) : assetCount === 0 ? (
-          <BodySmall color={Colors.textLight()}>No assets</BodySmall>
+          <Text size={12} color="textLight">
+            No assets
+          </Text>
         ) : (
           <Box flex={{direction: 'row', alignItems: 'center', gap: 6, wrap: 'wrap'}}>
             {healthyJsx}

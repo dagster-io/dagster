@@ -2,8 +2,6 @@ from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, Callable  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, JsonMetadataValue, UrlMetadataValue
-from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
-from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.storage.tags import KIND_PREFIX
 
 from dagster_airlift.constants import AUTOMAPPED_TASK_METADATA_KEY
@@ -71,15 +69,13 @@ def enrich_spec_with_airflow_dag_metadata(
     )
 
 
-def make_dag_external_asset(instance_name: str, dag_data: SerializedDagData) -> AssetsDefinition:
-    return external_asset_from_spec(
-        AssetSpec(
-            key=make_default_dag_asset_key(instance_name, dag_data.dag_id),
-            description=dag_description(dag_data.dag_info),
-            metadata=peered_dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
-            tags={**airflow_kind_dict(), f"{KIND_PREFIX}dag": ""},
-            deps=dag_data.leaf_asset_keys,
-        )
+def make_dag_asset_spec(instance_name: str, dag_data: SerializedDagData) -> AssetSpec:
+    return AssetSpec(
+        key=make_default_dag_asset_key(instance_name, dag_data.dag_id),
+        description=dag_description(dag_data.dag_info),
+        metadata=peered_dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
+        tags={**airflow_kind_dict(), f"{KIND_PREFIX}dag": ""},
+        deps=dag_data.leaf_asset_keys,
     )
 
 
@@ -104,9 +100,9 @@ def get_airflow_data_to_spec_mapper(
 
 def construct_dag_assets_defs(
     serialized_data: SerializedAirflowDefinitionsData,
-) -> Sequence[AssetsDefinition]:
+) -> Sequence[AssetSpec]:
     return [
-        make_dag_external_asset(serialized_data.instance_name, dag_data)
+        make_dag_asset_spec(serialized_data.instance_name, dag_data)
         for dag_data in serialized_data.dag_datas.values()
     ]
 
@@ -138,7 +134,7 @@ def metadata_for_automapped_task_asset(task_info: TaskInfo) -> Mapping[str, Any]
 
 def construct_automapped_dag_assets_defs(
     serialized_data: SerializedAirflowDefinitionsData,
-) -> Sequence[AssetsDefinition]:
+) -> Sequence[AssetSpec]:
     dag_specs = []
     task_specs = []
     for dag_data in serialized_data.dag_datas.values():

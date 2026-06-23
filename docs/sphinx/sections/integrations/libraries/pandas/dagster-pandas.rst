@@ -1,5 +1,6 @@
+######################
 dagster-pandas library
-----------------------
+######################
 
 The `dagster_pandas` library provides utilities for using pandas with Dagster and for implementing
 validation on pandas `DataFrames`. A good place to start with `dagster_pandas` is the `validation

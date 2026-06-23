@@ -136,21 +136,22 @@ class DagsterGrpcClient:
             ("grpc.max_receive_message_length", max_rx_bytes()),
             ("grpc.max_send_message_length", max_send_bytes()),
         ]
-        async with (
-            grpc.aio.secure_channel(
+        if self._use_ssl:
+            assert self._ssl_creds is not None
+            async with grpc.aio.secure_channel(
                 self._server_address,
                 self._ssl_creds,
                 options=options,
                 compression=grpc.Compression.Gzip,
-            )
-            if self._use_ssl
-            else grpc.aio.insecure_channel(
+            ) as channel:
+                yield channel
+        else:
+            async with grpc.aio.insecure_channel(
                 self._server_address,
                 options=options,
                 compression=grpc.Compression.Gzip,
-            )
-        ) as channel:
-            yield channel
+            ) as channel:
+                yield channel
 
     def _get_response(
         self,
@@ -514,7 +515,7 @@ class DagsterGrpcClient:
     def _is_unimplemented_error(self, e: Exception) -> bool:
         return (
             isinstance(e.__cause__, grpc.RpcError)
-            and cast("grpc.RpcError", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+            and cast("grpc.Call", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
         )
 
     def external_schedule_execution(

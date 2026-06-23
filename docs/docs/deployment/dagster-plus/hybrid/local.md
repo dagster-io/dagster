@@ -17,8 +17,7 @@ Local agents aren't well suited for most production use cases. If you're running
 
 :::
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -29,9 +28,7 @@ To follow the steps in this guide, you'll need:
 pip install dagster-cloud
 ```
 
-</details>
-
-## Step 1: Generate an agent token
+## Step 1: Generate a Dagster+ agent token
 
 Your local agent will need a token to authenticate with your Dagster+ account. To generate an agent token:
 
@@ -47,7 +44,7 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
 1. Create a directory to act as your Dagster home. This guide uses `~/dagster_home`, but the directory can be located wherever you want.
 2. In the new directory, create a `dagster.yaml` file with the following:
    <CodeExample
-     path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/local_dagster.yaml"
+     path="docs_snippets/docs_snippets/deployment/dagster_plus/hybrid/agents/local_dagster.yaml"
      language="yaml"
      title="dagster.yaml"
    />
@@ -58,7 +55,7 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
 
 For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/deployment/oss/dagster-yaml).
 
-### Alternative methods for setting the agent token
+### Alternative methods for setting the Dagster+ agent token
 
 If you prefer not to specify the agent token by using an environment variable in `dagster.yaml`, pass it to the `dagster-cloud agent run` command:
 
@@ -66,9 +63,9 @@ If you prefer not to specify the agent token by using an environment variable in
 dagster-cloud agent run ~/dagster_home/ --agent-token <AGENT_TOKEN>
 ```
 
-## Step 3: Run the agent
+## Step 3: Run the Dagster+ agent
 
-To start the agent, run the following command and pass the path to the `dagster.yaml` file you created in Step 2:
+To start the Dagster+ agent, run the following command and pass the path to the `dagster.yaml` file you created in Step 2:
 
 ```bash
 dagster-cloud agent run ~/dagster_home/

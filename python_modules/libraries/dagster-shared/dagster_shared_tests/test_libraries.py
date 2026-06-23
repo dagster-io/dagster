@@ -56,11 +56,11 @@ def library_registry_fixture():
 
     yield
 
-    DagsterLibraryRegistry._libraries = previous_libraries  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    DagsterLibraryRegistry._libraries = dict(previous_libraries)  # noqa: SLF001
 
 
 def test_check_dagster_package_version(monkeypatch):
-    monkeypatch.setattr(dagster_shared.version, "__version__", "1.1.0")  # type: ignore
+    monkeypatch.setattr(dagster_shared.version, "__version__", "1.1.0")
 
     # Ensure no warning emitted
     with warnings.catch_warnings():

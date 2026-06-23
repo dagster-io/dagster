@@ -1,29 +1,26 @@
-import {
-  Box,
-  Caption,
-  Colors,
-  NonIdealState,
-  Skeleton,
-  Subtitle2,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Heading, NonIdealState, Skeleton, Tag, Text} from '@dagster-io/ui-components';
 import {AssetAlertsSection} from '@shared/assets/AssetAlertsSection';
+import {AssetEventMetadataEntriesTable} from '@shared/assets/AssetEventMetadataEntriesTable';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {FreshnessPolicySection} from './FreshnessPolicySection';
-import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
-import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
+import {WorkspaceAssetNode} from '../useAllAssets';
 import {AutomationDetailsSection} from './AutomationDetailsSection';
-import {AttributeAndValue, NoValue, SectionEmptyState} from './Common';
+import {AttributeAndValue, SectionEmptyState} from './Common';
 import {ComputeDetailsSection} from './ComputeDetailsSection';
 import {DefinitionSection} from './DefinitionSection';
 import {FreshnessPolicyStatus} from './FreshnessPolicyStatus';
 import {LineageSection} from './LineageSection';
 import {useAssetsLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../../asset-graph/Utils';
-import {isCanonicalRowCountMetadataEntry} from '../../metadata/MetadataEntry';
+import {
+  MetadataEntryLabelOnly,
+  isCanonicalQueryCountMetadataEntry,
+  isCanonicalRowCountMetadataEntry,
+  isCanonicalSizeBytesMetadataEntry,
+} from '../../metadata/MetadataEntry';
 import {TableSchema, TableSchemaAssetContext} from '../../metadata/TableSchema';
 import {MetadataEntryFragment_IntMetadataEntry as IntMetadataEntry} from '../../metadata/types/MetadataEntryFragment.types';
 import {useRepositoryLocationForAddress} from '../../nav/useRepositoryLocationForAddress';
@@ -33,15 +30,21 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LargeCollapsibleSection} from '../LargeCollapsibleSection';
 import {MaterializationTag} from '../MaterializationTag';
 import {OverdueTag} from '../OverdueTag';
-import {RecentUpdatesTimelineForAssetKey} from '../RecentUpdatesTimeline';
+import {RecentUpdatesTimeline} from '../RecentUpdatesTimeline';
 import {SimpleStakeholderAssetStatus} from '../SimpleStakeholderAssetStatus';
 import {AssetChecksStatusSummary} from '../asset-checks/AssetChecksStatusSummary';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from '../globalAssetGraphPathToString';
 import {AssetKey} from '../types';
-import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {useLatestEvents} from '../useLatestEvents';
+
+const byteFormatter = new Intl.NumberFormat('en', {
+  style: 'unit',
+  unit: 'byte',
+  notation: 'compact',
+  unitDisplay: 'narrow',
+});
 
 export const AssetNodeOverview = ({
   assetKey,
@@ -54,9 +57,9 @@ export const AssetNodeOverview = ({
 }: {
   assetKey: AssetKey;
   assetNode: AssetViewDefinitionNodeFragment | undefined | null;
-  cachedAssetNode: AssetTableDefinitionFragment | undefined | null;
-  upstream: WorkspaceAssetFragment[] | null;
-  downstream: WorkspaceAssetFragment[] | null;
+  cachedAssetNode: WorkspaceAssetNode | undefined | null;
+  upstream: WorkspaceAssetNode[] | null;
+  downstream: WorkspaceAssetNode[] | null;
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
 }) => {
@@ -100,21 +103,16 @@ export const AssetNodeOverview = ({
     definitionLoadTimestamp: assetNodeLoadTimestamp,
   });
 
-  let rowCountMeta: IntMetadataEntry | undefined = materialization?.metadataEntries.find((entry) =>
-    isCanonicalRowCountMetadataEntry(entry),
-  ) as IntMetadataEntry | undefined;
+  const findCanonicalIntMeta = (
+    predicate: (entry: MetadataEntryLabelOnly) => boolean,
+  ): IntMetadataEntry | undefined =>
+    (materialization?.metadataEntries.find(predicate) ??
+      observation?.metadataEntries.find(predicate) ??
+      assetNode?.metadataEntries.find(predicate)) as IntMetadataEntry | undefined;
 
-  if (!rowCountMeta && observation) {
-    rowCountMeta = observation.metadataEntries.find((entry) =>
-      isCanonicalRowCountMetadataEntry(entry),
-    ) as IntMetadataEntry | undefined;
-  }
-
-  if (!rowCountMeta) {
-    rowCountMeta = assetNode?.metadataEntries.find((entry) =>
-      isCanonicalRowCountMetadataEntry(entry),
-    ) as IntMetadataEntry | undefined;
-  }
+  const rowCountMeta = findCanonicalIntMeta(isCanonicalRowCountMetadataEntry);
+  const sizeBytesMeta = findCanonicalIntMeta(isCanonicalSizeBytesMetadataEntry);
+  const queryCountMeta = findCanonicalIntMeta(isCanonicalQueryCountMetadataEntry);
 
   // The live data does not include a partition, but the timestamp on the live data triggers
   // an update of `observation` and `materialization`, so they should be in sync. To make sure
@@ -130,16 +128,18 @@ export const AssetNodeOverview = ({
     1,
     liveData?.assetChecks.length,
     internalFreshnessPolicy,
-    rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null,
+    rowCountMeta?.intValue != null,
+    sizeBytesMeta?.intValue != null,
+    queryCountMeta?.intValue != null,
   ].filter(Boolean).length;
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
       <Box style={{display: `grid`, gridTemplateColumns: `repeat(${sections}, minmax(0, 1fr))`}}>
         <Box flex={{direction: 'column', gap: 6}}>
-          <Subtitle2>
+          <Heading size={14} weight={600}>
             Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
-          </Subtitle2>
+          </Heading>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
               <SimpleStakeholderAssetStatus
@@ -149,7 +149,7 @@ export const AssetNodeOverview = ({
                 assetNode={assetNode ?? cachedAssetNode!}
               />
             ) : (
-              <NoValue />
+              <Skeleton $height={24} $width={240} />
             )}
             {assetNode && assetNode.freshnessPolicy && (
               <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
@@ -158,7 +158,9 @@ export const AssetNodeOverview = ({
         </Box>
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Latest check results</Subtitle2>
+            <Heading size={14} weight={600}>
+              Latest check results
+            </Heading>
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"
@@ -172,17 +174,33 @@ export const AssetNodeOverview = ({
             freshnessPolicy={internalFreshnessPolicy}
           />
         ) : undefined}
-        {rowCountMeta?.intValue !== undefined && rowCountMeta?.intValue !== null ? (
-          <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Row count</Subtitle2>
-            <Box>
-              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue ?? 0)}</Tag>
-            </Box>
+        {rowCountMeta?.intValue != null ? (
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
+            <Heading size={14} weight={600}>
+              Row count
+            </Heading>
+            <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
+          </Box>
+        ) : undefined}
+        {sizeBytesMeta?.intValue != null ? (
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
+            <Heading size={14} weight={600}>
+              Storage
+            </Heading>
+            <Tag icon="database">{byteFormatter.format(sizeBytesMeta.intValue)}</Tag>
+          </Box>
+        ) : undefined}
+        {queryCountMeta?.intValue != null ? (
+          <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
+            <Heading size={14} weight={600}>
+              Query count
+            </Heading>
+            <Tag icon="code_block">{numberFormatter.format(queryCountMeta.intValue)}</Tag>
           </Box>
         ) : undefined}
       </Box>
       {cachedOrLiveAssetNode.isPartitioned ? null : (
-        <RecentUpdatesTimelineForAssetKey assetKey={cachedOrLiveAssetNode.assetKey} />
+        <RecentUpdatesTimeline assetKey={cachedOrLiveAssetNode.assetKey} />
       )}
     </Box>
   );
@@ -271,6 +289,7 @@ export const AssetNodeOverview = ({
               location={location}
               assetNode={assetNode}
               cachedOrLiveAssetNode={cachedOrLiveAssetNode}
+              storageAddress={cachedAssetNode?.storageAddress ?? null}
             />
           </LargeCollapsibleSection>
           <LargeCollapsibleSection header="Automation details" icon="automation_condition">
@@ -349,10 +368,12 @@ export const AssetNodeOverviewNonSDA = ({
                   stepKey={null}
                 />
               ) : (
-                <Caption color={Colors.textLighter()}>Never materialized</Caption>
+                <Text size={12} color="textLighter">
+                  Never materialized
+                </Text>
               )}
             </div>
-            <RecentUpdatesTimelineForAssetKey assetKey={assetKey} />
+            <RecentUpdatesTimeline assetKey={assetKey} />
           </Box>
         </LargeCollapsibleSection>
       }

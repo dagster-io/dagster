@@ -1,5 +1,7 @@
 # Docs snippets
 
+This directory contains code referenced in Dagster docs.
+
 This module exists only to enable testing docs snippets/examples in CI, and should not be installed
 otherwise.
 
@@ -21,18 +23,24 @@ def my_cool_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
 
 ## Testing
 
-You can test that all code loads into Python correctly with:
+Snippet tests live in `docs_snippets_tests`.
+
+### Prerequisites
+
+Before running tests, you will need to create a virtual environment and run `make dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
+
+### Test all code loads into Python
+
+From the `example/docs_snippets` directory (with your virtual environment active and `tox` available), you can test that all code loads into Python correctly with:
 
 ```
 pip install tox-uv
 tox
 ```
 
-Note that before running tests, you will need to create a virtual environment and run `make dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
+**Note:** To exclude a snippet file from the file load test, see [Exclude a snippet file from the file load test](#exclude-a-snippet-file-from-the-file-load-test).
 
-You may include additional test files in `docs_snippets_tests`.
-
-### Running Tests
+### Run all tests
 
 From the `example/docs_snippets` directory (with your virtual environment active and `tox` available), you can run all tests with:
 
@@ -40,21 +48,25 @@ From the `example/docs_snippets` directory (with your virtual environment active
 tox -e all
 ```
 
-This runs all documentation tests, which can be slow and result in a less-than-ideal feedback loop. To run tests for a specific file:
+This runs all documentation tests, which can be slow and result in a less-than-ideal feedback loop. See below for guidance on [testing specific files](#test-specific-files) or [running specific tests](#run-specific-tests).
 
-### Testing Specific Files
+### Test specific files
+
+From the `example/docs_snippets` directory (with your virtual environment active and `tox` available), you can test specific files with:
 
 ```
 TOX_TESTENV_PASSENV=PYTEST_ADDOPTS PYTEST_ADDOPTS="docs_snippets_tests/{PATH TO TEST}.py" tox -e all
 ```
 
-### Testing Specific Tests
+### Run specific tests
+
+From the `example/docs_snippets` directory (with your virtual environment active and `tox` available), you can run specific tests with:
 
 ```
 TOX_TESTENV_PASSENV=PYTEST_ADDOPTS PYTEST_ADDOPTS="docs_snippets_tests/{PATH TO TEST}.py::{TEST NAME}" tox -e all
 ```
 
-### Test File Loads
+### Exclude a snippet file from the file load test
 
 By default, whenever a file is added to `examples/docs_snippets/docs_snippets`, the `test_file_loads` test ensures that the file can be successfully loaded.
 

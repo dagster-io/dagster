@@ -1,4 +1,24 @@
 # serializer version: 1
+# name: TestFormatIssues.test_format_created_issue_json_output[0]
+  dict({
+    'context': None,
+    'created_by_name': 'Creator Clark',
+    'description': 'Pipeline failed unexpectedly.',
+    'id': '1',
+    'linked_objects': list([
+    ]),
+    'status': 'OPEN',
+    'title': 'New pipeline issue',
+  })
+# ---
+# name: TestFormatIssues.test_format_created_issue_text_output[0]
+  '''
+  Title:       New pipeline issue
+  Status:      OPEN
+  Created By:  Creator Clark
+  Description: Pipeline failed unexpectedly.
+  '''
+# ---
 # name: TestFormatIssues.test_format_empty_issues_json_output[0]
   dict({
     'cursor': None,
@@ -14,7 +34,7 @@
   '''
   Title:       Minimal issue
   Status:      CLOSED
-  Created By:  user@example.com
+  Created By:  User D'User
   Description: Only required fields.
   '''
 # ---
@@ -22,8 +42,8 @@
   '''
   Title:       Run failure issue
   Status:      OPEN
-  Created By:  ops@example.com
-  Run ID:      run-failing-456
+  Created By:  Ops Service Account
+  Run IDs:     run-failing-456
   Description: This issue is linked to a specific run.
   '''
 # ---
@@ -33,34 +53,38 @@
     'has_more': False,
     'items': list([
       dict({
-        'asset_key': list([
-          'my_asset',
-        ]),
         'context': None,
-        'created_by_email': 'alice@example.com',
+        'created_by_name': 'Alice Apple',
         'description': 'The asset failed to materialize due to a connection error.',
-        'id': 'issue-1-uuid-12345',
-        'run_id': 'run-abc-123',
+        'id': '1',
+        'linked_objects': list([
+          dict({
+            'run_id': 'run-abc-123',
+          }),
+          dict({
+            'asset_key': 'my_asset',
+          }),
+        ]),
         'status': 'OPEN',
         'title': 'Asset materialization failed',
       }),
       dict({
-        'asset_key': None,
         'context': None,
-        'created_by_email': 'bob@example.com',
+        'created_by_name': 'Bob Brown',
         'description': 'The daily schedule did not execute as expected.',
-        'id': 'issue-2-uuid-67890',
-        'run_id': None,
+        'id': '2',
+        'linked_objects': list([
+        ]),
         'status': 'CLOSED',
         'title': 'Schedule missed execution',
       }),
       dict({
-        'asset_key': None,
         'context': 'Stack trace: ...',
-        'created_by_email': 'carol@example.com',
+        'created_by_name': 'Carol Cherry',
         'description': 'Sensor encountered an unhandled exception.',
-        'id': 'issue-3-uuid-abcdef',
-        'run_id': None,
+        'id': '3',
+        'linked_objects': list([
+        ]),
         'status': 'OPEN',
         'title': 'Sensor error',
       }),
@@ -69,24 +93,24 @@
 # ---
 # name: TestFormatIssues.test_format_issues_text_output[0]
   '''
-  STATUS  TITLE                         ID                   CREATED BY
-  OPEN    Asset materialization failed  issue-1-uuid-12345   alice@example.com
-  CLOSED  Schedule missed execution     issue-2-uuid-67890   bob@example.com
-  OPEN    Sensor error                  issue-3-uuid-abcdef  carol@example.com
+  STATUS  TITLE                         ID  CREATED BY
+  OPEN    Asset materialization failed  1   Alice Apple
+  CLOSED  Schedule missed execution     2   Bob Brown
+  OPEN    Sensor error                  3   Carol Cherry
   '''
 # ---
 # name: TestFormatIssues.test_format_paginated_issues_json_output[0]
   dict({
-    'cursor': 'next-page-cursor-xyz',
+    'cursor': '1',
     'has_more': True,
     'items': list([
       dict({
-        'asset_key': None,
         'context': None,
-        'created_by_email': 'dave@example.com',
+        'created_by_name': 'Dave Day',
         'description': 'Description for first paginated issue.',
-        'id': 'issue-page-1-uuid',
-        'run_id': None,
+        'id': '1',
+        'linked_objects': list([
+        ]),
         'status': 'OPEN',
         'title': 'First paginated issue',
       }),
@@ -95,22 +119,25 @@
 # ---
 # name: TestFormatIssues.test_format_paginated_issues_text_output[0]
   '''
-  STATUS  TITLE                  ID                 CREATED BY
-  OPEN    First paginated issue  issue-page-1-uuid  dave@example.com
+  STATUS  TITLE                  ID  CREATED BY
+  OPEN    First paginated issue  1   Dave Day
   Note: More issues available (use --cursor to paginate)
   '''
 # ---
 # name: TestFormatIssues.test_format_single_issue_json_output[0]
   dict({
-    'asset_key': list([
-      'namespace',
-      'my_critical_asset',
-    ]),
     'context': 'Additional diagnostic information here.',
-    'created_by_email': 'engineer@example.com',
+    'created_by_name': 'Engineer Engine',
     'description': 'The pipeline failed with a critical error during execution.',
-    'id': 'single-issue-uuid-xyz',
-    'run_id': 'run-xyz-789',
+    'id': '1',
+    'linked_objects': list([
+      dict({
+        'run_id': 'run-xyz-789',
+      }),
+      dict({
+        'asset_key': 'namespace/my_critical_asset',
+      }),
+    ]),
     'status': 'OPEN',
     'title': 'Critical pipeline failure',
   })
@@ -119,11 +146,52 @@
   '''
   Title:              Critical pipeline failure
   Status:             OPEN
-  Created By:         engineer@example.com
-  Run ID:             run-xyz-789
-  Asset Key:          ['namespace', 'my_critical_asset']
+  Created By:         Engineer Engine
+  Run IDs:            run-xyz-789
+  Asset Keys:         namespace/my_critical_asset
   Description:        The pipeline failed with a critical error during execution.
   Additional Context: Additional diagnostic information here.
+  '''
+# ---
+# name: TestFormatIssues.test_format_updated_issue_json_output[0]
+  dict({
+    'context': None,
+    'created_by_name': "Owner O'Owner",
+    'description': 'Updated description after investigation.',
+    'id': '1',
+    'linked_objects': list([
+    ]),
+    'status': 'CLOSED',
+    'title': 'Updated issue title',
+  })
+# ---
+# name: TestFormatIssues.test_format_updated_issue_text_output[0]
+  '''
+  Title:       Updated issue title
+  Status:      CLOSED
+  Created By:  Owner O'Owner
+  Description: Updated description after investigation.
+  '''
+# ---
+# name: TestFormatIssues.test_format_updated_issue_with_context_json_output[0]
+  dict({
+    'context': 'New context added during update.',
+    'created_by_name': "Owner O'Owner",
+    'description': 'Updated description after investigation.',
+    'id': '1',
+    'linked_objects': list([
+    ]),
+    'status': 'OPEN',
+    'title': 'Updated issue title',
+  })
+# ---
+# name: TestFormatIssues.test_format_updated_issue_with_context_text_output[0]
+  '''
+  Title:              Updated issue title
+  Status:             OPEN
+  Created By:         Owner O'Owner
+  Description:        Updated description after investigation.
+  Additional Context: New context added during update.
   '''
 # ---
 # name: TestIssueDataProcessing.test_issue_creation_with_all_statuses[0]
@@ -132,24 +200,44 @@
     'has_more': False,
     'items': list([
       dict({
-        'asset_key': None,
         'context': None,
-        'created_by_email': 'test@example.com',
+        'created_by_name': 'Test Tester',
         'description': 'Test issue for status OPEN.',
-        'id': 'issue-open-uuid',
-        'run_id': None,
+        'id': '1',
+        'linked_objects': list([
+        ]),
         'status': 'OPEN',
         'title': 'Issue with status OPEN',
       }),
       dict({
-        'asset_key': None,
         'context': None,
-        'created_by_email': 'test@example.com',
+        'created_by_name': 'Test Tester',
         'description': 'Test issue for status CLOSED.',
-        'id': 'issue-closed-uuid',
-        'run_id': None,
+        'id': '2',
+        'linked_objects': list([
+        ]),
         'status': 'CLOSED',
         'title': 'Issue with status CLOSED',
+      }),
+      dict({
+        'context': None,
+        'created_by_name': 'Test Tester',
+        'description': 'Test issue for status TRIAGE.',
+        'id': '3',
+        'linked_objects': list([
+        ]),
+        'status': 'TRIAGE',
+        'title': 'Issue with status TRIAGE',
+      }),
+      dict({
+        'context': None,
+        'created_by_name': 'Test Tester',
+        'description': 'Test issue for status CANCELED.',
+        'id': '4',
+        'linked_objects': list([
+        ]),
+        'status': 'CANCELED',
+        'title': 'Issue with status CANCELED',
       }),
     ]),
   })

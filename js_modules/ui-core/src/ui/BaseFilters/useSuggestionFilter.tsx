@@ -222,12 +222,12 @@ export function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-type SuggestionFilterLabelProps = {
-  value: any;
-  filter: SuggestionFilter<any>;
-  renderLabel: (value: any) => JSX.Element;
+type SuggestionFilterLabelProps<TValue> = {
+  value: TValue;
+  filter: SuggestionFilter<TValue>;
+  renderLabel: (value: {value: TValue; isActive: boolean}) => JSX.Element;
 };
-function SuggestionFilterLabel(props: SuggestionFilterLabelProps) {
+function SuggestionFilterLabel<TValue>(props: SuggestionFilterLabelProps<TValue>) {
   const {value, filter, renderLabel} = props;
   const isActive = filter.state.includes(value);
 

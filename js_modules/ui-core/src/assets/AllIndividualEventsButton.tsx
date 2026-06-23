@@ -5,15 +5,16 @@ import {
   Dialog,
   DialogFooter,
   Icon,
-  Mono,
   Table,
+  Text,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AssetLineageElements} from './AssetLineageElements';
+import styles from './css/AllIndividualEventsButton.module.css';
 import {AssetEventGroup} from './groupByPartition';
 import {
   AssetFailedToMaterializeFragment,
@@ -58,7 +59,8 @@ const AssetEventsTable = ({
       <tbody>
         {groups.map((group) => (
           <React.Fragment key={group.timestamp || group.partition}>
-            <HoverableRow
+            <tr
+              className={styles.hoverableRow}
               onClick={(e) => {
                 // If you're interacting with something in the row, don't trigger a focus change.
                 // Since focus is stored in the URL bar this overwrites any link click navigation.
@@ -77,7 +79,7 @@ const AssetEventsTable = ({
                 hasLineage={hasLineage}
                 isFocused={focusedTimestamp === group.timestamp}
               />
-            </HoverableRow>
+            </tr>
             {focusedTimestamp === group.timestamp ? (
               <MetadataEntriesRow hasLineage={hasLineage} group={group} />
             ) : undefined}
@@ -117,7 +119,7 @@ const MetadataEntriesRow = React.memo(({group, hasLineage}: MetadataEntriesRowPr
           <Box padding={{horizontal: 24, vertical: 12}}>{latest.description}</Box>
         )}
         {latest.metadataEntries.length || hasLineage ? (
-          <DetailsTable>
+          <table className={styles.detailsTable}>
             <tbody>
               {latest.metadataEntries.map((entry) => (
                 <tr key={`metadata-${entry.label}`}>
@@ -142,7 +144,9 @@ const MetadataEntriesRow = React.memo(({group, hasLineage}: MetadataEntriesRowPr
                           <span>
                             {`${obs.stepKey} in `}
                             <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
-                              <Mono>{titleForRun({id: obs.runId})}</Mono>
+                              <Text size={14} family="mono">
+                                {titleForRun({id: obs.runId})}
+                              </Text>
                             </Link>
                             {` (${dayjs(Number(obs.timestamp)).from(
                               Number(timestamp),
@@ -166,7 +170,7 @@ const MetadataEntriesRow = React.memo(({group, hasLineage}: MetadataEntriesRowPr
                 </tr>
               ) : null}
             </tbody>
-          </DetailsTable>
+          </table>
         ) : (
           <Box padding={{horizontal: 24, vertical: 12}}>No materialization event metadata</Box>
         )}
@@ -272,27 +276,15 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <RunStatusWithStats runId={run.id} status={run.status} />
           <Link to={`/runs/${run.id}?timestamp=${timestamp}`}>
-            <Mono>{titleForRun(run)}</Mono>
+            <Text size={14} family="mono">
+              {titleForRun(run)}
+            </Text>
           </Link>
         </Box>
       </td>
     </>
   );
 });
-
-const HoverableRow = styled.tr`
-  &:hover {
-    background: ${Colors.backgroundLightHover()};
-  }
-`;
-
-const DetailsTable = styled.table`
-  width: 100%;
-  margin: -2px -2px -3px;
-  tr td {
-    font-size: 14px;
-  }
-`;
 
 interface PredecessorDialogProps {
   hasLineage: boolean;
@@ -378,31 +370,13 @@ export const AllIndividualEventsButton = ({
 };
 
 const DisclosureTriangle = ({open, onClick}: {open: boolean; onClick?: () => void}) => (
-  <DisclosureTriangleButton onClick={onClick} $open={open}>
+  <button
+    className={clsx(
+      styles.disclosureTriangleButton,
+      open ? styles.disclosureTriangleOpen : styles.disclosureTriangleClosed,
+    )}
+    onClick={onClick}
+  >
     <Icon name="arrow_drop_down" size={24} />
-  </DisclosureTriangleButton>
+  </button>
 );
-
-const DisclosureTriangleButton = styled.button<{$open: boolean}>`
-  padding: 4px;
-  margin: -4px;
-  cursor: pointer;
-  border: 0;
-  background: transparent;
-  outline: none;
-
-  .iconGlobal {
-    margin: -2px -5px;
-    transform: ${({$open}) => ($open ? 'rotate(0deg)' : 'rotate(-90deg)')};
-    opacity: 0.25;
-  }
-
-  :focus {
-    outline: none;
-
-    .iconGlobal {
-      background: ${Colors.textDefault()};
-      opacity: 0.5;
-    }
-  }
-`;

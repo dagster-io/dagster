@@ -51,7 +51,7 @@ def test_fetch_tableau_workspace_data(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
     resource.build_client()
 
     actual_workspace_data = resource.get_or_fetch_workspace_data()
@@ -94,7 +94,7 @@ def test_invalid_workbook(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
     resource.build_client()
 
     # Test invalid workbook
@@ -182,6 +182,7 @@ def test_translator_spec(
             "dagster-tableau/id": TEST_DATA_SOURCE_ID,
             "dagster-tableau/has_extracts": False,
             "dagster-tableau/is_published": True,
+            "dagster/storage_kind": "tableau",
         }
 
         embedded_data_source_asset_spec = next(iter_data_source)
@@ -195,6 +196,7 @@ def test_translator_spec(
             "dagster-tableau/has_extracts": True,
             "dagster-tableau/is_published": False,
             "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+            "dagster/storage_kind": "tableau",
         }
 
 
@@ -253,7 +255,7 @@ def test_translator_custom_metadata(
         assert "custom" in asset_spec.metadata
         assert asset_spec.metadata["custom"] == "metadata"
         assert asset_spec.key.path == ["prefix", "superstore_datasource"]
-        assert asset_spec.tags["dagster/storage_kind"] == "tableau"
+        assert asset_spec.metadata["dagster/storage_kind"] == "tableau"
         assert asset_spec.kinds == {"tableau", "live", "published datasource"}
 
 
@@ -381,7 +383,7 @@ def test_tableau_workbook_selector(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
     resource.build_client()
 
     workbook_selector_fn = (

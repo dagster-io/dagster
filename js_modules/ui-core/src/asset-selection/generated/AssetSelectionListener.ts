@@ -1,4 +1,4 @@
-// Generated from dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/maximearmstrong/Documents/Repositories/dagster-io/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import {ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode} from 'antlr4ng';
 
@@ -22,12 +22,18 @@ import {TagAttributeExprContext} from './AssetSelectionParser.js';
 import {OwnerAttributeExprContext} from './AssetSelectionParser.js';
 import {GroupAttributeExprContext} from './AssetSelectionParser.js';
 import {KindAttributeExprContext} from './AssetSelectionParser.js';
+import {IsAttributeExprContext} from './AssetSelectionParser.js';
 import {StatusAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnAttributeExprContext} from './AssetSelectionParser.js';
 import {TableNameAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnTagAttributeExprContext} from './AssetSelectionParser.js';
 import {CodeLocationAttributeExprContext} from './AssetSelectionParser.js';
 import {ChangedInBranchAttributeExprContext} from './AssetSelectionParser.js';
+import {PartitionsAttributeExprContext} from './AssetSelectionParser.js';
+import {AutomationTypeAttributeExprContext} from './AssetSelectionParser.js';
+import {SensorAttributeExprContext} from './AssetSelectionParser.js';
+import {ScheduleAttributeExprContext} from './AssetSelectionParser.js';
+import {JobAttributeExprContext} from './AssetSelectionParser.js';
 import {ValueContext} from './AssetSelectionParser.js';
 import {KeyValueContext} from './AssetSelectionParser.js';
 
@@ -269,6 +275,18 @@ export class AssetSelectionListener implements ParseTreeListener {
    */
   exitKindAttributeExpr?: (ctx: KindAttributeExprContext) => void;
   /**
+   * Enter a parse tree produced by the `IsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterIsAttributeExpr?: (ctx: IsAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `IsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitIsAttributeExpr?: (ctx: IsAttributeExprContext) => void;
+  /**
    * Enter a parse tree produced by the `StatusAttributeExpr`
    * labeled alternative in `AssetSelectionParser.attributeExpr`.
    * @param ctx the parse tree
@@ -340,6 +358,66 @@ export class AssetSelectionListener implements ParseTreeListener {
    * @param ctx the parse tree
    */
   exitChangedInBranchAttributeExpr?: (ctx: ChangedInBranchAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `PartitionsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterPartitionsAttributeExpr?: (ctx: PartitionsAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `PartitionsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitPartitionsAttributeExpr?: (ctx: PartitionsAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `AutomationTypeAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterAutomationTypeAttributeExpr?: (ctx: AutomationTypeAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `AutomationTypeAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitAutomationTypeAttributeExpr?: (ctx: AutomationTypeAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `SensorAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterSensorAttributeExpr?: (ctx: SensorAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `SensorAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitSensorAttributeExpr?: (ctx: SensorAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `ScheduleAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterScheduleAttributeExpr?: (ctx: ScheduleAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `ScheduleAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitScheduleAttributeExpr?: (ctx: ScheduleAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `JobAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterJobAttributeExpr?: (ctx: JobAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `JobAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitJobAttributeExpr?: (ctx: JobAttributeExprContext) => void;
   /**
    * Enter a parse tree produced by `AssetSelectionParser.value`.
    * @param ctx the parse tree

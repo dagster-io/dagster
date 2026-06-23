@@ -1,8 +1,6 @@
 import {
-  Body2,
   Box,
   Button,
-  Caption,
   Colors,
   Dialog,
   DialogFooter,
@@ -10,6 +8,8 @@ import {
   Icon,
   Radio,
   RadioContainer,
+  RadioGroup,
+  Text,
   TextInput,
   Tooltip,
   showToast,
@@ -218,10 +218,10 @@ const ReportCheckEvaluationDialogBody = ({
         padding={{horizontal: 20, top: 16, bottom: 24}}
         border={check.isPartitioned ? {side: 'bottom'} : undefined}
       >
-        <Body2>
+        <Text size={14}>
           Record check evaluations to correct information or test alerts. Manually recorded check
           evaluations are not typically used for normal operations.
-        </Body2>
+        </Text>
       </Box>
 
       {check.isPartitioned ? (
@@ -240,24 +240,25 @@ const ReportCheckEvaluationDialogBody = ({
         flex={{direction: 'column', gap: 12}}
       >
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Evaluation result</Caption>
+          <Text size={12}>Evaluation result</Text>
           <RadioContainer>
-            {EVALUATION_RESULT_OPTIONS.map((option) => (
-              <Radio
-                key={option.value}
-                checked={evaluationResult === option.value}
-                onChange={() => setEvaluationResult(option.value)}
-              >
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                  {option.icon}
-                  <span>{option.label}</span>
-                </Box>
-              </Radio>
-            ))}
+            <RadioGroup
+              value={evaluationResult}
+              onValueChange={(v) => setEvaluationResult(v as EvaluationResult)}
+            >
+              {EVALUATION_RESULT_OPTIONS.map((option) => (
+                <Radio key={option.value} value={option.value}>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                    {option.icon}
+                    <span>{option.label}</span>
+                  </Box>
+                </Radio>
+              ))}
+            </RadioGroup>
           </RadioContainer>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Description</Caption>
+          <Text size={12}>Description</Text>
           <TextInput
             value={description}
             onChange={(e) => setDescription(e.target.value)}

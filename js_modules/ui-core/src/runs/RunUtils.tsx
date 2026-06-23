@@ -12,7 +12,7 @@ import {
   LaunchPipelineExecutionMutation,
   RunTimeFragment,
 } from './types/RunUtils.types';
-import {Mono, showToast} from '../../../ui-components/src';
+import {Text, showToast} from '../../../ui-components/src';
 import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -70,7 +70,11 @@ export async function handleLaunchResult(
   pipelineName: string,
   result: void | null | LaunchPipelineExecutionMutation['launchPipelineExecution'],
   history: History<unknown>,
-  options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
+  options: {
+    behavior: LaunchBehavior;
+    preserveQuerystring?: boolean;
+    openInNewTab?: (path: string) => void;
+  },
 ) {
   if (!result) {
     showCustomAlert({body: `No data was returned. Did dagster-webserver crash?`});
@@ -82,14 +86,19 @@ export async function handleLaunchResult(
     const search = options.preserveQuerystring ? history.location.search : '';
     const openInSameTab = () => history.push({pathname, search});
 
-    if (options.behavior === 'open') {
+    if (options.openInNewTab) {
+      options.openInNewTab(`${pathname}${search}`);
+    } else if (options.behavior === 'open') {
       openInSameTab();
     } else {
       showToast({
         intent: 'success',
         message: (
           <div>
-            Launched run <Mono>{result.run.id.slice(0, 8)}</Mono>
+            Launched run{' '}
+            <Text size={14} family="mono">
+              {result.run.id.slice(0, 8)}
+            </Text>
           </div>
         ),
         action: {

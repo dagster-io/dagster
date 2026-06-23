@@ -1302,6 +1302,9 @@ def get_asset_backfill_iteration_materialized_subset(
     This function is a generator so we can return control to the daemon and let it heartbeat
     during expensive operations.
     """
+    if asset_backfill_data.latest_storage_id is None:
+        return asset_backfill_data.materialized_subset
+
     recently_materialized_asset_partitions = AssetGraphSubset()
     for asset_key in asset_backfill_data.target_subset.asset_keys:
         cursor = None
@@ -1526,17 +1529,16 @@ def _get_candidate_asset_graph_subset(
         *(asset_graph_view.asset_graph.get(k).child_keys for k in failed_keys)
     )
 
-    child_subsets = []
-    for asset_key in parent_materialized_keys | parent_failed_keys:
-        child_subsets.append(
+    child_subsets = [
+        asset_graph_view.get_entity_subset_from_asset_graph_subset(
+            asset_backfill_data.target_subset, asset_key
+        ).compute_difference(
             asset_graph_view.get_entity_subset_from_asset_graph_subset(
-                asset_backfill_data.target_subset, asset_key
-            ).compute_difference(
-                asset_graph_view.get_entity_subset_from_asset_graph_subset(
-                    asset_backfill_data.requested_subset, asset_key
-                )
+                asset_backfill_data.requested_subset, asset_key
             )
         )
+        for asset_key in parent_materialized_keys | parent_failed_keys
+    ]
 
     return AssetGraphSubset.from_entity_subsets(child_subsets)
 
@@ -1671,7 +1673,7 @@ def _execute_asset_backfill_iteration_inner(
 
     updated_asset_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
-        latest_storage_id=next_latest_storage_id or asset_backfill_data.latest_storage_id,
+        latest_storage_id=next_latest_storage_id,
         requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots
         or request_roots,
         materialized_subset=updated_materialized_subset,
@@ -2102,15 +2104,14 @@ def _should_backfill_atomic_asset_graph_subset_unit(
         passed_subset_value = entity_subset_to_filter.value
         failure_subset_values_with_reasons.extend(new_failure_subset_values_with_reasons)
 
-    passed_entity_subsets = []
-    for candidate_entity_subset in candidate_entity_subsets:
-        passed_entity_subsets.append(
-            check.not_none(
-                asset_graph_view.get_subset_from_serializable_subset(
-                    SerializableEntitySubset(candidate_entity_subset.key, passed_subset_value)
-                )
+    passed_entity_subsets = [
+        check.not_none(
+            asset_graph_view.get_subset_from_serializable_subset(
+                SerializableEntitySubset(candidate_entity_subset.key, passed_subset_value)
             )
         )
+        for candidate_entity_subset in candidate_entity_subsets
+    ]
 
     failure_asset_graph_subsets_with_reasons = []
     # Any failure partition values apply to all candidate asset keys, so construct a subset

@@ -5,8 +5,15 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from dagster_cloud_cli import gql, ui
+from dagster_cloud_cli.core.graphql_client import (
+    DEFAULT_BACKOFF_FACTOR,
+    DEFAULT_RETRIES,
+    PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+)
 
 GENERATE_PUT_URL_QUERY = """
 mutation GenerateServerlessPexUrlMutation($filenames: [String!]!) {
@@ -131,6 +138,18 @@ def upload_files(dagster_cloud_url: str, dagster_cloud_api_token: str, filepaths
         ui.error(f"Cannot upload files, did not get PUT urls for: {filenames}")
         return
 
+    session = requests.Session()
+    put_retry_adapter = HTTPAdapter(
+        max_retries=Retry(
+            total=DEFAULT_RETRIES,
+            backoff_factor=DEFAULT_BACKOFF_FACTOR,
+            status_forcelist=PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+            allowed_methods=["PUT"],
+        )
+    )
+    session.mount("https://", put_retry_adapter)
+    session.mount("http://", put_retry_adapter)
+
     # we expect response list to be in the same order as the request
     for _, filepath, url in zip(filenames, filepaths, urls):
         if not url:
@@ -139,7 +158,7 @@ def upload_files(dagster_cloud_url: str, dagster_cloud_api_token: str, filepaths
 
         ui.print(f"Uploading {filepath} ...")
         with open(filepath, "rb") as f:
-            response = requests.put(url, data=f)
+            response = session.put(url, data=f)
             if response.ok:
                 ui.print(f"Upload successful: {filepath}")
             else:

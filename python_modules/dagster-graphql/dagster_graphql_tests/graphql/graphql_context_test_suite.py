@@ -1,3 +1,4 @@
+import logging
 import sys
 import tempfile
 from abc import ABC, abstractmethod
@@ -8,6 +9,7 @@ from unittest.mock import patch
 import dagster._check as check
 import pytest
 from dagster import file_relative_path
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -84,7 +86,7 @@ def graphql_postgres_instance(
                             "config": {"postgres_url": pg_conn_string},
                         },
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -123,7 +125,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -170,7 +172,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -192,7 +194,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -217,7 +219,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -286,7 +288,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -327,7 +329,7 @@ class EnvironmentManagers:
                     )
                     if loadable_target_origin.python_file
                     else ModuleTarget(
-                        module_name=loadable_target_origin.module_name,  # pyright: ignore[reportArgumentType]
+                        module_name=loadable_target_origin.module_name,
                         attribute=loadable_target_origin.attribute,
                         working_directory=loadable_target_origin.working_directory,
                         location_name=location_name,
@@ -360,7 +362,7 @@ class EnvironmentManagers:
                     GrpcServerTarget(
                         port=api_client.port,
                         socket=api_client.socket,
-                        host=api_client.host,  # pyright: ignore[reportArgumentType]
+                        host=api_client.host,
                         location_name=location_name,
                     ),
                     version="",
@@ -380,7 +382,7 @@ class EnvironmentManagers:
         def _mgr_fn(instance, read_only):
             loadable_target_origin = target or get_main_loadable_target_origin()
             with safe_tempfile_path() as socket:
-                subprocess_args = [  # pyright: ignore[reportOperatorIssue]
+                subprocess_args = [
                     "dagster",
                     "code-server",
                     "start",
@@ -407,7 +409,10 @@ class EnvironmentManagers:
                     ) as workspace:
                         yield workspace
                 finally:
-                    client.shutdown_server()
+                    try:
+                        client.shutdown_server()
+                    except DagsterUserCodeUnreachableError:
+                        logging.exception("Failed to shut down gRPC server during teardown")
                     server_process.wait(timeout=30)
 
         return MarkedManager(_mgr_fn, [Marks.code_server_cli_grpc_env])
@@ -878,7 +883,7 @@ def make_graphql_context_test_suite(context_variants):
             class MockedGraphQLClient:
                 def execute(self, gql_query, variable_values=None):
                     # Handle both gql v3 (DocumentNode) and v4 (GraphQLRequest)
-                    if HAS_GRAPHQL_REQUEST and isinstance(gql_query, GraphQLRequest):  # pyright: ignore[reportPossiblyUnboundVariable]
+                    if HAS_GRAPHQL_REQUEST and isinstance(gql_query, GraphQLRequest):
                         document = gql_query.document
                         variables = (
                             variable_values

@@ -139,7 +139,7 @@ def test_build_defs_no_conflicts(polytomic_workspace: PolytomicWorkspace):
     )
 
     defs = component.build_defs_from_workspace_data(workspace_data)
-    specs = defs.get_all_asset_specs()
+    specs = defs.resolve_all_asset_specs()
 
     # Should have 2 schemas
     assert len(specs) == 2
@@ -281,7 +281,7 @@ async def test_end_to_end_integration(polytomic_workspace: PolytomicWorkspace):
 
         # Step 2: Build definitions from workspace data
         defs = component.build_defs_from_workspace_data(workspace_data)
-        assets = defs.get_all_asset_specs()
+        assets = defs.resolve_all_asset_specs()
 
     # Verify end-to-end results
     assert len(assets) == 1  # 1 schema

@@ -1,17 +1,17 @@
 import {
-  Body2,
   Box,
-  Caption,
   Colors,
   CursorPaginationControls,
+  Heading,
   Icon,
   MiddleTruncate,
-  Subtitle1,
+  Text,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/AutomaterializeLeftPanel.module.css';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 import {SensorType} from '../../graphql/types';
@@ -42,9 +42,9 @@ export const AutomaterializeLeftPanel = ({
         selectedEvaluation={selectedEvaluation}
       />
       {evaluations.length ? (
-        <PaginationWrapper>
+        <div className={styles.paginationWrapper}>
           <CursorPaginationControls {...paginationProps} />
-        </PaginationWrapper>
+        </div>
       ) : null}
     </Box>
   );
@@ -78,7 +78,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <Subtitle1>Evaluations</Subtitle1>
+        <Heading size={16} weight={600}>
+          Evaluations
+        </Heading>
       </Box>
       <Box
         padding={{bottom: 8, horizontal: 12}}
@@ -88,7 +90,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         <Box border="bottom" padding={{top: 8, bottom: 12, left: 12, right: 8}}>
           <Box flex={{alignItems: 'center', gap: 4}}>
             <Icon name="sensors" color={Colors.accentBlue()} />
-            <Body2>
+            <Text size={14}>
               {repoAddress && sensorName ? (
                 <Link
                   to={workspacePathFromAddress(repoAddress, `/sensors/${sensorName}`)}
@@ -99,13 +101,15 @@ export const AutomaterializeLeftList = (props: ListProps) => {
               ) : (
                 <Link to="/overview/automation">{sensorName ?? 'Automation'}</Link>
               )}
-            </Body2>
+            </Text>
           </Box>
         </Box>
         <Box flex={{direction: 'column', gap: 8}}>
           {evaluations.length === 0 ? (
             <Box padding={{left: 12, top: 12, right: 8}}>
-              <Caption color={Colors.textLight()}>No evaluations</Caption>
+              <Text size={12} color="textLight">
+                No evaluations
+              </Text>
             </Box>
           ) : null}
           {evaluations.map((evaluation) => {
@@ -117,28 +121,31 @@ export const AutomaterializeLeftList = (props: ListProps) => {
               if (hasRequested) {
                 if (definition?.partitionDefinition) {
                   return (
-                    <Caption>
+                    <Text size={12}>
                       {numberFormatter.format(evaluation.numRequested ?? 0)} Requested
-                    </Caption>
+                    </Text>
                   );
                 }
-                return <Caption>requested</Caption>;
+                return <Text size={12}>requested</Text>;
               }
-              return <Caption>not requested</Caption>;
+              return <Text size={12}>not requested</Text>;
             }
 
             return (
-              <EvaluationListItem
+              <button
                 key={`skip-${evaluation.id}`}
+                className={clsx(
+                  styles.evaluationListItem,
+                  isSelected && styles.evaluationListItemSelected,
+                )}
                 onClick={() => {
                   onSelectEvaluation(evaluation);
                 }}
-                $selected={isSelected}
               >
                 <Box flex={{direction: 'column', gap: 4}}>
                   <Box flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
                     <StatusDot
-                      $color={
+                      color={
                         evaluation.numRequested ? Colors.accentGreen() : Colors.backgroundDisabled()
                       }
                     />
@@ -148,67 +155,26 @@ export const AutomaterializeLeftList = (props: ListProps) => {
                   </Box>
                   <div style={{paddingLeft: 22}}>{status()}</div>
                 </Box>
-              </EvaluationListItem>
+              </button>
             );
           })}
         </Box>
         <Box border="top" padding={{vertical: 20, horizontal: 12}} margin={{top: 12}}>
-          <Caption>Evaluations are retained for 30 days</Caption>
+          <Text size={12}>Evaluations are retained for 30 days</Text>
         </Box>
       </Box>
     </Box>
   );
 };
 
-const PaginationWrapper = styled.div`
-  position: sticky;
-  bottom: 0;
-  background: ${Colors.backgroundLight()};
-  border-right: 1px solid ${Colors.keylineDefault()};
-  box-shadow: inset 0 1px ${Colors.keylineDefault()};
-  margin-top: -1px;
-  padding-bottom: 16px;
-  padding-top: 16px;
-  > * {
-    margin-top: 0;
-  }
-`;
-
-interface EvaluationListItemProps {
-  $selected: boolean;
-}
-
-const EvaluationListItem = styled.button<EvaluationListItemProps>`
-  background-color: ${({$selected}) =>
-    $selected ? Colors.backgroundBlue() : Colors.backgroundDefault()};
-  border: none;
-  border-radius: 8px;
-  color: ${({$selected}) => ($selected ? Colors.textBlue() : Colors.textDefault())};
-  cursor: pointer;
-  margin: 2px 0;
-  text-align: left;
-  transition:
-    100ms background-color linear,
-    100ms color linear;
-  user-select: none;
-
-  &:hover {
-    background-color: ${({$selected}) =>
-      $selected ? Colors.backgroundBlueHover() : Colors.backgroundDefaultHover()};
-  }
-
-  &:focus,
-  &:active {
-    outline: none;
-  }
-
-  padding: 8px 12px;
-`;
-
-export const StatusDot = styled.div<{$color: string; $size?: number}>`
-  background-color: ${({$color}) => $color};
-  border-radius: 50%;
-  width: ${({$size = 10}) => $size}px;
-  height: ${({$size = 10}) => $size}px;
-  margin: ${({$size = 10}) => $size / 2}px;
-`;
+export const StatusDot = ({color, size = 10}: {color: string; size?: number}) => (
+  <div
+    className={styles.statusDot}
+    style={{
+      backgroundColor: color,
+      width: size,
+      height: size,
+      margin: size / 2,
+    }}
+  />
+);

@@ -1,7 +1,7 @@
 ---
 description: Track Google BigQuery usage in the Dagster+ Insights UI or by using the dagster-cloud package.
 sidebar_label: Google BigQuery
-sidebar_position: 4000
+sidebar_position: 1000
 title: Track Google BigQuery usage with Dagster+ Insights
 ---
 
@@ -27,9 +27,14 @@ To use these features, you will need:
   - For more information, see the [BigQuery Documentation](https://cloud.google.com/bigquery/docs/information-schema-jobs)
 - The following packages installed:
 
-```bash
-pip install dagster dagster-cloud
-```
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    ```bash uv add dagster dagster-cloud ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    ```bash pip install dagster dagster-cloud ```
+  </TabItem>
+</Tabs>
 
 ## Limitations
 
@@ -48,13 +53,13 @@ To enable this behavior, replace usage of `BigQueryResource` with `InsightsBigQu
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/google-bigquery/bigquery-resource.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/google-bigquery/bigquery-resource.py"
       language="python"
     />
   </TabItem>
   <TabItem value="after" label="After" default>
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/google-bigquery/bigquery-resource-insights.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/google-bigquery/bigquery-resource-insights.py"
       language="python"
     />
   </TabItem>
@@ -64,35 +69,52 @@ To enable this behavior, replace usage of `BigQueryResource` with `InsightsBigQu
 
 If you use `dagster-dbt` to manage a dbt project that targets Google BigQuery, you can emit usage metrics to the Dagster+ API with the `DbtCliResource`.
 
-First, add a `.with_insights()` call to your `dbt.cli()` command(s).
+### Using DbtProjectComponent
+
+If you use `DbtProjectComponent`, add `insights` to the `include_metadata` list in your `defs.yaml`:
+
+```yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: path/to/dbt_project
+  include_metadata:
+    - insights
+```
+
+### Using @dbt_assets
+
+If you use the `@dbt_assets` decorator, add a `.with_insights()` call to your `dbt.cli()` command(s):
 
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/google-bigquery/bigquery-dbt-asset.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/google-bigquery/bigquery-dbt-asset.py"
       language="python"
     />
   </TabItem>
   <TabItem value="after" label="After" default>
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/google-bigquery/bigquery-dbt-asset-insights.py"
+      path="docs_snippets/docs_snippets/guides/observe/insights/google-bigquery/bigquery-dbt-asset-insights.py"
       language="python"
     />
   </TabItem>
 </Tabs>
 
-Then, add the following to your `dbt_project.yml`:
+### Configuring dbt_project.yml
+
+Add the following to your `dbt_project.yml`:
 
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/google-bigquery/dbt_project.yml"
+      path="docs_snippets/docs_snippets/guides/observe/insights/google-bigquery/dbt_project.yml"
       language="python"
     />
   </TabItem>
   <TabItem value="after" label="After" default>
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/insights/google-bigquery/dbt_project_insights.yml"
+      path="docs_snippets/docs_snippets/guides/observe/insights/google-bigquery/dbt_project_insights.yml"
       language="python"
     />
   </TabItem>

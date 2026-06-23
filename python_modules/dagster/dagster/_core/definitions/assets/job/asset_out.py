@@ -2,6 +2,8 @@ from collections.abc import Mapping, Sequence
 from types import EllipsisType
 from typing import Any
 
+from dagster_shared.utils.warnings import preview_warning
+
 import dagster._check as check
 from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep
@@ -103,6 +105,7 @@ class AssetOut:
         tags: Mapping[str, str] | None = None,
         kinds: set[str] | None = None,
         freshness_policy: FreshnessPolicy | None = None,
+        is_virtual: bool = False,
         **kwargs,
     ):
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
@@ -110,6 +113,9 @@ class AssetOut:
         spec = kwargs.get("spec")
         if spec:
             del kwargs["spec"]
+
+        if is_virtual:
+            preview_warning("Virtual assets")
 
         only_allow_hidden_params_in_kwargs(AssetOut, kwargs)
         if isinstance(key_prefix, str):
@@ -171,6 +177,7 @@ class AssetOut:
                 owners=check.opt_sequence_param(owners, "owners", of_type=str),
                 tags=normalize_tags(tags or {}, strict=True),
                 kinds=check.opt_set_param(kinds, "kinds", of_type=str),
+                is_virtual=check.bool_param(is_virtual, "is_virtual"),
             )
         self.key_prefix = key_prefix
         self.dagster_type = dagster_type
@@ -221,6 +228,10 @@ class AssetOut:
     @property
     def kinds(self) -> set[str] | None:
         return self._spec.kinds
+
+    @property
+    def is_virtual(self) -> bool:
+        return self._spec.is_virtual
 
     def to_out(self) -> Out:
         return Out(

@@ -26,5 +26,5 @@ def get_has_seen_nux():
     try:
         # We only care about the existence of the file
         return os.path.exists(nux_seen_filepath())
-    except:
+    except Exception:
         return True

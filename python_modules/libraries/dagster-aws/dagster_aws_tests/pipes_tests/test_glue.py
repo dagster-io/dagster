@@ -2,7 +2,6 @@ import multiprocessing
 import os
 import re
 import signal
-import time
 from collections.abc import Iterator
 from typing import Literal
 
@@ -200,7 +199,7 @@ def test_glue_pipes(
     )
 
     pipes_glue_client = PipesGlueClient(
-        client=LocalGlueMockClient(  # pyright: ignore[reportArgumentType]
+        client=LocalGlueMockClient(  # ty: ignore[invalid-argument-type]
             aws_endpoint_url=_MOTO_SERVER_URL,
             glue_client=glue_client,
             s3_client=s3_client,
@@ -243,8 +242,28 @@ def test_glue_pipes_interruption_forwarding_asset_is_valid(glue_asset, pipes_glu
 
 
 def test_glue_pipes_interruption_forwarding(long_glue_job, glue_asset, pipes_glue_client):
+    # Use fork context explicitly - Python 3.14 changed the default to spawn on macOS,
+    # which requires pickling the target function (local functions can't be pickled)
+    ctx = multiprocessing.get_context("fork")
+    # Cross-process event so the child can signal when it has entered the
+    # _wait_for_job_run_completion polling loop (inside the try/except that
+    # catches DagsterExecutionInterruptedError and forwards termination).
+    job_polling_event = ctx.Event()
+
     def materialize_asset(env, return_dict):
         os.environ.update(env)
+
+        # Monkey-patch _wait_for_job_run_completion on the child's copy so it
+        # signals the parent right before entering the polling loop. This
+        # ensures SIGINT arrives while the interrupt handler is active.
+        original_wait = pipes_glue_client._wait_for_job_run_completion  # noqa: SLF001
+
+        def _patched_wait(*args, **kwargs):
+            job_polling_event.set()
+            return original_wait(*args, **kwargs)
+
+        pipes_glue_client._wait_for_job_run_completion = _patched_wait  # noqa: SLF001
+
         try:
             with instance_for_test() as instance:
                 materialize(  # this will be interrupted and raise an exception
@@ -253,14 +272,11 @@ def test_glue_pipes_interruption_forwarding(long_glue_job, glue_asset, pipes_glu
                     resources={"pipes_glue_client": pipes_glue_client},
                 )
         finally:
-            job_runs = pipes_glue_client._client._job_runs  # noqa
+            job_runs = pipes_glue_client._client._job_runs  # noqa: SLF001
             if job_runs:
                 job_run_id = next(iter(job_runs.keys()))
-                return_dict[0] = pipes_glue_client._client.get_job_run(long_glue_job, job_run_id)  # noqa
+                return_dict[0] = pipes_glue_client._client.get_job_run(long_glue_job, job_run_id)  # noqa: SLF001
 
-    # Use fork context explicitly - Python 3.14 changed the default to spawn on macOS,
-    # which requires pickling the target function (local functions can't be pickled)
-    ctx = multiprocessing.get_context("fork")
     with ctx.Manager() as manager:
         return_dict = manager.dict()
 
@@ -273,19 +289,21 @@ def test_glue_pipes_interruption_forwarding(long_glue_job, glue_asset, pipes_glu
         )
         p.start()
 
-        while p.is_alive():
-            # we started executing the run
-            # time to interrupt it!
-            time.sleep(5)
-            # Use SIGINT instead of p.terminate() (SIGTERM) so that Python
-            # raises KeyboardInterrupt and unwinds the stack normally,
-            # allowing the finally block to execute reliably.
-            assert p.pid is not None
-            try:
-                os.kill(p.pid, signal.SIGINT)
-            except ProcessLookupError:
-                # Process already terminated - this is acceptable for this test
-                pass
+        # Wait until the child is inside _wait_for_job_run_completion (the
+        # polling loop guarded by the DagsterExecutionInterruptedError handler).
+        assert job_polling_event.wait(timeout=60), (
+            "Timed out waiting for Glue job to enter polling loop"
+        )
+
+        assert p.pid is not None
+        # Use SIGINT instead of p.terminate() (SIGTERM) so that Python
+        # raises KeyboardInterrupt and unwinds the stack normally,
+        # allowing the finally block to execute reliably.
+        try:
+            os.kill(p.pid, signal.SIGINT)
+        except ProcessLookupError:
+            # Process already terminated - this is acceptable for this test
+            pass
 
         p.join()
         assert not p.is_alive()

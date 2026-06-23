@@ -80,5 +80,5 @@ def fivetran_snapshot_command(output_path: str, **other_opts: object) -> None:
             raise click.UsageError("No Fivetran data found in the repository")
         click.echo(f"Saving {len(load_data.reconstruction_metadata)} cached Fivetran data")
 
-        with open(output_path, "w") as file:
+        with open(output_path, "w", encoding="utf-8") as file:
             file.write(serialize_value(load_data))

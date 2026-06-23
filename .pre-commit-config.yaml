@@ -15,14 +15,14 @@ repos:
     language: system
     pass_filenames: false
 
-  # We do not use pyright's provided pre-commit hook because we need the environment management
-  # supplied by `scripts/run-pyright.py`.
-  - id: pyright
-    name: pyright
-    entry: make quick_pyright
+  # We do not use ty's provided pre-commit hook because we need the environment management
+  # supplied by `scripts/run-ty.py`.
+  - id: ty
+    name: ty
+    entry: make quick_ty
     stages: [pre-push]
     # This means pre-commit will not try to install a new environment for this hook. It relies on
-    # having a pre-existing `make` installed (and scripts/run-pyright.py).
+    # having a pre-existing `make` installed (and scripts/run-ty.py).
     language: system
     pass_filenames: false
     types: [python]

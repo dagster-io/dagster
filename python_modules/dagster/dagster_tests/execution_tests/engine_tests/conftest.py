@@ -22,11 +22,14 @@ def workspace(instance):
 
 @pytest.fixture
 def instance():
-    with tempfile.TemporaryDirectory() as temp_dir:
+    # ignore_cleanup_errors=True: multiprocess executor subprocesses can still be
+    # flushing files into temp_dir when this fixture tears down, racing the rmtree
+    # and surfacing as a spurious OSError(ENOTEMPTY) at teardown.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
         with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
-                    "module": "dagster.utils.test",
+                    "module": "dagster._utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir, "sleep_interval": 0.01},
                 },

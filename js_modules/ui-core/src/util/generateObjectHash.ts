@@ -9,15 +9,15 @@ import SparkMD5 from 'spark-md5';
  * @returns The hexadecimal string representation of the hash.
  */
 export function generateObjectHashStream(
-  obj: any,
-  replacer?: (key: string, value: any) => any,
+  obj: Record<string, unknown> | unknown[],
+  replacer?: (key: string, value: unknown) => unknown,
 ): string {
   const hash = new SparkMD5.ArrayBuffer();
   const encoder = new TextEncoder();
 
   type Frame = {
-    obj: any;
-    keys: string[] | number[];
+    obj: Record<string, unknown> | unknown[];
+    keys: (string | number)[];
     index: number;
     isArray: boolean;
     isFirst: boolean;
@@ -34,7 +34,7 @@ export function generateObjectHashStream(
     isFirst: true,
   });
 
-  hash.append(encoder.encode(isRootArray ? '[' : '{') as any);
+  hash.append(encoder.encode(isRootArray ? '[' : '{') as unknown as ArrayBuffer);
 
   while (stack.length > 0) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -42,7 +42,7 @@ export function generateObjectHashStream(
 
     if (currentFrame.index >= currentFrame.keys.length) {
       stack.pop();
-      hash.append(encoder.encode(currentFrame.isArray ? ']' : '}') as any);
+      hash.append(encoder.encode(currentFrame.isArray ? ']' : '}') as unknown as ArrayBuffer);
       if (stack.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const parentFrame = stack[stack.length - 1]!;
@@ -52,43 +52,44 @@ export function generateObjectHashStream(
     }
 
     if (!currentFrame.isFirst) {
-      hash.append(encoder.encode(',') as any);
+      hash.append(encoder.encode(',') as unknown as ArrayBuffer);
     }
     currentFrame.isFirst = false;
 
     const key = currentFrame.keys[currentFrame.index];
     currentFrame.index += 1;
 
-    let value: any;
+    let value: unknown;
     if (currentFrame.isArray) {
-      value = currentFrame.obj[key as number];
+      value = (currentFrame.obj as unknown[])[key as number];
     } else {
-      value = currentFrame.obj[key as string];
+      value = (currentFrame.obj as Record<string, unknown>)[key as string];
     }
 
     value = replacer ? replacer(currentFrame.isArray ? '' : String(key), value) : value;
 
     if (!currentFrame.isArray) {
       const serializedKey = JSON.stringify(key) + ':';
-      hash.append(encoder.encode(serializedKey) as any);
+      hash.append(encoder.encode(serializedKey) as unknown as ArrayBuffer);
     }
 
     if (value && typeof value === 'object') {
-      if (Array.isArray(value)) {
-        hash.append(encoder.encode('[') as any);
-        const childKeys = Array.from(Array(value.length).keys());
+      const objValue = value as Record<string, unknown> | unknown[];
+      if (Array.isArray(objValue)) {
+        hash.append(encoder.encode('[') as unknown as ArrayBuffer);
+        const childKeys = Array.from(Array(objValue.length).keys());
         stack.push({
-          obj: value,
+          obj: objValue,
           keys: childKeys,
           index: 0,
           isArray: true,
           isFirst: true,
         });
       } else {
-        const childKeys = Object.keys(value).sort();
-        hash.append(encoder.encode('{') as any);
+        const childKeys = Object.keys(objValue).sort();
+        hash.append(encoder.encode('{') as unknown as ArrayBuffer);
         stack.push({
-          obj: value,
+          obj: objValue,
           keys: childKeys,
           index: 0,
           isArray: false,
@@ -97,7 +98,7 @@ export function generateObjectHashStream(
       }
     } else {
       const serializedValue = JSON.stringify(value);
-      hash.append(encoder.encode(serializedValue) as any);
+      hash.append(encoder.encode(serializedValue) as unknown as ArrayBuffer);
     }
   }
 

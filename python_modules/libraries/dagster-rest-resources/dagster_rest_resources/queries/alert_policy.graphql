@@ -1,0 +1,34 @@
+query ListAlertPolicies {
+  alertPoliciesAsDocumentOrError {
+    __typename
+    ... on AlertPoliciesAsDocument {
+      document
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+mutation ReconcileAlertPolicies($document: GenericScalar!) {
+  reconcileAlertPoliciesFromDocument(document: $document) {
+    __typename
+    ... on ReconcileAlertPoliciesSuccess {
+      alertPolicies {
+        name
+      }
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on InvalidAlertPolicyError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

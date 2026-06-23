@@ -31,12 +31,8 @@ def scoped_definitions_load_context(
     repository_load_data: RepositoryLoadData | None = None,
 ) -> Iterator["DefinitionsLoadContext"]:
     context = DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
-    curr_context = DefinitionsLoadContext.get()
-    try:
-        DefinitionsLoadContext.set(context)
-        yield context
-    finally:
-        DefinitionsLoadContext.set(curr_context)
+    with DefinitionsLoadContext.scoped(context) as ctx:
+        yield ctx
 
 
 @contextmanager
@@ -56,7 +52,7 @@ def scoped_reconstruction_serdes_objects(
         with scoped_reconstruction_serdes_objects(test_key=ExampleDefState(a_string="bar")):
             loader_cached = ExampleStateBackedDefinitionsLoader("test_key")
             defs = loader_cached.build_defs()
-            assert len(defs.get_all_asset_specs()) == 1
+            assert len(defs.resolve_all_asset_specs()) == 1
             assert defs.get_assets_def("bar")
     """
     with scoped_reconstruction_metadata(
@@ -82,33 +78,27 @@ def scoped_reconstruction_metadata(
         with scoped_reconstruction_metadata({"test_key": "test_value"}):
             loader_cached = ExampleStateBackedDefinitionsLoader("test_key")
             defs = loader_cached.build_defs()
-            assert len(defs.get_all_asset_specs()) == 1
+            assert len(defs.resolve_all_asset_specs()) == 1
             assert defs.get_assets_def("bar")
     """
     prev_context = DefinitionsLoadContext.get()
     reconstruction_metadata = reconstruction_metadata or {}
-    try:
-        prev_load_data = prev_context._repository_load_data  # noqa
-        DefinitionsLoadContext.set(
-            DefinitionsLoadContext(
-                load_type=DefinitionsLoadType.RECONSTRUCTION,
-                repository_load_data=RepositoryLoadData(
-                    cacheable_asset_data=prev_load_data.cacheable_asset_data
-                    if prev_load_data
-                    else {},
-                    reconstruction_metadata={
-                        **{
-                            k: CodeLocationReconstructionMetadataValue(v)
-                            for k, v in reconstruction_metadata.items()
-                        },
-                        **(prev_load_data.reconstruction_metadata if prev_load_data else {}),
-                    },
-                ),
-            )
-        )
+    prev_load_data = prev_context._repository_load_data  # noqa: SLF001
+    next_context = DefinitionsLoadContext(
+        load_type=DefinitionsLoadType.RECONSTRUCTION,
+        repository_load_data=RepositoryLoadData(
+            cacheable_asset_data=prev_load_data.cacheable_asset_data if prev_load_data else {},
+            reconstruction_metadata={
+                **{
+                    k: CodeLocationReconstructionMetadataValue(v)
+                    for k, v in reconstruction_metadata.items()
+                },
+                **(prev_load_data.reconstruction_metadata if prev_load_data else {}),
+            },
+        ),
+    )
+    with DefinitionsLoadContext.scoped(next_context):
         yield
-    finally:
-        DefinitionsLoadContext.set(prev_context)
 
 
 def unwrap_reconstruction_metadata(repo_def: RepositoryDefinition) -> Mapping[str, Any]:

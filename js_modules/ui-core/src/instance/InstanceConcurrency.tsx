@@ -5,15 +5,14 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
   MetadataTableWIP,
-  Mono,
   NonIdealState,
   Page,
   PageHeader,
   SpinnerWithText,
-  Subheading,
-  Subtitle1,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -44,17 +43,23 @@ import {
 const DEFAULT_MIN_VALUE = 1;
 const DEFAULT_MAX_VALUE = 1000;
 
-export const InstanceConcurrencyPageContent = React.memo(() => {
-  const {concurrencyKey} = useParams<{concurrencyKey?: string}>();
-  if (!concurrencyKey) {
-    return <InstanceConcurrencyIndexContent />;
-  }
+interface ConcurrencyPageContentProps {
+  readOnly?: boolean;
+}
 
-  const decodedKey = decodeURIComponent(concurrencyKey);
-  return <InstanceConcurrencyKeyInfo concurrencyKey={decodedKey} />;
-});
+export const InstanceConcurrencyPageContent = React.memo(
+  ({readOnly}: ConcurrencyPageContentProps) => {
+    const {concurrencyKey} = useParams<{concurrencyKey?: string}>();
+    if (!concurrencyKey) {
+      return <InstanceConcurrencyIndexContent readOnly={readOnly} />;
+    }
 
-export const InstanceConcurrencyIndexContent = React.memo(() => {
+    const decodedKey = decodeURIComponent(concurrencyKey);
+    return <InstanceConcurrencyKeyInfo concurrencyKey={decodedKey} readOnly={readOnly ?? false} />;
+  },
+);
+
+export const InstanceConcurrencyIndexContent = React.memo(({readOnly}: {readOnly?: boolean}) => {
   useTrackPageView();
   useDocumentTitle('Concurrency');
   const queryResult = useQuery<
@@ -95,6 +100,7 @@ export const InstanceConcurrencyIndexContent = React.memo(() => {
           refetch={queryResult.refetch}
           minValue={data.instance.minConcurrencyLimitValue}
           maxValue={data.instance.maxConcurrencyLimitValue}
+          readOnly={readOnly ?? false}
         />
       </div>
     );
@@ -113,7 +119,11 @@ export const InstanceConcurrencyPage = () => {
   return (
     <Page style={{padding: 0}}>
       <PageHeader
-        title={<Subtitle1>{pageTitle}</Subtitle1>}
+        title={
+          <Heading size={16} weight={600}>
+            {pageTitle}
+          </Heading>
+        }
         tabs={<InstanceTabs tab="concurrency" />}
       />
       <InstanceConcurrencyIndexContent />
@@ -141,12 +151,21 @@ export const RunConcurrencyContent = ({
           border="bottom"
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
         >
-          <Subheading>Run tag concurrency</Subheading>
+          <Heading size={14} weight={600}>
+            Run tag concurrency
+          </Heading>
         </Box>
         <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
-          limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
-          <Mono>dagster.yaml</Mono>. See the{' '}
+          limits, configure your instance to use the{' '}
+          <Text size={14} family="mono">
+            QueuedRunCoordinator
+          </Text>{' '}
+          in your{' '}
+          <Text size={14} family="mono">
+            dagster.yaml
+          </Text>
+          . See the{' '}
           <a
             target="_blank"
             rel="noreferrer"
@@ -230,19 +249,19 @@ export const ConcurrencyLimits = ({
   refetch,
   minValue,
   maxValue,
+  readOnly,
 }: {
   concurrencyKeys: string[];
   refetch: () => void;
   hasSupport?: boolean;
   maxValue?: number;
   minValue?: number;
-  selectedKey?: string | null;
-  onSelectKey?: (key: string | undefined) => void;
+  readOnly: boolean;
 }) => {
   const [showAdd, setShowAdd] = React.useState<boolean>(false);
   const [search, setSearch] = React.useState('');
 
-  const onAdd = () => setShowAdd(true);
+  const onAdd = readOnly ? undefined : () => setShowAdd(true);
 
   const sortedKeys = React.useMemo(() => {
     return [...concurrencyKeys]
@@ -278,10 +297,14 @@ export const ConcurrencyLimits = ({
             icon="error"
             title="No pool limits"
             description={
-              <>
-                No pool limits have been configured for this instance.&nbsp;
-                <ButtonLink onClick={() => onAdd()}>Add a pool limit</ButtonLink>.
-              </>
+              readOnly ? (
+                'No pool limits have been configured for this instance.'
+              ) : (
+                <>
+                  No pool limits have been configured for this instance.&nbsp;
+                  <ButtonLink onClick={() => setShowAdd(true)}>Add a pool limit</ButtonLink>.
+                </>
+              )
             }
           />
         </Box>

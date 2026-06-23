@@ -158,3 +158,39 @@ def test_get_cleanup_statement_multi_partitioned():
         == "DELETE FROM schema1.table1 WHERE\nmy_fruit_col in ('apple') AND\nmy_timestamp_col >="
         " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
+
+
+def test_get_select_statement_escapes():
+    assert (
+        DuckDbClient.get_select_statement(
+            TableSlice(
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "SELECT * FROM schema1.table1 WHERE\nmy_col in ('it''s a test')"
+    )
+
+
+def test_get_cleanup_statement_escapes():
+    assert (
+        _get_cleanup_statement(
+            TableSlice(
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "DELETE FROM schema1.table1 WHERE\nmy_col in ('it''s a test')"
+    )

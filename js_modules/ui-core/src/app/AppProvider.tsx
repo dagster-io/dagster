@@ -69,6 +69,11 @@ export interface AppProviderProps {
 
   // Used for localStorage/IndexedDB caching to be isolated between instances/deployments
   localCacheIdPrefix?: string;
+
+  // When true, LocationWorkspaceAssetsQuery selects the assetManifest scalar
+  // instead of the typed assetNodes selection. Resolved server-side and shipped
+  // via the cloud HTML config.
+  shouldUseAssetManifestForWorkspace?: boolean;
 }
 
 export const AppProvider = (props: AppProviderProps) => {
@@ -157,14 +162,22 @@ export const AppProvider = (props: AppProviderProps) => {
     });
   }, [apolloLinks, appCache, graphqlPath, headerObject, retryLink, websocketClient, basePath]);
 
+  const {shouldUseAssetManifestForWorkspace} = props;
   const appContextValue = React.useMemo(
     () => ({
       basePath,
       rootServerURI,
       telemetryEnabled,
       localCacheIdPrefix,
+      shouldUseAssetManifestForWorkspace,
     }),
-    [basePath, rootServerURI, telemetryEnabled, localCacheIdPrefix],
+    [
+      basePath,
+      rootServerURI,
+      telemetryEnabled,
+      localCacheIdPrefix,
+      shouldUseAssetManifestForWorkspace,
+    ],
   );
 
   const analytics = React.useMemo(() => dummyAnalytics(), []);

@@ -1,4 +1,5 @@
 import datetime
+import io
 import os
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from dagster_shared.yaml_utils import (
     load_yaml_from_path,
     merge_yaml_strings,
     merge_yamls,
+    safe_load_yaml,
 )
 
 
@@ -125,6 +127,27 @@ def test_dump_octal_string():
 
     # our dump does not
     assert dump_run_config_yaml(octal_str_list) == "keys:\n- '0001823'\n- '0001234'\n"
+
+
+def test_safe_load_yaml_preserves_date_strings():
+    """Test that safe_load_yaml preserves date-like strings as strings."""
+    # Test with date string
+    assert safe_load_yaml("date: 2021-10-30") == {"date": "2021-10-30"}
+
+    # Test with datetime string
+    assert safe_load_yaml("ts: 2022-06-10T00:00:00.000000+00:00") == {
+        "ts": "2022-06-10T00:00:00.000000+00:00"
+    }
+
+    # Test with file-like object
+    f = io.StringIO("date: 2021-10-30")
+    assert safe_load_yaml(f) == {"date": "2021-10-30"}
+
+    # Verify yaml.safe_load would produce datetime for comparison
+    assert isinstance(yaml.safe_load("date: 2021-10-30")["date"], datetime.date)
+
+    # Test None input returns None (matches yaml.safe_load behavior)
+    assert safe_load_yaml("") is None
 
 
 def test_load_datetime_string():

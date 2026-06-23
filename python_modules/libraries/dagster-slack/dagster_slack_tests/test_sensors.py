@@ -11,7 +11,7 @@ def test_slack_run_failure_sensor_def():
 
         my_sensor = make_slack_on_run_failure_sensor(
             channel="#foo",
-            slack_token=os.getenv("SLACK_TOKEN"),  # pyright: ignore[reportArgumentType]
+            slack_token=os.getenv("SLACK_TOKEN"),  # ty: ignore[invalid-argument-type]
             name=sensor_name,
         )
         assert my_sensor.name == sensor_name

@@ -1,18 +1,11 @@
-import {
-  Box,
-  Caption,
-  CaptionBolded,
-  Colors,
-  Icon,
-  IconName,
-  StyledTag,
-} from '@dagster-io/ui-components';
+import {BaseTag, Box, Colors, Icon, IconName, Text} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/SearchResults.module.css';
 import {
   AssetFilterSearchResultType,
   SearchResult,
@@ -104,7 +97,7 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>, queryString: st
   const exactMatchPosition = label.indexOf(queryStringLower);
 
   if (exactMatchPosition === -1) {
-    return <Caption>{result.item.label}</Caption>;
+    return <Text size={12}>{result.item.label}</Text>;
   }
 
   const stringBeforeMatch = label.slice(0, exactMatchPosition);
@@ -113,9 +106,11 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>, queryString: st
 
   return (
     <>
-      <Caption>{stringBeforeMatch}</Caption>
-      <CaptionBolded>{match}</CaptionBolded>
-      <Caption>{stringAfterMatch}</Caption>
+      <Text size={12}>{stringBeforeMatch}</Text>
+      <Text size={12} weight={600}>
+        {match}
+      </Text>
+      <Text size={12}>{stringAfterMatch}</Text>
     </>
   );
 }
@@ -182,40 +177,48 @@ export const SearchResultItem = <T extends ResultType>({
   const labelComponents = 'refIndex' in result ? buildSearchLabel(result, queryString) : item.label;
 
   return (
-    <Item isHighlight={isHighlight} ref={element}>
-      <ResultLink to={item.href} onMouseDown={onClick}>
+    <li className={clsx(styles.item, isHighlight && styles.highlight)} ref={element}>
+      <Link className={styles.resultLink} to={item.href} onMouseDown={onClick}>
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12}}
           style={{width: '100%'}}
         >
           <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>
-            <StyledTag
-              $fillColor={Colors.backgroundGray()}
-              $interactive={false}
-              $textColor={Colors.textDefault()}
-            >
-              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                {buildSearchIcons(item, isHighlight)}
-                {isAssetFilterSearchResultType(item.type) && (
-                  <Caption>{assetFilterPrefixString(item.type)}:</Caption>
-                )}
-                <div>{labelComponents}</div>
-                {item.repoPath && <Caption>in {item.repoPath}</Caption>}
-              </Box>
-            </StyledTag>
+            <BaseTag
+              fillColor={Colors.backgroundGray()}
+              textColor={Colors.textDefault()}
+              tooltipText={item.label}
+              icon={
+                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} margin={{right: 4}}>
+                  {buildSearchIcons(item, isHighlight)}
+                </Box>
+              }
+              label={
+                <>
+                  {isAssetFilterSearchResultType(item.type) && (
+                    <Text size={12}>{assetFilterPrefixString(item.type)}:</Text>
+                  )}
+                  {labelComponents}
+                  {item.repoPath ? <Text size={12}> in {item.repoPath}</Text> : null}
+                </>
+              }
+            />
             <div style={{marginLeft: '8px'}}>
-              <Description isHighlight={isHighlight}>
+              <div className={clsx(styles.description, isHighlight && styles.highlight)}>
                 {item.numResults ? `${item.numResults} assets` : item.description}
-              </Description>
+              </div>
             </div>
           </Box>
-          <ResultEnterWrapper flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Box
+            className={styles.resultEnterWrapper}
+            flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+          >
             <div>Enter</div>
             <Icon name="key_return" color={Colors.accentGray()} />
-          </ResultEnterWrapper>
+          </Box>
         </Box>
-      </ResultLink>
-    </Item>
+      </Link>
+    </li>
   );
 };
 
@@ -240,11 +243,11 @@ export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>
     if (searching) {
       return;
     }
-    return <NoResults>No results</NoResults>;
+    return <div className={styles.noResults}>No results</div>;
   }
 
   return (
-    <SearchResultsList hasResults={!!results.length}>
+    <ul className={clsx(styles.searchResultsList, !!results.length && styles.hasResults)}>
       {results.map((result, ii) => (
         <SearchResultItem
           key={result.item.href}
@@ -254,88 +257,6 @@ export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>
           onClickResult={onClickResult}
         />
       ))}
-    </SearchResultsList>
+    </ul>
   );
 };
-
-export const NoResults = styled.div`
-  color: ${Colors.textLighter()};
-  font-size: 16px;
-  padding: 16px;
-`;
-
-interface SearchResultsListProps {
-  hasResults: boolean;
-}
-
-export const SearchResultsList = styled.ul<SearchResultsListProps>`
-  max-height: calc(60vh - 48px);
-  margin: 0;
-  padding: ${({hasResults}) => (hasResults ? '4px 0' : 'none')};
-  list-style: none;
-  overflow-y: auto;
-  background-color: ${Colors.backgroundDefault()};
-  box-shadow: 2px 2px 8px ${Colors.shadowDefault()};
-  border-radius: 0 0 4px 4px;
-`;
-
-interface HighlightableTextProps {
-  readonly isHighlight: boolean;
-}
-
-const Item = styled.li<HighlightableTextProps>`
-  align-items: center;
-  background-color: ${({isHighlight}) =>
-    isHighlight ? Colors.backgroundLightHover() : Colors.backgroundDefault()};
-  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentBlue() : 'transparent')} 4px 0 0
-    inset;
-  color: ${Colors.textLight()};
-  display: flex;
-  flex-direction: row;
-  list-style: none;
-  margin: 0;
-  user-select: none;
-
-  ${({isHighlight}) =>
-    isHighlight
-      ? ``
-      : `
-  ${ResultEnterWrapper} {
-    display: none;
-  }
-  `}
-  &:hover {
-    background-color: ${Colors.backgroundLighter()};
-  }
-`;
-
-const ResultLink = styled(Link)`
-  align-items: center;
-  align-self: stretch;
-  display: flex;
-  flex-direction: row;
-  padding: 8px 12px;
-  text-decoration: none;
-  width: 100%;
-
-  &:hover {
-    text-decoration: none;
-  }
-`;
-
-const Description = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? Colors.textDefault() : Colors.textLight())};
-  font-size: 12px;
-  max-width: 530px;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const ResultEnterWrapper = styled(Box)`
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 16px;
-  color: ${Colors.textLight()};
-`;

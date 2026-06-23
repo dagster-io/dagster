@@ -296,12 +296,12 @@ class Component(ABC):
                     "load_component_at_path": DeprecatedScope(
                         "load_component_at_path",
                         "context.load_component",
-                        context.load_component_at_path,
+                        context.load_component,
                     ),
                     "build_defs_at_path": DeprecatedScope(
                         "build_defs_at_path",
                         "context.build_defs",
-                        context.build_defs_at_path,
+                        context.build_defs,
                     ),
                 }
             )

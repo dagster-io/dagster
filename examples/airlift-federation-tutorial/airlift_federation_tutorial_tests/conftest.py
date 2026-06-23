@@ -1,5 +1,6 @@
 import os
 import shutil
+import signal
 import subprocess
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -42,6 +43,24 @@ def local_env_fixture() -> Generator[None, None, None]:
         subprocess.run(["make", "wipe"], cwd=makefile_dir(), check=True)
 
 
+def _kill_process_group(process: subprocess.Popen) -> None:
+    """Force-kill the entire process group as a safety net after graceful shutdown.
+
+    The graceful shutdown in stand_up_airflow/stand_up_dagster only checks whether
+    the parent exited, so child workers may still be alive and writing to disk.
+    """
+    if process.pid is None:
+        return
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (PermissionError, OSError):
+        pass
+    try:
+        process.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+        pass
+
+
 @pytest.fixture(name="warehouse_airflow")
 def warehouse_airflow_fixture(local_env: None) -> Generator[subprocess.Popen, None, None]:
     process = None
@@ -55,7 +74,7 @@ def warehouse_airflow_fixture(local_env: None) -> Generator[subprocess.Popen, No
             yield process
     finally:
         if process:
-            process.terminate()
+            _kill_process_group(process)
 
 
 @pytest.fixture(name="metrics_airflow")
@@ -71,7 +90,7 @@ def metrics_airflow_fixture(local_env: None) -> Generator[subprocess.Popen, None
             yield process
     finally:
         if process:
-            process.terminate()
+            _kill_process_group(process)
 
 
 @pytest.fixture(name="dagster_dev")
@@ -87,7 +106,7 @@ def dagster_fixture(
             yield process
     finally:
         if process:
-            process.terminate()
+            _kill_process_group(process)
 
 
 @contextmanager

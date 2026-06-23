@@ -14,6 +14,7 @@ from dagster._core.definitions.partitions.snap import (
 )
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
+from dagster._core.execution.backfill import BulkActionsFilter
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import (
@@ -461,17 +462,18 @@ class GraphenePartitionSet(graphene.ObjectType):
         cursor: str | None = None,
         limit: int | None = None,
     ):
-        matching = [
-            backfill
-            for backfill in graphene_info.context.instance.get_backfills(
-                cursor=cursor,
-            )
-            if backfill.partition_set_origin
-            and backfill.partition_set_origin.partition_set_name == self._remote_partition_set.name
-            and backfill.partition_set_origin.repository_origin.repository_name
-            == self._remote_partition_set.repository_handle.repository_name
-        ]
-        return [GraphenePartitionBackfill(backfill) for backfill in matching[:limit]]
+        # Filter by the partition set's selector_id (a hash of code location, repository, and
+        # partition set name) so the limit and filter are pushed down to storage. Otherwise
+        # every backfill in the deployment is loaded and deserialized just to return the most
+        # recent few for this partition set.
+        backfills = graphene_info.context.instance.get_backfills(
+            filters=BulkActionsFilter(
+                selector_id=self._remote_partition_set.get_remote_origin().get_selector_id()
+            ),
+            cursor=cursor,
+            limit=limit,
+        )
+        return [GraphenePartitionBackfill(backfill) for backfill in backfills]
 
 
 class GraphenePartitionSetOrError(graphene.Union):
@@ -501,6 +503,18 @@ class GraphenePartitionDefinitionType(graphene.Enum):
 
     class Meta:
         name = "PartitionDefinitionType"
+
+    @staticmethod
+    def snap_type_str(snap: PartitionsSnap) -> str:
+        if isinstance(snap, StaticPartitionsSnap):
+            return "STATIC"
+        elif isinstance(snap, TimeWindowPartitionsSnap):
+            return "TIME_WINDOW"
+        elif isinstance(snap, MultiPartitionsSnap):
+            return "MULTIPARTITIONED"
+        elif isinstance(snap, DynamicPartitionsSnap):
+            return "DYNAMIC"
+        check.failed(f"Invalid external partitions definition data type: {type(snap)}")
 
     @classmethod
     def from_partition_def_data(cls, partition_def_data):
@@ -580,6 +594,34 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                 )
             ]
         )
+
+    @staticmethod
+    def to_manifest_dict(partitions: PartitionsSnap) -> dict:
+        if isinstance(partitions, MultiPartitionsSnap):
+            dimension_types = [
+                {
+                    "__typename": "DimensionDefinitionType",
+                    "type": GraphenePartitionDefinitionType.snap_type_str(dim.partitions),
+                    "dynamicPartitionsDefinitionName": dim.partitions.name
+                    if isinstance(dim.partitions, DynamicPartitionsSnap)
+                    else None,
+                }
+                for dim in partitions.partition_dimensions
+            ]
+        else:
+            dimension_types = [
+                {
+                    "__typename": "DimensionDefinitionType",
+                    "type": GraphenePartitionDefinitionType.snap_type_str(partitions),
+                    "dynamicPartitionsDefinitionName": partitions.name
+                    if isinstance(partitions, DynamicPartitionsSnap)
+                    else None,
+                }
+            ]
+        return {
+            "__typename": "PartitionDefinition",
+            "dimensionTypes": dimension_types,
+        }
 
     def __init__(self, partition_def_data: PartitionsSnap):
         self._partition_def_data = partition_def_data

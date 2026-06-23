@@ -38,7 +38,7 @@ def test_basic_resource_request(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     @asset
     def test_assets():
@@ -92,7 +92,7 @@ def test_add_data_quality_warning(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     with resource.get_client() as client:
         client.add_data_quality_warning_to_data_source(data_source_id="fake_datasource_id")
@@ -134,7 +134,7 @@ def test_fetch_tableau_workspace_data(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     response = resource.get_or_fetch_workspace_data()
 
@@ -185,7 +185,7 @@ def test_fetch_tableau_workspace_data_with_workbook_selector_by_id(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     # Import after resource is created to avoid import errors
     from dagster_tableau.translator import TableauWorkbookMetadata
@@ -233,7 +233,7 @@ def test_fetch_tableau_workspace_data_with_workbook_selector_excludes_non_matchi
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -280,7 +280,7 @@ def test_fetch_tableau_workspace_data_with_project_selector_by_id(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -325,7 +325,7 @@ def test_fetch_tableau_workspace_data_with_project_selector_by_name(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -371,7 +371,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_or_logic(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -423,7 +423,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_workbook_matches_workb
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -474,7 +474,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_neither_matches(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -527,7 +527,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_both_match(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -599,7 +599,7 @@ def test_fetch_tableau_workspace_data_project_selector_filters_data_sources(
     with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
         mock_get_ds.return_value = [mock_ds_matching, mock_ds_non_matching]
 
-        resource = clazz(**resource_args)  # type: ignore
+        resource = clazz(**resource_args)
 
         from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -661,7 +661,7 @@ def test_fetch_tableau_workspace_data_project_selector_excludes_non_matching_dat
     with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
         mock_get_ds.return_value = [mock_ds]
 
-        resource = clazz(**resource_args)  # type: ignore
+        resource = clazz(**resource_args)
 
         from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -724,7 +724,7 @@ def test_fetch_tableau_workspace_data_project_selector_by_name_filters_data_sour
     with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
         mock_get_ds.return_value = [mock_ds]
 
-        resource = clazz(**resource_args)  # type: ignore
+        resource = clazz(**resource_args)
 
         from dagster_tableau.translator import TableauWorkbookMetadata
 

@@ -7,7 +7,7 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 
 class ResolveInfo(graphene.ResolveInfo):
     @property
-    def context(self) -> WorkspaceRequestContext:
+    def context(self) -> WorkspaceRequestContext:  # ty: ignore[invalid-named-tuple-override]
         return cast("WorkspaceRequestContext", super().context)
 
 

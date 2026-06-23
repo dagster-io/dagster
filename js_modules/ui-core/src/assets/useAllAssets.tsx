@@ -1,9 +1,11 @@
 import {useContext, useLayoutEffect, useMemo, useState} from 'react';
 
 import {ApolloClient, ApolloQueryResult, gql, useApolloClient} from '../apollo-client';
+import {WorkspaceAssetNode} from './WorkspaceAssetNode';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {CacheData} from '../search/useIndexedDBCachedQuery';
 import {hashObject} from '../util/hashObject';
@@ -17,8 +19,10 @@ import {
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {
   LocationWorkspaceAssetsQuery,
-  WorkspaceAssetFragment,
+  RepositoryAssetFragment,
 } from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+
+export type {WorkspaceAssetNode};
 
 export type AssetRecord = Extract<
   AssetRecordsQuery['assetRecordsOrError'],
@@ -258,20 +262,72 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
   return assets;
 }
 
+// Single pass over every loaded asset entry that produces:
+//   - `repoScopedNodes`: each per-repo `RepositoryAssetFragment` paired with
+//     the repo stamp from its parent location/repo. The stamp is shared by
+//     every node from the same repo. These are still per-repo nodes — the
+//     merge into `WorkspaceAssetNode` happens in `getAssets`, which picks one
+//     repo as the primary representative when an asset is defined in multiple
+//     repos.
+//   - `childrenByAssetKey`: workspace-wide reverse index over `dependencyKeys`,
+//     keyed by `tokenForAssetKey(parent)`. Used in the next pass to stamp
+//     workspace-scoped `dependedByKeys` on the merged node.
+type FlatAssetEntries = {
+  repoScopedNodes: Array<{
+    node: RepositoryAssetFragment;
+    repository: WorkspaceAssetNode['repository'];
+  }>;
+  childrenByAssetKey: Map<string, AssetNodeKeyFragment[]>;
+};
+
+const flatMapAssetEntries = weakMapMemoize(
+  (assetEntries: Record<string, LocationWorkspaceAssetsQuery>): FlatAssetEntries => {
+    const repoScopedNodes: FlatAssetEntries['repoScopedNodes'] = [];
+    const childrenByAssetKey = new Map<string, AssetNodeKeyFragment[]>();
+
+    for (const entry of Object.values(assetEntries)) {
+      if (
+        entry.workspaceLocationEntryOrError?.__typename !== 'WorkspaceLocationEntry' ||
+        entry.workspaceLocationEntryOrError.locationOrLoadError?.__typename !== 'RepositoryLocation'
+      ) {
+        continue;
+      }
+      const location = entry.workspaceLocationEntryOrError.locationOrLoadError;
+      const locationStamp = {
+        __typename: 'RepositoryLocation' as const,
+        id: location.id,
+        name: location.name,
+      };
+      for (const repo of location.repositories) {
+        const repoStamp = {
+          __typename: 'Repository' as const,
+          id: repo.id,
+          name: repo.name,
+          location: locationStamp,
+        };
+        for (const node of repo.assetNodes) {
+          repoScopedNodes.push({node, repository: repoStamp});
+          for (const dep of node.dependencyKeys ?? []) {
+            const token = tokenForAssetKey(dep);
+            const existing = childrenByAssetKey.get(token);
+            if (existing) {
+              existing.push(node.assetKey);
+            } else {
+              childrenByAssetKey.set(token, [node.assetKey]);
+            }
+          }
+        }
+      }
+    }
+
+    return {repoScopedNodes, childrenByAssetKey};
+  },
+);
+
 const getAllAssetNodes = weakMapMemoize(
   (assetEntries: Record<string, LocationWorkspaceAssetsQuery>) => {
-    const allAssets = Object.values(assetEntries).flatMap((repo) => {
-      if (
-        repo.workspaceLocationEntryOrError?.__typename === 'WorkspaceLocationEntry' &&
-        repo.workspaceLocationEntryOrError.locationOrLoadError?.__typename === 'RepositoryLocation'
-      ) {
-        return repo.workspaceLocationEntryOrError.locationOrLoadError.repositories.flatMap(
-          (repo) => repo.assetNodes,
-        );
-      }
-      return [];
-    });
-    return getAssets(allAssets);
+    const {repoScopedNodes, childrenByAssetKey} = flatMapAssetEntries(assetEntries);
+    return getAssets(repoScopedNodes, childrenByAssetKey);
   },
 );
 
@@ -287,76 +343,88 @@ const getAllAssetNodesByKey = weakMapMemoize(
   },
 );
 
-const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
-  const softwareDefinedAssetsWithDuplicates = allAssetNodes.map((assetNode) => ({
-    __typename: 'Asset' as const,
-    id: assetNode.id,
-    key: assetNode.assetKey,
-    definition: assetNode,
-  }));
+const getAssets = weakMapMemoize(
+  (
+    repoScopedNodes: FlatAssetEntries['repoScopedNodes'],
+    childrenByAssetKey: ReadonlyMap<string, AssetNodeKeyFragment[]>,
+  ) => {
+    const softwareDefinedAssetsWithDuplicates = repoScopedNodes.map(({node, repository}) => {
+      const definition: WorkspaceAssetNode = {
+        ...node,
+        repository,
+        dependedByKeys: childrenByAssetKey.get(tokenForAssetKey(node.assetKey)) ?? [],
+      };
+      return {
+        __typename: 'Asset' as const,
+        id: node.id,
+        key: node.assetKey,
+        definition,
+      };
+    });
 
-  const softwareDefinedAssetsByAssetKey: Record<
-    string,
-    (typeof softwareDefinedAssetsWithDuplicates)[number][]
-  > = {};
-  const keysWithMultipleDefinitions: Set<string> = new Set();
-  for (const asset of softwareDefinedAssetsWithDuplicates) {
-    const key = tokenForAssetKey(asset.key);
-    softwareDefinedAssetsByAssetKey[key] = softwareDefinedAssetsByAssetKey[key] || [];
-    softwareDefinedAssetsByAssetKey[key].push(asset);
-    if (softwareDefinedAssetsByAssetKey[key].length > 1) {
-      keysWithMultipleDefinitions.add(key);
+    const softwareDefinedAssetsByAssetKey: Record<
+      string,
+      (typeof softwareDefinedAssetsWithDuplicates)[number][]
+    > = {};
+    const keysWithMultipleDefinitions: Set<string> = new Set();
+    for (const asset of softwareDefinedAssetsWithDuplicates) {
+      const key = tokenForAssetKey(asset.key);
+      softwareDefinedAssetsByAssetKey[key] = softwareDefinedAssetsByAssetKey[key] || [];
+      softwareDefinedAssetsByAssetKey[key].push(asset);
+      if (softwareDefinedAssetsByAssetKey[key].length > 1) {
+        keysWithMultipleDefinitions.add(key);
+      }
     }
-  }
 
-  const softwareDefinedAssets: (typeof softwareDefinedAssetsWithDuplicates)[number][] = [];
+    const softwareDefinedAssets: (typeof softwareDefinedAssetsWithDuplicates)[number][] = [];
 
-  const addedKeys = new Set();
+    const addedKeys = new Set();
 
-  softwareDefinedAssetsWithDuplicates.forEach((asset) => {
-    /**
-     * Return a materialization node if it exists, otherwise return an observable node if it
-     * exists, otherwise return any non-stub node, otherwise return any node.
-     * This exists to preserve implicit behavior, where the
-     * materialization node was previously preferred over the observable node. This is a
-     * temporary measure until we can appropriately scope the accessors that could apply to
-     * either a materialization or observation node.
-     * This property supports existing behavior but it should be phased out, because it relies on
-     * materialization nodes shadowing observation nodes that would otherwise be exposed.
-     */
-    const key = tokenForAssetKey(asset.key);
-    const duplicate = addedKeys.has(key);
-    addedKeys.add(key);
-    if (duplicate) {
-      return;
-    }
-    if (!keysWithMultipleDefinitions.has(key)) {
-      softwareDefinedAssets.push(asset);
-      return;
-    }
-    const materializableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
-      (a) => a.definition?.isMaterializable,
-    );
-    const observableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
-      (a) => a.definition?.isObservable,
-    );
-    const nonGeneratedAsset = softwareDefinedAssetsByAssetKey[key]?.find(
-      (a) => !a.definition?.isAutoCreatedStub && a.definition,
-    );
-    const assetWithRepo = softwareDefinedAssetsByAssetKey[key]?.find((a) => !!a.definition);
-    const anyAsset = softwareDefinedAssetsByAssetKey[key]?.[0];
+    softwareDefinedAssetsWithDuplicates.forEach((asset) => {
+      /**
+       * Return a materialization node if it exists, otherwise return an observable node if it
+       * exists, otherwise return any non-stub node, otherwise return any node.
+       * This exists to preserve implicit behavior, where the
+       * materialization node was previously preferred over the observable node. This is a
+       * temporary measure until we can appropriately scope the accessors that could apply to
+       * either a materialization or observation node.
+       * This property supports existing behavior but it should be phased out, because it relies on
+       * materialization nodes shadowing observation nodes that would otherwise be exposed.
+       */
+      const key = tokenForAssetKey(asset.key);
+      const duplicate = addedKeys.has(key);
+      addedKeys.add(key);
+      if (duplicate) {
+        return;
+      }
+      if (!keysWithMultipleDefinitions.has(key)) {
+        softwareDefinedAssets.push(asset);
+        return;
+      }
+      const materializableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+        (a) => a.definition?.isMaterializable,
+      );
+      const observableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+        (a) => a.definition?.isObservable,
+      );
+      const nonGeneratedAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+        (a) => !a.definition?.isAutoCreatedStub && a.definition,
+      );
+      const assetWithRepo = softwareDefinedAssetsByAssetKey[key]?.find((a) => !!a.definition);
+      const anyAsset = softwareDefinedAssetsByAssetKey[key]?.[0];
 
-    const assetToReturn =
-      materializableAsset || observableAsset || nonGeneratedAsset || assetWithRepo || anyAsset;
+      const assetToReturn =
+        materializableAsset || observableAsset || nonGeneratedAsset || assetWithRepo || anyAsset;
 
-    softwareDefinedAssets.push(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      combineAssetDefinitions(assetToReturn!, softwareDefinedAssetsByAssetKey[key]!),
-    );
-  });
+      softwareDefinedAssets.push(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        combineAssetDefinitions(assetToReturn!, softwareDefinedAssetsByAssetKey[key]!),
+      );
+    });
 
-  return softwareDefinedAssets;
-});
+    return softwareDefinedAssets;
+  },
+);
 
 const filteredSDAs = weakMapMemoize(
   (sdaAssets: ReturnType<typeof getAssets>, groupSelector?: AssetGroupSelector) => {
@@ -404,11 +472,9 @@ const MERGE_ARRAY_KEYS = [
   'jobNames',
   'kinds',
   'opNames',
-  'pools',
   'owners',
   'tags',
   'dependencyKeys',
-  'dependedByKeys',
 ] as const;
 
 // The set of fields that should be merged by taking the union of the values from all SDA definitions across all code locations.
@@ -432,7 +498,9 @@ const combineAssetDefinitions = weakMapMemoize(
         ...asset.definition,
         ...MERGE_ARRAY_KEYS.reduce(
           (acc, key) => {
-            acc[key] = Array.from(new Set(sdas.map((sda) => sda.definition[key]).flat())) as any[];
+            acc[key] = Array.from(
+              new Set(sdas.map((sda) => sda.definition[key]).flat()),
+            ) as string[];
             return acc;
           },
           {} as Record<string, string[]>,

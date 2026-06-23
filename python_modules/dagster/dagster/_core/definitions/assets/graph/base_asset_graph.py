@@ -105,6 +105,10 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
+    def is_virtual(self) -> bool: ...
+
+    @property
+    @abstractmethod
     def description(self) -> str | None: ...
 
     @property
@@ -232,7 +236,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
 
     @property
     def child_entity_keys(self) -> AbstractSet[EntityKey]:
-        return {self.key.asset_key}
+        return set()
 
     @property
     def partitions_def(self) -> PartitionsDefinition | None:
@@ -432,7 +436,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get_partition_mapping(
         self, key: T_EntityKey, parent_asset_key: EntityKey
     ) -> PartitionMapping:
-        node = self.get(key)
+        node = self.get(key)  # ty: ignore[no-matching-overload]
         return infer_partition_mapping(
             node.partition_mappings.get(parent_asset_key),
             node.partitions_def,
@@ -446,6 +450,22 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get_parents(self, node: T_AssetNode) -> AbstractSet[T_AssetNode]:
         """Returns all asset nodes that are direct dependencies on the given asset node."""
         return {self._asset_nodes_by_key[key] for key in self.get(node.key).parent_keys}
+
+    def get_non_virtual_ancestor_keys(self, key: EntityKey) -> AbstractSet[AssetKey]:
+        """Direct parent asset keys, recursively expanding any parent that is a virtual asset.
+
+        Virtual assets are excluded from the result; their upstream parents are walked instead.
+        """
+        frontier: set[AssetKey] = set(self.get(key).parent_entity_keys)
+        resolved: set[AssetKey] = set()
+        while frontier:
+            current = frontier.pop()
+            node = self.get(current)
+            if node.is_virtual:
+                frontier |= node.parent_entity_keys
+            else:
+                resolved.add(current)
+        return resolved
 
     def get_ancestor_asset_keys(
         self, asset_key: AssetKey, include_self: bool = False

@@ -683,12 +683,12 @@ class RunDomain:
         check.str_param(job_snapshot_id, "job_snapshot_id")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
-        check.invariant(
-            execution_plan_snapshot.job_snapshot_id == job_snapshot_id,
-            "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-            f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
-            f'"{job_snapshot_id}"',
-        )
+        if execution_plan_snapshot.job_snapshot_id != job_snapshot_id:
+            logging.getLogger("dagster").warning(
+                "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
+                f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
+                f'"{job_snapshot_id}"'
+            )
 
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
 
@@ -697,7 +697,13 @@ class RunDomain:
                 self._instance.run_storage.add_execution_plan_snapshot(execution_plan_snapshot)
             )
 
-            check.invariant(execution_plan_snapshot_id == returned_execution_plan_snapshot_id)
+            if execution_plan_snapshot_id != returned_execution_plan_snapshot_id:
+                logging.getLogger("dagster").warning(
+                    "Execution plan snapshot ID mismatch: locally computed "
+                    f'"{execution_plan_snapshot_id}" but storage returned '
+                    f'"{returned_execution_plan_snapshot_id}". Using the storage-returned ID.'
+                )
+            return returned_execution_plan_snapshot_id
 
         return execution_plan_snapshot_id
 

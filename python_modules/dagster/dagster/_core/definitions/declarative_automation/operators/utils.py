@@ -49,3 +49,34 @@ def has_allow_ignore(
             SinceCondition,
         ),
     )
+
+
+def has_resolve_through_virtual(
+    condition: AutomationCondition,
+) -> TypeIs[
+    Union[
+        "AndAutomationCondition",
+        "DepsAutomationCondition",
+        "NotAutomationCondition",
+        "OrAutomationCondition",
+        "SinceCondition",
+    ]
+]:
+    from dagster._core.definitions.declarative_automation.operators import (
+        AndAutomationCondition,
+        DepsAutomationCondition,
+        NotAutomationCondition,
+        OrAutomationCondition,
+        SinceCondition,
+    )
+
+    return isinstance(
+        condition,
+        (
+            AndAutomationCondition,
+            DepsAutomationCondition,
+            NotAutomationCondition,
+            OrAutomationCondition,
+            SinceCondition,
+        ),
+    )

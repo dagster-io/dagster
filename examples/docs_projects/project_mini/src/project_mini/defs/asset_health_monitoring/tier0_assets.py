@@ -1,7 +1,7 @@
 """Tier-0 critical assets with freshness policies and asset checks."""
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import dagster as dg
 
@@ -11,10 +11,6 @@ import dagster as dg
     group_name="risk",
     tags={"tier": "tier-0", "criticality": "high"},
     description="Market risk calculations and exposure metrics",
-    freshness_policy=dg.FreshnessPolicy.time_window(
-        fail_window=timedelta(hours=1),
-        warn_window=timedelta(minutes=45),
-    ),
 )
 def market_risk_data(context: dg.AssetExecutionContext) -> dict:
     data = {
@@ -56,10 +52,6 @@ def market_risk_data_quality(context: dg.AssetExecutionContext) -> dg.AssetCheck
     group_name="security_master",
     tags={"tier": "tier-0", "criticality": "high"},
     description="Security master data - pricing and reference data for all instruments",
-    freshness_policy=dg.FreshnessPolicy.time_window(
-        fail_window=timedelta(minutes=30),
-        warn_window=timedelta(minutes=20),
-    ),
 )
 def security_master_data(context: dg.AssetExecutionContext) -> dict:
     data = {
@@ -98,10 +90,6 @@ def security_master_completeness(context: dg.AssetExecutionContext) -> dg.AssetC
     group_name="risk",
     tags={"tier": "tier-0", "criticality": "high"},
     description="Credit risk metrics and counterparty exposures",
-    freshness_policy=dg.FreshnessPolicy.time_window(
-        fail_window=timedelta(minutes=90),
-        warn_window=timedelta(hours=1),
-    ),
 )
 def credit_risk_data(context: dg.AssetExecutionContext) -> dict:
     data = {

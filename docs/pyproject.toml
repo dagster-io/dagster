@@ -1,0 +1,106 @@
+[project]
+name = "dagster-docs-tox"
+version = "1!0+dev"
+description = "Tox-only wrapper for the Dagster sphinx docs build. Brings in every dagster library whose API gets rendered, plus the in-tree sphinx extensions."
+requires-python = ">=3.11,<3.15"
+dependencies = []
+
+[dependency-groups]
+test = [
+    # sphinx + extension deps (was sphinx/requirements.txt)
+    "sphinx>=8,<9",
+    "sphinx_toolbox",
+    "claude_code_sdk",
+
+    # In-tree sphinx extensions (docs/sphinx/_ext/*)
+    "dagster-sphinx",
+    "sphinx-click",
+    "sphinxcontrib-mdxbuilder",
+
+    # Can't stub deps because processed by sphinx-click
+    "dagster",
+    "dagster-dg-core",
+    "dagster-cloud-cli",
+    "dagster-pipes",
+    "dagster-graphql",
+    "dagster-webserver",
+    "dagster-celery",
+    "dagster-shared",
+
+    # Can't stub deps due to import-time use of at least one dep
+    "dagstermill",
+    "dagster-aws",
+    "dagster-datahub",
+    "dagster-gcp[dataproc]",
+    "dagster-pyspark",
+    "dagster-spark",
+    "dagster-ssh",
+    "dagster-duckdb",
+    "dagster-dbt",
+    "dagster-dlt",
+    "dagster-sling",
+    "dagster-wandb",
+    "dagster-deltalake",
+    "dagster-deltalake-pandas",
+    "dagster-deltalake-polars",
+    "dagster-openai",
+    "dagster-looker",
+    "dagster-sigma",
+    "dagster-tableau",
+    "dagster-powerbi",
+    "dagster-pandas",
+    "dagster-airlift[tutorial,core,in-airflow]",
+    "airlift-migration-tutorial",
+    "sling",
+
+    # Community integrations (out-of-tree git sources)
+    "dagster-iceberg",
+    "dagster-polars",
+
+    # Optional dependencies for dagster-iceberg
+    "getdaft>=0.3.0",
+    "pandas>=2.0.0",
+    "polars>=1.0.0",
+    "pyspark[connect]>=3.4.0",
+]
+
+[tool.uv.sources]
+dagster-sphinx = { path = "sphinx/_ext/dagster-sphinx", editable = true }
+sphinx-click = { path = "sphinx/_ext/sphinx-click", editable = true }
+sphinxcontrib-mdxbuilder = { path = "sphinx/_ext/sphinx-mdx-builder", editable = true }
+
+dagster = { path = "../python_modules/dagster", editable = true }
+dagster-dg-core = { path = "../python_modules/libraries/dagster-dg-core", editable = true }
+dagster-cloud-cli = { path = "../python_modules/libraries/dagster-cloud-cli", editable = true }
+dagster-pipes = { path = "../python_modules/dagster-pipes", editable = true }
+dagster-graphql = { path = "../python_modules/dagster-graphql", editable = true }
+dagster-webserver = { path = "../python_modules/dagster-webserver", editable = true }
+dagster-celery = { path = "../python_modules/libraries/dagster-celery", editable = true }
+dagster-shared = { path = "../python_modules/libraries/dagster-shared", editable = true }
+
+dagstermill = { path = "../python_modules/libraries/dagstermill", editable = true }
+dagster-aws = { path = "../python_modules/libraries/dagster-aws", editable = true }
+dagster-datahub = { path = "../python_modules/libraries/dagster-datahub", editable = true }
+dagster-gcp = { path = "../python_modules/libraries/dagster-gcp", editable = true }
+dagster-pyspark = { path = "../python_modules/libraries/dagster-pyspark", editable = true }
+dagster-spark = { path = "../python_modules/libraries/dagster-spark", editable = true }
+dagster-ssh = { path = "../python_modules/libraries/dagster-ssh", editable = true }
+dagster-duckdb = { path = "../python_modules/libraries/dagster-duckdb", editable = true }
+dagster-dbt = { path = "../python_modules/libraries/dagster-dbt", editable = true }
+dagster-dlt = { path = "../python_modules/libraries/dagster-dlt", editable = true }
+dagster-sling = { path = "../python_modules/libraries/dagster-sling", editable = true }
+dagster-wandb = { path = "../python_modules/libraries/dagster-wandb", editable = true }
+dagster-deltalake = { path = "../python_modules/libraries/dagster-deltalake", editable = true }
+dagster-deltalake-pandas = { path = "../python_modules/libraries/dagster-deltalake-pandas", editable = true }
+dagster-deltalake-polars = { path = "../python_modules/libraries/dagster-deltalake-polars", editable = true }
+dagster-openai = { path = "../python_modules/libraries/dagster-openai", editable = true }
+dagster-looker = { path = "../python_modules/libraries/dagster-looker", editable = true }
+dagster-sigma = { path = "../python_modules/libraries/dagster-sigma", editable = true }
+dagster-tableau = { path = "../python_modules/libraries/dagster-tableau", editable = true }
+dagster-powerbi = { path = "../python_modules/libraries/dagster-powerbi", editable = true }
+dagster-pandas = { path = "../python_modules/libraries/dagster-pandas", editable = true }
+dagster-airlift = { path = "../python_modules/libraries/dagster-airlift", editable = true }
+airlift-migration-tutorial = { path = "../examples/airlift-migration-tutorial", editable = true }
+
+dagster-iceberg = { git = "https://github.com/dagster-io/community-integrations.git", subdirectory = "libraries/dagster-iceberg" }
+dagster-polars = { git = "https://github.com/dagster-io/community-integrations.git", subdirectory = "libraries/dagster-polars" }

@@ -44,7 +44,7 @@ To run the examples, you'll need to:
    </TabItem>
 </Tabs>
 
-- Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- Configure AWS authentication credentials. If you don't have this set up already, see the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - In AWS, you'll need:
   - An existing AWS account with access to Lambda
   - Permissions that allow you to create and modify Lambda functions
@@ -69,7 +69,7 @@ After the function is created, you'll be redirected to a page like the following
 
 ![The lambda function details page in the AWS UI](/images/guides/build/external-pipelines/aws-lambda/aws-lambda-function-details.png)
 
-### Step 1.2: Add a dagster-pipes file
+### Step 1.2: Add a `dagster-pipes` file
 
 Next, you'll add `dagster-pipes` to the function.
 
@@ -89,7 +89,7 @@ For simplicity, we're going to copy the contents of the single Dagster Pipes fil
    https://raw.githubusercontent.com/dagster-io/dagster/master/python_modules/dagster-pipes/dagster_pipes/__init__.py
    ```
 
-3. Copy the contents of `__init__.py` into the new file you created in AWS. **Note**: We recommend adding the source link and the date you copied the contents to the top of the file as comments:
+3. Copy the contents of `__init__.py` into the new file you created in AWS. We recommend adding the source link and the date you copied the contents to the top of the file as comments:
 
    ![The copied contents of the Dagster Pipes file into a file in the AWS UI](/images/guides/build/external-pipelines/aws-lambda/aws-lambda-add-dagster-pipes.png)
 
@@ -99,7 +99,7 @@ For simplicity, we're going to copy the contents of the single Dagster Pipes fil
 
 In this step, you'll add the code you want to execute to the function. Create another file in the AWS UI - or use the default `lambda_function.py` file created by the function - and paste in the following code:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/lambda_function.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/lambda/lambda_function.py" />
 
 :::tip
 
@@ -140,7 +140,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In your Dagster project, create a file named `dagster_lambda_pipes.py` and paste in the following code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/lambda/dagster_code.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -163,7 +163,7 @@ Here's what we did in this example:
 - Returned a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the execution in AWS Lambda has completed.
   {/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="libraries" module="pipes" object="dagster.PipesClientCompletedInvocation" /> */}
 
-### Step 2.2: Create Dagster Definitions
+### Step 2.2: Create Dagster definitions
 
 import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
@@ -174,11 +174,11 @@ Next, you'll add the asset and AWS Lambda resource to your project's code locati
 Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/lambda/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 
-Sometimes, you may want to transition data pipelines between development and production environments without minimal code changes. To do so, you can use the [Resources](/guides/build/external-resources) system to vary the Pipes clients based on different deployments. For example, you can specify different configured `boto3` clients. Or, you may handle the switch by swapping underlying AWS environment variables between deployments. For more info, check out detailed guides in [Transitioning data pipelines from development to production](/guides/operate/dev-to-prod) and [Testing against production data with Dagster+ branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data).
+Sometimes, you may want to transition data pipelines between development and production environments without minimal code changes. To do so, you can use the [Resources](/guides/build/external-resources) system to vary the Pipes clients based on different deployments. For example, you can specify different configured `boto3` clients. Or, you may handle the switch by swapping underlying AWS environment variables between deployments. For more information, see [Testing against production data with Dagster+ branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data).
 
 ## Step 3: Invoke the AWS Lambda function from the Dagster UI
 

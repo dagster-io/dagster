@@ -202,7 +202,11 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
   const {selected, clearSelection, requery} = props;
 
   const {menuItem, dialog} = useWipeMaterializations({
-    selected,
+    selected: selected.map((a) => ({
+      key: a.key,
+      definitionHasWipePermission: !!a.definition?.hasWipePermission,
+      locationName: a.definition?.repository.location.name,
+    })),
     onComplete: clearSelection,
     requery,
   });

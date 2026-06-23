@@ -1,22 +1,32 @@
 from pathlib import Path
+from typing import TypedDict
 
 import pytest
 import yaml
+from dagster import Component
 
 # Import the YAML generation functions from CLI
 from dagster_dg_cli.utils.yaml_template_generator import (
     generate_defs_yaml_example_values,
     generate_defs_yaml_schema,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 # Import the component classes directly
 from dagster_test.components import SimplePipesScriptComponent
+
+
+class _TestComponent(TypedDict):
+    name: str
+    component_class: type[Component]
+    test_data_dir: str
+
 
 # Path to test data files for validation
 TEST_DATA_DIR = Path(__file__).parent.parent / "yaml_template" / "test_data"
 
 # Component test cases
-TEST_COMPONENTS = [
+TEST_COMPONENTS: list[_TestComponent] = [
     {
         "name": "simple_example",
         "component_class": SimplePipesScriptComponent,
@@ -27,7 +37,7 @@ TEST_COMPONENTS = [
 ]
 
 
-def _get_component_schema(component_class: type) -> dict:
+def _get_component_schema(component_class: type[Component]) -> dict:
     """Get the JSON schema for a component class."""
     model_cls = component_class.get_model_cls()
     if model_cls is None:
@@ -35,7 +45,7 @@ def _get_component_schema(component_class: type) -> dict:
     return model_cls.model_json_schema()
 
 
-def _get_component_type_str(component_class: type) -> str:
+def _get_component_type_str(component_class: type[Component]) -> str:
     """Get the component type string for a component class."""
     return f"{component_class.__module__}.{component_class.__name__}"
 
@@ -95,14 +105,14 @@ def test_generated_yaml_is_valid(test_case):
     schema_content = "\n".join(schema_lines)
 
     try:
-        yaml.safe_load(schema_content)
+        safe_load_yaml(schema_content)
     except yaml.YAMLError as e:
         pytest.fail(f"Generated schema YAML is invalid for {test_case['name']}: {e}")
 
     # Test example YAML
     example_yaml = generate_defs_yaml_example_values(component_type_str, component_schema)
     try:
-        parsed_example = yaml.safe_load(example_yaml)
+        parsed_example = safe_load_yaml(example_yaml)
         assert "type" in parsed_example
         assert "attributes" in parsed_example
     except yaml.YAMLError as e:

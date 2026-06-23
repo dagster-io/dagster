@@ -96,7 +96,7 @@ def test_partition():
         assert "RUN_SUCCESS" in result.output
         event = instance.get_latest_materialization_event(dg.AssetKey("partitioned_asset"))
         assert event is not None
-        assert event.asset_materialization.partition == "one"  # pyright: ignore[reportOptionalMemberAccess]
+        assert event.asset_materialization.partition == "one"  # ty: ignore[unresolved-attribute]
 
 
 def test_partition_option_with_non_partitioned_asset():

@@ -8,7 +8,7 @@ A data platform typically involves people in various roles working together, eac
 
 In this step, we will incorporate a dbt project to model the data we loaded with DuckDB.
 
-## 1. Add the dbt project
+## Step 1: Add the dbt project
 
 First we will need a dbt project to work with. Run the following to add a dbt project to the root of the `etl_tutorial`:
 
@@ -31,7 +31,7 @@ This dbt project already contains models that work with the raw data we brought 
 
 :::
 
-## 2. Scaffold a dbt component definition
+## Step 2: Scaffold a dbt component definition
 
 Now that we have a dbt project to work with, we need to install both the Dagster dbt integration and the dbt adapter for DuckDB:
 
@@ -65,7 +65,7 @@ This will look similar to scaffolding assets, though also include the `--project
 
 <CliInvocationExample path="docs_projects/project_etl_tutorial/tree/dbt.txt" />
 
-## 3. Configure the dbt `defs.yaml`
+## Step 3: Configure the dbt `defs.yaml`
 
 The dbt component creates a single file, `defs.yaml`, which configures the Dagster dbt component definition. Unlike the assets file, which was in Python, components provide a low-code interface in YAML. Most of the YAML file’s contents were generated when we scaffolded the component definition with `dg` and provided the path to the dbt project which is set in the `project` attribute under `attributes`:
 
@@ -92,7 +92,7 @@ Adding in the `translation` attribute aligns the keys of our dbt models with the
 
 ![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
 
-## 4. Materialize assets
+## Step 4: Materialize assets
 
 To materialize the assets:
 

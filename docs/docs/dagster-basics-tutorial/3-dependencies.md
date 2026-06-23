@@ -10,21 +10,21 @@ To create a DAG, in this step, you will add another asset to your `Definitions` 
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/dependencies.png)
 
-## 1. Create a downstream asset
+## Step 1: Create a downstream asset
 
 Creating a downstream asset is the same as creating any other asset. In this step, you define a table that relies on the data from all of the assets you have already created.
 
 To link the assets together, set the `deps` parameter within the asset decorator. Dagster uses this information to build the asset graph:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/dagster_basics_tutorial/src/dagster_tutorial/defs/assets.py"
   language="python"
   startAfter="start_define_assets_with_dependencies"
   endBefore="end_define_assets_with_dependencies"
   title="src/dagster_tutorial/defs/assets.py"
 />
 
-## 2. Materialize the assets
+## Step 2: Materialize the assets
 
 To view the updated asset graph:
 

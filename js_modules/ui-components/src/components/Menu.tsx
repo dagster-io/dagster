@@ -101,7 +101,6 @@ interface MenuItemProps extends CommonMenuItemProps {
   onMouseDown?: (e: MouseEvent<HTMLButtonElement>) => void;
   onFocus?: FocusEventHandler<HTMLButtonElement>;
   right?: string | ReactNode;
-  shouldDismissPopover?: boolean;
   tabIndex?: number;
 }
 
@@ -116,7 +115,6 @@ export const MenuItem = forwardRef<HTMLLIElement, MenuItemProps>((props, ref) =>
     onMouseDown,
     onFocus,
     right,
-    shouldDismissPopover = true,
     style,
     tabIndex = 0,
     className,
@@ -148,12 +146,7 @@ export const MenuItem = forwardRef<HTMLLIElement, MenuItemProps>((props, ref) =>
         tabIndex={disabled ? -1 : tabIndex}
         data-active={active}
         disabled={disabled}
-        className={clsx(
-          styles.menuItemButton,
-          // Below is a Blueprint hack to close `Popover` on click, until we've refactored
-          // away from using Blueprint `Popover`.
-          shouldDismissPopover ? 'bp5-popover-dismiss' : null,
-        )}
+        className={styles.menuItemButton}
         onClick={handleClick}
         onMouseDown={onMouseDown}
         onKeyDown={handleKeyDown}

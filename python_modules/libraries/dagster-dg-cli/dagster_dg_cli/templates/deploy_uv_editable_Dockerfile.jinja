@@ -13,7 +13,7 @@ ENV UV_PYTHON_DOWNLOADS=0
 WORKDIR /app
 
 COPY --from=oss python_modules ../dagster/python_modules
-COPY --from=internal dagster-cloud/python_modules/dagster-cloud ../dagster-internal/dagster-cloud/python_modules/dagster-cloud
+COPY --from=internal dagster-oss/python_modules/dagster-cloud ../dagster-internal/dagster-oss/python_modules/dagster-cloud
 COPY --from=internal dagster-cloud/python_modules/dagster-cloud-cli ../dagster-internal/dagster-cloud/python_modules/dagster-cloud-cli
 
 RUN --mount=type=cache,target=/root/.cache/uv \

@@ -3,17 +3,14 @@ import os
 import yaml
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
-from dagster._core.definitions.external_asset import external_assets_from_specs
 
 
 def build_asset_specs_from_external_definitions():
     specs = []
-    with open(os.path.join(os.path.dirname(__file__), "asset_defs.yaml")) as f:
+    with open(os.path.join(os.path.dirname(__file__), "asset_defs.yaml"), encoding="utf-8") as f:
         data = yaml.load(f, Loader=yaml.SafeLoader)
         for asset in data["assets"]:
-            deps = []
-            for dep in asset.get("dependsOn", []):
-                deps.append(AssetKey(dep.split("/")))
+            deps = [AssetKey(dep.split("/")) for dep in asset.get("dependsOn", [])]
             specs.append(
                 AssetSpec(
                     key=AssetKey(asset["name"].split("/")), group_name="external_assets", deps=deps
@@ -22,6 +19,4 @@ def build_asset_specs_from_external_definitions():
     return specs
 
 
-external_asset_defs = external_assets_from_specs(
-    specs=build_asset_specs_from_external_definitions()
-)
+external_asset_specs = build_asset_specs_from_external_definitions()

@@ -15,8 +15,6 @@
     "tsgo": "tsgo -p .",
     "ts:workers": "tsc -p ./tsconfig.workers.json",
     "tsgo:workers": "tsgo -p ./tsconfig.workers.json",
-    "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
-    "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
     "generate-asset-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAssetSelection.ts",
     "generate-selection-autocomplete": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateSelection.ts",
     "generate-run-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateRunSelection.ts",
@@ -39,12 +37,15 @@
     "react-dom": "^18.3.1",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
-    "react-router-dom-v5-compat": "^6.30.3",
-    "styled-components": "^5.3.3"
+    "react-router-dom-v5-compat": "^6.30.3"
   },
   "dependencies": {
     "@koale/useworker": "^4.1.2",
+    "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@rjsf/core": "^5.24.13",
+    "@rjsf/utils": "^5.24.13",
+    "@rjsf/validator-ajv8": "^5.24.13",
     "@tanstack/react-virtual": "^3.0.1",
     "@testing-library/react-hooks": "^7.0.2",
     "@visx/shape": "^3.12.0",
@@ -67,9 +68,8 @@
     "fuse.js": "^6.4.2",
     "graphql": "^16.8.1",
     "graphql-codegen-persisted-query-ids": "^0.2.0",
-    "graphql.macro": "^1.4.2",
     "highlight.js": "11.6.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.18.1",
     "lru-cache": "^6.0.0",
     "qs": "^6.14.2",
     "react-chartjs-2": "^5.1.0",
@@ -88,7 +88,7 @@
     "strip-markdown": "^6.0.0",
     "subscriptions-transport-ws": "^0.9.15",
     "worker-loader": "^3.0.8",
-    "yaml": "^2.4.2"
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@apollo/client": "^3.14.1",
@@ -143,7 +143,6 @@
     "@types/react-router": "^5.1.17",
     "@types/react-router-dom": "^5.3.3",
     "@types/spark-md5": "^3.0.5",
-    "@types/styled-components": "^5.1.26",
     "@types/testing-library__jest-dom": "^5.14.2",
     "@types/ws": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
@@ -176,7 +175,6 @@
     "react-router-dom-v5-compat": "^6.30.3",
     "resize-observer-polyfill": "^1.5.1",
     "storybook": "^10.2.10",
-    "styled-components": "^5.3.3",
     "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
     "typescript": "5.9.2",

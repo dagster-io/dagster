@@ -32,6 +32,7 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir
 from typing_extensions import Self
 
+from dagster_azure._constants import DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX
 from dagster_azure.blob.utils import create_blob_client, generate_blob_sas
 
 
@@ -126,11 +127,13 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         default_azure_credential: dict | None = None,
         access_key_or_sas_token: str | None = None,
         show_url_only: bool = False,
+        endpoint_suffix: str = DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX,
     ):
         self._show_url_only = check.bool_param(show_url_only, "show_url_only")
         self._storage_account = check.str_param(storage_account, "storage_account")
         self._container = check.str_param(container, "container")
         self._blob_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
+        self._endpoint_suffix = check.str_param(endpoint_suffix, "endpoint_suffix")
         self._default_azure_credential = check.opt_dict_param(
             default_azure_credential, "default_azure_credential"
         )
@@ -142,13 +145,17 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
 
         if secret_credential is not None:
             self._blob_client = create_blob_client(
-                storage_account, ClientSecretCredential(**secret_credential)
+                storage_account, ClientSecretCredential(**secret_credential), self._endpoint_suffix
             )
         elif self._access_key_or_sas_token:
-            self._blob_client = create_blob_client(storage_account, self._access_key_or_sas_token)
+            self._blob_client = create_blob_client(
+                storage_account, self._access_key_or_sas_token, self._endpoint_suffix
+            )
         else:
             credential = DefaultAzureCredential(**self._default_azure_credential)
-            self._blob_client = create_blob_client(storage_account, credential)
+            self._blob_client = create_blob_client(
+                storage_account, credential, self._endpoint_suffix
+            )
 
         self._container_client = self._blob_client.get_container_client(container)
         self._download_urls = {}
@@ -193,6 +200,12 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
             "show_url_only": Field(bool, is_required=False, default_value=False),
+            "endpoint_suffix": Field(
+                StringSource,
+                is_required=False,
+                default_value=DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX,
+                description="The endpoint suffix for the Azure storage account.",
+            ),
         }
 
     @classmethod
@@ -336,7 +349,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
             return self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
 
         blob_key = self._blob_key(log_key, io_type)
-        return f"https://{self._storage_account}.blob.core.windows.net/{self._container}/{blob_key}"
+        return f"https://{self._storage_account}.blob.{self._endpoint_suffix}/{self._container}/{blob_key}"
 
     def cloud_storage_has_logs(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False

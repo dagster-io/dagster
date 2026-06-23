@@ -8,10 +8,6 @@ type FeatureFlagRow = {key: string; flagType: FeatureFlag; label?: React.ReactNo
  */
 export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
   {
-    key: 'Display resources in navigation sidebar',
-    flagType: FeatureFlag.flagSidebarResources,
-  },
-  {
     key: 'Disable WebSockets',
     flagType: FeatureFlag.flagDisableWebsockets,
   },
@@ -24,11 +20,11 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
   },
   {
-    key: 'Use new catalog layout (beta)',
-    flagType: FeatureFlag.flagAssetCatalogSidebar,
-  },
-  {
     key: 'Skip optional resource defaults in run config',
     flagType: FeatureFlag.flagSkipOptionalResourceDefaultsInRunConfig,
+  },
+  {
+    key: 'Enable experimental component instance UI',
+    flagType: FeatureFlag.flagComponentInstanceUI,
   },
 ];

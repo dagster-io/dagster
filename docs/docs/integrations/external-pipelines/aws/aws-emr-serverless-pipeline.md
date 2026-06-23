@@ -38,7 +38,7 @@ To run the examples, you'll need to:
    </TabItem>
 </Tabs>
 
-- Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- Configure AWS authentication credentials. If you don't have this set up already, see the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - In AWS, you'll need:
   - An existing AWS account
   - An AWS EMR Serverless job. AWS CloudWatch logging has to be enabled in order to receive logs from the job:
@@ -50,7 +50,7 @@ To run the examples, you'll need to:
   }
   ```
 
-## Step 1: Install the dagster-pipes module in your EMR Serverless environment
+## Step 1: Install the `dagster-pipes` module in your EMR Serverless environment
 
 There are a [few options](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/using-python-libraries.html) available for shipping Python packages to a PySpark job. For example, [install it in your Docker image](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/application-custom-image.html):
 
@@ -70,11 +70,11 @@ COPY . .
 USER hadoop
 ```
 
-## Step 2: Add dagster-pipes to the EMR Serverless job script
+## Step 2: Add `dagster-pipes` to the EMR Serverless job script
 
 Call `open_dagster_pipes` in the EMR Serverless script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-serverless/script.py" />
 
 :::tip
 
@@ -82,7 +82,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-## Step 3: Create an asset using the PipesEMRServerlessClient to launch the job
+## Step 3: Create an asset using the `PipesEMRServerlessClient` to launch the job
 
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
@@ -91,7 +91,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesEMRServerlessClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-serverless/dagster_code.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -106,7 +106,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 Next, add the `PipesEMRServerlessClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/resources.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/emr-serverless/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 

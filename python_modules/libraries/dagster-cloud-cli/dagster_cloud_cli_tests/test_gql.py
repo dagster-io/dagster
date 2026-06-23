@@ -18,7 +18,7 @@ def test_mark_cli_event_doesnt_raise():
 
     mark_cli_event(
         client=client,
-        event_type=MagicMock(),
+        event_type=MagicMock(),  # ty: ignore[invalid-argument-type]
         duration_seconds=MagicMock(),
         tags=MagicMock(),
     )

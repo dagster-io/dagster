@@ -40,24 +40,29 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ):
         """Stores the pandas DataFrame in duckdb."""
-        connection.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
-            " obj;"
-        )
-        if not connection.fetchall():
-            # table was not created, therefore already exists. Insert the data
-            connection.execute(
-                f"insert into {table_slice.schema}.{table_slice.table} select * from obj"
+        if obj.empty:
+            context.log.warning(
+                "Skipping DuckDB write for empty DataFrame. An empty table will not be created."
             )
+        else:
+            connection.execute(
+                f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+                " obj;"
+            )
+            if not connection.fetchall():
+                # table was not created, therefore already exists. Insert the data
+                connection.execute(
+                    f"insert into {table_slice.schema}.{table_slice.table} select * from obj"
+                )
 
         context.add_output_metadata(
             {
                 # output object may be a slice/partition, so we output different metadata keys based on
                 # whether this output represents an entire table or just a slice/partition
                 **(
-                    TableMetadataSet(partition_row_count=obj.shape[0])
+                    TableMetadataSet(partition_row_count=obj.shape[0], storage_kind="duckdb")
                     if context.has_partition_key
-                    else TableMetadataSet(row_count=obj.shape[0])
+                    else TableMetadataSet(row_count=obj.shape[0], storage_kind="duckdb")
                 ),
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(

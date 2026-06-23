@@ -1,0 +1,55 @@
+.size12 {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.size14 {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.size16 {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.size18 {
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.size20 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+.size24 {
+  font-size: 24px;
+  line-height: 28px;
+}
+
+.size32 {
+  font-size: 32px;
+  line-height: 36px;
+}
+
+.weight400 {
+  font-weight: 400;
+}
+
+.weight500 {
+  font-weight: 500;
+}
+
+.weight600 {
+  font-weight: 600;
+}
+
+.familyMono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+.trackingTight {
+  letter-spacing: -0.02em;
+}

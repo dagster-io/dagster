@@ -203,7 +203,7 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
     enable_semantic_model_refresh: bool | list[str] = False
     translation: ResolvedMultilayerTranslationFn | None = None
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.local_filesystem
     )
 
     @property
@@ -301,7 +301,7 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
         state = self.workspace_resource.fetch_powerbi_workspace_data(
             use_workspace_scan=self.use_workspace_scan
         )
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Path | None
@@ -322,7 +322,7 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
 
 
 class PowerBIComponentTranslator(
-    create_component_translator_cls(PowerBIWorkspaceComponent, DagsterPowerBITranslator),
+    create_component_translator_cls(PowerBIWorkspaceComponent, DagsterPowerBITranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[PowerBIWorkspaceComponent],
 ):
     def __init__(self, component: PowerBIWorkspaceComponent):

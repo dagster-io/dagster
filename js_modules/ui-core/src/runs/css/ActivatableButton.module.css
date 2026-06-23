@@ -1,0 +1,21 @@
+.activatableButton {
+  color: var(--color-text-light);
+}
+
+.activatableButton:hover {
+  color: var(--color-text-light);
+}
+
+.active {
+  background-color: var(--color-background-lighter-hover);
+  color: var(--color-text-default);
+}
+
+.active:hover {
+  background-color: var(--color-background-lighter-hover);
+  color: var(--color-text-default);
+}
+
+.inactive {
+  background-color: var(--color-background-default);
+}

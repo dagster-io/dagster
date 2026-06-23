@@ -1,4 +1,4 @@
-import {BodySmall, Box, Caption, Colors, Popover, Skeleton, Tag} from '@dagster-io/ui-components';
+import {Box, Popover, Skeleton, Tag, Text} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 
 import {FRESHNESS_EVALUATION_ENABLED_QUERY, FRESHNESS_STATUS_QUERY} from './FreshnessQueries';
@@ -51,7 +51,7 @@ const FreshnessPolicyNotEvaluated = () => {
       placement="top"
       content={
         <Box padding={{vertical: 12, horizontal: 16}} style={{width: '300px'}}>
-          <Caption>
+          <Text size={12}>
             Freshness policies are a new feature under active development and are not evaluated by
             default. See{' '}
             <a
@@ -62,7 +62,7 @@ const FreshnessPolicyNotEvaluated = () => {
               freshness policy documentation
             </a>{' '}
             to learn more.
-          </Caption>
+          </Text>
         </Box>
       }
     >
@@ -109,11 +109,13 @@ const QueryfulFreshnessPolicySection = ({assetKey, policy}: FreshnessPolicySecti
           </Tag>
         </div>
         {lastMaterializedTimestamp ? (
-          <BodySmall color={Colors.textLight()}>
+          <Text size={12} color="textLight">
             Last materialized <TimeFromNow unixTimestamp={lastMaterializedTimestamp} />
-          </BodySmall>
+          </Text>
         ) : (
-          <BodySmall color={Colors.textLight()}>No materializations</BodySmall>
+          <Text size={12} color="textLight">
+            No materializations
+          </Text>
         )}
       </Box>
       <Box flex={{direction: 'column', gap: 4}}>
@@ -167,11 +169,11 @@ export const FreshnessTag = ({
           <div>
             <Box padding={{vertical: 8, horizontal: 12}}>
               {lastMaterializedTimestamp ? (
-                <BodySmall>
+                <Text size={12}>
                   Last materialized <TimeFromNow unixTimestamp={lastMaterializedTimestamp} />
-                </BodySmall>
+                </Text>
               ) : (
-                <BodySmall>No materializations</BodySmall>
+                <Text size={12}>No materializations</Text>
               )}
             </Box>
             <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
@@ -194,15 +196,15 @@ export const FreshnessTag = ({
 
 const TimeWindowFreshnessPolicyDetails = ({policy}: {policy: TimeWindowFreshnessPolicy}) => (
   <>
-    <BodySmall color={Colors.textLight()}>
+    <Text size={12} color="textLight">
       Fails if more than {dayjs.duration(policy.failWindowSeconds, 'seconds').humanize()} since last
       materialization
-    </BodySmall>
+    </Text>
     {policy.warnWindowSeconds && (
-      <BodySmall color={Colors.textLight()}>
+      <Text size={12} color="textLight">
         Warns if more than {dayjs.duration(policy.warnWindowSeconds, 'seconds').humanize()} since
         last materialization
-      </BodySmall>
+      </Text>
     )}
   </>
 );
@@ -217,10 +219,12 @@ const CronFreshnessPolicyDetails = ({policy}: {policy: CronFreshnessPolicy}) => 
 
   return (
     <>
-      <BodySmall color={Colors.textLight()}>Deadline: {humanReadableDeadlineCron}</BodySmall>
-      <BodySmall color={Colors.textLight()}>
+      <Text size={12} color="textLight">
+        Deadline: {humanReadableDeadlineCron}
+      </Text>
+      <Text size={12} color="textLight">
         Fresh if materialized no earlier than {humanReadableLowerBoundDelta} before each deadline.
-      </BodySmall>
+      </Text>
     </>
   );
 };

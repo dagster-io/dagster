@@ -7,15 +7,17 @@ import subprocess
 import textwrap
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 import dagster._check as check
 import pytest
+from dagster._utils import discover_oss_root
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
 from databricks.sdk.service.workspace import ImportFormat, Language
 
-from dagster_databricks.pipes import dbfs_tempdir
+from dagster_databricks.pipes import dbfs_tempdir, volumes_tempdir
 
 DAGSTER_PIPES_WHL_FILENAME = "dagster_pipes-1!0+dev-py3-none-any.whl"
 
@@ -23,30 +25,38 @@ DAGSTER_PIPES_WHL_FILENAME = "dagster_pipes-1!0+dev-py3-none-any.whl"
 DAGSTER_PIPES_WHL_PATH = f"dbfs:/FileStore/jars/{DAGSTER_PIPES_WHL_FILENAME}"
 
 
-def get_repo_root() -> str:
-    path = os.path.dirname(__file__)
-    while not os.path.exists(os.path.join(path, ".git")):
-        path = os.path.dirname(path)
-    return path
-
-
 # Upload the Dagster Pipes wheel to DBFS. Use this fixture to avoid needing to manually reupload
 # dagster-pipes if it has changed between test runs.
 @contextmanager
 def upload_dagster_pipes_whl(databricks_client: WorkspaceClient) -> Iterator[str]:
     dbfs_client = files.DbfsAPI(databricks_client.api_client)
-    repo_root = get_repo_root()
-    orig_wd = os.getcwd()
-    dagster_pipes_root = os.path.join(repo_root, "python_modules", "dagster-pipes")
-    os.chdir(dagster_pipes_root)
-    subprocess.check_call(["python", "setup.py", "bdist_wheel"])
+    oss_root = discover_oss_root(Path(__file__))
+    dagster_pipes_root = os.path.join(oss_root, "python_modules", "dagster-pipes")
+    subprocess.check_call(["python", "-m", "build", "--wheel"], cwd=dagster_pipes_root)
+    whl_path = os.path.join(dagster_pipes_root, "dist", DAGSTER_PIPES_WHL_FILENAME)
     with dbfs_tempdir(dbfs_client) as tempdir:
-        path = os.path.join(f"dbfs:{tempdir}", DAGSTER_PIPES_WHL_FILENAME)
-        subprocess.check_call(
-            ["databricks", "fs", "cp", "--overwrite", f"dist/{DAGSTER_PIPES_WHL_FILENAME}", path]
-        )
-        os.chdir(orig_wd)
-        yield path
+        dbfs_path = os.path.join(f"dbfs:{tempdir}", DAGSTER_PIPES_WHL_FILENAME)
+        subprocess.check_call(["databricks", "fs", "cp", "--overwrite", whl_path, dbfs_path])
+        yield dbfs_path
+
+
+@contextmanager
+def upload_dagster_pipes_whl_to_volume(
+    databricks_client: WorkspaceClient, volume_path: str
+) -> Iterator[str]:
+    """Build the dagster-pipes wheel and upload it to a UC Volume. Yields the volume path
+    suitable for ``pip install`` inside a Databricks notebook (``/Volumes/.../*.whl``).
+    """
+    files_client = files.FilesAPI(databricks_client.api_client)
+    oss_root = discover_oss_root(Path(__file__))
+    dagster_pipes_root = os.path.join(oss_root, "python_modules", "dagster-pipes")
+    subprocess.check_call(["python", "-m", "build", "--wheel"], cwd=dagster_pipes_root)
+    local_whl = os.path.join(dagster_pipes_root, "dist", DAGSTER_PIPES_WHL_FILENAME)
+    with volumes_tempdir(files_client, volume_path) as tempdir:
+        remote_path = f"{tempdir}/{DAGSTER_PIPES_WHL_FILENAME}"
+        with open(local_whl, "rb") as f:
+            files_client.upload(remote_path, f, overwrite=True)
+        yield remote_path
 
 
 @pytest.fixture
@@ -114,16 +124,16 @@ def temp_workspace_notebook(
     contents = get_script_source(script_fn=script_fn, script_file=script_file)
     dirname = "".join(random.choices(string.ascii_letters, k=30))
     workspace_path = f"{workspace_path}/{dirname}"
-    script_path = os.path.join(workspace_path, "script.ipynb")
+    notebook_path = os.path.join(workspace_path, "temp-notebook")
     try:
         client.workspace.mkdirs(workspace_path)
         client.workspace.import_(
-            path=script_path,
+            path=notebook_path,
             content=contents,
             format=ImportFormat.SOURCE,
             language=Language.PYTHON,
             overwrite=True,
         )
-        yield script_path
+        yield notebook_path
     finally:
         client.workspace.delete(workspace_path, recursive=True)

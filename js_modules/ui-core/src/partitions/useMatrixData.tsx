@@ -65,7 +65,7 @@ function buildMatrixData(
   options?: DisplayOptions,
 ) {
   const partitionColumns = partitionNames.map((name, idx) => {
-    const partition: PartitionRuns = (partitionsByName as any)[name] || {
+    const partition: PartitionRuns = partitionsByName[name] || {
       name,
       runsLoaded: false,
       runs: [],

@@ -1,14 +1,41 @@
 from collections.abc import Sequence
-from typing import Any, Literal, NamedTuple, Union
+from typing import Any, Literal, NamedTuple, TypedDict, Union
 
 import pytest
 from dagster_shared.match import match_type
+from typing_extensions import NotRequired, Required
 
 
 # Helper to simulate the is_named_tuple_instance logic used in match_type
 class MyTuple(NamedTuple):
     x: int
     y: str
+
+
+class SimpleTypedDict(TypedDict, total=False):
+    name: str
+    count: int
+
+
+class RequiredTypedDict(TypedDict):
+    name: Required[str]
+    count: NotRequired[int]
+
+
+class _TotalTrueBase(TypedDict):
+    a: str
+
+
+class TotalFalseChild(_TotalTrueBase, total=False):
+    b: int
+
+
+class _TotalFalseBase(TypedDict, total=False):
+    a: str
+
+
+class TotalTrueChild(_TotalFalseBase):
+    b: int
 
 
 @pytest.mark.parametrize(
@@ -61,6 +88,24 @@ class MyTuple(NamedTuple):
         ("abc", (int, str), True),
         ("abc", (int, Literal["abc", "def"]), True),
         ("ghi", (int, Literal["abc", "def"]), False),
+        # TypedDict - total=False (all optional)
+        ({"name": "x", "count": 1}, SimpleTypedDict, True),
+        ({"name": "x"}, SimpleTypedDict, True),
+        ({}, SimpleTypedDict, True),
+        ({"name": 1}, SimpleTypedDict, False),
+        ("not a dict", SimpleTypedDict, False),
+        # TypedDict - with Required/NotRequired
+        ({"name": "x"}, RequiredTypedDict, True),
+        ({}, RequiredTypedDict, False),
+        ({"name": "x", "count": "bad"}, RequiredTypedDict, False),
+        # TypedDict - inherited per-class `total` is preserved
+        ({"a": "x"}, TotalFalseChild, True),
+        ({"a": "x", "b": 1}, TotalFalseChild, True),
+        ({}, TotalFalseChild, False),  # `a` inherited from total=True base is still required
+        ({"b": 1}, TotalFalseChild, False),
+        ({"b": 1}, TotalTrueChild, True),  # `a` inherited from total=False base is still optional
+        ({"a": "x", "b": 1}, TotalTrueChild, True),
+        ({}, TotalTrueChild, False),  # `b` declared in total=True child is required
     ],
 )
 def test_match_type(obj, type_, expected):

@@ -4,6 +4,7 @@ import pickle
 import shutil
 import tempfile
 import threading
+from typing import Any, cast
 
 import dagstermill
 import pytest
@@ -62,7 +63,9 @@ def in_job_manager(
                     "step_key": step_key,
                 }
 
-                manager.reconstitute_job_context(**dict(context_dict, **kwargs))
+                manager.reconstitute_job_context(
+                    **cast("dict[str, Any]", dict(context_dict, **kwargs))
+                )
                 yield manager
         finally:
             shutil.rmtree(marshal_dir)
@@ -143,13 +146,13 @@ def test_out_of_job_yield_event():
 
 def test_in_job_manager_resources():
     with in_job_manager() as manager:
-        assert "output_notebook_io_manager" in manager.context.resources._asdict()  # pyright: ignore[reportOptionalMemberAccess]
-        assert len(manager.context.resources._asdict()) == 1  # pyright: ignore[reportOptionalMemberAccess]
+        assert "output_notebook_io_manager" in manager.context.resources._asdict()
+        assert len(manager.context.resources._asdict()) == 1
 
 
 def test_in_job_manager_op_config():
     with in_job_manager() as manager:
-        assert manager.context.op_config is None  # pyright: ignore[reportOptionalMemberAccess]
+        assert manager.context.op_config is None
 
     with in_job_manager(
         job_name="hello_world_config_job",
@@ -160,7 +163,7 @@ def test_in_job_manager_op_config():
         ).to_dict(),
         step_key="hello_world_config",
     ) as manager:
-        assert manager.context.op_config == {"greeting": "hello"}  # pyright: ignore[reportOptionalMemberAccess]
+        assert manager.context.op_config == {"greeting": "hello"}
 
     with in_job_manager(
         job_name="hello_world_config_job",
@@ -177,7 +180,7 @@ def test_in_job_manager_op_config():
         ).to_dict(),
         step_key="hello_world_config",
     ) as manager:
-        assert manager.context.op_config == {"greeting": "bonjour"}  # pyright: ignore[reportOptionalMemberAccess]
+        assert manager.context.op_config == {"greeting": "bonjour"}
 
     with in_job_manager(
         job_name="hello_world_config_job",
@@ -196,7 +199,7 @@ def test_in_job_manager_op_config():
         ).to_dict(),
         step_key="goodbye_config",
     ) as manager:
-        assert manager.context.op_config == {"farewell": "goodbye"}  # pyright: ignore[reportOptionalMemberAccess]
+        assert manager.context.op_config == {"farewell": "goodbye"}
 
 
 def test_in_job_manager_with_resources():
@@ -214,7 +217,7 @@ def test_in_job_manager_with_resources():
             run_config={"resources": {"list": {"config": path}}},
             step_key="hello_world_resource",
         ) as manager:
-            assert "list" in manager.context.resources._asdict()  # pyright: ignore[reportOptionalMemberAccess]
+            assert "list" in manager.context.resources._asdict()
 
             with open(path, "rb") as fd:
                 messages = pickle.load(fd)

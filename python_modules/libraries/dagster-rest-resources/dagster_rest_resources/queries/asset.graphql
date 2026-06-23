@@ -1,0 +1,362 @@
+query ListAssetRecords($cursor: String, $limit: Int) {
+  assetRecordsOrError(cursor: $cursor, limit: $limit) {
+    __typename
+    ... on AssetRecordConnection {
+      assets {
+        id
+        key {
+          path
+        }
+      }
+      cursor
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetAssetDetails($assetKeys: [AssetKeyInput!]!) {
+  assetsOrError(assetKeys: $assetKeys) {
+    __typename
+    ... on AssetConnection {
+      nodes {
+        id
+        key {
+          path
+        }
+        definition {
+          description
+          groupName
+          kinds
+          dependencyKeys {
+            path
+          }
+          metadataEntries {
+            label
+            description
+            ... on TextMetadataEntry {
+              text
+            }
+            ... on UrlMetadataEntry {
+              url
+            }
+            ... on PathMetadataEntry {
+              path
+            }
+            ... on JsonMetadataEntry {
+              jsonString
+            }
+            ... on MarkdownMetadataEntry {
+              mdStr
+            }
+            ... on PythonArtifactMetadataEntry {
+              module
+              name
+            }
+            ... on FloatMetadataEntry {
+              floatValue
+            }
+            ... on IntMetadataEntry {
+              intValue
+            }
+            ... on BoolMetadataEntry {
+              boolValue
+            }
+          }
+          automationCondition {
+            label
+            expandedLabel
+          }
+          partitionDefinition {
+            description
+          }
+          dependencies {
+            asset {
+              assetKey {
+                path
+              }
+            }
+            partitionMapping {
+              className
+              description
+            }
+          }
+          dependedByKeys {
+            path
+          }
+          owners {
+            ... on UserAssetOwner {
+              email
+            }
+            ... on TeamAssetOwner {
+              team
+            }
+          }
+          tags {
+            key
+            value
+          }
+          backfillPolicy {
+            maxPartitionsPerRun
+          }
+          jobNames
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetAssetHealth($assetKeys: [AssetKeyInput!]!) {
+  assetsOrError(assetKeys: $assetKeys) {
+    __typename
+    ... on AssetConnection {
+      nodes {
+        key {
+          path
+        }
+        definition {
+          freshnessInfo {
+            currentLagMinutes
+            currentMinutesLate
+            latestMaterializationMinutesLate
+          }
+          freshnessPolicy {
+            maximumLagMinutes
+            cronSchedule
+          }
+        }
+        assetHealth {
+          assetHealth
+          materializationStatus
+          materializationStatusMetadata {
+            ... on AssetHealthMaterializationDegradedPartitionedMeta {
+              numMissingPartitions
+              numFailedPartitions
+              totalNumPartitions
+            }
+            ... on AssetHealthMaterializationHealthyPartitionedMeta {
+              numMissingPartitions
+              totalNumPartitions
+            }
+            ... on AssetHealthMaterializationDegradedNotPartitionedMeta {
+              failedRunId
+            }
+          }
+          assetChecksStatus
+          assetChecksStatusMetadata {
+            ... on AssetHealthCheckDegradedMeta {
+              numFailedChecks
+              numWarningChecks
+              totalNumChecks
+            }
+            ... on AssetHealthCheckWarningMeta {
+              numWarningChecks
+              totalNumChecks
+            }
+            ... on AssetHealthCheckUnknownMeta {
+              numNotExecutedChecks
+              totalNumChecks
+            }
+          }
+          freshnessStatus
+          freshnessStatusMetadata {
+            lastMaterializedTimestamp
+          }
+        }
+        assetMaterializations(limit: 1) {
+          timestamp
+          runId
+          partition
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetAssetMaterializationEvents(
+  $assetKeys: [AssetKeyInput!]!
+  $limit: Int
+  $beforeTimestampMillis: String
+  $partitions: [String!]
+) {
+  assetsOrError(assetKeys: $assetKeys) {
+    __typename
+    ... on AssetConnection {
+      nodes {
+        key {
+          path
+        }
+        assetMaterializations(
+          limit: $limit
+          beforeTimestampMillis: $beforeTimestampMillis
+          partitions: $partitions
+        ) {
+          timestamp
+          runId
+          partition
+          tags {
+            key
+            value
+          }
+          metadataEntries {
+            label
+            description
+            ... on TextMetadataEntry {
+              text
+            }
+            ... on UrlMetadataEntry {
+              url
+            }
+            ... on PathMetadataEntry {
+              path
+            }
+            ... on JsonMetadataEntry {
+              jsonString
+            }
+            ... on MarkdownMetadataEntry {
+              mdStr
+            }
+            ... on PythonArtifactMetadataEntry {
+              module
+              name
+            }
+            ... on FloatMetadataEntry {
+              floatValue
+            }
+            ... on IntMetadataEntry {
+              intValue
+            }
+            ... on BoolMetadataEntry {
+              boolValue
+            }
+          }
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetAssetObservationEvents(
+  $assetKeys: [AssetKeyInput!]!
+  $limit: Int
+  $beforeTimestampMillis: String
+  $partitions: [String!]
+) {
+  assetsOrError(assetKeys: $assetKeys) {
+    __typename
+    ... on AssetConnection {
+      nodes {
+        key {
+          path
+        }
+        assetObservations(
+          limit: $limit
+          beforeTimestampMillis: $beforeTimestampMillis
+          partitions: $partitions
+        ) {
+          timestamp
+          runId
+          partition
+          tags {
+            key
+            value
+          }
+          metadataEntries {
+            label
+            description
+            ... on TextMetadataEntry {
+              text
+            }
+            ... on UrlMetadataEntry {
+              url
+            }
+            ... on PathMetadataEntry {
+              path
+            }
+            ... on JsonMetadataEntry {
+              jsonString
+            }
+            ... on MarkdownMetadataEntry {
+              mdStr
+            }
+            ... on PythonArtifactMetadataEntry {
+              module
+              name
+            }
+            ... on FloatMetadataEntry {
+              floatValue
+            }
+            ... on IntMetadataEntry {
+              intValue
+            }
+            ... on BoolMetadataEntry {
+              boolValue
+            }
+          }
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetAssetConditionEvaluations($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+  assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+    __typename
+    ... on AssetConditionEvaluationRecords {
+      records {
+        evaluationId
+        timestamp
+        numRequested
+        runIds
+        startTimestamp
+        endTimestamp
+        rootUniqueId
+        evaluationNodes {
+          uniqueId
+          userLabel
+          expandedLabel
+          startTimestamp
+          endTimestamp
+          numTrue
+          numCandidates
+          isPartitioned
+          childUniqueIds
+          operatorType
+        }
+      }
+    }
+    ... on AutoMaterializeAssetEvaluationNeedsMigrationError {
+      message
+    }
+  }
+}
+
+query GetAssetPartitionStatus($assetKey: AssetKeyInput!) {
+  assetNodeOrError(assetKey: $assetKey) {
+    __typename
+    ... on AssetNode {
+      partitionStats {
+        numMaterialized
+        numPartitions
+        numFailed
+        numMaterializing
+      }
+    }
+    ... on AssetNotFoundError {
+      message
+    }
+  }
+}

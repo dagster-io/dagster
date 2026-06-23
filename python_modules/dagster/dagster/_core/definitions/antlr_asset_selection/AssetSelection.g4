@@ -32,18 +32,24 @@ attributeExpr:
 	| OWNER COLON value						# OwnerAttributeExpr
 	| GROUP COLON value						# GroupAttributeExpr
 	| KIND COLON value						# KindAttributeExpr
+	| IS COLON value						# IsAttributeExpr
 	| STATUS COLON value					# StatusAttributeExpr
 	| COLUMN COLON value					# ColumnAttributeExpr
 	| TABLE_NAME COLON value				# TableNameAttributeExpr
 	| COLUMN_TAG COLON value (EQUAL value)?	# ColumnTagAttributeExpr
 	| CODE_LOCATION COLON value				# CodeLocationAttributeExpr
-	| CHANGED_IN_BRANCH COLON value			# ChangedInBranchAttributeExpr;
+	| CHANGED_IN_BRANCH COLON value			# ChangedInBranchAttributeExpr
+	| PARTITIONS COLON value				# PartitionsAttributeExpr
+	| AUTOMATION_TYPE COLON value			# AutomationTypeAttributeExpr
+	| SENSOR COLON value					# SensorAttributeExpr
+	| SCHEDULE COLON value					# ScheduleAttributeExpr
+	| JOB COLON value						# JobAttributeExpr;
 
 // Define EQUAL token for tag:value=value syntax
 EQUAL: '=';
 
-// Value can be a quoted or unquoted string
-value: NULL_STRING | QUOTED_STRING | UNQUOTED_STRING;
+// Value can be a quoted or unquoted string (keyword tokens are also valid values)
+value: NULL_STRING | QUOTED_STRING | UNQUOTED_STRING | SENSOR | SCHEDULE | JOB;
 keyValue:
 	QUOTED_STRING
 	| UNQUOTED_STRING
@@ -72,12 +78,18 @@ OWNER: 'owner';
 GROUP: 'group';
 TAG: 'tag';
 KIND: 'kind';
+IS: 'is';
 CODE_LOCATION: 'code_location';
 STATUS: 'status';
 COLUMN: 'column';
 TABLE_NAME: 'table_name';
 COLUMN_TAG: 'column_tag';
 CHANGED_IN_BRANCH: 'changed_in_branch';
+PARTITIONS: 'partitions';
+AUTOMATION_TYPE: 'automation_type';
+SENSOR: 'sensor';
+SCHEDULE: 'schedule';
+JOB: 'job';
 // Function names
 SINKS: 'sinks';
 ROOTS: 'roots';

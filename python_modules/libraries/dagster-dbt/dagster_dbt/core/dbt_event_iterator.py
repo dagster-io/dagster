@@ -91,7 +91,7 @@ def _fetch_column_metadata(
         except Exception as e:
             logger.warning(
                 "An error occurred while building column schema metadata from data"
-                f" `{col_data}` for the dbt resource"  # pyright: ignore[reportPossiblyUnboundVariable]
+                f" `{col_data}` for the dbt resource"
                 f" `{dbt_resource_props['original_file_path']}`."
                 " Column schema metadata will not be included in the event.\n\n"
                 f"Exception: {e}",
@@ -120,13 +120,14 @@ def _fetch_column_metadata(
 
                 lineage_metadata = _build_column_lineage_metadata(
                     event_history_metadata=EventHistoryMetadata(
-                        columns=column_schema_data,  # pyright: ignore[reportPossiblyUnboundVariable]
+                        columns=column_schema_data,
                         parents=parents,
                     ),
                     dbt_resource_props=dbt_resource_props,
                     manifest=invocation.manifest,
                     dagster_dbt_translator=invocation.dagster_dbt_translator,
                     target_path=invocation.target_path,
+                    project=invocation.project,
                 )
 
             except Exception as e:
@@ -187,7 +188,8 @@ def _fetch_row_count_metadata(
         # some adapters do not output the column names, so we need
         # to index by position
         row_count = query_result_table[0][0]
-        return {**TableMetadataSet(row_count=row_count)}
+        adapter_type = invocation.manifest.get("metadata", {}).get("adapter_type")
+        return {**TableMetadataSet(row_count=row_count, storage_kind=adapter_type)}
 
     except Exception as e:
         logger.exception(
@@ -242,7 +244,7 @@ class DbtEventIterator(Iterator[T]):
         column lineage metadata using sqlglot, if enabled.
 
         Args:
-            generate_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
+            with_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
@@ -275,12 +277,11 @@ class DbtEventIterator(Iterator[T]):
         """
 
         def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
-            with pushd(str(self._dbt_cli_invocation.project_dir)):
-                result = fn(self._dbt_cli_invocation, event)
-                if result is None:
-                    return event
+            result = fn(self._dbt_cli_invocation, event)
+            if result is None:
+                return event
 
-                return event.with_metadata({**event.metadata, **result})
+            return event.with_metadata({**event.metadata, **result})
 
         # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
         # so that the DuckDB lock is released. This is because DuckDB does not allow for
@@ -305,7 +306,7 @@ class DbtEventIterator(Iterator[T]):
         ]:
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
-                thread_name_prefix=f"dbt_attach_metadata_{fn.__name__}",
+                thread_name_prefix=f"dbt_attach_metadata_{getattr(fn, '__name__', 'fn')}",
             ) as executor:
                 yield from imap(
                     executor=executor,
@@ -325,7 +326,9 @@ class DbtEventIterator(Iterator[T]):
         record_observation_usage: bool = True,
     ) -> "DbtEventIterator[DbtDagsterEventType]":
         """Associate each warehouse query with the produced asset materializations for use in Dagster
-        Plus Insights. Currently supports Snowflake and BigQuery.
+        Plus Insights. Currently supports Snowflake and BigQuery. For any other adapter (e.g.
+        DuckDB), this is a no-op: a warning is logged and the dbt events pass through unchanged,
+        so the same pipeline can run locally against an unsupported warehouse without failing.
 
         For more information, see the documentation for
         `dagster_cloud.dagster_insights.dbt_with_snowflake_insights` and
@@ -351,7 +354,7 @@ class DbtEventIterator(Iterator[T]):
         adapter_type = self._dbt_cli_invocation.manifest.get("metadata", {}).get("adapter_type")
         if adapter_type == "snowflake":
             try:
-                from dagster_cloud.dagster_insights import (  # pyright: ignore[reportMissingImports]
+                from dagster_cloud.dagster_insights import (  # ty: ignore[unresolved-import]
                     dbt_with_snowflake_insights,
                 )
             except ImportError as e:
@@ -372,7 +375,7 @@ class DbtEventIterator(Iterator[T]):
             )
         elif adapter_type == "bigquery":
             try:
-                from dagster_cloud.dagster_insights import (  # pyright: ignore[reportMissingImports]
+                from dagster_cloud.dagster_insights import (  # ty: ignore[unresolved-import]
                     dbt_with_bigquery_insights,
                 )
             except ImportError as e:
@@ -392,6 +395,12 @@ class DbtEventIterator(Iterator[T]):
                 dbt_cli_invocation=self._dbt_cli_invocation,
             )
         else:
-            check.failed(
-                f"The `with_insights` method is only supported for Snowflake and BigQuery and is not supported for adapter type `{adapter_type}`"
+            logger.warning(
+                "Dagster+ Insights is only supported for the Snowflake and BigQuery dbt"
+                f" adapters, but the dbt project uses the `{adapter_type}` adapter. Skipping"
+                " insights; dbt events will pass through unchanged."
+            )
+            return DbtEventIterator(
+                events=self,
+                dbt_cli_invocation=self._dbt_cli_invocation,
             )

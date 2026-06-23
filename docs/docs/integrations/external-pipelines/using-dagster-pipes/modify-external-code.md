@@ -37,7 +37,7 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 In our sample Python script, the changes would look like the following:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_1/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_2/step_1/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -46,7 +46,7 @@ In our sample Python script, the changes would look like the following:
 Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the `context.log` method on <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" /> to send log messages back to Dagster. In this case, we’re sending an `info` level log message:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_2/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_2/step_2/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -61,14 +61,14 @@ Then, the log messages will show up in the **Run details** page of the Dagster U
 
 Sometimes, you may want to log information from your external code as structured metadata shown in the Dagster UI. Dagster Pipes context also comes with the ability to log structured metadata back to Dagster.
 
-### Report asset materialization
+### Reporting asset materialization
 
 Similar to [reporting materialization metadata within the Dagster process](/guides/build/assets/metadata-and-tags), you can also report asset materialization back to Dagster from the external process.
 
 In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_3_materialization/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_2/step_3_materialization/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -80,7 +80,7 @@ This metadata will also be displayed on the **Events** tab of the **Asset Detail
 
 ![View materialization events in asset details page](/images/guides/build/external-pipelines/subprocess/part-2-step-3-asset-details.png)
 
-### Report asset checks
+### Reporting asset checks
 
 Dagster allows you to define and execute data quality checks on assets. Refer to the [Asset Checks](/guides/test/asset-checks) documentation for more information.
 
@@ -90,7 +90,7 @@ If your asset has data quality checks defined, you can report to Dagster that an
 <TabItem value="Report from the external code">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess//part_2/step_3_check/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess//part_2/step_3_check/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -98,7 +98,7 @@ If your asset has data quality checks defined, you can report to Dagster that an
 <TabItem value="Define the asset in the Dagster code">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_3_check/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_2/step_3_check/dagster_code.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 
@@ -120,7 +120,7 @@ At this point, your two files should look like the following:
 <TabItem value="External code in external_code.py">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_3_check/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_2/step_3_check/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -128,18 +128,18 @@ At this point, your two files should look like the following:
 <TabItem value="Dagster code in dagster_code.py">
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_3_check/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/part_2/step_3_check/dagster_code.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 
 </TabItem>
 </Tabs>
 
-## What's next?
+## Next steps
 
 In this tutorial, you learned how to get access to Dagster Pipes context, report log messages events from the external process, and send structured events back to Dagster.
 
-What's next? From here, you can:
+From here, you can:
 
 - Learn about other capabilities of executing external code in subprocess via Dagster Pipes in the [Subprocess reference](/integrations/external-pipelines/using-dagster-pipes/reference)
 - Learn how to [customize your own Dagster Pipes protocols](/integrations/external-pipelines/dagster-pipes-details-and-customization)

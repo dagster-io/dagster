@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Button,
-  Caption,
   Colors,
   Dialog,
   DialogBody,
@@ -12,12 +11,11 @@ import {
   Menu,
   MenuItem,
   MetadataTableWIP,
-  Mono,
   NonIdealState,
   Popover,
   SpinnerWithText,
-  Subheading,
   Table,
+  Text,
   TextInput,
   Tooltip,
   showToast,
@@ -67,9 +65,15 @@ import {TimeElapsed} from '../runs/TimeElapsed';
 const DEFAULT_MIN_VALUE = 0;
 const DEFAULT_MAX_VALUE = 1000;
 
-export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: string}) => {
+export const InstanceConcurrencyKeyInfo = ({
+  concurrencyKey,
+  readOnly,
+}: {
+  concurrencyKey: string;
+  readOnly: boolean;
+}) => {
   useTrackPageView();
-  useDocumentTitle(`Pool: ${concurrencyKey}`);
+  useDocumentTitle(`Pools | ${concurrencyKey}`);
   const [showEdit, setShowEdit] = React.useState<boolean>();
   const [showDelete, setShowDelete] = React.useState<boolean>(false);
   const queryResult = useQuery<PoolDetailsQuery, PoolDetailsQueryVariables>(POOL_DETAILS_QUERY, {
@@ -99,7 +103,7 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
               flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
               border="bottom"
             >
-              <Heading>
+              <Heading size={20} weight={500}>
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                   <div>
                     <Link to="/deployment/concurrency">Pools</Link>
@@ -110,25 +114,29 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
               </Heading>
               <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                 <QueryRefreshCountdown refreshState={refreshState} />
-                <Popover
-                  position="bottom-right"
-                  content={
-                    <Menu>
-                      <MenuItem
-                        icon="delete"
-                        text="Delete"
-                        intent="danger"
-                        onClick={() => setShowDelete(true)}
-                      />
-                    </Menu>
-                  }
-                >
-                  <Button icon={<Icon name="expand_more" />} />
-                </Popover>
+                {!readOnly && (
+                  <Popover
+                    position="bottom-right"
+                    content={
+                      <Menu>
+                        <MenuItem
+                          icon="delete"
+                          text="Delete"
+                          intent="danger"
+                          onClick={() => setShowDelete(true)}
+                        />
+                      </Menu>
+                    }
+                  >
+                    <Button icon={<Icon name="expand_more" />} />
+                  </Popover>
+                )}
               </Box>
             </Box>
             <Box padding={{vertical: 16, horizontal: 24}}>
-              <Subheading>Pool info</Subheading>
+              <Heading size={14} weight={600}>
+                Pool info
+              </Heading>
             </Box>
             {!hasRunQueue && granularity !== 'op' ? (
               <Box margin={{horizontal: 20, bottom: 20}}>
@@ -137,10 +145,20 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                   title="Run granularity for pools not supported"
                   description={
                     <>
-                      The pool granularity is set to <Mono>run</Mono>, but run-level concurrency is
-                      not supported with this run coordinator. To enable run granularity for pools,
-                      configure your instance to use the default <Mono>QueuedRunCoordinator</Mono>{' '}
-                      in your <Mono>dagster.yaml</Mono>. See the{' '}
+                      The pool granularity is set to{' '}
+                      <Text size={14} family="mono">
+                        run
+                      </Text>
+                      , but run-level concurrency is not supported with this run coordinator. To
+                      enable run granularity for pools, configure your instance to use the default{' '}
+                      <Text size={14} family="mono">
+                        QueuedRunCoordinator
+                      </Text>{' '}
+                      in your{' '}
+                      <Text size={14} family="mono">
+                        dagster.yaml
+                      </Text>
+                      . See the{' '}
                       <a
                         target="_blank"
                         rel="noreferrer"
@@ -176,12 +194,16 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                             )}
                           </div>
                           {concurrencyLimit.usingDefaultLimit ? (
-                            <Caption color={Colors.textLighter()}>(default)</Caption>
+                            <Text size={12} color="textLighter">
+                              (default)
+                            </Text>
                           ) : null}
                         </Box>
-                        <Button icon={<Icon name="edit" />} onClick={() => setShowEdit(true)}>
-                          Edit limit
-                        </Button>
+                        {!readOnly && (
+                          <Button icon={<Icon name="edit" />} onClick={() => setShowEdit(true)}>
+                            Edit limit
+                          </Button>
+                        )}
                       </Box>
                     </td>
                   </tr>
@@ -194,16 +216,24 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress steps</Subheading>
+                  <Heading size={14} weight={600}>
+                    In progress steps
+                  </Heading>
                 </Box>
                 <Box style={{marginLeft: -1}}>
-                  <PendingStepsTable keyInfo={concurrencyLimit} refresh={refetch} />
+                  <PendingStepsTable
+                    keyInfo={concurrencyLimit}
+                    refresh={refetch}
+                    readOnly={readOnly}
+                  />
                 </Box>
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>Queued runs</Subheading>
+                  <Heading size={14} weight={600}>
+                    Queued runs
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>
@@ -213,14 +243,18 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress</Subheading>
+                  <Heading size={14} weight={600}>
+                    In progress
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={inProgressStatuses} />
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>Queued</Subheading>
+                  <Heading size={14} weight={600}>
+                    Queued
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>
@@ -311,7 +345,10 @@ const EditConcurrencyLimitDialog = ({
       isOpen={open}
       title={
         <span>
-          Edit <Mono>{concurrencyKey}</Mono>
+          Edit{' '}
+          <Text size={14} family="mono">
+            {concurrencyKey}
+          </Text>
         </span>
       }
       onClose={onClose}
@@ -382,7 +419,10 @@ const DeleteConcurrencyLimitDialog = ({
 
   const title = (
     <>
-      Delete <Mono>{concurrencyKey}</Mono>
+      Delete{' '}
+      <Text size={14} family="mono">
+        {concurrencyKey}
+      </Text>
     </>
   );
   return (
@@ -486,9 +526,11 @@ const PoolRunsTable = ({pool, runStatuses}: {pool: string; runStatuses: Set<RunS
 const PendingStepsTable = ({
   keyInfo,
   refresh,
+  readOnly,
 }: {
   keyInfo: ConcurrencyLimitFragment;
   refresh: () => void;
+  readOnly: boolean;
 }) => {
   const runIds = [...new Set(keyInfo.pendingSteps.map((step) => step.runId))];
   const queryResult = useQuery<RunsForConcurrencyKeyQuery, RunsForConcurrencyKeyQueryVariables>(
@@ -537,7 +579,7 @@ const PendingStepsTable = ({
             </Tooltip>
           </Box>
         </th>
-        <th></th>
+        {!readOnly && <th></th>}
       </tr>
     </thead>
   );
@@ -559,6 +601,7 @@ const PendingStepsTable = ({
             step={step}
             statusByRunId={statusByRunId}
             onUpdate={refresh}
+            readOnly={readOnly}
           />
         ))}
       </tbody>
@@ -569,6 +612,7 @@ const PendingStepsTable = ({
             step={step}
             statusByRunId={statusByRunId}
             onUpdate={refresh}
+            readOnly={readOnly}
           />
         ))}
       </tbody>
@@ -580,10 +624,12 @@ const PendingStepRow = ({
   step,
   statusByRunId,
   onUpdate,
+  readOnly,
 }: {
   step: ConcurrencyStepFragment;
   statusByRunId: {[id: string]: RunStatus};
   onUpdate: () => void;
+  readOnly: boolean;
 }) => {
   const runStatus = statusByRunId[step.runId];
   return (
@@ -593,7 +639,9 @@ const PendingStepRow = ({
           <Link to={`/runs/${step.runId}`}>
             <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
               <RunStatusDot status={runStatus} size={10} />
-              <Mono>{titleForRun({id: step.runId})}</Mono>
+              <Text size={14} family="mono">
+                {titleForRun({id: step.runId})}
+              </Text>
               {failedStatuses.has(runStatus) ? (
                 <Tooltip
                   placement="top"
@@ -605,11 +653,15 @@ const PendingStepRow = ({
             </Box>
           </Link>
         ) : (
-          <Mono>{titleForRun({id: step.runId})}</Mono>
+          <Text size={14} family="mono">
+            {titleForRun({id: step.runId})}
+          </Text>
         )}
       </td>
       <td>
-        <Mono>{step.stepKey}</Mono>
+        <Text size={14} family="mono">
+          {step.stepKey}
+        </Text>
       </td>
       <td>
         {step.assignedTimestamp ? (
@@ -626,9 +678,11 @@ const PendingStepRow = ({
         )}
       </td>
       <td>{step.priority}</td>
-      <td>
-        <ConcurrencyActionMenu pendingStep={step} onUpdate={onUpdate} />
-      </td>
+      {!readOnly && (
+        <td>
+          <ConcurrencyActionMenu pendingStep={step} onUpdate={onUpdate} />
+        </td>
+      )}
     </tr>
   );
 };

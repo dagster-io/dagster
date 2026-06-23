@@ -1,0 +1,78 @@
+query ListSchedules($repositorySelector: RepositorySelector!) {
+  schedulesOrError(repositorySelector: $repositorySelector) {
+    __typename
+    ... on Schedules {
+      results {
+        id
+        name
+        cronSchedule
+        pipelineName
+        description
+        executionTimezone
+        scheduleState {
+          status
+        }
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query ListRepositoriesWithSchedules {
+  repositoriesOrError {
+    __typename
+    ... on RepositoryConnection {
+      nodes {
+        name
+        location {
+          name
+        }
+        schedules {
+          id
+          name
+          cronSchedule
+          pipelineName
+          description
+          executionTimezone
+          scheduleState {
+            status
+          }
+        }
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetSchedule($scheduleSelector: ScheduleSelector!) {
+  scheduleOrError(scheduleSelector: $scheduleSelector) {
+    __typename
+    ... on Schedule {
+      id
+      name
+      cronSchedule
+      pipelineName
+      description
+      executionTimezone
+      scheduleState {
+        status
+      }
+    }
+    ... on ScheduleNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

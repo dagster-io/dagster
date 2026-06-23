@@ -51,7 +51,7 @@ def with_dagster_yaml(text):
         with tempfile.TemporaryDirectory() as tmpdir:
             os.mkdir(os.path.join(tmpdir, "subdir"))
             yaml_path = os.path.join(tmpdir, "dagster_cloud.yaml")
-            with open(yaml_path, "w") as f:
+            with open(yaml_path, "w", encoding="utf-8") as f:
                 f.write(text)
             os.chdir(tmpdir)
             yield tmpdir
@@ -658,6 +658,38 @@ def test_ci_deploy_pex(
     (_, wait_location_args), wait_kwargs = wait_for_load.call_args_list[0]
     assert sorted(wait_location_args) == ["b", "c", "d"]
     assert wait_kwargs["url"] == f"https://some-org.dagster.cloud/{deployment_name}"
+
+
+def test_ci_notify_includes_deployment_name(
+    mocker, deployment_name: str, initialized_runner: CliRunner, project_dir: str
+) -> None:
+    """Test that notify scopes PR comments by deployment name via orig_text."""
+    mocker.patch(
+        "dagster_cloud_cli.commands.metrics.get_source",
+        return_value=CliEventTags.source.github,
+    )
+    mock_event = mocker.MagicMock()
+    mock_event.github_sha = "abc123"
+    mocker.patch(
+        "dagster_cloud_cli.commands.ci.github_context.get_github_event",
+        return_value=mock_event,
+    )
+
+    result = initialized_runner.invoke(
+        app,
+        ["ci", "notify", f"--project-dir={project_dir}"],
+        catch_exceptions=False,
+    )
+    assert not result.exit_code, result.output
+
+    mock_event.update_pr_comment.assert_called_once()
+    call_kwargs = mock_event.update_pr_comment.call_args
+    body = call_kwargs[0][0]
+    orig_text = call_kwargs[1]["orig_text"]
+
+    # The deployment name should appear in both the body and orig_text
+    assert f"Dagster Cloud (`{deployment_name}`)" in body
+    assert orig_text == f"Dagster Cloud (`{deployment_name}`)"
 
 
 def test_ci_branch_deployment(

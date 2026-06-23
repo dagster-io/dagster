@@ -95,6 +95,10 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#IsAttributeExpr.
+    def visitIsAttributeExpr(self, ctx: AssetSelectionParser.IsAttributeExprContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#StatusAttributeExpr.
     def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         return self.visitChildren(ctx)
@@ -121,6 +125,30 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitChangedInBranchAttributeExpr(
         self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
     ):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#PartitionsAttributeExpr.
+    def visitPartitionsAttributeExpr(
+        self, ctx: AssetSelectionParser.PartitionsAttributeExprContext
+    ):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#AutomationTypeAttributeExpr.
+    def visitAutomationTypeAttributeExpr(
+        self, ctx: AssetSelectionParser.AutomationTypeAttributeExprContext
+    ):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#SensorAttributeExpr.
+    def visitSensorAttributeExpr(self, ctx: AssetSelectionParser.SensorAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#ScheduleAttributeExpr.
+    def visitScheduleAttributeExpr(self, ctx: AssetSelectionParser.ScheduleAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#JobAttributeExpr.
+    def visitJobAttributeExpr(self, ctx: AssetSelectionParser.JobAttributeExprContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#value.

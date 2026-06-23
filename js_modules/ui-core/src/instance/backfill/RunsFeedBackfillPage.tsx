@@ -2,10 +2,10 @@ import {
   Alert,
   Box,
   Colors,
+  Heading,
   NonIdealState,
   PageHeader,
   Spinner,
-  Subtitle1,
   Tab,
   Tabs,
 } from '@dagster-io/ui-components';
@@ -36,7 +36,7 @@ export const RunsFeedBackfillPage = () => {
   const {featureContext} = useContext(CloudOSSContext);
   const {backfillId} = useParams<{backfillId: string}>();
   useTrackPageView();
-  useDocumentTitle(`Backfill | ${backfillId}`);
+  useDocumentTitle(`Backfills | ${backfillId}`);
 
   const isDaemonHealthy = useIsBackfillDaemonHealthy();
 
@@ -126,13 +126,13 @@ export const RunsFeedBackfillPage = () => {
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={
-          <Subtitle1>
+          <Heading size={16} weight={600}>
             <Link to="/runs/" style={{color: Colors.textLight()}}>
               Runs
             </Link>
             {' / '}
             {backfillId}
-          </Subtitle1>
+          </Heading>
         }
         right={
           <Box flex={{gap: 12, alignItems: 'center'}}>

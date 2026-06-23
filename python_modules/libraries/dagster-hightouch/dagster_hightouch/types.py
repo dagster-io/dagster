@@ -25,7 +25,7 @@ class HightouchOutput(
 
 
 SyncRunParsedOutput = namedtuple(
-    "_SyncRunParsedOutput",
+    "SyncRunParsedOutput",
     [
         "created_at",
         "started_at",

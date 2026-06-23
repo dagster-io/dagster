@@ -962,6 +962,7 @@ class JobDefinition(IHasInternalInit):
             resource_defs=self.resource_defs,
             description=self.description,
             tags=self.tags,
+            run_tags=self._run_tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
             allow_different_partitions_defs=True,
@@ -1143,7 +1144,7 @@ class JobDefinition(IHasInternalInit):
             owners=self._owners,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
-        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
+        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)  # ty: ignore[invalid-argument-type]
         update_wrapper(job_def, self, updated=())
         return job_def
 
@@ -1284,6 +1285,37 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
     return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
+def _shape_with_child_defaults(
+    config_type: ConfigType,
+    default_value: Any,
+) -> ConfigType:
+    """Apply default values from a dict to the immediate child fields of a Shape config type.
+
+    When a job has a config preset (e.g. resources with specific values), and a user provides
+    partial config at execution time (e.g. only some resources), the missing child fields should
+    get their defaults from the job-level preset, not from the definitions-level schema defaults.
+    """
+    if not isinstance(default_value, Mapping) or not isinstance(config_type, Shape):
+        return config_type
+
+    updated_fields = {}
+    for child_name, child_field in config_type.fields.items():
+        if child_name in default_value:
+            updated_fields[child_name] = Field(
+                config=child_field.config_type,
+                default_value=default_value[child_name],
+                description=child_field.description,
+            )
+        else:
+            updated_fields[child_name] = child_field
+
+    return Shape(
+        fields=updated_fields,
+        description=config_type.description,
+        field_aliases=config_type.field_aliases,
+    )
+
+
 def _config_mapping_with_default_value(
     inner_schema: ConfigType,
     default_config: Mapping[str, Any],
@@ -1300,13 +1332,15 @@ def _config_mapping_with_default_value(
     for name, field in inner_schema.fields.items():
         if name in default_config:
             updated_fields[name] = Field(
-                config=field.config_type,
+                config=_shape_with_child_defaults(field.config_type, default_config[name]),
                 default_value=default_config[name],
                 description=field.description,
             )
         elif name in field_aliases and field_aliases[name] in default_config:
             updated_fields[name] = Field(
-                config=field.config_type,
+                config=_shape_with_child_defaults(
+                    field.config_type, default_config[field_aliases[name]]
+                ),
                 default_value=default_config[field_aliases[name]],
                 description=field.description,
             )
@@ -1325,7 +1359,7 @@ def _config_mapping_with_default_value(
     config_evr = validate_config(config_schema, default_config)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            f"Error in config when building job '{job_name}' ",
+            f"Error in config when building job '{job_name}': the provided config is missing required fields or contains invalid entries",
             config_evr.errors,
             default_config,
         )
@@ -1390,9 +1424,11 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
                     keys_by_input_handle[inner_input_handle] = key
 
         # add all subgraphs to the stack
-        for node_def in graph_def.node_defs:
-            if isinstance(node_def, GraphDefinition):
-                stack.append((node_def, NodeHandle(node_def.name, parent_node_handle)))
+        stack.extend(
+            (node_def, NodeHandle(node_def.name, parent_node_handle))
+            for node_def in graph_def.node_defs
+            if isinstance(node_def, GraphDefinition)
+        )
 
     return AssetLayer(
         asset_graph=AssetGraph.from_assets(list(assets_defs_by_key.values())),

@@ -1,0 +1,127 @@
+.ganttChartContainer {
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  user-select: none;
+  background: var(--color-background-default);
+}
+
+.ganttChartContainer :global(.line) {
+  position: absolute;
+  user-select: none;
+  pointer-events: none;
+  transition:
+    top 100ms linear,
+    left 100ms linear,
+    width 100ms linear,
+    height 100ms linear;
+}
+
+.ganttChartContainer :global(.chart-element) {
+  font-size: 12px;
+  transition:
+    top 100ms linear,
+    left 100ms linear;
+  display: inline-block;
+  position: absolute;
+  color: var(--color-accent-reversed);
+  overflow: hidden;
+  z-index: 2;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.ganttChartContainer :global(.dot) {
+  width: 6px;
+  height: 6px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.ganttChartContainer :global(.box) {
+  /* Note: padding + font changes may also impact truncatedBoxLabel */
+  height: 24px;
+  padding: 3px;
+  padding-right: 1px;
+  border-radius: 2px;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 15px;
+  transition:
+    top 100ms linear,
+    left 100ms linear,
+    width 100ms linear,
+    height 100ms linear,
+    box-shadow 100ms linear;
+}
+
+.ganttChartContainer :global(.box.focused) {
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.ganttChartContainer :global(.box.hovered) {
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.ganttChartContainer :global(.box.dynamic) {
+  filter: brightness(115%);
+}
+
+.ganttChartContainer :global(.box) :global(.spinnerGlobal) {
+  display: inline-block;
+  vertical-align: text-bottom;
+  padding-right: 4px;
+}
+
+.ganttChartContainer :global(.marker-dot) {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--color-accent-cyan);
+  border-radius: 3px;
+}
+
+.ganttChartContainer :global(.marker-whiskers) {
+  display: inline-block;
+  position: absolute;
+  height: 24px;
+  background-color: var(--color-background-cyan);
+  border-left: 1px solid var(--color-accent-cyan);
+  border-right: 1px solid var(--color-accent-cyan);
+  transition:
+    top 100ms linear,
+    left 100ms linear,
+    width 100ms linear;
+}
+
+.ganttChartContainer :global(.marker-whiskers) > div {
+  border-bottom: 1px dashed var(--color-accent-cyan);
+  height: 12px;
+}
+
+.websocketWarning {
+  position: absolute;
+  bottom: 100%;
+  color: var(--color-text-yellow);
+  width: 100%;
+}
+
+.graphQueryInputContainer {
+  z-index: 2;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.filterInputsBackgroundBox {
+  background-color: var(--color-background-gray);
+  border-radius: 4px;
+  padding: 8px 12px 8px 8px;
+}

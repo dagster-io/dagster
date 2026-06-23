@@ -1,5 +1,6 @@
 import hashlib
 import re
+import uuid
 from collections.abc import Mapping
 from typing import Any
 
@@ -29,6 +30,7 @@ class RetryableEcsException(Exception): ...
 
 
 def run_ecs_task(ecs, run_task_kwargs) -> Mapping[str, Any]:
+    run_task_kwargs = {"clientToken": str(uuid.uuid4()), **run_task_kwargs}
     try:
         response = ecs.run_task(**run_task_kwargs)
     except ecs.exceptions.InvalidParameterException as e:
@@ -168,6 +170,12 @@ def is_transient_task_stopped_reason(stopped_reason: str) -> bool:
         return True
 
     if "The Service Discovery instance could not be registered" in stopped_reason:
+        return True
+
+    if "InsufficientFreeAddressesInSubnet" in stopped_reason:
+        return True
+
+    if "Task provisioning failed" in stopped_reason:
         return True
 
     return False

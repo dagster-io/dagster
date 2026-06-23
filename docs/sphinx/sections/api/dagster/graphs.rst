@@ -1,6 +1,6 @@
-
+######
 Graphs
-======
+######
 
 The core of a job is a _graph_ of ops - connected via data dependencies.
 
@@ -15,8 +15,10 @@ The core of a job is a _graph_ of ops - connected via data dependencies.
 .. autoclass:: GraphOut
 
 
+*********************
 Explicit dependencies
-------------------------
+*********************
+
 .. currentmodule:: dagster
 
 .. autoclass:: DependencyDefinition

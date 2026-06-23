@@ -197,7 +197,13 @@ def test_dagster_dbt_mixed_freshness_manifest_fixture() -> dict[str, Any]:
 
 @pytest.fixture(name="test_metadata_manifest", scope="session")
 def test_metadata_manifest_fixture() -> dict[str, Any]:
-    # Prepopulate duckdb with jaffle shop data to support testing individual column metadata.
+    # Create the source_raw_customers table in DuckDB before dbt runs.
+    # stg_customers reads from this source table (not a seed), so it must exist
+    # before dbt build.
+    subprocess.run(
+        ["python", test_metadata_path / "init_db.py"],
+        check=True,
+    )
     return _create_dbt_invocation(
         test_metadata_path,
         build_project=True,

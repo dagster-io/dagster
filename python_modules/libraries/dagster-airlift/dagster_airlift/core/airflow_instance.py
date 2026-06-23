@@ -31,6 +31,11 @@ DEFAULT_BATCH_TASK_RETRIEVAL_LIMIT = 100
 DEFAULT_BATCH_DAG_RUNS_LIMIT = 100
 DEFAULT_DAG_LIST_LIMIT = 100
 SLEEP_SECONDS = 1
+# Airflow webservers backed by SQLite occasionally return transient 500s when
+# basic-auth user lookups race scheduler writes ("database is locked"). Polling
+# read paths retry on 5xx so a single transient blip doesn't fail the caller.
+DEFAULT_5XX_RETRIES = 3
+DEFAULT_5XX_RETRY_SLEEP_SECONDS = 1.0
 
 
 @beta
@@ -370,10 +375,24 @@ class AirflowInstance:
             )
         return response.json()["dag_run_id"]
 
+    def _get_with_5xx_retry(
+        self,
+        url: str,
+        *,
+        retries: int = DEFAULT_5XX_RETRIES,
+        sleep_seconds: float = DEFAULT_5XX_RETRY_SLEEP_SECONDS,
+        **kwargs: Any,
+    ) -> requests.Response:
+        session = self.auth_backend.get_session()
+        for attempt in range(retries + 1):
+            response = session.get(url, **kwargs)
+            if not (500 <= response.status_code < 600) or attempt == retries:
+                return response
+            time.sleep(sleep_seconds)
+        raise AssertionError("unreachable")
+
     def get_dag_run(self, dag_id: str, run_id: str) -> "DagRun":
-        response = self.auth_backend.get_session().get(
-            f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}"
-        )
+        response = self._get_with_5xx_retry(f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}")
         if response.status_code != 200:
             raise DagsterError(
                 f"Failed to fetch dag run for {dag_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
@@ -574,7 +593,5 @@ def parse_af_log_response(logs: str) -> str:
     import ast
 
     parsed_data: list = ast.literal_eval(logs)
-    strs = []
-    for log_item in parsed_data:
-        strs.append(log_item[1])
+    strs = [log_item[1] for log_item in parsed_data]
     return "".join(strs)

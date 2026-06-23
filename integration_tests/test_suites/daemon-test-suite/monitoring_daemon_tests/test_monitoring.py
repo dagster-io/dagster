@@ -48,8 +48,8 @@ def aws_env(hostnames):
     endpoint_url_from_dagster_container = (
         endpoint_url_from_pytest if IS_BUILDKITE else "http://s3:4566"
     )
-    access_key_id = "fake"
-    secret_access_key = "fake"
+    access_key_id = "minioadmin"
+    secret_access_key = "minioadmin"
 
     boto3.client(
         "s3",
@@ -95,6 +95,7 @@ def log_run_events(instance, run_id):
             print(str(log) + "\n")  # noqa: T201
 
 
+@pytest.mark.xdist_group(name="monitoring_compose")
 def test_monitoring():
     # with setup_instance() as instance:
     with instance_for_test(
@@ -116,6 +117,7 @@ def test_monitoring():
             assert all_daemons_healthy(instance)
 
 
+@pytest.mark.xdist_group(name="monitoring_compose")
 def test_docker_monitoring(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
@@ -134,7 +136,7 @@ def test_docker_monitoring(docker_postgres_instance, aws_env):
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "ops": {
                 "multiply_the_word_slow": {
@@ -194,6 +196,7 @@ def test_docker_monitoring(docker_postgres_instance, aws_env):
                     assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
+@pytest.mark.xdist_group(name="monitoring_compose")
 def test_docker_monitoring_run_out_of_attempts(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
@@ -212,7 +215,7 @@ def test_docker_monitoring_run_out_of_attempts(docker_postgres_instance, aws_env
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # ty: ignore[invalid-argument-type]
         {
             "ops": {
                 "multiply_the_word_slow": {

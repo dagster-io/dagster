@@ -40,7 +40,7 @@ def permissive_schema_config() -> None:
         return requests.get("https://my-api.com/listings", params=url_params).json()
 
     # can pass in any fields, including those not defined in the schema
-    filtered_listings(FilterConfig(title="hotel", beds=4))  # type: ignore
+    filtered_listings(FilterConfig(title="hotel", beds=4))
     # end_permissive_schema_config
 
 
@@ -281,7 +281,7 @@ def execute_with_bad_config() -> None:
 
     op_result = greeting_job.execute_in_process(
         run_config=dg.RunConfig(
-            {"print_greeting": MyOpConfig(nonexistent_config_value=1)}  # type: ignore
+            {"print_greeting": MyOpConfig(nonexistent_config_value=1)}
         ),
     )
 
@@ -289,7 +289,7 @@ def execute_with_bad_config() -> None:
         [greeting],
         run_config=dg.RunConfig(
             {"greeting": MyAssetConfig(nonexistent_config_value=1)}
-        ),  # type: ignore
+        ),
     )
 
     # end_execute_with_bad_config
@@ -392,7 +392,7 @@ def required_config() -> None:
     class MyAssetConfig(dg.Config):
         # ellipsis indicates that even though the type is Optional,
         # an input is required
-        person_first_name: str | None = ...
+        person_first_name: str | None = ...  # ty: ignore[invalid-assignment]
 
         # ellipsis can also be used with pydantic.Field to attach metadata
         person_last_name: Callable | None = Field(

@@ -36,4 +36,4 @@ You must have [boto3](https://pypi.org/project/boto3) or `dagster-cloud[serverle
 
 ## Adding environment variables and secrets
 
-Often you'll need to securely access secrets from your jobs. Dagster+ supports several methods for adding secrets—refer to the [Dagster+ environment variables documentation](/deployment/dagster-plus/management/environment-variables) for more information.
+Often you'll need to securely access secrets from your jobs. Dagster+ supports several methods for adding secrets. For more information, see the [Dagster+ environment variables guide](/deployment/dagster-plus/management/environment-variables).

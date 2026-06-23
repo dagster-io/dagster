@@ -1,11 +1,10 @@
 export enum FeatureFlag {
   flagDebugConsoleLogging = 'flagDebugConsoleLogging',
   flagDisableWebsockets = 'flagDisableWebsockets',
-  flagSidebarResources = 'flagSidebarResources',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
   flagAssetGraphGroupsPerCodeLocation = 'flagAssetGraphGroupsPerCodeLocation',
-  flagAssetCatalogSidebar = 'flagAssetCatalogSidebar',
   flagSkipOptionalResourceDefaultsInRunConfig = 'flagSkipOptionalResourceDefaultsInRunConfig',
+  flagComponentInstanceUI = 'flagComponentInstanceUI',
 
   // Flags for tests
   __TestFlagDefaultNone = '__TestFlagDefaultNone',

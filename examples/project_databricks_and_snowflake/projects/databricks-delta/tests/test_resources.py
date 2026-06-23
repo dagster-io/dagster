@@ -1,6 +1,6 @@
 import pandas as pd
 
-from databricks_delta.defs.resources import (  # type: ignore[import-not-found]
+from databricks_delta.defs.resources import (
     DatabricksResource,
     DeltaStorageResource,
 )

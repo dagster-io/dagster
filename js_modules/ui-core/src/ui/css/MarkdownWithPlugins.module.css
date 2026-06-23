@@ -1,0 +1,53 @@
+.dagsterMarkdown :global(.hljs-doctag),
+.dagsterMarkdown :global(.hljs-keyword),
+.dagsterMarkdown :global(.hljs-meta .hljs-keyword),
+.dagsterMarkdown :global(.hljs-template-tag),
+.dagsterMarkdown :global(.hljs-template-variable),
+.dagsterMarkdown :global(.hljs-type),
+.dagsterMarkdown :global(.hljs-variable.language_) {
+  color: var(--color-text-blue);
+}
+
+.dagsterMarkdown :global(.hljs-title),
+.dagsterMarkdown :global(.hljs-title.class_),
+.dagsterMarkdown :global(.hljs-title.class_.inherited__),
+.dagsterMarkdown :global(.hljs-title.function_) {
+  color: var(--color-text-blue);
+}
+
+.dagsterMarkdown :global(.hljs-attr),
+.dagsterMarkdown :global(.hljs-attribute),
+.dagsterMarkdown :global(.hljs-literal),
+.dagsterMarkdown :global(.hljs-meta),
+.dagsterMarkdown :global(.hljs-number),
+.dagsterMarkdown :global(.hljs-operator),
+.dagsterMarkdown :global(.hljs-selector-attr),
+.dagsterMarkdown :global(.hljs-selector-class),
+.dagsterMarkdown :global(.hljs-selector-id),
+.dagsterMarkdown :global(.hljs-variable) {
+  color: var(--color-text-light);
+}
+
+.dagsterMarkdown :global(.hljs-meta .hljs-string),
+.dagsterMarkdown :global(.hljs-regexp),
+.dagsterMarkdown :global(.hljs-string) {
+  color: var(--color-text-cyan);
+}
+
+.dagsterMarkdown :global(.hljs-built_in),
+.dagsterMarkdown :global(.hljs-symbol) {
+  color: var(--color-text-yellow);
+}
+
+.dagsterMarkdown :global(.hljs-code),
+.dagsterMarkdown :global(.hljs-comment),
+.dagsterMarkdown :global(.hljs-formula) {
+  color: var(--color-text-light);
+}
+
+.dagsterMarkdown :global(.hljs-name),
+.dagsterMarkdown :global(.hljs-quote),
+.dagsterMarkdown :global(.hljs-selector-pseudo),
+.dagsterMarkdown :global(.hljs-selector-tag) {
+  color: var(--color-text-green);
+}

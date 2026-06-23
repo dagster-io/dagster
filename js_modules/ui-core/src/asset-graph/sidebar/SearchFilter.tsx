@@ -1,7 +1,7 @@
 import {MenuItem, Suggest, useViewport} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/SearchFilter.module.css';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 
 export const SearchFilter = <T,>({
@@ -9,7 +9,8 @@ export const SearchFilter = <T,>({
   onSelectValue,
 }: {
   values: {label: string; value: T}[];
-  onSelectValue: (e: React.MouseEvent<any>, value: T) => void;
+
+  onSelectValue: (e: any, value: T) => void;
 }) => {
   const {viewport, containerProps} = useViewport();
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -25,7 +26,8 @@ export const SearchFilter = <T,>({
       // Exclude metakey to not interfere with shortcut for opening/closing devtools
       shortcutFilter={(e) => !e.metaKey && e.altKey && e.code === 'KeyJ'}
     >
-      <SuggestWrapper
+      <div
+        className={styles.suggestWrapper}
         {...containerProps}
         ref={(div) => {
           if (div) {
@@ -53,16 +55,10 @@ export const SearchFilter = <T,>({
             />
           )}
           noResults={<MenuItem disabled={true} text="No results" />}
-          onItemSelect={(item, e) => onSelectValue(e as any, item.value)}
+          onItemSelect={(item, e) => onSelectValue(e, item.value)}
           selectedItem={null}
         />
-      </SuggestWrapper>
+      </div>
     </ShortcutHandler>
   );
 };
-
-const SuggestWrapper = styled.div`
-  .bp5-input-group.dagster-suggest-input {
-    width: 100%;
-  }
-`;

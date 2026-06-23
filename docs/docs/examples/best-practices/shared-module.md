@@ -4,7 +4,7 @@ description: How to share modules across code locations.
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Engineering.png
 ---
 
 In this example, we'll explore strategies for sharing code across Dagster [code locations](/guides/build/projects). This is useful when you have utility functions, factories, or helpers that are used in multiple places and you want to avoid duplication.

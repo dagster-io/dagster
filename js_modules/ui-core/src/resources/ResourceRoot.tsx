@@ -2,20 +2,17 @@ import {
   Alert,
   Box,
   ButtonLink,
-  CaptionMono,
   Colors,
   Heading,
   Icon,
   MiddleTruncate,
-  Mono,
   NonIdealState,
   Page,
   PageHeader,
   SplitPanelContainer,
-  Subheading,
-  Subtitle1,
   Table,
   Tag,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -31,6 +28,7 @@ import {
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLink} from '../assets/AssetLink';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -91,7 +89,7 @@ export const ResourceRoot = (props: Props) => {
   const {repoAddress} = props;
   const {resourceName} = useParams<{resourceName: string}>();
 
-  useDocumentTitle(`Resource: ${resourceName}`);
+  useDocumentTitle(`Resources | ${resourceName}`);
 
   const resourceSelector = {
     ...repoAddressToSelector(repoAddress),
@@ -123,7 +121,11 @@ export const ResourceRoot = (props: Props) => {
   return (
     <Page style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
-        title={<Subtitle1>{displayName}</Subtitle1>}
+        title={
+          <Heading size={16} weight={600}>
+            {displayName}
+          </Heading>
+        }
         tags={
           <Tag icon="resource">
             Resource in <RepositoryLink repoAddress={repoAddress} />
@@ -197,9 +199,13 @@ export const ResourceRoot = (props: Props) => {
                       flex={{gap: 4, direction: 'column'}}
                       margin={{left: 24, right: 12, vertical: 16}}
                     >
-                      <Heading>{displayName}</Heading>
+                      <Heading size={20} weight={500}>
+                        {displayName}
+                      </Heading>
                       <Tooltip content={topLevelResourceDetailsOrError.resourceType || ''}>
-                        <Mono>{resourceTypeSuccinct}</Mono>
+                        <Text size={14} family="mono">
+                          {resourceTypeSuccinct}
+                        </Text>
                       </Tooltip>
                     </Box>
                     <Box
@@ -246,7 +252,9 @@ const ResourceConfig = (props: {
       {nestedResources.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Resource dependencies</Subheading>
+            <Heading size={14} weight={600}>
+              Resource dependencies
+            </Heading>
           </SectionHeader>
           <Table>
             <thead>
@@ -284,7 +292,9 @@ const ResourceConfig = (props: {
       )}
       <Box>
         <SectionHeader>
-          <Subheading>Configuration</Subheading>
+          <Heading size={14} weight={600}>
+            Configuration
+          </Heading>
         </SectionHeader>
         <Table>
           <thead>
@@ -380,7 +390,9 @@ const ResourceUses = (props: {
       {parentResources.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Parent resources</Subheading>
+            <Heading size={14} weight={600}>
+              Parent resources
+            </Heading>
           </SectionHeader>
           <Table>
             <thead>
@@ -414,7 +426,9 @@ const ResourceUses = (props: {
       {resourceDetails.assetKeysUsing.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Assets</Subheading>
+            <Heading size={14} weight={600}>
+              Assets
+            </Heading>
           </SectionHeader>
           <Table>
             <thead>
@@ -424,10 +438,11 @@ const ResourceUses = (props: {
             </thead>
             <tbody>
               {resourceDetails.assetKeysUsing.map((assetKey) => {
+                const token = tokenForAssetKey(assetKey);
                 return (
-                  <tr key={assetKey.path.join('/')}>
+                  <tr key={token}>
                     <td>
-                      <AssetLink key={assetKey.path.join('/')} path={assetKey.path} icon="asset" />
+                      <AssetLink key={token} path={assetKey.path} icon="asset" />
                     </td>
                   </tr>
                 );
@@ -439,7 +454,9 @@ const ResourceUses = (props: {
       {resourceDetails.jobsOpsUsing.length > 0 && (
         <Box>
           <SectionHeader>
-            <Subheading>Jobs</Subheading>
+            <Heading size={14} weight={600}>
+              Jobs
+            </Heading>
           </SectionHeader>
           <Table>
             <thead>
@@ -527,7 +544,9 @@ const ResourceUses = (props: {
         .map(({name, objects, icon}) => (
           <div key={name}>
             <SectionHeader>
-              <Subheading>{name}</Subheading>
+              <Heading size={14} weight={600}>
+                {name}
+              </Heading>
             </SectionHeader>
             <Table>
               <thead>
@@ -589,7 +608,9 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
           )}
         </div>
       </Box>
-      <CaptionMono>{description}</CaptionMono>
+      <Text size={12} family="mono">
+        {description}
+      </Text>
     </Box>
   );
 };

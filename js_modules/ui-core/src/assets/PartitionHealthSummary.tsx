@@ -1,4 +1,4 @@
-import {Box, Caption, Spinner} from '@dagster-io/ui-components';
+import {Box, Spinner, Text} from '@dagster-io/ui-components';
 import {memo, useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
@@ -60,10 +60,14 @@ export const PartitionHealthSummary = memo((props: Props) => {
 
   return (
     <div>
-      <Box flex={{justifyContent: 'space-between'}} style={{fontWeight: 600}} margin={{bottom: 4}}>
-        <Caption>{showAssetKey ? displayNameForAssetKey(assetKey) : 'Materialized'}</Caption>
+      <Box flex={{justifyContent: 'space-between'}} margin={{bottom: 4}}>
+        <Text size={12} weight={600}>
+          {showAssetKey ? displayNameForAssetKey(assetKey) : 'Materialized'}
+        </Text>
         {partitionStats ? (
-          <Caption>{`${partitionStats.numMaterialized.toLocaleString()}/${partitionStats.numPartitions.toLocaleString()}`}</Caption>
+          <Text size={12} weight={600}>
+            {`${partitionStats.numMaterialized.toLocaleString()}/${partitionStats.numPartitions.toLocaleString()}`}
+          </Text>
         ) : null}
       </Box>
       {!assetData ? (
@@ -73,7 +77,7 @@ export const PartitionHealthSummary = memo((props: Props) => {
       ) : (
         assetData.dimensions.map((dimension, dimensionIdx) => (
           <Box key={dimensionIdx} margin={{bottom: 4}}>
-            {assetData.dimensions.length > 1 && <Caption>{dimension.name}</Caption>}
+            {assetData.dimensions.length > 1 && <Text size={12}>{dimension.name}</Text>}
             <PartitionStatus
               small
               partitionNames={dimension.partitionKeys}

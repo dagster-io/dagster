@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import cast
 from urllib.parse import urlparse
 
 import dagster._check as check
@@ -37,7 +36,7 @@ class TeamsClient:
         if parsed_url.hostname is None:
             check.failed(f"No hostname found in webhook URL: {self._hook_url}")
 
-        return cast("str", parsed_url.hostname).endswith(".webhook.office.com")
+        return parsed_url.hostname.endswith(".webhook.office.com")
 
     def post_message(self, payload: Mapping) -> bool:  # pragma: no cover
         response = post(

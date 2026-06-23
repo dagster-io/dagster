@@ -19,12 +19,13 @@ from dagster._core.definitions.asset_selection import AssetSelection, CoercibleT
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.execution.api import execute_run_iterator
+from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
 from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.test_utils import (
     create_test_asset_job,
     ignore_warning,
@@ -240,14 +241,14 @@ def test_source_asset():
             pass
 
         def load_input(self, context):
-            assert context.resource_config["a"] == 7  # pyright: ignore[reportOptionalSubscript]
+            assert context.resource_config["a"] == 7
             assert context.resources.subresource == 9
-            assert context.upstream_output.resources.subresource == 9  # pyright: ignore[reportOptionalMemberAccess]
-            assert context.upstream_output.asset_key == dg.AssetKey("source1")  # pyright: ignore[reportOptionalMemberAccess]
-            assert context.upstream_output.definition_metadata["a"] == "b"  # pyright: ignore[reportOptionalMemberAccess]
-            assert context.upstream_output.resource_config["a"] == 7  # pyright: ignore[reportOptionalSubscript,reportOptionalMemberAccess]
-            assert context.upstream_output.log is not None  # pyright: ignore[reportOptionalMemberAccess]
-            context.upstream_output.log.info("hullo")  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.resources.subresource == 9
+            assert context.upstream_output.asset_key == dg.AssetKey("source1")
+            assert context.upstream_output.definition_metadata["a"] == "b"
+            assert context.upstream_output.resource_config["a"] == 7
+            assert context.upstream_output.log is not None
+            context.upstream_output.log.info("hullo")
             assert context.asset_key == dg.AssetKey("source1")
             return 5
 
@@ -1025,7 +1026,7 @@ def test_asset_in_nested_graph():
 
     @dg.graph(out={"o1": dg.GraphOut(), "o3": dg.GraphOut()})
     def thing():
-        o1, o2 = inside_thing()  # pyright: ignore[reportGeneralTypeIssues]
+        o1, o2 = inside_thing()  # ty: ignore[not-iterable]
         o3 = get_transformed_string(o2)
         return (o1, o3)
 
@@ -1072,13 +1073,13 @@ def test_twice_nested_graph():
 
     @dg.graph(out={"n1": dg.GraphOut(), "n2": dg.GraphOut(), "unused": dg.GraphOut()})
     def middle_thing():
-        n1, unused_output = innermost_thing()  # pyright: ignore[reportGeneralTypeIssues]
+        n1, unused_output = innermost_thing()  # ty: ignore[not-iterable]
         n2 = get_string()
         return {"n1": n1, "n2": n2, "unused": unused_output}
 
     @dg.graph(out={"n1": dg.GraphOut(), "n2": dg.GraphOut(), "unused": dg.GraphOut()})
     def outer_thing(foo_asset):
-        n1, output, unused_output = middle_thing()  # pyright: ignore[reportGeneralTypeIssues]
+        n1, output, unused_output = middle_thing()  # ty: ignore[not-iterable]
         n2 = transformer(output)
         unused_output = combiner(unused_output, transformer(foo_asset))
         return {"n1": n1, "n2": n2, "unused": unused_output}
@@ -1240,7 +1241,7 @@ def test_connected_subset():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
 
         assert len(materialization_events) == 3
@@ -1259,7 +1260,7 @@ def test_subset_of_asset_job():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
         assert len(materialization_events) == 3
         assert materialization_events[0].asset_key == dg.AssetKey("bar")
@@ -1282,7 +1283,7 @@ def test_subset_of_assets_job():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
         assert len(materialization_events) == 3
         assert materialization_events[0].asset_key == dg.AssetKey("bar")
@@ -1367,7 +1368,7 @@ def test_asset_selection_reconstructable():
             reconstructable_foo_job = dg.build_reconstructable_job(
                 "dagster_tests.asset_defs_tests.test_asset_job",
                 "reconstruct_asset_job",
-                reconstructable_args=tuple(),
+                reconstructable_args=tuple(),  # ty: ignore[invalid-argument-type]
                 reconstructable_kwargs={},
             ).get_subset(asset_selection=frozenset([dg.AssetKey("f")]))
 
@@ -1508,7 +1509,7 @@ def test_multi_subset():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
 
         assert len(materialization_events) == 2
@@ -1526,7 +1527,7 @@ def test_multi_all():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
 
         assert len(materialization_events) == 3
@@ -1640,7 +1641,7 @@ def test_graph_output_is_input_within_graph():
         },
     )
     def complicated_graph():
-        one, two = nested()  # pyright: ignore[reportGeneralTypeIssues]
+        one, two = nested()  # ty: ignore[not-iterable]
         return one, two, transform(two)
 
     defs = dg.Definitions(
@@ -1840,7 +1841,7 @@ def test_transitive_resource_deps_provided():
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `io_manager_def` .* is currently in beta")
 def test_transitive_io_manager_dep_not_provided():
-    @dg.io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
 
@@ -2005,10 +2006,10 @@ def test_asset_subset_io_managers(job_selection, expected_nodes):
     @dg.io_manager(config_schema={"n": int})
     def return_n_io_manager(context):
         class ReturnNIOManager(dg.IOManager):
-            def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def handle_output(self, _context, obj):  # ty: ignore[invalid-method-override]
                 pass
 
-            def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def load_input(self, _context):  # ty: ignore[invalid-method-override]
                 return context.resource_config["n"]
 
         return ReturnNIOManager()
@@ -2388,7 +2389,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     with dg.instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            record.event_log_entry.dagster_event.event_specific_data.asset_key  # ty: ignore[unresolved-attribute]
             for record in instance.get_records_for_run(
                 run_id=result.run_id,
                 of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -2583,9 +2584,9 @@ def test_subset_cycle_resolution_complex():
             d = y + 1
             yield dg.Output(d, "d")
         if "e" in context.op_execution_context.selected_output_names:
-            yield dg.Output(c + 1, "e")  # pyright: ignore[reportPossiblyUnboundVariable]
+            yield dg.Output(c + 1, "e")
         if "f" in context.op_execution_context.selected_output_names:
-            yield dg.Output(d + 1, "f")  # pyright: ignore[reportPossiblyUnboundVariable]
+            yield dg.Output(d + 1, "f")
 
     @dg.asset
     def x(a):
@@ -2929,6 +2930,72 @@ def test_subset_cycle_dependencies():
     assert _all_asset_keys(result) == {dg.AssetKey("a"), dg.AssetKey("b")}
 
 
+def test_subset_cycle_resolution_preserves_orphan_check():
+    """When cycle resolution splits a multi-asset by color, asset checks whose
+    target asset is not in the user-selected asset_selection (but were explicitly
+    requested in the user's check selection) must not be silently dropped.
+    """
+
+    @dg.asset(deps=["A"])
+    def B():
+        return 1
+
+    @dg.multi_asset(
+        can_subset=True,
+        specs=[
+            dg.AssetSpec("A"),
+            dg.AssetSpec("C", deps=["B"]),
+            dg.AssetSpec("Z"),
+        ],
+        check_specs=[
+            dg.AssetCheckSpec("check_A", asset="A"),
+            dg.AssetCheckSpec("check_C", asset="C"),
+            dg.AssetCheckSpec("check_Z", asset="Z"),
+        ],
+    )
+    def M1():
+        yield dg.Output(1, "A")
+        yield dg.Output(3, "C")
+        yield dg.Output(26, "Z")
+        yield dg.AssetCheckResult(asset_key="A", check_name="check_A", passed=True)
+        yield dg.AssetCheckResult(asset_key="C", check_name="check_C", passed=True)
+        yield dg.AssetCheckResult(asset_key="Z", check_name="check_Z", passed=True)
+
+    job = dg.Definitions(assets=[M1, B]).resolve_implicit_global_asset_job_def()
+
+    # Selecting A, B, C creates a cycle (M1 -> M2 -> M1) that triggers
+    # _attempt_resolve_node_cycles, splitting M1 into two color pieces.
+    # check_Z's target Z is NOT in the asset_selection, so it would be orphaned.
+    subset_job = job.get_subset(
+        asset_selection={dg.AssetKey("A"), dg.AssetKey("B"), dg.AssetKey("C")},
+        asset_check_selection={
+            dg.AssetCheckKey(dg.AssetKey("A"), "check_A"),
+            dg.AssetCheckKey(dg.AssetKey("C"), "check_C"),
+            dg.AssetCheckKey(dg.AssetKey("Z"), "check_Z"),
+        },
+    )
+
+    plan = create_execution_plan(subset_job)
+    snap = snapshot_from_execution_plan(plan, subset_job.get_job_snapshot_id())
+
+    found_check_keys = set()
+    for step in snap.steps:
+        if step.key not in snap.step_keys_to_execute:
+            continue
+        for out in step.outputs:
+            if out.properties and out.properties.asset_check_key:
+                found_check_keys.add(out.properties.asset_check_key)
+
+    expected = {
+        dg.AssetCheckKey(dg.AssetKey("A"), "check_A"),
+        dg.AssetCheckKey(dg.AssetKey("C"), "check_C"),
+        dg.AssetCheckKey(dg.AssetKey("Z"), "check_Z"),
+    }
+    assert found_check_keys == expected, (
+        f"Expected {expected}, got {found_check_keys}. Missing: {expected - found_check_keys}"
+    )
+
+
 def test_subset_recongeal() -> None:
     # In this test, we create a job that requires multi-asset `acd` to be broken up into two pieces
     # in order to accomodate the inclusion of `b` in the job, as `b` depends on `a`, but is depended
@@ -3042,7 +3109,7 @@ def test_partial_dependency_on_upstream_multi_asset():
             self.values: dict[dg.AssetKey, int] = {}
 
         def handle_output(self, context: OutputContext, obj: object):
-            self.values[context.asset_key] = obj  # pyright: ignore[reportArgumentType]
+            self.values[context.asset_key] = obj  # ty: ignore[invalid-assignment]
 
         def load_input(self, context: InputContext) -> object:
             return self.values[context.asset_key]
@@ -3085,3 +3152,29 @@ def test_job_definition_with_resolution_error():
         dg.DagsterInvalidDefinitionError, match="Failed to resolve asset job invalid_job"
     ):
         defs.get_repository_def().get_all_jobs()
+
+
+def test_asset_subset_preserves_run_tags() -> None:
+    """Test that subsetting an asset job preserves run_tags from the original job."""
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    @dg.asset
+    def asset_b():
+        return 2
+
+    job = dg.define_asset_job(
+        name="my_job",
+        selection=[asset_a, asset_b],
+        run_tags={"dagster/max_retries": "1", "my_tag": "my_value"},
+    )
+
+    defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[job])
+    job_def = defs.resolve_job_def("my_job")
+
+    # Subset to just asset_a
+    subset_job = job_def.get_subset(asset_selection={dg.AssetKey("asset_a")})
+
+    assert subset_job.run_tags == {"dagster/max_retries": "1", "my_tag": "my_value"}

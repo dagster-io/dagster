@@ -2,6 +2,7 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {
   buildDryRunInstigationTick,
+  buildDynamicPartitionRequest,
   buildErrorChainLink,
   buildInstigationState,
   buildLaunchMultipleRunsResult,
@@ -15,7 +16,7 @@ import {
   buildSensorData,
   buildTickEvaluation,
 } from '../../graphql/builders';
-import {InstigationStatus, RunStatus} from '../../graphql/types';
+import {DynamicPartitionsRequestType, InstigationStatus, RunStatus} from '../../graphql/types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
@@ -373,6 +374,40 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
             }),
           }),
         ],
+      }),
+    },
+  },
+};
+
+export const SensorDryRunMutationDynamicPartitionsOnly: MockedResponse<SensorDryRunMutation> = {
+  request: {
+    query: EVALUATE_SENSOR_MUTATION,
+    variables: {
+      selectorData: {
+        sensorName: 'test',
+        repositoryLocationName: 'testLocation',
+        repositoryName: 'testName',
+      },
+      cursor: 'testCursortesting123',
+    },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      sensorDryRun: buildDryRunInstigationTick({
+        evaluationResult: buildTickEvaluation({
+          cursor: '',
+          runRequests: [],
+          skipReason: null,
+          error: null,
+          dynamicPartitionsRequests: [
+            buildDynamicPartitionRequest({
+              partitionKeys: ['red', 'blue', 'green'],
+              partitionsDefName: 'colors',
+              type: DynamicPartitionsRequestType.ADD_PARTITIONS,
+            }),
+          ],
+        }),
       }),
     },
   },

@@ -169,7 +169,7 @@ class DynamicPartitionsRequestMixin:
 
 
 class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "DynamicPartitionRequest"
 
     def __init__(
@@ -186,7 +186,7 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
 
 class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "DynamicPartitionsRequestResult"
 
     skippedPartitionKeys = non_null_list(graphene.String)
@@ -311,7 +311,8 @@ class GrapheneInstigationTick(graphene.ObjectType):
     def resolve_requestedMaterializationsForAssets(self, _):
         return [
             GrapheneRequestedMaterializationsForAsset(
-                assetKey=GrapheneAssetKey(path=asset_key.path), partitionKeys=list(partition_keys)
+                assetKey=GrapheneAssetKey(path=asset_key.path),
+                partitionKeys=list(partition_keys),
             )
             for asset_key, partition_keys in self._tick.requested_assets_and_partitions.items()
         ]
@@ -700,9 +701,11 @@ class GrapheneInstigationState(graphene.ObjectType):
                     REPOSITORY_LABEL_TAG: repository_label,
                 }
             )
+        instance = graphene_info.context.instance
+        limit = limit if limit is not None else instance.get_default_graphql_run_records_limit()
         return [
             GrapheneRun(record)
-            for record in graphene_info.context.instance.get_run_records(
+            for record in instance.get_run_records(
                 filters=filters,
                 limit=limit,
             )
@@ -778,7 +781,7 @@ class GrapheneInstigationStateNotFoundError(graphene.ObjectType):
 
     def __init__(self, target):
         super().__init__()
-        self.name = check.str_param(target, "target")
+        self.name = check.str_param(target, "target")  # ty: ignore[invalid-assignment]
         self.message = f"Could not find instigation state for `{target}`"
 
 

@@ -82,7 +82,7 @@ export function useRefreshAtInterval<T = any>({
   enabled = true,
   leading,
 }: {
-  refresh: () => Promise<T>;
+  refresh: () => T | Promise<T>;
   intervalMs: number;
   enabled?: boolean;
   leading?: boolean;
@@ -106,7 +106,16 @@ export function useRefreshAtInterval<T = any>({
 
   const refreshFn = useCallback(async () => {
     setLoading(true);
+    const start = Date.now();
     const result = await refresh();
+
+    // Prevent flickering and ensure we catch both react state changes around
+    // non-async `refresh` functions by making sure we waited at least 1s.
+    const delay = 1000 - (Date.now() - start);
+    if (delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
     setLoading(false);
     return result;
   }, [refresh]);

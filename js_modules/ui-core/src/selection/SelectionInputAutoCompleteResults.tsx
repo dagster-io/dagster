@@ -1,5 +1,4 @@
 import {
-  BodySmall,
   Box,
   Colors,
   Container,
@@ -8,13 +7,14 @@ import {
   Menu,
   MenuItem,
   Row,
+  Text,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect} from 'react';
-import styled from 'styled-components';
 
 import {Suggestion} from './SelectionAutoCompleteProvider';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
+import styles from './css/SelectionInputAutoCompleteResults.module.css';
 
 type SelectionInputAutoCompleteResultsProps = {
   results: {
@@ -57,12 +57,12 @@ export const SelectionInputAutoCompleteResults = React.memo(
       <div style={{minWidth: width}}>
         <Menu>
           <Container ref={menuRef} style={{maxHeight: '300px', overflowY: 'auto'}}>
-            <Inner $totalHeight={totalHeight}>
+            <Inner totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const result = results!.list[index]!;
                 return (
-                  <Row key={key} $height={size} $start={start}>
+                  <Row key={key} height={size} start={start}>
                     <div ref={rowVirtualizer.measureElement} data-index={index}>
                       {'type' in result && result.type === 'no-match' ? (
                         <Box
@@ -73,9 +73,13 @@ export const SelectionInputAutoCompleteResults = React.memo(
                         </Box>
                       ) : (
                         <MenuItem
+                          key={result.text}
                           text={result.jsx}
                           active={index === selectedIndex}
-                          onClick={() => onSelect(result)}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            onSelect(result);
+                          }}
                         />
                       )}
                     </div>
@@ -98,25 +102,25 @@ export const SelectionInputAutoCompleteResults = React.memo(
           >
             <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <KeyHintWrapper>
+                <div className={styles.keyHintWrapper}>
                   <Icon name="arrow_upward" size={12} style={{margin: 0}} />
-                </KeyHintWrapper>
-                <KeyHintWrapper>
+                </div>
+                <div className={styles.keyHintWrapper}>
                   <Icon name="arrow_downward" size={12} style={{margin: 0}} />
-                </KeyHintWrapper>
-                <BodySmall>to navigate</BodySmall>
+                </div>
+                <Text size={12}>to navigate</Text>
               </Box>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <KeyHintWrapper>
-                  <BodySmall>Tab</BodySmall>
-                </KeyHintWrapper>
-                <BodySmall>to select</BodySmall>
+                <div className={styles.keyHintWrapper}>
+                  <Text size={12}>Tab</Text>
+                </div>
+                <Text size={12}>to select</Text>
               </Box>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <KeyHintWrapper>
-                  <BodySmall>Enter</BodySmall>
-                </KeyHintWrapper>
-                <BodySmall>to search</BodySmall>
+                <div className={styles.keyHintWrapper}>
+                  <Text size={12}>Enter</Text>
+                </div>
+                <Text size={12}>to search</Text>
               </Box>
             </Box>
             <a
@@ -125,7 +129,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
               rel="noopener noreferrer"
             >
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <BodySmall>View documentation</BodySmall>
+                <Text size={12}>View documentation</Text>
                 <Icon name="open_in_new" color={Colors.linkDefault()} />
               </Box>
             </a>
@@ -136,9 +140,3 @@ export const SelectionInputAutoCompleteResults = React.memo(
     );
   },
 );
-
-const KeyHintWrapper = styled.div`
-  border-radius: 8px;
-  padding: 4px;
-  background-color: ${Colors.backgroundGrayHover()};
-`;

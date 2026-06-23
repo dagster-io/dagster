@@ -1,14 +1,13 @@
 import {
   Box,
-  Caption,
   CollapsibleSection,
   Colors,
   ExternalAnchorButton,
   FontFamily,
+  Heading,
   Icon,
   NonIdealState,
-  Subtitle1,
-  Subtitle2,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -64,7 +63,11 @@ export const AssetCheckOverview = ({
     >
       <CollapsibleSection
         headerWrapperProps={headerWrapperProps}
-        header={<Subtitle1>About</Subtitle1>}
+        header={
+          <Heading size={16} weight={600}>
+            About
+          </Heading>
+        }
         arrowSide="right"
       >
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} padding={{top: 12}}>
@@ -72,9 +75,9 @@ export const AssetCheckOverview = ({
             name={blocking ? 'shield_check' : 'shield'}
             color={blocking ? Colors.accentYellow() : Colors.accentPrimary()}
           />
-          <Caption>
+          <Text size={12}>
             This is a <strong>{blocking ? 'blocking' : 'non-blocking'}</strong> asset check.
-          </Caption>
+          </Text>
           <Tooltip
             placement="top"
             display="block"
@@ -93,13 +96,19 @@ export const AssetCheckOverview = ({
           {selectedCheck.description ? (
             <Description description={selectedCheck.description} maxHeight={260} />
           ) : (
-            <Caption color={Colors.textLight()}>No description provided</Caption>
+            <Text size={12} color="textLight">
+              No description provided
+            </Text>
           )}
         </Box>
       </CollapsibleSection>
       <CollapsibleSection
         headerWrapperProps={headerWrapperProps}
-        header={<Subtitle1>Latest execution</Subtitle1>}
+        header={
+          <Heading size={16} weight={600}>
+            Latest execution
+          </Heading>
+        }
         arrowSide="right"
       >
         {lastExecution?.evaluation?.description ? (
@@ -110,14 +119,18 @@ export const AssetCheckOverview = ({
         <Box padding={{top: 12}} flex={{direction: 'column', gap: 20}}>
           <Box flex={{direction: 'row', gap: 48}}>
             <Box flex={{direction: 'column', gap: 8}}>
-              <Subtitle2>Evaluation result</Subtitle2>
+              <Heading size={14} weight={600}>
+                Evaluation result
+              </Heading>
               <div>
                 <AssetCheckStatusTag execution={selectedCheck.executionForLatestMaterialization} />
               </div>
             </Box>
             {lastExecution ? (
               <Box flex={{direction: 'column', gap: 8}}>
-                <Subtitle2>Timestamp</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Timestamp
+                </Heading>
                 <Link
                   to={linkToRunEvent(
                     {id: lastExecution.runId},
@@ -130,7 +143,9 @@ export const AssetCheckOverview = ({
             ) : null}
             {targetMaterialization ? (
               <Box flex={{direction: 'column', gap: 8}}>
-                <Subtitle2>Target materialization</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Target materialization
+                </Heading>
                 <Link to={`/runs/${targetMaterialization.runId}`}>
                   <Timestamp timestamp={{unix: targetMaterialization.timestamp}} />
                 </Link>
@@ -138,7 +153,9 @@ export const AssetCheckOverview = ({
             ) : null}
             {lastExecution ? (
               <Box flex={{direction: 'column', gap: 8}}>
-                <Subtitle2>Partition</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Partition
+                </Heading>
                 {lastExecution.evaluation?.partition ? (
                   <div style={{fontFamily: FontFamily.monospace, fontSize: 12}}>
                     {lastExecution.evaluation.partition}
@@ -151,7 +168,9 @@ export const AssetCheckOverview = ({
           </Box>
           {lastExecution?.evaluation?.metadataEntries.length ? (
             <Box flex={{direction: 'column', gap: 8}}>
-              <Subtitle2>Metadata</Subtitle2>
+              <Heading size={14} weight={600}>
+                Metadata
+              </Heading>
               <div style={{fontFamily: FontFamily.monospace, fontSize: 12}}>
                 <MetadataEntries entries={lastExecution.evaluation.metadataEntries} />
               </div>
@@ -160,7 +179,11 @@ export const AssetCheckOverview = ({
         </Box>
       </CollapsibleSection>
       <CollapsibleSection
-        header={<Subtitle1>Plots</Subtitle1>}
+        header={
+          <Heading size={16} weight={600}>
+            Plots
+          </Heading>
+        }
         headerWrapperProps={headerWrapperProps}
         isInitiallyCollapsed={executionsLoading || executionPlotGroups.length === 0}
         key={`reset-collapsed-on-load-${executionsLoading}`}

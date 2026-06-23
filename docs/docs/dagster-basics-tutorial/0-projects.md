@@ -12,7 +12,7 @@ To streamline project creation, Dagster provides the [`create-dagster` CLI](/api
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/definitions.png)
 
-## 1. Scaffold a Dagster project
+## Step 1: Scaffold a Dagster project
 
 <Tabs groupId="package-manager">
    <TabItem value="uv" label="uv">
@@ -132,7 +132,7 @@ Your new Dagster project should have the following structure:
 - `src/definitions.py` defines the main Dagster project object.
 - The `tests` directory will contain tests for the project.
 
-## 2. Start the Dagster webserver
+## Step 2: Start the Dagster webserver
 
 When you initialize a project with `create-dagster`, the `dagster-dg-cli` library is installed. This provides the `dg` CLI, which includes several commands to help you structure and navigate Dagster projects. For more details, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-configuration).
 

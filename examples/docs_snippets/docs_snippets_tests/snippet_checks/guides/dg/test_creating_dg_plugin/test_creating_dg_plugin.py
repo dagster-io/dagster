@@ -60,12 +60,12 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
 
         # Add entry point to pyproject.toml
         pyproject_toml_path = Path("pyproject.toml")
-        pyproject_toml_content = pyproject_toml_path.read_text()
+        pyproject_toml_content = pyproject_toml_path.read_text(encoding="utf-8")
         pyproject_toml_content += format_multiline("""
             [project.entry-points]
             "dagster_dg_cli.registry_modules" = { my_library = "my_library" }
         """)
-        pyproject_toml_path.write_text(pyproject_toml_content)
+        pyproject_toml_path.write_text(pyproject_toml_content, encoding="utf-8")
 
         context.check_file(
             "pyproject.toml",
@@ -96,9 +96,10 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
-            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-dg-core'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-dg-cli'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-dg-core'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-cloud-cli'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-rest-resources'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
         )
 

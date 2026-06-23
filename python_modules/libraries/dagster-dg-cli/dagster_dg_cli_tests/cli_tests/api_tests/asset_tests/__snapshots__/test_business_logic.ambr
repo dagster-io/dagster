@@ -1,119 +1,9 @@
 # serializer version: 1
-# name: TestAssetDataProcessing.test_asset_creation_with_complex_metadata[0]
-  dict({
-    'asset_key': 'analytics/complex_table',
-    'asset_key_parts': list([
-      'analytics',
-      'complex_table',
-    ]),
-    'automation_condition': None,
-    'backfill_policy': None,
-    'dependency_keys': list([
-    ]),
-    'description': 'Complex asset with various metadata types',
-    'downstream_keys': None,
-    'group_name': 'analytics',
-    'id': 'complex-asset',
-    'job_names': None,
-    'kinds': list([
-      'dbt',
-      'table',
-      'materialized',
-    ]),
-    'metadata_entries': list([
-      dict({
-        'description': 'Some text',
-        'label': 'text_meta',
-        'text': 'example_text',
-      }),
-      dict({
-        'description': 'Documentation',
-        'label': 'url_meta',
-        'url': 'https://docs.example.com',
-      }),
-      dict({
-        'description': 'File path',
-        'label': 'path_meta',
-        'path': '/data/warehouse/table.sql',
-      }),
-      dict({
-        'description': 'Config',
-        'jsonString': '{"key": "value"}',
-        'label': 'json_meta',
-      }),
-      dict({
-        'description': 'Notes',
-        'label': 'markdown_meta',
-        'mdStr': '''
-          # Notes
-          This is markdown
-        ''',
-      }),
-      dict({
-        'description': 'Python class',
-        'label': 'python_meta',
-        'module': 'mymodule',
-        'name': 'MyClass',
-      }),
-      dict({
-        'description': 'Score',
-        'floatValue': 95.5,
-        'label': 'float_meta',
-      }),
-      dict({
-        'description': 'Count',
-        'intValue': 42,
-        'label': 'int_meta',
-      }),
-      dict({
-        'boolValue': True,
-        'description': 'Is active',
-        'label': 'bool_meta',
-      }),
-    ]),
-    'owners': None,
-    'partition_definition': None,
-    'tags': None,
-    'upstream_dependencies': None,
-  })
-# ---
-# name: TestEvaluationDataModels.test_evaluation_record_json_round_trip[0]
-  dict({
-    'end_timestamp': 1706745610.0,
-    'evaluation_id': 42,
-    'evaluation_nodes': list([
-      dict({
-        'child_unique_ids': list([
-        ]),
-        'end_timestamp': 1706745610.0,
-        'expanded_label': list([
-          'Any',
-          'deps',
-          'updated',
-        ]),
-        'is_partitioned': True,
-        'num_candidates': 5,
-        'num_true': 3,
-        'operator_type': 'AND',
-        'start_timestamp': 1706745600.0,
-        'unique_id': 'root_node',
-        'user_label': 'eager',
-      }),
-    ]),
-    'num_requested': 5,
-    'root_unique_id': 'root_node',
-    'run_ids': list([
-      'run-1',
-      'run-2',
-    ]),
-    'start_timestamp': 1706745600.0,
-    'timestamp': 1706745600.0,
-  })
-# ---
 # name: TestFormatAssetEvaluations.test_format_empty_evaluations_json_output[0]
   dict({
     'items': list([
     ]),
+    'total': 0,
   })
 # ---
 # name: TestFormatAssetEvaluations.test_format_empty_evaluations_text_output[0]
@@ -147,6 +37,7 @@
         'timestamp': 1706659200.0,
       }),
     ]),
+    'total': 2,
   })
 # ---
 # name: TestFormatAssetEvaluations.test_format_evaluations_text_output[0]
@@ -223,6 +114,7 @@
         'timestamp': 1706745600.0,
       }),
     ]),
+    'total': 1,
   })
 # ---
 # name: TestFormatAssetEvaluations.test_format_evaluations_with_nodes_text_output[0]
@@ -286,6 +178,7 @@
         'timestamp': '1706572800000',
       }),
     ]),
+    'total': 3,
   })
 # ---
 # name: TestFormatAssetEvents.test_format_asset_events_text_output[0]
@@ -300,6 +193,7 @@
   dict({
     'items': list([
     ]),
+    'total': 0,
   })
 # ---
 # name: TestFormatAssetEvents.test_format_empty_asset_events_text_output[0]
@@ -433,14 +327,14 @@
       'latest_materialization_minutes_late': None,
       'maximum_lag_minutes': 30.0,
     }),
-    'freshness_status': 'FRESH',
+    'freshness_status': 'DEGRADED',
     'health_metadata': None,
     'latest_materialization': dict({
       'partition': '2024-01-31',
       'run_id': 'run-abc-123',
       'timestamp': 1706745600000.0,
     }),
-    'materialization_status': 'MATERIALIZED',
+    'materialization_status': 'UNKNOWN',
   })
 # ---
 # name: TestFormatAssetHealth.test_format_asset_health_text_output[0]
@@ -448,8 +342,8 @@
   Asset Key: analytics/daily_metrics
   
   Asset Health: HEALTHY
-  Materialization Status: MATERIALIZED
-  Freshness Status: FRESH
+  Materialization Status: UNKNOWN
+  Freshness Status: DEGRADED
   Asset Checks Status: HEALTHY
   Latest Materialization: 2024-02-01 00:00:00 UTC
   Latest Run ID: run-abc-123
@@ -622,5 +516,45 @@
   Group: core_tables
   Kinds: dbt, table
   Deps: None
+  '''
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_all_materialized_text[0]
+  '''
+  Materialized: 50
+  Failed:       0
+  In Progress:  0
+  Total:        50
+  '''
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_empty_json[0]
+  dict({
+    'num_failed': 0,
+    'num_materialized': 0,
+    'num_materializing': 0,
+    'num_partitions': 100,
+  })
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_empty_text[0]
+  '''
+  Materialized: 0
+  Failed:       0
+  In Progress:  0
+  Total:        100
+  '''
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_json_output[0]
+  dict({
+    'num_failed': 3,
+    'num_materialized': 85,
+    'num_materializing': 2,
+    'num_partitions': 100,
+  })
+# ---
+# name: TestFormatPartitionStatus.test_format_partition_status_text_output[0]
+  '''
+  Materialized: 85
+  Failed:       3
+  In Progress:  2
+  Total:        100
   '''
 # ---

@@ -9,16 +9,9 @@ description = "Package for integrating Airbyte with Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
+    "python-dateutil",
     "requests",
 ]
 
@@ -32,10 +25,36 @@ dagster-airbyte = "dagster_airbyte.cli:main"
 dagster_airbyte = "dagster_airbyte"
 
 [project.optional-dependencies]
-test = [
-    "requests-mock",
-    "flaky",
-]
 managed = [
     "dagster-managed-elements==1!0+dev",
 ]
+
+[dependency-groups]
+test = [
+    "dagster-graphql",
+    "dagster-pipes",
+    "dagster[test]",
+    "dagster-test",
+    "dagster-shared",
+    "create-dagster",
+    "dagster-dg-cli",
+    "dagster-dg-core[test]",
+    "dagster-cloud-cli",
+    "dagster-rest-resources",
+    "dagster-managed-elements",
+    "requests-mock",
+    "pytest-rerunfailures",
+]
+
+[tool.uv.sources]
+dagster-graphql = { path = "../../dagster-graphql", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster = { path = "../../dagster", editable = true }
+dagster-test = { path = "../../dagster-test", editable = true }
+dagster-shared = { path = "../../libraries/dagster-shared", editable = true }
+create-dagster = { path = "../create-dagster", editable = true }
+dagster-dg-cli = { path = "../dagster-dg-cli", editable = true }
+dagster-dg-core = { path = "../dagster-dg-core", editable = true }
+dagster-cloud-cli = { path = "../dagster-cloud-cli", editable = true }
+dagster-rest-resources = { path = "../dagster-rest-resources", editable = true }
+dagster-managed-elements = { path = "../dagster-managed-elements", editable = true }

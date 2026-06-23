@@ -266,7 +266,7 @@ def get_telemetry_enabled_from_dagster_yaml() -> bool:
     """Lightweight check to see if telemetry is enabled by checking $DAGSTER_HOME/dagster.yaml,
     without needing to load the entire Dagster instance.
     """
-    import yaml
+    from dagster_shared.yaml_utils import safe_load_yaml
 
     dagster_home_path = dagster_home_if_set()
     if dagster_home_path is None:
@@ -277,7 +277,7 @@ def get_telemetry_enabled_from_dagster_yaml() -> bool:
         return True
 
     with open(dagster_yaml_path, encoding="utf8") as dagster_yaml_file:
-        dagster_yaml_data = yaml.safe_load(dagster_yaml_file)
+        dagster_yaml_data = safe_load_yaml(dagster_yaml_file)
         if (
             dagster_yaml_data
             and "telemetry" in dagster_yaml_data
@@ -309,7 +309,7 @@ def get_or_set_user_id() -> str:
 
 def _get_telemetry_user_id() -> str | None:
     """Gets the user_id from ~/.dagster/.telemetry/user_id.yaml."""
-    import yaml
+    from dagster_shared.yaml_utils import safe_load_yaml
 
     user_id_path = os.path.join(get_or_create_user_telemetry_dir(), "user_id.yaml")
     if not os.path.exists(user_id_path):
@@ -317,7 +317,7 @@ def _get_telemetry_user_id() -> str | None:
 
     try:
         with open(user_id_path, encoding="utf8") as user_id_file:
-            user_id_yaml = yaml.safe_load(user_id_file)
+            user_id_yaml = safe_load_yaml(user_id_file)
             if (
                 user_id_yaml
                 and USER_ID_STR in user_id_yaml
@@ -346,14 +346,14 @@ def _set_telemetry_user_id() -> str | None:
 
 # Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _get_telemetry_instance_id() -> str | None:
-    import yaml
+    from dagster_shared.yaml_utils import safe_load_yaml
 
     telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     if not os.path.exists(telemetry_id_path):
         return
 
     with open(telemetry_id_path, encoding="utf8") as telemetry_id_file:
-        telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
+        telemetry_id_yaml = safe_load_yaml(telemetry_id_file)
         if (
             telemetry_id_yaml
             and INSTANCE_ID_STR in telemetry_id_yaml

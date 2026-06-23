@@ -137,11 +137,25 @@ def test_ecs_pipes(
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def _materialize_asset(env, return_dict):
+def _materialize_asset(env, return_dict, task_started_event, materialization_done_event):
     ecs_client = boto3.client("ecs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
     cloudwatch_client = boto3.client("logs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
+    mock_client = LocalECSMockClient(ecs_client=ecs_client, cloudwatch_client=cloudwatch_client)
+
+    # Signal the parent as soon as the ECS task has actually been launched, so
+    # the parent waits for real work before sending SIGTERM rather than racing
+    # subprocess startup with a fixed sleep.
+    original_run_task = mock_client.run_task
+
+    def run_task_and_signal(**kwargs):
+        result = original_run_task(**kwargs)
+        task_started_event.set()
+        return result
+
+    mock_client.run_task = run_task_and_signal  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+
     pipes = PipesECSClient(
-        client=LocalECSMockClient(ecs_client=ecs_client, cloudwatch_client=cloudwatch_client),  # type: ignore
+        client=mock_client,  # type: ignore
         message_reader=PipesCloudWatchMessageReader(
             client=cloudwatch_client,
         ),
@@ -155,37 +169,122 @@ def _materialize_asset(env, return_dict):
                 resources={"pipes_ecs_client": pipes},
             )
     finally:
-        assert len(pipes._client._task_runs) > 0  # noqa  # pyright: ignore[reportAttributeAccessIssue]
-        task_arn = next(iter(pipes._client._task_runs.keys()))  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+        assert len(pipes._client._task_runs) > 0  # noqa  # ty: ignore[unresolved-attribute]
+        task_arn = next(iter(pipes._client._task_runs.keys()))  # noqa  # ty: ignore[unresolved-attribute]
         return_dict[0] = pipes._client.describe_tasks(  # noqa
             cluster="test-cluster", tasks=[task_arn]
         )
+        # Signal that return_dict is fully populated. The parent gates on this rather
+        # than on `p.is_alive()` because spawn/instance teardown after the interruption
+        # can outrun a fixed process-death window even when the materialization data
+        # the test cares about is already ready.
+        materialization_done_event.set()
 
 
+@pytest.mark.timeout(420)
 def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
-    with multiprocessing.Manager() as manager:
+    # Use a "spawn" context so the subprocess starts a fresh interpreter and does NOT
+    # inherit this process's open file descriptors -- in particular the moto server's
+    # listening socket on localhost:5193. The child reaches moto over the network as a
+    # client, so it has no need to inherit that socket; a forked child that outlived its
+    # expected lifetime would otherwise keep the port wedged and hang every subsequent
+    # pipes test. (Linux CI defaults to fork; macOS already defaults to spawn.)
+    ctx = multiprocessing.get_context("spawn")
+    with ctx.Manager() as manager:
         return_dict = manager.dict()
+        task_started_event = ctx.Event()
+        materialization_done_event = ctx.Event()
 
-        p = multiprocessing.Process(
+        p = ctx.Process(
             target=_materialize_asset,
             args=(
                 {"SLEEP_SECONDS": "10"},
                 return_dict,
+                task_started_event,
+                materialization_done_event,
             ),
         )
         p.start()
+        try:
+            # Generous windows -- spawn cold-start + instance setup + SIGTERM teardown
+            # can each take tens of seconds on slow CI runners (e.g. EKS pods).
+            if not task_started_event.wait(timeout=180):
+                raise AssertionError("Subprocess did not launch an ECS task within 180s")
 
-        while p.is_alive():
-            # we started executing the run
-            # time to interrupt it!
-            time.sleep(4)
             p.terminate()
 
-        p.join()
-        assert not p.is_alive()
-        # breakpoint()
-        assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
-        assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
+            # Re-send SIGTERM to defeat a Python race: when a signal lands inside
+            # a __del__/weakref finalizer the handler's `raise
+            # DagsterExecutionInterruptedError` is silently swallowed by Python's
+            # "Exception ignored in:" path, losing the interrupt entirely. The
+            # child's early-setup phase (instance + pipes session construction) is
+            # dense with sqlalchemy GC callbacks, so a single SIGTERM lands in a
+            # finalizer with non-trivial probability. Retries are capped so we
+            # don't interrupt the child's own interrupt-handling (the `_terminate`
+            # call + `describe_tasks` in `_materialize_asset`'s finally block).
+            #
+            # Outer wait gates on the materialization-complete signal -- set by the
+            # subprocess immediately after return_dict is populated -- rather than
+            # asserting the process is fully reaped within a fixed window. Under
+            # spawn, instance and multiprocessing teardown after the interruption
+            # can outrun a process-death check even when the data we want to assert
+            # on is already available.
+            deadline = time.monotonic() + 180
+            retries_remaining = 5
+            while not materialization_done_event.wait(timeout=2):
+                if not p.is_alive():
+                    break
+                if time.monotonic() > deadline:
+                    raise AssertionError(
+                        "Subprocess did not complete materialization within 180s of SIGTERM"
+                    )
+                if retries_remaining > 0:
+                    p.terminate()
+                    retries_remaining -= 1
+
+            assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
+            assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
+        finally:
+            # Defense-in-depth: spawn already prevents the child from inheriting our
+            # fds, and we waited on a real completion signal above, but never leave
+            # the subprocess alive -- a runaway child would still hold the manager
+            # connection and consume CI resources. Always reap.
+            if p.is_alive():
+                p.kill()
+                p.join()
+
+
+class FailToStartECSMockClient(LocalECSMockClient):
+    """Mock client that simulates a task failing to start (e.g. image pull failure)."""
+
+    FAIL_REASON = (
+        "TaskFailedToStart: CannotPullContainerError: pull image manifest has been retried"
+        " 1 time(s): failed to resolve ref docker.io/amazon/aws-for-fluent-bit:stable"
+    )
+
+    def run_task(self, **kwargs):
+        response = super().run_task(**kwargs)
+        task_arn = response["tasks"][0]["taskArn"]
+        self.simulate_task_failed_to_start(task_arn, self.FAIL_REASON)
+        return response
+
+
+def test_ecs_pipes_task_failed_to_start(
+    ecs_client, cloudwatch_client, ecs_cluster, ecs_task_definition
+):
+    """Test that a task which fails to start (e.g. image pull failure, missing IAM permissions)
+    raises an error instead of producing a successful materialization.
+    """
+    mock_client = FailToStartECSMockClient(
+        ecs_client=ecs_client, cloudwatch_client=cloudwatch_client
+    )
+    pipes = PipesECSClient(
+        client=mock_client,  # type: ignore
+        message_reader=PipesCloudWatchMessageReader(client=cloudwatch_client),
+    )
+    with instance_for_test() as instance:
+        with pytest.raises(RuntimeError, match="ECS task failed to start"):
+            materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes})
 
 
 def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
@@ -194,7 +293,7 @@ def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
         Test Error is thrown when the wait delay is less than the processing time.
         """
         os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "1", "SLEEP_SECONDS": "2"})
-        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # pyright: ignore (reportAttributeAccessIssue)
+        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # ty: ignore (reportAttributeAccessIssue)
             materialize(
                 [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
             )
@@ -203,7 +302,7 @@ def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
         Test Error is thrown when the wait attempts * wait delay is less than the processing time.
         """
         os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "2", "SLEEP_SECONDS": "3"})
-        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # pyright: ignore (reportAttributeAccessIssue)
+        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # ty: ignore (reportAttributeAccessIssue)
             materialize(
                 [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
             )

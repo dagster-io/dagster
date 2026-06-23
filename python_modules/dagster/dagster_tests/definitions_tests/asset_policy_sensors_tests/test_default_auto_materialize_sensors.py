@@ -18,14 +18,17 @@ def other_auto_materialize_asset():
     pass
 
 
-@dg.observable_source_asset(auto_observe_interval_minutes=1)
-def auto_observe_asset():
-    pass
+auto_observe_asset = dg.SourceAsset(
+    key="auto_observe_asset",
+    observe_fn=lambda context: dg.DataVersion("1"),
+    auto_observe_interval_minutes=1,
+)
 
-
-@dg.observable_source_asset(auto_observe_interval_minutes=1)
-def other_auto_observe_asset():
-    pass
+other_auto_observe_asset = dg.SourceAsset(
+    key="other_auto_observe_asset",
+    observe_fn=lambda context: dg.DataVersion("1"),
+    auto_observe_interval_minutes=1,
+)
 
 
 @dg.asset
@@ -201,7 +204,7 @@ def test_combine_default_sensors_with_non_default_sensors():
         == 'not key:"auto_materialize_asset" or key:"auto_observe_asset"'
     )
 
-    assert default_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
+    assert default_sensor.asset_selection.resolve(asset_graph) == {  # ty: ignore[unresolved-attribute]
         dg.AssetKey(["other_auto_materialize_asset"]),
         dg.AssetKey(["other_auto_observe_asset"]),
         dg.AssetKey(["boring_asset"]),
@@ -210,7 +213,7 @@ def test_combine_default_sensors_with_non_default_sensors():
 
     custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
-    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
+    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # ty: ignore[unresolved-attribute]
         dg.AssetKey(["auto_materialize_asset"]),
         dg.AssetKey(["auto_observe_asset"]),
     }
@@ -264,7 +267,7 @@ def test_custom_sensors_cover_all():
     # Custom sensor covered all the valid assets
     custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
-    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
+    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # ty: ignore[unresolved-attribute]
         dg.AssetKey(["auto_materialize_asset"]),
         dg.AssetKey(["auto_observe_asset"]),
         dg.AssetKey(["other_auto_materialize_asset"]),

@@ -2,7 +2,6 @@ from contextlib import ExitStack
 
 import dagster as dg
 import pytest
-import yaml
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_origin import GrpcServerCodeLocationOrigin
@@ -10,6 +9,7 @@ from dagster._core.test_utils import environ
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
 from dagster_shared import seven
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ load_from:
                 """
 
             origins = location_origins_from_config(
-                yaml.safe_load(workspace_yaml),
+                safe_load_yaml(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 dg.file_relative_path(__file__, "not_a_real.yaml"),
             )
@@ -57,16 +57,16 @@ load_from:
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 
-                assert local_port.socket == first_socket  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port.port is None  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port.socket == first_socket  # ty: ignore[unresolved-attribute]
+                assert local_port.host == "localhost"  # ty: ignore[unresolved-attribute]
+                assert local_port.port is None  # ty: ignore[unresolved-attribute]
 
                 assert code_locations.get("local_port_default_host")
                 local_port_default_host = code_locations.get("local_port_default_host")
 
-                assert local_port_default_host.socket == second_socket  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port_default_host.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port_default_host.port is None  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port_default_host.socket == second_socket  # ty: ignore[unresolved-attribute]
+                assert local_port_default_host.host == "localhost"  # ty: ignore[unresolved-attribute]
+                assert local_port_default_host.port is None  # ty: ignore[unresolved-attribute]
 
                 assert all(map(lambda x: x.name, code_locations.values()))
 
@@ -96,7 +96,7 @@ def test_grpc_server_env_vars():
     """
 
         origins = location_origins_from_config(
-            yaml.safe_load(valid_yaml),
+            safe_load_yaml(valid_yaml),
             dg.file_relative_path(__file__, "not_a_real.yaml"),
         )
 
@@ -105,14 +105,14 @@ def test_grpc_server_env_vars():
         port_origin = origins["my_grpc_server_port"]
         assert isinstance(origins["my_grpc_server_port"], GrpcServerCodeLocationOrigin)
 
-        assert port_origin.port == 1234  # pyright: ignore[reportAttributeAccessIssue]
-        assert port_origin.host == "barhost"  # pyright: ignore[reportAttributeAccessIssue]
+        assert port_origin.port == 1234  # ty: ignore[unresolved-attribute]
+        assert port_origin.host == "barhost"  # ty: ignore[unresolved-attribute]
 
         socket_origin = origins["my_grpc_server_socket"]
         assert isinstance(origins["my_grpc_server_socket"], GrpcServerCodeLocationOrigin)
 
-        assert socket_origin.socket == "barsocket"  # pyright: ignore[reportAttributeAccessIssue]
-        assert socket_origin.host == "barhost"  # pyright: ignore[reportAttributeAccessIssue]
+        assert socket_origin.socket == "barsocket"  # ty: ignore[unresolved-attribute]
+        assert socket_origin.host == "barhost"  # ty: ignore[unresolved-attribute]
 
 
 def test_ssl_grpc_server_workspace(instance):
@@ -131,12 +131,12 @@ load_from:
     ssl: true
 """
         origins = location_origins_from_config(
-            yaml.safe_load(ssl_yaml),
+            safe_load_yaml(ssl_yaml),
             # fake out as if it were loaded by a yaml file in this directory
             dg.file_relative_path(__file__, "not_a_real.yaml"),
         )
         origin = next(iter(origins.values()))
-        assert origin.use_ssl  # pyright: ignore[reportAttributeAccessIssue]
+        assert origin.use_ssl  # ty: ignore[unresolved-attribute]
 
         # Actually connecting to the server will fail since it's expecting SSL
         # and we didn't set up the server with SSL
@@ -186,7 +186,7 @@ load_from:
                 """
 
             origins = location_origins_from_config(
-                yaml.safe_load(workspace_yaml),
+                safe_load_yaml(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 dg.file_relative_path(__file__, "not_a_real.yaml"),
             )
@@ -202,16 +202,16 @@ load_from:
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 
-                assert local_port.port == first_port  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port.socket is None  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port.port == first_port  # ty: ignore[unresolved-attribute]
+                assert local_port.host == "localhost"  # ty: ignore[unresolved-attribute]
+                assert local_port.socket is None  # ty: ignore[unresolved-attribute]
 
                 assert code_locations.get("local_port_default_host")
                 local_port_default_host = code_locations.get("local_port_default_host")
 
-                assert local_port_default_host.port == second_port  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port_default_host.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
-                assert local_port_default_host.socket is None  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port_default_host.port == second_port  # ty: ignore[unresolved-attribute]
+                assert local_port_default_host.host == "localhost"  # ty: ignore[unresolved-attribute]
+                assert local_port_default_host.socket is None  # ty: ignore[unresolved-attribute]
 
                 assert all(map(lambda x: x.name, code_locations.values()))
 
@@ -226,7 +226,7 @@ load_from:
 
     with pytest.raises(CheckError, match="must supply either a socket or a port"):
         location_origins_from_config(
-            yaml.safe_load(workspace_yaml),
+            safe_load_yaml(workspace_yaml),
             # fake out as if it were loaded by a yaml file in this directory
             dg.file_relative_path(__file__, "not_a_real.yaml"),
         )

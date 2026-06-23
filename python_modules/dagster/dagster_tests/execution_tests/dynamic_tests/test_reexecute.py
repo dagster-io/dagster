@@ -246,7 +246,13 @@ def dynamic_with_transitive_optional_output_job():
         ):
             yield dg.Output(i + 1)
 
-    @dg.job(resource_defs={"io_manager": dg.fs_io_manager})
+    # Pinned to in_process_executor (matching the rest of this file) so the
+    # re-execute_job path is not subject to multiprocess subprocess startup
+    # races on CPU-constrained CI nodes (EKS pods).
+    @dg.job(
+        executor_def=in_process_executor,
+        resource_defs={"io_manager": dg.fs_io_manager},
+    )
     def _dynamic_with_transitive_optional_output_job():
         dynamic_results = dynamic_op().map(lambda n: echo(add_one_with_optional_output(n)))
         adder(dynamic_results.collect())
@@ -684,7 +690,7 @@ def dyn_bool():
     yield dg.DynamicOutput(True, mapping_key="yes")
 
 
-@dg.job
+@dg.job(executor_def=in_process_executor)
 def crashy_job():
     echo(dyn_bool().map(maybe_trigger).collect())
 
@@ -703,8 +709,10 @@ def test_crash() -> None:
         time.sleep(0.1)
 
         # Wait for cursor value to be set, with a timeout
-        # The cursor signals that the job has reached the point we want to test
-        max_wait = 10  # seconds
+        # The cursor signals that the job has reached the point we want to test.
+        # Budget is wide enough to cover Python + dagster startup and per-step
+        # multiprocess subprocess startup on slow CI nodes (EKS pods).
+        max_wait = 60  # seconds
         start = time.time()
         while time.time() - start < max_wait:
             cursor_values = instance.run_storage.get_cursor_values({"boom"})

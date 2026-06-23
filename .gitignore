@@ -27,6 +27,7 @@ wheels/
 *.egg
 
 !docs/docs/guides/build
+!examples/docs_snippets/docs_snippets/guides/build
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -186,8 +187,9 @@ exponent.txt
 .cloudstorage/
 
 # personal claude files
-.claude/**/*.local.md
-.claude/.local
+.claude/**/*.local.*
+.claude/worktrees
+**/CLAUDE.local.md
 
 .workstack
 .erk/scratch/

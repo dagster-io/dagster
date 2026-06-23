@@ -31,7 +31,7 @@ tox -e py39-pytest          # Test in isolated environment
 
 # UI Verification (run from js_modules/ when done with edits)
 cd js_modules
-make generate-graphql       # Regenerate GraphQL types (if schema changed; must run before tsgo/lint)
+just generate-graphql       # Regenerate GraphQL types (if schema changed; must run before tsgo/lint)
 yarn tsgo                   # TypeScript checking
 yarn lint                   # ESLint checking
 yarn jest                   # Jest tests
@@ -39,8 +39,8 @@ yarn build                  # Verify production build (ui-components changes onl
 
 # Development
 make rebuild_ui             # Rebuild React UI after changes
-make graphql               # Regenerate GraphQL schema
-make sanity_check          # Check for non-editable installs
+just generate-graphql       # Regenerate GraphQL schema and codegen clients
+make sanity_check           # Check for non-editable installs
 ```
 
 ## Development Workflow

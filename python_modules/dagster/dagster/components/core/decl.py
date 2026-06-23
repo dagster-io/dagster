@@ -4,28 +4,39 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
 from functools import cached_property
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, cast
 
 from dagster_shared.record import record
 from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.seven import load_module_object
-from dagster_shared.yaml_utils import parse_yamls_with_source_position
+from dagster_shared.yaml_utils import (
+    parse_yaml_with_source_position,
+    parse_yamls_with_source_position,
+)
 from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSourcePositionTree
 from pydantic import BaseModel, TypeAdapter
 
 import dagster._check as check
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
+)
+from dagster.components.component.app_managed_state import (
+    AppManagedComponentEntry,
+    import_component_class,
 )
 from dagster.components.component.component import Component, EmptyAttributesModel
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.defs_module import (
     EXPLICITLY_IGNORED_GLOB_PATTERNS,
+    AppManagedDefinitionsComponent,
     ComponentFileModel,
+    ComponentLoc,
     ComponentPath,
+    ComponentRootComponent,
     CompositeYamlComponent,
     DefsFolderComponent,
     PythonFileComponent,
@@ -46,7 +57,7 @@ class ComponentDecl(abc.ABC, Generic[T]):
     """
 
     context: ComponentDeclLoadContext
-    path: ComponentPath
+    loc: ComponentLoc
 
     @abc.abstractmethod
     def _load_component(self) -> T:
@@ -58,18 +69,18 @@ class ComponentDecl(abc.ABC, Generic[T]):
     def component_type(self) -> type[T]: ...
 
     def iterate_all_component_decls(self) -> Iterator["ComponentDecl"]:
-        for _, component in self.iterate_path_component_decl_pairs():
+        for _, component in self.iterate_loc_component_decl_pairs():
             yield component
 
     def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
         return iter([])
 
-    def iterate_path_component_decl_pairs(
+    def iterate_loc_component_decl_pairs(
         self,
-    ) -> Iterator[tuple[ComponentPath, "ComponentDecl"]]:
-        yield self.path, self
+    ) -> Iterator[tuple[ComponentLoc, "ComponentDecl"]]:
+        yield self.loc, self
         for child in self.iterate_child_component_decls():
-            yield from child.iterate_path_component_decl_pairs()
+            yield from child.iterate_loc_component_decl_pairs()
 
 
 @record
@@ -97,12 +108,13 @@ class PythonFileDecl(ComponentDecl[PythonFileComponent]):
     decls: Mapping[str, ComponentLoaderDecl]
 
     def _load_component(self) -> "PythonFileComponent":
+        component_path = check.inst(self.loc, ComponentPath)
         return PythonFileComponent(
             components={
-                attr: self.context.load_structural_component_at_path(decl.path)
+                attr: self.context.load_structural_component_at_loc(decl.loc)
                 for attr, decl in self.decls.items()
             },
-            path=self.path.file_path,
+            path=component_path.file_path,
         )
 
     @property
@@ -115,7 +127,7 @@ class PythonFileDecl(ComponentDecl[PythonFileComponent]):
 
 def _get_component_class(
     context: ComponentDeclLoadContext, component_file_model: ComponentFileModel
-) -> type:
+) -> type[Component]:
     # TODO: lookup in cache so we don't have to import the class directly
     type_str = context.normalize_component_type_str(component_file_model.type)
     key = EnvRegistryKey.from_typename(type_str)
@@ -174,7 +186,10 @@ class YamlBackedComponentDecl(ComponentDecl[T]):
     @property
     def component_type(self) -> type[T]:
         """The class of the component that is being loaded."""
-        return _get_component_class(self.context, check.not_none(self.component_file_model))
+        return cast(
+            "type[T]",
+            _get_component_class(self.context, check.not_none(self.component_file_model)),
+        )
 
     def get_asset_post_processor_lists(self) -> list[AssetPostProcessor]:
         if not self.source_tree or not self.component_file_model:
@@ -213,7 +228,7 @@ class YamlDecl(YamlBackedComponentDecl):
             context=context,
             source_tree=source_tree,
             component_file_model=component_file_model,
-            path=path,
+            loc=path,
         )
 
     def _load_component(self) -> "Component":
@@ -244,7 +259,7 @@ class YamlFileDecl(ComponentDecl[CompositeYamlComponent]):
     def _load_component(self) -> "CompositeYamlComponent":
         return CompositeYamlComponent(
             components=[
-                self.context.load_structural_component_at_path(decl.path) for decl in self.decls
+                self.context.load_structural_component_at_loc(decl.loc) for decl in self.decls
             ],
             source_positions=self.source_positions,
             asset_post_processor_lists=[
@@ -266,7 +281,7 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
 
     @classmethod
     def get(cls, context: ComponentDeclLoadContext) -> "DefsFolderDecl":
-        component = build_component_decl_from_context(context)
+        component = build_filesystem_component_decl_from_context(context)
         return check.inst(
             component,
             DefsFolderDecl,
@@ -281,10 +296,11 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
         _process_attributes_with_enriched_validation_err(
             self.source_tree, self.component_file_model, DefsFolderComponent.get_model_cls()
         )
+        component_path = check.inst(self.loc, ComponentPath)
         return DefsFolderComponent(
-            path=self.path.file_path,
+            path=component_path.file_path,
             children={
-                subpath: self.context.load_structural_component_at_path(decl.path)
+                subpath: self.context.load_structural_component_at_loc(decl.loc)
                 for subpath, decl in self.children.items()
             },
         )
@@ -293,7 +309,127 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
         yield from self.children.values()
 
 
-def build_component_decl_from_context(context: ComponentDeclLoadContext) -> ComponentDecl | None:
+@record
+class AppManagedComponentDecl(ComponentDecl[Component]):
+    """Declaration for a single app-managed component.
+
+    Each app-managed component has its own state key in storage. The
+    ``instance_key`` on the decl's loc (a ``AppManagedDefinitionsLoc``) is the
+    component id that addresses its storage entry, mirroring how
+    ``YamlDecl`` uses an instance key to distinguish multiple components
+    in a single yaml file.
+
+    The entry payload (component type + attributes) is fetched lazily on
+    first access. Building the decl tree is a metadata-only operation —
+    it costs one cursor read for the whole listing, regardless of how
+    many UI components exist. The per-component download only happens
+    when the decl is actually loaded (i.e. when ``build_defs`` reaches
+    this loc), so tree walks that don't need the entries (string
+    rendering, loc enumeration, type filtering on filesystem-only
+    queries) pay no per-component download cost.
+    """
+
+    location_name: str
+    component_id: str
+
+    @cached_property
+    def entry(self) -> AppManagedComponentEntry:
+        from dagster._core.storage.defs_state.base import DefsStateStorage
+        from dagster.components.component.app_managed_state import (
+            get_app_managed_component_state_key,
+            read_app_managed_component_entry_at_version,
+        )
+
+        storage = check.not_none(
+            DefsStateStorage.get(),
+            "DefsStateStorage must be available to load a app-managed component.",
+        )
+        # Resolve the version through the pinned DefinitionsLoadContext so that
+        # entry bytes are consistent with the listing in
+        # ComponentTree._build_app_managed_definitions_decl, even when storage has moved
+        # past the snapshot we're loading against (RECONSTRUCTION, or an
+        # explicit ReloadCodeWithState pin).
+        key = get_app_managed_component_state_key(self.location_name, self.component_id)
+        key_info = check.not_none(
+            DefinitionsLoadContext.get().get_defs_key_state_info(key),
+            f"No state version pinned for UI component {self.component_id} in location"
+            f" {self.location_name} — it may have been deleted concurrently.",
+        )
+        return read_app_managed_component_entry_at_version(
+            storage, self.location_name, self.component_id, key_info.version
+        )
+
+    @property
+    def component_type(self) -> type[Component]:
+        return import_component_class(self.entry.component_type)
+
+    def _load_component(self) -> Component:
+        cls = self.component_type
+        model_cls = cls.get_model_cls()
+        model = None
+        if model_cls and self.entry.attributes.strip():
+            parsed = parse_yaml_with_source_position(self.entry.attributes).value
+            if parsed is not None:
+                model = TypeAdapter(model_cls).validate_python(parsed)
+        load_context = ComponentLoadContext.from_decl_load_context(self.context, self)
+        return cls.load(model, load_context)
+
+
+@record
+class AppManagedDefinitionsDecl(ComponentDecl[AppManagedDefinitionsComponent]):
+    """Declaration for the UI-definitions subtree at a code location.
+
+    Aggregates ``AppManagedComponentDecl`` children, one per app-managed entry
+    discovered in storage. Mirrors the structural role of
+    ``YamlFileDecl`` for yaml-defined components: a single named node
+    that bundles the components beneath it. The list of children is
+    rebuilt fresh on every ``find_root_decl`` call (since the listing
+    step is cheap), but each child's decl is cached individually.
+    """
+
+    location_name: str
+    children: Sequence[AppManagedComponentDecl]
+
+    def _load_component(self) -> AppManagedDefinitionsComponent:
+        return AppManagedDefinitionsComponent()
+
+    @property
+    def component_type(self) -> type[AppManagedDefinitionsComponent]:
+        return AppManagedDefinitionsComponent
+
+    def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
+        yield from self.children
+
+
+@record
+class ComponentRootDecl(ComponentDecl[ComponentRootComponent]):
+    """Declaration for the unified root of the component tree.
+
+    Holds a flat list of child decls. Not cached itself — always freshly
+    constructed by ``ComponentTree.find_root_decl`` from independently
+    cached parts.
+    """
+
+    decls: Sequence[ComponentDecl]
+
+    def _load_component(self) -> ComponentRootComponent:
+        return ComponentRootComponent(
+            components=[
+                self.context.load_structural_component_at_loc(decl.loc) for decl in self.decls
+            ],
+        )
+
+    @property
+    def component_type(self) -> type[ComponentRootComponent]:
+        return ComponentRootComponent
+
+    def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
+        yield from self.decls
+
+
+def build_filesystem_component_decl_from_context(
+    context: ComponentDeclLoadContext,
+) -> ComponentDecl | None:
     """Attempts to determine the type of component that should be loaded for the given context.  Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
@@ -310,7 +446,7 @@ def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Comp
     ):
         return PythonFileDecl(
             context=context,
-            path=ComponentPath.from_path(context.path / "definitions.py"),
+            loc=ComponentPath.from_path(context.path / "definitions.py"),
             decls={},
         )
     elif context.path.suffix == ".py":
@@ -321,7 +457,7 @@ def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Comp
         if children:
             return DefsFolderDecl(
                 context=context,
-                path=ComponentPath.from_path(context.path),
+                loc=ComponentPath.from_path(context.path),
                 children=children,
                 source_tree=None,
                 component_file_model=None,
@@ -342,9 +478,9 @@ def build_component_decls_from_directory_items(
             context,
             DefsFolderComponent,
             component_file_model.template_vars_module if component_file_model else None,
-        ).for_component_path(ComponentPath.from_path(subpath))
+        ).for_component_loc(ComponentPath.from_path(subpath))
 
-        component_node = build_component_decl_from_context(path_context)
+        component_node = build_filesystem_component_decl_from_context(path_context)
         if component_node:
             found[subpath] = component_node
     return found
@@ -359,13 +495,13 @@ def build_component_decl_from_python_file(
     component_loaders = list(inspect.getmembers(module, is_component_loader))
 
     return PythonFileDecl(
-        path=ComponentPath.from_path(context.path),
+        loc=ComponentPath.from_path(context.path),
         context=context,
         decls={
             attr: ComponentLoaderDecl(
-                context=context.for_component_path(ComponentPath.from_path(context.path, attr)),
+                context=context.for_component_loc(ComponentPath.from_path(context.path, attr)),
                 component_node_fn=component_loader,
-                path=ComponentPath.from_path(context.path, attr),
+                loc=ComponentPath.from_path(context.path, attr),
             )
             for attr, component_loader in component_loaders
         },
@@ -385,13 +521,13 @@ def build_component_decl_from_yaml_file(
     context: ComponentDeclLoadContext, component_def_path: Path
 ) -> ComponentDecl:
     source_trees = parse_yamls_with_source_position(
-        component_def_path.read_text(), str(component_def_path)
+        component_def_path.read_text(encoding="utf-8"), str(component_def_path)
     )
     component_nodes = []
     for i, source_tree in enumerate(source_trees):
         component_nodes.append(
             build_component_decl_from_yaml_document(
-                context=context.for_component_path(ComponentPath.from_path(context.path, i)),
+                context=context.for_component_loc(ComponentPath.from_path(context.path, i)),
                 source_tree=source_tree,
                 path=ComponentPath.from_path(context.path, i),
             )
@@ -399,9 +535,9 @@ def build_component_decl_from_yaml_file(
 
     check.invariant(len(component_nodes) > 0, "No components found in YAML file")
     return YamlFileDecl(
-        path=ComponentPath.from_path(context.path),
+        loc=ComponentPath.from_path(context.path),
         context=context,
-        decls=component_nodes,
+        decls=component_nodes,  # ty: ignore[invalid-argument-type]
         source_positions=[
             source_tree.source_position_tree.position for source_tree in source_trees
         ],
@@ -424,7 +560,7 @@ def build_component_decl_from_yaml_document(
         children = build_component_decls_from_directory_items(context, component_file_model)
         return DefsFolderDecl(
             context=context,
-            path=path,
+            loc=path,
             children=children,
             source_tree=source_tree,
             component_file_model=component_file_model,
@@ -434,5 +570,5 @@ def build_component_decl_from_yaml_document(
             context=context,
             source_tree=source_tree,
             component_file_model=component_file_model,
-            path=path,
+            loc=path,
         )

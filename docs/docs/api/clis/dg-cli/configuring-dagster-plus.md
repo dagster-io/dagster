@@ -1,6 +1,7 @@
 ---
 description: Authenticate and configure the dg CLI for Dagster+.
 title: Configuring Dagster+ with the dg CLI
+sidebar_position: 5000
 ---
 
 The `dg` CLI includes built-in commands for authenticating with Dagster+ and managing your configuration. This guide covers how to log in, set configuration, and view your current settings.

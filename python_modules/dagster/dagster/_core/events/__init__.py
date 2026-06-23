@@ -1245,6 +1245,13 @@ class DagsterEvent(
         first_step_failure_event: Optional["DagsterEvent"] = None,
     ) -> "DagsterEvent":
         check.str_param(context_msg, "context_msg")
+        if (
+            error_info is None
+            and first_step_failure_event
+            and first_step_failure_event.event_type == DagsterEventType.STEP_FAILURE
+        ):
+            error_info = first_step_failure_event.step_failure_data.error
+
         if isinstance(job_context_or_name, IPlanContext):
             return DagsterEvent.from_job(
                 DagsterEventType.RUN_FAILURE,
@@ -1617,7 +1624,7 @@ class DagsterEvent(
         return DagsterEvent.from_step(
             DagsterEventType.LOGS_CAPTURED,
             step_context,
-            message=f"Started capturing logs for step: {step_key}.",
+            message=f"Logs will be captured for step: {step_key}.",
             event_specific_data=ComputeLogsCaptureData(
                 step_keys=[step_key],
                 file_key=step_key,
@@ -1635,7 +1642,7 @@ class DagsterEvent(
         return DagsterEvent.from_job(
             DagsterEventType.LOGS_CAPTURED,
             job_context,
-            message=f"Started capturing logs in process (pid: {os.getpid()}).",
+            message=f"Capturing logs for process (pid: {os.getpid()}).",
             event_specific_data=ComputeLogsCaptureData(
                 step_keys=step_keys,
                 file_key=file_key,
@@ -1669,14 +1676,20 @@ class DagsterEvent(
         job_name: str,
         step_key: str | None,
         asset_materialization_failure: "AssetMaterializationFailure",
+        *,
         error: SerializableErrorInfo | None = None,
+        location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> "DagsterEvent":
         return DagsterEvent(
             event_type_value=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
             job_name=job_name,
             message=f"Asset {asset_materialization_failure.asset_key.to_string()} failed to materialize",
             event_specific_data=AssetFailedToMaterializeData(
-                asset_materialization_failure, error=error
+                asset_materialization_failure,
+                error=error,
+                location_name=location_name,
+                repository_name=repository_name,
             ),
             step_key=step_key,
         )
@@ -1711,13 +1724,15 @@ class AssetObservationData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(skip_when_none_fields={"location_name", "repository_name"})
 class AssetFailedToMaterializeData(
     NamedTuple(
         "AssetFailedToMaterializeData",
         [
             ("asset_materialization_failure", AssetMaterializationFailure),
             ("error", SerializableErrorInfo | None),
+            ("location_name", str | None),
+            ("repository_name", str | None),
         ],
     )
 ):
@@ -1725,6 +1740,8 @@ class AssetFailedToMaterializeData(
         cls,
         asset_materialization_failure: AssetMaterializationFailure,
         error: SerializableErrorInfo | None = None,
+        location_name: str | None = None,
+        repository_name: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -1736,6 +1753,8 @@ class AssetFailedToMaterializeData(
             error=truncate_event_error_info(
                 check.opt_inst_param(error, "error", SerializableErrorInfo)
             ),
+            location_name=check.opt_str_param(location_name, "location_name"),
+            repository_name=check.opt_str_param(repository_name, "repository_name"),
         )
 
     @property

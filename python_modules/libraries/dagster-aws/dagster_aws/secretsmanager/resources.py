@@ -62,7 +62,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def get_client(self) -> "botocore.client.SecretsManager":  # pyright: ignore (reportAttributeAccessIssue)
+    def get_client(self) -> "botocore.client.SecretsManager":  # ty: ignore[possibly-missing-submodule]
         return construct_secretsmanager_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -79,7 +79,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
 @beta
 @dagster_maintained_resource
 @resource(SecretsManagerResource.to_config_schema())
-def secretsmanager_resource(context) -> "botocore.client.SecretsManager":  # pyright: ignore (reportAttributeAccessIssue)
+def secretsmanager_resource(context) -> "botocore.client.SecretsManager":  # ty: ignore[possibly-missing-submodule]
     """Resource that gives access to AWS SecretsManager.
 
     The underlying SecretsManager session is created by calling

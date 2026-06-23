@@ -1,13 +1,4 @@
-import {
-  Box,
-  Colors,
-  Icon,
-  Intent,
-  Popover,
-  Spinner,
-  Subtitle2,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, Intent, Popover, Spinner, Tag} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
 
@@ -92,7 +83,7 @@ export const ChecksSummaryPopover = ({
   return (
     <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
       <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-        <Subtitle2>{`${titlePerCheckType(type)} checks`}</Subtitle2>
+        <Heading size={14} weight={600}>{`${titlePerCheckType(type)} checks`}</Heading>
       </Box>
       {assetChecks.map((check) => (
         <CheckStatusRow

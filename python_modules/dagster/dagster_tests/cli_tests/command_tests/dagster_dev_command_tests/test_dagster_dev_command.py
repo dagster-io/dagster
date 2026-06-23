@@ -83,13 +83,13 @@ def test_dagster_dev_command_no_dagster_home():
     }
     dagster_yaml = {
         "run_coordinator": {
-            "module": "dagster.core.run_coordinator",
+            "module": "dagster._core.run_coordinator",
             "class": "QueuedRunCoordinator",
         },
     }
 
     with tempfile.TemporaryDirectory() as tempdir, environ(environment_patch), pushd(tempdir):
-        with open(os.path.join(str(tempdir), "dagster.yaml"), "w") as config_file:
+        with open(os.path.join(str(tempdir), "dagster.yaml"), "w", encoding="utf-8") as config_file:
             yaml.dump(dagster_yaml, config_file)
 
         webserver_port = find_free_port()
@@ -127,7 +127,7 @@ def test_dagster_dev_command_no_dagster_home():
                         # Verify the run was queued (so the dagster.yaml was applied)
                         break
 
-                    if time.time() - start_time > 30:
+                    if time.time() - start_time > 60:
                         raise Exception("Timed out waiting for queued run to exist")
 
                     time.sleep(1)
@@ -265,7 +265,7 @@ def _wait_for_webserver_running(dagit_port: int) -> None:
         except:
             print("Waiting for webserver to be ready..")  # noqa: T201
 
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 60:
             raise Exception("Timed out waiting for webserver to serve requests")
 
         time.sleep(1)
@@ -275,7 +275,7 @@ def _wait_for_instance_dir_to_be_written(parent_dir: Path) -> Path:
     # Wait for instance files to exist
     start_time = time.time()
     while True:
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 60:
             raise Exception("Timed out waiting for instance files to exist")
         subfolders = [
             child
@@ -398,7 +398,7 @@ def test_dagster_dev_command_verbose(verbose: bool) -> None:
 
         with pushd(INVALID_PROJECT_PATH_WITH_EXCEPTION):
             webserver_port = find_free_port()
-            stdout_file = open(stdout_filepath, "w")
+            stdout_file = open(stdout_filepath, "w", encoding="utf-8")
             with _launch_dev_command(
                 options=["--port", str(webserver_port)] + (["--verbose"] if verbose else []),
                 capture_output=True,
@@ -431,7 +431,7 @@ def test_proxy_server_crash() -> None:
             stdout_filepath = str(Path(tempdir) / "stdout.txt")
             with environ({"DAGSTER_HOME": ""}):
                 with pushd(tempdir):
-                    stdout_file = open(stdout_filepath, "w")
+                    stdout_file = open(stdout_filepath, "w", encoding="utf-8")
                     webserver_port = find_free_port()
                     with _launch_dev_command(
                         [

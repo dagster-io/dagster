@@ -1,37 +1,21 @@
 import os
 import re
 import shlex
-from dataclasses import dataclass
+from collections.abc import Sequence
 from pathlib import Path
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     BuildkiteQueue,
-    CommandStepBuilder,
     CommandStepConfiguration,
+    ResourceRequests,
 )
-from buildkite_shared.uv import UV_PIN
+from buildkite_shared.step_builders.slug import slugify_label
+from buildkite_shared.tox import (
+    ToxFactor as ToxFactor,  # re-export
+    build_tox_step as _shared_build_tox_step,
+)
 from dagster_buildkite.utils import make_buildkite_section_header
-
-
-@dataclass
-class ToxFactor:
-    """Represents a tox environment factor for configuration.
-
-    Args:
-        factor: The tox factor name (e.g., "pytest", "integration")
-        splits: Number of parallel splits to generate for this factor (default: 1)
-        concurrency: Maximum number of jobs to run concurrently in this factor's
-            concurrency group (default: None, no limit)
-        concurrency_group: Name of the concurrency group for this factor. Required
-            if concurrency is set.
-    """
-
-    factor: str
-    splits: int = 1
-    concurrency: int | None = None
-    concurrency_group: str | None = None
-
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
@@ -48,66 +32,52 @@ def build_tox_step(
     tox_file: str | None = None,
     extra_commands_pre: list[str] | None = None,
     extra_commands_post: list[str] | None = None,
-    env_vars: list[str] | None = None,
-    dependencies: list[str] | None = None,
-    retries: int | None = None,
+    env: list[str] | None = None,
+    depends_on: list[str] | Sequence[str] | None = None,
     timeout_in_minutes: int | None = None,
     queue: BuildkiteQueue | None = None,
     skip_reason: str | None = None,
     pytest_args: list[str] | None = None,
     concurrency: int | None = None,
     concurrency_group: str | None = None,
+    resources: ResourceRequests | None = None,
+    soft_fail: bool = False,
+    ecr_passthru: bool = False,
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
-    label = f"{emoji} {base_label} {_tox_env_to_label_suffix(tox_env)}"
-    python_version = python_version or _resolve_python_version(tox_env)
+    key = slugify_label(f"{base_label} {_tox_env_to_label_suffix(tox_env)}")
+    resolved_python_version = python_version or _resolve_python_version(tox_env)
 
     header_message = f"{emoji} Running tox env: {tox_env}"
-    buildkite_section_header = make_buildkite_section_header(header_message)
+    section_header = shlex.quote(make_buildkite_section_header(header_message))
 
-    tox_command_parts = filter(
-        None,
-        [
-            "tox",
-            f"-c {tox_file} " if tox_file else None,
-            "-vv",  # extra-verbose
-            "-e",
-            tox_env,
-            "--" if pytest_args else None,
-            " ".join(pytest_args) if pytest_args else None,
-        ],
+    return _shared_build_tox_step(
+        root_dir,
+        tox_env,
+        key=key,
+        label_emojis=[emoji],
+        timeout_in_minutes=timeout_in_minutes,
+        tox_file=tox_file,
+        extra_commands_pre=extra_commands_pre,
+        extra_commands_post=extra_commands_post,
+        env=env,
+        # OSS tox suites broadly use docker-compose-backed fixtures (postgres,
+        # redis, kafka, redpanda), so opt the whole factory in.
+        with_docker=True,
+        image="test",
+        python_version=resolved_python_version,
+        queue=queue,
+        depends_on=depends_on,
+        skip_reason=skip_reason,
+        pytest_args=pytest_args,
+        concurrency=concurrency,
+        concurrency_group=concurrency_group,
+        resources=resources,
+        soft_fail=soft_fail,
+        ecr_passthru=ecr_passthru,
+        section_header=section_header,
     )
-    tox_command = " ".join(tox_command_parts)
-    commands = [
-        *(extra_commands_pre or []),
-        f"cd {root_dir}",
-        f'pip install "{UV_PIN}"',
-        f"echo -e {shlex.quote(buildkite_section_header)}",
-        tox_command,
-        *(extra_commands_post or []),
-    ]
-
-    step_builder = (
-        CommandStepBuilder(label)
-        .on_test_image(python_version.value, env=env_vars or [])
-        .run(*commands)
-        .with_timeout(timeout_in_minutes)
-        .with_retry(retries)
-        .depends_on(dependencies)
-        .skip(skip_reason)
-    )
-
-    if queue:
-        step_builder.on_queue(queue)
-
-    if concurrency is not None or concurrency_group is not None:
-        if concurrency is None or concurrency_group is None:
-            raise ValueError("Both 'concurrency' and 'concurrency_group' must be set together")
-        step_builder.concurrency(concurrency)
-        step_builder.concurrency_group(concurrency_group)
-
-    return step_builder.build()
 
 
 def _tox_env_to_label_suffix(tox_env: str) -> str:

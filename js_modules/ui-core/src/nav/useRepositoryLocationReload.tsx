@@ -1,5 +1,5 @@
 import {showToast} from '@dagster-io/ui-components';
-import {useCallback, useMemo, useReducer} from 'react';
+import {useCallback, useEffect, useMemo, useReducer, useRef} from 'react';
 
 import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '../apollo-client';
 import {
@@ -93,7 +93,7 @@ export const useRepositoryLocationReload = ({
 
   const invalidateConfigs = useInvalidateConfigsForRepo();
 
-  const {startPolling, stopPolling} = useQuery<
+  const {data, loading, startPolling, stopPolling} = useQuery<
     RepositoryLocationStatusQuery,
     RepositoryLocationStatusQueryVariables
   >(REPOSITORY_LOCATION_STATUS_QUERY, {
@@ -103,103 +103,150 @@ export const useRepositoryLocationReload = ({
     // This is irritating, but apparently necessary for now.
     // https://github.com/apollographql/apollo-client/issues/5531
     notifyOnNetworkStatusChange: true,
-    onCompleted: (data: RepositoryLocationStatusQuery) => {
-      // SetTimeout to avoid infinite loop in test
-      setTimeout(async () => {
-        const workspace = data.workspaceOrError;
-
-        if (workspace.__typename === 'PythonError') {
-          dispatch({type: 'error', error: workspace, errorLocationId: null});
-          stopPolling();
-          return;
-        }
-        if (state.pollLocationIds === null) {
-          stopPolling();
-          return;
-        }
-
-        type LocationEntryType = (typeof workspace.locationEntries)[number];
-        const locationMap = Object.fromEntries(workspace.locationEntries.map((e) => [e.id, e]));
-        const matches = state.pollLocationIds
-          .map((id) => locationMap[id])
-          .filter((location): location is LocationEntryType => !!location);
-        const missingId = state.pollLocationIds.find((id) => !locationMap[id]);
-
-        if (missingId) {
-          dispatch({
-            type: 'error',
-            error: {message: `Location ${missingId} not found in workspace.`},
-            errorLocationId: missingId,
-          });
-          stopPolling();
-          return;
-        }
-
-        // If we're still loading, there's nothing to do yet. Continue polling unless
-        // we have hit our timeout threshold.
-        if (matches.some((l) => l.loadStatus === RepositoryLocationLoadStatus.LOADING)) {
-          if (Date.now() - Number(state.pollStartTime) > THREE_MINUTES) {
-            const message = `Timed out waiting for the ${
-              matches.length > 1 ? 'locations' : 'location'
-            } to reload.`;
-            dispatch({
-              type: 'error',
-              error: {message},
-              errorLocationId: null,
-            });
-            stopPolling();
-          }
-          return;
-        }
-
-        // If we're done loading and an error persists, show it.
-        const errorLocation = matches.find(
-          (m) => m.locationOrLoadError?.__typename === 'PythonError',
-        );
-
-        if (errorLocation && errorLocation.locationOrLoadError?.__typename === 'PythonError') {
-          dispatch({
-            type: 'error',
-            error: errorLocation.locationOrLoadError,
-            errorLocationId: errorLocation.id,
-          });
-          stopPolling();
-          return;
-        }
-
-        // Otherwise, we have no errors left.
-        dispatch({type: 'finish-polling'});
-        stopPolling();
-
-        // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
-        showToast({
-          message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
-          timeout: 3000,
-          icon: 'check_circle',
-          intent: 'success',
-        });
-        dispatch({type: 'success'});
-
-        // Update run config localStorage, which may now be out of date.
-        const repositories = matches.flatMap((location) =>
-          location?.__typename === 'WorkspaceLocationEntry' &&
-          location.locationOrLoadError?.__typename === 'RepositoryLocation'
-            ? location.locationOrLoadError.repositories.map((repo) => ({
-                ...repo,
-                locationName: location.id,
-              }))
-            : [],
-        );
-
-        invalidateConfigs(repositories);
-
-        // Refetch all the queries bound to the UI.
-        apollo.refetchQueries({include: 'active'});
-      }, 0);
-    },
   });
 
+  // Hold latest callback-like values in a ref so the effect below only re-runs
+  // when poll data or polling state actually changes, not when stable callbacks
+  // get a new reference.
+  const actionsRef = useRef({stopPolling, scope, apollo, invalidateConfigs});
+  actionsRef.current = {stopPolling, scope, apollo, invalidateConfigs};
+
+  // Track the last `data` reference we processed so we don't re-process stale
+  // results from a previous polling cycle when a new reload starts.
+  const lastProcessedDataRef = useRef<RepositoryLocationStatusQuery | undefined>(undefined);
+
+  // False until the poll query has actually fetched within the *current* reload
+  // cycle (i.e. we've observed it go ``loading``). Until then we ignore any
+  // ``data`` Apollo surfaces: when ``skip`` toggles back to false at the start
+  // of a new cycle, Apollo re-emits the prior cycle's last result before its
+  // fresh fetch arrives, and acting on that stale emission would dispatch a
+  // misleading ``success``/``error`` and stop polling before fresh data is
+  // observed. Reset on each ``tryReload``.
+  const hasFetchedThisCycleRef = useRef(false);
+
+  // Process poll results in a useEffect rather than in an `onCompleted` callback
+  // wrapped in `setTimeout(0)`. Apollo's `onCompleted` does not fire reliably with
+  // `fetchPolicy: 'no-cache'` + `notifyOnNetworkStatusChange: true`, which made this
+  // flow intermittently hang in tests. A useEffect keyed on `data` and the relevant
+  // state fields runs deterministically after each poll response, and the early
+  // return on `pollStartTime === null` prevents the infinite-loop that originally
+  // motivated the setTimeout.
+  useEffect(() => {
+    if (state.pollStartTime === null) {
+      return;
+    }
+    // Mark that a fetch is underway for this cycle. Once we've seen the query
+    // go ``loading``, any subsequent settled ``data`` is genuinely fresh.
+    if (loading) {
+      hasFetchedThisCycleRef.current = true;
+      return;
+    }
+    // Ignore data surfaced before this cycle's fetch has run — that's the
+    // prior cycle's result Apollo re-emits when ``skip`` toggles back to false.
+    // Acting on it would dispatch a misleading ``success``/``error`` and stop
+    // polling before fresh data is observed.
+    if (!hasFetchedThisCycleRef.current) {
+      return;
+    }
+    if (!data || data === lastProcessedDataRef.current) {
+      return;
+    }
+    lastProcessedDataRef.current = data;
+
+    const {stopPolling, scope, apollo, invalidateConfigs} = actionsRef.current;
+    const workspace = data.workspaceOrError;
+
+    if (workspace.__typename === 'PythonError') {
+      dispatch({type: 'error', error: workspace, errorLocationId: null});
+      stopPolling();
+      return;
+    }
+    if (state.pollLocationIds === null) {
+      stopPolling();
+      return;
+    }
+
+    type LocationEntryType = (typeof workspace.locationEntries)[number];
+    const locationMap = Object.fromEntries(workspace.locationEntries.map((e) => [e.id, e]));
+    const matches = state.pollLocationIds
+      .map((id) => locationMap[id])
+      .filter((location): location is LocationEntryType => !!location);
+    const missingId = state.pollLocationIds.find((id) => !locationMap[id]);
+
+    if (missingId) {
+      dispatch({
+        type: 'error',
+        error: {message: `Location ${missingId} not found in workspace.`},
+        errorLocationId: missingId,
+      });
+      stopPolling();
+      return;
+    }
+
+    // If we're still loading, there's nothing to do yet. Continue polling unless
+    // we have hit our timeout threshold.
+    if (matches.some((l) => l.loadStatus === RepositoryLocationLoadStatus.LOADING)) {
+      if (Date.now() - Number(state.pollStartTime) > THREE_MINUTES) {
+        const message = `Timed out waiting for the ${
+          matches.length > 1 ? 'locations' : 'location'
+        } to reload.`;
+        dispatch({
+          type: 'error',
+          error: {message},
+          errorLocationId: null,
+        });
+        stopPolling();
+      }
+      return;
+    }
+
+    // If we're done loading and an error persists, show it.
+    const errorLocation = matches.find((m) => m.locationOrLoadError?.__typename === 'PythonError');
+
+    if (errorLocation && errorLocation.locationOrLoadError?.__typename === 'PythonError') {
+      dispatch({
+        type: 'error',
+        error: errorLocation.locationOrLoadError,
+        errorLocationId: errorLocation.id,
+      });
+      stopPolling();
+      return;
+    }
+
+    // Otherwise, we have no errors left.
+    dispatch({type: 'finish-polling'});
+    stopPolling();
+
+    // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
+    showToast({
+      message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
+      timeout: 3000,
+      icon: 'check_circle',
+      intent: 'success',
+    });
+    dispatch({type: 'success'});
+
+    // Update run config localStorage, which may now be out of date.
+    const repositories = matches.flatMap((location) =>
+      location?.__typename === 'WorkspaceLocationEntry' &&
+      location.locationOrLoadError?.__typename === 'RepositoryLocation'
+        ? location.locationOrLoadError.repositories.map((repo) => ({
+            ...repo,
+            locationName: location.id,
+          }))
+        : [],
+    );
+
+    invalidateConfigs(repositories);
+
+    // Refetch all the queries bound to the UI.
+    apollo.refetchQueries({include: 'active'});
+  }, [data, loading, state.pollStartTime, state.pollLocationIds]);
+
   const tryReload = useCallback(async () => {
+    // New cycle: ignore any pre-cycle ``data`` Apollo re-emits until this
+    // cycle's poll query has actually fetched (see ``hasFetchedThisCycleRef``).
+    hasFetchedThisCycleRef.current = false;
     dispatch({type: 'start-mutation'});
     const action = await reloadFn(apollo);
     dispatch(action);
@@ -217,7 +264,7 @@ export const useRepositoryLocationReload = ({
   );
 };
 
-const REPOSITORY_LOCATION_STATUS_QUERY = gql`
+export const REPOSITORY_LOCATION_STATUS_QUERY = gql`
   query RepositoryLocationStatusQuery {
     workspaceOrError {
       ... on Workspace {
@@ -343,7 +390,7 @@ export const buildReloadFnForLocation = (location: string) => {
   };
 };
 
-const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
+export const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
   mutation ReloadRepositoryLocationMutation($location: String!) {
     reloadRepositoryLocation(repositoryLocationName: $location) {
       ... on WorkspaceLocationEntry {

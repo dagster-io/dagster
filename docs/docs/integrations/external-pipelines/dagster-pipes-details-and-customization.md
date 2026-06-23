@@ -43,7 +43,7 @@ At present the only official Dagster Pipes integration library is Python's [`dag
 
 Pipes sessions are represented in the orchestration process by the <PyObject section="pipes" module="dagster" object="PipesSession" /> class. A session is started with the <PyObject section="pipes" module="dagster" object="open_pipes_session" /> context manager, which yields a `PipesSession`. `open_pipes_session` should be called inside of an asset, where an <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> is available:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_orchestration.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_orchestration.py" />
 
 Above we see that <PyObject section="pipes" module="dagster" object="open_pipes_session" /> takes four parameters:
 
@@ -70,7 +70,7 @@ As noted above, currently the only existing Pipes integration library is Python'
 
 A Pipes session is represented in the external process by a <PyObject section="libraries" integration="pipes" object="PipesContext" module="dagster_pipes" /> object. A session created by the launching orchestration process can be connected to with <PyObject section="libraries" integration="pipes" object="open_dagster_pipes" module="dagster_pipes" /> from `dagster-pipes`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_external.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_external.py" />
 
 :::tip
 
@@ -98,7 +98,7 @@ Users may implement custom params loaders, context loader/injector pairs, and me
 
 Params loaders need to inherit from <PyObject section="libraries" integration="pipes" object="PipesParamsLoader" module="dagster_pipes" />. Here is an example that loads parameters from an object called `METADATA` imported from a fictional package called `cloud_service`. It is assumed that "cloud service" represents some compute platform, that the `cloud_service` package is available in the environment, and that the API for launching processes in "cloud service" allows you to set arbitrary key-value pairs in a payload that is exposed as `cloud_service.METADATA`.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_bootstrap_loader.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/dagster_pipes_details_and_customization/custom_bootstrap_loader.py" />
 
 ### Custom context injector/loader
 
@@ -106,11 +106,11 @@ Context injectors must inherit from <PyObject section="pipes" module="dagster" o
 
 In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Below is a simple example that uses a fictional `cloud_service` key/value store to write the context. First the context injector:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_context_injector.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/dagster_pipes_details_and_customization/custom_context_injector.py" />
 
 And the context loader:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_context_loader.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/dagster_pipes_details_and_customization/custom_context_loader.py" />
 
 ### Custom message reader/writer
 
@@ -132,8 +132,8 @@ Below is a simple example that uses a fictional `cloud_service` key/value store 
 
 First, the message reader:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_message_reader.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/dagster_pipes_details_and_customization/custom_message_reader.py" />
 
 And the message writer:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_message_writer.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/dagster_pipes_details_and_customization/custom_message_writer.py" />

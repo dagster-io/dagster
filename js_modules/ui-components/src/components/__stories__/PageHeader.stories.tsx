@@ -3,7 +3,7 @@ import {Button} from '../Button';
 import {PageHeader} from '../PageHeader';
 import {Tab, Tabs} from '../Tabs';
 import {Tag} from '../Tag';
-import {Subtitle1} from '../Text';
+import {Heading} from '../Typography';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -12,13 +12,25 @@ export default {
 };
 
 export const Default = () => {
-  return <PageHeader title={<Subtitle1>My Page Title</Subtitle1>} />;
+  return (
+    <PageHeader
+      title={
+        <Heading size={16} weight={600}>
+          My Page Title
+        </Heading>
+      }
+    />
+  );
 };
 
 export const WithTagsAndActions = () => {
   return (
     <PageHeader
-      title={<Subtitle1>My Page Title</Subtitle1>}
+      title={
+        <Heading size={16} weight={600}>
+          My Page Title
+        </Heading>
+      }
       tags={
         <Box flex={{direction: 'row', gap: 8}}>
           <Tag>Production</Tag>
@@ -38,7 +50,11 @@ export const WithTagsAndActions = () => {
 export const WithTabs = () => {
   return (
     <PageHeader
-      title={<Subtitle1>My Page Title</Subtitle1>}
+      title={
+        <Heading size={16} weight={600}>
+          My Page Title
+        </Heading>
+      }
       tags={<Tag>Production</Tag>}
       right={<Button intent="primary">Launch Run</Button>}
       tabs={

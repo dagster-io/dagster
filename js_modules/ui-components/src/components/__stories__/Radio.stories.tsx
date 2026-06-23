@@ -1,5 +1,5 @@
 import {Box} from '../Box';
-import {Radio, RadioContainer} from '../Radio';
+import {Radio, RadioContainer, RadioGroup} from '../Radio';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -12,10 +12,14 @@ export const Default = () => {
     <div>
       <Box margin={{bottom: 8}}>Vacation to:</Box>
       <RadioContainer>
-        <Radio name="vacation" label="London" />
-        <Radio name="vacation" label="Paris" />
-        <Radio name="vacation" label="Tokyo" />
-        <Radio name="vacation" label="Pyongyang" disabled />
+        <RadioGroup defaultValue="london">
+          <Radio value="london">London</Radio>
+          <Radio value="paris">Paris</Radio>
+          <Radio value="tokyo">Tokyo</Radio>
+          <Radio value="pyongyang" disabled>
+            Pyongyang
+          </Radio>
+        </RadioGroup>
       </RadioContainer>
     </div>
   );

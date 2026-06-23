@@ -3,8 +3,8 @@ import {
   ButtonGroup,
   Checkbox,
   Colors,
+  Heading,
   Spinner,
-  Subtitle2,
   Table,
 } from '@dagster-io/ui-components';
 import {useCallback, useEffect, useMemo, useState} from 'react';
@@ -23,7 +23,7 @@ import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus, RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
+import {LiveTickTimeline} from '../../instigation/LiveTickTimeline';
 import {isStuckStartedTick} from '../../instigation/util';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
@@ -182,7 +182,9 @@ export const GlobalAutomaterializationContent = () => {
         </tbody>
       </Table>
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <Subtitle2>Evaluation timeline</Subtitle2>
+        <Heading size={14} weight={600}>
+          Evaluation timeline
+        </Heading>
       </Box>
       {!data ? (
         <Box

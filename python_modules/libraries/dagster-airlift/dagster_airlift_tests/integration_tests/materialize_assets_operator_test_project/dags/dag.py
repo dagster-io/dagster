@@ -23,7 +23,7 @@ default_args = {
 dag = DAG(
     "the_dag",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
     start_date=datetime(2023, 1, 1),
 )
@@ -34,10 +34,10 @@ class BlankSessionAssetsOperator(BaseMaterializeAssetsOperator):
     The dagster url is expected to be set in the environment as DAGSTER_URL.
     """
 
-    def get_dagster_session(self, context: Context) -> requests.Session:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_dagster_session(self, context: Context) -> requests.Session:  # ty: ignore[invalid-method-override]
         return requests.Session()
 
-    def get_dagster_url(self, context: Context) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_dagster_url(self, context: Context) -> str:  # ty: ignore[invalid-method-override]
         return os.environ["DAGSTER_URL"]
 
 

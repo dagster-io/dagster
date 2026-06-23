@@ -8,7 +8,6 @@ from dagster_shared.scaffold import should_skip_scaffolded_file
 
 # Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = [
-    "components_yaml_checks_dsl",
     "deploy_k8s_beta",
     "docs_beta_snippets",
     "docs_projects",
@@ -42,6 +41,7 @@ AVAILABLE_EXAMPLES = [
     "oss-metadata-to-plus",
     "project_analytics",
     "project_fully_featured",
+    "project_multi_tenant",
     "quickstart_etl",
     "snowflake_cortex",
     "tutorial_notebook_assets",

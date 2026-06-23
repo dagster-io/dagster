@@ -31,7 +31,7 @@ def load_pipeline_via_cli_runner(cli_args):
             repository_opts=repository_opts,
             job_name=job_name,
         ) as remote_job:
-            capture_result["external_pipeline"] = remote_job  # pyright: ignore[reportArgumentType]
+            capture_result["external_pipeline"] = remote_job
 
     with dg.instance_for_test():
         runner = CliRunner()

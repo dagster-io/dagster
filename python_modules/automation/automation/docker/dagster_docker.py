@@ -6,6 +6,7 @@ from typing import Any, NamedTuple
 
 import dagster._check as check
 import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from automation.docker.ecr import ecr_image, get_aws_account_id, get_aws_region
 from automation.docker.utils import (
@@ -85,14 +86,14 @@ class DagsterDockerImage(
     def python_versions(self) -> list[str]:
         """List of Python versions supported for this image."""
         with open(os.path.join(self.path, "versions.yaml"), encoding="utf8") as f:
-            versions = yaml.safe_load(f.read())
+            versions = safe_load_yaml(f.read())
         return list(versions.keys())
 
     def _get_last_updated_for_python_version(self, python_version: str) -> str:
         """Retrieve the last_updated timestamp for a particular python_version of this image."""
         check.str_param(python_version, "python_version")
         with open(os.path.join(self.path, "last_updated.yaml"), encoding="utf8") as f:
-            last_updated = yaml.safe_load(f.read())
+            last_updated = safe_load_yaml(f.read())
             return last_updated[python_version]
 
     def _set_last_updated_for_python_version(self, timestamp: str, python_version: str) -> None:
@@ -105,7 +106,7 @@ class DagsterDockerImage(
         last_updated_path = os.path.join(self.path, "last_updated.yaml")
         if os.path.exists(last_updated_path):
             with open(last_updated_path, encoding="utf8") as f:
-                last_updated = yaml.safe_load(f.read())
+                last_updated = safe_load_yaml(f.read())
 
         last_updated[python_version] = timestamp
 
@@ -154,7 +155,7 @@ class DagsterDockerImage(
         image.
         """
         with open(os.path.join(self.path, "versions.yaml"), encoding="utf8") as f:
-            versions = yaml.safe_load(f.read())
+            versions = safe_load_yaml(f.read())
             image_info = versions.get(python_version, {})
 
         docker_args = image_info.get("docker_args", {})
@@ -178,6 +179,13 @@ class DagsterDockerImage(
 
         # Set Dagster version
         docker_args["DAGSTER_VERSION"] = dagster_version
+
+        # Allow callers (e.g. CI) to override BASE_IMAGE without editing
+        # versions.yaml — used to route the build through a private registry
+        # mirror like an ECR pull-through cache.
+        if base_image_override := os.environ.get("BASE_IMAGE"):
+            docker_args["BASE_IMAGE"] = base_image_override
+
         return docker_args
 
     def build(

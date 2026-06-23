@@ -37,19 +37,19 @@ class EntityMatchesCondition(
 
     @property
     def name(self) -> str:
-        return self.key.to_user_string()
+        return self.key.to_user_string()  # ty: ignore[invalid-argument-type]
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
         return [self.operand]
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # if the key we're mapping to is a child of the key we're mapping from and is not
         # self-dependent, use the downstream mapping function, otherwise use upstream
         if (
-            self.key in context.asset_graph.get(context.key).child_entity_keys
+            self.key in context.asset_graph.get(context.key).child_entity_keys  # ty: ignore[no-matching-overload]
             and self.key != context.key
         ):
             to_direction, from_direction = "down", "up"
@@ -117,6 +117,8 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     allow_selection: Any | None = None
     ignore_selection: Any | None = None
 
+    resolves_virtual_deps: bool = False
+
     @property
     @abstractmethod
     def base_name(self) -> str: ...
@@ -129,6 +131,8 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
             props.append(f"allow_selection={self.allow_selection}")
         if self.ignore_selection is not None:
             props.append(f"ignore_selection={self.ignore_selection}")
+        if self.resolves_virtual_deps:
+            props.append("resolves_virtual_deps=True")
 
         if props:
             name += f"({','.join(props)})"
@@ -179,15 +183,35 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
         return copy(self, ignore_selection=ignore_selection)
 
+    def resolve_through_virtual(self, value: bool = True) -> "DepsAutomationCondition":
+        return copy(self, resolves_virtual_deps=value)
+
     def _get_dep_keys(
         self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
     ) -> AbstractSet[AssetKey]:
-        dep_keys = asset_graph.get(key).parent_entity_keys
+        dep_keys = (
+            set(asset_graph.get_non_virtual_ancestor_keys(key))
+            if self.resolves_virtual_deps
+            else set(asset_graph.get(key).parent_entity_keys)  # ty: ignore[no-matching-overload]
+        )
         if self.allow_selection is not None:
             dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
         if self.ignore_selection is not None:
             dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
         return dep_keys
+
+    def _merge_timing_metadata(
+        self,
+        results: Sequence[AutomationResult[T_EntityKey]],
+    ) -> TimingMetadata[T_EntityKey] | None:
+        """Merge timing metadata across multiple dep results by unioning subsets per timestamp."""
+        merged: dict[float, EntitySubset[T_EntityKey]] = {}
+        for result in results:
+            if not result.timing_metadata:
+                continue
+            for ts, sub in result.timing_metadata.timestamps.items():
+                merged[ts] = merged[ts].compute_union(sub) if ts in merged else sub
+        return TimingMetadata(timestamps=merged) if merged else None
 
     @public
     def replace(
@@ -209,19 +233,6 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
 
 
-def _merge_timing_metadata(
-    results: Sequence[AutomationResult[T_EntityKey]],
-) -> TimingMetadata[T_EntityKey] | None:
-    """Merge timing metadata across multiple dep results by unioning subsets per timestamp."""
-    merged: dict[float, EntitySubset[T_EntityKey]] = {}
-    for result in results:
-        if not result.timing_metadata:
-            continue
-        for ts, sub in result.timing_metadata.timestamps.items():
-            merged[ts] = merged[ts].compute_union(sub) if ts in merged else sub
-    return TimingMetadata(timestamps=merged) if merged else None
-
-
 @whitelist_for_serdes
 class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     @property
@@ -232,7 +243,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def operator_type(self) -> OperatorType:
         return "or"
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []
@@ -245,7 +256,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
                     None,
                     i,
                 ],
-                candidate_subset=context.candidate_subset,
+                candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
             true_subset = true_subset.compute_union(dep_result.true_subset)
@@ -256,7 +267,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
             context,
             true_subset=true_subset,
             child_results=dep_results,
-            timing_metadata=_merge_timing_metadata(dep_results),
+            timing_metadata=self._merge_timing_metadata(dep_results),  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -270,7 +281,7 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def operator_type(self) -> OperatorType:
         return "and"
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []
@@ -283,7 +294,7 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
                     None,
                     i,
                 ],
-                candidate_subset=context.candidate_subset,
+                candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
             true_subset = true_subset.compute_intersection(dep_result.true_subset)

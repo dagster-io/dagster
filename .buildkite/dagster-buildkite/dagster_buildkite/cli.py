@@ -24,14 +24,14 @@ a pipeline.
 
 def dagster() -> None:
     ctx = BuildkiteContext.create()
-    steps = build_dagster_oss_main_steps(ctx)
+    steps = ctx.apply_transforms(build_dagster_oss_main_steps(ctx))
     pipeline = _build_pipeline(steps)
     print(dump_pipeline_yaml(pipeline))  # noqa: T201
 
 
 def prerelease_package() -> None:
     ctx = BuildkiteContext.create()
-    steps = build_prerelease_package_steps(ctx)
+    steps = ctx.apply_transforms(build_prerelease_package_steps(ctx))
     pipeline = _build_pipeline(steps, custom_slack_channel="eng-buildkite-nightly")
     print(dump_pipeline_yaml(pipeline))  # noqa: T201
 

@@ -37,7 +37,7 @@ To create a full deployment:
 4. In the new deployment modal, enter the following:
    - **Name** - Enter a name for the full deployment.
    - **Initial deployment permissions** - Select the permissions you want to use to create the full deployment:
-     - **Empty permissions** - Creates the full deployment with an empty set of permissions. **Note**: Only Organization Admins will be able to manage the full deployment until other uses are granted Admin or Editor permissions.
+     - **Empty permissions** - Creates the full deployment with an empty set of permissions. **Note that only Organization Admins will be able to manage the full deployment until other uses are granted Admin or Editor permissions.**
      - **Copy from** - Creates the full deployment using permissions duplicated from an existing full deployment.
 5. When finished, click **Create deployment**.
 

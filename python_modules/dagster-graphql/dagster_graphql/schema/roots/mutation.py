@@ -36,6 +36,10 @@ from dagster_graphql.implementation.execution.launch_execution import (
     launch_reexecution_from_parent_run,
 )
 from dagster_graphql.implementation.external import fetch_workspace, get_full_remote_job_or_raise
+from dagster_graphql.implementation.fetch_app_managed_components import (
+    delete_app_managed_component,
+    set_app_managed_component,
+)
 from dagster_graphql.implementation.telemetry import log_ui_telemetry_event
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
@@ -48,6 +52,10 @@ from dagster_graphql.implementation.utils import (
     check_permission,
     pipeline_selector_from_graphql,
     require_permission_check,
+)
+from dagster_graphql.schema.app_managed_components import (
+    GrapheneDeleteAppManagedComponentResult,
+    GrapheneSetAppManagedComponentResult,
 )
 from dagster_graphql.schema.backfill import (
     GrapheneAssetPartitionRange,
@@ -156,7 +164,7 @@ async def create_execution_params(graphene_info, graphql_execution_params):
 def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
         selector=pipeline_selector_from_graphql(graphql_execution_params.get("selector")),
-        run_config=parse_run_config_input(  # pyright: ignore[reportArgumentType]
+        run_config=parse_run_config_input(
             graphql_execution_params.get("runConfigData") or {},
             raise_on_error=True,
         ),
@@ -354,7 +362,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
 
         for execution_params in executionParamsList:
             result = await GrapheneLaunchRunMutation.mutate(
-                None,  # type: ignore
+                None,
                 graphene_info,
                 executionParams=execution_params,
             )
@@ -493,6 +501,57 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
         return delete_dynamic_partitions(
             graphene_info, repositorySelector, partitionsDefName, partitionKeys
         )
+
+
+class GrapheneSetAppManagedComponentMutation(graphene.Mutation):
+    """Adds or replaces a app-managed component for a code location.
+
+    Writes are last-writer-wins; concurrent calls targeting the same
+    component_id resolve to whichever finishes last.
+    """
+
+    Output = graphene.NonNull(GrapheneSetAppManagedComponentResult)
+
+    class Arguments:
+        locationName = graphene.NonNull(graphene.String)
+        componentId = graphene.NonNull(graphene.String)
+        componentType = graphene.NonNull(graphene.String)
+        attributes = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "SetAppManagedComponentMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.EDIT_APP_MANAGED_COMPONENTS)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        locationName: str,
+        componentId: str,
+        componentType: str,
+        attributes: str,
+    ):
+        return set_app_managed_component(
+            graphene_info, locationName, componentId, componentType, attributes
+        )
+
+
+class GrapheneDeleteAppManagedComponentMutation(graphene.Mutation):
+    """Deletes a app-managed component. Idempotent — deleting a missing id is a no-op."""
+
+    Output = graphene.NonNull(GrapheneDeleteAppManagedComponentResult)
+
+    class Arguments:
+        locationName = graphene.NonNull(graphene.String)
+        componentId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DeleteAppManagedComponentMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.EDIT_APP_MANAGED_COMPONENTS)
+    def mutate(self, graphene_info: ResolveInfo, locationName: str, componentId: str):
+        return delete_app_managed_component(graphene_info, locationName, componentId)
 
 
 async def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
@@ -828,7 +887,7 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
             Permissions.WIPE_ASSETS,
         )
 
-        return wipe_assets(graphene_info, normalized_ranges)
+        return wipe_assets(graphene_info, normalized_ranges)  # ty: ignore[invalid-return-type]
 
 
 class GrapheneReportRunlessAssetEventsSuccess(graphene.ObjectType):
@@ -996,7 +1055,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
     def mutate(
         self, graphene_info: ResolveInfo, action: str, clientTime: str, clientId: str, metadata: str
     ):
-        action = log_ui_telemetry_event(
+        action = log_ui_telemetry_event(  # ty: ignore[invalid-assignment]
             graphene_info,
             action=action,
             client_time=clientTime,
@@ -1157,6 +1216,8 @@ class GrapheneMutation(graphene.ObjectType):
     setNuxSeen = GrapheneSetNuxSeenMutation.Field()
     addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()
     deleteDynamicPartitions = GrapheneDeleteDynamicPartitionsMutation.Field()
+    setAppManagedComponent = GrapheneSetAppManagedComponentMutation.Field()
+    deleteAppManagedComponent = GrapheneDeleteAppManagedComponentMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
     deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()

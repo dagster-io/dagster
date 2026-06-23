@@ -8,7 +8,6 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.partitions.utils import warn_if_partition_mapping_not_builtin
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -125,15 +124,6 @@ def coerce_to_deps_and_check_duplicates(
 
     if not coercible_to_asset_deps:
         return []
-
-    # when AssetKey was a plain NamedTuple, it also happened to be Iterable[CoercibleToAssetKey]
-    # so continue to support it here
-    if isinstance(coercible_to_asset_deps, AssetKey):
-        deprecation_warning(
-            subject="Passing a single AssetKey to deps",
-            breaking_version="1.10.0",
-        )
-        coercible_to_asset_deps = [coercible_to_asset_deps]
 
     # expand any multi_assets into a list of keys
     all_deps = []

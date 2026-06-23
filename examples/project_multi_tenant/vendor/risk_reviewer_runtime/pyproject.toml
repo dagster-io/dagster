@@ -1,0 +1,8 @@
+[project]
+name = "risk_reviewer_runtime"
+version = "2.2.0"
+requires-python = ">=3.11"
+
+[build-system]
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"

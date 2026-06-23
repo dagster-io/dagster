@@ -20,6 +20,7 @@ const INSTANCE_RUN_QUEUE_CONFIG = gql`
         maxConcurrentRuns
         tagConcurrencyLimitsYaml
         isOpConcurrencyAware
+        maxConcurrentRunsAllBranchDeployments
       }
     }
   }

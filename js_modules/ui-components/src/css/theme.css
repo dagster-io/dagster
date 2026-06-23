@@ -47,6 +47,7 @@ textarea {
 
 button {
   font-family: inherit;
+  color: var(--color-text-default);
 }
 
 code,

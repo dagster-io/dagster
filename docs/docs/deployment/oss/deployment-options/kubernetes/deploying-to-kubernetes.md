@@ -8,8 +8,7 @@ This guide will walk you through how to run the Dagster-specific components of a
 
 Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master/helm) for deploying Dagster that you can customize for your specific needs. For each Dagster component used by the Helm chart, Dagster publishes a corresponding image to [DockerHub](https://hub.docker.com/u/dagster).
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -26,8 +25,6 @@ To follow the steps in this guide, you'll need:
   dagster project from-example --example deploy_k8s --name deploy_k8s
   ```
 
-</details>
-
 ## Step 1: Write and build a Docker image containing your Dagster project
 
 ### Step 1.1: Write a Dockerfile
@@ -39,7 +36,7 @@ Next, you'll build a Docker image that contains your Dagster project and all of 
 3. Expose port 80, which we'll use to set up port-forwarding later.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/deployment/kubernetes/Dockerfile"
+  path="docs_snippets/docs_snippets/deployment/oss/deployment_options/kubernetes/Dockerfile"
   language="docker"
   title="Example Dockerfile"
 />
@@ -49,15 +46,15 @@ Next, you'll build a Docker image that contains your Dagster project and all of 
 To build your Docker image, run the following command from the directory where your Dockerfile is located:
 
 ```bash
-docker build . -t iris_analysis:1
+docker build . -t deploy_k8s:1
 ```
 
-This builds the Docker image from Step 1.1 and gives it the name `iris_analysis` and tag `1`. You can set custom values for both the name and the tag. We recommend that each time you rebuild your Docker image, you assign a new value for the tag to ensure that the correct image is used when running your code.
+This builds the Docker image from Step 1.1 and gives it the name `deploy_k8s` and tag `1`. You can set custom values for both the name and the tag. We recommend that each time you rebuild your Docker image, you assign a new value for the tag to ensure that the correct image is used when running your code.
 
 If you are using a Docker image registry, push the image to your registry. If you are following along on your local machine, you can skip this command.
 
 ```bash
-docker push iris_analysis:1
+docker push deploy_k8s:1
 ```
 
 If you are pushing your image to an image registry, you can find more information about this process in your registry's documentation:
@@ -128,12 +125,12 @@ To deploy your project, you'll need to set the following options:
 If you are following this guide on your local machine, you will also need to set `pullPolicy: IfNotPresent`. This will use the local version of the image built in Step 1. However, in production use cases when your Docker images are pushed to image registries, this value should remain `pullPolicy: Always`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/deployment/kubernetes/minimal_values.yaml"
+  path="docs_snippets/docs_snippets/deployment/oss/deployment_options/kubernetes/minimal_values.yaml"
   language="yaml"
   title="Minimal changes to make to values.yaml"
 />
 
-In this example, the image `repository` and `tag` are set to `iris_analysis` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/iris_analysis/definitions.py` are set for `dagsterApiGrpcArgs`.
+In this example, the image `repository` and `tag` are set to `deploy_k8s` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/deploy_k8s/definitions.py` are set for `dagsterApiGrpcArgs`.
 
 ## Step 5: Install the Helm chart
 
@@ -166,8 +163,7 @@ dagster-dagster-user-deployments-iris-analysis-564cbcf9f-fbqlw    1/1     Runnin
 dagster-postgresql-0                                              1/1     Running     3m41s
 ```
 
-<details>
-  <summary>Debugging failed pods</summary>
+### Debugging failed pods
 
 If one of the pods is in an error state, you can view the logs using the command
 
@@ -180,8 +176,6 @@ For example, if the pod `dagster-webserver-7c5b5c7f5c-rqrf8` is in a `CrashLoopB
 ```
 kubectl logs dagster-webserver-7c5b5c7f5c-rqrf8
 ```
-
-</details>
 
 ## Step 6: Connect to your Dagster deployment and materialize your assets
 
@@ -213,8 +207,3 @@ $ kubectl get jobs
 NAME                                               COMPLETIONS   DURATION   AGE
 dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
 ```
-
-## Next steps
-
-- Forwarding Dagster logs from a Kubernetes deployment to AWS, Azure, GCP
-- Other configuration options for K8s deployment - secrets,

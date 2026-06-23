@@ -3,10 +3,10 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
-import yaml
 from dagster._annotations import public
 from dagster._record import IHaveNew, record_custom
 from dagster._utils import run_with_concurrent_update_guard
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dbt.errors import (
     DagsterDbtManifestNotFoundError,
@@ -96,8 +96,16 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             project (DbtProject):
                 The dbt project to be prepared.
         """
-        # guard against multiple Dagster processes trying to update this at the same time
-        if project.has_uninstalled_deps:
+        # Always run dbt deps when dependency files exist, not just when
+        # packages appear uninstalled. The has_uninstalled_deps check uses a
+        # heuristic (dbt_packages dir existence) that can incorrectly skip
+        # deps when dependencies have changed but the directory still exists.
+        # dbt deps itself is fast when packages are already up-to-date.
+        has_deps_files = (
+            project.project_dir.joinpath("dependencies.yml").exists()
+            or project.project_dir.joinpath("packages.yml").exists()
+        )
+        if has_deps_files:
             run_with_concurrent_update_guard(
                 project.project_dir.joinpath("package-lock.yml"),
                 self._prepare_packages,
@@ -136,14 +144,23 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         self._invalidate_seeds_in_partial_parse(project)
 
     def _invalidate_seeds_in_partial_parse(self, project: "DbtProject") -> None:
-        """Remove seed entries from partial_parse.msgpack to force re-parsing.
+        """Force dbt to re-parse seeds by invalidating their partial-parse cache entry.
 
         Seeds contain root_path which is an absolute path from build time. When state
         is generated in one environment (e.g., CI/CD) and used in another (e.g., deployed
         container), the root_path points to the wrong location and seed loading fails.
 
-        By removing seed entries from the cache, dbt will re-parse them at runtime with
-        the correct current project path. Models keep their cached data for fast loading.
+        To force a re-parse we overwrite the saved checksum of each seed file entry with
+        a sentinel value that can never match the on-disk file. On the next parse, dbt's
+        partial-parser sees the checksum mismatch and treats the seed as a normally-changed
+        file, re-parsing it through its standard code path and refreshing root_path. Models
+        keep their cached data for fast loading.
+
+        We deliberately key off ``parse_file_type == "seed"`` rather than the ``.csv``
+        extension: dbt unit-test fixtures are also ``.csv`` files, and removing their file
+        entries while leaving the corresponding fixture objects in the saved manifest causes
+        dbt to re-add them on the next parse, raising a duplicate-resource compile error.
+        See https://github.com/dagster-io/dagster/issues/33471.
         """
         import msgpack
 
@@ -154,15 +171,12 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         with open(partial_parse_path, "rb") as f:
             data = msgpack.unpack(f, raw=False, strict_map_key=False)
 
-        # Remove seed nodes
-        seed_node_ids = [k for k in data.get("nodes", {}).keys() if k.startswith("seed.")]
-        for seed_id in seed_node_ids:
-            del data["nodes"][seed_id]
-
-        # Remove seed file entries (CSVs)
-        seed_file_ids = [k for k in data.get("files", {}).keys() if k.lower().endswith(".csv")]
-        for file_id in seed_file_ids:
-            del data["files"][file_id]
+        # Sentinel checksum that cannot match any real file, forcing dbt to re-parse
+        # the seed (and only the seed) on the next invocation.
+        invalid_checksum = {"name": "sha256", "checksum": "0" * 64}
+        for file_entry in data.get("files", {}).values():
+            if file_entry.get("parse_file_type") == "seed":
+                file_entry["checksum"] = invalid_checksum
 
         with open(partial_parse_path, "wb") as f:
             msgpack.pack(data, f)
@@ -295,8 +309,8 @@ class DbtProject(IHaveNew):
                 f"Did not find dbt_project.yml at expected path {dbt_project_yml_path}. "
                 f"Ensure the specified project directory respects all dbt project requirements."
             )
-        with open(project_dir.joinpath("dbt_project.yml")) as file:
-            dbt_project_yml = yaml.safe_load(file)
+        with open(project_dir.joinpath("dbt_project.yml"), encoding="utf-8") as file:
+            dbt_project_yml = safe_load_yaml(file)
         packages_install_path = project_dir.joinpath(
             dbt_project_yml.get("packages-install-path", "dbt_packages")
         )

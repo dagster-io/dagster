@@ -35,13 +35,13 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.on_c
 In the example below, the asset will start waiting for each of its dependencies to be updated at the start of each hour. Once all dependencies have updated since the start of the hour, this asset will be immediately requested.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/on_cron/basic.py"
   title="src/<project_name>/defs/assets.py"
 />
 
 **Behavior**
 
-If you would like to customize aspects of this behavior, refer to the [customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition) guide.
+To customize aspects of this behavior, see [Customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition).
 
 - If at least one upstream partition of _all_ upstream assets has been updated since the previous cron schedule tick, and the downstream asset has not yet been requested or updated, the downstream asset will be requested.
 - If all upstream assets **do not** update within the given cron tick, the downstream asset will not be requested.
@@ -57,7 +57,7 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.eage
 In the example below, the following asset will be automatically updated whenever any of its upstream dependencies are updated:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/basic.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -82,7 +82,7 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.on_m
 In the example below, as soon as all hourly partitions of the upstream asset are filled in, the downstream asset will be immediately requested:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/on_missing/basic.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/on_missing/basic.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -97,3 +97,7 @@ To customize this behavior, see the [customizing on_missing](/guides/automate/de
 </TabItem>
 
 </Tabs>
+
+## Testing declarative automations
+
+To test automation conditions in isolation without starting the automation daemon, use <PyObject section="assets" module="dagster" object="evaluate_automation_conditions" />. Usage examples covering missing assets, same-code-location dependencies, and cross-code-location dependencies are available in the [API reference](/api/dagster/assets#testing-declarative-automations).

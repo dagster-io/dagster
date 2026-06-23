@@ -45,7 +45,7 @@ metrics:
       - Check all parts
 """
 
-        with open(config_file, "w") as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             f.write(yaml_content)
 
         # Test that load_config properly parses and creates the config
@@ -78,9 +78,9 @@ def test_load_sessions_valid():
             "extra_field": "Extra data",
         }
 
-        with open(eval_dir / "session1.json", "w") as f:
+        with open(eval_dir / "session1.json", "w", encoding="utf-8") as f:
             json.dump(session1, f)
-        with open(eval_dir / "session2.json", "w") as f:
+        with open(eval_dir / "session2.json", "w", encoding="utf-8") as f:
             json.dump(session2, f)
 
         sessions = load_sessions(eval_dir)
@@ -94,7 +94,7 @@ def test_load_sessions_invalid_files():
     with tempfile.TemporaryDirectory() as tmpdir:
         eval_dir = Path(tmpdir)
 
-        with open(eval_dir / "invalid.json", "w") as f:
+        with open(eval_dir / "invalid.json", "w", encoding="utf-8") as f:
             json.dump({"missing": "required fields"}, f)
 
         with pytest.raises(click.UsageError, match="missing required fields"):
@@ -108,9 +108,9 @@ def test_load_sessions_ignores_cache_files():
         session = {"input": "Test", "output": "Response", "timestamp": "2024-01-01T10:00:00"}
         cache = {"session1": {"score": 0.9}}
 
-        with open(eval_dir / "session1.json", "w") as f:
+        with open(eval_dir / "session1.json", "w", encoding="utf-8") as f:
             json.dump(session, f)
-        with open(eval_dir / "metric-abc123.json", "w") as f:
+        with open(eval_dir / "metric-abc123.json", "w", encoding="utf-8") as f:
             json.dump(cache, f)
 
         sessions = load_sessions(eval_dir)

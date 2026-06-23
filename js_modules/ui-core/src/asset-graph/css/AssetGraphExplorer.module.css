@@ -1,0 +1,30 @@
+.svgContainer {
+  overflow: visible;
+  border-radius: 0;
+}
+
+.svgContainer :global(foreignObject.group) {
+  transition: opacity 300ms linear;
+}
+
+.topbarWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-background-default);
+  border-bottom: 1px solid var(--color-keyline-default);
+}
+
+.topbarWrapper.fullScreenCatalog {
+  background: none;
+  border-bottom: none;
+}
+
+.graphQueryInputFlexWrap {
+  flex: 1;
+}
+
+.graphQueryInputFlexWrap > * {
+  width: 100%;
+}

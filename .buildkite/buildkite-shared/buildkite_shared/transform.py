@@ -106,21 +106,20 @@ def _filter_step(
 
 def repeat_steps(steps: Sequence[StepConfiguration], n: int) -> Sequence[StepConfiguration]:
     repeated_steps = []
-    for i in range(n):
-        for step in steps:
-            if is_group_step(step):
-                # Recursively repeat substeps in group steps
-                repeated_substeps = repeat_steps(step["steps"], n)
-                repeated_steps.append(
-                    cast(
-                        "GroupStepConfiguration",
-                        {**step, "steps": repeated_substeps},
-                    )
+    for step in steps:
+        if is_group_step(step):
+            repeated_substeps = repeat_steps(step["steps"], n)
+            repeated_steps.append(
+                cast(
+                    "GroupStepConfiguration",
+                    {**step, "steps": repeated_substeps},
                 )
-            else:
+            )
+        else:
+            for i in range(n):
                 step_copy = step.copy()
                 step_copy["label"] = f"{step.get('label', '')} [{i + 1}]"
-                repeated_steps.append(step)
+                repeated_steps.append(step_copy)
     return repeated_steps
 
 

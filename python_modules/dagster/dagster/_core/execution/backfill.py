@@ -86,6 +86,9 @@ class BulkActionsFilter:
             here must be present for a given bulk action to pass the filter.
         job_name (Optional[str]): Name of the job to query for. If blank, all job_names will be accepted.
         backfill_ids (Optional[Sequence[str]]): A list of backfill_ids to filter by. If blank, all backfill_ids will be included
+        selector_id (Optional[str]): A partition set selector id (a hash of the code location, repository,
+            and partition set name) to filter by. Matches the selector_id stored for each job backfill.
+            If blank, backfills for all partition sets will be included.
     """
 
     statuses: Sequence[BulkActionStatus] | None = None
@@ -94,6 +97,7 @@ class BulkActionsFilter:
     tags: Mapping[str, str | Sequence[str]] | None = None
     job_name: str | None = None
     backfill_ids: Sequence[str] | None = None
+    selector_id: str | None = None
 
 
 @whitelist_for_serdes

@@ -1,13 +1,18 @@
 import json
 import os
+import shutil
 import subprocess
+from collections.abc import Mapping
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from _pytest.mark.structures import ParameterSet
 from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetSelection,
+    AssetSpec,
     TableColumn,
     TableColumnDep,
     TableColumnLineage,
@@ -18,6 +23,8 @@ from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnConstraints
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resource import DbtCliResource
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dbt_project import DbtProject
 from pytest_mock import MockFixture
 from sqlglot import Dialect
 
@@ -29,6 +36,46 @@ from dagster_dbt_tests.dbt_projects import (
 )
 
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
+
+
+@pytest.fixture(autouse=True)
+def _isolated_duckdb_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Give each test its own DuckDB database file in a pytest tmp_path.
+
+    These tests use ``fetch_column_metadata``, which opens an in-process READ_ONLY
+    DuckDB adapter connection via ``dbt.adapters.factory``. The adapter registry is a
+    process-global singleton, so a connection opened in one test can linger into the
+    next test's ``dbt build`` subprocess and cause ``IO Error: Could not set lock on
+    file`` failures. Giving each test its own DB file eliminates the shared resource
+    entirely — no lock conflict is possible regardless of adapter cleanup timing.
+
+    The filename stem is preserved from the session-scoped fixture in ``conftest.py``:
+    in DuckDB the database identifier is derived from the file stem, and the
+    session-scoped ``test_metadata_manifest`` fixture builds the project (including
+    dbt's partial-parse cache at ``target/partial_parse.msgpack``) with SQL that
+    qualifies tables as ``{stem}.main.<table>``. Changing the stem would leave the
+    compiled references dangling.
+
+    The session-built DB file is copied into tmp_path when present. The
+    ``source_raw_customers`` table (created by ``init_db.py`` at session setup) must
+    exist before ``stg_customers.sql`` can be built — copying the session DB
+    preserves it. ``tmp_path`` is cleaned up by pytest, so this adds no persistent
+    disk footprint.
+    """
+    db_file_name = os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME"]
+    db_path = tmp_path / f"{db_file_name}.duckdb"
+
+    # The session-scoped ``test_metadata_manifest`` fixture builds the project with
+    # ``build_project=True``, leaving a populated DB at this path. Tests that depend
+    # on that session fixture will have triggered the build before this autouse
+    # fixture runs (session fixtures are always resolved before function-scoped
+    # fixtures for a given test). For the rare test that doesn't use the session
+    # fixture, the source may not exist — in that case we start with an empty DB.
+    session_db_path = test_metadata_path / "target" / f"{db_file_name}.duckdb"
+    if session_db_path.exists():
+        shutil.copy(session_db_path, db_path)
+
+    monkeypatch.setenv("DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH", os.fspath(db_path))
 
 
 def test_no_column_schema(test_jaffle_shop_manifest: dict[str, Any]) -> None:
@@ -249,6 +296,81 @@ def test_no_column_lineage(test_metadata_manifest: dict[str, Any]) -> None:
         not TableMetadataSet.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
+
+
+@pytest.mark.parametrize(
+    "use_fetch_column_metadata",
+    [True, False],
+    ids=["adapter_path", "native_event_history_path"],
+)
+def test_column_lineage_uses_get_asset_spec_for_upstream_keys(
+    test_metadata_manifest: dict[str, Any],
+    use_fetch_column_metadata: bool,
+) -> None:
+    """Regression test for https://github.com/dagster-io/dagster/issues/33856.
+
+    Column lineage upstream asset keys must be resolved via
+    ``translator.get_asset_spec(...).key`` so that translators which customize
+    translation only by overriding ``get_asset_spec`` (e.g.
+    ``DbtProjectComponentTranslator``) produce lineage entries that point at the
+    *translated* keys actually present in the asset graph, rather than at the
+    default-derived keys returned by ``get_asset_key``.
+
+    Exercised against both lineage-building paths through
+    ``_build_column_lineage_metadata``:
+
+    - ``adapter_path``: the post-run adapter-querying thread invoked when the
+      user calls ``.fetch_column_metadata()``
+      (``dbt_event_iterator._fetch_column_metadata``).
+    - ``native_event_history_path``: the path driven by dbt's structured event
+      history when ``has_column_lineage_metadata`` is ``True``
+      (``dbt_cli_event._get_lineage_metadata``).
+    """
+
+    class SpecOverrideTranslator(DagsterDbtTranslator):
+        def get_asset_spec(
+            self,
+            manifest: Mapping[str, Any],
+            unique_id: str,
+            project: DbtProject | None,
+        ) -> AssetSpec:
+            spec = super().get_asset_spec(manifest, unique_id, project)
+            return spec.replace_attributes(key=AssetKey(["renamed", *spec.key.path]))
+
+    translator = SpecOverrideTranslator()
+
+    @dbt_assets(manifest=test_metadata_manifest, dagster_dbt_translator=translator)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        cli_invocation = dbt.cli(["build"], context=context).stream()
+        if use_fetch_column_metadata:
+            cli_invocation = cli_invocation.fetch_column_metadata()
+        yield from cli_invocation
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+    assert result.success
+
+    upstream_keys_in_lineage: set[AssetKey] = set()
+    for event in result.get_asset_materialization_events():
+        lineage = TableMetadataSet.extract(event.materialization.metadata).column_lineage
+        if lineage is None:
+            continue
+        for col_deps in lineage.deps_by_column.values():
+            for dep in col_deps:
+                upstream_keys_in_lineage.add(dep.asset_key)
+
+    # We need at least one lineage entry for the assertion to be meaningful.
+    assert upstream_keys_in_lineage, (
+        "Expected at least one column lineage entry in the materialization metadata"
+    )
+    # Every upstream key referenced in column lineage must be the translated key
+    # ("renamed/..."), not the default-derived key.
+    for key in upstream_keys_in_lineage:
+        assert key.path[0] == "renamed", (
+            f"Upstream key {key} in column lineage was not translated via get_asset_spec"
+        )
 
 
 @pytest.mark.parametrize(
@@ -557,38 +679,61 @@ def test_column_lineage_real_warehouse(
     )
 
 
+def _is_master_branch() -> bool:
+    return os.environ.get("BUILDKITE_BRANCH") == "master"
+
+
+# Representative cases that always run on every branch. The remainder of the
+# sql_dialect x use_async x selection cross product is gated behind a master-
+# only skip below; that lets master detect any coverage gap in either this
+# reduced set or in the direct dialect unit tests, while keeping PR-time
+# runtime down.
+_REPRESENTATIVE_INTEGRATION_KEYS: set[tuple[bool, AssetKey | None, str]] = {
+    (True, None, "duckdb"),
+    (False, None, "duckdb"),
+    (True, AssetKey(["raw_customers"]), "duckdb"),
+    (True, AssetKey(["stg_customers"]), "duckdb"),
+    (True, AssetKey(["customers"]), "duckdb"),
+    (True, AssetKey(["select_star_customers"]), "duckdb"),
+}
+
+
+def _build_integration_lineage_cases() -> list[ParameterSet]:
+    skip_on_feature_branch = pytest.mark.skipif(
+        not _is_master_branch(),
+        reason="Full integration matrix runs only on master; PRs use representative cases.",
+    )
+    cases: list[ParameterSet] = []
+    for use_async in [True, False]:
+        for sql_dialect in ["bigquery", "databricks", "duckdb", "snowflake", "trino"]:
+            for selection in [
+                None,
+                AssetKey(["raw_customers"]),
+                AssetKey(["stg_customers"]),
+                AssetKey(["customers"]),
+                AssetKey(["select_star_customers"]),
+            ]:
+                key = (use_async, selection, sql_dialect)
+                marks = () if key in _REPRESENTATIVE_INTEGRATION_KEYS else (skip_on_feature_branch,)
+                metadata_id = "async" if use_async else "legacy"
+                selection_id = selection.path[-1] if selection else "all"
+                cases.append(
+                    pytest.param(
+                        sql_dialect,
+                        use_async,
+                        selection,
+                        marks=marks,
+                        id=f"{metadata_id}-{sql_dialect}-{selection_id}",
+                    )
+                )
+    return cases
+
+
 @pytest.mark.parametrize(
-    "asset_key_selection",
-    [
-        None,
-        AssetKey(["raw_customers"]),
-        AssetKey(["stg_customers"]),
-        AssetKey(["customers"]),
-        AssetKey(["select_star_customers"]),
-    ],
-    ids=[
-        "--select fqn:*",
-        "--select raw_customers",
-        "--select stg_customers",
-        "--select customers",
-        "--select select_star_customers",
-    ],
+    "sql_dialect,use_async_fetch_column_schema,asset_key_selection",
+    _build_integration_lineage_cases(),
 )
-@pytest.mark.parametrize(
-    "sql_dialect",
-    [
-        "bigquery",
-        "databricks",
-        "duckdb",
-        "snowflake",
-        "trino",
-    ],
-)
-@pytest.mark.parametrize(
-    "use_async_fetch_column_schema",
-    [True, False],
-)
-def test_column_lineage(
+def test_column_lineage_integration(
     sql_dialect: str,
     test_metadata_manifest: dict[str, Any],
     asset_key_selection: AssetKey | None,
@@ -614,6 +759,9 @@ def test_column_lineage(
     manifest["metadata"]["adapter_type"] = sql_dialect
 
     dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    # Pre-build so column metadata (types, lineage) is available for the
+    # fetch_column_metadata assertions below.
+    dbt.cli(["--quiet", "seed"]).wait()
     dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
 
     @dbt_assets(manifest=manifest)
@@ -626,7 +774,7 @@ def test_column_lineage(
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": dbt},
-        selection=asset_key_selection and AssetSelection.assets(asset_key_selection),
+        selection=AssetSelection.assets(asset_key_selection) if asset_key_selection else None,
     )
 
     # Check that the warning is printed only when using log_column_level_metadata

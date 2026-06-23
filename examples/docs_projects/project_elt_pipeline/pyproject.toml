@@ -1,0 +1,28 @@
+[project]
+name = "project_elt_pipeline"
+requires-python = ">=3.10,<3.15"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-sling",
+    "dagster-dlt",
+    "dlt[duckdb]",
+    "duckdb",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+    "dagster-dg-cli",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_elt_pipeline"
+registry_modules = ["project_elt_pipeline.components"]

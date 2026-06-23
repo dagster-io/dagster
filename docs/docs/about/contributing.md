@@ -35,11 +35,11 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 3. Create and activate a virtual environment using uv with a Python version that Dagster supports:
 
    ```bash
-   uv venv --python 3.12
+   uv venv --python 3.13
    source .venv/bin/activate
    ```
 
-   Dagster supports Python 3.10 through 3.12.
+   Dagster supports Python 3.10 or higher.
 
 4. Install Node.js (20.X and above). We recommend using [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager) to manage Node.js versions. It allows you to switch between different Node versions:
 
@@ -132,13 +132,13 @@ During development, you might find these commands useful. Run them from `js_modu
 - `make lint`: Linting with autofix
 - `make jest`: Test runner that runs the full suite of tests
 
-## Picking a GitHub Issue
+## Picking a GitHub issue
 
 We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aopen+is%3Aissue+label%3A%22type%3A+good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
 When you are ready for more of a challenge, you can tackle issues with the [most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc). We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest.
 
-## Submit Your Code
+## Submit your code
 
 To submit your code, [fork the Dagster repository](https://help.github.com/en/articles/fork-a-repo), create a [new branch](https://help.github.com/en/desktop/contributing-to-projects/creating-a-branch-for-your-work) on your fork, and open [a Pull Request (PR)](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork) once your work is ready for review.
 

@@ -14,6 +14,7 @@ import typer
 import yaml
 from dagster_shared import check
 from dagster_shared.utils import remove_none_recursively
+from dagster_shared.yaml_utils import safe_load_yaml
 from jinja2 import TemplateSyntaxError
 from typer import Typer
 
@@ -362,11 +363,11 @@ def _create_context_from_values(values_list: list[str], values_file: str | None)
     values_file_path = pathlib.Path(values_file) if values_file else None
     if values_file_path:
         try:
-            with open(values_file_path) as f:
+            with open(values_file_path, encoding="utf-8") as f:
                 if values_file_path.suffix == ".json":
                     context.update(json.load(f))
                 elif values_file_path.suffix in [".yaml", ".yml"]:
-                    context.update(yaml.safe_load(f))
+                    context.update(safe_load_yaml(f))
                 else:
                     raise ui.error(f"Unsupported values file extension {values_file_path.suffix}")
         except Exception as err:
@@ -568,11 +569,13 @@ def notify(
     source = metrics.get_source()
     if source == CliEventTags.source.github:
         event = github_context.get_github_event(project_dir)
-        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud."
+        deployment_name = location_states[0].deployment_name if location_states else None
+        deployment_label = f" (`{deployment_name}`)" if deployment_name else ""
+        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud{deployment_label}."
         event.update_pr_comment(
             msg + "\n\n" + report.markdown_report(location_states),
             orig_author="github-actions[bot]",
-            orig_text="Dagster Cloud",  # used to identify original comment
+            orig_text=f"Dagster Cloud{deployment_label}",  # used to identify original comment
         )
     else:
         raise ui.error("'dagster-cloud ci notify' is only available within Github actions.")
@@ -830,6 +833,7 @@ def _build_docker(
     name = location_state.location_name
     docker_utils.verify_docker()
     registry_info = utils.get_registry_info(url)
+    repo_location = name if registry_info.get("is_harbor") else None
 
     docker_image_tag = docker_utils.default_image_tag(
         location_state.deployment_name, name, location_state.build.commit_hash
@@ -851,15 +855,18 @@ def _build_docker(
         base_image=docker_base_image,
         dockerfile_path=dockerfile_path,
         use_editable_dagster=use_editable_dagster,
+        location_name=repo_location,
     )
     if retval != 0:
         raise ui.error(f"Failed to build docker image for location {name}")
 
-    retval = docker_utils.upload_image(docker_image_tag, registry_info)
+    retval = docker_utils.upload_image(docker_image_tag, registry_info, location_name=repo_location)
     if retval != 0:
         raise ui.error(f"Failed to upload docker image for location {name}")
 
-    image = f"{registry_info['registry_url']}:{docker_image_tag}"
+    image = docker_utils.full_image_ref(
+        registry_info["registry_url"], repo_location, docker_image_tag
+    )
     ui.print(f"Built and uploaded image {image} for location {name}")
 
     return state.DockerBuildOutput(image=image)
@@ -1058,7 +1065,7 @@ def _deploy(
                 else {}
             ),
         }
-        if build_output.strategy == "python-executable":
+        if isinstance(build_output, state.PexBuildOutput):
             metrics.instrument_add_tags([CliEventTags.server_strategy.pex])
             location_args["pex_tag"] = build_output.pex_tag
             location_args["python_version"] = build_output.python_version

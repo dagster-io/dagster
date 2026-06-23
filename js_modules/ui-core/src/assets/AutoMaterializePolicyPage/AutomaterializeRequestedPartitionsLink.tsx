@@ -2,18 +2,17 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
   Dialog,
   DialogFooter,
   NonIdealState,
   Spinner,
   Tag,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {
   RunStatusAndPartitionKeyQuery,
@@ -21,6 +20,7 @@ import {
   RunStatusAndTagsFragment,
 } from './types/AutomaterializeRequestedPartitionsLink.types';
 import {gql, useQuery} from '../../apollo-client';
+import styles from './css/AutomaterializeRequestedPartitionsLink.module.css';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
@@ -74,7 +74,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <Tag intent={intent}>{label}</Tag>
         <ButtonLink onClick={() => setIsOpen(true)}>
-          <Caption>View details</Caption>
+          <Text size={12}>View details</Text>
         </ButtonLink>
       </Box>
       <Dialog
@@ -257,12 +257,12 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
                 {showRunTag ? (
                   <div>
                     {runForPartition ? (
-                      <TagLink to={`/runs/${runForPartition.id}`}>
+                      <Link className={styles.tagLink} to={`/runs/${runForPartition.id}`}>
                         <RunStatusTagWithID
                           runId={runForPartition.id}
                           status={runForPartition.status}
                         />
-                      </TagLink>
+                      </Link>
                     ) : (
                       <Tag>Run not found</Tag>
                     )}
@@ -303,10 +303,4 @@ export const RUN_STATUS_AND_PARTITION_KEY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const TagLink = styled(Link)`
-  :focus {
-    outline: none;
-  }
 `;

@@ -15,12 +15,12 @@ When you first [create a project using the `create-dagster` CLI](/guides/build/p
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
 
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/uv-tree-project.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/build/projects/uv-tree-project.txt" />
 
   </TabItem>
   <TabItem value="pip" label="pip">
 
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/pip-tree-project.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/build/projects/pip-tree-project.txt" />
 
   </TabItem>
 </Tabs>
@@ -43,12 +43,12 @@ Deciding how to organize your project is often influenced by how you and your te
   <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
   
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/uv-project-by-tech.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/build/projects/uv-project-by-tech.txt" />
 
   </TabItem>
   <TabItem value="pip" label="pip">
   
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/pip-project-by-tech.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/build/projects/pip-project-by-tech.txt" />
 
   </TabItem>
   </Tabs>
@@ -61,12 +61,12 @@ You can also organize your project by data processing concept -- for example, da
   <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
 
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/uv-project-by-concept.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/build/projects/uv-project-by-concept.txt" />
 
   </TabItem>
   <TabItem value="pip" label="pip">
   
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/pip-project-by-concept.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/build/projects/pip-project-by-concept.txt" />
 
   </TabItem>
   </Tabs>

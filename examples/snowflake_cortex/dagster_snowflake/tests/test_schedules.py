@@ -23,6 +23,7 @@ class TestSchedules:
     def test_schedule_timing_consistency(self):
         """Test that schedules run at appropriate times."""
         # Daily schedule should run early morning
+        assert isinstance(daily_schedule.cron_schedule, str)
         daily_hour = int(daily_schedule.cron_schedule.split()[1])
         assert daily_hour <= 6, "Daily schedule should run early in the morning"
 

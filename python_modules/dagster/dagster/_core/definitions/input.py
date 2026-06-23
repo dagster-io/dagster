@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Callable, Mapping
 from types import UnionType
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from dagster_shared.error import DagsterError
 from dagster_shared.record import IHaveNew, record, record_custom
@@ -49,7 +49,7 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
                     f"Received value {default_value} of type {type(default_value)}",
                 )
 
-    return default_value  # type: ignore  # (pyright bug)
+    return default_value  # (pyright bug)
 
 
 @superseded(additional_warn_text="Use `In` instead", emit_runtime_warning=False)
@@ -128,7 +128,7 @@ class InputDefinition:
                 'Cannot specify "asset_partitions" argument without also specifying "asset_key"',
             )
         if callable(asset_partitions):
-            self._asset_partitions_fn = asset_partitions
+            self._asset_partitions_fn = asset_partitions  # ty: ignore[invalid-assignment]
         elif asset_partitions is not None:
             _asset_partitions = check.set_param(asset_partitions, "asset_partitions", of_type=str)
             self._asset_partitions_fn = lambda _: _asset_partitions
@@ -184,7 +184,7 @@ class InputDefinition:
                 in
         """
         if callable(self._asset_key):
-            return self._asset_key(context)
+            return cast("Callable[[InputContext], AssetKey]", self._asset_key)(context)
         else:
             return self.hardcoded_asset_key
 

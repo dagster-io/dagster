@@ -1,4 +1,4 @@
-import {BodySmall, Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Text} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -105,15 +105,13 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
       <Link to={link} className={styles.tileLink}>
         <Box
           border="all"
-          style={{
-            minWidth: TILE_WIDTH,
-          }}
           className={clsx(styles.tile, loading && styles.tileLoading)}
+          flex={{direction: 'column'}}
         >
           <div className={styles.header}>
             <div>{icon}</div>
-            <div className={styles.title}>
-              <MiddleTruncate text={label} />
+            <div className={styles.title} title={label}>
+              {label}
             </div>
           </div>
           {statusJsx ? (
@@ -156,32 +154,28 @@ export const JobTile = ({name, repoAddress}: {name: string; repoAddress: RepoAdd
   const link = workspacePathFromAddress(repoAddress, `/jobs/${name}`);
   return (
     <Link to={link} className={styles.tileLink}>
-      <Box
-        border="all"
-        style={{
-          minWidth: TILE_WIDTH,
-        }}
-        className={styles.tile}
-      >
+      <Box border="all" className={styles.tile} flex={{direction: 'column'}}>
         <div className={styles.header}>
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 4}}
           >
             <Icon name="job" size={20} />
           </Box>
-          <div className={styles.title} style={{color: Colors.textDefault()}}>
-            <MiddleTruncate text={name} />
+          <div className={styles.title} style={{color: Colors.textDefault()}} title={name}>
+            {name}
           </div>
         </div>
         {latestRun?.startTime ? (
           <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
             <RunStatusIndicator status={latestRun.runStatus} />
-            <BodySmall color={Colors.textLight()}>
+            <Text size={12} color="textLight">
               launched <TimeFromNow unixTimestamp={latestRun.startTime} />
-            </BodySmall>
+            </Text>
           </Box>
         ) : (
-          <BodySmall color={Colors.textLight()}>Never launched</BodySmall>
+          <Text size={12} color="textLight">
+            Never launched
+          </Text>
         )}
       </Box>
     </Link>

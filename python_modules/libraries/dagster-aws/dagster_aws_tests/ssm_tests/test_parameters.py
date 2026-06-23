@@ -42,7 +42,7 @@ def test_get_parameters_by_path(mock_ssm_client):
 
     result = get_parameters_by_paths(
         mock_ssm_client,
-        ["path/based"],  # pyright: ignore[reportArgumentType]
+        ["path/based"],  # ty: ignore[invalid-argument-type]
         with_decryption=True,
         recursive=True,
     )
@@ -50,7 +50,7 @@ def test_get_parameters_by_path(mock_ssm_client):
 
     result = get_parameters_by_paths(
         mock_ssm_client,
-        ["path/based"],  # pyright: ignore[reportArgumentType]
+        ["path/based"],  # ty: ignore[invalid-argument-type]
         with_decryption=True,
         recursive=False,
     )
@@ -58,7 +58,7 @@ def test_get_parameters_by_path(mock_ssm_client):
 
     result = get_parameters_by_paths(
         mock_ssm_client,
-        ["path/"],  # pyright: ignore[reportArgumentType]
+        ["path/"],  # ty: ignore[invalid-argument-type]
         with_decryption=False,
         recursive=False,
     )

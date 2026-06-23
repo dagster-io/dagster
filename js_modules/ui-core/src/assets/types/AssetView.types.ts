@@ -23,15 +23,16 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           pools: Array<string>;
+          opVersion: string | null;
           groupName: string;
           isExecutable: boolean;
           hasReportRunlessAssetEventPermission: boolean;
           graphName: string | null;
           hasMaterializePermission: boolean;
+          hasWipePermission: boolean;
           jobNames: Array<string>;
           changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
-          opVersion: string | null;
           description: string | null;
           computeKind: string | null;
           isPartitioned: boolean;
@@ -87,6 +88,7 @@ export type AssetViewDefinitionQuery = {
               }
             | null;
           backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
+          opTags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           repository: {
             __typename: 'Repository';
@@ -16504,15 +16506,16 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   pools: Array<string>;
+  opVersion: string | null;
   groupName: string;
   isExecutable: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   graphName: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   jobNames: Array<string>;
   changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
-  opVersion: string | null;
   description: string | null;
   computeKind: string | null;
   isPartitioned: boolean;
@@ -16567,6 +16570,7 @@ export type AssetViewDefinitionNodeFragment = {
       }
     | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
+  opTags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   repository: {
     __typename: 'Repository';
@@ -32762,4 +32766,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '085912b81c1d063190109b0133df9a51f8f3c98952df345ebf1871676d983d10';
+export const AssetViewDefinitionQueryVersion = '5ae1c366703cf42f0c9bb5583fbb1789981bda3853360fec897c44dd069eea40';

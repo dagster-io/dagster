@@ -1,4 +1,4 @@
-import {Box, Colors, Mono, Spinner, useViewport} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner, Text, useViewport} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -159,7 +159,7 @@ export const ExecutionTimelineRow = ({
   }, [run, start, end, width]);
 
   return (
-    <TimelineRowContainer $height={height} $start={top}>
+    <TimelineRowContainer height={height} start={top}>
       <Box
         style={{width: LEFT_SIDE_SPACE_ALLOTTED}}
         padding={{horizontal: 24}}
@@ -168,7 +168,9 @@ export const ExecutionTimelineRow = ({
         <Box flex={{alignItems: 'center', gap: 4}}>
           <RunStatusDot status={run.status} size={12} />
           <Link to={`/runs/${run.id}`}>
-            <Mono>{titleForRun(run)}</Mono>
+            <Text size={14} family="mono">
+              {titleForRun(run)}
+            </Text>
           </Link>
         </Box>
         <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
@@ -176,8 +178,8 @@ export const ExecutionTimelineRow = ({
       <RunChunks>
         {chunk && (
           <RunChunk
-            $background={mergeStatusToBackground(chunk.runs)}
-            $multiple={false}
+            background={mergeStatusToBackground(chunk.runs)}
+            multiple={false}
             style={{
               left: `${chunk.left}px`,
               width: `${chunk.width}px`,

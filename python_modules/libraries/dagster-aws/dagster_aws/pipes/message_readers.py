@@ -117,7 +117,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         *,
         interval: float = 10,
         bucket: str,
-        client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
+        client: boto3.client,  # ty: ignore (reportGeneralTypeIssues)
         log_readers: Sequence[PipesLogReader] | None = None,
         include_stdio_in_messages: bool = False,
     ):

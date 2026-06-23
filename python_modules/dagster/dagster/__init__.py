@@ -1,36 +1,5 @@
 import sys
 
-from dagster import _module_alias_map
-
-# Imports of a key will return the module named by the corresponding value.
-sys.meta_path.insert(
-    _module_alias_map.get_meta_path_insertion_index(),
-    _module_alias_map.AliasedModuleFinder(
-        {
-            "dagster.api": "dagster._api",
-            "dagster.builtins": "dagster._builtins",
-            "dagster.check": "dagster._check",
-            "dagster.cli": "dagster._cli",
-            "dagster.config": "dagster._config",
-            "dagster.core": "dagster._core",
-            "dagster.daemon": "dagster._daemon",
-            "dagster.experimental": "dagster._experimental",
-            "dagster.generate": "dagster._generate",
-            "dagster.grpc": "dagster._grpc",
-            "dagster.loggers": "dagster._loggers",
-            "dagster.serdes": "dagster._serdes",
-            "dagster.seven": "dagster_shared.seven",
-            "dagster.time": "dagster._time",
-            "dagster.utils": "dagster._utils",
-            # Added in 1.3.4 for backcompat when `_core.storage.pipeline_run` was renamed to
-            # `_core.storage.dagster_run`. This was necessary because some docs (incorrectly)
-            # demonstarted a direct import from `dagster._core.storage.pipeline_run` instead of
-            # using the top-level import.
-            "dagster._core.storage.pipeline_run": "dagster.core.storage.dagster_run",
-        }
-    ),
-)
-
 # ########################
 # ##### NOTES ON IMPORT FORMAT
 # ########################
@@ -44,13 +13,11 @@ sys.meta_path.insert(
 # by static analyzers. The redundant alias form `import X as X` overwrites the private imported `X`
 # with a public `X` bound to the same value. It is also possible to expose `X` as public by listing
 # it inside `__all__`, but the redundant alias form is preferred here due to easier maintainability.
-
 # (2) All imports should target the module in which a symbol is actually defined, rather than a
 # container module where it is imported. This rule also derives from the default private status of
 # imported symbols. So long as there is a private import somewhere in the import chain leading from
 # an import to its definition, some linters will be triggered (e.g. pyright). For example, the
 # following results in a linter error when using dagster as a third-party library:
-
 #     ### dagster/foo/bar.py
 #     BAR = "BAR"
 #
@@ -67,11 +34,9 @@ sys.meta_path.insert(
 #
 # We could get around this by always remembering to use the `from .foo import X as X` form in
 # containers, but it is simpler to just import directly from the defining module.
-
 # ########################
 # ##### DYNAMIC IMPORTS
 # ########################
-
 from dagster_shared.error import DagsterError as DagsterError
 from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes import (
@@ -187,6 +152,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationResult as AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_condition_tester import (
+    EvaluateAutomationConditionsResult as EvaluateAutomationConditionsResult,
     evaluate_automation_conditions as evaluate_automation_conditions,
 )
 from dagster._core.definitions.declarative_automation.automation_context import (
@@ -558,17 +524,20 @@ from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as De
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
 from dagster._core.pipes.client import (
     PipesClient as PipesClient,
+    PipesClientCompletedInvocation as PipesClientCompletedInvocation,
     PipesContextInjector as PipesContextInjector,
     PipesExecutionResult as PipesExecutionResult,
     PipesMessageReader as PipesMessageReader,
 )
 from dagster._core.pipes.context import (
+    PipesLaunchedData as PipesLaunchedData,
     PipesMessageHandler as PipesMessageHandler,
     PipesSession as PipesSession,
 )
 from dagster._core.pipes.subprocess import PipesSubprocessClient as PipesSubprocessClient
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader as PipesBlobStoreMessageReader,
+    PipesCompositeMessageReader as PipesCompositeMessageReader,
     PipesEnvContextInjector as PipesEnvContextInjector,
     PipesFileContextInjector as PipesFileContextInjector,
     PipesFileMessageReader as PipesFileMessageReader,
@@ -698,6 +667,7 @@ from dagster.components.resolved.core_models import (
     ResolvedAssetKey as ResolvedAssetKey,
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
+from dagster.components.resolved.form_config import ComponentFormConfig as ComponentFormConfig
 from dagster.components.resolved.model import (
     Injected as Injected,
     Model as Model,
@@ -778,7 +748,7 @@ def __getattr__(name: str) -> TypingAny:
         value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
         deprecation_warning(
-            value.__name__,
+            getattr(value, "__name__", name),
             breaking_version,
             additional_warn_text=f"Use `{name}` instead.",
             stacklevel=stacklevel,

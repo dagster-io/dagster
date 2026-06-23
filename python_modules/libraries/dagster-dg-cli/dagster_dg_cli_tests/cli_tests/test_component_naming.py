@@ -4,6 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_component_library_foo_bar
 
 
@@ -29,6 +30,7 @@ def test_scaffold_component_acme_databricks_naming():
         )
 
 
+@pytest.mark.slow
 def test_scaffold_component_various_uppercase_patterns():
     """Test various uppercase patterns that should be handled gracefully."""
     test_cases = [
@@ -58,10 +60,10 @@ def test_scaffold_component_various_uppercase_patterns():
 
             init_file = Path("src/foo_bar/components/__init__.py")
             if init_file.exists():
-                content = init_file.read_text()
+                content = init_file.read_text(encoding="utf-8")
                 # Remove the import line for this component
                 lines = [line for line in content.split("\n") if component_name not in line]
-                init_file.write_text("\n".join(lines))
+                init_file.write_text("\n".join(lines), encoding="utf-8")
 
 
 def test_scaffold_component_edge_cases():
@@ -88,7 +90,7 @@ def test_scaffold_component_edge_cases():
 
             init_file = Path("src/foo_bar/components/__init__.py")
             if init_file.exists():
-                content = init_file.read_text()
+                content = init_file.read_text(encoding="utf-8")
                 # Remove the import line for this component
                 lines = [line for line in content.split("\n") if component_name not in line]
-                init_file.write_text("\n".join(lines))
+                init_file.write_text("\n".join(lines), encoding="utf-8")

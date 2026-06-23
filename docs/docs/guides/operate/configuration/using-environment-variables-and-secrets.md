@@ -209,8 +209,6 @@ Using environment variables, you define how your code should execute at runtime.
 
 In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/guides/operate/configuration/run-configuration) (specifically the configured API) and [resources](/guides/build/external-resources).
 
-This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/operate/dev-to-prod):
-
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/per_env_config.py"
   title="src/<project_name>/defs/resources.py"
@@ -243,9 +241,32 @@ def get_current_env():
 
 This function checks the value of `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` and, if equal to `1`, returns a variable with the value of `branch`. This indicates that the current deployment is a branch deployment. Otherwise, the deployment is a full deployment and `is_branch_depl` will be returned with a value of `prod`.
 
+## Using EnvVar with nested resources
+
+When a resource containing <PyObject section="resources" module="dagster" object="EnvVar" /> values is instantiated outside of a <PyObject section="definitions" module="dagster" object="Definitions" /> object (for example, at module level), those `EnvVar` values will not be resolved. `EnvVar` is only resolved when Dagster initializes the resource as part of its resource management system.
+
+A common pattern that triggers this issue is defining sub-resources at module level and referencing them inside a `ConfigurableResource` method:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/nested_resources_broken.py"
+  title="src/<project_name>/defs/resources.py"
+/>
+
+Because `duckdb_resource` is created outside of Dagster's resource system, `dg.EnvVar("DUCKDB_DATABASE")` is never evaluated. Dagster will use the literal string `"DUCKDB_DATABASE"` as the value instead.
+
+Instead, nest sub-resources as typed fields on the parent `ConfigurableResource` so that Dagster manages their lifecycle and resolves `EnvVar` values at launch time:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/nested_resources_working.py"
+  title="src/<project_name>/defs/resources.py"
+/>
+
+By defining `snowflake` and `duckdb` as fields of `DynamicDatabaseResource`, Dagster initializes them as part of its resource system and `EnvVar` values are resolved correctly at run time.
+
 ## Troubleshooting
 
 | Error                                                                                                                                                              | Description                                                                                                                                                                                                               | Solution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **You have attempted to fetch the environment variable "[variable]" which is not set. In order for this execution to succeed it must be set in this environment.** | Surfacing when a run is launched in the UI, this error means that an environment variable set using <PyObject section="config" module="dagster" object="StringSource" /> could not be found in the executing environment. | Verify that the environment variable is named correctly and accessible in the environment.<ul><li>**If developing locally and using a `.env` file**, try reloading the workspace in the UI. The workspace must be reloaded any time this file is modified for the UI to be aware of the changes.</li><li>**If using Dagster+**:</li><ul><li>Verify that the environment variable is [scoped to the environment and code location](/deployment/dagster-plus/management/environment-variables/dagster-ui#scope) if using the built-in secrets manager</li><li>Verify that the environment variable was correctly configured and added to your [agent's configuration](/deployment/dagster-plus/management/environment-variables/agent-config)</li></ul></ul> |
 | **No environment variables in `.env` file.**                                                                                                                       | Dagster located and attempted to load a local `.env` file while launching `dagster-webserver`, but couldn't find any environment variables in the file.                                                                   | If this is unexpected, verify that your `.env` is correctly formatted and located in the same folder where you're running `dagster-webserver`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **`dg.EnvVar` is resolved as the literal variable name.**                                                                                                          | A resource containing `dg.EnvVar` was instantiated outside of `dg.Definitions`, so Dagster's resource system never resolved the environment variable.                                                                     | Instead of instantiating sub-resources at module level and referencing them inside a `ConfigurableResource` method, define them as typed fields on the parent resource. When sub-resources are fields, Dagster initializes them through its resource system and resolves `dg.EnvVar` values at launch time.                                                                                                                                                                                                                                                                                                                                                                                                                                                |

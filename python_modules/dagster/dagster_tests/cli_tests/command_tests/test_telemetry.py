@@ -38,6 +38,7 @@ from dagster_shared.telemetry import (
     get_or_create_dir_from_dagster_home,
     get_telemetry_logger,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_test.utils.data_factory import remote_repository
 
 EXPECTED_KEYS = set(
@@ -361,10 +362,10 @@ def test_get_stats_from_remote_repo_code_checks():
     @dg.asset
     def my_asset(): ...
 
-    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)
     def my_check(): ...
 
-    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)
     def my_check_2(): ...
 
     @dg.asset
@@ -510,11 +511,11 @@ def test_get_stats_from_remote_repo_functional_resources():
 
 def test_get_stats_from_remote_repo_functional_io_managers():
     @dagster_maintained_io_manager
-    @dg.io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(config_schema={"foo": str})
     def my_io_manager():
         return 1
 
-    @dg.io_manager(config_schema={"baz": str})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(config_schema={"baz": str})
     def custom_io_manager():
         return 2
 
@@ -585,7 +586,7 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration():
         return 1
 
     @dagster_maintained_io_manager
-    @dg.io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(config_schema={"foo": str})
     def my_io_manager():
         return 1
 
@@ -725,8 +726,6 @@ def test_set_instance_id_from_empty_file():
 
 def test_user_id_ignores_dagster_home():
     """Test that user_id is always stored in the user telemetry dir regardless of $DAGSTER_HOME."""
-    import yaml
-
     with tempfile.TemporaryDirectory() as fake_user_telemetry_dir:
         user_id_path = os.path.join(fake_user_telemetry_dir, "user_id.yaml")
 
@@ -751,7 +750,7 @@ def test_user_id_ignores_dagster_home():
                     # Verify the user_id WAS stored in the user telemetry dir
                     assert os.path.exists(user_id_path)
                     with open(user_id_path, encoding="utf8") as f:
-                        data = yaml.safe_load(f)
+                        data = safe_load_yaml(f)
                         assert data["user_id"] == user_id
 
 

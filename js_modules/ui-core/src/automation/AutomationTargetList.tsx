@@ -5,11 +5,11 @@ import {
   Colors,
   Dialog,
   DialogFooter,
-  Mono,
-  Subtitle2,
+  Heading,
   Tab,
   Tabs,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -161,8 +161,12 @@ const AssetSelectionTag = ({
           border="bottom"
         >
           <Box flex={{direction: 'column', gap: 4}}>
-            <Subtitle2>Asset selection</Subtitle2>
-            <Mono>{assetSelectionString}</Mono>
+            <Heading size={14} weight={600}>
+              Asset selection
+            </Heading>
+            <Text size={14} family="mono">
+              {assetSelectionString}
+            </Text>
           </Box>
         </Box>
 

@@ -154,6 +154,7 @@
   --button-stroke-color-hover: var(--color-border-default);
   --button-text-color: var(--color-accent-primary);
   --button-icon-color: var(--color-accent-primary);
+  --button-spinner-color: var(--color-accent-gray);
 }
 
 .button.outlined {

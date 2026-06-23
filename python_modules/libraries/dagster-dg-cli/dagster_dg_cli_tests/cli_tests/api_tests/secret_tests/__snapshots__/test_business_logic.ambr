@@ -21,7 +21,7 @@
   Value: <hidden - use --show-value to display>
   
   Updated By: admin@company.com
-  Updated: 2022-01-01 14:23:00
+  Updated: 2022-01-01 14:23:00 UTC
   '''
 # ---
 # name: TestFormatSecrets.test_format_secret_with_all_scopes[0]
@@ -36,7 +36,7 @@
   Value: <hidden - use --show-value to display>
   
   Updated By: system@company.com
-  Updated: 2022-01-01 14:22:00
+  Updated: 2022-01-01 14:22:00 UTC
   '''
 # ---
 # name: TestFormatSecrets.test_format_secret_without_metadata[0]
@@ -67,7 +67,7 @@
         ]),
         'name': 'database_password',
         'specific_branch_deployment_scope': None,
-        'update_timestamp': '2022-01-01T14:20:00',
+        'update_timestamp': 1641046800.0,
         'updated_by': dict({
           'email': 'admin@company.com',
         }),
@@ -100,7 +100,7 @@
         ]),
         'name': 'staging_token',
         'specific_branch_deployment_scope': 'staging',
-        'update_timestamp': '2022-01-01T14:21:00',
+        'update_timestamp': 1641046860.0,
         'updated_by': dict({
           'email': 'dev@company.com',
         }),
@@ -113,9 +113,9 @@
 # name: TestFormatSecrets.test_format_secrets_text_output[0]
   '''
   NAME               LOCATIONS                 SCOPES                             UPDATED
-  database_password  data_pipeline, analytics  Full Deployment                    2022-01-01 14:20:00
+  database_password  data_pipeline, analytics  Full Deployment                    2022-01-01 14:20:00 UTC
   api_key            All                       All Branch Deployments             
-  staging_token      staging_app               Branch: staging, Local Deployment  2022-01-01 14:21:00
+  staging_token      staging_app               Branch: staging, Local Deployment  2022-01-01 14:21:00 UTC
   '''
 # ---
 # name: TestFormatSecrets.test_format_single_secret_json_output[0]
@@ -132,7 +132,7 @@
     ]),
     'name': 'development_secret',
     'specific_branch_deployment_scope': None,
-    'update_timestamp': '2022-01-01 14:20:00',
+    'update_timestamp': 1641046800.0,
     'updated_by': dict({
       'email': 'developer@company.com',
     }),
@@ -153,7 +153,7 @@
     ]),
     'name': 'development_secret',
     'specific_branch_deployment_scope': None,
-    'update_timestamp': '2022-01-01T14:20:00',
+    'update_timestamp': 1641046800.0,
     'updated_by': dict({
       'email': 'developer@company.com',
     }),
@@ -172,7 +172,7 @@
   Value: <hidden - use --show-value to display>
   
   Updated By: developer@company.com
-  Updated: 2022-01-01 14:20:00
+  Updated: 2022-01-01 14:20:00 UTC
   '''
 # ---
 # name: TestFormatSecrets.test_format_single_secret_text_output_with_value[0]
@@ -188,103 +188,6 @@
     dev_secret_value
   
   Updated By: developer@company.com
-  Updated: 2022-01-01 14:20:00
+  Updated: 2022-01-01 14:20:00 UTC
   '''
-# ---
-# name: TestSecretDataProcessing.test_secret_creation_with_all_scopes[0]
-  dict({
-    'items': list([
-      dict({
-        'all_branch_deployments_scope': False,
-        'can_edit_secret': True,
-        'can_view_secret_value': True,
-        'full_deployment_scope': True,
-        'id': 'scope-test-secret-0',
-        'local_deployment_scope': False,
-        'location_names': list([
-          'location_0',
-        ]),
-        'name': 'scope_test_secret_0',
-        'specific_branch_deployment_scope': None,
-        'update_timestamp': '2022-01-01T14:20:00',
-        'updated_by': dict({
-          'email': 'user0@company.com',
-        }),
-        'value': 'test_value_0',
-      }),
-      dict({
-        'all_branch_deployments_scope': True,
-        'can_edit_secret': True,
-        'can_view_secret_value': True,
-        'full_deployment_scope': False,
-        'id': 'scope-test-secret-1',
-        'local_deployment_scope': False,
-        'location_names': list([
-          'location_1',
-        ]),
-        'name': 'scope_test_secret_1',
-        'specific_branch_deployment_scope': None,
-        'update_timestamp': '2022-01-01T14:20:01',
-        'updated_by': dict({
-          'email': 'user1@company.com',
-        }),
-        'value': 'test_value_1',
-      }),
-      dict({
-        'all_branch_deployments_scope': False,
-        'can_edit_secret': True,
-        'can_view_secret_value': True,
-        'full_deployment_scope': False,
-        'id': 'scope-test-secret-2',
-        'local_deployment_scope': False,
-        'location_names': list([
-          'location_2',
-        ]),
-        'name': 'scope_test_secret_2',
-        'specific_branch_deployment_scope': 'main',
-        'update_timestamp': '2022-01-01T14:20:02',
-        'updated_by': dict({
-          'email': 'user2@company.com',
-        }),
-        'value': 'test_value_2',
-      }),
-      dict({
-        'all_branch_deployments_scope': False,
-        'can_edit_secret': True,
-        'can_view_secret_value': True,
-        'full_deployment_scope': False,
-        'id': 'scope-test-secret-3',
-        'local_deployment_scope': True,
-        'location_names': list([
-          'location_3',
-        ]),
-        'name': 'scope_test_secret_3',
-        'specific_branch_deployment_scope': None,
-        'update_timestamp': '2022-01-01T14:20:03',
-        'updated_by': dict({
-          'email': 'user3@company.com',
-        }),
-        'value': 'test_value_3',
-      }),
-      dict({
-        'all_branch_deployments_scope': True,
-        'can_edit_secret': True,
-        'can_view_secret_value': True,
-        'full_deployment_scope': True,
-        'id': 'scope-test-secret-4',
-        'local_deployment_scope': True,
-        'location_names': list([
-          'location_4',
-        ]),
-        'name': 'scope_test_secret_4',
-        'specific_branch_deployment_scope': None,
-        'update_timestamp': '2022-01-01T14:20:04',
-        'updated_by': dict({
-          'email': 'user4@company.com',
-        }),
-        'value': 'test_value_4',
-      }),
-    ]),
-    'total': 5,
-  })
 # ---

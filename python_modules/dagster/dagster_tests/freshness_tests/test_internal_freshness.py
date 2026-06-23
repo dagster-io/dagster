@@ -54,7 +54,7 @@ class TestApplyFreshnessPolicy:
             defs.map_asset_specs(
                 func=lambda spec: apply_freshness_policy(
                     spec,
-                    None,  # pyright: ignore[reportArgumentType]
+                    None,
                     overwrite_existing=False,
                 )
             )
@@ -224,7 +224,7 @@ class TestTimeWindowFreshnessPolicy:
             )
         )
 
-        specs = mapped_defs.get_all_asset_specs()
+        specs = mapped_defs.resolve_all_asset_specs()
 
         # Should see new policy applied to asset without existing policy
         spec_no_policy = next(spec for spec in specs if spec.key == dg.AssetKey("asset_no_policy"))

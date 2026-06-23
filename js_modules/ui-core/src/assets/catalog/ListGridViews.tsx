@@ -55,7 +55,8 @@ function getSectionRows<T>(params: {
             key={i}
             padding={{
               horizontal: PADDING_HORIZONTAL,
-              bottom: tileGap as any,
+              // tileGap comes from TILE_GAP (12) which is a valid Spacing value
+              bottom: tileGap as 12,
             }}
             style={{
               rowGap: tileGap,
@@ -191,12 +192,12 @@ export const List = ({rows}: {rows: React.ReactNode[]}) => {
 
   return (
     <Container ref={scrollWrapperRef} style={{maxHeight: '600px', overflowY: 'auto'}}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {rowItems.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row = rows[index]!;
           return (
-            <Row key={key} $height={size} $start={start}>
+            <Row key={key} height={size} start={start}>
               <div ref={rowVirtualizer.measureElement} data-index={index}>
                 {row}
               </div>

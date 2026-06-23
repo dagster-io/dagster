@@ -280,10 +280,10 @@ def test_prefix(prefix):
     from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     assets = dg.load_assets_from_modules([asset_package, module_with_assets], key_prefix=prefix)
-    assert_assets_have_prefix(prefix, assets)  # pyright: ignore[reportArgumentType]
+    assert_assets_have_prefix(prefix, assets)  # ty: ignore[invalid-argument-type]
 
     assets = dg.load_assets_from_package_module(asset_package, key_prefix=prefix)
-    assert_assets_have_prefix(prefix, assets)  # pyright: ignore[reportArgumentType]
+    assert_assets_have_prefix(prefix, assets)  # ty: ignore[invalid-argument-type]
 
 
 def _load_assets_from_module_with_assets(**kwargs):

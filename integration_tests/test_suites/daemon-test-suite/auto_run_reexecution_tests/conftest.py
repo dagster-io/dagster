@@ -13,7 +13,7 @@ def instance():
         with instance_for_test(
             overrides={
                 "run_coordinator": {
-                    "module": "dagster.core.test_utils",
+                    "module": "dagster._core.test_utils",
                     "class": "MockedRunCoordinator",
                 },
                 "event_log_storage": {
@@ -34,7 +34,7 @@ def instance_no_retry_on_asset_or_op_failure():
         with instance_for_test(
             overrides={
                 "run_coordinator": {
-                    "module": "dagster.core.test_utils",
+                    "module": "dagster._core.test_utils",
                     "class": "MockedRunCoordinator",
                 },
                 "event_log_storage": {

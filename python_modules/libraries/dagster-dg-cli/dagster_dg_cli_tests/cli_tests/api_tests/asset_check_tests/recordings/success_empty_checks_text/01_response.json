@@ -1,0 +1,9 @@
+{
+  "assetNodeOrError": {
+    "__typename": "AssetNode",
+    "assetChecksOrError": {
+      "__typename": "AssetChecks",
+      "checks": []
+    }
+  }
+}

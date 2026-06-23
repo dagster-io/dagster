@@ -1,3 +1,4 @@
+###################
 dagster-dbt library
 ###################
 
@@ -81,7 +82,7 @@ Asset Checks (dbt Core)
 Resources (dbt Core)
 ====================
 
-CLI Resource
+CLI resource
 ------------
 
 .. autoclass:: DbtCliResource

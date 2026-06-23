@@ -1,0 +1,43 @@
+.hoverableRow:hover {
+  background: var(--color-background-light-hover);
+}
+
+.detailsTable {
+  width: 100%;
+  margin: -2px -2px -3px;
+}
+
+.detailsTable tr td {
+  font-size: 14px;
+}
+
+.disclosureTriangleButton {
+  padding: 4px;
+  margin: -4px;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+
+.disclosureTriangleButton .iconGlobal {
+  margin: -2px -5px;
+  opacity: 0.25;
+}
+
+.disclosureTriangleButton:focus {
+  outline: none;
+}
+
+.disclosureTriangleButton:focus .iconGlobal {
+  background: var(--color-text-default);
+  opacity: 0.5;
+}
+
+.disclosureTriangleOpen .iconGlobal {
+  transform: rotate(0deg);
+}
+
+.disclosureTriangleClosed .iconGlobal {
+  transform: rotate(-90deg);
+}

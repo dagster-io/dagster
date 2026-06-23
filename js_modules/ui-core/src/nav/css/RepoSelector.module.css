@@ -1,0 +1,55 @@
+.repoLabel {
+  cursor: pointer;
+  display: block;
+  font-weight: 500;
+  overflow: hidden;
+  position: relative;
+  top: 1px;
+  transition: filter 50ms linear;
+  user-select: none;
+  white-space: nowrap;
+
+  &:focus,
+  &:active {
+    outline: none;
+  }
+
+  &:hover {
+    filter: opacity(0.8);
+  }
+}
+
+.repoLocation {
+  color: var(--color-text-light);
+}
+
+.reloadButtonInner {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 8px;
+  margin: -6px;
+  outline: none;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:disabled .iconGlobal {
+    background-color: var(--color-text-disabled);
+    transition: background-color 100ms;
+  }
+
+  .iconGlobal {
+    background-color: var(--color-text-light);
+    transition: background-color 100ms;
+  }
+
+  &:hover:not(:disabled) .iconGlobal {
+    background-color: var(--color-text-lighter);
+  }
+
+  &:focus .iconGlobal {
+    background-color: var(--color-link-default);
+  }
+}

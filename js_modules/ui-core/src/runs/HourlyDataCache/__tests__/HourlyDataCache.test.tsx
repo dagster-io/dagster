@@ -4,7 +4,9 @@ import {HourlyDataCache, ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache'
 
 const mockedCache = {
   has: jest.fn<any, any, any>(() => false),
+
   get: jest.fn<any, any, any>(),
+
   set: jest.fn<any, any, any>(),
 };
 let mockShouldThrowError = false;

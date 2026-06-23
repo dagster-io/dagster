@@ -1,0 +1,28 @@
+name: bluegreen_analytics
+version: "1.0.0"
+profile: bluegreen_analytics
+config-version: 2
+
+vars:
+  green_schema: green # live schema that consumers read
+  blue_schema: blue # staging schema that models build into
+
+# Before any model builds, clone the live "green" tables into "blue" so the
+# run starts from the current published state.
+on-run-start:
+  - "{{ clone_green_to_blue() }}"
+
+# After EVERY model and test has finished, promote blue to green — but only if
+# the whole run was clean. Per-model post-hooks fire before tests, so they
+# cannot gate promotion on test results. See swap_all_marts_if_clean.sql.
+on-run-end:
+  - "{{ swap_all_marts_if_clean() }}"
+
+models:
+  bluegreen_analytics:
+    staging:
+      +schema: blue
+      +materialized: view
+    marts:
+      +schema: blue
+      +materialized: table

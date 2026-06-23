@@ -1,7 +1,7 @@
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import type {WorkspaceAssetNode} from '../assets/WorkspaceAssetNode';
 
-export type AssetNode = WorkspaceAssetFragment;
+export type AssetNode = WorkspaceAssetNode;
 export type AssetGraphQueryItem = GraphQueryItem & {
   node: AssetNode;
 };

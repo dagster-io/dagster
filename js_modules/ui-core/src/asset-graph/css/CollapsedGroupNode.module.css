@@ -1,0 +1,49 @@
+.groupStackLine {
+  background: transparent;
+  border-top: 2px solid var(--color-lineage-group-node-border);
+  border-radius: 2px;
+}
+
+.groupStackLine1 {
+  width: 94%;
+  margin-left: 3%;
+}
+
+.groupStackLine2 {
+  width: 88%;
+  margin-left: 6%;
+}
+
+.collapsedGroupNodeBox {
+  border: 2px solid var(--color-lineage-group-node-border);
+  background: var(--color-background-light);
+  border-radius: 8px;
+  position: relative;
+  margin-top: 8px;
+}
+
+.collapsedGroupNodeBox.minimal {
+  border-width: 4px;
+}
+
+.collapsedGroupNodeContainer {
+  user-select: none;
+  padding: 4px;
+  transition:
+    transform linear 200ms,
+    gap linear 200ms;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.collapsedGroupNodeContainer:hover {
+  transform: scale(1.03);
+  gap: 3px;
+}
+
+.collapsedGroupNodeContainer:hover .collapsedGroupNodeBox {
+  transition: background linear 200ms;
+  background: var(--color-background-light-hover);
+}

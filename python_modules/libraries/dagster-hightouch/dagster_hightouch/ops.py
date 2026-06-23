@@ -1,3 +1,4 @@
+import dagster._check as check
 from dagster import AssetMaterialization, Field, In, Noneable, Nothing, Out, Output, op
 
 from dagster_hightouch.resources import DEFAULT_POLL_INTERVAL, HightouchOutput
@@ -47,8 +48,8 @@ def hightouch_sync_op(context):
         poll_interval=context.op_config["poll_interval"],
         poll_timeout=context.op_config["poll_timeout"],
     )
-    destination_type = hightouch_output.destination_details.get("type")
-    destination_slug = hightouch_output.destination_details.get("slug")
+    destination_type = check.not_none(hightouch_output.destination_details.get("type"))
+    destination_slug = check.not_none(hightouch_output.destination_details.get("slug"))
     sync_object = hightouch_output.sync_details.get("configuration", dict()).get("object")
     if sync_object:
         asset_name = ["hightouch", destination_type, destination_slug, sync_object]

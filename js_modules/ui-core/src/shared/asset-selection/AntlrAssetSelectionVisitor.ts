@@ -8,16 +8,22 @@ import {
   AllExpressionContext,
   AndExpressionContext,
   AttributeExpressionContext,
+  AutomationTypeAttributeExprContext,
   CodeLocationAttributeExprContext,
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
   GroupAttributeExprContext,
+  IsAttributeExprContext,
+  JobAttributeExprContext,
   KeyExprContext,
   KindAttributeExprContext,
   NotExpressionContext,
   OrExpressionContext,
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
+  PartitionsAttributeExprContext,
+  ScheduleAttributeExprContext,
+  SensorAttributeExprContext,
   StartContext,
   StatusAttributeExprContext,
   TagAttributeExprContext,
@@ -35,6 +41,7 @@ import {
   getValue,
   isNullValue,
 } from '../../asset-selection/util';
+import {PartitionDefinitionType} from '../../graphql/types';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
 export class AntlrAssetSelectionVisitor
@@ -225,10 +232,14 @@ export class AntlrAssetSelectionVisitor
     const valueCtx = ctx.value();
     const value = valueCtx ? getValue(valueCtx) : '';
     const isNull = valueCtx ? isNullValue(valueCtx) : false;
+    const isWildcard = value.includes('*');
+    const regex = isWildcard
+      ? new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`)
+      : null;
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.groupName) {
-          return i.node.groupName === value;
+          return regex ? regex.test(i.node.groupName) : i.node.groupName === value;
         }
         return isNull;
       }),
@@ -247,6 +258,23 @@ export class AntlrAssetSelectionVisitor
         return isNull;
       }),
     );
+  }
+
+  // `is:` filters by a structural boolean flag on the asset node.
+  // Only "external" and "materializable" are valid values — these are logical
+  // inverses (both derive from `execution_type == MATERIALIZATION` on the
+  // server). Unknown values resolve to an empty set rather than throwing,
+  // matching the silent-filter behavior of the other attribute visitors.
+  visitIsAttributeExpr(ctx: IsAttributeExprContext) {
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    if (value === 'materializable') {
+      return new Set([...this.all_assets].filter((i) => i.node.isMaterializable));
+    }
+    if (value === 'external') {
+      return new Set([...this.all_assets].filter((i) => !i.node.isMaterializable));
+    }
+    return new Set<AssetGraphQueryItem>();
   }
 
   visitCodeLocationAttributeExpr(ctx: CodeLocationAttributeExprContext) {
@@ -272,6 +300,70 @@ export class AntlrAssetSelectionVisitor
       field: 'status',
       value: statusName.toUpperCase(),
     });
+    const matchingAssetKeys = this.supplementaryData?.[supplementaryDataKey];
+    if (!matchingAssetKeys) {
+      return new Set<AssetGraphQueryItem>();
+    }
+    return new Set(
+      matchingAssetKeys
+        .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key)))
+        .filter((item): item is AssetGraphQueryItem => item !== undefined),
+    );
+  }
+
+  visitPartitionsAttributeExpr(ctx: PartitionsAttributeExprContext) {
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    const isNull = valueCtx ? isNullValue(valueCtx) : false;
+    return new Set(
+      [...this.all_assets].filter((i) => {
+        const partitionDef = i.node.partitionDefinition;
+        if (value === 'none' || isNull) {
+          return partitionDef === null;
+        }
+        if (!partitionDef) {
+          return false;
+        }
+        const dims = partitionDef.dimensionTypes;
+        switch (value) {
+          case 'static':
+            return dims.length === 1 && dims[0]?.type === PartitionDefinitionType.STATIC;
+          case 'dynamic':
+            return dims.length === 1 && dims[0]?.type === PartitionDefinitionType.DYNAMIC;
+          case 'time':
+            return dims.length === 1 && dims[0]?.type === PartitionDefinitionType.TIME_WINDOW;
+          case 'multipartitions':
+            return dims.length > 1;
+          default:
+            return false;
+        }
+      }),
+    );
+  }
+
+  visitAutomationTypeAttributeExpr(ctx: AutomationTypeAttributeExprContext) {
+    const valueCtx = ctx.value();
+    return this._supplementaryDataLookup('automation_type', valueCtx ? getValue(valueCtx) : '');
+  }
+
+  visitSensorAttributeExpr(ctx: SensorAttributeExprContext) {
+    const valueCtx = ctx.value();
+    return this._supplementaryDataLookup('sensor', valueCtx ? getValue(valueCtx) : '');
+  }
+
+  visitScheduleAttributeExpr(ctx: ScheduleAttributeExprContext) {
+    const valueCtx = ctx.value();
+    return this._supplementaryDataLookup('schedule', valueCtx ? getValue(valueCtx) : '');
+  }
+
+  visitJobAttributeExpr(ctx: JobAttributeExprContext) {
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    return new Set([...this.all_assets].filter((i) => i.node.jobNames.includes(value)));
+  }
+
+  private _supplementaryDataLookup(field: string, value: string): Set<AssetGraphQueryItem> {
+    const supplementaryDataKey = getSupplementaryDataKey({field, value});
     const matchingAssetKeys = this.supplementaryData?.[supplementaryDataKey];
     if (!matchingAssetKeys) {
       return new Set<AssetGraphQueryItem>();

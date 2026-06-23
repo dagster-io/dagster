@@ -2,61 +2,16 @@ import {
   Box,
   Colors,
   FontFamily,
-  Icon,
   Menu,
   MenuDivider,
   MenuExternalLink,
   MenuItem,
-  Popover,
   Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {useCallback, useState} from 'react';
 
-import {ShortcutHandler} from './ShortcutHandler';
-import {TooltipShortcutInfo, TopNavButton} from './TopNavButton';
 import {useVersionNumber} from '../nav/VersionNumber';
 import {CopyIconButton} from '../ui/CopyButton';
-
-interface Props {
-  showContactSales?: boolean;
-  onShareFeedback?: () => void;
-}
-
-export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const onInteraction = useCallback((open: boolean) => setIsOpen(open), []);
-
-  return (
-    <ShortcutHandler
-      onShortcut={() => setIsOpen(!isOpen)}
-      shortcutLabel="?"
-      shortcutFilter={(e) => e.key === '?'}
-    >
-      <Popover
-        isOpen={isOpen}
-        placement="bottom-end"
-        canEscapeKeyClose
-        onInteraction={onInteraction}
-        modifiers={{offset: {enabled: true, options: {offset: [0, 16]}}}}
-        content={
-          <HelpMenuContents onShareFeedback={onShareFeedback} showContactSales={showContactSales} />
-        }
-      >
-        <Tooltip
-          content={<TooltipShortcutInfo label="Help" shortcutKey="?" />}
-          placement="bottom"
-          canShow={!isOpen}
-        >
-          <TopNavButton>
-            <Icon name="help_circle" size={20} />
-          </TopNavButton>
-        </Tooltip>
-      </Popover>
-    </ShortcutHandler>
-  );
-};
 
 interface HelpMenuContentsProps {
   onShareFeedback?: () => void;

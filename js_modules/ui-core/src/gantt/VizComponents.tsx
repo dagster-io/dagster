@@ -1,37 +1,25 @@
-import {Colors} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import clsx from 'clsx';
+import * as React from 'react';
 
-export const OptionsContainer = styled.div`
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  padding: 5px 12px 5px 24px;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  background: ${Colors.backgroundDefault()};
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  z-index: 3;
+import styles from './css/VizComponents.module.css';
 
-  .dagster-cursor-controls {
-    margin-top: 0;
-    gap: 8px;
+export const OptionsContainer = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'>
+>((props, ref) => {
+  return <div {...props} ref={ref} className={clsx(styles.optionsContainer, props.className)} />;
+});
 
-    @media (max-width: 1100px) {
-      & .hideable-button-text {
-        display: none;
-      }
-      & div[role='img'] {
-        margin: 0;
-      }
-    }
-  }
-`;
+export const OptionsDivider = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'>
+>((props, ref) => {
+  return <div {...props} ref={ref} className={clsx(styles.optionsDivider, props.className)} />;
+});
 
-export const OptionsDivider = styled.div`
-  width: 30px;
-  height: 25px;
-`;
-
-export const OptionsSpacer = styled.div`
-  width: 30px;
-`;
+export const OptionsSpacer = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'>
+>((props, ref) => {
+  return <div {...props} ref={ref} className={clsx(styles.optionsSpacer, props.className)} />;
+});

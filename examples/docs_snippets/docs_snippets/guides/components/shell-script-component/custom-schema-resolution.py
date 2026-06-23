@@ -28,4 +28,4 @@ class MyComponent(dg.Component, dg.Resolvable):
         ),
     ]
 
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]

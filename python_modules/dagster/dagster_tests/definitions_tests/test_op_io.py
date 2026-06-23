@@ -1,8 +1,11 @@
 import sys
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterator, Mapping, Sequence
 from typing import (  # noqa:UP035
+    Any,
     Iterable as TypingIterable,
     Iterator as TypingIterator,
+    Mapping as TypingMapping,
+    Sequence as TypingSequence,
 )
 
 import dagster as dg
@@ -89,8 +92,8 @@ def test_precedence():
     assert precedence.input_defs[0].default_value == "hi"
     assert precedence.input_defs[0].metadata["explicit"]
     assert precedence.input_defs[0].input_manager_key == "rudy"
-    assert precedence.input_defs[0].get_asset_key(None) is not None  # pyright: ignore[reportArgumentType]
-    assert precedence.input_defs[0].get_asset_partitions(None) is not None  # pyright: ignore[reportArgumentType]
+    assert precedence.input_defs[0].get_asset_key(None) is not None  # ty: ignore[invalid-argument-type]
+    assert precedence.input_defs[0].get_asset_partitions(None) is not None  # ty: ignore[invalid-argument-type]
 
 
 def test_output_merge():
@@ -185,3 +188,54 @@ def test_not_type_input():
         @dg.op
         def _out(_context) -> TypingIterable[int]:
             return [1]
+
+
+def test_abstract_collection_type_annotations():
+    @dg.op
+    def mapping_op(x: TypingMapping[str, Any]):
+        pass
+
+    @dg.op
+    def sequence_op(x: TypingSequence[int]):
+        pass
+
+    @dg.op
+    def bare_mapping_op(x: TypingMapping):
+        pass
+
+    @dg.op
+    def bare_sequence_op(x: TypingSequence):
+        pass
+
+    @dg.op
+    def collections_abc_mapping_op(x: Mapping[str, Any]):
+        pass
+
+    @dg.op
+    def collections_abc_sequence_op(x: Sequence[int]):
+        pass
+
+    assert (
+        mapping_op.input_defs[0].dagster_type
+        == InputDefinition("test", dagster_type=dg.Dict[str, Any]).dagster_type
+    )
+    assert (
+        sequence_op.input_defs[0].dagster_type
+        == InputDefinition("test", dagster_type=dg.List[int]).dagster_type
+    )
+    assert (
+        bare_mapping_op.input_defs[0].dagster_type
+        == InputDefinition("test", dagster_type=dg.Dict).dagster_type
+    )
+    assert (
+        bare_sequence_op.input_defs[0].dagster_type
+        == InputDefinition("test", dagster_type=dg.List).dagster_type
+    )
+    assert (
+        collections_abc_mapping_op.input_defs[0].dagster_type
+        == InputDefinition("test", dagster_type=dg.Dict[str, Any]).dagster_type
+    )
+    assert (
+        collections_abc_sequence_op.input_defs[0].dagster_type
+        == InputDefinition("test", dagster_type=dg.List[int]).dagster_type
+    )

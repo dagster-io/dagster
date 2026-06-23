@@ -1,0 +1,32 @@
+[
+  {
+    "source": "/getting-started/install",
+    "destination": "/getting-started/installation",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dg",
+    "destination": "/getting-started/installation",
+    "permanent": true
+  },
+  {
+    "source": "/concepts",
+    "destination": "/getting-started/concepts",
+    "permanent": true
+  },
+  {
+    "source": "/install",
+    "destination": "/getting-started/installation",
+    "permanent": true
+  },
+  {
+    "source": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
+    "destination": "/getting-started/concepts#code-location",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/code-locations/managing-code-locations-with-definitions",
+    "destination": "/getting-started/concepts#code-location",
+    "permanent": true
+  }
+]

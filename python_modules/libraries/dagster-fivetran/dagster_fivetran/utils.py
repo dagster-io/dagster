@@ -26,9 +26,8 @@ clean_name = clean_name_lower
 
 
 def get_fivetran_connector_url(connector_details: Mapping[str, Any]) -> str:
-    service = connector_details["service"]
-    schema = connector_details["schema"]
-    return f"https://fivetran.com/dashboard/connectors/{service}/{schema}"
+    connector_id = connector_details["id"]
+    return f"https://fivetran.com/dashboard/connections/{connector_id}"
 
 
 def get_fivetran_logs_url(connector_details: Mapping[str, Any]) -> str:
@@ -61,6 +60,7 @@ def metadata_for_table(
     schema: str | None,
     table: str | None,
     include_column_info: bool = False,
+    service: str | None = None,
 ) -> RawMetadataMapping:
     metadata: dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
     column_schema = None
@@ -75,7 +75,9 @@ def metadata_for_table(
     if database and schema and table:
         table_name = ".".join([database, schema, table])
     metadata = {
-        **TableMetadataSet(column_schema=column_schema, table_name=table_name),
+        **TableMetadataSet(
+            column_schema=column_schema, table_name=table_name, storage_kind=service
+        ),
         **metadata,
     }
 

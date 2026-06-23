@@ -1,0 +1,1 @@
+DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX = "core.windows.net"

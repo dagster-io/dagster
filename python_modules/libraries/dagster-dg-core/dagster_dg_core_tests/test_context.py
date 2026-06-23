@@ -136,6 +136,36 @@ def test_context_outside_project_or_workspace():
         assert context.config.cli.verbose is False
 
 
+def test_project_python_executable_env_file_formats():
+    # `dg dev` reads DG_PROJECT_PYTHON_EXECUTABLE from a project's .env to allow non-standard
+    # venv layouts (uv workspaces, Nix, etc.). Parsing goes through python-dotenv, so every
+    # format that dotenv accepts must be honored.
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        project_root = Path.cwd()
+        env_path = project_root / ".env"
+        expected = project_root / "../shared/.venv/bin/python"
+        cases = [
+            "DG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python",
+            "export DG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python",
+            'DG_PROJECT_PYTHON_EXECUTABLE="../shared/.venv/bin/python"',
+            "DG_PROJECT_PYTHON_EXECUTABLE='../shared/.venv/bin/python'",
+            "# leading comment\nDG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python  # trailing",
+            "OTHER=ignored\nDG_PROJECT_PYTHON_EXECUTABLE=../shared/.venv/bin/python",
+        ]
+        for content in cases:
+            env_path.write_text(content + "\n", encoding="utf-8")
+            context = DgContext.for_project_environment(project_root, {})
+            assert context.project_python_executable == expected, f"Failed for content: {content!r}"
+
+        # Unset / missing variable falls back to the default project .venv.
+        env_path.write_text("OTHER=ignored\n", encoding="utf-8")
+        context = DgContext.for_project_environment(project_root, {})
+        assert context.project_python_executable.is_relative_to(project_root / ".venv")
+
+
 @pytest.mark.parametrize("user_config_file", ["default", "xdg_config_home", "explicit_env_var"])
 def test_context_with_user_config(monkeypatch, user_config_file: str):
     if user_config_file == "xdg_config_home" and is_windows():
@@ -219,7 +249,7 @@ def test_setup_cfg_entry_point():
         with modify_toml_as_dict(Path("pyproject.toml")) as toml:
             delete_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.registry_modules"))
         # Create a setup.cfg file with the entry point
-        with open("setup.cfg", "w") as f:
+        with open("setup.cfg", "w", encoding="utf-8") as f:
             f.write(
                 textwrap.dedent("""
                 [options.entry_points]
@@ -336,28 +366,28 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 _set_and_detect_invalid_key(config_file, path)
 
-        cases = [
-            ["cli.verbose", bool, 1],
-            ["cli.use_component_modules", Sequence[str], 1],
-            ["cli.suppress_warnings", list[DgWarningIdentifier], 1],
-            ["workspace.projects", list, 1],
-            ["workspace.projects[1]", dict, 1],
-            ["workspace.projects[0].path", str, 1],
-            ["workspace.scaffold_project_options", dict, 1],
-            [
+        mistyped_cases: list[tuple[str, Any, Any]] = [
+            ("cli.verbose", bool, 1),
+            ("cli.use_component_modules", Sequence[str], 1),
+            ("cli.suppress_warnings", list[DgWarningIdentifier], 1),
+            ("workspace.projects", list, 1),
+            ("workspace.projects[1]", dict, 1),
+            ("workspace.projects[0].path", str, 1),
+            ("workspace.scaffold_project_options", dict, 1),
+            (
                 "workspace.scaffold_project_options.use_editable_dagster",
                 bool,
                 1,
-            ],
+            ),
         ]
-        for path, expected_type, val in cases:
+        for path, expected_type, val in mistyped_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_mistyped_value(config_file, path, expected_type, val)
 
-        cases = [
-            ["workspace.projects[0].path", str],
+        missing_cases: list[tuple[str, Any]] = [
+            ("workspace.projects[0].path", str),
         ]
-        for path, expected_type in cases:
+        for path, expected_type in missing_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
@@ -377,21 +407,21 @@ def test_invalid_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 _set_and_detect_invalid_key(config_file, case)
 
-        cases = [
-            ["cli.verbose", bool, 1],
-            ["project.root_module", str, 1],
-            ["project.defs_module", str, 1],
-            ["project.code_location_name", str, 1],
-            ["project.code_location_target_module", str, 1],
+        mistyped_cases: list[tuple[str, Any, Any]] = [
+            ("cli.verbose", bool, 1),
+            ("project.root_module", str, 1),
+            ("project.defs_module", str, 1),
+            ("project.code_location_name", str, 1),
+            ("project.code_location_target_module", str, 1),
         ]
-        for path, expected_type, val in cases:
+        for path, expected_type, val in mistyped_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_mistyped_value(config_file, path, expected_type, val)
 
-        cases = [
-            ["project.root_module", str],
+        missing_cases: list[tuple[str, Any]] = [
+            ("project.root_module", str),
         ]
-        for path, expected_type in cases:
+        for path, expected_type in missing_cases:
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
@@ -456,6 +486,21 @@ def test_code_location_config(config_file: ConfigFileType):
         assert context.code_location_name == "my-code_location"
 
 
+@pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
+def test_cli_telemetry_config(config_file: ConfigFileType):
+    # Regression test for dagster-io/dagster#32728: validating `cli.telemetry.enabled`
+    # raised `TypeError: TypedDict does not support instance and class checks` because
+    # the validator called `isinstance` against a TypedDict.
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, config_file_type=config_file, in_workspace=False),
+    ):
+        with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
+            create_toml_node(toml, ("cli", "telemetry", "enabled"), False)
+        context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+        assert context.config.cli.telemetry_enabled is False
+
+
 def test_virtual_env_mismatch_warning():
     with (
         ProxyRunner.test() as runner,
@@ -478,9 +523,9 @@ def test_virtual_env_mismatch_warning():
 
 @contextmanager
 def _reset_config_file(config_file: ConfigFileType):
-    original = Path(config_file).read_text()
+    original = Path(config_file).read_text(encoding="utf-8")
     yield
-    Path(config_file).write_text(original)
+    Path(config_file).write_text(original, encoding="utf-8")
 
 
 def _get_full_str_path(config_file: ConfigFileType, str_path: str) -> str:

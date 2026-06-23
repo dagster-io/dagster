@@ -26,7 +26,7 @@ class ComponentWithAdditionalScope(dg.Component, dg.Resolvable, dg.Model):
     def a_udf_with_args() -> Callable:
         return lambda x: f"a_udf_value_{x}"
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]
 
 
 def test_basic_additional_scope_hardcoded_value():
@@ -73,7 +73,7 @@ def test_basic_additional_scope_scope_udf_with_args():
 class ComponentWithInjectedScope(dg.Component, dg.Resolvable, dg.Model):
     value: str
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]
 
 
 def test_basic_injected_scope_var():
@@ -124,7 +124,7 @@ class ComponentWithContextTemplateVars(dg.Component, dg.Resolvable, dg.Model):
     def context_udf(context: ComponentLoadContext) -> Callable:
         return lambda x: f"context_udf_{x}_{context.path.name}"
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]
 
 
 @pytest.mark.skipif(

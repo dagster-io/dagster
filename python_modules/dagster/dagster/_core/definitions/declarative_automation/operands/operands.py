@@ -21,7 +21,6 @@ from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
-from dagster._utils.schedules import reverse_cron_string_iterator
 
 
 @whitelist_for_serdes
@@ -91,7 +90,7 @@ class MissingAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "missing"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # ty: ignore[invalid-method-override]
         return await context.asset_graph_view.compute_missing_subset(
             key=context.key, from_subset=context.candidate_subset
         )
@@ -104,7 +103,7 @@ class RunInProgressAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "run_in_progress"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # ty: ignore[invalid-method-override]
         return await context.asset_graph_view.compute_run_in_progress_subset(
             key=context.key, from_subset=context.candidate_subset
         )
@@ -117,7 +116,7 @@ class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "backfill_in_progress"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # ty: ignore[invalid-method-override]
         return await context.asset_graph_view.compute_backfill_in_progress_subset(
             key=context.key, from_subset=context.candidate_subset
         )
@@ -130,7 +129,7 @@ class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "execution_failed"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # ty: ignore[invalid-method-override]
         return await context.asset_graph_view.compute_execution_failed_subset(
             key=context.key, from_subset=context.candidate_subset
         )
@@ -178,13 +177,20 @@ class WillBeRequestedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class NewlyRequestedCondition(SubsetAutomationCondition):
+class NewlyRequestedCondition(TimedSubsetAutomationCondition):
     @property
     def name(self) -> str:
         return "newly_requested"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.get_previous_requested_subset(context.key) or context.get_empty_subset()
+    def compute_subset_with_timing_metadata(
+        self, context: AutomationContext
+    ) -> tuple[EntitySubset, TimingMetadata | None]:
+        subset = context.get_previous_requested_subset(context.key) or context.get_empty_subset()
+        if subset.is_empty or context.previous_evaluation_time is None:
+            return subset, None
+        return subset, TimingMetadata(
+            timestamps={context.previous_evaluation_time.timestamp(): subset}
+        )
 
 
 @whitelist_for_serdes
@@ -194,7 +200,7 @@ class NewlyUpdatedCondition(TimedSubsetAutomationCondition):
     def name(self) -> str:
         return "newly_updated"
 
-    async def compute_subset_with_timing_metadata(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset_with_timing_metadata(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext
     ) -> tuple[EntitySubset, TimingMetadata | None]:
         # if it's the first time evaluating, just return the empty subset
@@ -247,7 +253,7 @@ class FreshnessResultCondition(SubsetAutomationCondition[AssetKey]):
     def name(self) -> str:
         return f"freshness_result(state={self.state})"
 
-    async def compute_subset(self, context: AutomationContext[AssetKey]) -> EntitySubset[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext[AssetKey]) -> EntitySubset[AssetKey]:  # ty: ignore[invalid-method-override]
         return await context.asset_graph_view.compute_subset_with_freshness_state(
             key=context.key, state=self.state
         )
@@ -260,7 +266,7 @@ class DataVersionChangedCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "data_version_changed"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # ty: ignore[invalid-method-override]
         # if it's the first time evaluating, just return the empty subset
         if context.previous_temporal_context is None:
             return context.get_empty_subset()
@@ -279,18 +285,12 @@ class CronTickPassedCondition(TimedSubsetAutomationCondition):
     def name(self) -> str:
         return f"cron_tick_passed(cron_schedule={self.cron_schedule}, cron_timezone={self.cron_timezone})"
 
-    def _get_previous_cron_tick(self, effective_dt: datetime.datetime) -> datetime.datetime:
-        previous_ticks = reverse_cron_string_iterator(
-            end_timestamp=effective_dt.timestamp(),
-            cron_string=self.cron_schedule,
-            execution_timezone=self.cron_timezone,
-        )
-        return next(previous_ticks)
-
     def compute_subset_with_timing_metadata(
         self, context: AutomationContext
     ) -> tuple[EntitySubset, TimingMetadata | None]:
-        previous_cron_tick = self._get_previous_cron_tick(context.evaluation_time)
+        previous_cron_tick = context.asset_graph_view.compute_previous_cron_tick(
+            cron_schedule=self.cron_schedule, cron_timezone=self.cron_timezone
+        )
         if (
             # no previous evaluation
             context.previous_evaluation_time is None
@@ -357,7 +357,7 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
     def name(self) -> str:
         return "check_passed" if self.passed else "check_failed"
 
-    async def compute_subset(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[AssetCheckKey]
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.storage.asset_check_execution_record import (

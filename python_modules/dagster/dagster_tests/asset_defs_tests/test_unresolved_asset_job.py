@@ -372,7 +372,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     with dg.instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            record.event_log_entry.dagster_event.event_specific_data.asset_key  # ty: ignore[unresolved-attribute]
             for record in instance.get_records_for_run(
                 run_id=result.run_id,
                 of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -892,3 +892,40 @@ def test_metadata():
     defs = dg.Definitions()
     resolved = updated.resolve(defs.resolve_asset_graph())
     assert resolved.metadata["foo"] == dg.TextMetadataValue("baz")
+
+
+def test_owners():
+    @dg.asset
+    def asset1(): ...
+
+    unresolved = dg.define_asset_job(
+        "with_owners", selection=[asset1], owners=["user@example.com", "team:Data Engineering"]
+    )
+    assert unresolved.owners == ["user@example.com", "team:Data Engineering"]
+
+    defs = dg.Definitions(assets=[asset1], jobs=[unresolved])
+    resolved = defs.resolve_job_def("with_owners")
+    assert resolved.owners == ["user@example.com", "team:Data Engineering"]
+
+    # Owners are persisted on the job snapshot
+    snap = resolved.get_job_snapshot()
+    assert snap.owners == ["user@example.com", "team:Data Engineering"]
+
+
+def test_owners_validation():
+    @dg.asset
+    def asset1(): ...
+
+    # Empty team name
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Team name cannot be empty after 'team:' prefix",
+    ):
+        dg.define_asset_job("empty_team", selection=[asset1], owners=["team:"])
+
+    # Invalid owner format
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
+        dg.define_asset_job("bad_owner", selection=[asset1], owners=["not-an-email-or-team"])

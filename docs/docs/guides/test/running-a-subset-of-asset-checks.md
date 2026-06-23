@@ -8,12 +8,6 @@ In some cases, you may only want to execute some of the [asset checks](/guides/t
 
 In this guide, we'll show you a few approaches to subsetting asset checks in <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator pluralize /> and <PyObject section="assets" module="dagster" object="multi_asset" decorator pluralize />.
 
-:::note
-
-This article assumes familiarity with [asset checks](/guides/test/asset-checks) and [multi-assets](/guides/build/assets/defining-assets#multi-asset).
-
-:::
-
 ## Subsetting checks in @multi_asset_checks
 
 Using the <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator /> decorator's `specs` and `can_subset` arguments, you can execute a subset of checks in a single op.
@@ -24,7 +18,7 @@ Inside the body of the function, we can use `AssetCheckExecutionContext.selected
 As we don't know in advance which checks will be executed, we explicitly `yield` each asset check result that we're expected to create:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/assets/asset_checks/subset_multi_asset_check.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/asset_checks/subset_multi_asset_check.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -35,7 +29,7 @@ When using [multi-assets](/guides/build/assets/defining-assets#multi-asset), Dag
 In the following example, we only want to execute a check when the `multi_asset_piece_1` asset produced by the `multi_asset_1_and_2` multi-asset is materialized:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/assets/asset_checks/subset_check_multi_asset.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/asset_checks/subset_check_multi_asset.py"
   title="src/<project_name>/defs/assets.py"
 />
 

@@ -97,10 +97,10 @@ Adding a `kind` isn't the only thing we can do. The full schema for
 `attributes` contains many other fields:
 
 <details>
+<summary>JSON Schema for asset attributes</summary>
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/post-processing-components/attr_json_schema.json"
   language="json"
-  title="JSON Schema for asset attributes"
 />
 </details>
 

@@ -1,28 +1,28 @@
 import {
   Box,
   ButtonLink,
-  Caption,
   Colors,
   HeaderCell,
+  Heading,
   Icon,
   Inner,
   Row,
   RowCell,
   Spinner,
-  Subtitle2,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/TickMaterializationsTable.module.css';
 import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
 } from './types/TickMaterializationsTable.types';
-import {tokenForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLink} from '../assets/AssetLink';
 import {AssetKeysDialogEmptyState} from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
 import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
@@ -48,7 +48,7 @@ export const TickMaterializationsTable = ({
     () =>
       tick
         ? tick.requestedAssetKeys.filter((assetKey) =>
-            assetKey.path.join('/').includes(queryString),
+            displayNameForAssetKey(assetKey).includes(queryString),
           )
         : [],
     [tick, queryString],
@@ -88,7 +88,9 @@ export const TickMaterializationsTable = ({
     if (!tick?.requestedAssetKeys.length) {
       return (
         <Box padding={{vertical: 12, horizontal: 24}}>
-          <Caption color={Colors.textLight()}>None</Caption>
+          <Text size={12} color="textLight">
+            None
+          </Text>
         </Box>
       );
     }
@@ -99,15 +101,15 @@ export const TickMaterializationsTable = ({
           <HeaderCell>Group</HeaderCell>
           <HeaderCell>Result</HeaderCell>
         </HeaderRow>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const assetKey = filteredAssetKeys[index]!;
             return (
               <AssetDetailRow
                 key={key}
-                $height={size}
-                $start={start}
+                height={size}
+                start={start}
                 assetKey={assetKey}
                 partitionKeys={assetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -127,7 +129,9 @@ export const TickMaterializationsTable = ({
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         border="bottom"
       >
-        <Subtitle2>Requested materializations</Subtitle2>
+        <Heading size={14} weight={600}>
+          Requested materializations
+        </Heading>
         <TextInput
           icon="search"
           value={queryString}
@@ -142,14 +146,14 @@ export const TickMaterializationsTable = ({
 };
 
 const AssetDetailRow = ({
-  $start,
-  $height,
+  start,
+  height,
   assetKey,
   partitionKeys,
   evaluationId,
 }: {
-  $start: number;
-  $height: number;
+  start: number;
+  height: number;
   assetKey: AssetKeyInput;
   partitionKeys?: string[];
   evaluationId: string;
@@ -174,8 +178,8 @@ const AssetDetailRow = ({
     : null;
 
   return (
-    <Row $start={$start} $height={$height}>
-      <RowGrid border="bottom">
+    <Row start={start} height={height}>
+      <Box className={styles.rowGrid} border="bottom">
         <RowCell>
           <AssetLink path={assetKey.path} icon="asset" textStyle="middle-truncate" />
         </RowCell>
@@ -189,7 +193,9 @@ const AssetDetailRow = ({
                 </Box>
               </Link>
             ) : (
-              <Caption color={Colors.textLight()}>Asset not found</Caption>
+              <Text size={12} color="textLight">
+                Asset not found
+              </Text>
             )
           ) : (
             <Spinner purpose="body-text" />
@@ -211,19 +217,10 @@ const AssetDetailRow = ({
             </>
           ) : null}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-  > * {
-    justify-content: center;
-  }
-`;
 
 const ASSET_GROUP_QUERY = gql`
   query AssetGroupAndLocationQuery($assetKey: AssetKeyInput!) {

@@ -62,7 +62,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             tags = None
 
         if self.statuses:
-            statuses = [DagsterRunStatus[status.value] for status in self.statuses]
+            statuses = [DagsterRunStatus[status.value] for status in self.statuses]  # ty: ignore[not-iterable]
         else:
             statuses = None
 
@@ -408,6 +408,7 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
     )
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
+    selectorId = graphene.InputField(graphene.String)
 
     class Meta:
         description = """This type represents a filter on Dagster Bulk Actions (backfills)."""
@@ -415,7 +416,7 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
 
     def to_selector(self):
         statuses = (
-            [BulkActionStatus[status.value] for status in self.statuses] if self.statuses else None
+            [BulkActionStatus[status.value] for status in self.statuses] if self.statuses else None  # ty: ignore[not-iterable]
         )
         created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
         created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
@@ -424,6 +425,7 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
             statuses=statuses,
             created_before=created_before,
             created_after=created_after,
+            selector_id=self.selectorId,
         )
 
 

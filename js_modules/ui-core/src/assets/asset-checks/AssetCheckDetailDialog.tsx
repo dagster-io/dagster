@@ -1,15 +1,13 @@
 import {
-  Body2,
   Box,
   Button,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
   FontFamily,
   Icon,
-  Mono,
   NonIdealState,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
@@ -129,10 +127,13 @@ export function MigrationRequired() {
         title="Migration required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Text size={14} color="textLight" style={{padding: '6px 0'}}>
               A database schema migration is required to use asset checks. Run{' '}
-              <Mono>dagster instance migrate</Mono>.
-            </Body2>
+              <Text size={14} family="mono">
+                dagster instance migrate
+              </Text>
+              .
+            </Text>
           </Box>
         }
       />
@@ -148,10 +149,10 @@ export function AgentUpgradeRequired() {
         title="Agent upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Text size={14} color="textLight" style={{padding: '6px 0'}}>
               Checks require Dagster Cloud Agent version 1.5 or higher. Upgrade your agent(s) to use
               checks.
-            </Body2>
+            </Text>
           </Box>
         }
       />
@@ -167,10 +168,10 @@ export function NeedsUserCodeUpgrade() {
         title="Upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Text size={14} color="textLight" style={{padding: '6px 0'}}>
               Checks aren&apos;t supported with dagster versions before 1.5. Upgrade the dagster
               library in this code location to use them.
-            </Body2>
+            </Text>
           </Box>
         }
       />
@@ -186,10 +187,10 @@ export function NoChecks() {
         title="No checks found for this asset"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.textLight()} style={{padding: '6px 0'}}>
+            <Text size={14} color="textLight" style={{padding: '6px 0'}}>
               Asset Checks run after a materialization and can verify a particular property of a
               data asset. Checks can help ensure that the contents of each data asset is correct.
-            </Body2>
+            </Text>
             {/* <Box
               as="a"
               href="https://docs.dagster.io/concepts/assets/asset-checks"
@@ -220,7 +221,7 @@ function canShowMetadataInline(entries: MetadataEntryFragment[]) {
   if (entries.length > 1) {
     return false;
   }
-  if (InlineableTypenames.includes(entries[0]?.__typename as any)) {
+  if (entries[0] && InlineableTypenames.includes(entries[0].__typename)) {
     return true;
   }
   if (entries[0]?.__typename === 'TableMetadataEntry' && entries[0].table.records.length <= 1) {

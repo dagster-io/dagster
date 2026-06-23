@@ -1,6 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps} from '@blueprintjs/core';
-import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
+import {Alert, Box, BreadcrumbProps, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
 import {observeEnabled} from '@shared/app/observeEnabled';
 import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import {AssetPageHeader} from '@shared/assets/AssetPageHeader';
@@ -26,8 +24,8 @@ import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql} from '../apollo-client';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
-import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {WorkspaceAssetNode} from './useAllAssets';
 import {useAssetDefinition} from './useAssetDefinition';
 import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
@@ -432,6 +430,7 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
   fragment AssetViewDefinitionNode on AssetNode {
     id
     pools
+    opVersion
     groupName
     isExecutable
     automationCondition {
@@ -481,6 +480,10 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     }
     backfillPolicy {
       description
+    }
+    opTags {
+      key
+      value
     }
     requiredResources {
       resourceKey
@@ -550,7 +553,7 @@ const AssetViewPageHeaderTags = ({
   onShowUpstream,
 }: {
   assetKey: AssetKey;
-  definition: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment | null | undefined;
+  definition: AssetViewDefinitionNodeFragment | WorkspaceAssetNode | null | undefined;
   liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
 }) => {

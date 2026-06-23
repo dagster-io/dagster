@@ -82,13 +82,13 @@ def list_all_components_schema(
             model_cls_list.append(
                 create_model(
                     key.name,
-                    type=(Literal[key_string], key_string),
+                    type=(Literal[key_string], key_string),  # ty: ignore[invalid-type-form]
                     attributes=(model_cls, None),
                     requirements=(Optional[ComponentRequirementsModel], None),  # noqa: UP045
                     __config__=ConfigDict(extra="forbid"),
                 )
             )
-    union_type = Union[tuple(model_cls_list)]  # type: ignore  # noqa: UP007
+    union_type = Union[tuple(model_cls_list)]  # noqa: UP007
     return TypeAdapter(union_type).json_schema()
 
 
@@ -217,15 +217,15 @@ def list_definitions(
 
         # dont include other definitions if asset selection provided
         if asset_selection_obj is None:
-            for job in repo_def.get_all_jobs():
-                if not is_reserved_asset_job_name(job.name):
-                    jobs.append(
-                        DgJobMetadata(
-                            name=job.name,
-                            description=job.description,
-                            source=_get_source(job.metadata, dg_context),
-                        )
-                    )
+            jobs.extend(
+                DgJobMetadata(
+                    name=job.name,
+                    description=job.description,
+                    source=_get_source(job.metadata, dg_context),
+                )
+                for job in repo_def.get_all_jobs()
+                if not is_reserved_asset_job_name(job.name)
+            )
 
             for schedule in repo_def.schedule_defs:
                 schedule_str = (
@@ -241,13 +241,13 @@ def list_definitions(
                     )
                 )
 
-            for sensor in repo_def.sensor_defs:
-                sensors.append(
-                    DgSensorMetadata(
-                        name=sensor.name,
-                        source=_get_source(sensor.metadata, dg_context),
-                    )
+            sensors.extend(
+                DgSensorMetadata(
+                    name=sensor.name,
+                    source=_get_source(sensor.metadata, dg_context),
                 )
+                for sensor in repo_def.sensor_defs
+            )
 
             for name, resource in repo_def.get_top_level_resources().items():
                 resources.append(

@@ -5,19 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-cloud-cli"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Operating System :: OS Independent",
-]
 dependencies = [
-    "dagster-shared",
+    "dagster-shared==1!0+dev",
     "packaging>=20.9",
     "questionary",
     "requests",
@@ -39,10 +32,17 @@ dagster-cloud = "dagster_cloud_cli.entrypoint:app"
 dagster-plus = "dagster_cloud_cli.entrypoint:app"
 
 [project.optional-dependencies]
+
+[dependency-groups]
 test = [
+    "dagster-shared",
     "freezegun",
     "pytest>=8",
     "pytest-mock==3.14.0",
-    "flaky",
+    "pytest-rerunfailures",
     "pex>=2.1.132,<2.60.0",
+    "pip",
 ]
+
+[tool.uv.sources]
+dagster-shared = { path = "../dagster-shared", editable = true }

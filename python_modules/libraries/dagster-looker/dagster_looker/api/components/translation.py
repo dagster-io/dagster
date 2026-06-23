@@ -96,7 +96,7 @@ def create_looker_component_translator(component_cls):
     """Creates a translator class for a Looker component."""
 
     class LookerComponentTranslator(
-        create_component_translator_cls(component_cls, DagsterLookerApiTranslator),
+        create_component_translator_cls(component_cls, DagsterLookerApiTranslator),  # ty: ignore[unsupported-base]
         ComponentTranslator[component_cls],
     ):
         def __init__(self, component):

@@ -11,6 +11,10 @@ class GrapheneAssetKey(graphene.ObjectType):
     class Meta:
         name = "AssetKey"
 
+    @staticmethod
+    def to_manifest_dict(asset_key: AssetKey) -> dict:
+        return {"__typename": "AssetKey", "path": asset_key.path}
+
 
 class GrapheneAssetCheckHandle(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
@@ -31,9 +35,9 @@ class GrapheneEntityKey(graphene.Union):
     @staticmethod
     def from_entity_key(key: EntityKey) -> "GrapheneEntityKey":
         if isinstance(key, AssetKey):
-            return GrapheneAssetKey(path=key.path)
+            return GrapheneAssetKey(path=key.path)  # ty: ignore[invalid-return-type]
         else:
-            return GrapheneAssetCheckHandle(handle=key)
+            return GrapheneAssetCheckHandle(handle=key)  # ty: ignore[invalid-return-type]
 
 
 class GrapheneAssetLineageInfo(graphene.ObjectType):

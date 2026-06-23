@@ -79,7 +79,7 @@ class LateBoundTypesForResourceTypeChecking:
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-class BaseConfigMeta(ModelMetaclass):  # type: ignore
+class BaseConfigMeta(ModelMetaclass):
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
         # Materialize lazy annotations for Python 3.14+ before Pydantic sees them
         annotations = _materialize_annotations_for_pydantic(namespaces)
@@ -151,7 +151,7 @@ class BaseResourceMeta(BaseConfigMeta):
                     base = annotations[field]
                     annotations[field] = Annotated[
                         base
-                        | LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
+                        | LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),  # ty: ignore[invalid-type-form]
                         "resource_dependency",
                     ]
                     # Pydantic 2.5.0 changed the default union mode to "smart", which causes

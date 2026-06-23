@@ -75,7 +75,7 @@ def test_snowflake_sql_component2(snowflake_connect):
         "attributes": {
             "sql_template": "SELECT * FROM MY_TABLE;",
             "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
-            "connection": "{{ load_component_at_path('sql_connection_component') }}",
+            "connection": "{{ context.load_component('sql_connection_component') }}",
         },
     }
 
@@ -115,7 +115,9 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
     """Test that the TemplatedSqlComponent correctly handles SQL templates from strings and files."""
     # If sql_template is None, create a temporary file with the template
     if sql_template is None:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".sql", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            encoding="utf-8", mode="w", suffix=".sql", delete=False
+        ) as f:
             f.write(
                 "SELECT * FROM TESTDB.TESTSCHEMA.TEST_TABLE WHERE date = '{{ date }}' LIMIT {{ limit }}"
             )
@@ -132,7 +134,7 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
                     "date": "2024-03-20",
                     "limit": 100,
                 },
-                "connection": "{{ load_component_at_path('sql_connection_component') }}",
+                "connection": "{{ context.load_component('sql_connection_component') }}",
             },
         }
         with setup_snowflake_component_with_external_connection(
@@ -166,7 +168,7 @@ def test_snowflake_sql_component_with_execution(snowflake_connect):
             "sql_template": "SELECT * FROM MY_TABLE;",
             "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
             "execution": {"description": "This is a test op description"},
-            "connection": "{{ load_component_at_path('sql_connection_component') }}",
+            "connection": "{{ context.load_component('sql_connection_component') }}",
         },
     }
     with setup_snowflake_component_with_external_connection(
@@ -193,6 +195,12 @@ class RefreshExternalTableComponent(SqlComponent):
     ) -> str:
         return f"ALTER TABLE {self.table_name} REFRESH;"
 
+    def get_unique_name(self) -> str:
+        """Generate a unique name based on the table name."""
+        from dagster._utils.security import non_secure_md5_hash_str
+
+        return non_secure_md5_hash_str(self.table_name.encode("utf-8"))[:8]
+
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_custom_snowflake_sql_component(snowflake_connect):
@@ -202,7 +210,7 @@ def test_custom_snowflake_sql_component(snowflake_connect):
         "attributes": {
             "table_name": "TESTDB.TESTSCHEMA.EXTERNAL_TABLE",
             "assets": [{"key": "TESTDB/TESTSCHEMA/EXTERNAL_TABLE"}],
-            "connection": "{{ load_component_at_path('sql_connection_component') }}",
+            "connection": "{{ context.load_component('sql_connection_component') }}",
         },
     }
 
@@ -230,3 +238,78 @@ def test_custom_snowflake_sql_component(snowflake_connect):
         assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["TESTDB", "TESTSCHEMA", "EXTERNAL_TABLE"])
         }
+
+
+@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
+def test_templated_sql_component_unique_node_names(snowflake_connect):
+    """Test that TemplatedSqlComponents with different template vars get unique node names."""
+    with create_defs_folder_sandbox() as sandbox:
+        # Create connection component
+        sandbox.scaffold_component(
+            component_cls=SnowflakeConnectionComponent,
+            defs_path="sql_connection_component",
+            defs_yaml_contents={
+                "type": "dagster_snowflake.SnowflakeConnectionComponent",
+                "attributes": {
+                    "account": "test_account",
+                    "user": "test_user",
+                    "password": "test_password",
+                    "database": "TESTDB",
+                    "schema": "TESTSCHEMA",
+                },
+            },
+        )
+
+        # Create first SQL component
+        sandbox.scaffold_component(
+            component_cls=TemplatedSqlComponent,
+            defs_path="sql_component_1",
+            defs_yaml_contents={
+                "type": "dagster.TemplatedSqlComponent",
+                "attributes": {
+                    "sql_template": "SELECT * FROM TABLE1 WHERE id = {{ id }}",
+                    "sql_template_vars": {"id": 1},
+                    "assets": [{"key": "TESTDB/TESTSCHEMA/TABLE1"}],
+                    "connection": "{{ load_component_at_path('sql_connection_component') }}",
+                },
+            },
+        )
+
+        # Create second SQL component with different template vars
+        sandbox.scaffold_component(
+            component_cls=TemplatedSqlComponent,
+            defs_path="sql_component_2",
+            defs_yaml_contents={
+                "type": "dagster.TemplatedSqlComponent",
+                "attributes": {
+                    "sql_template": "SELECT * FROM TABLE1 WHERE id = {{ id }}",
+                    "sql_template_vars": {"id": 2},
+                    "assets": [{"key": "TESTDB/TESTSCHEMA/TABLE2"}],
+                    "connection": "{{ load_component_at_path('sql_connection_component') }}",
+                },
+            },
+        )
+
+        with sandbox.build_all_defs() as defs:
+            # Get all asset definitions
+            asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
+            assert asset_keys == {
+                AssetKey(["TESTDB", "TESTSCHEMA", "TABLE1"]),
+                AssetKey(["TESTDB", "TESTSCHEMA", "TABLE2"]),
+            }
+
+            # Verify each asset has a different node name
+            asset_def_1 = defs.get_assets_def(AssetKey(["TESTDB", "TESTSCHEMA", "TABLE1"]))
+            asset_def_2 = defs.get_assets_def(AssetKey(["TESTDB", "TESTSCHEMA", "TABLE2"]))
+
+            node_name_1 = asset_def_1.node_def.name
+            node_name_2 = asset_def_2.node_def.name
+
+            # Assert node names are unique
+            assert node_name_1 != node_name_2, (
+                "Components with same template but different vars should have different node names"
+            )
+
+            # Materialize all assets to ensure they execute correctly
+            result = materialize([asset_def_1, asset_def_2])
+            assert result.success

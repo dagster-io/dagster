@@ -4,23 +4,12 @@ description: 'Learn to construct schedules from partitioned Dagster assets and j
 sidebar_position: 400
 ---
 
-In this guide, we'll walk you through how to construct schedules from partitioned [assets](/guides/build/assets) and jobs. By the end, you'll be able to:
+In this guide, we'll walk you through how to construct schedules from partitioned assets and jobs. By the end, you'll be able to:
 
 - Construct a schedule for a time-partitioned job
 - Customize a partitioned job's starting time
 - Customize the most recent partition in a set
 - Construct a schedule for a statically-partitioned job
-
-:::note
-
-This article assumes familiarity with:
-
-- Schedules
-- [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
-- [Asset definitions](/guides/build/assets/defining-assets)
-- [Asset jobs](/guides/build/jobs/asset-jobs) and [op jobs](/guides/build/jobs/op-jobs)
-
-:::
 
 ## Working with time-based partitions
 
@@ -31,12 +20,10 @@ Refer to the following tabs for examples of asset and op-based jobs using <PyObj
 <Tabs>
 <TabItem value="Asset jobs">
 
-**Asset jobs**
-
-Asset jobs are defined using <PyObject section="assets" module="dagster" object="define_asset_job" />. In this example, we created an asset job named `partitioned_job` and then constructed `asset_partitioned_schedule` by using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
+[Asset jobs](/guides/build/jobs/asset-jobs) are defined using <PyObject section="assets" module="dagster" object="define_asset_job" />. In this example, we created an asset job named `partitioned_job` and then constructed `asset_partitioned_schedule` by using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/schedule_from_partitions.py"
   startAfter="start_partitioned_asset_schedule"
   endBefore="end_partitioned_asset_schedule"
   title="src/<project_name>/defs/assets.py"
@@ -45,12 +32,10 @@ Asset jobs are defined using <PyObject section="assets" module="dagster" object=
 </TabItem>
 <TabItem value="Op jobs">
 
-**Op jobs**
-
-Op jobs are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
+[Op jobs](/guides/build/jobs/op-jobs) are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/schedule_from_partitions.py"
   startAfter="start_marker"
   endBefore="end_marker"
   title="src/<project_name>/defs/assets.py"
@@ -66,7 +51,7 @@ The `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameter
 Consider the following job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/schedule_from_partitions.py"
   startAfter="start_partitioned_schedule_with_offset"
   endBefore="end_partitioned_schedule_with_offset"
 />
@@ -101,7 +86,7 @@ After `2024-05-20 23:59:59` passes, the time window is complete and Dagster will
 If you need to customize the ending, or most recent partition in a set, use the `end_offset` parameter in the partition's config:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/schedule_from_partitions.py"
   startAfter="start_offset_partition"
   endBefore="end_offset_partition"
   title="src/<project_name>/defs/schedules.py"
@@ -133,7 +118,7 @@ Next, we'll demonstrate how to create a schedule for a job with a static partiti
 In this example, the job is partitioned by continent:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/static_partitioned_asset_job.py"
   startAfter="start_job"
   endBefore="end_job"
   title="src/<project_name>/defs/assets.py"
@@ -142,7 +127,7 @@ In this example, the job is partitioned by continent:
 Using the <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator /> decorator, we'll write a schedule that targets each partition, or `continent`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/static_partitioned_asset_job.py"
   startAfter="start_schedule_all_partitions"
   endBefore="end_schedule_all_partitions"
   title="src/<project_name>/defs/schedules.py"
@@ -151,7 +136,7 @@ Using the <PyObject section="schedules-sensors" module="dagster" object="schedul
 If we only want to target the `Antarctica` partition, we can create a schedule like the following:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/static_partitioned_asset_job.py"
   startAfter="start_single_partition"
   endBefore="end_single_partition"
   title="src/<project_name>/defs/schedules.py"
@@ -164,9 +149,28 @@ Sometimes you may want to run a schedule on a cadence that differs from your par
 For example, consider an asset partitioned by hour, while the schedule is set to run every minute. In this case, you can use <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext.scheduled_execution_time" displayText="context.scheduled_execution_context" /> from the <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> class to determine the correct partition key:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_different_schedule.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partition_with_different_schedule.py"
   title="src/<project_name>/defs/assets.py"
 />
+
+## Looking up the last partition key for a specific time
+
+When a schedule needs to find the most recent partition key as of a particular execution time (for example, to decide which partition to trigger on a given tick), wrap the call to `get_last_partition_key` in a <PyObject section="partitions" module="dagster" object="partition_loading_context" /> with `effective_dt` set to the time you care about:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automate/schedules/schedules.py"
+  startAfter="start_partition_loading_context"
+  endBefore="end_partition_loading_context"
+  title="src/<project_name>/defs/schedules.py"
+/>
+
+`get_last_partition_key` does not accept a `current_time` argument; the partition loading context is what controls the effective time for the lookup. For the full set of options, see the <PyObject section="partitions" module="dagster" object="partition_loading_context" /> API reference.
+
+:::tip
+
+If you only need the partition key that contains a given timestamp (rather than the most recent completed one), `get_partition_key_for_timestamp` may be simpler. Note that it can return keys for partitions that don't yet exist, so additional validation may be required.
+
+:::
 
 ## APIs in this guide
 

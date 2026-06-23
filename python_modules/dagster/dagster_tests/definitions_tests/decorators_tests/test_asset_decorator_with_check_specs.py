@@ -12,6 +12,7 @@ from dagster import (
 from dagster._core.definitions.asset_selection import AssetCheckKeysSelection, AssetSelection
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.storage.event_log.base import AssetRecordsFilter
 
 
 def test_asset_check_same_op() -> None:
@@ -972,3 +973,89 @@ def test_arbitary_asset_check_specs() -> None:
     check_eval = check_evals[0]
     assert check_eval.asset_key == dg.AssetKey("asset1")
     assert check_eval.check_name == "check1"
+
+
+def test_unpartitioned_asset_with_unpartitioned_asset_check() -> None:
+    """For unpartitioned asset, inline check yielded after Output must target this run's materialization."""
+
+    @dg.asset(check_specs=[dg.AssetCheckSpec("check1", asset="asset1")])
+    def asset1() -> Iterable:
+        yield dg.Output(None)
+        yield dg.AssetCheckResult(check_name="check1", passed=True)
+
+    with dg.instance_for_test() as instance:
+        result = dg.materialize(assets=[asset1], instance=instance)
+        assert result.success
+
+        (check_eval,) = result.get_asset_check_evaluations()
+        assert check_eval.partition is None
+        assert check_eval.target_materialization_data is not None
+        assert check_eval.target_materialization_data.run_id == result.run_id
+
+
+def test_partitioned_asset_with_unpartitioned_asset_check() -> None:
+    """Regression: unpartitioned inline check on partitioned asset must target the current partition.
+
+    Injects a concurrent partition B materialization between Output and AssetCheckResult.
+    The check has no partitions_def but runs inside a partitioned step, so it must still
+    use a partition-scoped lookup rather than the global last_materialization_record.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["A", "B"])
+
+    @dg.asset(
+        partitions_def=partitions_def,
+        check_specs=[dg.AssetCheckSpec("check1", asset="asset1")],
+    )
+    def asset1(context: dg.AssetExecutionContext) -> Iterable:
+        yield dg.Output(None)
+        context.instance.report_runless_asset_event(
+            dg.AssetMaterialization(asset_key=asset1.key, partition="B")
+        )
+        yield dg.AssetCheckResult(check_name="check1", passed=True)
+
+    with dg.instance_for_test() as instance:
+        result = dg.materialize(assets=[asset1], instance=instance, partition_key="A")
+        assert result.success
+
+        (check_eval,) = result.get_asset_check_evaluations()
+        assert check_eval.partition is None  # check itself is unpartitioned
+        assert check_eval.target_materialization_data is not None
+        assert check_eval.target_materialization_data.run_id == result.run_id
+        mat = instance.fetch_materializations(
+            AssetRecordsFilter(asset_key=asset1.key, asset_partitions=["A"]), limit=1
+        ).records[0]
+        assert check_eval.target_materialization_data.storage_id == mat.storage_id
+
+
+def test_partitioned_asset_with_partitioned_asset_check() -> None:
+    """Regression: partitioned check after Output must target the current partition's mat.
+
+    Injects a concurrent partition B materialization between Output and AssetCheckResult to
+    simulate a backfill race; the global last_materialization_record would point to B without
+    the partition-scoped fix.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["A", "B"])
+
+    @dg.asset(
+        partitions_def=partitions_def,
+        check_specs=[dg.AssetCheckSpec("check1", asset="asset1", partitions_def=partitions_def)],
+    )
+    def asset1(context: dg.AssetExecutionContext) -> Iterable:
+        yield dg.Output(None)
+        context.instance.report_runless_asset_event(
+            dg.AssetMaterialization(asset_key=asset1.key, partition="B")
+        )
+        yield dg.AssetCheckResult(check_name="check1", passed=True)
+
+    with dg.instance_for_test() as instance:
+        result = dg.materialize(assets=[asset1], instance=instance, partition_key="A")
+        assert result.success
+
+        (check_eval,) = result.get_asset_check_evaluations()
+        assert check_eval.partition == "A"
+        assert check_eval.target_materialization_data is not None
+        assert check_eval.target_materialization_data.run_id == result.run_id
+        mat = instance.fetch_materializations(
+            AssetRecordsFilter(asset_key=asset1.key, asset_partitions=["A"]), limit=1
+        ).records[0]
+        assert check_eval.target_materialization_data.storage_id == mat.storage_id

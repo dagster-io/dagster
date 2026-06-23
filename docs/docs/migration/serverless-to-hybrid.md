@@ -17,7 +17,7 @@ Transitioning from Serverless to Hybrid requires some downtime, as your Dagster+
 
 To follow the steps in this guide, you'll need [**Organization Admin** permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in your Dagster+ account.
 
-## 1. Deactivate your Serverless agent
+## Step 1: Deactivate your Serverless agent
 
 1. In the Dagster+ UI, navigate to the **Deployment > Agents** page.
 2. On the right side of the page, click the dropdown arrow and select **Switch to Hybrid**.
@@ -26,7 +26,7 @@ To follow the steps in this guide, you'll need [**Organization Admin** permissio
 
 It may take a few minutes for the agent to deactivate and be removed from the list of agents.
 
-## 2. Create a Hybrid agent
+## Step 2: Create a Hybrid agent
 
 Next, you'll need to create a Hybrid agent to execute your code. Follow the setup instructions for the agent of your choice:
 
@@ -36,13 +36,13 @@ Next, you'll need to create a Hybrid agent to execute your code. Follow the setu
 - **[Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)**, which launches user code on a Kubernetes cluster.
 - **[Local](/deployment/dagster-plus/hybrid/local)**, which launches user code in operating system subprocesses on your machine.
 
-## 3. Update your code locations' configuration in `build.yaml`
+## Step 3: Update your code locations' configuration in `build.yaml`
 
 See the documentation for the agent of your choice:
 
 - [Amazon Web Services (AWS)](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#per-location-configuration)
 - [Docker](/deployment/dagster-plus/hybrid/docker/configuration)
-- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure/acr-user-code#update-the-buildyaml-build-configuration-to-use-the-azure-container-registry)
+- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure/acr-user-code#step-34-update-the-buildyaml-build-configuration-to-use-the-azure-container-registry)
 - [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes/configuration#per-location-configuration)
 
 :::note
@@ -51,22 +51,21 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 
 :::
 
-## 4. Confirm successful setup
+## Step 4: Confirm successful setup
 
 Once you've set up a Hybrid agent, navigate to the **Deployment > Agents** page in the UI. The new agent should display in the list with a `RUNNING` status:
 
 ![Running Hybrid agent displayed in Dagster+ UI](/images/dagster-plus/deployment/running-agent.png)
 
-## 5. Update your build process
+## Step 5: Update your build process
 
 Update your build process to publish a new container image and configuration for each code location. To use Dagster's CI/CD process, see [Configuring CI/CD in Dagster+](/deployment/dagster-plus/deploying-code/configuring-ci-cd).
 
-## 6. Replace Serverless-only features with their Hybrid equivalents
+## Step 6: Replace Serverless-only features with their Hybrid equivalents
 
-| Serverless-only feature                                                                                                                                          | Hybrid equivalent                                                                                                                                                                                                                                                                                                         |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Disabling PEX-based deploys](/deployment/dagster-plus/serverless/runtime-environment#disable-pex-deploys) and customizing the Docker image with lifecycle hooks | To customize a code location's runtime environment, you can customize the code location's [Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) to build its image.                                                                                                            |
-| Enabling [non-isolated runs](/deployment/dagster-plus/serverless/run-isolation#non-isolated-runs)                                                                | While this feature doesn't have a direct Hybrid equivalent, you can experiment with the <PyObject section="execution" module="dagster" object="in_process_executor" /> or <PyObject section="execution" module="dagster" object="multiprocess_executor" /> for specific jobs or entire code locations to reduce overhead. |
+| Serverless-only feature                                                                                                                                          | Hybrid equivalent                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Disabling PEX-based deploys](/deployment/dagster-plus/serverless/runtime-environment#disable-pex-deploys) and customizing the Docker image with lifecycle hooks | To customize a code location's runtime environment, you can customize the code location's [Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) to build its image. |
 
 ## 7. Migrate asset data to your own storage (optional)
 
@@ -77,7 +76,7 @@ You can use <PyObject section="io-managers" module="dagster" object="migrate_io_
 The example below shows a job that migrates asset data from the default IO manager (which in Serverless is Dagster-managed S3 storage) to a new S3 bucket that you control:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/migrations/migrate_io_storage.py"
+  path="docs_snippets/docs_snippets/migration/migrate_io_storage.py"
   language="python"
   startAfter="start_migrate_io_storage"
   endBefore="end_migrate_io_storage"

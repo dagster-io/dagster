@@ -7,18 +7,18 @@ from unittest import mock
 from unittest.mock import patch
 
 import pytest
-import responses
-import yaml
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg_cli.cli.plus.deploy import DEFAULT_STATEDIR_PATH
 from dagster_dg_core.utils import pushd
 from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
+    modify_dg_toml_config_as_dict,
 )
 
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
@@ -73,7 +73,7 @@ def empty_dg_cli_config(monkeypatch):
 def build_yaml_file(project):
     build_yaml_path = "build.yaml"
     try:
-        with open(build_yaml_path, "w") as f:
+        with open(build_yaml_path, "w", encoding="utf-8") as f:
             f.write("registry: my-repo\ndirectory: .")
         yield build_yaml_path
     finally:
@@ -84,7 +84,7 @@ def build_yaml_file(project):
 def container_context_yaml_file(project):
     yaml_path = "container_context.yaml"
     try:
-        with open(yaml_path, "w") as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write("""k8s:
   env_secrets:
     - project-secret
@@ -98,7 +98,7 @@ def container_context_yaml_file(project):
 def workspace_build_yaml_file(workspace):
     build_yaml_path = workspace / "build.yaml"
     try:
-        with open(build_yaml_path, "w") as f:
+        with open(build_yaml_path, "w", encoding="utf-8") as f:
             f.write("registry: my-workspace-repo\ndirectory: .")
         yield build_yaml_path
     finally:
@@ -109,7 +109,7 @@ def workspace_build_yaml_file(workspace):
 def workspace_container_context_yaml_file(workspace):
     yaml_path = workspace / "container_context.yaml"
     try:
-        with open(yaml_path, "w") as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write("""k8s:
   env_secrets:
     - workspace-secret
@@ -124,7 +124,7 @@ def workspace_container_context_yaml_file(workspace):
 def workspace_project_build_yaml_file(workspace):
     build_yaml_path = workspace / "foo-bar" / "build.yaml"
     try:
-        with open(build_yaml_path, "w") as f:
+        with open(build_yaml_path, "w", encoding="utf-8") as f:
             f.write("registry: my-project-repo\ndirectory: .")
         yield build_yaml_path
     finally:
@@ -135,7 +135,7 @@ def workspace_project_build_yaml_file(workspace):
 def workspace_project_container_context_yaml_file(workspace):
     yaml_path = workspace / "foo-bar" / "container_context.yaml"
     try:
-        with open(yaml_path, "w") as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write("""k8s:
   env_secrets:
     - project-secret
@@ -242,7 +242,6 @@ def mock_external_dagster_cloud_cli_command() -> Generator[MockedCloudCliCommand
         )
 
 
-@responses.activate
 def test_plus_deploy_command_agent_type_from_graphql(
     logged_in_dg_cli_config, project: Path, runner
 ):
@@ -670,8 +669,8 @@ def test_plus_deploy_hybrid_with_yaml_files(
 
             dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
-            with open(dagster_cloud_yaml_path) as f:
-                file = yaml.safe_load(f)
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
+                file = safe_load_yaml(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str(project.resolve()),
                     "registry": "my-repo",
@@ -730,8 +729,8 @@ def test_plus_deploy_hybrid_with_workspace_yaml_files(
                 location_load_timeout=mock.ANY,
             )
 
-            with open(dagster_cloud_yaml_path) as f:
-                file = yaml.safe_load(f)
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
+                file = safe_load_yaml(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str(workspace.resolve()),  # from build.yaml
                     "registry": "my-workspace-repo",
@@ -791,8 +790,8 @@ def test_plus_deploy_hybrid_with_merged_yaml_files(
                 location_load_timeout=mock.ANY,
             )
 
-            with open(dagster_cloud_yaml_path) as f:
-                file = yaml.safe_load(f)
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
+                file = safe_load_yaml(f)
                 assert file["locations"][0]["build"] == {
                     "directory": str((workspace / "foo-bar").resolve()),  # from build.yaml
                     "registry": "my-project-repo",
@@ -994,7 +993,6 @@ def test_plus_deploy_subcommands_with_location(
         )
 
 
-@responses.activate
 def test_plus_deploy_hybrid_with_build_yaml_scaffold(
     logged_in_dg_cli_config, project, runner, mocker
 ):
@@ -1038,7 +1036,6 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
             )
 
 
-@responses.activate
 def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
     logged_in_dg_cli_config,
     workspace,
@@ -1094,8 +1091,82 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
                 location_load_timeout=mock.ANY,
             )
 
-            with open(dagster_cloud_yaml_path) as f:
-                assert yaml.safe_load(f)["locations"][0]["build"] == {
+            with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
+                assert safe_load_yaml(f)["locations"][0]["build"] == {
                     "directory": str(workspace.resolve() / "foo-bar"),  # from build.yaml
                     "registry": "...",
                 }
+
+
+def _set_project_toml_field(project_path: Path, key: str, value: str) -> str | None:
+    """Set a field in the project section of pyproject.toml and return the old value."""
+    old_value = None
+    with modify_dg_toml_config_as_dict(project_path / "pyproject.toml") as config:
+        old_value = config.get("project", {}).get(key)
+        config["project"][key] = value
+    return old_value
+
+
+def _remove_project_toml_field(project_path: Path, key: str) -> None:
+    """Remove a field from the project section of pyproject.toml."""
+    with modify_dg_toml_config_as_dict(project_path / "pyproject.toml") as config:
+        if key in config.get("project", {}):
+            del config["project"][key]
+
+
+def test_plus_deploy_hybrid_with_agent_queue_in_pyproject(
+    logged_in_dg_cli_config,
+    project,
+    runner,
+    mocker,
+    build_yaml_file,
+):
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+    _set_project_toml_field(project, "agent_queue", "my-queue")
+    try:
+        with mock_external_dagster_cloud_cli_command():
+            with patch(
+                "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
+            ):
+                result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+                assert not result.exit_code, result.output
+
+                dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+                with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
+                    file = safe_load_yaml(f)
+                    assert file["locations"][0]["agent_queue"] == "my-queue"
+    finally:
+        _remove_project_toml_field(project, "agent_queue")
+
+
+def test_plus_deploy_hybrid_with_image_in_pyproject(
+    logged_in_dg_cli_config,
+    project,
+    runner,
+    mocker,
+):
+    mocker.patch(
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+    _set_project_toml_field(project, "image", "my-repo/my-image:latest")
+    try:
+        with mock_external_dagster_cloud_cli_command():
+            with patch(
+                "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
+            ):
+                result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
+                assert not result.exit_code, result.output
+
+                dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+                with open(dagster_cloud_yaml_path, encoding="utf-8") as f:
+                    file = safe_load_yaml(f)
+                    assert file["locations"][0]["image"] == "my-repo/my-image:latest"
+                    assert "build" not in file["locations"][0]
+    finally:
+        _remove_project_toml_field(project, "image")

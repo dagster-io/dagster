@@ -1,0 +1,129 @@
+.styledTagInput {
+  background-color: var(--color-background-default);
+  border: none;
+  border-radius: 8px;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  color: var(--color-text-default);
+  min-width: 400px;
+  max-width: 600px;
+  min-height: 32px;
+  transition: box-shadow 150ms;
+  cursor: text;
+  display: flex;
+  align-items: stretch;
+}
+
+.fullWidth {
+  max-width: 100%;
+}
+
+.active {
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
+    var(--color-focus-ring) 0 0 0 3px;
+}
+
+.tagInputValues {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1;
+  margin-right: 4px;
+  padding: 4px 0 4px 4px;
+  gap: 4px;
+}
+
+.input {
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  font-size: 14px;
+  font-weight: 400;
+  padding-left: 4px;
+  padding-bottom: 2px;
+  padding-top: 2px;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  flex: 1;
+  min-width: 50px;
+}
+
+.input::placeholder {
+  color: var(--color-text-lighter);
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.inputFirst {
+  padding-left: 8px;
+}
+
+.tag {
+  border-radius: 6px;
+  display: inline-flex;
+  flex-direction: row;
+  font-size: 12px;
+  line-height: 16px;
+  align-items: center;
+  max-width: 400px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  user-select: none;
+  gap: 4px;
+}
+
+.tagDefault {
+  background-color: var(--color-background-gray);
+  color: var(--color-text-default);
+}
+
+.tagSuccess {
+  background-color: var(--color-background-green);
+  color: var(--color-text-green);
+}
+
+.tagWarning {
+  background-color: var(--color-background-yellow);
+  color: var(--color-text-yellow);
+}
+
+.tagDanger {
+  background-color: var(--color-background-red);
+  color: var(--color-text-red);
+}
+
+.tagText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tagRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tagRemove:hover {
+  opacity: 1;
+}
+
+.suggestionList {
+  max-height: 235px;
+  width: 400px;
+  overscroll-behavior: none;
+}

@@ -33,7 +33,7 @@ For example, the **Admin** user role includes permissions specific to this role 
 
 :::tip Teams in Dagster+ Pro
 
-Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see "[Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams)".
+Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see [Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams).
 
 :::
 
@@ -81,7 +81,7 @@ Organization Admins have access to the entire organization, including all [deplo
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.                                                                                                                                  |
 | Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/guides/build/projects). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. Note that overrides can only be used to grant additional permissions, not to take away permissions from the Deployment role. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
-| Branch deployments | All plans | Defines the level of access for all Branch Deployments in the organization, in all code locations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Branch deployments | Pro       | Defines the level of access for branch deployments in the organization, in all code locations. <br/><br/> Dagster+ Pro users can assign a role to a specific branch deployment. <br/><br/>For non-Pro users, users will have the same level of access for all branch deployments.                                                                                                                                                                                                                                                                                                                                                                                |
 
 ### Applying role overrides
 
@@ -210,7 +210,11 @@ User management is accessed in the UI by navigating to **user menu (your icon) >
 
 Team management is accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Teams**.
 
-**Note**: Admin users can modify teams only in deployments where they're an Admin.
+:::note
+
+Admin users can modify teams only in deployments where they're an Admin.
+
+:::
 
 |                                                                                     | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ----------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |

@@ -1,5 +1,6 @@
+#####
 Types
-=========
+#####
 
 .. currentmodule:: dagster
 
@@ -7,8 +8,9 @@ Dagster includes facilities for typing the input and output values of ops ("runt
 
 .. _builtin:
 
+**************
 Built-in types
--------------------------
+**************
 
 .. attribute:: Nothing
 
@@ -49,8 +51,9 @@ Built-in types
             done(wait_int())
 
 
-Making New Types
-----------------
+****************
+Making new types
+****************
 
 .. autoclass:: DagsterType
 
@@ -66,7 +69,7 @@ Making New Types
 
 .. autofunction:: make_python_type_usable_as_dagster_type
 
-Testing Types
-^^^^^^^^^^^^^
+Testing types
+=============
 
 .. autofunction:: check_dagster_type

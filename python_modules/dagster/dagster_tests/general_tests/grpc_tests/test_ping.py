@@ -103,8 +103,8 @@ def test_process_killed_after_server_finished():
             # verify socket is cleaned up
             assert not os.path.exists(socket)
         finally:
-            raw_process.terminate()  # pyright: ignore[reportOptionalMemberAccess]
-            raw_process.wait()  # pyright: ignore[reportOptionalMemberAccess]
+            raw_process.terminate()
+            raw_process.wait()
 
 
 def test_server_port():
@@ -154,7 +154,7 @@ def test_client_port():
 def test_client_port_bad_host():
     port = find_free_port()
     with pytest.raises(check.CheckError, match="Must provide a hostname"):
-        DagsterGrpcClient(port=port, host=None)  # pyright: ignore[reportArgumentType]
+        DagsterGrpcClient(port=port, host=None)  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")

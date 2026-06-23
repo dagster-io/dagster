@@ -9,14 +9,6 @@ description = "Package for AWS-specific Dagster framework solid and resource com
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "boto3",
     "dagster==1!0+dev",
@@ -35,17 +27,33 @@ redshift = [
     "psycopg2-binary",
 ]
 pyspark = [
-    "dagster-pyspark",
+    "dagster-pyspark==1!0+dev",
 ]
 stubs = [
     "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr,emr-containers]",
 ]
+
+[dependency-groups]
 test = [
+    "dagster[test]",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-spark",
+    "dagster-pyspark",
     "botocore!=1.32.1",
     "moto[s3,server,glue,emrserverless,logs,emrcontainers]>=5.0",
     "requests-mock",
     "xmltodict>=0.12.0",
-    "flaky",
+    "pytest-rerunfailures",
     "pytest-cases",
     "s3fs",
 ]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-test = { path = "../../dagster-test", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-spark = { path = "../dagster-spark", editable = true }
+dagster-pyspark = { path = "../dagster-pyspark", editable = true }

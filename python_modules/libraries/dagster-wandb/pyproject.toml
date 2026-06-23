@@ -9,11 +9,6 @@ description = "Package for wandb Dagster components."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
     "wandb>=0.15.11,<1.0",
@@ -29,3 +24,17 @@ dev = [
     "callee",
     "dill",
 ]
+
+[dependency-groups]
+test = [
+    "dagster-wandb[dev]",
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+]
+
+[tool.uv.sources]
+dagster-wandb = { path = "../dagster-wandb", editable = true }
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
