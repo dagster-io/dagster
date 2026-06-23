@@ -57,12 +57,15 @@ def watch_grpc_server_thread(
     Additionally, if `get_location_entry(location_name).load_error` is a
     `DagsterUserCodeUnreachableError`, this is treated the same as "2. The server is unreachable":
     `on_disconnect` is fired and the reconnect loop runs. This enables recovery when a prior
-    refresh failed (e.g. during a Kubernetes rolling deployment where the gRPC call routed to a
-    dying pod). Within the reconnect loop, if `GetServerId` succeeds but the workspace entry is
-    still errored, `refresh_code_location` is called directly — we don't route this through any
-    `on_*` event, because subscribers should only be notified on actual state transitions, not
-    every poll. Once the error clears, the next loop iteration fires on_updated and exits the
-    reconnect loop.
+    refresh failed with a transient gRPC error (e.g. during a Kubernetes rolling deployment where
+    the gRPC call routed to a dying pod). The check is intentionally scoped to
+    `DagsterUserCodeUnreachableError` only: other load errors (e.g. `DagsterUserCodeProcessError`
+    from a syntax error in user code) are treated as non-transient and not retried here, to avoid
+    log spam and wasted gRPC traffic on permanently-broken locations. Within the reconnect loop,
+    if `GetServerId` succeeds but the workspace entry is still errored, `refresh_code_location`
+    is called directly — we don't route this through any `on_*` event, because subscribers should
+    only be notified on actual state transitions, not every poll. Once the error clears, the next
+    loop iteration fires on_updated and exits the reconnect loop.
 
     The thread only exits when shutdown_event is set. on_updated, on_disconnect, and
     on_reconnected may fire multiple times over the thread's lifetime; on_error fires at most
