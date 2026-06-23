@@ -1,4 +1,4 @@
-# dagster-cron-native
+# dagster-cron
 
 Rust-backed cron schedule iteration for Dagster.
 

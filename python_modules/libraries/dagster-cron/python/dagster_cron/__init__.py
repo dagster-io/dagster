@@ -1,4 +1,4 @@
-from dagster_cron_native._native import (
+from dagster_cron._native import (
     CronStringIterator,
     DayMatching,
     DayOfWeekNumbering,

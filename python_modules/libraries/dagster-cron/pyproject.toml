@@ -3,7 +3,7 @@ requires = ["maturin>=1.9,<2"]
 build-backend = "maturin"
 
 [project]
-name = "dagster-cron-native"
+name = "dagster-cron"
 version = "1!0+dev"
 description = "Rust-backed cron schedule iteration for Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-cron-native"
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-cron"
 
 [dependency-groups]
 test = [
@@ -33,7 +33,7 @@ test = [
 ]
 
 [tool.maturin]
-module-name = "dagster_cron_native._native"
+module-name = "dagster_cron._native"
 python-source = "python"
 features = ["pyo3/extension-module"]
 

@@ -19,7 +19,7 @@ PRIVATE_NTH_WEEKDAY_HELPER_REASON = (
     "unsupported croniter private helper API: _get_nth_weekday_of_month"
 )
 CRON_UNIONS_SPECIAL_SPECIFIERS_REASON = (
-    "dagster_cron_native unions special specifiers that croniter treats as filters or rejects"
+    "dagster_cron unions special specifiers that croniter treats as filters or rejects"
 )
 DEFAULT_YEAR_RANGE_REASON = (
     "unsupported croniter policy: default 1970-2099 year range validation"
@@ -60,7 +60,7 @@ STRICT_YEAR_REACHABILITY_TESTS = {
 
 def _load_croniter_compat():
     compat_path = pathlib.Path(__file__).resolve().parents[1] / "tests" / "croniter_compat.py"
-    spec = importlib.util.spec_from_file_location("dagster_cron_native_croniter_compat", compat_path)
+    spec = importlib.util.spec_from_file_location("dagster_cron_croniter_compat", compat_path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Unable to load croniter compatibility test module: {compat_path}")
     module = importlib.util.module_from_spec(spec)

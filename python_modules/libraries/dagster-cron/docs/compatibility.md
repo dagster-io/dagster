@@ -1,6 +1,6 @@
 # Cron Compatibility
 
-`dagster-cron-native` targets Dagster's public cron schedule behavior, not croniter's full
+`dagster-cron` targets Dagster's public cron schedule behavior, not croniter's full
 private API surface.
 
 Supported through the Dagster runtime path:

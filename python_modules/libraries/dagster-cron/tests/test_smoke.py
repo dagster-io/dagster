@@ -6,8 +6,8 @@ import zoneinfo
 
 import pytest
 
-import dagster_cron_native
-from dagster_cron_native import (
+import dagster_cron
+from dagster_cron import (
     CronStringIterator,
     DayMatching,
     DayOfWeekNumbering,
@@ -25,14 +25,14 @@ UTC = dt.timezone.utc
 
 
 def test_import_exports_native_schedule_api_only():
-    assert dagster_cron_native.Schedule is Schedule
-    assert dagster_cron_native.ScheduleIterator is ScheduleIterator
-    assert dagster_cron_native.CronStringIterator is CronStringIterator
-    assert dagster_cron_native.ScheduleParts is ScheduleParts
-    assert dagster_cron_native.DayMatching is DayMatching
-    assert dagster_cron_native.DayOfWeekNumbering is DayOfWeekNumbering
-    assert dagster_cron_native.NonexistentTimeBehavior is NonexistentTimeBehavior
-    assert dagster_cron_native.__all__ == [
+    assert dagster_cron.Schedule is Schedule
+    assert dagster_cron.ScheduleIterator is ScheduleIterator
+    assert dagster_cron.CronStringIterator is CronStringIterator
+    assert dagster_cron.ScheduleParts is ScheduleParts
+    assert dagster_cron.DayMatching is DayMatching
+    assert dagster_cron.DayOfWeekNumbering is DayOfWeekNumbering
+    assert dagster_cron.NonexistentTimeBehavior is NonexistentTimeBehavior
+    assert dagster_cron.__all__ == [
         "CronStringIterator",
         "DayMatching",
         "DayOfWeekNumbering",
@@ -44,11 +44,11 @@ def test_import_exports_native_schedule_api_only():
         "is_valid_cron_string",
         "repeats_every_hour",
     ]
-    assert not hasattr(dagster_cron_native, "croniter")
-    assert not hasattr(dagster_cron_native, "croniter_range")
+    assert not hasattr(dagster_cron, "croniter")
+    assert not hasattr(dagster_cron, "croniter_range")
     assert not hasattr(Schedule("* * * * *"), "iterator")
-    assert not hasattr(dagster_cron_native, "IteratorDirection")
-    assert importlib.util.find_spec("dagster_cron_native.croniter") is None
+    assert not hasattr(dagster_cron, "IteratorDirection")
+    assert importlib.util.find_spec("dagster_cron.croniter") is None
 
 
 def test_schedule_source_round_trip():

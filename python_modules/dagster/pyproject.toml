@@ -53,7 +53,7 @@ dependencies = [
     "filelock",
     "dagster-pipes==1!0+dev",
     "dagster-shared==1!0+dev",
-    "dagster-cron-native==1!0+dev",
+    "dagster-cron==1!0+dev",
     "antlr4-python3-runtime<4.14",
 ]
 
@@ -203,7 +203,7 @@ conflicts = [
 dagster-test = { path = "../dagster-test", editable = true }
 dagster-pipes = { path = "../dagster-pipes", editable = true }
 dagster-shared = { path = "../libraries/dagster-shared", editable = true }
-dagster-cron-native = { path = "../libraries/dagster-cron-native", editable = true }
+dagster-cron = { path = "../libraries/dagster-cron", editable = true }
 dagster-cloud-cli = { path = "../libraries/dagster-cloud-cli", editable = true }
 dagster-dg-core = { path = "../libraries/dagster-dg-core", editable = true }
 dagster-dg-cli = { path = "../libraries/dagster-dg-cli", editable = true }

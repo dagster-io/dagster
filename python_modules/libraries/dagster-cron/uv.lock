@@ -24,7 +24,7 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-cron-native"
+name = "dagster-cron"
 version = "1!0+dev"
 source = { editable = "." }
 

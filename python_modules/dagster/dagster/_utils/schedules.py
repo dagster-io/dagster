@@ -2,7 +2,7 @@ import datetime
 import re
 from collections.abc import Iterator, Sequence
 
-from dagster_cron_native import (
+from dagster_cron import (
     cron_string_iterator as _native_cron_string_iterator,
     is_valid_cron_string as _native_is_valid_cron_string,
     repeats_every_hour as _native_cron_string_repeats_every_hour,

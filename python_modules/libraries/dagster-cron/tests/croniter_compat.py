@@ -7,7 +7,7 @@ import zoneinfo
 from time import time
 from typing import Any, Optional, Union
 
-from dagster_cron_native import (
+from dagster_cron import (
     DayMatching as _NativeDayMatching,
     DayOfWeekNumbering as _NativeDayOfWeekNumbering,
     NonexistentTimeBehavior as _NativeNonexistentTimeBehavior,

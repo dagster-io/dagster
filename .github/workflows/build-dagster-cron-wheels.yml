@@ -1,10 +1,10 @@
-name: Build dagster-cron-native wheels
+name: Build dagster-cron wheels
 
 on:
   pull_request:
     paths:
-      - ".github/workflows/build-dagster-cron-native-wheels.yml"
-      - "python_modules/libraries/dagster-cron-native/**"
+      - ".github/workflows/build-dagster-cron-wheels.yml"
+      - "python_modules/libraries/dagster-cron/**"
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: python_modules/libraries/dagster-cron-native
+        working-directory: python_modules/libraries/dagster-cron
         shell: bash
 
     steps:
@@ -47,7 +47,7 @@ jobs:
           python -m pip install dist/*.whl
           python - <<'PY'
           import datetime as dt
-          import dagster_cron_native as cron
+          import dagster_cron as cron
 
           iterator = cron.cron_string_iterator(
               dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc).timestamp(),
@@ -59,5 +59,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dagster-cron-native-${{ matrix.os }}
-          path: python_modules/libraries/dagster-cron-native/dist/*
+          name: dagster-cron-${{ matrix.os }}
+          path: python_modules/libraries/dagster-cron/dist/*

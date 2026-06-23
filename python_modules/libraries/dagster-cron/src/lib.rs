@@ -13,7 +13,7 @@ const DAGSTER_SEARCH_YEARS: i64 = 400;
 
 #[pyclass(
     name = "ScheduleParts",
-    module = "dagster_cron_native",
+    module = "dagster_cron",
     eq,
     eq_int,
     rename_all = "SCREAMING_SNAKE_CASE"
@@ -43,7 +43,7 @@ impl From<PyCronScheduleParts> for CronScheduleParts {
 
 #[pyclass(
     name = "DayMatching",
-    module = "dagster_cron_native",
+    module = "dagster_cron",
     eq,
     eq_int,
     rename_all = "SCREAMING_SNAKE_CASE"
@@ -65,7 +65,7 @@ impl From<PyDayMatching> for DowDomOperand {
 
 #[pyclass(
     name = "DayOfWeekNumbering",
-    module = "dagster_cron_native",
+    module = "dagster_cron",
     eq,
     eq_int,
     rename_all = "SCREAMING_SNAKE_CASE"
@@ -87,7 +87,7 @@ impl From<PyDayOfWeekNumbering> for DayOfWeekNumbering {
 
 #[pyclass(
     name = "NonexistentTimeBehavior",
-    module = "dagster_cron_native",
+    module = "dagster_cron",
     eq,
     eq_int,
     rename_all = "SCREAMING_SNAKE_CASE"
@@ -107,7 +107,7 @@ impl From<PyNonexistentTimeBehavior> for NonexistentTimeBehavior {
     }
 }
 
-#[pyclass(name = "Schedule", module = "dagster_cron_native")]
+#[pyclass(name = "Schedule", module = "dagster_cron")]
 #[derive(Clone)]
 struct PySchedule {
     schedule: Schedule,
@@ -181,7 +181,7 @@ impl PySchedule {
     }
 }
 
-#[pyclass(name = "ScheduleIterator", module = "dagster_cron_native")]
+#[pyclass(name = "ScheduleIterator", module = "dagster_cron")]
 struct PyScheduleIterator {
     inner: NativeIterator,
 }
@@ -218,7 +218,7 @@ impl PyScheduleIterator {
     }
 }
 
-#[pyclass(name = "CronStringIterator", module = "dagster_cron_native")]
+#[pyclass(name = "CronStringIterator", module = "dagster_cron")]
 struct PyCronStringIterator {
     iter: OwnedScheduleIterator<Tz>,
     ascending: bool,
