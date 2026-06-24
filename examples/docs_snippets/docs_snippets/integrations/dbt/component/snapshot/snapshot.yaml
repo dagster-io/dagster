@@ -3,9 +3,5 @@ type: dagster_dbt.DbtProjectComponent
 attributes:
   project: '{{ project_root }}/dbt'
   select: "resource_type:snapshot"
-
-post_processing:
-  assets:
-    - target: "*"
-      attributes:
-        pool: "dbt-snapshots"
+  op:
+    pool: "dbt-snapshots"
