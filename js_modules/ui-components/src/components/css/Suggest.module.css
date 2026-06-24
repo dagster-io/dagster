@@ -12,6 +12,13 @@
   align-items: center;
 }
 
-.suggestWithIconWrapper :global(.bp5-input-group input.bp5-input) {
+.suggestWithIconWrapper input {
   padding-left: 28px;
+}
+
+.suggestRightElement {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  height: 100%;
 }

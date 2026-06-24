@@ -59,7 +59,8 @@ export const CodeLinkProtocolSelect = ({}) => {
           modifiers: {offset: {enabled: true, options: {offset: [-12, 8]}}},
         }}
         activeItem={isCustom ? '' : codeLinkProtocol.protocol}
-        inputProps={{style: {width: '300px'}}}
+        menuWidth={400}
+        inputProps={{style: {width: '400px'}}}
         items={Object.keys(POPULAR_PROTOCOLS)}
         itemPredicate={(query: string, protocol: string) =>
           protocol.toLowerCase().includes(query.toLowerCase())
