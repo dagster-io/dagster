@@ -12,7 +12,7 @@ from dagster._core.workspace.workspace import CodeLocationEntry
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.server import open_server_process
-from dagster._grpc.server_watcher import MAX_RECONNECT_ATTEMPTS, create_grpc_watch_thread
+from dagster._grpc.server_watcher import create_grpc_watch_thread
 from dagster._utils import find_free_port
 from dagster._utils.error import SerializableErrorInfo
 from dagster_shared.ipc import interrupt_ipc_subprocess_pid
@@ -82,6 +82,7 @@ def create_server_process_and_watch_thread(
         on_error: Callable[[str], None] = should_not_be_called("on_error"),
         watch_interval: float | None = None,
         max_reconnect_attempts: int | None = None,
+        error_recovery_interval: float | None = TEST_WATCH_INTERVAL,
         fixed_server_id: str | None = None,
         port: int | None = None,
     ) -> tuple[threading.Event, threading.Thread, subprocess.Popen]:
@@ -89,6 +90,9 @@ def create_server_process_and_watch_thread(
 
         Defaults for ``on_updated``, ``on_error``, and ``refresh_code_location`` record a
         violation if invoked; pass explicit callbacks for events the test expects.
+
+        ``error_recovery_interval`` defaults to a small value so the periodic recovery check (which
+        is the only caller of ``get_location_entry``) runs frequently in tests.
         """
         port = port or find_free_port()
 
@@ -114,9 +118,11 @@ def create_server_process_and_watch_thread(
             on_error=on_error,
             watch_interval=watch_interval,
             max_reconnect_attempts=max_reconnect_attempts,
+            error_recovery_interval=error_recovery_interval,
         )
         watch_thread.start()
-        # Wait for the watch thread to establish the server ID (2 polls: discover + confirm).
+        # Wait until the periodic recovery check has run twice, confirming the thread is alive and
+        # looping. (get_location_entry is only called by the recovery check.)
         wait_for_condition(
             lambda: called_callback["get_location_entry_count"] >= 2,
             interval=watch_interval or TEST_WATCH_INTERVAL,
@@ -415,119 +421,70 @@ def test_run_grpc_watch_without_server(
     assert called_event["on_disconnect_count"]
 
 
-@pytest.mark.parametrize("cycles_to_recover", [3, 20])
 def test_grpc_watch_thread_recovery_when_errored(
-    process_cleanup: list[subprocess.Popen],
-    instance: DagsterInstance,
     code_location_entry: MagicMock,
     called_event: dict[str, int],
     called_callback: dict[str, int],
-    on_error: Callable[[str], None],
-    on_updated: Callable[[str, str], None],
     refresh_code_location: Callable[[str], None],
     create_server_process_and_watch_thread: Callable[
         ..., tuple[threading.Event, threading.Thread, subprocess.Popen]
     ],
-    cycles_to_recover: int,
 ) -> None:
-    """Verify recovery when the workspace entry is errored but the gRPC server is reachable.
+    """Verify the periodic recovery check refreshes a location stuck in a transient
+    unreachable-error state, independently of the server-id watch/reconnect logic.
 
-    Simulates a K8s rolling-deployment race: the watch thread fired on_updated for a new server
-    ID, but the workspace's refresh failed (e.g. routed to a dying pod). The watch thread must
-    detect the errored entry and call ``refresh_code_location`` to recover, then fire
-    on_reconnected (within ``MAX_RECONNECT_ATTEMPTS``) or on_updated (after on_error).
+    Simulates a K8s rolling-deployment race: a prior workspace refresh failed (e.g. routed to a
+    dying pod) leaving the entry errored, but the gRPC server is reachable. The recovery check
+    must call ``refresh_code_location`` to recover, without firing any on_* event (recovery is
+    fully decoupled from the gRPC reconnect loop).
     """
-    fixed_server_id = "fixed_id"
-
-    watch_interval = 0.1
-    # Once on_error fires, recovery must go through on_updated rather than on_reconnected.
-    hooks = {}
-    if cycles_to_recover > MAX_RECONNECT_ATTEMPTS:
-        hooks["on_updated"] = on_updated
-        hooks["on_error"] = on_error
-    shutdown_event, watch_thread, _ = create_server_process_and_watch_thread(
-        refresh_code_location=refresh_code_location,
-        watch_interval=watch_interval,
-        fixed_server_id=fixed_server_id,
-        **hooks,
-    )
-
-    wait_for_condition(
-        lambda: called_callback["get_location_entry_count"] >= 2,
-        interval=watch_interval,
-        timeout=5,
-    )
-    assert called_event == {
+    no_events = {
         "on_disconnect_count": 0,
         "on_reconnected_count": 0,
         "on_updated_count": 0,
         "on_error_count": 0,
     }
-    assert called_callback["refresh_code_location_count"] == 0
-    called_callback_snapshot = dict(called_callback)
 
-    # Simulate the workspace entry stuck in an unreachable-error state
+    watch_interval = 0.1
+    error_recovery_interval = 0.1
+    shutdown_event, watch_thread, _ = create_server_process_and_watch_thread(
+        refresh_code_location=refresh_code_location,
+        watch_interval=watch_interval,
+        error_recovery_interval=error_recovery_interval,
+        fixed_server_id="fixed_id",
+    )
+
+    # Healthy entry: the recovery check runs but never refreshes.
+    wait_for_condition(
+        lambda: called_callback["get_location_entry_count"] >= 2,
+        interval=watch_interval,
+        timeout=5,
+    )
+    assert called_callback["refresh_code_location_count"] == 0
+    assert called_event == no_events
+
+    # Simulate the workspace entry stuck in an unreachable-error state.
     code_location_entry.load_error = SerializableErrorInfo(
         "Simulated failure", [], DagsterUserCodeUnreachableError.__name__
     )
 
-    # Watch thread should detect the error and call refresh_code_location to recover,
+    # The recovery check should detect the error and keep refreshing while it stays errored,
     # without the server ID having changed.
     wait_for_condition(
-        lambda: called_callback["refresh_code_location_count"] >= 1,
+        lambda: called_callback["refresh_code_location_count"] >= 2,
         interval=watch_interval,
         timeout=5,
     )
-    assert (
-        called_callback["get_location_entry_count"]
-        > called_callback_snapshot["get_location_entry_count"]
-    )
-    called_event_expected = {
-        "on_disconnect_count": 1,
-        "on_reconnected_count": 0,
-        "on_updated_count": 0,
-        "on_error_count": 0,
-    }
-    assert called_event == called_event_expected
-    called_callback_snapshot = dict(called_callback)
-    time.sleep(watch_interval * cycles_to_recover)
-    if cycles_to_recover > MAX_RECONNECT_ATTEMPTS:
-        called_event_expected["on_error_count"] = 1
-    assert called_event == called_event_expected
+    # Recovery is fully decoupled from the gRPC loop: no events fire.
+    assert called_event == no_events
 
-    # Clear the error — on_reconnected (pre-error) or on_updated (post-error) should fire.
+    # Clear the error — refresh attempts should stop.
     code_location_entry.load_error = None
-    called_event_expected[
-        "on_reconnected_count" if cycles_to_recover < MAX_RECONNECT_ATTEMPTS else "on_updated_count"
-    ] = 1
-    wait_for_condition(
-        lambda: called_event == called_event_expected,
-        interval=watch_interval,
-        timeout=5,
-    )
-    assert (
-        called_callback["get_location_entry_count"]
-        >= called_callback_snapshot["get_location_entry_count"] + cycles_to_recover
-    )
-    assert called_callback["refresh_code_location_count"] >= min(
-        MAX_RECONNECT_ATTEMPTS - 1, cycles_to_recover
-    )
-    called_callback_snapshot = dict(called_callback)
-    # Confirm the thread is still polling after recovery (≥ 2 more poll cycles).
-    wait_for_condition(
-        lambda: (
-            called_callback["get_location_entry_count"]
-            >= called_callback_snapshot["get_location_entry_count"] + 2
-        ),
-        interval=watch_interval,
-        timeout=watch_interval * 5,
-    )
-    # System is settled: no further events and no spurious refresh calls.
-    assert called_event == called_event_expected
-    assert (
-        called_callback["refresh_code_location_count"]
-        == called_callback_snapshot["refresh_code_location_count"]
-    )
+    time.sleep(error_recovery_interval * 3)
+    refresh_snapshot = called_callback["refresh_code_location_count"]
+    time.sleep(error_recovery_interval * 5)
+    assert called_callback["refresh_code_location_count"] == refresh_snapshot
+    assert called_event == no_events
 
     shutdown_event.set()
     watch_thread.join()
