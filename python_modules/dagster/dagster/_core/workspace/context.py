@@ -1259,32 +1259,19 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
 
     def _location_state_events_handler(self, event: LocationStateChangeEvent) -> None:
         # If the server was updated or we were not able to reconnect, we immediately reload the
-        # location handle. Reconnect/disconnect events are logged but don't trigger a refresh
-        # unless the location is in an error state (in which case reconnect triggers a recovery
-        # refresh).
-        logger = logging.getLogger("dagster-webserver")
-        refresh_event_types = (
+        # location handle
+        if event.event_type in (
             LocationStateChangeEventType.LOCATION_UPDATED,
             LocationStateChangeEventType.LOCATION_ERROR,
-        )
-
-        location_is_errored = self.has_code_location_error(event.location_name)
-        # Refresh on update/error events, or on any event when the location is errored (to attempt
-        # recovery).
-        should_refresh = location_is_errored or event.event_type in refresh_event_types
-
-        if should_refresh:
+        ):
             # In case of an updated location, reload the handle to get updated repository data and
             # re-attach a subscriber
-            # In case of a location error, reload the handle in order to update the workspace
-            # with the correct error messages and/or to attempt to resolve the error (in the case of
-            # a transient, recoverable error)
-            logger.info(
+            # In case of a location error, just reload the handle in order to update the workspace
+            # with the correct error messages
+            logging.getLogger("dagster-webserver").info(
                 f"Received {event.event_type} event for location {event.location_name}, refreshing"
             )
             self.refresh_code_location(event.location_name)
-        else:
-            logger.debug(f"Received {event.event_type} event for location {event.location_name}")
 
     def refresh_code_location(self, name: str) -> None:
         # This method reloads the webserver's copy of the code from the remote gRPC server without
