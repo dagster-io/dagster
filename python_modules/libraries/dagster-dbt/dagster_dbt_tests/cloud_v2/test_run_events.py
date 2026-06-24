@@ -1,3 +1,5 @@
+import copy
+
 import responses
 from dagster import AssetCheckEvaluation, AssetMaterialization
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
@@ -36,3 +38,32 @@ def test_default_asset_events_from_run_results(
     first_check_eval = next(check_eval for check_eval in sorted(asset_check_evaluations))
     assert first_check_eval.check_name == "not_null_customers_customer_id"
     assert first_check_eval.asset_key.path == ["customers"]
+    # dbt Core includes the `failures` count, which we surface as metadata.
+    assert "dagster_dbt/failed_row_count" in first_check_eval.metadata
+
+
+def test_default_asset_events_from_run_results_missing_failures_key(
+    workspace: DbtCloudWorkspace, fetch_workspace_data_api_mocks: responses.RequestsMock
+):
+    run_results_json = copy.deepcopy(dict(get_sample_run_results_json()))
+    for result in run_results_json["results"]:
+        result.pop("failures", None)
+
+    run_results = DbtCloudJobRunResults.from_run_results_json(run_results_json=run_results_json)
+
+    events = list(
+        run_results.to_default_asset_events(
+            client=workspace.get_client(),
+            manifest=workspace.get_or_fetch_workspace_data().manifest,
+        )
+    )
+
+    asset_materializations = [event for event in events if isinstance(event, AssetMaterialization)]
+    asset_check_evaluations = [event for event in events if isinstance(event, AssetCheckEvaluation)]
+
+    assert len(asset_materializations) == 8
+    assert len(asset_check_evaluations) == 20
+
+    # Without a `failures` count, we should not attach failed row count metadata.
+    for check_eval in asset_check_evaluations:
+        assert "dagster_dbt/failed_row_count" not in check_eval.metadata
