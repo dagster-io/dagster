@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.13.11 (core) / 0.29.11 (libraries)
+
+### New
+
+- [ui] The asset catalog page now renders as a single virtualized list, so workspaces with many asset groups or code locations no longer freeze the UI when expanding those sections.
+- [dagster-dbt] Added a new `"insights"` option to `DbtProjectComponent`'s `include_metadata` field, enabling Dagster+ Insights tracking from YAML config.
+- [dagster-graphql] Added an optional `limit` argument and new `assetSelectionCount` / `assetCheckSelectionCount` fields to the `Run` GraphQL type, so clients can render a bounded preview of a run's asset/check selection alongside the true totals.
+
+### Bugfixes
+
+- Asset check history is now cleared when an asset or its partitions are wiped; stale entries no longer linger in the Execution History and Partitions views.
+- [ui] The run detail page header now displays the asset-check count for asset-job runs, and the count is now read from the execution plan rather than by scanning the full run event log.
+- [ui] The "View asset lineage" item in the run actions menu now correctly scopes to the assets in that run.
+- [dagster-dbt] `.with_insights()` now logs a warning instead of raising when called against an unsupported adapter.
+
+### Documentation
+
+- Added a new page documenting Dagster+ code-location snapshot size limits, with a script you can run locally to estimate snapshot sizes before deploying.
+- Documented the "Run concurrency" Insights metric.
+- Fixed an invalid `pool` config in the "Preventing concurrent dbt snapshots" `DbtProjectComponent` example.
+
 ## 1.13.10 (core) / 0.29.10 (libraries)
 
 ### Bugfixes
