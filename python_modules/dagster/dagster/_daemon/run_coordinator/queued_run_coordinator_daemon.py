@@ -4,8 +4,7 @@ import sys
 import threading
 import time
 from collections.abc import Iterable, Iterator, Sequence
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import ExitStack
+from concurrent.futures import FIRST_COMPLETED, Future, wait
 
 from dagster import (
     DagsterEvent,
@@ -34,6 +33,12 @@ from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 PAGE_SIZE = int(os.getenv("DAGSTER_RUN_QUEUE_PAGE_SIZE", "100"))
+THREAD_DEQUEUE_WAIT_POLL_INTERVAL = float(
+    os.getenv("DAGSTER_RUN_QUEUE_DEQUEUE_WAIT_POLL_INTERVAL_SECONDS", "1")
+)
+THREAD_DEQUEUE_WAIT_MAX_SECONDS = float(
+    os.getenv("DAGSTER_RUN_QUEUE_DEQUEUE_WAIT_MAX_SECONDS", "30")
+)
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
@@ -41,30 +46,55 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     store and launches them.
     """
 
-    def __init__(self, interval_seconds, page_size=PAGE_SIZE) -> None:
-        self._exit_stack = ExitStack()
-        self._executor: ThreadPoolExecutor | None = None
+    def __init__(
+        self,
+        interval_seconds,
+        page_size=PAGE_SIZE,
+        dequeue_wait_poll_interval=THREAD_DEQUEUE_WAIT_POLL_INTERVAL,
+        dequeue_wait_max_seconds=THREAD_DEQUEUE_WAIT_MAX_SECONDS,
+    ) -> None:
+        self._executor: InheritContextThreadPoolExecutor | None = None
+        self._inflight_run_dequeue_futures: dict[Future[bool], str] = {}
         self._location_timeouts_lock = threading.Lock()
         self._location_timeouts: dict[str, float] = {}
         self._page_size = page_size
+        self._dequeue_wait_poll_interval = float(
+            check.numeric_param(dequeue_wait_poll_interval, "dequeue_wait_poll_interval")
+        )
+        self._dequeue_wait_max_seconds = float(
+            check.numeric_param(dequeue_wait_max_seconds, "dequeue_wait_max_seconds")
+        )
+        check.invariant(
+            self._dequeue_wait_poll_interval > 0,
+            "dequeue_wait_poll_interval must be greater than 0",
+        )
+        check.invariant(
+            self._dequeue_wait_max_seconds > 0,
+            "dequeue_wait_max_seconds must be greater than 0",
+        )
         self._global_concurrency_blocked_runs_lock = threading.Lock()
         self._global_concurrency_blocked_runs = set()
         super().__init__(interval_seconds)
 
-    def _get_executor(self, max_workers) -> ThreadPoolExecutor:
+    def _get_executor(self, max_workers) -> InheritContextThreadPoolExecutor:
         if self._executor is None:
             # assumes max_workers wont change
-            self._executor = self._exit_stack.enter_context(
-                InheritContextThreadPoolExecutor(
-                    max_workers=max_workers,
-                    thread_name_prefix="run_dequeue_worker",
-                )
+            self._executor = InheritContextThreadPoolExecutor(
+                max_workers=max_workers,
+                thread_name_prefix="run_dequeue_worker",
             )
         return self._executor
 
-    def __exit__(self, _exception_type, _exception_value, _traceback):
+    def _shutdown_executor(self, wait: bool, cancel_futures: bool) -> None:
+        if self._executor is None:
+            return
+
+        self._executor.shutdown(wait=wait, cancel_futures=cancel_futures)
         self._executor = None
-        self._exit_stack.close()
+        self._inflight_run_dequeue_futures = {}
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._shutdown_executor(wait=False, cancel_futures=True)
         super().__exit__(_exception_type, _exception_value, _traceback)
 
     @classmethod
@@ -147,21 +177,64 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         fixed_iteration_time: float | None,
     ) -> Iterator[None]:
         num_dequeued_runs = 0
+        executor = self._get_executor(max_workers)
+        runs_iter = iter(runs_to_dequeue)
+        wait_timeout = self._dequeue_wait_poll_interval
+        last_progress_time = time.monotonic()
 
-        for future in as_completed(
-            self._get_executor(max_workers).submit(
-                self._dequeue_run_thread,
-                workspace_process_context,
-                run,
-                concurrency_config,
-                fixed_iteration_time=fixed_iteration_time,
+        while True:
+            while len(self._inflight_run_dequeue_futures) < executor.max_workers:
+                run = next(runs_iter, None)
+                if run is None:
+                    break
+
+                future = executor.submit(
+                    self._dequeue_run_thread,
+                    workspace_process_context,
+                    run,
+                    concurrency_config,
+                    fixed_iteration_time=fixed_iteration_time,
+                )
+                self._inflight_run_dequeue_futures[future] = run.run_id
+
+            if not self._inflight_run_dequeue_futures:
+                break
+
+            done, _ = wait(
+                self._inflight_run_dequeue_futures,
+                timeout=wait_timeout,
+                return_when=FIRST_COMPLETED,
             )
-            for run in runs_to_dequeue
-        ):
-            run_launched = future.result()
-            yield None
-            if run_launched:
-                num_dequeued_runs += 1
+
+            if not done:
+                if wait_timeout == 0:
+                    # After a completion, do a zero-timeout drain pass before falling back to the
+                    # bounded wait that keeps the daemon responsive when launches stall.
+                    wait_timeout = self._dequeue_wait_poll_interval
+                    continue
+
+                yield None
+                if time.monotonic() - last_progress_time < self._dequeue_wait_max_seconds:
+                    continue
+
+                self._logger.warning(
+                    "Timed out waiting %.1f seconds for %d queued runs to finish launching. "
+                    "Keeping those launches in flight and continuing in a later iteration. "
+                    "Runs still launching: %s",
+                    self._dequeue_wait_max_seconds,
+                    len(self._inflight_run_dequeue_futures),
+                    ", ".join(sorted(self._inflight_run_dequeue_futures.values())),
+                )
+                break
+
+            last_progress_time = time.monotonic()
+            wait_timeout = 0
+            for future in done:
+                self._inflight_run_dequeue_futures.pop(future)
+                run_launched = future.result()
+                yield None
+                if run_launched:
+                    num_dequeued_runs += 1
 
         if num_dequeued_runs > 0:
             self._logger.info("Launched %d runs.", num_dequeued_runs)
