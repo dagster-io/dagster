@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import Mapping, Sequence
-from dataclasses import MISSING, fields, is_dataclass
+from dataclasses import MISSING, dataclass, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
 from types import UnionType
@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Final,
     Literal,
     Optional,
@@ -329,12 +330,68 @@ class AnnotationInfo:
     field_info: FieldInfo | None
 
 
+def _is_classvar(annotation: Any) -> bool:
+    # Handles both real ``typing.ClassVar[...]`` annotations and string annotations
+    # (e.g. under ``from __future__ import annotations``), which dataclasses also treats
+    # as ClassVars by name.
+    if get_origin(annotation) is ClassVar or annotation is ClassVar:
+        return True
+    if isinstance(annotation, str):
+        return annotation.startswith("ClassVar") or annotation.startswith("typing.ClassVar")
+    return False
+
+
+def _ensure_dataclass_fields_registered(target_type: type) -> type:
+    """Register fields added by a subclass that inherits ``@dataclass``-ness but was not
+    itself re-decorated.
+
+    A subclass of a ``@dataclass`` ``Resolvable`` inherits ``__dataclass_fields__``, so
+    ``is_dataclass`` is True, but ``dataclasses.fields`` only returns the fields the
+    decorator registered. Any field the subclass declares is therefore silently dropped
+    from the resolution schema (and from the generated ``__init__``), which surfaces as a
+    confusing "Extra inputs are not permitted" error from yaml. Re-applying ``@dataclass``
+    here picks those fields up and regenerates ``__init__``, matching how pydantic Model
+    subclasses pick up new fields automatically. See
+    https://github.com/dagster-io/dagster/issues/33889.
+    """
+    own_annotations = target_type.__dict__.get("__annotations__", {})
+    if not own_annotations:
+        return target_type
+
+    registered = {f.name for f in fields(target_type)}
+    unregistered = [
+        name
+        for name, annotation in own_annotations.items()
+        if name not in registered and not _is_classvar(annotation)
+    ]
+    if not unregistered:
+        return target_type
+
+    # Mirror the inherited dataclass config so re-decorating doesn't silently change
+    # semantics (e.g. eq/order/frozen) or raise on a frozen/non-frozen mismatch. `slots`
+    # and `weakref_slot` are intentionally omitted: `@dataclass(slots=True)` returns a new
+    # class object, which would break the in-place mutation the caller relies on.
+    params = getattr(target_type, "__dataclass_params__", None)
+    forwarded = ("init", "repr", "eq", "order", "unsafe_hash", "frozen", "match_args", "kw_only")
+    dataclass_kwargs = {name: getattr(params, name) for name in forwarded if hasattr(params, name)}
+    try:
+        return dataclass(**dataclass_kwargs)(target_type)
+    except TypeError as e:
+        raise ResolutionException(
+            f"Could not register field(s) {unregistered} added by {target_type.__name__}. "
+            "When subclassing a @dataclass Resolvable to add fields, the new fields must be "
+            "declared with defaults (or the base must use kw_only) so a valid __init__ can be "
+            "generated. See https://github.com/dagster-io/dagster/issues/33889."
+        ) from e
+
+
 def _get_annotations(
     resolved_type: type[Resolvable],
 ) -> dict[str, AnnotationInfo]:
     annotations: dict[str, AnnotationInfo] = {}
     init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
+        resolved_type = _ensure_dataclass_fields_registered(resolved_type)
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
             annotations[f.name] = AnnotationInfo(
