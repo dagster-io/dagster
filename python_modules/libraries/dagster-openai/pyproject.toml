@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-openai"
-version = "1!0+dev"
+version = "0.29.11"
 requires-python = ">=3.10,<3.15"
 description = "An OpenAI client resource for interacting with OpenAI API."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.11",
     "openai",
 ]
 
