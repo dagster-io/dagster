@@ -2297,6 +2297,7 @@ class SqlEventLogStorage(EventLogStorage):
                         )
                     )
                     self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                    return False
                 else:
                     try:
                         conn.execute(
@@ -2309,11 +2310,14 @@ class SqlEventLogStorage(EventLogStorage):
                     except db_exc.IntegrityError:
                         conn.execute(
                             ConcurrencyLimitsTable.update()
-                            .values(limit=default_limit)
+                            .values(limit=default_limit, using_default_limit=True)
                             .where(
                                 db.and_(
                                     ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
-                                    ConcurrencyLimitsTable.c.limit != default_limit,
+                                    db.or_(
+                                        ConcurrencyLimitsTable.c.limit != default_limit,
+                                        ConcurrencyLimitsTable.c.using_default_limit == False,  # noqa: E712
+                                    ),
                                 )
                             )
                         )
@@ -2332,8 +2336,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             except db_exc.IntegrityError:
                 pass
-
-        self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
         return True
 
     def _upsert_and_lock_limit_row(
