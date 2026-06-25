@@ -47,6 +47,7 @@ TEST_AIRBYTE_OSS_REST_API_BASE_URL = "http://localhost:8000/api/public/v1"
 TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL = "http://localhost:8000/api/v1"
 
 TEST_UNRECOGNIZED_AIRBYTE_JOB_STATUS_TYPE = "unrecognized"
+TEST_DEPRECATED_CONNECTION_ID = "aaaabbbb-0000-1111-2222-c2c9766f7da5"
 
 TEST_AIRBYTE_CONNECTION_TABLE_PROPS = AirbyteConnectionTableProps(
     table_name=f"{TEST_STREAM_PREFIX}{TEST_STREAM_NAME}",
@@ -84,6 +85,38 @@ def get_sample_connections() -> Mapping[str, Any]:
                     "schedule_type": "cron",
                 },
             }
+        ],
+    }
+
+
+def get_sample_connections_with_deprecated() -> Mapping[str, Any]:
+    """Returns a page of connections that includes one active and one deprecated (deleted) connection."""
+    return {
+        "next": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=10",
+        "previous": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=0",
+        "data": [
+            {
+                "connectionId": TEST_CONNECTION_ID,
+                "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
+                "name": TEST_CONNECTION_NAME,
+                "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
+                "destinationId": TEST_DESTINATION_ID,
+                "status": "active",
+                "schedule": {
+                    "schedule_type": "cron",
+                },
+            },
+            {
+                "connectionId": TEST_DEPRECATED_CONNECTION_ID,
+                "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
+                "name": "Deprecated Connection",
+                "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
+                "destinationId": TEST_DESTINATION_ID,
+                "status": "deprecated",
+                "schedule": {
+                    "schedule_type": "cron",
+                },
+            },
         ],
     }
 
@@ -366,6 +399,38 @@ def resource(rest_api_url: str, config_api_url: str) -> AirbyteWorkspace | Airby
             max_items_per_page=5,
             poll_interval=0,
             cancel_on_termination=False,
+        )
+
+
+@pytest.fixture
+def resource_exclude_deprecated(
+    rest_api_url: str, config_api_url: str
+) -> AirbyteWorkspace | AirbyteCloudWorkspace:
+    """Returns the appropriate workspace type with exclude_deprecated_connections=True."""
+    if (
+        rest_api_url == AIRBYTE_CLOUD_REST_API_BASE_URL
+        and config_api_url == AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
+    ):
+        return AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
+            exclude_deprecated_connections=True,
+        )
+    else:
+        return AirbyteWorkspace(
+            rest_api_base_url=rest_api_url,
+            configuration_api_base_url=config_api_url,
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
+            exclude_deprecated_connections=True,
         )
 
 
