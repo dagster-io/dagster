@@ -25,7 +25,7 @@ export const RunRowTags = ({
   isHovered,
   hideTags,
 }: {
-  run: Pick<RunTableRunFragment, 'tags' | 'assetSelection' | 'mode'>;
+  run: Pick<RunTableRunFragment, 'tags' | 'mode'>;
   onAddTag?: (token: RunFilterToken) => void;
   isHovered: boolean;
   hideTags?: string[];

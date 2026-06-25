@@ -18,23 +18,28 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
       value
     }
     jobName
-    assetSelection {
-      ... on AssetKey {
-        path
-      }
-    }
-    assetCheckSelection {
-      name
-      assetKey {
-        path
-      }
-    }
     ... on Run {
       repositoryOrigin {
         id
         repositoryLocationName
         repositoryName
       }
+      # Only a bounded preview of the selection is fetched for the table; the full lists (which can
+      # be tens of thousands of entries) are fetched on demand when the "View list" dialog is
+      # opened (see RunTargetLink). Aliased to *Preview to make the truncation explicit downstream.
+      assetSelectionPreview: assetSelection(limit: 25) {
+        ... on AssetKey {
+          path
+        }
+      }
+      assetSelectionCount
+      assetCheckSelectionPreview: assetCheckSelection(limit: 25) {
+        name
+        assetKey {
+          path
+        }
+      }
+      assetCheckSelectionCount
       ...RunActionsMenuRunFragment
     }
     ... on PartitionBackfill {

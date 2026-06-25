@@ -18,6 +18,7 @@ export type RunFragment = {
   parentRunId: string | null;
   pipelineName: string;
   solidSelection: Array<string> | null;
+  assetCheckSelectionCount: number;
   pipelineSnapshotId: string | null;
   stepKeysToExecute: Array<string> | null;
   updateTime: number | null;
@@ -3497,6 +3498,7 @@ export type RunPageFragment = {
   parentRunId: string | null;
   pipelineName: string;
   solidSelection: Array<string> | null;
+  assetCheckSelectionCount: number;
   pipelineSnapshotId: string | null;
   stepKeysToExecute: Array<string> | null;
   updateTime: number | null;

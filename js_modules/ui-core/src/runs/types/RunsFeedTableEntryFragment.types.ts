@@ -32,15 +32,12 @@ export type RunsFeedTableEntryFragment_PartitionBackfill = {
   } | null;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  assetCheckSelection: Array<{
-    __typename: 'AssetCheckhandle';
-    name: string;
-    assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  }> | null;
 };
 
 export type RunsFeedTableEntryFragment_Run = {
   __typename: 'Run';
+  assetSelectionCount: number;
+  assetCheckSelectionCount: number;
   id: string;
   runStatus: Types.RunStatus;
   creationTime: number;
@@ -62,13 +59,13 @@ export type RunsFeedTableEntryFragment_Run = {
     repositoryName: string;
     repositoryLocationName: string;
   } | null;
-  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-  assetCheckSelection: Array<{
+  assetSelectionPreview: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+  assetCheckSelectionPreview: Array<{
     __typename: 'AssetCheckhandle';
     name: string;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }> | null;
+  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
 
 export type RunsFeedTableEntryFragment =

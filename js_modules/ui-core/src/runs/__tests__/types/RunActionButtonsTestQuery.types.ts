@@ -25,6 +25,7 @@ export type RunActionButtonsTestQuery = {
         parentRunId: string | null;
         pipelineName: string;
         solidSelection: Array<string> | null;
+        assetCheckSelectionCount: number;
         pipelineSnapshotId: string | null;
         stepKeysToExecute: Array<string> | null;
         updateTime: number | null;
@@ -62,4 +63,4 @@ export type RunActionButtonsTestQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunActionButtonsTestQueryVersion = '604a93ec19ca72ff504447fb4bae7309f0ae8ab24ec5d7b688d7312d3a00848d';
+export const RunActionButtonsTestQueryVersion = '12a17fb83822fac95ef35b430211d8ee8f301fe3fa31f63380c2b0e56df7dedb';

@@ -138,7 +138,7 @@ export const RunsFeedRow = ({
         {entry.__typename === 'Run' ? (
           <RunTargetLink
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
+            run={{...entry, pipelineName: entry.jobName!}}
             repoAddress={repoAddress}
             extraTags={
               partitionTag

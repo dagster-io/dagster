@@ -57,15 +57,12 @@ export type RunsFeedRootQuery = {
               } | null;
               assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-              assetCheckSelection: Array<{
-                __typename: 'AssetCheckhandle';
-                name: string;
-                assetKey: {__typename: 'AssetKey'; path: Array<string>};
-              }> | null;
             }
           | {
               __typename: 'Run';
               id: string;
+              assetSelectionCount: number;
+              assetCheckSelectionCount: number;
               runStatus: Types.RunStatus;
               creationTime: number;
               startTime: number | null;
@@ -86,16 +83,16 @@ export type RunsFeedRootQuery = {
                 repositoryName: string;
                 repositoryLocationName: string;
               } | null;
-              tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-              assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-              assetCheckSelection: Array<{
+              assetSelectionPreview: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+              assetCheckSelectionPreview: Array<{
                 __typename: 'AssetCheckhandle';
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }> | null;
+              tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
             }
         >;
       };
 };
 
-export const RunsFeedRootQueryVersion = 'bcb46700635d2a8f2668cfd8799bf2a55e0f950e2b925b66ad6b7318072876dd';
+export const RunsFeedRootQueryVersion = 'f38be3e2c65b5e52f0abc3fb7bceea28caf2bdb5bebdd4d8977c1f0d91cae61e';

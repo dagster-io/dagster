@@ -7,6 +7,7 @@ import {
   DialogFooter,
   Icon,
   MiddleTruncate,
+  SpinnerWithText,
   Tag,
 } from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
@@ -15,6 +16,7 @@ import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {
+  Check,
   labelForAssetCheck,
   renderItemAssetCheck,
   renderItemAssetKey,
@@ -31,41 +33,72 @@ import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
 
+/**
+ * Describes a selection whose inline tags are a bounded preview, with the full list fetched lazily
+ * (e.g. the runs feed, where a run can target tens of thousands of assets/checks). When provided,
+ * the total count drives the labels and the full list is loaded on demand for the "View list"
+ * dialog and lineage link.
+ */
+export interface TagCollectionLazyLoad<T> {
+  /** Total number of items; the inline preview list may be truncated. */
+  totalCount: number;
+  /** The full list, once lazily loaded (null until then). */
+  allItems: T[] | null;
+  /** Whether the full list is currently being fetched. */
+  loading: boolean;
+  /** Request the full list. Called when the overflow popover opens and when an action is clicked. */
+  onRequest: () => void;
+}
+
 function useShowMoreDialog<T>(
   dialogTitle: string,
   items: T[] | null,
   renderItem: (item: T) => React.ReactNode,
+  loading?: boolean,
 ) {
   const [showMore, setShowMore] = React.useState(false);
 
-  const dialog =
-    !!items && items.length > 1 ? (
-      <Dialog
-        title={dialogTitle}
-        onClose={() => setShowMore(false)}
-        style={{minWidth: '400px', width: '50vw', maxWidth: '800px', maxHeight: '70vh'}}
-        isOpen={showMore}
-      >
-        <div style={{height: '500px', overflow: 'hidden'}}>
+  // Always render the dialog and toggle it with `isOpen` rather than mounting/unmounting it on
+  // `showMore` — mount/unmount breaks the open/close fade animation.
+  const dialog = (
+    <Dialog
+      title={dialogTitle}
+      onClose={() => setShowMore(false)}
+      style={{minWidth: '400px', width: '50vw', maxWidth: '800px', maxHeight: '70vh'}}
+      isOpen={showMore}
+    >
+      <div style={{height: '500px', overflow: 'hidden'}}>
+        {items && items.length ? (
           <VirtualizedItemListForDialog items={items} renderItem={renderItem} />
-        </div>
-        <DialogFooter topBorder>
-          <Button intent="primary" autoFocus onClick={() => setShowMore(false)}>
-            Done
-          </Button>
-        </DialogFooter>
-      </Dialog>
-    ) : undefined;
+        ) : (
+          <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{height: '100%'}}>
+            {loading ? <SpinnerWithText label="Loading…" /> : null}
+          </Box>
+        )}
+      </div>
+      <DialogFooter topBorder>
+        <Button intent="primary" autoFocus onClick={() => setShowMore(false)}>
+          Done
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
 
   return {dialog, showMore, setShowMore};
 }
 
 interface AssetKeyTagCollectionProps {
+  /**
+   * The asset keys to render as inline tags. When `lazy` is provided this is only a bounded
+   * preview — `lazy.totalCount` is the true count and `lazy.allItems` the full list (loaded on
+   * demand). Without `lazy` it is the complete list.
+   */
   assetKeys: AssetKey[] | null;
   dialogTitle?: string;
   useTags?: boolean;
   extraTags?: React.ReactNode[];
   maxRows?: number;
+  lazy?: TagCollectionLazyLoad<AssetKey>;
 }
 
 /** This hook returns a containerRef and a moreLabelRef. It expects you to populate
@@ -141,20 +174,45 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
 }
 
 export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
-  const {assetKeys, useTags, extraTags, maxRows, dialogTitle = 'Assets in run'} = props;
+  const {assetKeys, useTags, extraTags, maxRows, dialogTitle = 'Assets in run', lazy} = props;
 
-  const count = assetKeys?.length ?? 0;
+  const count = lazy ? lazy.totalCount : (assetKeys?.length ?? 0);
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
 
-  const {sortedAssetKeys, slicedSortedAssetKeys} = React.useMemo(() => {
-    const sortedAssetKeys = assetKeys?.slice().sort(sortItemAssetKey) ?? [];
-    return {
-      sortedAssetKeys,
-      slicedSortedAssetKeys: sortedAssetKeys?.slice(0, rendered) ?? [],
-    };
-  }, [assetKeys, rendered]);
+  // When the preview already holds the entire selection there is nothing more to fetch, so the
+  // preview itself is the full list and actions needing it are ready immediately.
+  const previewComplete = !lazy || (assetKeys?.length ?? 0) >= lazy.totalCount;
 
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, sortedAssetKeys, renderItemAssetKey);
+  const {slicedSortedAssetKeys, fullAssetKeys} = React.useMemo(() => {
+    const sortedPreview = assetKeys?.slice().sort(sortItemAssetKey) ?? [];
+    const sortedAll = lazy?.allItems ? lazy.allItems.slice().sort(sortItemAssetKey) : null;
+    return {
+      slicedSortedAssetKeys: sortedPreview.slice(0, rendered),
+      // The complete, sorted list: the preview when it already holds everything, otherwise the
+      // lazily-loaded full list (null until it arrives).
+      fullAssetKeys: previewComplete ? sortedPreview : sortedAll,
+    };
+  }, [assetKeys, rendered, lazy, previewComplete]);
+
+  const {setShowMore, dialog} = useShowMoreDialog(
+    dialogTitle,
+    fullAssetKeys,
+    renderItemAssetKey,
+    lazy?.loading,
+  );
+
+  // Kick off the lazy fetch (a no-op when the preview is already complete) when the overflow menu
+  // opens or "View list" is clicked.
+  const requestFull = React.useCallback(() => {
+    if (!previewComplete) {
+      lazy?.onRequest();
+    }
+  }, [previewComplete, lazy]);
+
+  const showMore = React.useCallback(() => {
+    requestFull();
+    setShowMore(true);
+  }, [requestFull, setShowMore]);
 
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
@@ -223,15 +281,24 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
         <span style={useTags ? {} : {marginBottom: -4}}>
           <TagActionsPopover
             data={{key: '', value: ''}}
+            onOpening={requestFull}
             actions={[
               {
                 label: 'View list',
-                onClick: () => setShowMore(true),
+                onClick: showMore,
               },
-              {
-                label: 'View lineage',
-                to: globalAssetGraphPathForAssets(sortedAssetKeys),
-              },
+              // Lineage needs the complete set; disable it until the full list is available so we
+              // never navigate with only the preview.
+              fullAssetKeys
+                ? {
+                    label: 'View lineage',
+                    to: globalAssetGraphPathForAssets(fullAssetKeys),
+                  }
+                : {
+                    label: 'View lineage',
+                    to: '',
+                    disabled: true,
+                  },
             ]}
           >
             {useTags ? (
@@ -239,7 +306,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
                 <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
               </Tag>
             ) : (
-              <ButtonLink onClick={() => setShowMore(true)} underline="hover">
+              <ButtonLink onClick={showMore} underline="hover">
                 <Box
                   flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}
                 >
@@ -256,33 +323,53 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
   );
 });
 
-type Check = {name: string; assetKey: AssetKey};
-
 interface AssetCheckTagCollectionProps {
+  /**
+   * The asset checks to render as inline tags. When `lazy` is provided this is only a bounded
+   * preview — `lazy.totalCount` is the true count and `lazy.allItems` the full list (loaded on
+   * demand). Without `lazy` it is the complete list.
+   */
   assetChecks: Check[] | null;
   dialogTitle?: string;
   maxRows?: number;
+  lazy?: TagCollectionLazyLoad<Check>;
 }
 
 export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
-  const {assetChecks, maxRows, dialogTitle = 'Asset checks in run'} = props;
+  const {assetChecks, maxRows, dialogTitle = 'Asset checks in run', lazy} = props;
 
-  const count = assetChecks?.length ?? 0;
+  const count = lazy ? lazy.totalCount : (assetChecks?.length ?? 0);
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
 
-  const {sortedAssetChecks, slicedSortedAssetChecks} = React.useMemo(() => {
-    const sortedAssetChecks = assetChecks?.slice().sort(sortItemAssetCheck) ?? [];
+  // When the preview already holds every check there is nothing more to fetch.
+  const previewComplete = !lazy || (assetChecks?.length ?? 0) >= lazy.totalCount;
+
+  const {slicedSortedAssetChecks, fullAssetChecks} = React.useMemo(() => {
+    const sortedPreview = assetChecks?.slice().sort(sortItemAssetCheck) ?? [];
+    const sortedAll = lazy?.allItems ? lazy.allItems.slice().sort(sortItemAssetCheck) : null;
     return {
-      sortedAssetChecks,
-      slicedSortedAssetChecks: sortedAssetChecks?.slice(0, rendered) ?? [],
+      slicedSortedAssetChecks: sortedPreview.slice(0, rendered),
+      fullAssetChecks: previewComplete ? sortedPreview : sortedAll,
     };
-  }, [assetChecks, rendered]);
+  }, [assetChecks, rendered, lazy, previewComplete]);
 
   const {setShowMore, dialog} = useShowMoreDialog(
     dialogTitle,
-    sortedAssetChecks,
+    fullAssetChecks,
     renderItemAssetCheck,
+    lazy?.loading,
   );
+
+  const requestFull = React.useCallback(() => {
+    if (!previewComplete) {
+      lazy?.onRequest();
+    }
+  }, [previewComplete, lazy]);
+
+  const showMore = React.useCallback(() => {
+    requestFull();
+    setShowMore(true);
+  }, [requestFull, setShowMore]);
 
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
@@ -327,10 +414,11 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
         <span>
           <TagActionsPopover
             data={{key: '', value: ''}}
+            onOpening={requestFull}
             actions={[
               {
                 label: 'View list',
-                onClick: () => setShowMore(true),
+                onClick: showMore,
               },
             ]}
           >

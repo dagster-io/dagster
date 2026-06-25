@@ -27,6 +27,7 @@ export type RunRootQuery = {
         parentRunId: string | null;
         pipelineName: string;
         solidSelection: Array<string> | null;
+        assetCheckSelectionCount: number;
         pipelineSnapshotId: string | null;
         stepKeysToExecute: Array<string> | null;
         updateTime: number | null;
@@ -64,4 +65,4 @@ export type RunRootQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunRootQueryVersion = 'a43d256bd72f39975b4d776b20df42e3db4ea605cfe3cee1bd93c10deb62121b';
+export const RunRootQueryVersion = '989d537bea3b655307a745070d956a15f22ebec02f26a1cc54c9d0757f9d8db2';
