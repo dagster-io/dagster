@@ -945,3 +945,30 @@ def test_launcher_run_k8s_config_precedence_preserves_non_conflicting_fields(
     pod_spec = result.run_k8s_config.pod_spec_config
     assert pod_spec.get("node_selector") == {"pool": "autoscaling-pool"}
     assert pod_spec.get("dns_policy") == "ClusterFirst"
+
+
+def test_launcher_run_k8s_config_takes_precedence_with_run_tags(
+    kubeconfig_file,
+):
+    launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        run_k8s_config={"pod_spec_config": {"node_selector": {"pool": "autoscaling-pool"}}},
+    )
+
+    run = _run_with_container_context(
+        {
+            "k8s": {
+                "run_k8s_config": {"pod_spec_config": {"node_selector": {"pool": "default-pool"}}}
+            }
+        }
+    )
+
+    result = K8sContainerContext.create_for_run(run, launcher, include_run_tags=True)
+
+    node_selector = result.run_k8s_config.pod_spec_config.get("node_selector")
+    assert node_selector == {"pool": "autoscaling-pool"}
