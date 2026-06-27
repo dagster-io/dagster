@@ -129,6 +129,15 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     default=None,
     type=click.INT,
 )
+@click.option(
+    "--db-pool-pre-ping/--no-db-pool-pre-ping",
+    help=(
+        "Whether to test sqlalchemy pool connections for liveness on each checkout, "
+        "transparently recovering from stale connections (e.g. dropped by the database, "
+        "a connection pooler, or a network timeout)."
+    ),
+    default=None,
+)
 @workspace_options
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
@@ -150,6 +159,7 @@ def dev_command(
     db_statement_timeout: int | None,
     db_pool_recycle: int | None,
     db_pool_max_overflow: int | None,
+    db_pool_pre_ping: bool | None,
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -169,6 +179,7 @@ def dev_command(
         db_statement_timeout=db_statement_timeout,
         db_pool_recycle=db_pool_recycle,
         db_pool_max_overflow=db_pool_max_overflow,
+        db_pool_pre_ping=db_pool_pre_ping,
     )
 
 
@@ -186,6 +197,7 @@ def dev_command_impl(
     db_statement_timeout: int | None = None,
     db_pool_recycle: int | None = None,
     db_pool_max_overflow: int | None = None,
+    db_pool_pre_ping: bool | None = None,
 ) -> None:
     # check if dagster-webserver installed, crash if not
     try:
@@ -265,6 +277,11 @@ def dev_command_impl(
                 + (
                     ["--db-pool-max-overflow", str(db_pool_max_overflow)]
                     if db_pool_max_overflow is not None
+                    else []
+                )
+                + (
+                    ["--db-pool-pre-ping" if db_pool_pre_ping else "--no-db-pool-pre-ping"]
+                    if db_pool_pre_ping is not None
                     else []
                 )
                 + ["--shutdown-pipe", str(webserver_read_fd)]
