@@ -92,3 +92,73 @@ def test_limits() -> None:
             repository_def=defs.get_repository_def(),
         ),
     )
+
+
+def test_max_entities_param_validation() -> None:
+    # only supported alongside use_user_code_server
+    with pytest.raises(ParameterCheckError, match="non-user-code"):
+        dg.AutomationConditionSensorDefinition("foo", target="*", max_entities=100)
+
+    # must be positive
+    with pytest.raises(ParameterCheckError, match="positive"):
+        dg.AutomationConditionSensorDefinition(
+            "foo", target="*", use_user_code_server=True, max_entities=0
+        )
+
+    sensor = dg.AutomationConditionSensorDefinition(
+        "foo", target="*", use_user_code_server=True, max_entities=1000
+    )
+    assert sensor.max_entities == 1000
+    # survives attribute-replacing copies
+    assert sensor.with_attributes(metadata={}).max_entities == 1000
+
+    # defaults to the standard limit when unset
+    sensor = dg.AutomationConditionSensorDefinition("foo", target="*", use_user_code_server=True)
+    assert sensor.max_entities == 500
+
+
+def test_max_entities_overrides_limit() -> None:
+    defs = dg.Definitions(
+        assets=build_assets(
+            "test",
+            layer_configs=[AssetLayerConfig(600)],
+            automation_condition=AutomationCondition.eager(),
+        )
+    )
+
+    # under the default limit of 500, 600 targeted assets raises
+    sensor = dg.AutomationConditionSensorDefinition("foo", target="*", use_user_code_server=True)
+    with pytest.raises(
+        dg.DagsterInvalidInvocationError, match="more than the limit of 500"
+    ):
+        sensor(
+            dg.build_sensor_context(
+                instance=DagsterInstance.ephemeral(),
+                repository_def=defs.get_repository_def(),
+            ),
+        )
+
+    # raising the limit allows evaluation to proceed
+    sensor = dg.AutomationConditionSensorDefinition(
+        "foo", target="*", use_user_code_server=True, max_entities=1000
+    )
+    sensor(
+        dg.build_sensor_context(
+            instance=DagsterInstance.ephemeral(),
+            repository_def=defs.get_repository_def(),
+        ),
+    )
+
+    # a lowered limit is also respected
+    sensor = dg.AutomationConditionSensorDefinition(
+        "foo", target="*", use_user_code_server=True, max_entities=100
+    )
+    with pytest.raises(
+        dg.DagsterInvalidInvocationError, match="more than the limit of 100"
+    ):
+        sensor(
+            dg.build_sensor_context(
+                instance=DagsterInstance.ephemeral(),
+                repository_def=defs.get_repository_def(),
+            ),
+        )
