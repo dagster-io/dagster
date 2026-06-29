@@ -2,10 +2,11 @@ import logging
 import os
 from unittest import mock
 
+import paramiko
 import pytest
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 from dagster import Field
 from dagster._core.definitions.decorators import op
 from dagster._core.execution.context.init import build_init_resource_context
@@ -28,6 +29,51 @@ def generate_ssh_key():
         format=serialization.PrivateFormat.TraditionalOpenSSL,  # ty: ignore[invalid-argument-type]
         encryption_algorithm=serialization.NoEncryption(),
     ).decode("utf-8")
+
+
+def generate_ed25519_ssh_key():
+    key = ed25519.Ed25519PrivateKey.generate()
+    return key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.OpenSSH,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+
+def generate_ecdsa_ssh_key():
+    key = ec.generate_private_key(ec.SECP256R1())
+    return key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.OpenSSH,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+
+
+def test_key_from_str_supports_rsa() -> None:
+    """Verify key_from_str correctly loads RSA keys."""
+    rsa_key = generate_ssh_key()
+    result = key_from_str(rsa_key)
+    assert isinstance(result, paramiko.RSAKey)
+
+
+def test_key_from_str_supports_ed25519() -> None:
+    """Verify key_from_str correctly loads Ed25519 keys, not just RSA."""
+    ed25519_key = generate_ed25519_ssh_key()
+    result = key_from_str(ed25519_key)
+    assert isinstance(result, paramiko.Ed25519Key)
+
+
+def test_key_from_str_supports_ecdsa() -> None:
+    """Verify key_from_str correctly loads ECDSA keys."""
+    ecdsa_key = generate_ecdsa_ssh_key()
+    result = key_from_str(ecdsa_key)
+    assert isinstance(result, paramiko.ECDSAKey)
+
+
+def test_key_from_str_invalid_key_raises_value_error() -> None:
+    """Verify key_from_str raises ValueError for garbage input."""
+    with pytest.raises(ValueError, match="Unable to parse private key string"):
+        key_from_str("not a valid key")
 
 
 @mock.patch("paramiko.SSHClient")
