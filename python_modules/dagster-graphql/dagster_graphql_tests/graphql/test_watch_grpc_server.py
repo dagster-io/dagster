@@ -71,27 +71,26 @@ RecoveryTestSuite: Any = make_graphql_context_test_suite(context_variants=RECOVE
 class TestGrpcServerRecovery(RecoveryTestSuite):
     @graphql_context_variants_fixture(context_variants=RECOVERY_CONTEXT_VARIANTS)
     def yield_class_scoped_graphql_context(self, request):
-        with patch.object(server_watcher, "WATCH_INTERVAL", 0.1):
+        with (
+            patch.object(server_watcher, "WATCH_INTERVAL", 0.1),
+            patch.object(server_watcher, "ERROR_RECOVERY_INTERVAL", 0.1),
+        ):
             with self.graphql_context_for_request(request) as graphql_context:
                 yield graphql_context
 
     def test_grpc_server_recovery_after_failed_refresh(self, graphql_context):
-        """Integration test: verify that the watch thread triggers recovery when a code location
-        is stuck in an error state after a failed refresh.
+        """Integration test: verify the periodic recovery check refreshes a code location stuck
+        in an error state after a failed refresh.
 
         This simulates the K8s rolling deployment race condition end-to-end:
         1. Directly set the workspace entry to an errored state with a
            DagsterUserCodeUnreachableError load_error (simulating a failed refresh against a
            pod that was briefly unreachable).
-        2. The watch thread's polling call to get_location_entry_or_raise_unreachable_error()
-           sees the unreachable load_error and re-raises DagsterUserCodeUnreachableError, which
-           kicks watch_for_changes() out to the outer reconnect path.
-        3. on_disconnect fires and reconnect_loop runs. Because GetServerId still succeeds
-           against the live server but the workspace entry remains errored, reconnect_loop
-           calls refresh_code_location directly to clear the stuck error.
-        4. Once refresh_code_location succeeds, the next iteration of reconnect_loop sees a
-           healthy entry and matching server ID, and fires on_reconnected.
-        5. Verify the location recovers.
+        2. The watch thread's periodic recovery check sees the unreachable load_error and, because
+           the gRPC server is still reachable, calls refresh_code_location directly to clear it.
+        3. Verify the location recovers — with no disconnect/reconnect events, since recovery is
+           fully decoupled from the gRPC reconnect loop (the server-id watch never saw the server
+           go unreachable).
         """
         ctx = graphql_context.process_context
         location = next(iter(ctx.create_request_context().code_locations))
@@ -106,8 +105,7 @@ class TestGrpcServerRecovery(RecoveryTestSuite):
 
         # Simulate a failed refresh by directly setting the workspace entry to an errored state.
         # The load_error must be a DagsterUserCodeUnreachableError: that is the only error class
-        # that get_location_entry_or_raise_unreachable_error() in the watch thread will re-raise
-        # to trigger the reconnect/recovery path.
+        # the periodic recovery check acts on.
         current_entry = ctx.get_current_workspace().code_location_entries[location_name]
         injected_timestamp = time.time()
         errored_entry = CodeLocationEntry(
@@ -132,9 +130,8 @@ class TestGrpcServerRecovery(RecoveryTestSuite):
         # Verify location is now errored
         assert ctx.has_code_location_error(location_name)
 
-        # The watch thread should detect the unreachable load_error, fire on_disconnect, enter
-        # reconnect_loop, and call refresh_code_location directly to clear the stuck error.
-        # Once the refresh succeeds, reconnect_loop fires on_reconnected on its next iteration.
+        # The periodic recovery check should detect the unreachable load_error and call
+        # refresh_code_location directly to clear the stuck error.
         start_time = time.time()
         timeout = 30
         while ctx.has_code_location_error(location_name):
@@ -151,28 +148,10 @@ class TestGrpcServerRecovery(RecoveryTestSuite):
         recovered_entry = ctx.get_current_workspace().code_location_entries[location_name]
         assert recovered_entry.update_timestamp > injected_timestamp
 
-        # Wait for on_reconnected: refresh_code_location clears the error inline within
-        # reconnect_loop, but on_reconnected fires on the *next* poll iteration once the entry
-        # check passes and GetServerId matches the cached server id.
-        start_time = time.time()
-        reconnect_timeout = 30
-        while not _events_of_type(events, LocationStateChangeEventType.LOCATION_RECONNECTED):
-            if time.time() - start_time > reconnect_timeout:
-                raise Exception(
-                    f"Timed out waiting for LOCATION_RECONNECTED event for {location_name}. "
-                    f"Events received: {[(e.event_type, e.location_name) for e in events]}"
-                )
-            time.sleep(0.5)
-
-        # Verify the recovery events were fired
-        disconnect_events = _events_of_type(
-            events, LocationStateChangeEventType.LOCATION_DISCONNECTED
-        )
-        reconnected_events = _events_of_type(
-            events, LocationStateChangeEventType.LOCATION_RECONNECTED
-        )
-        assert len(disconnect_events) >= 1
-        assert len(reconnected_events) >= 1
+        # Recovery is fully decoupled from the gRPC reconnect loop: it fires no disconnect or
+        # reconnect events, because refresh_code_location only swaps the workspace entry.
+        assert not _events_of_type(events, LocationStateChangeEventType.LOCATION_DISCONNECTED)
+        assert not _events_of_type(events, LocationStateChangeEventType.LOCATION_RECONNECTED)
 
     def test_grpc_server_on_error_then_recovery_via_on_updated(self, graphql_context):
         """Integration test: when reconnect attempts exhaust MAX_RECONNECT_ATTEMPTS, on_error
