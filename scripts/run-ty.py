@@ -794,13 +794,15 @@ def get_hints(output: TyOutput) -> Sequence[str]:
                         " changing package dependencies."
                     ),
                     (
-                        "If you have added dependencies to an existing package, run"
-                        " `just rebuild_ty_pins` to rebuild and update the"
-                        " dependencies of the ty venv."
+                        "If you have changed the dependencies of an existing package, run"
+                        " `just rebuild_ty_pins` to relock and rebuild the ty venvs so they"
+                        " pick up the new dependency tree."
                     ),
                     (
-                        "If you have added an entirely new package, add it to"
-                        " ty/master/pyproject.toml and then run `just rebuild_ty_pins`."
+                        "If you have added an entirely new package, add it to the relevant ty"
+                        " environment's pyproject.toml first (the dependency source-of-truth"
+                        " is the pyproject.toml in each env dir, e.g. ty/internal/pyproject.toml"
+                        " for internal packages), then run `just rebuild_ty_pins`."
                     ),
                 ]
             )
