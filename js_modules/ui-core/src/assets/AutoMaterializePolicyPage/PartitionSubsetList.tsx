@@ -1,9 +1,12 @@
 import {
   Box,
   Colors,
+  Container,
+  Inner,
   Menu,
   MenuItem,
   MiddleTruncate,
+  Row,
   SpinnerWithText,
   TextInput,
 } from '@dagster-io/ui-components';
@@ -19,7 +22,6 @@ import {
   PartitionSubsetListQueryVariables,
 } from './types/PartitionSubsetListQuery.types';
 import {useQuery} from '../../apollo-client';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props {
   description: string;
@@ -111,12 +113,12 @@ export const PartitionSubsetList = ({
         >
           <Container ref={container}>
             <Menu>
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {virtualItems.map(({index, key, size, start}) => {
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const partitionKey = filteredKeys[index]!;
                   return (
-                    <Row $height={size} $start={start} key={key}>
+                    <Row height={size} start={start} key={key}>
                       <MenuItem
                         onClick={() => {
                           if (selectPartition) {

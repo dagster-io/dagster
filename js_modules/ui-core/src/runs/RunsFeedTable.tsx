@@ -1,8 +1,11 @@
 import {
   Alert,
   Box,
+  Container,
   CursorHistoryControls,
   CursorPaginationProps,
+  Inner,
+  Row,
   SpinnerWithText,
   Text,
   ifPlural,
@@ -28,7 +31,6 @@ import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {numberFormatter} from '../ui/formatters';
 
 interface RunsFeedTableProps {
@@ -213,14 +215,14 @@ export const RunsFeedTable = ({
               <SpinnerWithText label="Loading runs…" />
             </Box>
           )}
-          <Inner $totalHeight={totalHeight}>
+          <Inner totalHeight={totalHeight}>
             {items.map(({index, size, start, key}) => {
               const entry = entries[index];
               if (!entry) {
                 return <span key={key} />;
               }
               return (
-                <Row $height={size} $start={start} data-key={key} key={key}>
+                <Row height={size} start={start} data-key={key} key={key}>
                   <div ref={rowVirtualizer.measureElement} data-index={index}>
                     <RunsFeedRow
                       key={key}

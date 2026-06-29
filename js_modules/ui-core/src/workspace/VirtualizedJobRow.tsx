@@ -1,4 +1,11 @@
-import {Box, MiddleTruncate, useDelayedState} from '@dagster-io/ui-components';
+import {
+  Box,
+  HeaderCell,
+  HeaderRow,
+  MiddleTruncate,
+  RowCell,
+  useDelayedState,
+} from '@dagster-io/ui-components';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -15,7 +22,6 @@ import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {RunStatusPezList} from '../runs/RunStatusPez';
-import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
 

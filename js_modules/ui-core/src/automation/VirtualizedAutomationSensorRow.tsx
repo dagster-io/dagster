@@ -2,6 +2,7 @@ import {
   Box,
   Checkbox,
   MiddleTruncate,
+  RowCell,
   Tag,
   Tooltip,
   useDelayedState,
@@ -22,7 +23,6 @@ import {
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
-import {RowCell} from '../ui/VirtualizedTable';
 import {SENSOR_TYPE_META, SINGLE_SENSOR_QUERY} from '../workspace/VirtualizedSensorRow';
 import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 import {RepoAddress} from '../workspace/types';

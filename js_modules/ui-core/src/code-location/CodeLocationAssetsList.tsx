@@ -1,8 +1,13 @@
 import {
   Box,
   Colors,
+  Container,
+  HeaderCell,
+  HeaderRow,
   Icon,
+  Inner,
   NonIdealState,
+  Row,
   SpinnerWithText,
   Tag,
   TextInput,
@@ -16,7 +21,6 @@ import styles from './css/CodeLocationAssetsList.module.css';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useAssetSearch} from '../assets/useAssetSearch';
-import {Container, HeaderCell, HeaderRow, Inner, Row} from '../ui/VirtualizedTable';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {useRepository} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -107,7 +111,7 @@ export const CodeLocationAssetsList = ({repoAddress, expandAllGroups = false}: P
         <HeaderRow templateColumns="1fr" sticky>
           <HeaderCell>Name</HeaderCell>
         </HeaderRow>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {virtualItems.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const item = flattened[index]!;
@@ -128,7 +132,7 @@ export const CodeLocationAssetsList = ({repoAddress, expandAllGroups = false}: P
 
             const {path} = item.definition.assetKey;
             return (
-              <Row key={key} $height={size} $start={start}>
+              <Row key={key} height={size} start={start}>
                 <SearchableListRow
                   iconName="asset"
                   label={displayNameForAssetKey({path})}
@@ -177,8 +181,8 @@ const GroupNameRow = (props: GroupNameRowProps) => {
         !expanded && styles.clickableRowCollapsed,
         !canToggle && styles.notToggleable,
       )}
-      $height={height}
-      $start={start}
+      height={height}
+      start={start}
       onClick={() => canToggle && onToggle(groupName)}
       tabIndex={0}
       onKeyDown={(e) => {

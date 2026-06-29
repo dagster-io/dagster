@@ -1,4 +1,11 @@
-import {Box, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
+import {
+  Box,
+  HeaderCell,
+  HeaderRow,
+  JoinedButtons,
+  MiddleTruncate,
+  RowCell,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -16,7 +23,6 @@ import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
-import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import styles from './css/VirtualizedCodeLocationRow.module.css';
 
 export type CodeLocationRowType =

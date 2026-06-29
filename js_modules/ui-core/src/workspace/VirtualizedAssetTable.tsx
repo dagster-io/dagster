@@ -1,3 +1,4 @@
+import {Container, Inner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -11,7 +12,6 @@ import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
-import {Container, Inner} from '../ui/VirtualizedTable';
 
 type Row =
   | {type: 'asset'; path: string[]; displayKey: string; asset: AssetTableFragment}
@@ -78,7 +78,7 @@ export const VirtualizedAssetTable = (props: Props) => {
       <IndeterminateLoadingBar $loading={isLoading} />
       <Container ref={parentRef}>
         <VirtualizedAssetCatalogHeader headerCheckbox={headerCheckbox} view={view} />
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: Row = rows[index]!;

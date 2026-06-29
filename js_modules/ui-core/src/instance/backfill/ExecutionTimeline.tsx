@@ -1,4 +1,4 @@
-import {Box, Colors, Spinner, Text, useViewport} from '@dagster-io/ui-components';
+import {Box, Colors, Container, Inner, Spinner, Text, useViewport} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -16,7 +16,6 @@ import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from '../../runs/batchRunsForTimeline';
 import {mergeStatusToBackground} from '../../runs/mergeStatusToBackground';
-import {Container, Inner} from '../../ui/VirtualizedTable';
 
 const {DATE_TIME_HEIGHT, ONE_HOUR_MSEC, EMPTY_STATE_HEIGHT, LEFT_SIDE_SPACE_ALLOTTED} = CONSTANTS;
 
@@ -73,7 +72,7 @@ export const ExecutionTimeline = (props: Props) => {
       {runs.length ? (
         <div ref={measureRef} style={{overflow: 'hidden', position: 'relative'}}>
           <Container ref={parentRef}>
-            <Inner $totalHeight={totalHeight}>
+            <Inner totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => (
                 <ExecutionTimelineRow
                   key={key}

@@ -2,7 +2,9 @@ import {
   Box,
   ButtonLink,
   Colors,
+  Container,
   HeaderCell,
+  HeaderRow,
   Heading,
   Icon,
   Inner,
@@ -29,7 +31,6 @@ import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/Evalua
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {globalAssetGraphPathForGroup} from '../assets/globalAssetGraphPathToString';
 import {AssetKeyInput} from '../graphql/types';
-import {Container, HeaderRow} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const TEMPLATE_COLUMNS = '30% 17% 53%';

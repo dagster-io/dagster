@@ -1,4 +1,14 @@
-import {Box, Icon, useDelayedState} from '@dagster-io/ui-components';
+import {
+  Box,
+  Container,
+  HeaderCell,
+  HeaderRow,
+  Icon,
+  Inner,
+  Row,
+  RowCell,
+  useDelayedState,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -10,7 +20,6 @@ import {
   SingleConcurrencyKeyQueryVariables,
 } from './types/VirtualizedInstanceConcurrencyTable.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 
 const POOL_TEMPLATE_COLUMNS = '1fr 1fr';
@@ -32,7 +41,7 @@ export const ConcurrencyTable = ({concurrencyKeys}: {concurrencyKeys: string[]})
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
         <ConcurrencyHeader />
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const concurrencyKey = concurrencyKeys[index]!;
@@ -85,7 +94,7 @@ const ConcurrencyRow = ({
 
   const path = `/deployment/concurrency/${encodeURIComponent(concurrencyKey)}`;
   return (
-    <Row $height={height} $start={start}>
+    <Row height={height} start={start}>
       <Box className={styles.rowGrid} border="bottom">
         <RowCell>
           <Box flex={{gap: 4, alignItems: 'center'}}>

@@ -2,8 +2,12 @@ import {
   Box,
   Checkbox,
   Colors,
+  HeaderCell,
+  HeaderRow,
   IconName,
   MiddleTruncate,
+  Row,
+  RowCell,
   Tag,
   Text,
   Tooltip,
@@ -34,7 +38,6 @@ import {
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.5fr 180px 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
@@ -137,7 +140,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
       : null;
 
   return (
-    <Row $height={height} $start={start}>
+    <Row height={height} start={start}>
       <Box
         border="bottom"
         className={styles.rowGrid}

@@ -1,4 +1,13 @@
-import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Container,
+  Icon,
+  Inner,
+  Row,
+  Skeleton,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -9,7 +18,6 @@ import {useFeatureFlags} from '../../app/useFeatureFlags';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {invariant} from '../../util/invariant';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
@@ -300,7 +308,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                 }
               }}
             >
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
                   const node = renderedNodes[index];
                   invariant(node, 'Sidebar node is required');
@@ -313,7 +321,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   invariant(row, 'Row for sidebar node is required');
 
                   return (
-                    <Row $height={size} $start={start} key={key}>
+                    <Row height={size} start={start} key={key}>
                       <div data-index={index} ref={rowVirtualizer.measureElement}>
                         <AssetSidebarNode
                           isOpen={openNodes.has(nodePathKey(node))}

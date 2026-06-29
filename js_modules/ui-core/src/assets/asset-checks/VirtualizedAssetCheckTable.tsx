@@ -1,4 +1,13 @@
-import {Box, Text} from '@dagster-io/ui-components';
+import {
+  Box,
+  Container,
+  HeaderCell,
+  HeaderRow,
+  Inner,
+  Row,
+  RowCell,
+  Text,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -13,7 +22,6 @@ import {gql} from '../../apollo-client';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
-import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 type Props = {
@@ -39,7 +47,7 @@ export const VirtualizedAssetCheckTable = ({assetNode, rows}: Props) => {
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
         <VirtualizedAssetCheckHeader />
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: AssetCheckTableFragment = rows[index]!;
@@ -73,7 +81,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
   const timestamp = execution?.evaluation?.timestamp;
 
   return (
-    <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
+    <Row height={height} start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
       <Box className={styles.rowGrid} border="bottom">
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
