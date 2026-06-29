@@ -58,7 +58,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         message_reader: PipesMessageReader | None = None,
         forward_termination: bool = True,
         poll_interval: float = 5.0,
-        dashboard_refresh_interval: Optional[float] = 3300.0,
+        dashboard_refresh_interval: float | None = 3300.0,
     ):
         self._client: EMRServerlessClient = cast(
             "EMRServerlessClient", client or boto3.client("emr-serverless")
@@ -67,7 +67,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
         self.poll_interval = poll_interval
-        self.dashboard_refresh_interval = check.opt_numeric_param(dashboard_refresh_interval, "dashboard_refresh_interval")
+        self.dashboard_refresh_interval = check.opt_numeric_param(
+            dashboard_refresh_interval, "dashboard_refresh_interval"
+        )
 
     @property
     def client(self) -> "EMRServerlessClient":

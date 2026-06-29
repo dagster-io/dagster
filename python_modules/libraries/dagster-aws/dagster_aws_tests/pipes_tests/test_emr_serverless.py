@@ -85,6 +85,7 @@ def test_emr_serverless_manual(emr_serverless_setup: tuple["EMRServerlessClient"
 
 def test_emr_serverless_dashboard_refresh():
     from unittest.mock import MagicMock, patch
+
     from dagster_aws.pipes import PipesEMRServerlessClient
 
     client = MagicMock()
@@ -106,10 +107,34 @@ def test_emr_serverless_dashboard_refresh():
     mock_time_module.sleep.side_effect = mock_sleep
 
     client.get_job_run.side_effect = [
-        {"jobRun": {"state": "RUNNING", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
-        {"jobRun": {"state": "RUNNING", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
-        {"jobRun": {"state": "RUNNING", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
-        {"jobRun": {"state": "SUCCESS", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "SUCCESS",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
     ]
 
     client.get_dashboard_for_job_run.return_value = "http://mock-spark-ui-url"
@@ -126,14 +151,16 @@ def test_emr_serverless_dashboard_refresh():
                         "entryPoint": "s3://my-bucket/my-script.py",
                     }
                 },
-            }
+                "clientToken": str(uuid4()),
+            },
         ).get_results()
 
-    with patch.object(PipesEMRServerlessClient, "_read_messages"), \
-         patch.object(PipesEMRServerlessClient, "_extract_dagster_metadata", return_value={}), \
-         patch("dagster_aws.pipes.clients.emr_serverless.time", mock_time_module), \
-         instance_for_test() as instance:
-
+    with (
+        patch.object(PipesEMRServerlessClient, "_read_messages"),
+        patch.object(PipesEMRServerlessClient, "_extract_dagster_metadata", return_value={}),
+        patch("dagster_aws.pipes.clients.emr_serverless.time", mock_time_module),
+        instance_for_test() as instance,
+    ):
         materialize(
             [my_asset],
             resources={
@@ -151,17 +178,42 @@ def test_emr_serverless_dashboard_refresh():
     client.get_dashboard_for_job_run.reset_mock()
     current_time[0] = 0.0
     client.get_job_run.side_effect = [
-        {"jobRun": {"state": "RUNNING", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
-        {"jobRun": {"state": "RUNNING", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
-        {"jobRun": {"state": "RUNNING", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
-        {"jobRun": {"state": "SUCCESS", "applicationId": "test-app-id", "jobRunId": "test-job-run-id"}},
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "SUCCESS",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
     ]
 
-    with patch.object(PipesEMRServerlessClient, "_read_messages"), \
-         patch.object(PipesEMRServerlessClient, "_extract_dagster_metadata", return_value={}), \
-         patch("dagster_aws.pipes.clients.emr_serverless.time", mock_time_module), \
-         instance_for_test() as instance:
-
+    with (
+        patch.object(PipesEMRServerlessClient, "_read_messages"),
+        patch.object(PipesEMRServerlessClient, "_extract_dagster_metadata", return_value={}),
+        patch("dagster_aws.pipes.clients.emr_serverless.time", mock_time_module),
+        instance_for_test() as instance,
+    ):
         materialize(
             [my_asset],
             resources={
@@ -175,6 +227,3 @@ def test_emr_serverless_dashboard_refresh():
         )
 
     assert client.get_dashboard_for_job_run.call_count == 2
-
-
-
