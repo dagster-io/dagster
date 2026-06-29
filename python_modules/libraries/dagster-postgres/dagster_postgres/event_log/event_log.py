@@ -94,12 +94,12 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         )
         self._token_provider = token_provider
 
-        # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_pg_engine(
             self.postgres_url,
             self._token_provider,
             isolation_level="AUTOCOMMIT",
-            poolclass=db_pool.NullPool,
+            poolclass=db_pool.QueuePool,
+            pool_size=3,
         )
         self._event_watcher: SqlPollingEventWatcher | None = None
 
@@ -171,7 +171,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         conn_string: str, should_autocreate_tables: bool = True
     ) -> "PostgresEventLogStorage":
         engine = create_engine(
-            conn_string, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
+            conn_string, 
+            isolation_level="AUTOCOMMIT", 
+            poolclass=db_pool.QueuePool,
+            pool_size=3,
         )
         try:
             SqlEventLogStorageMetadata.drop_all(engine)
