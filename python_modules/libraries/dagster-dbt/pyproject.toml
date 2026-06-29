@@ -13,7 +13,7 @@ dependencies = [
     "dagster==1!0+dev",
     # Follow the version support constraints for dbt Core:
     # https://docs.getdbt.com/docs/dbt-versions/core
-    "dbt-core>=1.7,<1.12",
+    "dbt-core>=1.7.0,<2.0.0",
     "gitpython",
     "Jinja2",
     "networkx",
