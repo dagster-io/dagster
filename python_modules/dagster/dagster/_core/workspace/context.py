@@ -1052,6 +1052,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
         shutdown_event, watch_thread = create_grpc_watch_thread(
             location_name,
             client,
+            get_location_entry=self._get_location_entry_without_locking,
+            refresh_code_location=self.refresh_code_location,
             on_updated=lambda location_name, new_server_id: self._send_state_event_to_subscribers(
                 LocationStateChangeEvent(
                     LocationStateChangeEventType.LOCATION_UPDATED,
@@ -1068,6 +1070,20 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                         "Unable to reconnect to server. You can reload the server once it is "
                         "reachable again"
                     ),
+                )
+            ),
+            on_disconnect=lambda location_name: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_DISCONNECTED,
+                    location_name=location_name,
+                    message="Disconnected from the server.",
+                )
+            ),
+            on_reconnected=lambda location_name: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_RECONNECTED,
+                    location_name=location_name,
+                    message="Reconnected to the server.",
                 )
             ),
         )
@@ -1165,6 +1181,16 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
                 and self._current_workspace.code_location_entries[location_name].load_error
                 is not None
             )
+
+    def _get_location_entry_without_locking(self, location_name: str) -> CodeLocationEntry | None:
+        """Get the current location entry record (if it exists) without locking.
+
+        Called from the watch thread without holding self._lock. This is safe because
+        _current_workspace is replaced atomically (single reference assignment) and we only need a
+        consistent-enough snapshot — correctness doesn't depend on reading the latest value.
+        """
+        check.str_param(location_name, "location_name")
+        return self._current_workspace.code_location_entries.get(location_name)
 
     def reload_code_location(self, name: str) -> None:
         new_entry = self._load_location(
