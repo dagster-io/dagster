@@ -237,9 +237,8 @@ def _get_mapping_from_entity_subsets(
     entity_subsets_by_key = {es.key: es for es in entity_subsets}
     for key in entity_subsets_by_key:
         if isinstance(key, AssetCheckKey) and key.asset_key in entity_subsets_by_key:
-            # all asset checks are currently unpartitioned, so ensure that they get grouped
-            # into a run with the asset they check if that asset is being requested this
-            # tick
+            # group a check into the same run as the asset it checks when that asset is also
+            # being requested this tick, using the asset's partitioning
             partitions_def = asset_graph.get(key.asset_key).partitions_def
             subset = entity_subsets_by_key[key.asset_key]
         else:
@@ -247,8 +246,18 @@ def _get_mapping_from_entity_subsets(
             subset = entity_subsets_by_key[key]
 
         if partitions_def:
-            for asset_partition in subset.expensively_compute_asset_partitions():
-                mapping[partitions_def, asset_partition.partition_key].add(key)
+            # a subset keyed on an asset check (a partitioned check requested without its
+            # asset) cannot be expanded into AssetKeyPartitionKeys, but the mapping only needs
+            # the partition keys, which can be read off any entity subset
+            if isinstance(subset.key, AssetKey):
+                partition_keys = {
+                    asset_partition.partition_key
+                    for asset_partition in subset.expensively_compute_asset_partitions()
+                }
+            else:
+                partition_keys = subset.expensively_compute_partition_keys()
+            for partition_key in partition_keys:
+                mapping[partitions_def, partition_key].add(key)
         else:
             mapping[partitions_def, None].add(key)
 
