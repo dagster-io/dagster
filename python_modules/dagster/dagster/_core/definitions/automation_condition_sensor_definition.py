@@ -8,7 +8,7 @@ from dagster._core.definitions.asset_selection import AssetSelection, CoercibleT
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata import IntMetadataValue, RawMetadataMapping
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
@@ -24,6 +24,7 @@ from dagster._utils.tags import normalize_tags
 
 MAX_ENTITIES = 500
 EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
+MAX_ENTITIES_PER_RUN_METADATA_KEY = "dagster/max_entities_per_run"
 DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME = "default_automation_condition_sensor"
 
 
@@ -53,6 +54,7 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         asset_selection=sensor_def.asset_selection,
         emit_backfills=sensor_def.emit_backfills,
         default_condition=sensor_def.default_condition,
+        max_entities_per_run=sensor_def.max_entities_per_run,
         logger=context.log,
     )
     if evaluation_context.total_keys > MAX_ENTITIES:
@@ -81,6 +83,7 @@ def not_supported(context) -> None:
 @public
 @beta_param(param="use_user_code_server")
 @beta_param(param="default_condition")
+@beta_param(param="max_entities_per_run")
 class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
     """Targets a set of assets and repeatedly evaluates all the AutomationConditions on all of
     those assets to determine which to request runs for.
@@ -102,6 +105,11 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         description (Optional[str]): A human-readable description of the sensor.
         emit_backfills (bool): If set to True, will emit a backfill on any tick where more than one partition
             of any single asset is requested, rather than individual runs. Defaults to True.
+        max_entities_per_run (Optional[int]): (Beta) If set, runs launched by this sensor will
+            target at most this many assets or checks each. Entities requested on the same
+            evaluation beyond this limit are split into additional runs deterministically. Asset
+            checks are always kept in the same run as the asset they target. Does not apply to
+            backfills emitted when `emit_backfills` is set to True.
         use_user_code_server (bool): (Beta) If set to True, this sensor will be evaluated in the user
             code server, rather than the AssetDaemon. This enables evaluating custom AutomationCondition
             subclasses, and ensures that the condition definitions will remain in sync with your user code
@@ -159,9 +167,19 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         emit_backfills: bool = True,
         use_user_code_server: bool = False,
         default_condition: AutomationCondition | None = None,
+        max_entities_per_run: int | None = None,
     ):
         self._use_user_code_server = use_user_code_server
         check.bool_param(emit_backfills, "allow_backfills")
+
+        self._max_entities_per_run = check.opt_int_param(
+            max_entities_per_run, "max_entities_per_run"
+        )
+        check.param_invariant(
+            self._max_entities_per_run is None or self._max_entities_per_run > 0,
+            "max_entities_per_run",
+            "`max_entities_per_run` must be a positive integer.",
+        )
 
         self._default_condition = check.opt_inst_param(
             default_condition, "default_condition", AutomationCondition
@@ -179,6 +197,14 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         # only store this value in the metadata if it's True
         if emit_backfills:
             metadata = {**(metadata or {}), EMIT_BACKFILLS_METADATA_KEY: True}
+
+        # stored in metadata so that the value is accessible to the AssetDaemon when this
+        # sensor is not evaluated in the user code server
+        if self._max_entities_per_run is not None:
+            metadata = {
+                **(metadata or {}),
+                MAX_ENTITIES_PER_RUN_METADATA_KEY: self._max_entities_per_run,
+            }
 
         super().__init__(
             name=check_valid_name(name),
@@ -208,6 +234,11 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         return EMIT_BACKFILLS_METADATA_KEY in self.metadata
 
     @property
+    def max_entities_per_run(self) -> int | None:
+        value = self.metadata.get(MAX_ENTITIES_PER_RUN_METADATA_KEY)
+        return value.value if isinstance(value, IntMetadataValue) else None
+
+    @property
     def default_condition(self) -> AutomationCondition | None:
         return self._default_condition
 
@@ -229,6 +260,7 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         emit_backfills: bool,
         use_user_code_server: bool,
         default_condition: AutomationCondition | None,
+        max_entities_per_run: int | None = None,
     ) -> "AutomationConditionSensorDefinition":
         return AutomationConditionSensorDefinition(
             name=name,
@@ -242,6 +274,7 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
             emit_backfills=emit_backfills,
             use_user_code_server=use_user_code_server,
             default_condition=default_condition,
+            max_entities_per_run=max_entities_per_run,
         )
 
     def with_attributes(
@@ -266,4 +299,5 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
             emit_backfills=self._emit_backfills,
             use_user_code_server=self._use_user_code_server,
             default_condition=self._default_condition,
+            max_entities_per_run=self._max_entities_per_run,
         )
