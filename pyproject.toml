@@ -94,6 +94,10 @@ exclude = ["*.ipynb"]
 # Project-scaffold templates; the PROJECT_NAME_PLACEHOLDER is substituted at generation time.
 "**/templates/PROJECT_NAME_PLACEHOLDER/**/__init__.py" = ["INP001"]
 
+# User-facing connectivity reproduction script shown verbatim in the docs; print is the
+# intended output channel and the dagster-cloud API config is read off the instance.
+"examples/docs_snippets/docs_snippets/deployment/dagster_plus/hybrid/test_connection.py" = ["T201", "SLF001"]
+
 # yaml_utils implements the wrapped loader; test_yaml asserts the bare yaml.safe_load behavior for comparison.
 "python_modules/libraries/dagster-shared/dagster_shared/yaml_utils/__init__.py" = ["TID251"]
 "python_modules/libraries/dagster-shared/dagster_shared_tests/test_yaml.py" = ["TID251"]
