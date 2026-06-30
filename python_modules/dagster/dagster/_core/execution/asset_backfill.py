@@ -1661,6 +1661,7 @@ def _execute_asset_backfill_iteration_inner(
         asset_partitions=asset_partitions_to_request,
         asset_graph=asset_graph,
         dynamic_partitions_store=instance_queryer,
+        resolve_check_keys_enabled=instance_queryer.instance.automation_resolve_asset_check_keys_enabled(),
     )
     if run_config is not None:
         run_requests = [rr._replace(run_config=run_config) for rr in run_requests]
