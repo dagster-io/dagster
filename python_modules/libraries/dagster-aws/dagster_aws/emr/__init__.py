@@ -1,6 +1,8 @@
 from dagster_aws.emr.emr import (
     EmrError as EmrError,
     EmrJobRunner as EmrJobRunner,
+    FailureLogConfig as FailureLogConfig,
+    StepFailureDiagnostics as StepFailureDiagnostics,
 )
 from dagster_aws.emr.pyspark_step_launcher import (
     emr_pyspark_step_launcher as emr_pyspark_step_launcher,
