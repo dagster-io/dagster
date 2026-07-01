@@ -275,20 +275,17 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event_id = None
 
             # mirror the event in the cross-run index database
-            with (
-                self.index_connection() as conn,
-                db_result(conn, insert_event_statement) as result,
-            ):
-                event_id = result.inserted_primary_key[0]
+            with self.index_transaction() as conn:
+                with db_result(conn, insert_event_statement) as result:
+                    event_id = result.inserted_primary_key[0]
 
-            self.store_asset_event(event, event_id)
+                if event_id is None:
+                    raise DagsterInvariantViolationError(
+                        "Cannot store asset event tags for null event id."
+                    )
 
-            if event_id is None:
-                raise DagsterInvariantViolationError(
-                    "Cannot store asset event tags for null event id."
-                )
-
-            self.store_asset_event_tags([event], [event_id])
+                self._store_asset_event_tags(conn, [event], [event_id])
+                self._store_asset_event(conn, event, event_id)
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             # mirror the event in the cross-run index database
