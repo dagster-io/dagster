@@ -58,6 +58,144 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     def can_wipe_asset_partitions(self) -> bool:
         return False
 
+    def test_store_planned_events_batch_on_conflict_updates_asset_keys(self, conn_string):
+        """Postgres-specific: re-running a batch of ASSET_MATERIALIZATION_PLANNED events for
+        an asset key that already has a row in AssetKeyTable should *update* the existing row
+        via ON CONFLICT DO UPDATE rather than fail or insert a duplicate. This exercises the
+        upsert path that the shared sqlite/in-memory inherited tests do not cover (those
+        storages fall through to the base per-event loop).
+        """
+        import dagster as dg
+        from dagster._core.events import (
+            AssetMaterializationPlannedData,
+            DagsterEvent,
+            DagsterEventType,
+        )
+        from dagster._core.events.log import EventLogEntry
+        from dagster._core.storage.event_log.schema import AssetKeyTable
+
+        with _clean_storage(conn_string) as storage:
+            asset_key = dg.AssetKey(["pg_planned_conflict"])
+            first_run_id = make_new_run_id()
+            second_run_id = make_new_run_id()
+
+            def _planned_event(run_id):
+                return EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(asset_key),
+                    ),
+                )
+
+            storage.store_event_batch([_planned_event(first_run_id)])
+
+            records = storage.get_asset_records([asset_key])
+            assert len(records) == 1
+            assert records[0].asset_entry.last_run_id == first_run_id
+
+            # Second batch for the same key must UPDATE (not raise IntegrityError, not duplicate)
+            storage.store_event_batch([_planned_event(second_run_id)])
+
+            with storage.index_connection() as conn:
+                row_count = conn.execute(
+                    AssetKeyTable.select().where(AssetKeyTable.c.asset_key == asset_key.to_string())
+                ).rowcount
+            assert row_count == 1
+
+            records = storage.get_asset_records([asset_key])
+            assert len(records) == 1
+            assert records[0].asset_entry.last_run_id == second_run_id
+
+    def test_store_planned_events_batch_chunks_check_execution_rows(self, conn_string, monkeypatch):
+        """Postgres-specific: the asset_check_executions bulk INSERT fans out to one row
+        per (event x partition), so the row count can exceed PG's 65_535 bind-parameter
+        ceiling even when the *event* count is under DAGSTER_PLANNED_EVENT_CHUNK_SIZE.
+        Verify the storage layer chunks by row count and still produces the full set.
+        """
+        import dagster as dg
+        import dagster_postgres.event_log.event_log as pg_event_log
+        from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+            AssetCheckEvaluationPlanned,
+        )
+        from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+        from dagster._core.events import DagsterEvent, DagsterEventType
+        from dagster._core.events.log import EventLogEntry
+
+        # Squeeze the row cap so we don't have to allocate 8k partitions in a test.
+        monkeypatch.setattr(pg_event_log, "_CHECK_EXECUTION_ROWS_PER_INSERT", 3)
+
+        partition_keys = ["p1", "p2", "p3", "p4", "p5", "p6", "p7"]
+        partitions_def = StaticPartitionsDefinition(partition_keys)
+        partitions_subset = partitions_def.subset_with_partition_keys(partition_keys)
+
+        with _clean_storage(conn_string) as storage:
+            run_id = make_new_run_id()
+            check_key = dg.AssetCheckKey(dg.AssetKey(["pg_chunk_check"]), "c")
+            event = EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluationPlanned(
+                        asset_key=check_key.asset_key,
+                        check_name=check_key.name,
+                        partitions_subset=partitions_subset,
+                    ),
+                ),
+            )
+
+            storage.store_event_batch([event])
+
+            history = storage.get_asset_check_execution_history(check_key, limit=20)
+            assert len(history) == 7
+            assert {r.partition for r in history} == set(partition_keys)
+
+    def test_store_planned_events_batch_rolls_back_on_partial_failure(self, conn_string):
+        """Postgres-specific: if the asset-check-execution insert fails mid-batch, the
+        wrapping transaction must roll back so that no event-log rows are committed.
+        The outer `_store_and_notify` fallback then re-runs per-event without producing
+        duplicate rows.
+        """
+        from dagster._core.events import DagsterEvent, DagsterEventType
+        from dagster._core.events.log import EventLogEntry
+
+        with _clean_storage(conn_string) as storage:
+            run_id = make_new_run_id()
+
+            # Build a planned check event with malformed event_specific_data (None)
+            # so the bulk check-execution insert raises mid-transaction. The event-log
+            # bulk insert should not be visible after the rollback.
+            bad_event = EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=None,  # forces the check insert helper to raise
+                ),
+            )
+
+            with pytest.raises(Exception):
+                storage.store_event_batch([bad_event])
+
+            records = storage.get_records_for_run(
+                run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+            ).records
+            assert records == []
+
     def test_event_log_storage_two_watchers(self, conn_string):
         with _clean_storage(conn_string) as storage:
             run_id = make_new_run_id()
