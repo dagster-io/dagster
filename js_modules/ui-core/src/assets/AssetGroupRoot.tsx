@@ -81,7 +81,7 @@ export const AssetGroupRoot = ({
           `/lineage/${node.assetKey.path.map(encodeURIComponent).join('/')}`,
         );
       } else {
-        path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
+        path = assetDetailsPathForKey(node.assetKey, {view: 'overview'});
       }
       if (e.metaKey) {
         openInNewTab(path);

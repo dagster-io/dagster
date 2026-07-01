@@ -1,10 +1,13 @@
 import qs from 'qs';
 
-import {AssetViewParams} from './types';
+import {AssetViewParams, AssetViewTab} from './types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
-export const decode = ({lineageDepth, showAllEvents, ...rest}: qs.ParsedQs) => {
+export const decode = ({lineageDepth, showAllEvents, view, ...rest}: qs.ParsedQs) => {
   const result: AssetViewParams = {...rest};
+  if (typeof view === 'string') {
+    result.view = view as AssetViewTab;
+  }
   if (typeof lineageDepth === 'string') {
     result.lineageDepth = Number(lineageDepth);
   }
