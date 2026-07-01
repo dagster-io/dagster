@@ -1,8 +1,8 @@
 import os
+import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
-from distutils import spawn
 from pathlib import Path
 
 import click
@@ -19,9 +19,9 @@ def check_output(cmd: list[str], dry_run: bool = True, cwd: str | None = None) -
 
 
 def which_(exe: str) -> str | None:
-    """Uses distutils to look for an executable, mimicking unix which."""
-    # https://github.com/PyCQA/pylint/issues/73
-    return spawn.find_executable(exe)
+    """Uses shutil to look for an executable, mimicking unix which."""
+    # Replaced distutils.spawn with shutil.which for Python 3.12+ compatibility
+    return shutil.which(exe)
 
 
 def all_equal(iterable: Iterable[object]) -> bool:
