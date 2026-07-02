@@ -34,6 +34,12 @@ pandas = [
     "pandas<3.0.0",
     "snowflake-connector-python[pandas]>=3.4.0",
 ]
+# [dbt] enables the SnowflakeDbtProjectComponent, which runs a dbt project natively
+# on Snowflake (dbt Projects on Snowflake). Only the manifest -> AssetSpec translation
+# logic from dagster-dbt is used; dbt-core is never executed locally.
+dbt = [
+    "dagster-dbt==1!0+dev",
+]
 
 [dependency-groups]
 test = [
@@ -41,6 +47,7 @@ test = [
     "dagster-pipes",
     "dagster-shared",
     "dagster-pandas",
+    "dagster-dbt",
 ]
 
 [tool.uv.sources]
@@ -48,3 +55,4 @@ dagster = { path = "../../dagster", editable = true }
 dagster-pipes = { path = "../../dagster-pipes", editable = true }
 dagster-shared = { path = "../dagster-shared", editable = true }
 dagster-pandas = { path = "../dagster-pandas", editable = true }
+dagster-dbt = { path = "../dagster-dbt", editable = true }
