@@ -1,10 +1,39 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type SelectedTickQueryVariables = Types.Exact<{
+export type DynamicPartitionsRequestType = 'ADD_PARTITIONS' | 'DELETE_PARTITIONS';
+
+export type InstigationSelector = {
+  name: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+};
+
+export type InstigationTickStatus = 'FAILURE' | 'SKIPPED' | 'STARTED' | 'SUCCESS';
+
+export type InstigationType = 'AUTO_MATERIALIZE' | 'SCHEDULE' | 'SENSOR';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
+
+export type SelectedTickQueryVariables = Exact<{
   instigationSelector: Types.InstigationSelector;
-  tickId: Types.Scalars['ID']['input'];
+  tickId: string;
 }>;
 
 export type SelectedTickQuery = {

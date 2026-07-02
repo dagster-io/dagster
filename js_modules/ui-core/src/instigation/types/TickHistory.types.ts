@@ -1,15 +1,44 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type TickHistoryQueryVariables = Types.Exact<{
+export type DynamicPartitionsRequestType = 'ADD_PARTITIONS' | 'DELETE_PARTITIONS';
+
+export type InstigationSelector = {
+  name: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+};
+
+export type InstigationTickStatus = 'FAILURE' | 'SKIPPED' | 'STARTED' | 'SUCCESS';
+
+export type InstigationType = 'AUTO_MATERIALIZE' | 'SCHEDULE' | 'SENSOR';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
+
+export type TickHistoryQueryVariables = Exact<{
   instigationSelector: Types.InstigationSelector;
-  dayRange?: Types.InputMaybe<Types.Scalars['Int']['input']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  statuses?: Types.InputMaybe<Array<Types.InstigationTickStatus> | Types.InstigationTickStatus>;
-  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
-  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  dayRange?: number | null | undefined;
+  limit?: number | null | undefined;
+  cursor?: string | null | undefined;
+  statuses?: Array<Types.InstigationTickStatus> | Types.InstigationTickStatus | null | undefined;
+  beforeTimestamp?: number | null | undefined;
+  afterTimestamp?: number | null | undefined;
 }>;
 
 export type TickHistoryQuery = {

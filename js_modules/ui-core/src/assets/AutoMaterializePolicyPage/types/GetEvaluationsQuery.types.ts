@@ -1,6 +1,25 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
+
+export type AssetCheckHandleInput = {
+  assetKey: AssetKeyInput;
+  name: string;
+};
+
+export type AssetConditionEvaluationStatus = 'FALSE' | 'SKIPPED' | 'TRUE';
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type AutoMaterializeDecisionType = 'DISCARD' | 'MATERIALIZE' | 'SKIP';
 
 export type EntityKeyFragment_AssetCheckhandle = {
   __typename: 'AssetCheckhandle';
@@ -833,11 +852,11 @@ export type AssetConditionEvaluationRecordFragment = {
   }>;
 };
 
-export type GetEvaluationsQueryVariables = Types.Exact<{
+export type GetEvaluationsQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
-  assetCheckKey?: Types.InputMaybe<Types.AssetCheckHandleInput>;
-  limit: Types.Scalars['Int']['input'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  assetCheckKey?: Types.AssetCheckHandleInput | null | undefined;
+  limit: number;
+  cursor?: string | null | undefined;
 }>;
 
 export type GetEvaluationsQuery = {
@@ -1323,11 +1342,11 @@ export type GetEvaluationsQuery = {
     | null;
 };
 
-export type GetSlimEvaluationsQueryVariables = Types.Exact<{
-  assetKey?: Types.InputMaybe<Types.AssetKeyInput>;
-  assetCheckKey?: Types.InputMaybe<Types.AssetCheckHandleInput>;
-  limit: Types.Scalars['Int']['input'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+export type GetSlimEvaluationsQueryVariables = Exact<{
+  assetKey?: Types.AssetKeyInput | null | undefined;
+  assetCheckKey?: Types.AssetCheckHandleInput | null | undefined;
+  limit: number;
+  cursor?: string | null | undefined;
 }>;
 
 export type GetSlimEvaluationsQuery = {
@@ -1798,10 +1817,10 @@ export type GetSlimEvaluationsQuery = {
     | null;
 };
 
-export type GetEvaluationsSpecificPartitionQueryVariables = Types.Exact<{
+export type GetEvaluationsSpecificPartitionQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
-  evaluationId: Types.Scalars['ID']['input'];
-  partition: Types.Scalars['String']['input'];
+  evaluationId: string;
+  partition: string;
 }>;
 
 export type GetEvaluationsSpecificPartitionQuery = {
@@ -2214,9 +2233,9 @@ export type AssetLastEvaluationFragment = {
   timestamp: number;
 };
 
-export type GetAssetEvaluationDetailsQueryVariables = Types.Exact<{
+export type GetAssetEvaluationDetailsQueryVariables = Exact<{
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
-  asOfEvaluationId: Types.Scalars['ID']['input'];
+  asOfEvaluationId: string;
 }>;
 
 export type GetAssetEvaluationDetailsQuery = {

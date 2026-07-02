@@ -1,10 +1,33 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type AssetCatalogTableQueryVariables = Types.Exact<{
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  limit: Types.Scalars['Int']['input'];
+export type AssetGroupSelector = {
+  groupName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+};
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type AssetCatalogTableQueryVariables = Exact<{
+  cursor?: string | null | undefined;
+  limit: number;
 }>;
 
 export type AssetCatalogTableQuery = {
@@ -90,8 +113,8 @@ export type AssetCatalogTableQuery = {
       };
 };
 
-export type AssetCatalogGroupTableQueryVariables = Types.Exact<{
-  group?: Types.InputMaybe<Types.AssetGroupSelector>;
+export type AssetCatalogGroupTableQueryVariables = Exact<{
+  group?: Types.AssetGroupSelector | null | undefined;
 }>;
 
 export type AssetCatalogGroupTableQuery = {

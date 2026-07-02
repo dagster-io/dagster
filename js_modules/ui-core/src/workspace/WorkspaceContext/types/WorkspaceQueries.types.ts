@@ -1,6 +1,39 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
+
+export type DefinitionsSource = 'CODE_SERVER' | 'CONNECTION';
+
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type RepositoryLocationLoadStatus = 'LOADED' | 'LOADING';
+
+export type SensorType =
+  | 'ASSET'
+  | 'AUTOMATION'
+  | 'AUTO_MATERIALIZE'
+  | 'FRESHNESS_POLICY'
+  | 'MULTI_ASSET'
+  | 'RUN_STATUS'
+  | 'STANDARD'
+  | 'UNKNOWN';
 
 export type WorkspaceDisplayMetadataFragment = {
   __typename: 'RepositoryMetadata';
@@ -751,8 +784,8 @@ export type WorkspaceLocationAssetsEntryFragment = {
     | null;
 };
 
-export type LocationWorkspaceQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceQuery = {
@@ -882,7 +915,7 @@ export type LocationWorkspaceQuery = {
     | null;
 };
 
-export type CodeLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;
+export type CodeLocationStatusQueryVariables = Exact<{[key: string]: never}>;
 
 export type CodeLocationStatusQuery = {
   __typename: 'Query';
@@ -901,8 +934,8 @@ export type CodeLocationStatusQuery = {
       };
 };
 
-export type LocationWorkspaceAssetsQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceAssetsQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceAssetsQuery = {
@@ -1033,15 +1066,15 @@ export type WorkspaceLocationAssetsManifestEntryFragment = {
           __typename: 'Repository';
           id: string;
           name: string;
-          assetManifest: any | null;
+          assetManifest: any;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
         }>;
       }
     | null;
 };
 
-export type LocationWorkspaceAssetsManifestQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceAssetsManifestQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceAssetsManifestQuery = {
@@ -1083,7 +1116,7 @@ export type LocationWorkspaceAssetsManifestQuery = {
                 __typename: 'Repository';
                 id: string;
                 name: string;
-                assetManifest: any | null;
+                assetManifest: any;
                 assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
               }>;
             }

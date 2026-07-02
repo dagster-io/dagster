@@ -1,6 +1,42 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
+
+export type AssetCheckCanExecuteIndividually =
+  | 'CAN_EXECUTE'
+  | 'NEEDS_USER_CODE_UPGRADE'
+  | 'REQUIRES_MATERIALIZATION';
+
+export type AssetCheckExecutionResolvedStatus =
+  | 'EXECUTION_FAILED'
+  | 'FAILED'
+  | 'IN_PROGRESS'
+  | 'SKIPPED'
+  | 'SUCCEEDED';
+
+export type AssetCheckPartitionRangeStatus =
+  | 'EXECUTION_FAILED'
+  | 'FAILED'
+  | 'IN_PROGRESS'
+  | 'SKIPPED'
+  | 'SUCCEEDED';
+
+export type AssetCheckSeverity = 'ERROR' | 'WARN';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
 
 export type AssetCheckTableFragment = {
   __typename: 'AssetCheck';
