@@ -116,6 +116,23 @@ def test_handle_output_nonempty_dataframe():
     mock_job.result.assert_called_once()
 
 
+def test_handle_output_preserve_column_case():
+    handler = BigQueryPandasTypeHandler()
+    df = pd.DataFrame({"Foo": ["a", "b"], "bar": [1, 2]})
+    connection = MagicMock()
+    output_context = build_output_context(resource_config={"uppercase_column_names": False})
+
+    handler.handle_output(
+        output_context,
+        TableSlice(table="my_table", schema="my_schema", database="my_db"),
+        df,
+        connection,
+    )
+
+    loaded_df = connection.load_table_from_dataframe.call_args.kwargs["dataframe"]
+    assert list(loaded_df.columns) == ["Foo", "bar"]
+
+
 @pytest.mark.skipif(
     not RUN_BUILDKITE_BIGQUERY_TESTS,
     reason="Requires Buildkite BigQuery credentials",
