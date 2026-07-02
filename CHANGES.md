@@ -331,6 +331,7 @@
 
 ### Bugfixes
 
+- [dagster-dbt] Fixed an issue where using dbt-fusion's `dbtf` executable (v2+) would silently cap materialized rows to 10. `DbtCliResource` now automatically injects `--limit 0` for materialization commands (`build`, `run`, `seed`, `snapshot`, `test`), including when the command is preceded by leading global flags, unless the caller has already supplied `--limit`.
 - Fixed an issue where a sensor targeting a job with `run_tags` and specifying an `asset_selection` in the `RunRequest` would not apply the job's `run_tags` to the resulting run.
 - Fixed a potential error in YAML config snapshot conversion when encountering `None` fields.
 - [dg] Fixed `dg plus deploy configure` generating a GitHub Action that used Docker instead of the PEX build strategy.
