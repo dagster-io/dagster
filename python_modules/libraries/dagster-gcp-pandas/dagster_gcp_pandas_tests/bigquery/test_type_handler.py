@@ -18,6 +18,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_input_context,
     build_output_context,
     fs_io_manager,
     instance_for_test,
@@ -131,6 +132,23 @@ def test_handle_output_preserve_column_case():
 
     loaded_df = connection.load_table_from_dataframe.call_args.kwargs["dataframe"]
     assert list(loaded_df.columns) == ["Foo", "bar"]
+
+
+def test_load_input_preserve_column_case():
+    handler = BigQueryPandasTypeHandler()
+    connection = MagicMock()
+    connection.query.return_value.to_dataframe.return_value = pd.DataFrame(
+        {"Foo": ["a", "b"], "bar": [1, 2]}
+    )
+    input_context = build_input_context(resource_config={"uppercase_column_names": False})
+
+    result = handler.load_input(
+        input_context,
+        TableSlice(table="my_table", schema="my_schema", database="my_db"),
+        connection,
+    )
+
+    assert list(result.columns) == ["Foo", "bar"]
 
 
 @pytest.mark.skipif(
