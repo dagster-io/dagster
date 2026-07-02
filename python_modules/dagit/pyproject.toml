@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagit"
-version = "1!0+dev"
+version = "1.13.12"
 description = "Web UI for dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 readme = "README.rst"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster-webserver==1!0+dev",
+    "dagster-webserver==1.13.12",
 ]
 
 [project.urls]
@@ -23,7 +23,7 @@ dagit-debug = "dagster_webserver.debug:main"
 
 [project.optional-dependencies]
 notebook = [
-    "dagster-webserver[notebook]==1!0+dev",
+    "dagster-webserver[notebook]==1.13.12",
 ]
 
 [dependency-groups]
@@ -34,7 +34,7 @@ test = [
     "dagster-graphql",
     "dagster-webserver",
     "objgraph",
-    "dagster-webserver[test]==1!0+dev",
+    "dagster-webserver[test]==1.13.12",
 ]
 
 [tool.uv.sources]

@@ -4,15 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-celery-docker"
-version = "1!0+dev"
+version = "0.29.12"
 description = "A Dagster integration for celery-docker"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
-    "dagster-celery==1!0+dev",
-    "dagster-graphql==1!0+dev",
+    "dagster==1.13.12",
+    "dagster-celery==0.29.12",
+    "dagster-graphql==1.13.12",
     "docker",
 ]
 

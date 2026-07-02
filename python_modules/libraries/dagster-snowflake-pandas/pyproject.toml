@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-snowflake-pandas"
-version = "1!0+dev"
+version = "0.29.12"
 description = "Package for integrating Snowflake and Pandas with Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
-    "dagster-snowflake==1!0+dev",
+    "dagster==1.13.12",
+    "dagster-snowflake==0.29.12",
     "pandas<3.0.0",
     "requests",
     "snowflake-connector-python[pandas]>=3.4.0",
