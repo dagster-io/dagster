@@ -310,10 +310,14 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._storage.run_storage.dispose()
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self,
+        statement_timeout: int,
+        pool_recycle: int,
+        max_overflow: int,
+        pool_pre_ping: bool = True,
     ) -> None:
         return self._storage.run_storage.optimize_for_webserver(
-            statement_timeout, pool_recycle, max_overflow
+            statement_timeout, pool_recycle, max_overflow, pool_pre_ping
         )
 
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
@@ -471,12 +475,17 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.dispose()
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self,
+        statement_timeout: int,
+        pool_recycle: int,
+        max_overflow: int,
+        pool_pre_ping: bool = True,
     ) -> None:
         return self._storage.event_log_storage.optimize_for_webserver(
             statement_timeout,
             pool_recycle,
             max_overflow,
+            pool_pre_ping,
         )
 
     def get_event_records(  # ty: ignore[invalid-method-override]
@@ -925,12 +934,17 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self,
+        statement_timeout: int,
+        pool_recycle: int,
+        max_overflow: int,
+        pool_pre_ping: bool = True,
     ) -> None:
         return self._storage.schedule_storage.optimize_for_webserver(
             statement_timeout,
             pool_recycle,
             max_overflow,
+            pool_pre_ping,
         )
 
     def dispose(self) -> None:
