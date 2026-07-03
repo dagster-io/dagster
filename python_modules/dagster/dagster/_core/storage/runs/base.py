@@ -230,10 +230,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
     @abstractmethod
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
-        """Check to see if storage contains a pipeline snapshot.
+        """Check to see if storage contains a job snapshot.
 
         Args:
-            pipeline_snapshot_id (str): The id of the run.
+            job_snapshot_id (str): The id of the job snapshot.
 
         Returns:
             bool

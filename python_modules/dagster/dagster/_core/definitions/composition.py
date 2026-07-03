@@ -902,7 +902,7 @@ def do_composition(
         config_mapping (Any): Config mapping provided to decorator by user. In
             job/graph case, this would have been constructed from a user-provided
             config_schema and config_fn.
-        ignore_output_from_composite_fn(Bool): Because of backwards compatibility
+        ignore_output_from_composition_fn(Bool): Because of backwards compatibility
             issues, jobs ignore the return value out of the mapping if
             the user has not explicitly provided the output definitions.
             This should be removed in 0.11.0.

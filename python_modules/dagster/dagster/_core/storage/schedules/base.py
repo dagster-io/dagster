@@ -171,7 +171,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Get the policy evaluations for a given asset.
 
         Args:
-            asset_key (AssetKey): The asset key to query
+            key (T_EntityKey): The entity key to query
             limit (Optional[int]): The maximum number of evaluations to return
             cursor (Optional[int]): The cursor to paginate from
         """

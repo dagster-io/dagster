@@ -37,7 +37,6 @@ def usable_as_dagster_type(
     make them dagster types whose typecheck is an isinstance check against that python class.
 
     Args:
-        python_type (cls): The python type to make usable as python type.
         name (Optional[str]): Name of the new Dagster type. If ``None``, the name (``__name__``) of
             the ``python_type`` will be used.
         description (Optional[str]): A user-readable description of the type.
