@@ -12,6 +12,7 @@ import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {withMiddleTruncation} from '../app/Util';
 import {ReexecutionStrategy} from '../graphql/types';
 import {isNewTabClick} from '../hooks/useOpenInNewTab';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
@@ -275,7 +276,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   };
 
   return (
-    <Box flex={{direction: 'row', gap: 8}}>
+    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
       <Box flex={{direction: 'row'}}>
         <LaunchButtonDropdown
           runCount={1}
@@ -285,7 +286,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             primary.scope === '*'
               ? `Re-execute all (*)`
               : primary.scope
-                ? `Re-execute (${primary.scope})`
+                ? // Long step/asset names would otherwise push the button offscreen.
+                  `Re-execute (${withMiddleTruncation(primary.scope, {maxLength: 24})})`
                 : `Re-execute ${primary.title}`
           }
           tooltip={tooltip()}

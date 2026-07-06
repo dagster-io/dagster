@@ -2,3 +2,50 @@
   display: grid;
   height: 100%;
 }
+
+/* Card layout on mobile. grid-template-columns is set inline by the
+   component, so it needs !important here. Keep the max-width value in
+   sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .rowGrid {
+    grid-template-columns: 36px minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      'checkbox name menu'
+      '. repo repo'
+      '. status status';
+    height: auto;
+    row-gap: 2px;
+    padding: 8px 8px 8px 4px;
+  }
+
+  .rowGrid > * {
+    box-shadow: none !important;
+    padding: 2px 8px !important;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .cellCheckbox {
+    grid-area: checkbox;
+  }
+
+  .cellName {
+    grid-area: name;
+  }
+
+  .cellRepo {
+    grid-area: repo;
+  }
+
+  .cellStatus {
+    grid-area: status;
+  }
+
+  .cellMenu {
+    grid-area: menu;
+  }
+
+  .tableHeader {
+    display: none !important;
+  }
+}

@@ -82,3 +82,23 @@
 .right > * {
   pointer-events: all;
 }
+
+/* Stack the right-side controls under the main content on mobile. Keep the
+   max-width value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .listItem {
+    flex-wrap: wrap;
+  }
+
+  .listItemAnchor {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .right {
+    align-self: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+}

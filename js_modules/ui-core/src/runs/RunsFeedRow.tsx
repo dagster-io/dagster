@@ -96,11 +96,11 @@ export const RunsFeedRow = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <RowCell>
+      <RowCell className={styles.cellCheckbox}>
         <Checkbox checked={!!checked} onChange={onChange} />
       </RowCell>
 
-      <RowCell>
+      <RowCell className={styles.cellId}>
         <Box flex={{direction: 'column', gap: 5}}>
           <Link
             to={
@@ -144,7 +144,10 @@ export const RunsFeedRow = ({
           </Box>
         </Box>
       </RowCell>
-      <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
+      <RowCell
+        className={styles.cellTarget}
+        style={{flexDirection: 'row', alignItems: 'flex-start'}}
+      >
         {entry.__typename === 'Run' ? (
           <RunTargetLink
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -165,10 +168,10 @@ export const RunsFeedRow = ({
           />
         )}
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellCreatedBy}>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} repoAddress={repoAddress} />
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellStatus}>
         <div>
           {entry.__typename === 'PartitionBackfill' ? (
             <RunStatusTag status={entry.runStatus} />
@@ -177,7 +180,7 @@ export const RunsFeedRow = ({
           )}
         </div>
       </RowCell>
-      <RowCell style={{flexDirection: 'column', gap: 4}}>
+      <RowCell className={styles.cellTime} style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
         {isReexecution ? (
           <div>
@@ -185,10 +188,10 @@ export const RunsFeedRow = ({
           </div>
         ) : null}
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellDuration}>
         <RunStateSummary run={runTime} />
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellMenu}>
         {entry.__typename === 'PartitionBackfill' ? (
           <BackfillActionsMenu
             backfill={{...entry, status: entry.backfillStatus}}
@@ -208,7 +211,7 @@ const TEMPLATE_COLUMNS =
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky className={styles.tableHeader}>
       <HeaderCell>
         <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
       </HeaderCell>

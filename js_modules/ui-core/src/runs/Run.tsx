@@ -319,7 +319,7 @@ const RunWithData = ({
               mode: GanttChartMode.WATERFALL_TIMED,
             }}
             toolbarActions={
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 12, wrap: 'wrap'}}>
                 <Tooltip content={isTopExpanded ? 'Collapse' : 'Expand'}>
                   <Button
                     icon={<Icon name={isTopExpanded ? 'collapse_arrows' : 'expand_arrows'} />}

@@ -159,11 +159,12 @@ export const AssetTable = ({
             background: Colors.backgroundDefault(),
             alignItems: 'flex-start',
             gap: 12,
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) auto',
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
           }}
         >
-          <div>{actionBarComponents}</div>
+          <div style={{minWidth: 0, maxWidth: '100%'}}>{actionBarComponents}</div>
           <Box
             style={{justifySelf: 'flex-end'}}
             flex={{gap: 12, direction: 'row-reverse', alignItems: 'center'}}

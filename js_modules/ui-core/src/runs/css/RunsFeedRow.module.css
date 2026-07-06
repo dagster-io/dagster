@@ -3,3 +3,63 @@
   grid-template-columns: 60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 170px 120px 132px;
   height: 100%;
 }
+
+/* Card layout on mobile. Keep the max-width value in sync with
+   MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .rowGrid {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'checkbox id menu'
+      '. target target'
+      '. createdBy createdBy'
+      '. status duration'
+      '. time time';
+    height: auto;
+    row-gap: 2px;
+    padding: 8px 8px 8px 4px;
+  }
+
+  .rowGrid > * {
+    box-shadow: none !important;
+    padding: 2px 8px !important;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .cellCheckbox {
+    grid-area: checkbox;
+  }
+
+  .cellId {
+    grid-area: id;
+  }
+
+  .cellTarget {
+    grid-area: target;
+  }
+
+  .cellCreatedBy {
+    grid-area: createdBy;
+  }
+
+  .cellStatus {
+    grid-area: status;
+  }
+
+  .cellTime {
+    grid-area: time;
+  }
+
+  .cellDuration {
+    grid-area: duration;
+  }
+
+  .cellMenu {
+    grid-area: menu;
+  }
+
+  .tableHeader {
+    display: none !important;
+  }
+}

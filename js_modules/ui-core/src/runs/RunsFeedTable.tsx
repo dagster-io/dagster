@@ -109,7 +109,7 @@ export const RunsFeedTable = ({
   const actionBar = (
     <Box flex={{direction: 'column', gap: 8}}>
       <Box
-        flex={{justifyContent: 'space-between'}}
+        flex={{justifyContent: 'space-between', wrap: 'wrap', gap: 8}}
         style={{width: '100%'}}
         padding={{left: 24, right: 12}}
       >

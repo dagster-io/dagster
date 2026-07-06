@@ -159,9 +159,12 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
   return (
     <>
       <Header refreshState={refreshState} />
-      <Box padding={{horizontal: 24, vertical: 12}} flex={{alignItems: 'center', gap: 16}}>
+      <Box
+        padding={{horizontal: 24, vertical: 12}}
+        flex={{alignItems: 'center', gap: 16, wrap: 'wrap'}}
+      >
         <GroupTimelineRunsBySelect value={groupRunsBy} onSelect={setGroupRunsBy} />
-        <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
+        <div style={{flex: 1, display: 'flex', alignItems: 'center', minWidth: 120}}>
           {groupRunsBy === 'automation' ? (
             <AutomationSelectionInput
               items={automationRows}

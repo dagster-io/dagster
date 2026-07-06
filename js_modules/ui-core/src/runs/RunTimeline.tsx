@@ -28,6 +28,7 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
 import styles from './css/RunTimeline.module.css';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
+import {LayoutContext} from '../app/LayoutProvider';
 import {COMMON_COLLATOR} from '../app/Util';
 import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJobTooltip';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
@@ -50,7 +51,18 @@ const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
 const EMPTY_STATE_HEIGHT = 110;
 const LEFT_SIDE_SPACE_ALLOTTED = 320;
 const LABEL_WIDTH = 268;
+// Mobile values must match the media-query overrides in css/RunTimeline.module.css.
+const MOBILE_LEFT_SIDE_SPACE_ALLOTTED = 148;
+const MOBILE_LABEL_WIDTH = 100;
 const MIN_DATE_WIDTH_PCT = 10;
+
+// The label column shrinks on mobile so the time axis keeps a usable width.
+const useTimelineWidths = () => {
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+  return isMobileScreen
+    ? {leftAllotted: MOBILE_LEFT_SIDE_SPACE_ALLOTTED, labelWidth: MOBILE_LABEL_WIDTH}
+    : {leftAllotted: LEFT_SIDE_SPACE_ALLOTTED, labelWidth: LABEL_WIDTH};
+};
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
 
@@ -173,65 +185,71 @@ export const RunTimeline = (props: Props) => {
   const anyObjects = repoOrder.length > 0;
 
   return (
-    <>
-      <div ref={measureRef} />
-      <Box
-        padding={{left: 24}}
-        flex={{direction: 'column', justifyContent: 'center'}}
-        style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
-        border="top-and-bottom"
-      >
-        Runs
-      </Box>
-      <div style={{position: 'relative'}}>
-        <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyObjects ? height : 0} />
-      </div>
-      {repoOrder.length ? (
-        <div style={{overflow: 'hidden', position: 'relative'}}>
-          <Container ref={parentRef}>
-            <Inner totalHeight={totalHeight}>
-              {items.map(({index, key, size, start}) => {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const row: RowType = flattened[index]!;
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const type = row!.type;
-                if (type === 'header') {
-                  const repoKey = repoAddressAsURLString(row.repoAddress);
-                  const repoName = row.repoAddress.name;
+    <div className={styles.timelineScrollWrapper}>
+      <div className={styles.timelineScrollInner}>
+        <div ref={measureRef} />
+        <Box
+          padding={{left: 24}}
+          flex={{direction: 'column', justifyContent: 'center'}}
+          style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
+          border="top-and-bottom"
+        >
+          Runs
+        </Box>
+        <div style={{position: 'relative'}}>
+          <TimeDividers
+            interval={ONE_HOUR_MSEC}
+            rangeMs={rangeMs}
+            height={anyObjects ? height : 0}
+          />
+        </div>
+        {repoOrder.length ? (
+          <div style={{overflow: 'hidden', position: 'relative'}}>
+            <Container ref={parentRef}>
+              <Inner totalHeight={totalHeight}>
+                {items.map(({index, key, size, start}) => {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  const row: RowType = flattened[index]!;
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  const type = row!.type;
+                  if (type === 'header') {
+                    const repoKey = repoAddressAsURLString(row.repoAddress);
+                    const repoName = row.repoAddress.name;
+                    return (
+                      <TimelineHeaderRow
+                        expanded={expandedKeys.includes(repoKey)}
+                        key={repoKey}
+                        height={size}
+                        top={start}
+                        repoAddress={row.repoAddress}
+                        isDuplicateRepoName={!!(repoName && duplicateRepoNames.has(repoName))}
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        rows={buckets[repoKey]!}
+                        onToggle={onToggle}
+                        onToggleAll={onToggleAll}
+                      />
+                    );
+                  }
+
                   return (
-                    <TimelineHeaderRow
-                      expanded={expandedKeys.includes(repoKey)}
-                      key={repoKey}
+                    <RunTimelineRow
+                      row={row.row}
+                      key={key}
                       height={size}
                       top={start}
-                      repoAddress={row.repoAddress}
-                      isDuplicateRepoName={!!(repoName && duplicateRepoNames.has(repoName))}
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      rows={buckets[repoKey]!}
-                      onToggle={onToggle}
-                      onToggleAll={onToggleAll}
+                      rangeMs={rangeMs}
+                      width={width}
                     />
                   );
-                }
-
-                return (
-                  <RunTimelineRow
-                    row={row.row}
-                    key={key}
-                    height={size}
-                    top={start}
-                    rangeMs={rangeMs}
-                    width={width}
-                  />
-                );
-              })}
-            </Inner>
-          </Container>
-        </div>
-      ) : (
-        <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
-      )}
-    </>
+                })}
+              </Inner>
+            </Container>
+          </div>
+        ) : (
+          <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -556,7 +574,8 @@ const RunTimelineRow = ({
   width: number;
 }) => {
   const [start, end] = rangeMs;
-  const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
+  const {leftAllotted, labelWidth} = useTimelineWidths();
+  const width = containerWidth - leftAllotted;
   const {runs} = row;
 
   // Batch overlapping runs in this row.
@@ -581,7 +600,7 @@ const RunTimelineRow = ({
     <TimelineRowContainer height={height} start={top}>
       <div className={styles.rowName}>
         <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
-        <div style={{width: LABEL_WIDTH}}>
+        <div style={{width: labelWidth}}>
           {row.path ? (
             <Link to={row.path}>
               <MiddleTruncate text={row.name} />

@@ -92,11 +92,11 @@ export const RunsFeedRoot = () => {
   const {error} = queryResult;
 
   const actionBarComponents = (
-    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center', wrap: 'wrap'}}>
       {button}
       {isShowingViewOption && (
         <Checkbox
-          label={<span>Show runs within backfills</span>}
+          label={<span style={{whiteSpace: 'nowrap'}}>Show runs within backfills</span>}
           checked={view === RunsFeedView.RUNS}
           onChange={() => {
             setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
@@ -171,7 +171,14 @@ export const RunsFeedRoot = () => {
   }
 
   return (
-    <Box style={{height: '100%', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)'}}>
+    <Box
+      style={{
+        height: '100%',
+        display: 'grid',
+        gridTemplateRows: 'auto minmax(0, 1fr)',
+        gridTemplateColumns: 'minmax(0, 1fr)',
+      }}
+    >
       <Box
         border="bottom"
         background={Colors.backgroundDefault()}

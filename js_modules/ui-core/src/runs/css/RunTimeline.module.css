@@ -161,3 +161,46 @@
   white-space: nowrap;
   width: 100%;
 }
+
+/* Keep these values in sync with MOBILE_LEFT_SIDE_SPACE_ALLOTTED in
+   RunTimeline.tsx, and the max-width with MOBILE_BREAKPOINT_PX. */
+@media (max-width: 768px) {
+  .dividerContainer {
+    left: 148px;
+  }
+
+  .rowName {
+    width: 148px;
+    padding: 0 8px 0 12px;
+  }
+
+  /* The narrow time axis can't fit a label for every time marker. */
+  .timeLabel {
+    display: none;
+  }
+
+  .timeLabel:nth-child(3n + 1) {
+    display: block;
+  }
+}
+
+/* Desktop: wrappers are layout-transparent. On mobile they become a
+   horizontal scroller so the timeline can be swiped sideways. */
+.timelineScrollWrapper,
+.timelineScrollInner {
+  display: contents;
+}
+
+@media (max-width: 768px) {
+  .timelineScrollWrapper {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  .timelineScrollInner {
+    display: flex;
+    flex-direction: column;
+    min-width: 640px;
+  }
+}

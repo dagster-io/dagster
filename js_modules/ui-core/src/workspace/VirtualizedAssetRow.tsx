@@ -106,7 +106,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
         }}
       >
         {showCheckboxColumn ? (
-          <RowCell>
+          <RowCell className={styles.cellCheckbox}>
             <Checkbox
               checked={checked}
               onChange={onChange}
@@ -114,7 +114,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
             />
           </RowCell>
         ) : null}
-        <RowCell>
+        <RowCell className={styles.cellName}>
           <Box flex={{alignItems: 'center'}}>
             <div style={{flex: 1, minWidth: 0}}>
               <AssetLink
@@ -154,7 +154,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </div>
         </RowCell>
         {showRepoColumn ? (
-          <RowCell>
+          <RowCell className={styles.cellRepo}>
             {repoAddress ? (
               <Box
                 flex={{direction: 'column', gap: 4}}
@@ -177,7 +177,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
             )}
           </RowCell>
         ) : null}
-        <RowCell>
+        <RowCell className={styles.cellStatus}>
           {definition?.partitionDefinition && definition?.isMaterializable ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               <PartitionCountLabels partitionStats={liveData?.partitionStats} />
@@ -222,7 +222,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
             </Box>
           )}
         </RowCell>
-        <RowCell>
+        <RowCell className={styles.cellMenu}>
           {type !== 'folder' ? (
             <AssetActionMenu
               path={path}
@@ -245,7 +245,7 @@ export const VirtualizedAssetCatalogHeader = ({
   view: AssetViewType;
 }) => {
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS_FOR_CATALOG} sticky>
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS_FOR_CATALOG} sticky className={styles.tableHeader}>
       <HeaderCell>{headerCheckbox}</HeaderCell>
       <HeaderCell>{view === 'flat' ? 'Asset name' : 'Asset key prefix'}</HeaderCell>
       <HeaderCell>Code location / Asset group</HeaderCell>
@@ -291,7 +291,7 @@ export const ShimmerRow = (props: {$height: number; $start: number; $showRepoCol
 
 export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}) => {
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky className={styles.tableHeader}>
       <HeaderCell>{nameLabel}</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell></HeaderCell>
