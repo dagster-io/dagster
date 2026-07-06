@@ -18,6 +18,7 @@ import {useMemo} from 'react';
 import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {TickMaterializationsTable} from './TickMaterializationsTable';
+import {getTickResultType} from './util';
 import {gql, useQuery} from '../apollo-client';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
@@ -46,24 +47,14 @@ interface DialogProps extends InnerProps {
   isOpen: boolean;
 }
 
-export const TickDetailsDialog = ({
-  tickId,
-  tickResultType,
-  isOpen,
-  instigationSelector,
-  onClose,
-}: DialogProps) => {
+export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}: DialogProps) => {
   return (
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
       style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
     >
-      <TickDetailsDialogImpl
-        tickId={tickId}
-        tickResultType={tickResultType}
-        instigationSelector={instigationSelector}
-      />
+      <TickDetailsDialogImpl tickId={tickId} instigationSelector={instigationSelector} />
       <DialogFooter topBorder>
         <Button onClick={onClose}>Close</Button>
       </DialogFooter>
@@ -73,11 +64,10 @@ export const TickDetailsDialog = ({
 
 interface InnerProps {
   tickId: string | undefined;
-  tickResultType: TickResultType;
   instigationSelector: InstigationSelector;
 }
 
-const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: InnerProps) => {
+const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
   const {data, loading} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(
     JOB_SELECTED_TICK_QUERY,
     {
@@ -131,6 +121,8 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
     );
   }
 
+  const resultType = getTickResultType(tick);
+
   return (
     <>
       <DialogHeader
@@ -145,10 +137,10 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
         }
       />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <TickDetailSummary tick={tick} tickResultType={tickResultType} />
+        <TickDetailSummary tick={tick} tickResultType={resultType} />
       </Box>
-      {tickResultType === 'materializations' ? <TickMaterializationsTable tick={tick} /> : null}
-      {tickResultType === 'runs' ? (
+      {resultType === 'materializations' ? <TickMaterializationsTable tick={tick} /> : null}
+      {resultType === 'runs' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
           {tick.runIds.length ? (
             <>
