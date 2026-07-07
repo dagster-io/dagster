@@ -39,7 +39,7 @@ compute_logs:
     allow_invalid_certificates: false
     timeout: "60s"  # Timeout for obstore requests
     region: "us-west-1"
-# Use S3 with custom endpoint (Minio, Cloudflare R2 etc.)
+# Use S3 with custom endpoint (Minio, Tigris, Cloudflare R2 etc.)
 compute_logs:
   module:  dagster_obstore.s3.compute_log_manager
   class: S3ComputeLogManager
