@@ -458,7 +458,7 @@ class AssetMethods:
 
     def automation_resolve_asset_check_keys_enabled(self) -> bool:
         """Whether declarative automation explicitly resolves the asset checks recorded on its run requests."""
-        return os.getenv("DAGSTER_AUTOMATION_RESOLVE_ASSET_CHECK_KEYS", "").lower() == "true"
+        return os.getenv("DAGSTER_AUTOMATION_RESOLVE_ASSET_CHECK_KEYS", "true").lower() == "true"
 
     def streamline_read_asset_health_supported(self, streamline_name: StreamlineName) -> bool:
         """Check if streamline read asset health is supported - moved from AssetMixin.streamline_read_asset_health_supported()."""
