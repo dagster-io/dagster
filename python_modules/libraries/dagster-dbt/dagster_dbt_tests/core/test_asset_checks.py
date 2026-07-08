@@ -22,7 +22,11 @@ from dagster import (
     op,
 )
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
+from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
+    build_dbt_specs,
+    get_asset_check_key_for_test,
+)
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_shared.record import replace
@@ -946,3 +950,118 @@ def test_dbt_source_tests_checks_enabled(
         if eval_result.asset_key == AssetKey(["jaffle_shop", "raw_customers"])
     ]
     assert len(asset_check_results) == expected_num_source_test_execs
+
+
+def test_source_relationships_test_as_check(
+    test_dbt_source_relationships_manifest: dict[str, Any],
+) -> None:
+    """A `relationships` test defined on a *source* column is a multi-dependency test that dbt
+    does not attach to a node. It should still be modeled as an asset check on the source the
+    test is defined on. See https://github.com/dagster-io/dagster/issues/33982.
+    """
+    manifest = test_dbt_source_relationships_manifest
+
+    foo_key = AssetKey(["my_source", "foo"])
+    bar_key = AssetKey(["my_source", "bar"])
+
+    # The source `relationships` test should attach to the source it is defined on (`foo`),
+    # with the referenced source (`bar`) modeled as an additional dependency.
+    relationships_test_unique_id = next(
+        unique_id
+        for unique_id, node in manifest["nodes"].items()
+        if node["resource_type"] == "test"
+        and node.get("test_metadata", {}).get("name") == "relationships"
+    )
+    assert manifest["nodes"][relationships_test_unique_id].get("attached_node") is None
+
+    assert get_asset_check_key_for_test(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks_and_source_checks,
+        test_unique_id=relationships_test_unique_id,
+        project=None,
+    ) == AssetCheckKey(
+        asset_key=foo_key,
+        name=manifest["nodes"][relationships_test_unique_id]["name"],
+    )
+
+    _, check_specs = build_dbt_specs(
+        translator=dagster_dbt_translator_with_checks_and_source_checks,
+        manifest=manifest,
+        select="fqn:*",
+        exclude="",
+        selector="",
+        io_manager_key=None,
+        project=None,
+    )
+    check_specs_by_name = {spec.key.name: spec for spec in check_specs}
+
+    relationships_check = check_specs_by_name[
+        manifest["nodes"][relationships_test_unique_id]["name"]
+    ]
+    assert relationships_check.key.asset_key == foo_key
+    assert bar_key in {dep.asset_key for dep in relationships_check.additional_deps}
+
+    # The `meta.dagster.ref` escape hatch can attach a test to a source.
+    meta_ref_check = check_specs_by_name["singular_source_test_with_meta"]
+    assert meta_ref_check.key.asset_key == bar_key
+
+    # Source `relationships` tests are dropped when source tests as checks are disabled.
+    _, check_specs_without_source_checks = build_dbt_specs(
+        translator=dagster_dbt_translator_with_checks,
+        manifest=manifest,
+        select="fqn:*",
+        exclude="",
+        selector="",
+        io_manager_key=None,
+        project=None,
+    )
+    assert not check_specs_without_source_checks
+
+
+def test_source_ref_escape_hatch_ambiguous_table_name_does_not_attach() -> None:
+    """When a `meta.dagster.ref` escape hatch omits `package`, the table name alone can match
+    more than one source. In that case the test must not be attached to an arbitrary source, as
+    that would silently model the check against an unrelated source asset.
+    """
+    test_unique_id = "test.my_project.ambiguous_singular_test"
+    # Two distinct sources that happen to share the same table name (`bar`).
+    source_a_unique_id = "source.my_project.source_a.bar"
+    source_b_unique_id = "source.my_project.source_b.bar"
+
+    manifest: dict[str, Any] = {
+        "metadata": {"project_name": "my_project"},
+        "nodes": {
+            test_unique_id: {
+                "resource_type": "test",
+                "name": "ambiguous_singular_test",
+                "package_name": "my_project",
+                "depends_on": {"nodes": [source_a_unique_id, source_b_unique_id]},
+                # `package` (the source name) is intentionally omitted, so `bar` is ambiguous.
+                "config": {"meta": {"dagster": {"ref": {"name": "bar"}}}},
+            },
+        },
+        "sources": {
+            source_a_unique_id: {
+                "resource_type": "source",
+                "name": "bar",
+                "source_name": "source_a",
+            },
+            source_b_unique_id: {
+                "resource_type": "source",
+                "name": "bar",
+                "source_name": "source_b",
+            },
+        },
+        "exposures": {},
+        "metrics": {},
+    }
+
+    assert (
+        get_asset_check_key_for_test(
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator_with_checks_and_source_checks,
+            test_unique_id=test_unique_id,
+            project=None,
+        )
+        is None
+    )
