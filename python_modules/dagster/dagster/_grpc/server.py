@@ -237,6 +237,7 @@ class LoadedRepositories:
         entry_point: Sequence[str],
         container_context: Mapping[str, Any] | None,
         defs_state_info: DefsStateInfo | None = None,
+        code_location_name: str | None = None,
     ):
         self._loadable_target_origin = loadable_target_origin
 
@@ -253,6 +254,7 @@ class LoadedRepositories:
                 DefinitionsLoadType.INITIALIZATION,
                 repository_load_data=RepositoryLoadData(
                     defs_state_info=defs_state_info,
+                    code_location_name=code_location_name,
                 ),
             )
         )
@@ -469,6 +471,7 @@ class DagsterApiServer(DagsterApiServicer):
                 container_context=self._container_context,
                 # state info threaded through via CLI arguments
                 defs_state_info=self._defs_state_info,
+                code_location_name=location_name,
             )
         except Exception:
             if not lazy_load_user_code:

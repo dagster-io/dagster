@@ -55,6 +55,12 @@ class RepositoryLoadData(
             # location. the full state object is stored separately in the DefsStateStorage,
             # which will generally be blob storage.
             ("defs_state_info", DefsStateInfo | None),
+            # the name of the code location being loaded, as reported by the loading harness
+            # (gRPC server / workspace). None when loading outside a workspace context (e.g.
+            # direct CLI invocations). Carried on the load data so that reconstruction (e.g. in
+            # a run worker) resolves the same location name -- and therefore the same
+            # app-managed components -- as the original initialization load.
+            ("code_location_name", str | None),
         ],
     )
 ):
@@ -64,6 +70,7 @@ class RepositoryLoadData(
         reconstruction_metadata: Mapping[str, CodeLocationReconstructionMetadataValue]
         | None = None,
         defs_state_info: DefsStateInfo | None = None,
+        code_location_name: str | None = None,
     ):
         return super().__new__(
             cls,
@@ -79,6 +86,7 @@ class RepositoryLoadData(
                 reconstruction_metadata, "reconstruction_metadata", key_type=str
             ),
             defs_state_info=check.opt_inst_param(defs_state_info, "defs_state_info", DefsStateInfo),
+            code_location_name=check.opt_str_param(code_location_name, "code_location_name"),
         )
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
