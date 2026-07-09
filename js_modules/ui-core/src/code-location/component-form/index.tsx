@@ -2,9 +2,17 @@ import Form from '@rjsf/core';
 import type {IChangeEvent} from '@rjsf/core';
 import type {RJSFSchema, UiSchema} from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
+import {useCallback, useMemo, useState} from 'react';
 
 import {isFormDataValid} from './validate';
-import {FieldTemplate, ObjectFieldTemplate, widgets} from './widgets';
+import {
+  ArrayFieldTemplate,
+  FieldTemplate,
+  ObjectFieldTemplate,
+  WrapIfAdditionalTemplate,
+  widgets,
+} from './widgets';
+import type {ComponentFormContext} from './widgets';
 
 interface Props {
   dataSchema: RJSFSchema;
@@ -20,6 +28,28 @@ interface Props {
  * that pair with our Blueprint-themed widgets and field template.
  */
 export function ComponentSchemaForm({dataSchema, uiSchema, formData, onChange}: Props) {
+  // Ids of fields the user has visited (widgets mark on blur). Validation
+  // errors are displayed only for touched fields so a freshly opened form
+  // isn't a wall of red; submit-enablement is computed independently below.
+  const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
+  const markTouched = useCallback((id: string) => {
+    setTouched((prev) => {
+      if (prev.has(id)) {
+        return prev;
+      }
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+  const formContext: ComponentFormContext = useMemo(
+    () => ({
+      isTouched: (id: string) => touched.has(id),
+      markTouched,
+    }),
+    [touched, markTouched],
+  );
+
   return (
     <Form
       schema={dataSchema}
@@ -27,7 +57,8 @@ export function ComponentSchemaForm({dataSchema, uiSchema, formData, onChange}: 
       formData={formData}
       validator={validator}
       widgets={widgets}
-      templates={{FieldTemplate, ObjectFieldTemplate}}
+      templates={{ArrayFieldTemplate, FieldTemplate, ObjectFieldTemplate, WrapIfAdditionalTemplate}}
+      formContext={formContext}
       liveValidate
       showErrorList={false}
       // Avoid colliding with the page's #root selector (sets width: 100vw on
