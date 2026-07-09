@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-cloud"
 requires-python = ">=3.10,<3.15"
-version = "1!0+dev"
+version = "1.13.13"
 authors = [{name = "Elementl", email = "support@elementl.com"}]
 license = {text = "Apache-2.0"}
 classifiers = [
@@ -25,9 +25,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "dagster==1!0+dev",
-    "dagster-shared==1!0+dev",
-    "dagster-cloud-cli==1!0+dev",
+    "dagster==1.13.13",
+    "dagster-shared==1.13.13",
+    "dagster-cloud-cli==1.13.13",
     "pex>=2.1.132,<2.60.0", # https://github.com/pex-tool/pex/issues/2942
     "questionary",
     "requests",
@@ -52,9 +52,9 @@ Newsletter = "https://dagster.io/newsletter-signup"
 
 [project.optional-dependencies]
 insights = ["pyarrow"]
-docker = ["docker", "dagster-docker==1!0+dev"]
-kubernetes = ["kubernetes", "dagster-k8s==1!0+dev"]
-ecs = ["dagster-aws==1!0+dev", "boto3"]
+docker = ["docker", "dagster-docker==0.29.13"]
+kubernetes = ["kubernetes", "dagster-k8s==0.29.13"]
+ecs = ["dagster-aws==0.29.13", "boto3"]
 sandbox = ["supervisor"]
 pex = ["boto3"]
 serverless = ["boto3"]
@@ -63,14 +63,14 @@ serverless = ["boto3"]
 test = [
     "dagster[test]",
     "dagster-pipes",
-    "dagster-shared==1!0+dev",
+    "dagster-shared==1.13.13",
     "dagster-test",
-    "dagster-aws==1!0+dev",
-    "dagster-cloud-cli==1!0+dev",
+    "dagster-aws==0.29.13",
+    "dagster-cloud-cli==1.13.13",
     "dagster-dbt",
     "dagster-dg-cli",
-    "dagster-docker==1!0+dev",
-    "dagster-k8s==1!0+dev",
+    "dagster-docker==0.29.13",
+    "dagster-k8s==0.29.13",
     "dagster-rest-resources",
     "dbt-bigquery>=1.9.0",
     "dbt-core",

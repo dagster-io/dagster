@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster_looker"
-version = "1!0+dev"
+version = "0.29.13"
 requires-python = ">=3.10,<3.15"
 description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.13",
     "lkml",
     # Remove pin after resolution of: https://github.com/looker-open-source/sdk-codegen/issues/1518
     "looker_sdk<24.18.0",

@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-pandas"
-version = "1!0+dev"
+version = "0.29.13"
 description = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.13",
     "pandas<3.0.0",
 ]
 
