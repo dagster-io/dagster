@@ -83,19 +83,23 @@
   pointer-events: all;
 }
 
-/* Stack the right-side controls under the main content on mobile. Keep the
+/* Stack the right-side controls under the main content on mobile, keeping
+   the checkbox (when present) on the same line as the content. Keep the
    max-width value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
 @media (max-width: 768px) {
   .listItem {
     flex-wrap: wrap;
   }
 
+  /* A 60% basis keeps the anchor on the first line (sharing it with the
+     checkbox when present) while forcing the 100%-basis controls to wrap. */
   .listItemAnchor {
-    flex: 1 1 100%;
+    flex: 1 1 60%;
     min-width: 0;
   }
 
   .right {
+    flex: 1 1 100%;
     align-self: flex-start;
     max-width: 100%;
     overflow-x: auto;

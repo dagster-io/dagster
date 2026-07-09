@@ -2,3 +2,45 @@
   display: grid;
   grid-template-columns: 3fr 1fr 1fr 160px;
 }
+
+/* Card layout on mobile. Keep the max-width value in sync with
+   MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .rowGrid {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name name'
+      'status updated'
+      'actions actions';
+    row-gap: 2px;
+    padding: 8px 12px;
+  }
+
+  .rowGrid > * {
+    box-shadow: none !important;
+    padding: 2px 8px !important;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .cellName {
+    grid-area: name;
+  }
+
+  .cellStatus {
+    grid-area: status;
+  }
+
+  .cellUpdated {
+    grid-area: updated;
+  }
+
+  .cellActions {
+    grid-area: actions;
+    align-items: flex-start !important;
+  }
+
+  .tableHeader {
+    display: none !important;
+  }
+}

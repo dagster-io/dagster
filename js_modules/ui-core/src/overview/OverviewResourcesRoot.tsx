@@ -148,7 +148,7 @@ export const OverviewResourcesRoot = () => {
       <OverviewPageHeader tab="resources" refreshState={refreshState} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
+        flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0, wrap: 'wrap'}}
       >
         {repoCount > 1 ? <RepoFilterButton /> : null}
         <TextInput
@@ -161,7 +161,7 @@ export const OverviewResourcesRoot = () => {
           }
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Filter by resource name…"
-          style={{width: '340px'}}
+          style={{width: '340px', maxWidth: 'calc(100vw - 48px)'}}
         />
       </Box>
       {loading && !repoCount ? (

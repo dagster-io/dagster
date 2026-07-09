@@ -51,6 +51,7 @@ import {
   PipelineRunTag,
   SessionBase,
 } from '../app/ExecutionSessionStorage';
+import {LayoutContext} from '../app/LayoutProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useJobPermissions} from '../app/useJobPermissions';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
@@ -556,6 +557,10 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const splitPanelRef = React.useRef<SplitPanelContainerHandle>(null);
 
+  // On mobile the config-schema help panel is hidden: it assumes a keyboard
+  // (Ctrl+Space hints) and squeezes the editor to an unusable width.
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+
   const repositorySelector = React.useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
   const partitionSetDetails = usePartitionSetDetailsForLaunchpad({
     pipelineName: pipeline.name,
@@ -794,12 +799,14 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
               {sessionSettingsItems()}
 
               <div className={styles.sessionSettingsSpacer} />
-              <LaunchpadConfigExpansionButton
-                axis="horizontal"
-                firstInitialPercent={75}
-                getSize={splitPanelRef.current?.getSize}
-                changeSize={splitPanelRef.current?.changeSize}
-              />
+              {!isMobileScreen ? (
+                <LaunchpadConfigExpansionButton
+                  axis="horizontal"
+                  firstInitialPercent={75}
+                  getSize={splitPanelRef.current?.getSize}
+                  changeSize={splitPanelRef.current?.changeSize}
+                />
+              ) : null}
             </SessionSettingsBar>
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
@@ -842,34 +849,50 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                 </Box>
               </Box>
             ) : null}
-            <SplitPanelContainer
-              ref={splitPanelRef}
-              axis="horizontal"
-              identifier="execution-editor"
-              firstMinSize={100}
-              firstInitialPercent={70}
-              first={
-                <NewConfigEditor
-                  ref={editor}
-                  readOnly={false}
-                  configSchema={runConfigSchema}
-                  configCode={currentSession.runConfigYaml}
-                  onConfigChange={onConfigChange}
-                  onHelpContextChange={(next) => {
-                    if (!isHelpContextEqual(editorHelpContext, next)) {
-                      dispatch({type: 'set-editor-help-context', payload: next});
-                    }
-                  }}
-                  checkConfig={checkConfig}
-                />
-              }
-              second={
-                <ConfigEditorHelp
-                  context={editorHelpContext}
-                  allInnerTypes={runConfigSchema?.allConfigTypes || []}
-                />
-              }
-            />
+            {isMobileScreen ? (
+              <NewConfigEditor
+                ref={editor}
+                readOnly={false}
+                configSchema={runConfigSchema}
+                configCode={currentSession.runConfigYaml}
+                onConfigChange={onConfigChange}
+                onHelpContextChange={(next) => {
+                  if (!isHelpContextEqual(editorHelpContext, next)) {
+                    dispatch({type: 'set-editor-help-context', payload: next});
+                  }
+                }}
+                checkConfig={checkConfig}
+              />
+            ) : (
+              <SplitPanelContainer
+                ref={splitPanelRef}
+                axis="horizontal"
+                identifier="execution-editor"
+                firstMinSize={100}
+                firstInitialPercent={70}
+                first={
+                  <NewConfigEditor
+                    ref={editor}
+                    readOnly={false}
+                    configSchema={runConfigSchema}
+                    configCode={currentSession.runConfigYaml}
+                    onConfigChange={onConfigChange}
+                    onHelpContextChange={(next) => {
+                      if (!isHelpContextEqual(editorHelpContext, next)) {
+                        dispatch({type: 'set-editor-help-context', payload: next});
+                      }
+                    }}
+                    checkConfig={checkConfig}
+                  />
+                }
+                second={
+                  <ConfigEditorHelp
+                    context={editorHelpContext}
+                    allInnerTypes={runConfigSchema?.allConfigTypes || []}
+                  />
+                }
+              />
+            )}
           </>
         }
         second={

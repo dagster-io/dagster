@@ -57,7 +57,7 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
     return (
       <div ref={ref} data-index={index}>
         <Box border="bottom" className={styles.rowGrid}>
-          <RowCell>
+          <RowCell className={styles.cellName}>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
                 <Link to={workspacePathFromAddress(repoAddress)}>
@@ -66,17 +66,17 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
               </div>
             </Box>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellStatus}>
             <div>
               <LocationStatus locationStatus={locationStatus} locationOrError={locationEntry} />
             </div>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellUpdated}>
             <div style={{whiteSpace: 'nowrap'}}>
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellActions}>
             <JoinedButtons>
               <ReloadButton location={name} />
               {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
@@ -105,7 +105,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
     return (
       <div ref={ref} data-index={index}>
         <Box border="bottom" className={styles.rowGrid}>
-          <RowCell>
+          <RowCell className={styles.cellName}>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
                 <Link to={workspacePathFromAddress(repoAddress)}>
@@ -117,17 +117,17 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
               <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
             </Box>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellStatus}>
             <div>
               <LocationStatus locationStatus={locationStatus} locationOrError={locationEntry} />
             </div>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellUpdated}>
             <div style={{whiteSpace: 'nowrap'}}>
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell style={{alignItems: 'flex-end'}}>
+          <RowCell className={styles.cellActions} style={{alignItems: 'flex-end'}}>
             <JoinedButtons>
               <ReloadButton location={locationStatus.name} />
               <CodeLocationMenu locationNode={locationEntry} />
@@ -141,7 +141,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
 
 export const VirtualizedCodeLocationHeader = () => {
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky className={styles.tableHeader}>
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Updated</HeaderCell>

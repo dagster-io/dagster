@@ -33,8 +33,14 @@ export const CodeLocationsPageContent = () => {
     <>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-        style={{height: '64px'}}
+        flex={{
+          direction: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          wrap: 'wrap',
+          gap: 8,
+        }}
+        style={{minHeight: '64px'}}
       >
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           {button}
@@ -44,7 +50,7 @@ export const CodeLocationsPageContent = () => {
               value={searchValue}
               onChange={onChangeSearch}
               placeholder="Filter code locations by name…"
-              style={{width: '400px'}}
+              style={{width: '400px', maxWidth: 'calc(100vw - 140px)'}}
             />
           ) : (
             <Heading size={14} weight={600} id="repository-locations">
