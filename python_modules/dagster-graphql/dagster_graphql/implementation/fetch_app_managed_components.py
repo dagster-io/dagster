@@ -74,7 +74,7 @@ def set_app_managed_component(
     storage = _require_storage(graphene_info)
     entry = AppManagedComponentEntry(component_type=component_type, attributes=attributes)
     write_app_managed_component_entry(storage, location_name, component_id, entry)
-    graphene_info.context.reload_code_location(location_name)
+    graphene_info.context.reload_code_location_with_latest_defs_state(location_name)
     return GrapheneSetAppManagedComponentSuccess(
         component=_to_graphene_component(component_id, entry)
     )
@@ -92,7 +92,7 @@ def delete_app_managed_component(
     )
     storage = _require_storage(graphene_info)
     delete_app_managed_component_entry(storage, location_name, component_id)
-    graphene_info.context.reload_code_location(location_name)
+    graphene_info.context.reload_code_location_with_latest_defs_state(location_name)
     return GrapheneDeleteAppManagedComponentSuccess(
         locationName=location_name, componentId=component_id
     )

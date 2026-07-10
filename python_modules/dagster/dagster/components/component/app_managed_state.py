@@ -39,9 +39,14 @@ class AppManagedComponentEntry:
     attributes: str
 
 
+# The prefix shared by app-managed component state keys across all locations. Keys are
+# namespaced per-location beneath it -- see ``get_app_managed_prefix``.
+APP_MANAGED_COMPONENTS_KEY_PREFIX = "dagster-app-managed-components"
+
+
 def get_app_managed_prefix(location_name: str) -> str:
     """The shared prefix for all app-managed component state keys at a location."""
-    return f"dagster-app-managed-components[{location_name}]/"
+    return f"{APP_MANAGED_COMPONENTS_KEY_PREFIX}[{location_name}]/"
 
 
 def get_app_managed_component_state_key(location_name: str, component_id: str) -> str:

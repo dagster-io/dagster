@@ -245,7 +245,6 @@ export const TicksTable = ({
       <TickDetailsDialog
         isOpen={!!showDetailsForTick}
         tickId={showDetailsForTick?.tickId}
-        tickResultType={tickResultType}
         instigationSelector={instigationSelector}
         onClose={() => setShowDetailsForTick(null)}
       />
@@ -405,7 +404,6 @@ export const TickHistoryTimeline = ({
       <TickDetailsDialog
         isOpen={!!selectedTickId}
         tickId={selectedTickId}
-        tickResultType={tickResultType}
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
       />

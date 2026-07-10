@@ -1,5 +1,6 @@
 """Tests for ComponentTree integration with per-component app-managed components."""
 
+import logging
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -7,6 +8,11 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import dagster as dg
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
@@ -190,6 +196,122 @@ class TestRootDeclWithWrapper:
                 assert ComponentRootLoc() in pairs
                 assert AppManagedDefinitionsLoc() in pairs
                 assert AppManagedDefinitionsLoc(instance_key="comp_x") in pairs
+
+
+@contextmanager
+def _ambient_location_name(
+    location_name: str, storage: DefsStateStorage
+) -> Iterator[DefinitionsLoadContext]:
+    """Install a DefinitionsLoadContext reporting the given harness location name, pinned to
+    the latest state versions in storage — mirrors how the gRPC server seeds the context.
+    """
+    with DefinitionsLoadContext.scoped(
+        DefinitionsLoadContext(
+            DefinitionsLoadType.INITIALIZATION,
+            repository_load_data=RepositoryLoadData(
+                defs_state_info=storage.get_latest_defs_state_info(),
+                code_location_name=location_name,
+            ),
+        )
+    ) as context:
+        yield context
+
+
+class TestAmbientLocationNameResolution:
+    def test_ambient_name_used_when_tree_has_none(self) -> None:
+        """A tree with no config-derived name (e.g. the legacy ``load_defs`` entry point)
+        still discovers app-managed components when the harness reports the location name.
+        """
+        with _instance_with_storage() as storage:
+            write_app_managed_component_entry(
+                storage,
+                "ambient_loc",
+                "comp1",
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+            with _component_tree_for_loc(None) as tree:
+                with _ambient_location_name("ambient_loc", storage):
+                    root = tree.find_root_decl()
+                    ui_decl = check.inst(root.decls[1], AppManagedDefinitionsDecl)
+                    assert ui_decl.location_name == "ambient_loc"
+                    assert [c.loc for c in ui_decl.children] == [
+                        AppManagedDefinitionsLoc(instance_key="comp1")
+                    ]
+
+    def test_ambient_name_overrides_mismatched_config_name(self, caplog) -> None:
+        """When the config-derived name disagrees with the harness-reported name, the
+        harness name wins (it is what state keys were written under) and a warning is
+        logged naming both.
+        """
+        with _instance_with_storage() as storage:
+            write_app_managed_component_entry(
+                storage,
+                "ambient_loc",
+                "ambient_comp",
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+            write_app_managed_component_entry(
+                storage,
+                "config_loc",
+                "config_comp",
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+            with _component_tree_for_loc("config_loc") as tree:
+                with _ambient_location_name("ambient_loc", storage):
+                    with caplog.at_level(logging.WARNING):
+                        ui_decl = check.inst(
+                            tree.find_root_decl().decls[1], AppManagedDefinitionsDecl
+                        )
+            assert ui_decl.location_name == "ambient_loc"
+            assert [c.loc for c in ui_decl.children] == [
+                AppManagedDefinitionsLoc(instance_key="ambient_comp")
+            ]
+            assert "'config_loc'" in caplog.text
+            assert "'ambient_loc'" in caplog.text
+
+    def test_config_name_used_when_no_ambient_name(self) -> None:
+        """Without a harness-reported name (e.g. dg CLI loads), the config-derived name
+        on the tree is used, as before.
+        """
+        with _instance_with_storage() as storage:
+            write_app_managed_component_entry(
+                storage,
+                "config_loc",
+                "comp1",
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+            with _component_tree_for_loc("config_loc") as tree:
+                ui_decl = check.inst(tree.find_root_decl().decls[1], AppManagedDefinitionsDecl)
+                assert ui_decl.location_name == "config_loc"
+                assert [c.loc for c in ui_decl.children] == [
+                    AppManagedDefinitionsLoc(instance_key="comp1")
+                ]
+
+    def test_warns_when_state_exists_but_no_name_available(self, caplog) -> None:
+        """App-managed state exists but neither the harness nor the project config provides
+        a location name: discovery is skipped, but loudly rather than silently.
+        """
+        with _instance_with_storage() as storage:
+            write_app_managed_component_entry(
+                storage,
+                "some_loc",
+                "comp1",
+                AppManagedComponentEntry(component_type="dagster.Component", attributes=""),
+            )
+            with _component_tree_for_loc(None) as tree:
+                with caplog.at_level(logging.WARNING):
+                    root = tree.find_root_decl()
+                assert len(root.decls) == 1  # filesystem only, no app-managed wrapper
+                assert "no app-managed components will be loaded" in caplog.text
+
+    def test_no_warning_when_no_state_and_no_name(self, caplog) -> None:
+        """The common case — no app-managed state anywhere, no location name — stays quiet."""
+        with _instance_with_storage():
+            with _component_tree_for_loc(None) as tree:
+                with caplog.at_level(logging.WARNING):
+                    root = tree.find_root_decl()
+                assert len(root.decls) == 1
+                assert "app-managed" not in caplog.text
 
 
 class TestPerComponentInvalidation:

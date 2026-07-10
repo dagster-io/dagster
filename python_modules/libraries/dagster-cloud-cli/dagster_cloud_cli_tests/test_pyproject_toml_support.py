@@ -346,11 +346,17 @@ test = ["pytest>=6.0.0"]
     # Should have no local packages (just the main directory)
     assert local_packages.local_package_paths == []
 
-    # Should have collected dependencies from pyproject.toml
+    # Should have collected dependencies from pyproject.toml, plus the build-time
+    # constraints get_deps_requirements always injects (see _EXTRA_BUILD_CONSTRAINTS).
     deps_lines = deps_requirements.requirements_txt.strip().split("\n")
     deps_lines = [line.strip() for line in deps_lines if line.strip()]
 
-    expected_deps = ["dagster-cloud>=1.0.0", "pytest>=6.0.0", "requests>=2.25.0"]
+    expected_deps = [
+        "dagster-cloud>=1.0.0",
+        "grpcio-health-checking<1.82",
+        "pytest>=6.0.0",
+        "requests>=2.25.0",
+    ]
     assert sorted(deps_lines) == sorted(expected_deps)
 
 

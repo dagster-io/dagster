@@ -383,6 +383,16 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self.process_context.reload_code_location(name)
         return self.process_context.create_request_context()
 
+    def reload_code_location_with_latest_defs_state(
+        self, name: str
+    ) -> "BaseWorkspaceRequestContext":
+        """Reloads a code location such that the reloaded location observes the latest
+        defs state versions. The default reload already loads the latest state versions,
+        so this is a plain reload; subclasses that pin defs state versions at load time
+        must override this to refresh the pins as part of the reload.
+        """
+        return self.reload_code_location(name)
+
     def shutdown_code_location(self, name: str):
         self.process_context.shutdown_code_location(name)
 

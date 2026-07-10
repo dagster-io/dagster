@@ -128,6 +128,16 @@ class DefinitionsLoadContext:
         """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
         return self._load_type
 
+    @property
+    def code_location_name(self) -> str | None:
+        """The name of the code location being loaded, as reported by the loading harness
+        (gRPC server / workspace). This is the authoritative name of the location -- the one
+        the rest of the system (including app-managed component state keys) refers to it by.
+        None when loading outside a workspace context (e.g. direct CLI invocations), in which
+        case callers may fall back to a project-config-derived name.
+        """
+        return self._repository_load_data.code_location_name if self._repository_load_data else None
+
     def add_to_pending_reconstruction_metadata(self, key: str, metadata: Any) -> None:
         self._pending_reconstruction_metadata[key] = metadata
 

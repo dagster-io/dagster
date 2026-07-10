@@ -815,6 +815,7 @@ def reconstruct_repository_def_from_pointer(
                 else {},
                 reconstruction_metadata=curr_context.get_pending_reconstruction_metadata(),
                 defs_state_info=curr_context.accessed_defs_state_info,
+                code_location_name=curr_context.code_location_name,
             ),
         )
     else:

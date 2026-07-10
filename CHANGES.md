@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.13 (core) / 0.29.13 (libraries)
+
+### New
+
+- [ui] The asset launch dialog now automatically expands the warnings section when alerts are present.
+
+### Bugfixes
+
+- Fixed an issue where a fresh installation of `dagster` could resolve an incompatible version of `grpcio-health-checking`, breaking code server imports due to a `protobuf` version conflict.
+- [ui] Fixed an error that occurred when viewing tick details for declarative automation runs.
+
 ## 1.13.12 (core) / 0.29.12 (libraries)
 
 ### New

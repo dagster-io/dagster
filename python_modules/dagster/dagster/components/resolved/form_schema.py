@@ -78,30 +78,32 @@ def _transform(
 
     for key in _VARIANT_KEYS:
         variants = out.get(key)
-        if isinstance(variants, list):
-            filtered = variants if key == "allOf" else _filter_jinja_string_variants(variants)
-            out[key] = [_transform(v, root, {}, visiting) for v in filtered]
-
-    # Pydantic emits discriminator fields like ``Literal["asset_selection"]`` as
-    # ``anyOf: [{const: "...", type: "string"}, {type: "string"}]`` (the second
-    # variant is the Jinja escape hatch filtered out above). Collapse a
-    # remaining single-variant ``anyOf``/``oneOf`` whose only entry is a
-    # ``const`` back to a top-level ``const`` so downstream code recognises it.
-    for key in ("anyOf", "oneOf"):
-        variants = out.get(key)
-        if (
-            isinstance(variants, list)
-            and len(variants) == 1
-            and isinstance(variants[0], Mapping)
-            and "const" in variants[0]
-        ):
-            only = variants[0]
-            if "const" not in out:
-                out["const"] = only["const"]
-            only_type = only.get("type")
-            if "type" not in out and isinstance(only_type, str):
-                out["type"] = only_type
+        if not isinstance(variants, list):
+            continue
+        if key == "allOf":
+            out[key] = [_transform(v, root, {}, visiting) for v in variants]
+            continue
+        filtered = _drop_null_variants(variants)
+        if len(filtered) < len(variants) and "default" in out and out["default"] is None:
+            # The null variant only encodes optionality (``X | None``). With it
+            # gone, a null default would seed ``null`` into the form data for a
+            # non-null field; omitting the key resolves to the same python-side
+            # default.
+            del out["default"]
+        filtered = _filter_jinja_string_variants(filtered)
+        if len(filtered) == 1 and isinstance(filtered[0], Mapping):
+            # A single real variant left (e.g. the payload of an ``X | None``
+            # optional, an enum ``Literal``, or a tagged-union discriminator
+            # ``const``): merge it into the parent so the form renders a plain
+            # field instead of a one-option variant picker with a duplicated
+            # label. Parent keys (title, description, default) win. UI hints
+            # inside the variant lift to this field's ui_node.
+            merged = _transform(filtered[0], root, ui_node, visiting)
             del out[key]
+            for merged_key, merged_value in merged.items():
+                out.setdefault(merged_key, merged_value)
+        else:
+            out[key] = [_transform(v, root, {}, visiting) for v in filtered]
 
     properties = out.get("properties")
     if isinstance(properties, Mapping):
@@ -148,6 +150,18 @@ def _resolve_ref(ref: str, root: Mapping[str, Any]) -> Any:
             return None
         current = current.get(segment)
     return current
+
+
+def _drop_null_variants(variants: list[Any]) -> list[Any]:
+    """Drop ``{"type": "null"}`` variants when any real variant exists.
+
+    The null variant comes from ``X | None`` annotations. Optionality is
+    already expressed by the field's absence from ``required``; in the form,
+    "leave it empty" is the way to express null, so a null branch in a variant
+    picker is never a meaningful choice.
+    """
+    non_null = [v for v in variants if not (isinstance(v, Mapping) and v.get("type") == "null")]
+    return non_null if non_null else variants
 
 
 def _filter_jinja_string_variants(variants: list[Any]) -> list[Any]:

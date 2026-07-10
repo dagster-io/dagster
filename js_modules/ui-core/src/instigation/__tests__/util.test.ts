@@ -1,6 +1,6 @@
 import {buildInstigationTick} from '../../graphql/builders';
 import {InstigationTickStatus} from '../../graphql/types';
-import {isStuckStartedTick} from '../util';
+import {getTickResultType, isStuckStartedTick} from '../util';
 
 const DAY = 1000 * 60 * 60 * 24;
 
@@ -35,5 +35,17 @@ describe('isStuckStarted', () => {
 
     expect(isStuckStartedTick(todayTickFailure, 0)).toBe(false);
     expect(isStuckStartedTick(todayTickFailure, 1)).toBe(false);
+  });
+});
+
+describe('getTickResultType', () => {
+  it('shows materializations for a tick that requested materializations', () => {
+    // Declarative-automation tick (e.g. opened from a run, where the run is a backfill).
+    expect(getTickResultType({requestedAssetMaterializationCount: 3})).toBe('materializations');
+  });
+
+  it('shows runs for a tick that requested no materializations', () => {
+    // Plain sensor/schedule tick that launched runs.
+    expect(getTickResultType({requestedAssetMaterializationCount: 0})).toBe('runs');
   });
 });
