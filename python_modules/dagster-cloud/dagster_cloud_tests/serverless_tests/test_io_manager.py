@@ -58,11 +58,13 @@ def test_factory_returns_presigned_when_env_var_set():
     init_context.instance.dagster_cloud_url = "https://myorg.agent.dagster.cloud"
     init_context.instance.dagster_cloud_agent_token = "test-token"
     init_context.instance.dagster_cloud_api_timeout = 30
+    init_context.instance.deployment_name = "prod"
 
     with environ({"SERVERLESS_IO_MANAGER_USE_PRESIGNED_URL": "True"}):
         manager = _build_serverless_io_manager(init_context)
 
     assert isinstance(manager, ServerlessPresignedURLIOManager)
+    assert manager._deployment_name == "prod"
 
 
 def test_factory_returns_s3_when_env_var_not_set():
@@ -93,12 +95,15 @@ def test_factory_returns_s3_when_env_var_not_set():
 
 API_URL = "https://myorg.agent.dagster.cloud"
 API_TOKEN = "test-token"
+DEPLOYMENT_NAME = "prod"
 PRESIGNED_PUT_URL = "https://s3.amazonaws.com/bucket/key?X-Amz-Signature=put123"
 PRESIGNED_GET_URL = "https://s3.amazonaws.com/bucket/key?X-Amz-Signature=get123"
 
 
 def _make_manager() -> ServerlessPresignedURLIOManager:
-    return ServerlessPresignedURLIOManager(api_url=API_URL, api_token=API_TOKEN, timeout=30)
+    return ServerlessPresignedURLIOManager(
+        api_url=API_URL, api_token=API_TOKEN, timeout=30, deployment_name=DEPLOYMENT_NAME
+    )
 
 
 def _presigned_url_response(url: str):
@@ -145,6 +150,7 @@ def test_dump_to_path_calls_put():
             "key": "storage/run-123/my_step/result",
             "method": "PUT",
         }
+        assert call_kwargs.kwargs["headers"]["Dagster-Cloud-Deployment"] == DEPLOYMENT_NAME
 
         mock_put.assert_called_once()
         (put_url,) = mock_put.call_args.args
@@ -331,7 +337,7 @@ def test_module_imports_without_boto3_installed():
             assert reloaded.ServerlessPresignedURLIOManager is not None
             # Instantiating the presigned-URL manager must not touch boto3.
             manager = reloaded.ServerlessPresignedURLIOManager(
-                api_url=API_URL, api_token=API_TOKEN, timeout=30
+                api_url=API_URL, api_token=API_TOKEN, timeout=30, deployment_name=DEPLOYMENT_NAME
             )
             assert manager is not None
     finally:
