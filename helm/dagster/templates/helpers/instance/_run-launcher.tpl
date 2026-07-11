@@ -5,9 +5,9 @@ class: CeleryK8sRunLauncher
 config:
   dagster_home: {{ .Values.global.dagsterHome | quote }}
   instance_config_map: "{{ template "dagster.fullname" .}}-instance"
-  {{- if not .Values.global.postgresqlAuthWifEnabled }}
+  {{ if not .Values.global.postgresqlAuthWifEnabled }}
   postgres_password_secret: {{ include "dagster.postgresql.secretName" . | quote }}
-  {{- end }}
+  {{ end }}
   job_namespace: {{ $celeryK8sRunLauncherConfig.jobNamespace | default .Release.Namespace }}
   broker:
     env: DAGSTER_CELERY_BROKER_URL
@@ -83,9 +83,9 @@ config:
   {{- end }}
   dagster_home: {{ .Values.global.dagsterHome | quote }}
   instance_config_map: "{{ template "dagster.fullname" .}}-instance"
-  {{- if not .Values.global.postgresqlAuthWifEnabled }}
+  {{ if not .Values.global.postgresqlAuthWifEnabled }}
   postgres_password_secret: {{ include "dagster.postgresql.secretName" . | quote }}
-  {{- end }}
+  {{ end }}
   {{- if $k8sRunLauncherConfig.envConfigMaps }}
   env_config_maps:
     {{- range $envConfigMap := $k8sRunLauncherConfig.envConfigMaps }}
