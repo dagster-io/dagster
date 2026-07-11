@@ -24,6 +24,7 @@ from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
+from dagster._core.storage.runs.schema import BulkActionsTable
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
@@ -1431,6 +1432,39 @@ class TestRunStorage:
         storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
         assert len(storage.get_backfills()) == 1
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
+
+    def test_get_backfills_skips_corrupt_backfill_rows(
+        self, storage: RunStorage, caplog: pytest.LogCaptureFixture
+    ):
+        if not isinstance(storage, SqlRunStorage):
+            pytest.skip("storage is not SQL-backed")
+
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        valid_backfill = PartitionBackfill(
+            "valid",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(valid_backfill)
+
+        with storage.connect() as conn:
+            conn.execute(
+                BulkActionsTable.insert().values(
+                    key="corrupt",
+                    status=BulkActionStatus.REQUESTED.value,
+                    timestamp=datetime_from_timestamp(time.time()),
+                    body='{"truncated"',
+                )
+            )
+
+        with caplog.at_level("WARNING", logger="dagster"):
+            assert storage.get_backfills() == [valid_backfill]
+
+        assert "Skipping backfill corrupt because it could not be deserialized." in caplog.text
 
     def test_backfill_status_filtering(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")

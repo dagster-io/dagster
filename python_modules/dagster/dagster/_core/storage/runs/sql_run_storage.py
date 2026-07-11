@@ -913,7 +913,9 @@ class SqlRunStorage(RunStorage):
         return table
 
     def _backfills_query(self, filters: BulkActionsFilter | None = None):
-        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
+        query = db_select(
+            [BulkActionsTable.c.key, BulkActionsTable.c.body, BulkActionsTable.c.timestamp]
+        )
         if filters and filters.tags:
             if not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
                 # if the migration was run, we added the query for tags filtering in _add_backfill_filters_to_table
@@ -1008,6 +1010,22 @@ class SqlRunStorage(RunStorage):
 
         return [backfill for backfill in backfills if _matches_backfill(backfill, tags)]
 
+    def _deserialize_backfill_rows(
+        self, rows: Sequence[Mapping[str, Any]]
+    ) -> Sequence[PartitionBackfill]:
+        backfills = []
+        for row in rows:
+            try:
+                backfills.append(deserialize_value(row["body"], PartitionBackfill))
+            except Exception:
+                logging.getLogger("dagster").warning(
+                    "Skipping backfill %s because it could not be deserialized.",
+                    row["key"],
+                    exc_info=True,
+                )
+
+        return backfills
+
     def get_backfills(
         self,
         filters: BulkActionsFilter | None = None,
@@ -1016,7 +1034,6 @@ class SqlRunStorage(RunStorage):
         status: BulkActionStatus | None = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
-        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
         if status and filters:
             raise DagsterInvariantViolationError(
                 "Cannot provide status and filters to get_backfills. Please use filters rather than status."
@@ -1030,7 +1047,7 @@ class SqlRunStorage(RunStorage):
         query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
+        backfill_candidates = self._deserialize_backfill_rows(rows)
 
         if filters and filters.tags and not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
             # if we are still using the run tags table to get backfills by tag, we need to do an additional check.
