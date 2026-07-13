@@ -96,6 +96,13 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             project (DbtProject):
                 The dbt project to be prepared.
         """
+        run_with_concurrent_update_guard(
+            project.manifest_path,
+            self._prepare,
+            project=project,
+        )
+
+    def _prepare(self, project: "DbtProject") -> None:
         # Always run dbt deps when dependency files exist, not just when
         # packages appear uninstalled. The has_uninstalled_deps check uses a
         # heuristic (dbt_packages dir existence) that can incorrectly skip
@@ -106,17 +113,9 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             or project.project_dir.joinpath("packages.yml").exists()
         )
         if has_deps_files:
-            run_with_concurrent_update_guard(
-                project.project_dir.joinpath("package-lock.yml"),
-                self._prepare_packages,
-                project=project,
-            )
+            self._prepare_packages(project)
 
-        run_with_concurrent_update_guard(
-            project.manifest_path,
-            self._prepare_manifest,
-            project=project,
-        )
+        self._prepare_manifest(project)
 
     def _prepare_packages(self, project: "DbtProject") -> None:
         from dagster_dbt.core.resource import DbtCliResource
