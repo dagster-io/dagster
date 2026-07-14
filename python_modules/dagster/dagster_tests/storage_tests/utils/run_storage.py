@@ -1466,6 +1466,50 @@ class TestRunStorage:
 
         assert "Skipping backfill corrupt because it could not be deserialized." in caplog.text
 
+    def test_get_backfills_limit_skips_corrupt_rows_without_shrinking_page(
+        self, storage: RunStorage, caplog: pytest.LogCaptureFixture
+    ):
+        if not isinstance(storage, SqlRunStorage):
+            pytest.skip("storage is not SQL-backed")
+
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        older_backfill = PartitionBackfill(
+            "older",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(older_backfill)
+
+        with storage.connect() as conn:
+            conn.execute(
+                BulkActionsTable.insert().values(
+                    key="corrupt",
+                    status=BulkActionStatus.REQUESTED.value,
+                    timestamp=datetime_from_timestamp(time.time()),
+                    body='{"truncated"',
+                )
+            )
+
+        newer_backfill = PartitionBackfill(
+            "newer",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(newer_backfill)
+
+        with caplog.at_level("WARNING", logger="dagster"):
+            assert storage.get_backfills(limit=2) == [newer_backfill, older_backfill]
+
+        assert "Skipping backfill corrupt because it could not be deserialized." in caplog.text
+
     def test_backfill_status_filtering(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()

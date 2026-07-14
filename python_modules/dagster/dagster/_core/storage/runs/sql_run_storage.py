@@ -914,7 +914,12 @@ class SqlRunStorage(RunStorage):
 
     def _backfills_query(self, filters: BulkActionsFilter | None = None):
         query = db_select(
-            [BulkActionsTable.c.key, BulkActionsTable.c.body, BulkActionsTable.c.timestamp]
+            [
+                BulkActionsTable.c.id,
+                BulkActionsTable.c.key,
+                BulkActionsTable.c.body,
+                BulkActionsTable.c.timestamp,
+            ]
         )
         if filters and filters.tags:
             if not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
@@ -1044,18 +1049,40 @@ class SqlRunStorage(RunStorage):
 
         table = self._add_backfill_filters_to_table(BulkActionsTable, filters)
         query = self._backfills_query(filters=filters).select_from(table)
-        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
+        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor)
         query = query.order_by(BulkActionsTable.c.id.desc())
-        rows = self.fetchall(query)
-        backfill_candidates = self._deserialize_backfill_rows(rows)
 
-        if filters and filters.tags and not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
-            # if we are still using the run tags table to get backfills by tag, we need to do an additional check.
-            # runs can have more tags than the backfill that launched them. Since we filtered tags by
-            # querying for runs with those tags, we need to do an additional check that the backfills
-            # also have the requested tags
-            backfill_candidates = self._apply_backfill_tags_filter_to_results(
-                backfill_candidates, filters.tags
+        def _filter_backfill_candidates(
+            backfill_candidates: Sequence[PartitionBackfill],
+        ) -> Sequence[PartitionBackfill]:
+            if not (filters and filters.tags and not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)):
+                return backfill_candidates
+            # If we are still using the run tags table to get backfills by tag, we need to do an
+            # additional check. Runs can have more tags than the backfill that launched them. Since
+            # we filtered tags by querying for runs with those tags, verify that the backfills also
+            # have the requested tags.
+            return self._apply_backfill_tags_filter_to_results(backfill_candidates, filters.tags)
+
+        if not limit:
+            rows = self.fetchall(query)
+            backfill_candidates = self._deserialize_backfill_rows(rows)
+            return _filter_backfill_candidates(backfill_candidates)
+
+        backfill_candidates = []
+        last_row_id = None
+        while len(backfill_candidates) < limit:
+            page_query = query
+            if last_row_id is not None:
+                page_query = page_query.where(BulkActionsTable.c.id < last_row_id)
+            rows = self.fetchall(page_query.limit(limit - len(backfill_candidates)))
+            if not rows:
+                break
+
+            last_row_id = rows[-1]["id"]
+            backfill_candidates = list(
+                _filter_backfill_candidates(
+                    [*backfill_candidates, *self._deserialize_backfill_rows(rows)]
+                )
             )
         return backfill_candidates
 
