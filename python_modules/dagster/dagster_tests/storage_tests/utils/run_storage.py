@@ -1450,14 +1450,6 @@ class TestRunStorage:
             backfill_timestamp=time.time(),
         )
         storage.add_backfill(valid_backfill)
-        storage.add_run(
-            create_dagster_run(
-                run_id=make_new_run_id(),
-                job_name="some_pipeline",
-                status=DagsterRunStatus.SUCCESS,
-                tags={"foo": "bar", BACKFILL_ID_TAG: valid_backfill.backfill_id},
-            )
-        )
 
         with storage.connect() as conn:
             conn.execute(
@@ -1515,6 +1507,41 @@ class TestRunStorage:
 
         with caplog.at_level("WARNING", logger="dagster"):
             assert storage.get_backfills(limit=2) == [newer_backfill, older_backfill]
+
+        assert "Skipping backfill corrupt because it could not be deserialized." in caplog.text
+
+    def test_get_backfills_count_skips_corrupt_rows(
+        self, storage: RunStorage, caplog: pytest.LogCaptureFixture
+    ):
+        if not isinstance(storage, SqlRunStorage):
+            pytest.skip("storage is not SQL-backed")
+        if not self.supports_backfills_count():
+            pytest.skip("storage does not support backfill count")
+
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        valid_backfill = PartitionBackfill(
+            "valid",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(valid_backfill)
+
+        with storage.connect() as conn:
+            conn.execute(
+                BulkActionsTable.insert().values(
+                    key="corrupt",
+                    status=BulkActionStatus.REQUESTED.value,
+                    timestamp=datetime_from_timestamp(time.time()),
+                    body='{"truncated"',
+                )
+            )
+
+        with caplog.at_level("WARNING", logger="dagster"):
+            assert storage.get_backfills_count() == 1
 
         assert "Skipping backfill corrupt because it could not be deserialized." in caplog.text
 

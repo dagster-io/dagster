@@ -1087,22 +1087,17 @@ class SqlRunStorage(RunStorage):
 
     def get_backfills_count(self, filters: BulkActionsFilter | None = None) -> int:
         check.opt_inst_param(filters, "filters", BulkActionsFilter)
+        query = self._backfills_query(filters=filters)
+        rows = self.fetchall(query)
+        backfill_candidates = self._deserialize_backfill_rows(rows)
         if filters and filters.tags:
             # runs can have more tags than the backfill that launched them. Since we filtered tags by
             # querying for runs with those tags, we need to do an additional check that the backfills
             # also have the requested tags. This requires fetching the backfills from the db and filtering them
-            query = self._backfills_query(filters=filters)
-            rows = self.fetchall(query)
-            backfill_candidates = self._deserialize_backfill_rows(rows)
-            return len(
-                self._apply_backfill_tags_filter_to_results(backfill_candidates, filters.tags)
+            backfill_candidates = self._apply_backfill_tags_filter_to_results(
+                backfill_candidates, filters.tags
             )
-
-        subquery = db_subquery(self._backfills_query(filters=filters))
-        query = db_select([db.func.count().label("count")]).select_from(subquery)
-        row = self.fetchone(query)
-        count = row["count"] if row else 0
-        return count
+        return len(backfill_candidates)
 
     def get_backfill(self, backfill_id: str) -> PartitionBackfill | None:
         check.str_param(backfill_id, "backfill_id")
